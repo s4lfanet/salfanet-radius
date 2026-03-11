@@ -1,6 +1,6 @@
 # Salfanet Radius — Documentation Index
 
-> Last updated: 2026-03-07 | Version 2.10.24
+> Last updated: 2026-03-12 | Version 2.10.25
 
 ---
 
@@ -135,6 +135,8 @@ docs/
 | [DYNAMIC_VIRTUAL_PARAMETERS.md](features/DYNAMIC_VIRTUAL_PARAMETERS.md) | Virtual parameters GenieACS | GenieACS → Devices |
 | [GENIEACS-GUIDE.md](features/GENIEACS-GUIDE.md) | Panduan lengkap GenieACS TR-069 | GenieACS |
 | [TOAST_NOTIFICATIONS_GUIDE.md](features/TOAST_NOTIFICATIONS_GUIDE.md) | UI toast notification system | Semua halaman admin |
+| [FIBER_NETWORK_TOPOLOGY.md](features/FIBER_NETWORK_TOPOLOGY.md) | Infrastruktur fiber: OTB/ODC/ODP/JC/splice/peta/trace (**roadmap**) | Network → Infrastruktur |
+| [LAPORAN_EXPORT.md](features/LAPORAN_EXPORT.md) | Laporan & ekspor: invoice, pembayaran, pelanggan | Laporan → Data & Export |
 
 ---
 
@@ -160,6 +162,8 @@ docs/
 | **GenieACS** | [GENIEACS-GUIDE.md](features/GENIEACS-GUIDE.md), [DYNAMIC_VIRTUAL_PARAMETERS.md](features/DYNAMIC_VIRTUAL_PARAMETERS.md) |
 | **Technicians** | [GPS_LOCATION_FEATURE.md](features/GPS_LOCATION_FEATURE.md) |
 | **FreeRADIUS** | [FREERADIUS-SETUP.md](setup/FREERADIUS-SETUP.md), [MIKROTIK_RADIUS_COA_COMPLETE_SETUP.md](mikrotik/MIKROTIK_RADIUS_COA_COMPLETE_SETUP.md) |
+| **Laporan → Data & Export** | [LAPORAN_EXPORT.md](features/LAPORAN_EXPORT.md) |
+| **Network → Infrastruktur** | [FIBER_NETWORK_TOPOLOGY.md](features/FIBER_NETWORK_TOPOLOGY.md) |
 | **Settings** | [DATABASE_MIGRATION_GUIDE.md](getting-started/DATABASE_MIGRATION_GUIDE.md) |
 
 ---
