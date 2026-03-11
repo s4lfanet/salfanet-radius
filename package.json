@@ -83,6 +83,7 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-leaflet": "^5.0.0",
+    "react-leaflet-cluster": "^4.0.0",
     "recharts": "^3.3.0",
     "sweetalert2": "^11.26.3",
     "tailwind-merge": "^3.3.1",

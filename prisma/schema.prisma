@@ -906,18 +906,20 @@ model networkServer {
 }
 
 model networkOLT {
-  id         String             @id
-  name       String
-  ipAddress  String
-  latitude   Float
-  longitude  Float
-  status     String             @default("active")
-  followRoad Boolean            @default(false)
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  routers    networkOLTRouter[]
-  odcs       networkODC[]
-  odps       networkODP[]
+  id                   String             @id
+  name                 String
+  ipAddress            String
+  latitude             Float
+  longitude            Float
+  status               String             @default("active")
+  followRoad           Boolean            @default(false)
+  customRouteWaypoints Json?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  routers              networkOLTRouter[]
+  odcs                 networkODC[]
+  odps                 networkODP[]
+  otbs                 network_otbs[]
 
   @@map("network_olts")
 }
@@ -941,47 +943,75 @@ model networkOLTRouter {
 }
 
 model networkODC {
-  id         String       @id
-  name       String
-  latitude   Float
-  longitude  Float
-  oltId      String
-  ponPort    Int
-  portCount  Int          @default(8)
-  status     String       @default("active")
-  followRoad Boolean      @default(false)
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  olt        networkOLT   @relation(fields: [oltId], references: [id], onDelete: Cascade)
-  odps       networkODP[]
+  id                   String         @id
+  name                 String
+  latitude             Float
+  longitude            Float
+  oltId                String
+  otbId                String?
+  ponPort              Int
+  portCount            Int            @default(8)
+  status               String         @default("active")
+  followRoad           Boolean        @default(false)
+  customRouteWaypoints Json?
+  fiberCableType       String?
+  splitterConfig       Json?
+  incomingCableId      String?
+  incomingCoreId       String?
+  spliceTrayCount      Int            @default(2)
+  totalSpliceCapacity  Int            @default(48)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  olt                  networkOLT     @relation(fields: [oltId], references: [id], onDelete: Cascade)
+  otb                  network_otbs?  @relation(fields: [otbId], references: [id])
+  odps                 networkODP[]
 
   @@index([oltId])
+  @@index([otbId])
+  @@index([incomingCableId])
   @@map("network_odcs")
 }
 
 model networkODP {
-  id          String       @id
-  name        String
-  latitude    Float
-  longitude   Float
-  status      String       @default("active")
-  followRoad  Boolean      @default(false)
-  portCount   Int          @default(8)
-  oltId       String?
-  ponPort     Int?
-  odcId       String?
-  parentOdpId String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  olt         networkOLT?  @relation(fields: [oltId], references: [id], onDelete: SetNull)
-  odc         networkODC?  @relation(fields: [odcId], references: [id], onDelete: SetNull)
-  parentOdp   networkODP?  @relation("ODPHierarchy", fields: [parentOdpId], references: [id])
-  childOdps   networkODP[] @relation("ODPHierarchy")
-  customers   odpCustomerAssignment[]
+  id                   String                     @id
+  name                 String
+  latitude             Float
+  longitude            Float
+  status               String                     @default("active")
+  followRoad           Boolean                    @default(false)
+  portCount            Int                        @default(8)
+  oltId                String?
+  ponPort              Int?
+  odcId                String?
+  parentOdpId          String?
+  childType            String                     @default("standalone")
+  customRouteWaypoints Json?
+  parentConnectionCore Int?
+  splitterDiagram      Json?
+  splitterRatio        String                     @default("1:8")
+  splitterType         String                     @default("PLC")
+  hierarchyLevel       Int                        @default(0)
+  upstreamType         network_odps_upstreamType?
+  upstreamId           String?
+  maxChildLevel        Int                        @default(2)
+  fbtRatioType         network_odps_fbtRatioType  @default(even)
+  fbtTapLoss           Decimal?                   @db.Decimal(5, 2)
+  fbtThroughLoss       Decimal?                   @db.Decimal(5, 2)
+  incomingCableId      String?
+  incomingCoreId       String?
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
+  olt                  networkOLT?                @relation(fields: [oltId], references: [id], onDelete: SetNull)
+  odc                  networkODC?                @relation(fields: [odcId], references: [id], onDelete: SetNull)
+  parentOdp            networkODP?                @relation("ODPHierarchy", fields: [parentOdpId], references: [id])
+  childOdps            networkODP[]               @relation("ODPHierarchy")
+  customers            odpCustomerAssignment[]
 
   @@index([oltId])
   @@index([odcId])
   @@index([parentOdpId])
+  @@index([hierarchyLevel])
+  @@index([upstreamType, upstreamId])
   @@map("network_odps")
 }
 
@@ -1612,4 +1642,372 @@ model referralReward {
   @@index([status])
   @@index([createdAt])
   @@map("referral_rewards")
+}
+
+// =============================================================================
+// === FIBER NETWORK TOPOLOGY ENUMS ===
+// =============================================================================
+
+enum cable_segments_status {
+  ACTIVE
+  INACTIVE
+  DAMAGED
+}
+
+enum core_assignment_history_action {
+  ASSIGN
+  RELEASE
+  RESERVE
+  TRANSFER
+  DAMAGE
+  REPAIR
+}
+
+enum fiber_cables_cableType {
+  GPON
+  ADSS
+  OPGW
+  Figure_8
+  Aerial
+  Underground
+  Indoor
+  SM_G652
+  SM_G657A1
+  SM_G657A2
+  MM_OM3
+  MM_OM4
+}
+
+enum fiber_cables_status {
+  ACTIVE
+  INACTIVE
+  DAMAGED
+}
+
+enum fiber_cores_status {
+  AVAILABLE
+  ASSIGNED
+  RESERVED
+  DAMAGED
+  DARK
+}
+
+enum fiber_tubes_status {
+  ACTIVE
+  DAMAGED
+  RESERVED
+}
+
+enum network_joint_closures_closureType {
+  INLINE
+  BRANCHING
+  TERMINAL
+}
+
+enum network_nodes_status {
+  active
+  inactive
+  maintenance
+  damaged
+}
+
+enum network_nodes_type {
+  OLT
+  OTB
+  ODC
+  ODP
+  JOINT_CLOSURE
+}
+
+enum network_odps_fbtRatioType {
+  even
+  uneven
+}
+
+enum network_odps_upstreamType {
+  OLT
+  OTB
+  JC
+  ODC
+  ODP_PARENT
+  ODP_SUB_PARENT
+}
+
+enum splice_points_deviceType {
+  OTB
+  JOINT_CLOSURE
+  ODC
+  ODP
+}
+
+enum splice_points_spliceType {
+  FUSION
+  MECHANICAL
+}
+
+enum splice_points_status {
+  ACTIVE
+  REPAIRED
+  DAMAGED
+}
+
+// =============================================================================
+// === FIBER NETWORK TOPOLOGY MODELS ===
+// =============================================================================
+
+model network_otbs {
+  id                  String         @id
+  name                String         @db.VarChar(255)
+  code                String         @unique @db.VarChar(100)
+  latitude            Float
+  longitude           Float
+  address             String?        @db.Text
+  oltId               String?
+  portCount           Int            @default(24)
+  usedPorts           Int            @default(0)
+  cableType           String?        @db.VarChar(100)
+  feederCable         String?        @db.VarChar(100)
+  hasSplitter         Boolean        @default(true)
+  splitterRatio       String?        @db.VarChar(50)
+  coverageRadiusKm    Float?         @default(3)
+  installDate         DateTime?
+  status              String         @default("ACTIVE") @db.VarChar(50)
+  notes               String?        @db.Text
+  metadata            Json?
+  incomingCableId     String?
+  spliceTrayCount     Int            @default(1)
+  totalSpliceCapacity Int            @default(24)
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+  olt                 networkOLT?    @relation(fields: [oltId], references: [id])
+  odcs                networkODC[]
+
+  @@index([code])
+  @@index([incomingCableId])
+  @@index([oltId])
+  @@index([status])
+}
+
+model fiber_cables {
+  id             String                 @id
+  code           String                 @unique @db.VarChar(100)
+  name           String                 @db.VarChar(255)
+  cableType      fiber_cables_cableType @default(SM_G652)
+  tubeCount      Int
+  coresPerTube   Int
+  totalCores     Int?
+  outerDiameter  Decimal?               @db.Decimal(5, 2)
+  manufacturer   String?                @db.VarChar(100)
+  partNumber     String?                @db.VarChar(100)
+  status         fiber_cables_status    @default(ACTIVE)
+  notes          String?                @db.Text
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  segments       cable_segments[]
+  tubes          fiber_tubes[]
+
+  @@index([cableType])
+  @@index([status])
+}
+
+model fiber_tubes {
+  id             String             @id
+  cableId        String
+  tubeNumber     Int
+  colorCode      String             @db.VarChar(20)
+  colorHex       String             @default("#000000") @db.VarChar(7)
+  coreCount      Int
+  usedCores      Int                @default(0)
+  availableCores Int?
+  status         fiber_tubes_status @default(ACTIVE)
+  notes          String?            @db.Text
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  cores          fiber_cores[]
+  cable          fiber_cables       @relation(fields: [cableId], references: [id], onDelete: Cascade)
+
+  @@unique([cableId, tubeNumber])
+  @@index([cableId])
+  @@index([status])
+}
+
+model fiber_cores {
+  id                      String                    @id
+  tubeId                  String
+  coreNumber              Int
+  colorCode               String                    @db.VarChar(20)
+  colorHex                String                    @default("#000000") @db.VarChar(7)
+  status                  fiber_cores_status        @default(AVAILABLE)
+  assignedToType          String?                   @db.VarChar(50)
+  assignedToId            String?
+  attenuation             Decimal?                  @db.Decimal(6, 3)
+  notes                   String?                   @db.Text
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  assignmentHistory       core_assignment_history[]
+  tube                    fiber_tubes               @relation(fields: [tubeId], references: [id], onDelete: Cascade)
+  incomingSplices         splice_points[]           @relation("IncomingSpliceCore")
+  outgoingSplices         splice_points[]           @relation("OutgoingSpliceCore")
+
+  @@unique([tubeId, coreNumber])
+  @@index([assignedToId])
+  @@index([assignedToType])
+  @@index([status])
+  @@index([tubeId])
+}
+
+model splice_points {
+  id             String                   @id
+  deviceType     splice_points_deviceType
+  deviceId       String
+  trayNumber     Int                      @default(1)
+  incomingCoreId String
+  outgoingCoreId String
+  spliceType     splice_points_spliceType @default(FUSION)
+  insertionLoss  Decimal?                 @db.Decimal(5, 3)
+  reflectance    Decimal?                 @db.Decimal(5, 3)
+  spliceDate     DateTime?
+  splicedBy      String?
+  status         splice_points_status     @default(ACTIVE)
+  notes          String?                  @db.Text
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+  incomingCore   fiber_cores              @relation("IncomingSpliceCore", fields: [incomingCoreId], references: [id], onDelete: Cascade)
+  outgoingCore   fiber_cores              @relation("OutgoingSpliceCore", fields: [outgoingCoreId], references: [id], onDelete: Cascade)
+
+  @@index([deviceType, deviceId])
+  @@index([incomingCoreId])
+  @@index([outgoingCoreId])
+  @@index([status])
+}
+
+model cable_segments {
+  id                    String                @id
+  cableId               String
+  fromDeviceType        String                @db.VarChar(50)
+  fromDeviceId          String
+  fromPort              Int?
+  toDeviceType          String                @db.VarChar(50)
+  toDeviceId            String
+  toPort                Int?
+  lengthMeters          Decimal               @default(0.00) @db.Decimal(10, 2)
+  attenuationPerKm      Decimal               @default(0.350) @db.Decimal(5, 3)
+  calculatedAttenuation Decimal?              @db.Decimal(6, 3)
+  status                cable_segments_status @default(ACTIVE)
+  installDate           DateTime?             @db.Date
+  notes                 String?               @db.Text
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  cable                 fiber_cables          @relation(fields: [cableId], references: [id], onDelete: Cascade)
+
+  @@index([cableId])
+  @@index([fromDeviceType, fromDeviceId])
+  @@index([status])
+  @@index([toDeviceType, toDeviceId])
+}
+
+model core_assignment_history {
+  id                     String                         @id
+  coreId                 String
+  action                 core_assignment_history_action
+  previousStatus         String?                        @db.VarChar(50)
+  newStatus              String                         @db.VarChar(50)
+  previousAssignedToType String?                        @db.VarChar(50)
+  previousAssignedToId   String?
+  newAssignedToType      String?                        @db.VarChar(50)
+  newAssignedToId        String?
+  performedBy            String?
+  reason                 String?                        @db.Text
+  createdAt              DateTime                       @default(now())
+  core                   fiber_cores                    @relation(fields: [coreId], references: [id], onDelete: Cascade)
+
+  @@index([action])
+  @@index([coreId])
+  @@index([createdAt])
+}
+
+model network_joint_closures {
+  id                   String                             @id
+  name                 String
+  code                 String                             @unique
+  type                 String
+  latitude             Float
+  longitude            Float
+  address              String?                            @db.Text
+  cableType            String
+  fiberCount           Int
+  connections          Json
+  hasSplitter          Boolean                            @default(false)
+  splitterRatio        String?
+  status               String                             @default("active")
+  installDate          DateTime?
+  lastInspection       DateTime?
+  followRoad           Boolean                            @default(true)
+  customRouteWaypoints Json?
+  spliceTrayCount      Int                                @default(4)
+  totalSpliceCapacity  Int                                @default(96)
+  closureType          network_joint_closures_closureType @default(BRANCHING)
+  createdAt            DateTime                           @default(now())
+  updatedAt            DateTime                           @updatedAt
+
+  @@index([closureType])
+  @@index([code])
+  @@index([status])
+  @@index([type])
+}
+
+model network_maintenance_history {
+  id          String   @id
+  nodeType    String
+  nodeId      String
+  jobId       String?
+  action      String
+  description String?  @db.Text
+  performedBy String?
+  performedAt DateTime
+  notes       String?  @db.Text
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([jobId])
+  @@index([nodeId])
+  @@index([nodeType])
+  @@index([performedAt])
+}
+
+model network_nodes {
+  id         String                @id
+  type       network_nodes_type
+  code       String                @unique @db.VarChar(100)
+  name       String                @db.VarChar(255)
+  latitude   Decimal               @db.Decimal(10, 8)
+  longitude  Decimal               @db.Decimal(11, 8)
+  address    String?               @db.Text
+  status     network_nodes_status? @default(active)
+  upstreamId String?
+  metadata   Json?
+  createdAt  DateTime?             @default(now())
+  updatedAt  DateTime?             @updatedAt
+
+  @@index([code])
+  @@index([status])
+  @@index([type])
+  @@index([upstreamId])
+}
+
+model network_fiber_paths {
+  id                String    @id
+  name              String
+  pathNodes         Json
+  cableType         String
+  usedCores         Json
+  length            Float?
+  status            String    @default("active")
+  lastVerified      DateTime?
+  verifiedBy        String?
+  affectedCustomers Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([status])
 }
