@@ -11,6 +11,7 @@ import {
   PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,13 +71,7 @@ const fmtIDRFull = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
 const PIE_COLORS = ['#0d9488', '#6366f1', '#f59e0b', '#ef4444', '#22c55e', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 // ─── Period selector config ───────────────────────────────────────────────────
-
-const PERIODS = [
-  { label: '3 Bulan', value: '3' },
-  { label: '6 Bulan', value: '6' },
-  { label: '12 Bulan', value: '12' },
-  { label: '24 Bulan', value: '24' },
-];
+const PERIOD_VALUES = ['3', '6', '12', '24'];
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 
@@ -147,6 +142,15 @@ function ChartSection({ title, subtitle, children }: {
 
 export default function LaporanAnalitikPage() {
   const router = useRouter();
+  const { t } = useTranslation();
+
+  const PERIODS = [
+    { label: t('laporanAnalitik.months3'), value: '3' },
+    { label: t('laporanAnalitik.months6'), value: '6' },
+    { label: t('laporanAnalitik.months12'), value: '12' },
+    { label: t('laporanAnalitik.months24'), value: '24' },
+  ];
+
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('12');
@@ -177,7 +181,7 @@ export default function LaporanAnalitikPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-2">
           <div className="animate-spin w-10 h-10 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="text-sm text-muted-foreground">Memuat data analitik…</p>
+          <p className="text-sm text-muted-foreground">{t('laporanAnalitik.loading')}</p>
         </div>
       </div>
     );
@@ -238,32 +242,32 @@ export default function LaporanAnalitikPage() {
       {s && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <KpiCard
-            label="Total Pendapatan"
+            label={t('laporanAnalitik.totalRevenue')}
             value={fmtIDR(s.totalRevenue)}
-            sub={`${data?.period} bulan terakhir`}
+            sub={t('laporanAnalitik.lastMonths', { n: String(data?.period) })}
             icon={DollarSign}
             color="bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"
             trend="up"
           />
           <KpiCard
-            label="Avg ARPU"
+            label={t('laporanAnalitik.avgArpu')}
             value={fmtIDR(s.avgArpu)}
-            sub="per pelanggan aktif"
+            sub={t('laporanAnalitik.perActiveCustomer')}
             icon={TrendingUp}
             color="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400"
           />
           <KpiCard
-            label="Avg Churn Rate"
+            label={t('laporanAnalitik.avgChurnRate')}
             value={`${s.avgChurnRate}%`}
-            sub={`Retention ${s.avgRetentionRate}%`}
+            sub={t('laporanAnalitik.retention', { n: String(s.avgRetentionRate) })}
             icon={UserX}
             color="bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
             trend={s.avgChurnRate > 5 ? 'down' : 'neutral'}
           />
           <KpiCard
-            label="Pelanggan Aktif"
+            label={t('laporanAnalitik.activeCustomers')}
             value={s.currentActiveUsers.toLocaleString('id-ID')}
-            sub={`+${s.totalNewCustomers} baru dalam ${data?.period}bln`}
+            sub={t('laporanAnalitik.newIn', { n: String(s.totalNewCustomers), n2: String(data?.period) })}
             icon={Users}
             color="bg-violet-100 text-violet-600 dark:bg-violet-900/30 dark:text-violet-400"
             trend="up"
@@ -275,7 +279,7 @@ export default function LaporanAnalitikPage() {
       {d && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Revenue Trend */}
-          <ChartSection title="Tren Pendapatan" subtitle="Total invoice lunas per bulan">
+          <ChartSection title={t('laporanAnalitik.revenueTrend')} subtitle={t('laporanAnalitik.revenueTrendSub')}>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={d.monthlyData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
                 <defs>
@@ -289,7 +293,7 @@ export default function LaporanAnalitikPage() {
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} tickFormatter={v => fmtIDR(v)} width={70} />
                 <Tooltip content={<CustomTooltip isCurrency />} />
                 <Area
-                  type="monotone" dataKey="revenue" name="Pendapatan"
+                  type="monotone" dataKey="revenue" name={t('laporanAnalitik.revenueTrend')}
                   stroke="#0d9488" fill="url(#revGrad)" strokeWidth={2}
                 />
               </AreaChart>
@@ -297,7 +301,7 @@ export default function LaporanAnalitikPage() {
           </ChartSection>
 
           {/* New customers vs Churn */}
-          <ChartSection title="Pelanggan Baru vs Churn" subtitle="Penambahan dan kehilangan pelanggan per bulan">
+          <ChartSection title={t('laporanAnalitik.newVsChurn')} subtitle={t('laporanAnalitik.newVsChurnSub')}>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={d.monthlyData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -305,8 +309,8 @@ export default function LaporanAnalitikPage() {
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} allowDecimals={false} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="newCustomers" name="Pelanggan Baru" fill="#22c55e" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="churned" name="Churn" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="newCustomers" name={t('laporanAnalitik.newCustomers')} fill="#22c55e" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="churned" name={t('laporanAnalitik.churn')} fill="#ef4444" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </ChartSection>
@@ -318,8 +322,8 @@ export default function LaporanAnalitikPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* ARPU trend */}
           <ChartSection
-            title="Tren ARPU"
-            subtitle="Average Revenue Per User (aktif) per bulan"
+            title={t('laporanAnalitik.arpuTrend')}
+            subtitle={t('laporanAnalitik.arpuTrendSub')}
           >
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={d.monthlyData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
@@ -328,7 +332,7 @@ export default function LaporanAnalitikPage() {
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} tickFormatter={v => fmtIDR(v)} width={72} />
                 <Tooltip content={<CustomTooltip isCurrency />} />
                 <Line
-                  type="monotone" dataKey="arpu" name="ARPU"
+                  type="monotone" dataKey="arpu" name={t('laporanAnalitik.avgArpu')}
                   stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }}
                 />
               </LineChart>
@@ -337,8 +341,8 @@ export default function LaporanAnalitikPage() {
 
           {/* Churn rate trend */}
           <ChartSection
-            title="Tren Churn Rate"
-            subtitle="Persentase pelanggan yang berhenti per bulan"
+            title={t('laporanAnalitik.churnTrend')}
+            subtitle={t('laporanAnalitik.churnTrendSub')}
           >
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={d.monthlyData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
@@ -362,7 +366,7 @@ export default function LaporanAnalitikPage() {
 
       {/* Cumulative active customers */}
       {d && (
-        <ChartSection title="Jumlah Pelanggan Aktif (Estimasi)" subtitle="Perkiraan pelanggan aktif per akhir bulan">
+        <ChartSection title={t('laporanAnalitik.cumulativeCustomers')} subtitle={t('laporanAnalitik.cumulativeCustomersSub')}>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={d.monthlyData} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
               <defs>
@@ -376,7 +380,7 @@ export default function LaporanAnalitikPage() {
               <YAxis tick={{ fontSize: 10 }} tickLine={false} allowDecimals={false} />
               <Tooltip content={<CustomTooltip />} />
               <Area
-                type="monotone" dataKey="cumulativeCustomers" name="Pelanggan Aktif"
+                type="monotone" dataKey="cumulativeCustomers" name={t('laporanAnalitik.activeCustomers')}
                 stroke="#8b5cf6" fill="url(#custGrad)" strokeWidth={2}
               />
             </AreaChart>
@@ -389,7 +393,7 @@ export default function LaporanAnalitikPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {/* Profile breakdown */}
           {d.profileBreakdown.length > 0 && (
-            <ChartSection title="Distribusi Paket" subtitle="Pelanggan aktif per paket/profile">
+            <ChartSection title={t('laporanAnalitik.profileDistribution')} subtitle={t('laporanAnalitik.profileDistributionSub')}>
               <div className="flex items-center gap-4">
                 <ResponsiveContainer width={160} height={160}>
                   <PieChart>
@@ -423,7 +427,7 @@ export default function LaporanAnalitikPage() {
 
           {/* Area breakdown */}
           {d.areaBreakdown.length > 0 && (
-            <ChartSection title="Distribusi Area" subtitle="Pelanggan aktif per area layanan">
+            <ChartSection title={t('laporanAnalitik.areaDistribution')} subtitle={t('laporanAnalitik.areaDistributionSub')}>
               <div className="space-y-2.5 mt-1">
                 {d.areaBreakdown.map((area, idx) => (
                   <div key={area.area} className="space-y-1">
@@ -456,19 +460,19 @@ export default function LaporanAnalitikPage() {
 
       {/* Monthly data table */}
       {d && (
-        <ChartSection title="Detail Data Bulanan" subtitle="Ringkasan lengkap per bulan">
+        <ChartSection title={t('laporanAnalitik.monthlyTable')} subtitle={t('laporanAnalitik.monthlyTableSub')}>
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="pb-2 pr-4 font-medium">Bulan</th>
-                  <th className="pb-2 pr-4 font-medium text-right">Pendapatan</th>
-                  <th className="pb-2 pr-4 font-medium text-right">Inv. Lunas</th>
-                  <th className="pb-2 pr-4 font-medium text-right">+Pelanggan</th>
-                  <th className="pb-2 pr-4 font-medium text-right">Churn</th>
-                  <th className="pb-2 pr-4 font-medium text-right">Churn %</th>
-                  <th className="pb-2 pr-4 font-medium text-right">ARPU</th>
-                  <th className="pb-2 font-medium text-right">Aktif (est.)</th>
+                  <th className="pb-2 pr-4 font-medium">{t('laporanAnalitik.colMonth')}</th>
+                  <th className="pb-2 pr-4 font-medium text-right">{t('laporanAnalitik.colRevenue')}</th>
+                  <th className="pb-2 pr-4 font-medium text-right">{t('laporanAnalitik.colInvPaid')}</th>
+                  <th className="pb-2 pr-4 font-medium text-right">{t('laporanAnalitik.colNewCustomers')}</th>
+                  <th className="pb-2 pr-4 font-medium text-right">{t('laporanAnalitik.colChurn')}</th>
+                  <th className="pb-2 pr-4 font-medium text-right">{t('laporanAnalitik.colChurnPct')}</th>
+                  <th className="pb-2 pr-4 font-medium text-right">{t('laporanAnalitik.colArpu')}</th>
+                  <th className="pb-2 font-medium text-right">{t('laporanAnalitik.colActiveEst')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -504,9 +508,7 @@ export default function LaporanAnalitikPage() {
 
       {/* Note about churn approximation */}
       <div className="text-xs text-muted-foreground bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-        <strong>Catatan metodologi:</strong> Churn rate dihitung berdasarkan pelanggan yang statusnya berubah ke 
-        "stop" pada bulan tersebut (berdasarkan <code>updatedAt</code>). ARPU = total pendapatan ÷ estimasi pelanggan aktif.
-        Data bersifat estimasi — untuk akurasi maksimal gunakan laporan manual + audit berkala.
+        {t('laporanAnalitik.methodologyNote')}
       </div>
     </div>
   );

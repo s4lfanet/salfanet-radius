@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Shield, Users, Wifi, WifiOff, DollarSign, RefreshCw, Search, Download,
   AlertTriangle, CheckCircle, XCircle, Phone, Calendar, TrendingUp, Activity,
@@ -48,6 +49,7 @@ interface Stats {
 }
 
 export default function IsolatedUsersMonitorPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [users, setUsers] = useState<IsolatedUser[]>([]);
@@ -129,7 +131,7 @@ export default function IsolatedUsersMonitorPage() {
       <div className="flex items-center justify-center min-h-[50vh]">
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto text-primary mb-2" />
-          <p className="text-sm text-muted-foreground">Memuat data...</p>
+          <p className="text-sm text-muted-foreground">{t('isolatedUsers.loading')}</p>
         </div>
       </div>
     );
@@ -142,10 +144,10 @@ export default function IsolatedUsersMonitorPage() {
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Shield className="w-5 h-5 text-destructive" />
-            Isolated Users Monitor
+            {t('isolatedUsers.title')}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Real-time monitoring user yang diisolir
+            {t('isolatedUsers.subtitle')}
           </p>
         </div>
         <button
@@ -154,7 +156,7 @@ export default function IsolatedUsersMonitorPage() {
           className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-all text-sm text-primary"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Memperbarui...' : 'Refresh'}
+          {refreshing ? t('isolatedUsers.refreshing') : t('common.refresh')}
         </button>
       </div>
 
@@ -167,7 +169,7 @@ export default function IsolatedUsersMonitorPage() {
               <TrendingUp className="w-3.5 h-3.5 text-red-500/40" />
             </div>
             <div className="text-xl font-bold text-foreground">{stats.totalIsolated}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Total Diisolir</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{t('isolatedUsers.totalIsolated')}</div>
           </div>
           <div className="bg-card border border-emerald-500/20 rounded-xl p-3">
             <div className="flex items-center justify-between mb-1.5">
@@ -175,14 +177,14 @@ export default function IsolatedUsersMonitorPage() {
               <Activity className="w-3.5 h-3.5 text-emerald-500/40" />
             </div>
             <div className="text-xl font-bold text-foreground">{stats.totalOnline}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Online</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{t('isolatedUsers.online')}</div>
           </div>
           <div className="bg-card border border-gray-500/20 rounded-xl p-3">
             <div className="flex items-center justify-between mb-1.5">
               <WifiOff className="w-4 h-4 text-gray-400" />
             </div>
             <div className="text-xl font-bold text-foreground">{stats.totalOffline}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Offline</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{t('isolatedUsers.offline')}</div>
           </div>
           <div className="bg-card border border-amber-500/20 rounded-xl p-3">
             <div className="flex items-center justify-between mb-1.5">
@@ -190,14 +192,14 @@ export default function IsolatedUsersMonitorPage() {
               <FileText className="w-3.5 h-3.5 text-amber-500/40" />
             </div>
             <div className="text-xl font-bold text-foreground">{stats.totalUnpaidInvoices}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Invoice Belum Bayar</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{t('isolatedUsers.unpaidInvoices')}</div>
           </div>
           <div className="bg-card border border-cyan-500/20 rounded-xl p-3 col-span-2 md:col-span-1">
             <div className="flex items-center justify-between mb-1.5">
               <DollarSign className="w-4 h-4 text-cyan-500" />
             </div>
             <div className="text-base font-bold text-foreground">{formatCurrency(stats.totalUnpaidAmount)}</div>
-            <div className="text-[10px] text-muted-foreground mt-0.5">Total Tunggakan</div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">{t('isolatedUsers.totalArrears')}</div>
           </div>
         </div>
       )}
@@ -208,7 +210,7 @@ export default function IsolatedUsersMonitorPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <input
             type="text"
-            placeholder="Cari username, nama, atau telepon..."
+            placeholder={t('isolatedUsers.searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-4 py-2 bg-input border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50"
@@ -229,7 +231,7 @@ export default function IsolatedUsersMonitorPage() {
                   : 'bg-input text-muted-foreground border-border hover:border-primary/30'
               }`}
             >
-              {s === 'all' ? `Semua (${users.length})` : s === 'online' ? `Online (${stats?.totalOnline || 0})` : `Offline (${stats?.totalOffline || 0})`}
+              {s === 'all' ? t('isolatedUsers.filterAll', { count: String(users.length) }) : s === 'online' ? t('isolatedUsers.filterOnline', { count: String(stats?.totalOnline || 0) }) : t('isolatedUsers.filterOffline', { count: String(stats?.totalOffline || 0) })}
             </button>
           ))}
         </div>
@@ -238,7 +240,7 @@ export default function IsolatedUsersMonitorPage() {
           className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-all text-xs text-primary"
         >
           <Download className="w-3.5 h-3.5" />
-          Export CSV
+          {t('isolatedUsers.exportCsv')}
         </button>
       </div>
 
@@ -247,7 +249,7 @@ export default function IsolatedUsersMonitorPage() {
         {filteredUsers.length === 0 ? (
           <div className="bg-card border border-border rounded-xl p-10 text-center">
             <CheckCircle className="w-10 h-10 mx-auto mb-3 text-success/50" />
-            <p className="text-muted-foreground text-sm">Tidak ada user yang diisolir.</p>
+            <p className="text-muted-foreground text-sm">{t('isolatedUsers.noIsolated')}</p>
           </div>
         ) : (
           filteredUsers.map((user) => {
@@ -314,7 +316,7 @@ export default function IsolatedUsersMonitorPage() {
                       {/* Detail grid */}
                       <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1.5 text-[11px]">
                         <div>
-                          <span className="text-muted-foreground block">Profil</span>
+                          <span className="text-muted-foreground block">{t('isolatedUsers.profile')}</span>
                           <span className="text-foreground font-medium">{user.profileName}</span>
                           <span className="text-primary block">{formatCurrency(user.profilePrice)}</span>
                         </div>
@@ -339,33 +341,33 @@ export default function IsolatedUsersMonitorPage() {
                           )}
                         </div>
                         <div>
-                          <span className="text-muted-foreground block">Jatuh Tempo</span>
+                          <span className="text-muted-foreground block">{t('isolatedUsers.dueDate')}</span>
                           <span className="text-destructive flex items-center gap-1">
                             <Calendar className="w-2.5 h-2.5" />
                             {formatDate(user.expiredAt)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-muted-foreground block">Koneksi</span>
+                          <span className="text-muted-foreground block">{t('isolatedUsers.connection')}</span>
                           {user.isOnline ? (
                             <>
                               <span className="font-mono text-foreground">{user.ipAddress}</span>
-                              <span className="text-muted-foreground block">Sejak {formatDateTime(user.loginTime!)}</span>
+                              <span className="text-muted-foreground block">{t('isolatedUsers.connectedSince', { date: formatDateTime(user.loginTime!) })}</span>
                             </>
                           ) : (
-                            <span className="text-muted-foreground">Tidak terhubung</span>
+                            <span className="text-muted-foreground">{t('isolatedUsers.notConnected')}</span>
                           )}
                         </div>
                         <div>
-                          <span className="text-muted-foreground block">Tunggakan</span>
+                          <span className="text-muted-foreground block">{t('isolatedUsers.arrears')}</span>
                           {hasUnpaid ? (
                             <>
-                              <span className="text-pink-600 dark:text-pink-400 font-semibold">{user.unpaidInvoicesCount} invoice</span>
+                              <span className="text-pink-600 dark:text-pink-400 font-semibold">{t('isolatedUsers.invoiceCount', { count: String(user.unpaidInvoicesCount) })}</span>
                               <span className="text-destructive font-bold block">{formatCurrency(user.totalUnpaid)}</span>
                             </>
                           ) : (
                             <span className="text-success flex items-center gap-1">
-                              <CheckCircle className="w-2.5 h-2.5" /> Lunas
+                              <CheckCircle className="w-2.5 h-2.5" /> {t('isolatedUsers.paid')}
                             </span>
                           )}
                         </div>
@@ -385,7 +387,7 @@ export default function IsolatedUsersMonitorPage() {
                             {copiedId === `quick-${user.id}`
                               ? <Check className="w-3 h-3 text-success" />
                               : <Copy className="w-3 h-3" />}
-                            {copiedId === `quick-${user.id}` ? 'Disalin!' : 'Salin Link Bayar'}
+                            {copiedId === `quick-${user.id}` ? t('isolatedUsers.copied') : t('isolatedUsers.copyPayLink')}
                           </button>
                           <a
                             href={firstPayLink}
@@ -394,7 +396,7 @@ export default function IsolatedUsersMonitorPage() {
                             className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-primary/10 border border-primary/30 rounded text-primary hover:bg-primary/20 transition-all"
                           >
                             <CreditCard className="w-3 h-3" />
-                            Buka Link Bayar
+                            {t('isolatedUsers.openPayLink')}
                           </a>
                           {user.phone && (
                             <a
@@ -404,7 +406,7 @@ export default function IsolatedUsersMonitorPage() {
                               className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-medium bg-green-500/10 border border-green-500/30 rounded text-green-600 dark:text-green-400 hover:bg-green-500/20 transition-all"
                             >
                               <Phone className="w-3 h-3" />
-                              Kirim WA
+                              {t('isolatedUsers.sendWa')}
                             </a>
                           )}
                         </>
@@ -414,7 +416,7 @@ export default function IsolatedUsersMonitorPage() {
                         onClick={() => setExpandedUser(isExpanded ? null : user.id)}
                       >
                         {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                        {isExpanded ? 'Tutup' : `Lihat ${user.unpaidInvoicesCount} Invoice`}
+                        {isExpanded ? t('common.close') : t('isolatedUsers.viewInvoices', { count: String(user.unpaidInvoicesCount) })}
                       </button>
                     </div>
                   )}
@@ -424,7 +426,7 @@ export default function IsolatedUsersMonitorPage() {
                 {isExpanded && hasUnpaid && (
                   <div className="border-t border-border bg-muted/30">
                     <div className="px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                      Invoice Belum Dibayar
+                      {t('isolatedUsers.unpaidInvoicesSection')}
                     </div>
                     <div className="divide-y divide-border">
                       {user.unpaidInvoices.map((inv) => {
@@ -442,7 +444,7 @@ export default function IsolatedUsersMonitorPage() {
                               </div>
                               <div className="flex items-center gap-1 mt-0.5 text-[10px] text-muted-foreground">
                                 <Clock className="w-2.5 h-2.5" />
-                                Jatuh tempo: {formatDate(inv.dueDate)}
+                                {t('isolatedUsers.dueOn', { date: formatDate(inv.dueDate) })}
                               </div>
                             </div>
                             <div className={`text-sm font-bold shrink-0 ${isOverdue ? 'text-destructive' : 'text-amber-600 dark:text-amber-400'}`}>
@@ -477,7 +479,7 @@ export default function IsolatedUsersMonitorPage() {
                       })}
                     </div>
                     <div className="px-4 py-2.5 bg-destructive/5 border-t border-destructive/20 flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Total tunggakan</span>
+                      <span className="text-xs text-muted-foreground">{t('isolatedUsers.totalArrearsAmount')}</span>
                       <span className="text-sm font-bold text-destructive">{formatCurrency(user.totalUnpaid)}</span>
                     </div>
                   </div>
@@ -490,7 +492,7 @@ export default function IsolatedUsersMonitorPage() {
 
       {/* Footer */}
       <div className="text-center text-[10px] text-muted-foreground">
-        Terakhir diperbarui: {new Date().toLocaleTimeString('id-ID')} · Auto-refresh setiap 30 detik
+        {t('isolatedUsers.lastUpdated', { time: new Date().toLocaleTimeString('id-ID') })}
       </div>
     </div>
   );

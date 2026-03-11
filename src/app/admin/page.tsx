@@ -424,7 +424,7 @@ export default function AdminDashboard() {
               <button
                 onClick={() => shiftMonth(-1)}
                 className="p-1 rounded hover:bg-[#00f7ff]/15 text-[#00f7ff]/70 hover:text-[#00f7ff] transition-colors"
-                title="Bulan sebelumnya"
+                title={t('dashboard.prevMonth')}
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
@@ -435,7 +435,7 @@ export default function AdminDashboard() {
                 onClick={() => shiftMonth(1)}
                 disabled={dashboardMonth >= (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; })()}
                 className="p-1 rounded hover:bg-[#00f7ff]/15 text-[#00f7ff]/70 hover:text-[#00f7ff] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                title="Bulan berikutnya"
+                title={t('dashboard.nextMonth')}
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -524,9 +524,9 @@ export default function AdminDashboard() {
                   <Activity className="w-3.5 h-3.5 text-[#00f7ff]" />
                 </div>
                 <div>
-                  <h2 className="text-xs font-semibold text-foreground">Activity Log</h2>
+                  <h2 className="text-xs font-semibold text-foreground">{t('dashboard.activityLog')}</h2>
                   <p className="text-[10px] text-[#e0d0ff]/40">
-                    {activityTotal > 0 ? `${activityTotal} aktivitas` : 'Log aktivitas'}
+                    {activityTotal > 0 ? t('dashboard.activityCount', { count: String(activityTotal) }) : t('dashboard.activitySubtitle')}
                   </p>
                 </div>
               </div>
@@ -570,7 +570,7 @@ export default function AdminDashboard() {
               ) : activityLog.length === 0 ? (
                 <div className="text-center py-10">
                   <Activity className="h-5 w-5 mx-auto mb-1 text-[#e0d0ff]/20" />
-                  <p className="text-[10px] text-[#e0d0ff]/40">Belum ada aktivitas</p>
+                  <p className="text-[10px] text-[#e0d0ff]/40">{t('dashboard.noActivities')}</p>
                 </div>
               ) : (
                 activityLog.map((entry) => {
@@ -614,7 +614,7 @@ export default function AdminDashboard() {
                   className="flex items-center gap-1 mx-auto px-2.5 py-1 text-[10px] font-medium bg-[#00f7ff]/10 border border-[#00f7ff]/30 text-[#00f7ff] rounded-lg hover:bg-[#00f7ff]/20 disabled:opacity-50 transition-all"
                 >
                   {activityLoading ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <ChevronDown className="w-2.5 h-2.5" />}
-                  Muat lebih banyak
+                  {t('dashboard.loadMore')}
                 </button>
               </div>
             )}

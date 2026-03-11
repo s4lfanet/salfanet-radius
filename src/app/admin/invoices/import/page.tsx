@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   Table,
   TableBody,
@@ -50,6 +51,7 @@ interface PreviewRow {
 }
 
 export default function ImportInvoicePage() {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -184,9 +186,9 @@ export default function ImportInvoicePage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Import Invoice dari CSV</h1>
+          <h1 className="text-2xl font-bold">{t('invoicesImport.title')}</h1>
           <p className="text-sm text-gray-500">
-            Upload file CSV untuk membuat banyak invoice sekaligus
+            {t('invoicesImport.subtitle')}
           </p>
         </div>
       </div>
@@ -196,18 +198,18 @@ export default function ImportInvoicePage() {
         <div className="flex items-start gap-2">
           <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
           <div className="text-sm text-blue-800">
-            <p className="font-semibold mb-1">Format CSV yang diperlukan:</p>
+            <p className="font-semibold mb-1">{t('invoicesImport.requiredFormat')}</p>
             <p>
-              Kolom wajib: <code className="bg-blue-100 px-1 rounded">username</code>,{' '}
+              {t('invoicesImport.requiredCols')} <code className="bg-blue-100 px-1 rounded">username</code>,{' '}
               <code className="bg-blue-100 px-1 rounded">amount</code>
             </p>
             <p>
-              Kolom opsional: <code className="bg-blue-100 px-1 rounded">dueDate</code> (format: YYYY-MM-DD),{' '}
+              {t('invoicesImport.optionalCols')} <code className="bg-blue-100 px-1 rounded">dueDate</code> (format: YYYY-MM-DD),{' '}
               <code className="bg-blue-100 px-1 rounded">notes</code>
             </p>
             <p className="mt-1 text-xs">
-              Jika dueDate kosong, otomatis 7 hari dari sekarang.{' '}
-              <strong>Username harus cocok dengan username pelanggan di sistem.</strong>
+              {t('invoicesImport.dueDateHint')}{' '}
+              <strong>{t('invoicesImport.usernameHint')}</strong>
             </p>
           </div>
         </div>
@@ -217,11 +219,11 @@ export default function ImportInvoicePage() {
       <div className="flex justify-between items-center mb-4">
         <Button variant="outline" size="sm" onClick={handleDownloadTemplate}>
           <Download className="w-4 h-4 mr-2" />
-          Download Template CSV
+          {t('invoicesImport.downloadTemplate')}
         </Button>
         {selectedFile && (
           <Button variant="ghost" size="sm" onClick={handleReset}>
-            Ganti File
+            {t('invoicesImport.changeFile')}
           </Button>
         )}
       </div>
@@ -241,9 +243,9 @@ export default function ImportInvoicePage() {
         >
           <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
           <p className="text-lg font-medium text-gray-600">
-            Drag & drop file CSV di sini, atau klik untuk pilih file
+            {t('invoicesImport.dropZoneText')}
           </p>
-          <p className="text-sm text-muted-foreground mt-1">Hanya file .csv yang diterima</p>
+          <p className="text-sm text-muted-foreground mt-1">{t('invoicesImport.csvOnly')}</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -272,18 +274,18 @@ export default function ImportInvoicePage() {
             <div className="flex items-center gap-2">
               <FileText className="w-4 h-4 text-gray-500" />
               <span className="font-medium text-sm">{selectedFile.name}</span>
-              <Badge variant="secondary">{previewRows.length} baris (preview)</Badge>
+              <Badge variant="secondary">{previewRows.length} {t('invoicesImport.rowsPreview')}</Badge>
             </div>
             <Button onClick={handleImport} disabled={isUploading} className="min-w-[140px]">
               {isUploading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Mengimport...
+                  {t('invoicesImport.importing')}
                 </>
               ) : (
                 <>
                   <Upload className="w-4 h-4 mr-2" />
-                  Import Sekarang
+                  {t('invoicesImport.importNow')}
                 </>
               )}
             </Button>
@@ -304,13 +306,13 @@ export default function ImportInvoicePage() {
                 {previewRows.map((row) => (
                   <TableRow key={row.no}>
                     <TableCell className="text-gray-400">{row.no}</TableCell>
-                    <TableCell className="font-mono text-sm">{row.username || <span className="text-red-500 italic">kosong</span>}</TableCell>
+                    <TableCell className="font-mono text-sm">{row.username || <span className="text-red-500 italic">{t('invoicesImport.empty')}</span>}</TableCell>
                     <TableCell>
                       {row.amount
                         ? `Rp ${Number(row.amount.replace(/[^0-9]/g, '')).toLocaleString('id-ID')}`
-                        : <span className="text-red-500 italic">kosong</span>}
+                        : <span className="text-red-500 italic">{t('invoicesImport.empty')}</span>}
                     </TableCell>
-                    <TableCell className="text-sm">{row.dueDate || <span className="text-gray-400 italic">+7 hari</span>}</TableCell>
+                    <TableCell className="text-sm">{row.dueDate || <span className="text-gray-400 italic">{t('invoicesImport.plus7days')}</span>}</TableCell>
                     <TableCell className="text-sm text-gray-500">{row.notes}</TableCell>
                   </TableRow>
                 ))}
@@ -318,8 +320,8 @@ export default function ImportInvoicePage() {
             </Table>
           </div>
           {previewRows.length === 50 && (
-            <p className="text-xs text-muted-foreground mt-1 text-center">
-              Menampilkan 50 baris pertama. Semua baris akan diproses saat import.
+          <p className="text-xs text-muted-foreground mt-1 text-center">
+              {t('invoicesImport.showing50')}
             </p>
           )}
         </div>
@@ -332,27 +334,27 @@ export default function ImportInvoicePage() {
           <div className="grid grid-cols-3 gap-4 mb-4">
             <div className="bg-gray-50 rounded-lg p-4 text-center border">
               <p className="text-2xl font-bold text-gray-700">{importResult.total}</p>
-              <p className="text-sm text-gray-500">Total Baris</p>
+              <p className="text-sm text-gray-500">{t('invoicesImport.totalRows')}</p>
             </div>
             <div className="bg-green-50 rounded-lg p-4 text-center border border-green-200">
               <p className="text-2xl font-bold text-green-600">{importResult.imported}</p>
-              <p className="text-sm text-green-700">Berhasil Diimport</p>
+              <p className="text-sm text-green-700">{t('invoicesImport.successImported')}</p>
             </div>
             <div className={`rounded-lg p-4 text-center border ${importResult.failed > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50'}`}>
               <p className={`text-2xl font-bold ${importResult.failed > 0 ? 'text-red-600' : 'text-gray-400'}`}>
                 {importResult.failed}
               </p>
-              <p className={`text-sm ${importResult.failed > 0 ? 'text-red-700' : 'text-gray-400'}`}>Gagal</p>
+              <p className={`text-sm ${importResult.failed > 0 ? 'text-red-700' : 'text-gray-400'}`}>{t('invoicesImport.failed')}</p>
             </div>
           </div>
 
           {/* Button row */}
           <div className="flex gap-2 mb-4">
             <Link href="/admin/invoices">
-              <Button variant="outline">Lihat Daftar Invoice</Button>
+              <Button variant="outline">{t('invoicesImport.viewList')}</Button>
             </Link>
             <Button variant="ghost" onClick={handleReset}>
-              Import File Lain
+              {t('invoicesImport.importAnother')}
             </Button>
           </div>
 

@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar, Activity } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ReportType = 'invoice' | 'payment' | 'customer';
@@ -34,30 +35,32 @@ function firstOfMonthStr(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
 }
 
-const TYPE_LABELS: Record<ReportType, string> = {
-  invoice: 'Invoice',
-  payment: 'Pembayaran',
-  customer: 'Pelanggan',
-};
-
-const INVOICE_STATUSES = [
-  { value: 'all', label: 'Semua Status' },
-  { value: 'PAID', label: 'Lunas' },
-  { value: 'PENDING', label: 'Belum Bayar' },
-  { value: 'OVERDUE', label: 'Jatuh Tempo' },
-  { value: 'CANCELLED', label: 'Dibatalkan' },
-];
-
-const CUSTOMER_STATUSES = [
-  { value: 'all', label: 'Semua Status' },
-  { value: 'active', label: 'Aktif' },
-  { value: 'isolated', label: 'Isolir' },
-  { value: 'stopped', label: 'Berhenti' },
-  { value: 'expired', label: 'Expired' },
-];
-
 // ── Main Component ───────────────────────────────────────────────────────────
 export default function LaporanPage() {
+  const { t } = useTranslation();
+
+  const TYPE_LABELS: Record<ReportType, string> = {
+    invoice: t('laporan.typeInvoice'),
+    payment: t('laporan.typePayment'),
+    customer: t('laporan.typeCustomer'),
+  };
+
+  const INVOICE_STATUSES = [
+    { value: 'all', label: t('laporan.statusAll') },
+    { value: 'PAID', label: t('laporan.statusPaid') },
+    { value: 'PENDING', label: t('laporan.statusPending') },
+    { value: 'OVERDUE', label: t('laporan.statusOverdue') },
+    { value: 'CANCELLED', label: t('laporan.statusCancelled') },
+  ];
+
+  const CUSTOMER_STATUSES = [
+    { value: 'all', label: t('laporan.statusAll') },
+    { value: 'active', label: t('laporan.statusActive') },
+    { value: 'isolated', label: t('laporan.statusIsolated') },
+    { value: 'stopped', label: t('laporan.statusStopped') },
+    { value: 'expired', label: t('laporan.statusExpired') },
+  ];
+
   const [reportType, setReportType] = useState<ReportType>('invoice');
   const [dateFrom, setDateFrom] = useState(firstOfMonthStr());
   const [dateTo, setDateTo] = useState(todayStr());
@@ -190,16 +193,16 @@ export default function LaporanPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
             <BarChart3 className="w-7 h-7 text-[#00f7ff] drop-shadow-[0_0_10px_rgba(0,247,255,0.7)]" />
-            Laporan & Export
+            {t('laporan.title')}
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Generate dan export laporan dalam format PDF atau Excel</p>
+          <p className="text-sm text-slate-400 mt-1">{t('laporan.subtitle')}</p>
         </div>
         <Link
           href="/admin/laporan/analitik"
           className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#00f7ff]/40 text-[#00f7ff] text-sm font-semibold hover:bg-[#00f7ff]/10 transition-all"
         >
           <Activity className="w-4 h-4" />
-          Analitik Advanced
+          {t('laporan.advancedAnalytics')}
         </Link>
       </div>
 
@@ -207,13 +210,13 @@ export default function LaporanPage() {
       <div className="bg-slate-800/60 backdrop-blur border border-[#bc13fe]/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(188,19,254,0.1)]">
         <div className="flex items-center gap-2 mb-5">
           <Filter className="w-4 h-4 text-[#bc13fe]" />
-          <span className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Filter Laporan</span>
+          <span className="text-sm font-semibold text-slate-300 uppercase tracking-wider">{t('laporan.filterTitle')}</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Report Type */}
           <div>
-            <label className="block text-xs font-bold text-[#00f7ff] mb-2 uppercase tracking-wider">Jenis Laporan</label>
+            <label className="block text-xs font-bold text-[#00f7ff] mb-2 uppercase tracking-wider">{t('laporan.reportType')}</label>
             <div className="flex gap-2 flex-wrap">
               {(['invoice', 'payment', 'customer'] as ReportType[]).map((t) => (
                 <button
@@ -237,7 +240,7 @@ export default function LaporanPage() {
           {/* Date From */}
           <div>
             <label className="block text-xs font-bold text-[#00f7ff] mb-2 uppercase tracking-wider">
-              <Calendar className="w-3.5 h-3.5 inline mr-1" />Dari Tanggal
+              <Calendar className="w-3.5 h-3.5 inline mr-1" />{t('laporan.dateFrom')}
             </label>
             <input
               type="date"
@@ -250,7 +253,7 @@ export default function LaporanPage() {
           {/* Date To */}
           <div>
             <label className="block text-xs font-bold text-[#00f7ff] mb-2 uppercase tracking-wider">
-              <Calendar className="w-3.5 h-3.5 inline mr-1" />Sampai Tanggal
+              <Calendar className="w-3.5 h-3.5 inline mr-1" />{t('laporan.dateTo')}
             </label>
             <input
               type="date"
@@ -285,8 +288,8 @@ export default function LaporanPage() {
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#bc13fe] to-[#9b10d4] text-white text-sm font-bold rounded-xl hover:shadow-[0_0_20px_rgba(188,19,254,0.5)] disabled:opacity-50 transition-all"
           >
             {loading
-              ? <><Loader2 className="w-4 h-4 animate-spin" />Memuat...</>
-              : <><RefreshCw className="w-4 h-4" />Tampilkan Data</>
+              ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.loading')}</>
+              : <><RefreshCw className="w-4 h-4" />{t('laporan.showData')}</>
             }
           </button>
 
@@ -298,8 +301,8 @@ export default function LaporanPage() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-sm font-bold rounded-xl hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] disabled:opacity-50 transition-all"
               >
                 {exporting === 'excel'
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Exporting...</>
-                  : <><FileSpreadsheet className="w-4 h-4" />Export Excel</>
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.exporting')}</>
+                  : <><FileSpreadsheet className="w-4 h-4" />{t('laporan.exportExcel')}</>
                 }
               </button>
 
@@ -309,8 +312,8 @@ export default function LaporanPage() {
                 className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-rose-600 to-rose-700 text-white text-sm font-bold rounded-xl hover:shadow-[0_0_20px_rgba(225,29,72,0.4)] disabled:opacity-50 transition-all"
               >
                 {exporting === 'pdf'
-                  ? <><Loader2 className="w-4 h-4 animate-spin" />Exporting...</>
-                  : <><Download className="w-4 h-4" />Export PDF</>
+                  ? <><Loader2 className="w-4 h-4 animate-spin" />{t('laporan.exporting')}</>
+                  : <><Download className="w-4 h-4" />{t('laporan.exportPdf')}</>
                 }
               </button>
             </>
@@ -330,24 +333,24 @@ export default function LaporanPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {reportType === 'invoice' && (
             <>
-              <SummaryCard label="Total Invoice" value={summary.total} icon={<FileText className="w-5 h-5" />} color="cyan" />
-              <SummaryCard label="Lunas" value={summary.paid ?? 0} icon={<TrendingUp className="w-5 h-5" />} color="green" />
-              <SummaryCard label="Belum Bayar" value={summary.pending ?? 0} icon={<FileText className="w-5 h-5" />} color="yellow" />
-              <SummaryCard label="Total Tagihan" value={formatRupiah(summary.totalAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="purple" />
+              <SummaryCard label={t('laporan.totalInvoice')} value={summary.total} icon={<FileText className="w-5 h-5" />} color="cyan" />
+              <SummaryCard label={t('laporan.paid')} value={summary.paid ?? 0} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label={t('laporan.unpaid')} value={summary.pending ?? 0} icon={<FileText className="w-5 h-5" />} color="yellow" />
+              <SummaryCard label={t('laporan.totalBill')} value={formatRupiah(summary.totalAmount ?? 0)} icon={<CreditCard className="w-5 h-5" />} color="purple" />
             </>
           )}
           {reportType === 'payment' && (
             <>
-              <SummaryCard label="Total Transaksi" value={summary.total} icon={<CreditCard className="w-5 h-5" />} color="cyan" />
-              <SummaryCard label="Total Diterima" value={formatRupiah(summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label={t('laporan.totalTransaction')} value={summary.total} icon={<CreditCard className="w-5 h-5" />} color="cyan" />
+              <SummaryCard label={t('laporan.totalReceived')} value={formatRupiah(summary.totalAmount ?? 0)} icon={<TrendingUp className="w-5 h-5" />} color="green" />
             </>
           )}
           {reportType === 'customer' && (
             <>
-              <SummaryCard label="Total Pelanggan" value={summary.total} icon={<Users className="w-5 h-5" />} color="cyan" />
-              <SummaryCard label="Aktif" value={summary.active ?? 0} icon={<TrendingUp className="w-5 h-5" />} color="green" />
-              <SummaryCard label="Isolir" value={summary.isolated ?? 0} icon={<Users className="w-5 h-5" />} color="yellow" />
-              <SummaryCard label="Berhenti/Expired" value={(summary.stopped ?? 0) + (summary.expired ?? 0)} icon={<Users className="w-5 h-5" />} color="red" />
+              <SummaryCard label={t('laporan.totalCustomer')} value={summary.total} icon={<Users className="w-5 h-5" />} color="cyan" />
+              <SummaryCard label={t('laporan.active')} value={summary.active ?? 0} icon={<TrendingUp className="w-5 h-5" />} color="green" />
+              <SummaryCard label={t('laporan.isolated')} value={summary.isolated ?? 0} icon={<Users className="w-5 h-5" />} color="yellow" />
+              <SummaryCard label={t('laporan.stoppedExpired')} value={(summary.stopped ?? 0) + (summary.expired ?? 0)} icon={<Users className="w-5 h-5" />} color="red" />
             </>
           )}
         </div>
@@ -358,9 +361,9 @@ export default function LaporanPage() {
         <div className="bg-slate-800/60 backdrop-blur border border-slate-700/50 rounded-2xl overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-700/50 flex items-center justify-between">
             <span className="text-sm font-semibold text-slate-300">
-              Preview Data — menampilkan {Math.min(rows.length, 100)} dari {rows.length} baris
+              {t('laporan.previewData', { count: String(Math.min(rows.length, 100)), total: String(rows.length) })}
             </span>
-            <span className="text-xs text-slate-500">Export untuk data lengkap</span>
+            <span className="text-xs text-slate-500">{t('laporan.exportHint')}</span>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -398,7 +401,7 @@ export default function LaporanPage() {
       {loaded && rows.length === 0 && (
         <div className="text-center py-16 text-slate-500">
           <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Tidak ada data untuk filter yang dipilih</p>
+          <p className="text-sm">{t('laporan.noData')}</p>
         </div>
       )}
 
@@ -406,7 +409,7 @@ export default function LaporanPage() {
       {!loaded && !loading && (
         <div className="text-center py-16 text-slate-500">
           <BarChart3 className="w-12 h-12 mx-auto mb-3 opacity-20" />
-          <p className="text-sm">Pilih filter dan klik <strong className="text-slate-400">Tampilkan Data</strong></p>
+          <p className="text-sm">Pilih filter dan klik <strong className="text-slate-400">{t('laporan.showData')}</strong></p>
         </div>
       )}
     </div>
