@@ -490,14 +490,21 @@ function AdminLayoutContent({
   }, []);
 
   // Idle timeout - 30 minutes with 1 minute warning
+  const handleIdleWarning = useCallback(() => {
+    setShowIdleWarning(true);
+    setIdleCountdown(60);
+  }, []);
+
+  const handleIdleTimeout = useCallback(() => {
+    setShowIdleWarning(false);
+  }, []);
+
   const { extendSession } = useIdleTimeout({
     timeout: 30 * 60 * 1000, // 30 minutes
     warningTime: 60 * 1000, // 1 minute warning
     enabled: !isLoginPage && status === 'authenticated',
-    onWarning: () => {
-      setShowIdleWarning(true);
-      setIdleCountdown(60);
-    },
+    onWarning: handleIdleWarning,
+    onTimeout: handleIdleTimeout,
   });
 
   // Countdown timer for idle warning
