@@ -48,6 +48,9 @@ next-env.d.ts
 .idea/
 *.swp
 *.swo
+
+# Reference folder — not part of production
+billing-radius/
 *~
 .fleet/
 .vscode-test/
