@@ -87,6 +87,19 @@ export async function POST(request: NextRequest) {
           }, { status: 200 });
         }
 
+        // Isolated users MUST be allowed to authenticate so FreeRADIUS assigns the
+        // 'isolir' radusergroup → MikroTik applies the isolir PPP profile → browser
+        // gets redirected to the payment/isolated page.
+        // Do NOT check expiredAt for isolated users — they are intentionally expired.
+        if (pppoeUser.status === 'isolated') {
+          console.log(`[AUTHORIZE] ALLOW (isolated): PPPoE user ${username} will get isolir profile`);
+          return NextResponse.json({
+            success: true,
+            action: "allow",
+            message: `PPPoE user isolated - allow with isolir group`
+          });
+        }
+
         // Cek apakah masa aktif sudah habis (expiredAt lewat)
         if (pppoeUser.expiredAt && now > new Date(pppoeUser.expiredAt)) {
           const message = 'Masa Aktif Habis - Segera Bayar Tagihan';

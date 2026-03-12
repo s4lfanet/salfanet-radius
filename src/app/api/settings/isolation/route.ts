@@ -117,9 +117,9 @@ export async function PUT(request: NextRequest) {
     // Sync new rate limit to RADIUS radgroupreply for 'isolir' group
     if (isolationRateLimit) {
       await prisma.$executeRaw`
-        UPDATE radgroupreply
-        SET value = ${isolationRateLimit}
-        WHERE groupname = 'isolir' AND attribute = 'Mikrotik-Rate-Limit'
+        INSERT INTO radgroupreply (groupname, attribute, op, value)
+        VALUES ('isolir', 'Mikrotik-Rate-Limit', ':=', ${isolationRateLimit})
+        ON DUPLICATE KEY UPDATE value = ${isolationRateLimit}
       `
     }
 
