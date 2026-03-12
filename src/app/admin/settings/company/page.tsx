@@ -49,7 +49,6 @@ export default function CompanySettingsPage() {
     invoiceGenerateDays: 7,
     logo: '',
   });
-  const [numBankAccounts, setNumBankAccounts] = useState(0);
   const [initialTimezone, setInitialTimezone] = useState('Asia/Jakarta');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -66,7 +65,6 @@ export default function CompanySettingsPage() {
       if (response.ok) {
         const data = await response.json();
         if (data) {
-          const bankAccounts = data.bankAccounts || [];
           setSettings({
             id: data.id || '',
             name: data.name || '',
@@ -75,7 +73,7 @@ export default function CompanySettingsPage() {
             address: data.address || '',
             baseUrl: data.baseUrl || '',
             timezone: data.timezone || 'Asia/Jakarta',
-            bankAccounts: bankAccounts,
+            bankAccounts: data.bankAccounts || [],
             poweredBy: data.poweredBy || 'SALFANET RADIUS',
             footerAdmin: data.footerAdmin || 'Powered by SALFANET RADIUS',
             footerCustomer: data.footerCustomer || 'Powered by SALFANET RADIUS',
@@ -83,7 +81,6 @@ export default function CompanySettingsPage() {
             invoiceGenerateDays: data.invoiceGenerateDays || 7,
             logo: data.logo || '',
           });
-          setNumBankAccounts(bankAccounts.length);
           setInitialTimezone(data.timezone || 'Asia/Jakarta');
         }
       }
@@ -418,90 +415,6 @@ export default function CompanySettingsPage() {
                   required
                 />
                 <p className="mt-1 text-[10px] text-muted-foreground">{t('settings.invoiceGenerateDaysHelp')}</p>
-              </div>
-
-              {/* Bank Accounts */}
-              <div className="border-t border-border pt-3">
-                <label className="flex items-center gap-1.5 text-[11px] font-medium text-foreground mb-2">
-                  🏦 {t('settings.bankAccountsTitle')}
-                </label>
-                <div className="mb-3">
-                  <label className="text-[10px] text-muted-foreground mb-1 block">{t('settings.numberOfAccounts')}</label>
-                  <select
-                    value={numBankAccounts}
-                    onChange={(e) => {
-                      const count = parseInt(e.target.value);
-                      setNumBankAccounts(count);
-                      const newAccounts = Array.from({ length: count }, (_, i) =>
-                        settings.bankAccounts[i] || { bankName: '', accountNumber: '', accountName: '' }
-                      );
-                      setSettings({ ...settings, bankAccounts: newAccounts });
-                    }}
-                    className="w-32 px-2.5 py-1.5 text-sm border border-border rounded-lg bg-card"
-                  >
-                    <option value="0">{t('settings.noAccounts')}</option>
-                    <option value="1">1 {t('settings.accountsCount').replace('{count}', '1')}</option>
-                    <option value="2">2 {t('settings.accountsCount').replace('{count}', '2')}</option>
-                    <option value="3">3 {t('settings.accountsCount').replace('{count}', '3')}</option>
-                    <option value="4">4 {t('settings.accountsCount').replace('{count}', '4')}</option>
-                    <option value="5">5 {t('settings.accountsCount').replace('{count}', '5')}</option>
-                  </select>
-                </div>
-
-                {numBankAccounts > 0 && (
-                  <div className="space-y-3">
-                    {settings.bankAccounts.map((account, index) => (
-                      <div key={index} className="p-3 bg-muted rounded-lg border border-border">
-                        <h4 className="text-xs font-medium text-foreground mb-2">{t('settings.accountNumber')}{index + 1}</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                          <div>
-                            <label className="text-[10px] text-muted-foreground mb-1 block">{t('settings.bankName')}</label>
-                            <input
-                              type="text"
-                              value={account.bankName}
-                              onChange={(e) => {
-                                const newAccounts = [...settings.bankAccounts];
-                                newAccounts[index].bankName = e.target.value;
-                                setSettings({ ...settings, bankAccounts: newAccounts });
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-border rounded bg-card"
-                              placeholder={t('settings.bankNamePlaceholder')}
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-foreground mb-1 block">{t('settings.accountNo')}</label>
-                            <input
-                              type="text"
-                              value={account.accountNumber}
-                              onChange={(e) => {
-                                const newAccounts = [...settings.bankAccounts];
-                                newAccounts[index].accountNumber = e.target.value;
-                                setSettings({ ...settings, bankAccounts: newAccounts });
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-border rounded bg-card"
-                              placeholder="1234567890"
-                            />
-                          </div>
-                          <div>
-                            <label className="text-[10px] text-muted-foreground mb-1 block">{t('settings.ownerName')}</label>
-                            <input
-                              type="text"
-                              value={account.accountName}
-                              onChange={(e) => {
-                                const newAccounts = [...settings.bankAccounts];
-                                newAccounts[index].accountName = e.target.value;
-                                setSettings({ ...settings, bankAccounts: newAccounts });
-                              }}
-                              className="w-full px-2 py-1.5 text-xs border border-border rounded bg-card"
-                              placeholder={t('settings.ownerNamePlaceholder')}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <p className="mt-2 text-[10px] text-muted-foreground">{t('settings.bankAccountsHelp')}</p>
               </div>
 
               {/* Powered By */}

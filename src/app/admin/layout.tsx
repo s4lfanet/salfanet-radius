@@ -143,6 +143,7 @@ const menuGroups: MenuGroup[] = [
         children: [
           { titleKey: 'nav.paymentGateway', href: '/admin/payment-gateway', requiredPermission: 'settings.payment' },
           { titleKey: 'nav.manualPayments', href: '/admin/manual-payments', badge: 'manualPayments', requiredPermission: 'invoices.view' },
+          { titleKey: 'nav.bankAccounts', href: '/admin/payment/bank-accounts', requiredPermission: 'settings.payment' },
         ],
       },
       {
