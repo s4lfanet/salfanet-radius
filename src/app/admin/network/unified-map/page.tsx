@@ -4,7 +4,7 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Plus, X, SlidersHorizontal, ChevronDown, Link2, Loader2, Trash2, Eye, EyeOff } from 'lucide-react';
+import { Plus, X, SlidersHorizontal, ChevronDown, Link2, Loader2, Trash2, Eye, EyeOff, Navigation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FilterPanel from '@/components/network/FilterPanel';
 import NetworkNodePanel, { type MapEntity } from '@/components/network/NetworkNodePanel';
@@ -64,6 +64,24 @@ export default function UnifiedMapPage() {
   // Mobile UI state
   const [showPanel, setShowPanel] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
+
+  // My Location state
+  const [locatingUser, setLocatingUser] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  const detectUserLocation = () => {
+    if (!navigator.geolocation) return;
+    setLocatingUser(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const loc = { lat: coords.latitude, lng: coords.longitude };
+        setUserLocation(loc);
+        setLocatingUser(false);
+      },
+      () => { setLocatingUser(false); },
+      { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 },
+    );
+  };
 
   // ── Load entities ──────────────────────────────────────────────────────
   const loadEntities = useCallback(async () => {
@@ -300,6 +318,8 @@ export default function UnifiedMapPage() {
             onConnectNodeClick={handleConnectNodeClick}
             connections={connections}
             showConnections={showConnections}
+            flyToLocation={userLocation}
+            userLocation={userLocation}
           />
 
           {/* Mobile: Filter panel toggle */}
@@ -320,6 +340,15 @@ export default function UnifiedMapPage() {
 
           {/* ── Top-right toolbar ───────────────────────────────────────── */}
           <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[600] flex items-center gap-2">
+            {/* My Location */}
+            <button
+              onClick={detectUserLocation}
+              disabled={locatingUser}
+              title="My Location"
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all border bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
+            >
+              {locatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
+            </button>
             {/* Show/Hide connections toggle */}
             <button
               onClick={() => setShowConnections(v => !v)}

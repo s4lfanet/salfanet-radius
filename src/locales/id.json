@@ -1791,7 +1791,11 @@
       "title": "Peta Jaringan Terpadu",
       "subtitle": "Visualisasi semua infrastruktur jaringan dan pelanggan dalam satu peta",
       "statisticsTitle": "Statistik",
-      "legend": "Legenda"
+      "legend": "Legenda",
+      "searchPlaceholder": "Cari node...",
+      "filterByType": "Filter Tipe",
+      "filterByStatus": "Filter Status",
+      "clearFilters": "Hapus Filter"
     }
   },
   "settings": {

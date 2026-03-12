@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents, useMap } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -75,10 +75,25 @@ interface UnifiedNetworkMapProps {
   connections?: ConnectionLine[];
   /** Whether to show connection lines */
   showConnections?: boolean;
+  /** When set, map flies to this location */
+  flyToLocation?: { lat: number; lng: number } | null;
+  /** If set, show a pulsing dot for the user's GPS location */
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 function MapClickHandler({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
   useMapEvents({ click: (e) => onMapClick(e.latlng.lat, e.latlng.lng) });
+  return null;
+}
+
+function FlyToController({ location }: { location: { lat: number; lng: number } | null | undefined }) {
+  const map = useMap();
+  useEffect(() => {
+    if (location) {
+      map.flyTo([location.lat, location.lng], 16, { duration: 1.5 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location]);
   return null;
 }
 
@@ -220,6 +235,7 @@ const createCustomIcon = (type: string, status: string) => {
 export default function UnifiedNetworkMap({
   filters, onEntityClick, onMapClick, addMode, pendingPin, onPinMoved, refreshSignal,
   connectMode, connectSource, onConnectNodeClick, connections, showConnections,
+  flyToLocation, userLocation,
 }: UnifiedNetworkMapProps) {
   const { t } = useTranslation();
   const [entities, setEntities] = useState<MapEntity[]>([]);
@@ -468,6 +484,26 @@ export default function UnifiedNetworkMap({
       />
 
       {addMode && onMapClick && <MapClickHandler onMapClick={onMapClick} />}
+      <FlyToController location={flyToLocation} />
+
+      {/* User GPS location marker */}
+      {userLocation && (
+        <Marker
+          position={[userLocation.lat, userLocation.lng]}
+          icon={L.divIcon({
+            html: `
+              <div style="position:relative;width:24px;height:24px;">
+                <div style="width:24px;height:24px;background:#3b82f6;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(59,130,246,0.5);position:absolute;"></div>
+                <div style="width:40px;height:40px;background:rgba(59,130,246,0.2);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);animation:pinPing 2s ease-out infinite;"></div>
+              </div>`,
+            className: '',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -14],
+          })}
+          interactive={false}
+        />
+      )}
 
       {/* ── Connection polylines ────────────────────────────────────────── */}
       {showConnections && connections && connections.map(conn => (

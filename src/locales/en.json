@@ -4611,7 +4611,11 @@
       "title": "Unified Network Map",
       "subtitle": "Visualize all network infrastructure and customers in one map",
       "statisticsTitle": "Statistics",
-      "legend": "Legend"
+      "legend": "Legend",
+      "searchPlaceholder": "Search nodes...",
+      "filterByType": "Filter by Type",
+      "filterByStatus": "Filter by Status",
+      "clearFilters": "Clear Filters"
     }
   },
   "notifications": {

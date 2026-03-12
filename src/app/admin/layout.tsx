@@ -188,7 +188,6 @@ const menuGroups: MenuGroup[] = [
         icon: <Globe className="w-4 h-4" />,
         requiredPermission: 'network.view',
         children: [
-          { titleKey: 'nav.networkMap', href: '/admin/network/map', requiredPermission: 'network.view' },
           { titleKey: 'nav.unifiedMap', href: '/admin/network/unified-map', requiredPermission: 'network.view' },
           { titleKey: 'nav.infrastructure', href: '/admin/network/infrastruktur', requiredPermission: 'network.view' },
           { titleKey: 'nav.splitterDiagrams', href: '/admin/network/diagrams', requiredPermission: 'network.view' },
