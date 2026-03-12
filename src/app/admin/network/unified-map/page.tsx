@@ -247,7 +247,7 @@ export default function UnifiedMapPage() {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-[44px] lg:left-56 flex flex-col bg-white dark:bg-gray-900 z-10">
+    <div className="fixed inset-x-0 bottom-0 top-[44px] lg:left-64 flex flex-col bg-white dark:bg-gray-900 z-10">
       {/* Page Header */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shrink-0 flex items-center gap-3">
         <div className="flex-1 min-w-0">
