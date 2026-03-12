@@ -690,50 +690,6 @@ mysql -u salfanet_user -psalfanetradius123 salfanet_radius < backup/salfanet_rad
 
 ## 📝 Changelog
 
-### December 6, 2025 (v2.3) - Session & Network Improvements
-- ✅ **Session Timeout** - Auto logout setelah 30 menit tidak aktif
-- ✅ **Idle Warning Popup** - Warning 1 menit sebelum logout dengan countdown
-- ✅ **Stay Logged In** - Tombol perpanjang sesi dari warning popup
-- ✅ **Fix Logout Redirect** - Gunakan `redirect: false` + manual redirect untuk hindari NEXTAUTH_URL issue
-- ✅ **Router GPS** - Tambah koordinat GPS untuk router/NAS dengan Map Picker
-- ✅ **Auto GPS** - Deteksi lokasi otomatis dari browser (HTTPS required)
-- ✅ **OLT Uplink Config** - Konfigurasi uplink dari router ke OLT dengan interface dropdown
-- ✅ **MikroTik Interfaces API** - Endpoint baru untuk fetch interface dari router
-- ✅ **Network Map Enhancement** - Tampilkan uplink info di popup router
-- ✅ **Fix Layout Loading** - Perbaiki sidebar tidak muncul saat pertama login
-- ✅ **Installer Baru** - `vps-install-local.sh` untuk VPS tanpa root access
-
-### December 5, 2025 (v2.2) - FTTH Network Management
-- ✅ **Network Map** - Visualisasi interaktif jaringan FTTH di peta
-- ✅ **OLT Management** - CRUD OLT dengan assignment router
-- ✅ **ODC Management** - CRUD ODC terhubung ke OLT  
-- ✅ **ODP Management** - CRUD ODP dengan parent ODC/ODP
-- ✅ **Customer Assignment** - Assign pelanggan ke port ODP
-- ✅ **Sync PPPoE MikroTik** - Import PPPoE secrets dari MikroTik
-- ✅ **WhatsApp Maintenance Template** - Template gangguan/maintenance
-- ✅ **FreeRADIUS BOM Fix** - Auto remove UTF-16 BOM dari config files
-
-### December 4, 2025 (v2.2) - System Improvements
-- ✅ **Admin Management** - Fixed permission checkboxes not showing
-- ✅ **Settings/Cron** - Complete page rewrite with teal theme
-- ✅ **Settings/Database** - Complete page rewrite with Telegram backup
-- ✅ **Agent Dashboard** - Fixed API paths, Router column added to voucher table
-- ✅ **Payment Gateway** - Added validation for deposit (show error if not configured)
-- ✅ **WhatsApp Providers** - Multi-provider support (Fonnte, WAHA, GOWA, MPWA, Wablas)
-- ✅ **FreeRADIUS Config** - Updated backup configs from production
-- ✅ **Install Wizard** - Added FreeRADIUS config restore option
-- ✅ **vps-install.sh** - Updated with FreeRADIUS config restore
-
-### December 4, 2025 (v2.1) - GenieACS WiFi Management
-- ✅ **GenieACS TR-069 Integration** - Complete CPE management via Web UI
-- ✅ **WiFi Configuration** - Edit SSID, password, security mode (WPA/WPA2/Open)
-- ✅ **Real-time Updates** - Changes applied instantly without waiting periodic inform
-- ✅ **Task Monitoring** - Track all TR-069 tasks with auto-refresh
-- ✅ **Multi-WLAN Support** - Manage WiFi 2.4GHz, 5GHz, and Guest networks
-- ✅ **Force Sync** - Manual connection request trigger
-- ✅ **Device Details** - View ONT info, uptime, RX power, WiFi clients
-- ✅ Fixed GenieACS menu structure (separate from Settings)
-
 ### December 7, 2025 (v2.4) 🆕 - Activity Log & Performance
 - ✅ **Activity Log System COMPLETE** - All priority endpoints implemented
   - Auth: Login/Logout tracking
@@ -765,6 +721,50 @@ mysql -u salfanet_user -psalfanetradius123 salfanet_radius < backup/salfanet_rad
 - ✅ **Cloudflare Integration** - Domain via Cloudflare CDN
 - ✅ Updated NEXTAUTH_URL to use subdomain
 - ✅ PM2 restart with --update-env flag
+
+### December 6, 2025 (v2.3) - Session & Network Improvements
+- ✅ **Session Timeout** - Auto logout setelah 30 menit tidak aktif
+- ✅ **Idle Warning Popup** - Warning 1 menit sebelum logout dengan countdown
+- ✅ **Stay Logged In** - Tombol perpanjang sesi dari warning popup
+- ✅ **Fix Logout Redirect** - Gunakan `redirect: false` + manual redirect untuk hindari NEXTAUTH_URL issue
+- ✅ **Router GPS** - Tambah koordinat GPS untuk router/NAS dengan Map Picker
+- ✅ **Auto GPS** - Deteksi lokasi otomatis dari browser (HTTPS required)
+- ✅ **OLT Uplink Config** - Konfigurasi uplink dari router ke OLT dengan interface dropdown
+- ✅ **MikroTik Interfaces API** - Endpoint baru untuk fetch interface dari router
+- ✅ **Network Map Enhancement** - Tampilkan uplink info di popup router
+- ✅ **Fix Layout Loading** - Perbaiki sidebar tidak muncul saat pertama login
+- ✅ **Installer Baru** - `vps-install-local.sh` untuk VPS tanpa root access
+
+### December 5, 2025 (v2.2) - FTTH Network Management
+- ✅ **Network Map** - Visualisasi interaktif jaringan FTTH di peta
+- ✅ **OLT Management** - CRUD OLT dengan assignment router
+- ✅ **ODC Management** - CRUD ODC terhubung ke OLT  
+- ✅ **ODP Management** - CRUD ODP dengan parent ODC/ODP
+- ✅ **Customer Assignment** - Assign pelanggan ke port ODP
+- ✅ **Sync PPPoE MikroTik** - Import PPPoE secrets dari MikroTik
+- ✅ **WhatsApp Maintenance Template** - Template gangguan/maintenance
+- ✅ **FreeRADIUS BOM Fix** - Auto remove UTF-16 BOM dari config files
+
+### December 4, 2025 (v2.1.5) - System Improvements
+- ✅ **Admin Management** - Fixed permission checkboxes not showing
+- ✅ **Settings/Cron** - Complete page rewrite with teal theme
+- ✅ **Settings/Database** - Complete page rewrite with Telegram backup
+- ✅ **Agent Dashboard** - Fixed API paths, Router column added to voucher table
+- ✅ **Payment Gateway** - Added validation for deposit (show error if not configured)
+- ✅ **WhatsApp Providers** - Multi-provider support (Fonnte, WAHA, GOWA, MPWA, Wablas)
+- ✅ **FreeRADIUS Config** - Updated backup configs from production
+- ✅ **Install Wizard** - Added FreeRADIUS config restore option
+- ✅ **vps-install.sh** - Updated with FreeRADIUS config restore
+
+### December 4, 2025 (v2.1) - GenieACS WiFi Management
+- ✅ **GenieACS TR-069 Integration** - Complete CPE management via Web UI
+- ✅ **WiFi Configuration** - Edit SSID, password, security mode (WPA/WPA2/Open)
+- ✅ **Real-time Updates** - Changes applied instantly without waiting periodic inform
+- ✅ **Task Monitoring** - Track all TR-069 tasks with auto-refresh
+- ✅ **Multi-WLAN Support** - Manage WiFi 2.4GHz, 5GHz, and Guest networks
+- ✅ **Force Sync** - Manual connection request trigger
+- ✅ **Device Details** - View ONT info, uptime, RX power, WiFi clients
+- ✅ Fixed GenieACS menu structure (separate from Settings)
 
 ### December 3, 2025 (v2.0)
 - ✅ **RADIUS CoA Support** - Real-time speed changes & disconnect
