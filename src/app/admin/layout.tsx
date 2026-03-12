@@ -176,17 +176,23 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
-        titleKey: 'nav.network',
-        icon: <Network className="w-4 h-4" />,
+        titleKey: 'nav.oltAndOnu',
+        icon: <Server className="w-4 h-4" />,
+        requiredPermission: 'network.view',
+        children: [
+          { titleKey: 'nav.oltManagement', href: '/admin/network/olts', requiredPermission: 'network.view' },
+        ],
+      },
+      {
+        titleKey: 'nav.topology',
+        icon: <Globe className="w-4 h-4" />,
         requiredPermission: 'network.view',
         children: [
           { titleKey: 'nav.networkMap', href: '/admin/network/map', requiredPermission: 'network.view' },
-          { titleKey: 'nav.olt', href: '/admin/network/olts', requiredPermission: 'network.view' },
-          { titleKey: 'nav.odc', href: '/admin/network/odcs', requiredPermission: 'network.view' },
-          { titleKey: 'nav.odp', href: '/admin/network/odps', requiredPermission: 'network.view' },
-          { titleKey: 'nav.odpCustomer', href: '/admin/network/customers', requiredPermission: 'network.view' },
-          { titleKey: 'nav.otb', href: '/admin/network/infrastruktur', requiredPermission: 'network.view' },
-          { titleKey: 'nav.networkMap', href: '/admin/network/unified-map', requiredPermission: 'network.view' },
+          { titleKey: 'nav.unifiedMap', href: '/admin/network/unified-map', requiredPermission: 'network.view' },
+          { titleKey: 'nav.infrastructure', href: '/admin/network/infrastruktur', requiredPermission: 'network.view' },
+          { titleKey: 'nav.splitterDiagrams', href: '/admin/network/diagrams', requiredPermission: 'network.view' },
+          { titleKey: 'nav.networkTrace', href: '/admin/network/trace', requiredPermission: 'network.view' },
         ],
       },
       {
@@ -197,8 +203,7 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.fiberCables', href: '/admin/network/fiber-cables', requiredPermission: 'network.view' },
           { titleKey: 'nav.fiberCores', href: '/admin/network/fiber-cores', requiredPermission: 'network.view' },
           { titleKey: 'nav.splicePoints', href: '/admin/network/splice-points', requiredPermission: 'network.view' },
-          { titleKey: 'nav.networkTrace', href: '/admin/network/trace', requiredPermission: 'network.view' },
-          { titleKey: 'nav.splitterDiagrams', href: '/admin/network/diagrams', requiredPermission: 'network.view' },
+          { titleKey: 'nav.jointClosures', href: '/admin/network/fiber-joint-closures', requiredPermission: 'network.view' },
         ],
       },
       {

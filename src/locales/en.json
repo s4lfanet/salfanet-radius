@@ -3885,6 +3885,7 @@
     "networkNodes": "Network Nodes",
     "fiberPaths": "Fiber Paths",
     "olt": "OLT",
+    "oltAndOnu": "OLT & ONU",
     "oltAlerts": "Alerts & Notifications",
     "oltManagement": "OLT Management",
     "oltMonitoring": "OLT Monitoring",

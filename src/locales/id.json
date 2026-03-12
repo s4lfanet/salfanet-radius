@@ -343,6 +343,7 @@
     "virtualParameters": "Parameter Virtual",
     "parameterConfig": "Konfigurasi Parameter",
     "oltManagement": "OLT Management",
+    "oltAndOnu": "OLT & ONU",
     "onuList": "Daftar ONU",
     "oltTerminal": "OLT Terminal",
     "management": "Manajemen",
