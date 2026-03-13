@@ -339,6 +339,15 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: suspendErr.message })
         }
 
+      case 'cron_history_cleanup':
+        try {
+          const { cleanupOldHistory } = await import('@/server/jobs/helpers')
+          await cleanupOldHistory()
+          return NextResponse.json({ success: true, message: 'Cron history cleaned up' })
+        } catch (cleanupErr: any) {
+          return NextResponse.json({ success: false, error: cleanupErr.message })
+        }
+
       default:
         return NextResponse.json({
           success: false,

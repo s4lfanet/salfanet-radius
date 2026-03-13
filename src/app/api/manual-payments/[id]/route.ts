@@ -225,17 +225,6 @@ export async function PATCH(
           await prisma.radreply.deleteMany({
             where: { username: manualPayment.user.username, attribute: 'Reply-Message' }
           });
-          // Restore static IP if user has one (was stripped during isolation)
-          await prisma.radreply.deleteMany({
-            where: { username: manualPayment.user.username, attribute: 'Framed-IP-Address' }
-          });
-          if (manualPayment.user.ipAddress) {
-            await prisma.$executeRaw`
-              INSERT INTO radreply (username, attribute, op, value)
-              VALUES (${manualPayment.user.username}, 'Framed-IP-Address', ':=', ${manualPayment.user.ipAddress})
-              ON DUPLICATE KEY UPDATE value = ${manualPayment.user.ipAddress}
-            `;
-          }
           // CoA disconnect to force re-auth
           const coaResult = await disconnectPPPoEUser(manualPayment.user.username);
           console.log(`[Manual Payment APPROVE] CoA: ${coaResult.success ? 'disconnected for re-auth' : coaResult.error}`);

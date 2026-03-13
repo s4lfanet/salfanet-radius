@@ -48,8 +48,10 @@ export async function GET(request: NextRequest) {
           expiredAt: true,
           balance: true,
           autoRenewal: true,
+          profileId: true,
           profile: {
             select: {
+              id: true,
               name: true,
               downloadSpeed: true,
               uploadSpeed: true,

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Wifi, WifiOff, Router, RefreshCw, Pencil, Save, X,
-  Eye, EyeOff, Monitor, ServerCrash, Info, Radio
+  Eye, EyeOff, Monitor, ServerCrash, Info, Radio, Power
 } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
@@ -68,6 +68,7 @@ export default function CustomerWiFiPage() {
   const [noDevice, setNoDevice] = useState(false);
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
+  const [rebooting, setRebooting] = useState(false);
 
   const toast = (type: 'success' | 'error' | 'info', title: string, desc?: string) =>
     addToast({ type, title, description: desc, duration: type === 'error' ? 8000 : 5000 });
@@ -117,6 +118,31 @@ export default function CustomerWiFiPage() {
   const handleRefresh = () => {
     setRefreshing(true);
     loadDevice();
+  };
+
+  const handleReboot = async () => {
+    const confirmed = window.confirm(
+      'Reboot modem/ONT?\n\nPerangkat akan restart dan koneksi internet terputus sementara 1-2 menit.'
+    );
+    if (!confirmed) return;
+    setRebooting(true);
+    const token = localStorage.getItem('customer_token');
+    try {
+      const res = await fetch('/api/customer/ont/reboot', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast('success', 'Reboot dikirim', data.message || 'Perangkat akan restart dalam beberapa detik.');
+      } else {
+        toast('error', 'Gagal', data.error || 'Gagal mengirim perintah reboot.');
+      }
+    } catch {
+      toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setRebooting(false);
+    }
   };
 
   const startEdit = (wlan: WLANConfig) => {
@@ -243,13 +269,23 @@ export default function CustomerWiFiPage() {
           </h1>
           <p className="text-xs text-slate-400 mt-0.5">Kelola SSID dan password WiFi perangkat Anda</p>
         </div>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-cyan-400 hover:border-cyan-400 transition-colors"
-        >
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleReboot}
+            disabled={rebooting}
+            title="Reboot Modem/ONT"
+            className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-400 transition-colors disabled:opacity-40"
+          >
+            <Power className={`w-4 h-4 ${rebooting ? 'animate-pulse text-red-400' : ''}`} />
+          </button>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="p-2 rounded-lg border border-slate-700 text-slate-400 hover:text-cyan-400 hover:border-cyan-400 transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {/* Device Info Card */}

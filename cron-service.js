@@ -256,6 +256,11 @@ cron.schedule('0 * * * *', async () => {
   await runCronJob('suspend_check', 'Suspend Check');
 });
 
+// 16. Cron History Cleanup - Daily at 4 AM (keep table size small)
+cron.schedule('0 4 * * *', async () => {
+  await runCronJob('cron_history_cleanup', 'Cron History Cleanup', { lockTtl: 120 });
+});
+
 console.log('[CRON SERVICE] All cron jobs initialized successfully!');
 console.log('[CRON SERVICE] Schedules:');
 console.log('  - Hotspot Sync: Every minute');

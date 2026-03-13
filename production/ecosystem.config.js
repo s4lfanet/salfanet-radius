@@ -8,13 +8,12 @@ module.exports = {
       instances: 2,            // Gunakan kedua CPU core (2 thread)
       exec_mode: 'cluster',    // Load balance antar 2 worker
       watch: false,
-      // Memory: 2 instance × 256MB = 512MB heap limit, actual ~300MB total
-      max_memory_restart: '280M',
+      // ~370MB each, 740MB total for 2 workers — allows more headroom with 512MB MySQL
+      max_memory_restart: '370M',
       node_args: [
-        '--max-old-space-size=256',  // Per-instance heap limit
-        '--max-semi-space-size=8',   // Reduce new generation size
-        '--optimize-for-size',       // Optimize for memory over speed
-        '--expose-gc',               // Allow explicit GC calls
+        '--max-old-space-size=320',  // Increased from 256 — allows more cache
+        '--max-semi-space-size=16',  // Increased from 8 — reduces GC frequency
+        '--expose-gc',
       ],
       env: {
         NODE_ENV: 'production',
@@ -30,8 +29,8 @@ module.exports = {
       autorestart: true,
       max_restarts: 10,
       min_uptime: '10s',
-      // Restart every 6 hours to clear memory leaks
-      cron_restart: '0 */6 * * *'
+      // Restart every 8 hours (was 6 — with more heap, less frequent restarts needed)
+      cron_restart: '0 */8 * * *'
     },
     // Standalone Cron Service
     {
@@ -45,8 +44,7 @@ module.exports = {
       max_memory_restart: '150M',
       node_args: [
         '--max-old-space-size=120',  // Limit heap to 120MB
-        '--max-semi-space-size=4',
-        '--optimize-for-size',
+        '--max-semi-space-size=8',
         '--expose-gc',
       ],
       env: {

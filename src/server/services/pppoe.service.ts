@@ -86,16 +86,17 @@ export async function listPppoeUsers(params: { status?: string | null }) {
     orderBy: { createdAt: 'desc' },
   });
 
-  const usersWithOnlineStatus = await Promise.all(
-    users.map(async (user) => {
-      const activeSession = await prisma.radacct.findFirst({
-        where: { username: user.username, acctstoptime: null },
-      });
-      return { ...user, isOnline: !!activeSession };
-    })
-  );
+  // Batch fetch all active sessions in ONE query instead of N queries (N+1 fix)
+  const usernames = users.map(u => u.username);
+  const activeSessions = usernames.length > 0
+    ? await prisma.radacct.findMany({
+        where: { username: { in: usernames }, acctstoptime: null },
+        select: { username: true },
+      })
+    : [];
+  const onlineSet = new Set(activeSessions.map(s => s.username));
 
-  return usersWithOnlineStatus;
+  return users.map(user => ({ ...user, isOnline: onlineSet.has(user.username) }));
 }
 
 // â”€â”€â”€ Get one â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

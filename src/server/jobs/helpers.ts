@@ -22,23 +22,27 @@ export async function saveCronHistory(data: {
   }
 }
 
-// Cleanup old history (keep last 100 per job type)
+// Cleanup old history — keep last 50 per job type + delete anything older than 30 days
 export async function cleanupOldHistory() {
   try {
-    const jobTypes = ['voucher_sync', 'agent_sales', 'invoice_generate', 'invoice_reminder'];
-    
-    for (const jobType of jobTypes) {
-      const allHistory = await prisma.cronHistory.findMany({
+    // 1. Delete all entries older than 30 days in one query
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    await prisma.cronHistory.deleteMany({ where: { startedAt: { lt: cutoff } } });
+
+    // 2. Per job-type: keep only last 50
+    const jobTypes = await prisma.cronHistory.groupBy({
+      by: ['jobType'],
+    });
+
+    for (const { jobType } of jobTypes) {
+      const rows = await prisma.cronHistory.findMany({
         where: { jobType },
         orderBy: { startedAt: 'desc' },
+        skip: 50,
         select: { id: true },
       });
-
-      if (allHistory.length > 100) {
-        const idsToDelete = allHistory.slice(100).map((h) => h.id);
-        await prisma.cronHistory.deleteMany({
-          where: { id: { in: idsToDelete } },
-        });
+      if (rows.length > 0) {
+        await prisma.cronHistory.deleteMany({ where: { id: { in: rows.map(r => r.id) } } });
       }
     }
   } catch (error) {
