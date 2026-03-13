@@ -323,7 +323,7 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-2 px-2 pt-2.5 pb-1 group"
       >
-        <span className="text-[9px] text-cyan-300/80 tracking-[0.25em] uppercase font-bold group-hover:text-cyan-300 transition-colors flex-shrink-0">
+        <span className="text-[9px] text-slate-600 tracking-[0.25em] uppercase font-bold group-hover:text-slate-800 dark:text-cyan-300/80 dark:group-hover:text-cyan-300 transition-colors flex-shrink-0">
           {t(titleKey)}
         </span>
         <div className="flex-1 h-px bg-gradient-to-r from-cyan-400/35 via-cyan-400/20 to-transparent" />
