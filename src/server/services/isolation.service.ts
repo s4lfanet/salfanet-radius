@@ -45,6 +45,7 @@ export async function getIsolationSettings() {
       const defaultSettings = {
         isolationEnabled: true,
         isolationIpPool: '192.168.200.0/24',
+        isolationServerIp: undefined as string | undefined,
         isolationRateLimit: '128k/128k',
         isolationRedirectUrl: '',
         isolationAllowDns: true,
@@ -77,6 +78,7 @@ export async function getIsolationSettings() {
     const defaultSettings = {
       isolationEnabled: true,
       isolationIpPool: '192.168.200.0/24',
+      isolationServerIp: undefined as string | undefined,
       isolationRateLimit: '128k/128k',
       isolationRedirectUrl: '',
       isolationAllowDns: true,
