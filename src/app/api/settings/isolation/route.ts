@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
       select: {
         isolationEnabled: true,
         isolationIpPool: true,
+        isolationServerIp: true,
         isolationRateLimit: true,
         isolationRedirectUrl: true,
         isolationMessage: true,
@@ -63,6 +64,7 @@ export async function PUT(request: NextRequest) {
     const {
       isolationEnabled,
       isolationIpPool,
+      isolationServerIp,
       isolationRateLimit,
       isolationRedirectUrl,
       isolationMessage,
@@ -78,6 +80,14 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'Invalid IP pool format. Use CIDR notation (e.g., 192.168.200.0/24)'
+      }, { status: 400 });
+    }
+
+    // Validate server IP (plain IPv4)
+    if (isolationServerIp && !isolationServerIp.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid server IP format. Use a plain IPv4 address (e.g., 103.151.140.110)'
       }, { status: 400 });
     }
 
@@ -103,6 +113,7 @@ export async function PUT(request: NextRequest) {
       data: {
         isolationEnabled: isolationEnabled ?? company.isolationEnabled,
         isolationIpPool: isolationIpPool ?? company.isolationIpPool,
+        isolationServerIp: isolationServerIp !== undefined ? (isolationServerIp || null) : company.isolationServerIp,
         isolationRateLimit: isolationRateLimit ?? company.isolationRateLimit,
         isolationRedirectUrl: isolationRedirectUrl ?? company.isolationRedirectUrl,
         isolationMessage: isolationMessage ?? company.isolationMessage,

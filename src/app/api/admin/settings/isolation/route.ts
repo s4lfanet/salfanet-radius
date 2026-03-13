@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
       select: {
         isolationEnabled: true,
         isolationIpPool: true,
+        isolationServerIp: true,
         isolationRateLimit: true,
         isolationRedirectUrl: true,
         isolationAllowDns: true,
@@ -77,6 +78,7 @@ export async function PUT(request: NextRequest) {
     const {
       isolationEnabled,
       isolationIpPool,
+      isolationServerIp,
       isolationRateLimit,
       isolationRedirectUrl,
       isolationAllowDns,
@@ -99,6 +101,14 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Validate server IP (plain IPv4 only — MikroTik NAT requires IP)
+    if (isolationServerIp && !isolationServerIp.match(/^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid server IP format. Use a plain IPv4 address (e.g., 103.151.140.110)'
+      }, { status: 400 });
+    }
+
     // Validate rate limit format (basic check)
     if (isolationRateLimit) {
       const rateLimitRegex = /^\d+[kmgKMG]?\/\d+[kmgKMG]?/;
@@ -115,6 +125,7 @@ export async function PUT(request: NextRequest) {
       data: {
         isolationEnabled,
         isolationIpPool,
+        isolationServerIp: isolationServerIp !== undefined ? (isolationServerIp || null) : undefined,
         isolationRateLimit,
         isolationRedirectUrl,
         isolationAllowDns,

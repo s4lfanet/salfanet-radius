@@ -4,6 +4,7 @@ import { prisma } from '@/server/db/client';
 let isolationSettingsCache: {
   isolationEnabled: boolean;
   isolationIpPool: string;
+  isolationServerIp?: string;
   isolationRateLimit: string;
   isolationRedirectUrl?: string;
   isolationAllowDns: boolean;
@@ -30,6 +31,7 @@ export async function getIsolationSettings() {
       select: {
         isolationEnabled: true,
         isolationIpPool: true,
+        isolationServerIp: true,
         isolationRateLimit: true,
         isolationRedirectUrl: true,
         isolationAllowDns: true,
@@ -58,6 +60,7 @@ export async function getIsolationSettings() {
     isolationSettingsCache = {
       isolationEnabled: company.isolationEnabled ?? true,
       isolationIpPool: company.isolationIpPool ?? '192.168.200.0/24',
+      isolationServerIp: company.isolationServerIp ?? undefined,
       isolationRateLimit: company.isolationRateLimit ?? '128k/128k',
       isolationRedirectUrl: company.isolationRedirectUrl ?? '',
       isolationAllowDns: company.isolationAllowDns ?? true,

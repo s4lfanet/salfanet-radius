@@ -31,10 +31,10 @@ export async function GET(request: NextRequest) {
     const uploadLimit = rateParts[0] || '128k';
     const downloadLimit = rateParts[1] || '128k';
 
-    // Get billing server IP from request
+    // Get billing server IP: use stored isolationServerIp first, then query param, then placeholder
     const { searchParams } = new URL(request.url);
-    const billingServerIp = searchParams.get('billingIp') || 'YOUR_BILLING_SERVER_IP';
-    const isolationPageIp = searchParams.get('isolationIp') || billingServerIp;
+    const billingServerIp = settings.isolationServerIp || searchParams.get('billingIp') || 'YOUR_BILLING_SERVER_IP';
+    const isolationPageIp = settings.isolationServerIp || searchParams.get('isolationIp') || billingServerIp;
 
     // Generate MikroTik script
     const script = `# MikroTik Isolation System Configuration

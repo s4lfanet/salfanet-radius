@@ -25,6 +25,7 @@ import {
 interface IsolationSettings {
   isolationEnabled: boolean;
   isolationIpPool: string;
+  isolationServerIp: string;
   isolationRateLimit: string;
   isolationRedirectUrl: string;
   isolationMessage: string;
@@ -45,6 +46,7 @@ export default function IsolationSettingsPage() {
   const [settings, setSettings] = useState<IsolationSettings>({
     isolationEnabled: true,
     isolationIpPool: '192.168.200.0/24',
+    isolationServerIp: '',
     isolationRateLimit: '64k/64k',
     isolationRedirectUrl: '',
     isolationMessage: 'Akun Anda telah diisolir karena masa berlangganan habis. Silakan lakukan pembayaran untuk mengaktifkan kembali layanan.',
@@ -69,6 +71,7 @@ export default function IsolationSettingsPage() {
         setSettings({
           isolationEnabled: data.data.isolationEnabled ?? true,
           isolationIpPool: data.data.isolationIpPool || '192.168.200.0/24',
+          isolationServerIp: data.data.isolationServerIp || '',
           isolationRateLimit: data.data.isolationRateLimit || '64k/64k',
           isolationRedirectUrl: data.data.isolationRedirectUrl || '',
           isolationMessage: data.data.isolationMessage || 'Akun Anda telah diisolir karena masa berlangganan habis. Silakan lakukan pembayaran untuk mengaktifkan kembali layanan.',
@@ -122,6 +125,7 @@ export default function IsolationSettingsPage() {
     setSettings({
       isolationEnabled: true,
       isolationIpPool: '192.168.200.0/24',
+      isolationServerIp: settings.isolationServerIp,
       isolationRateLimit: '64k/64k',
       isolationRedirectUrl: settings.baseUrl ? `${settings.baseUrl}/isolated` : '',
       isolationMessage: 'Akun Anda telah diisolir karena masa berlangganan habis. Silakan lakukan pembayaran untuk mengaktifkan kembali layanan.',
@@ -249,6 +253,24 @@ export default function IsolationSettingsPage() {
               />
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {t('isolation.ipPoolHint')}
+              </p>
+            </div>
+
+            {/* Server IP for MikroTik NAT */}
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1.5 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5" />
+                {t('isolation.serverIpLabel')}
+              </label>
+              <input
+                type="text"
+                value={settings.isolationServerIp}
+                onChange={(e) => setSettings({ ...settings, isolationServerIp: e.target.value })}
+                placeholder="103.151.140.110"
+                className="w-full px-3 py-1.5 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary dark:bg-input dark:text-foreground font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {t('isolation.serverIpHint')}
               </p>
             </div>
 

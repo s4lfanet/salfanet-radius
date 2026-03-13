@@ -3184,6 +3184,8 @@
     "insertVariable": "Insert Variable",
     "ipPoolHint": "Dedicated IP Pool for isolated users (e.g., 192.168.200.0/24)",
     "ipPoolLabel": "Isolation IP Pool",
+    "serverIpLabel": "Server IP (for MikroTik NAT)",
+    "serverIpHint": "VPS/billing server IP address. Used in MikroTik NAT redirect scripts. MikroTik cannot use hostnames — IP address required.",
     "landingPage": "Isolation Landing Page",
     "loading": "Loading...",
     "mikrotik": {

@@ -2278,6 +2278,8 @@
     "networkSettings": "Pengaturan Network",
     "ipPoolLabel": "IP Pool untuk User Isolir",
     "ipPoolHint": "Format CIDR (contoh: 192.168.200.0/24). Pool ini harus dikonfigurasi di MikroTik.",
+    "serverIpLabel": "IP Server (untuk MikroTik NAT)",
+    "serverIpHint": "IP address VPS/billing server. Digunakan di script MikroTik NAT redirect. MikroTik tidak bisa menggunakan hostname, harus IP address.",
     "rateLimit": "Rate Limit (Bandwidth)",
     "rateLimitHint": "Format: upload/download (contoh: 64k/64k, 128k/128k, 1M/1M)",
     "accessControl": "Kontrol Akses",

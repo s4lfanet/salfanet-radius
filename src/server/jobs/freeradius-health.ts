@@ -10,6 +10,7 @@ import { promisify } from 'util';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { syncNasClients } from '@/server/services/radius/freeradius.service';
+import { getIsolationSettings } from '@/server/services/isolation.service';
 
 const execAsync = promisify(exec);
 
@@ -418,8 +419,14 @@ export async function freeradiusHealthCheck(autoRestart = true): Promise<{
             `;
             if (nasList.length > 0) {
                 const nasIp = nasList[0].nasname;
+                // Use the configured IP pool (dynamic from settings, not hardcoded)
+                const isolSettings = await getIsolationSettings();
+                const ipPool = isolSettings.isolationIpPool ?? '192.168.200.0/24';
+                const networkMatch = ipPool.match(/^(\d+\.\d+\.\d+)\.\d+\/\d+$/);
+                const networkBase = networkMatch ? networkMatch[1] + '.0' : '192.168.200.0';
+                const cidr = ipPool.includes('/') ? ipPool : `${networkBase}/24`;
                 // Add route if not already present (exits cleanly if route exists)
-                await execAsync(`ip route show 192.168.200.0/24 | grep -q '192.168.200' || ip route add 192.168.200.0/24 via ${nasIp} 2>/dev/null || true`);
+                await execAsync(`ip route show ${cidr} | grep -q '${networkBase}' || ip route add ${cidr} via ${nasIp} 2>/dev/null || true`);
             }
         } catch (routeErr: any) {
             // Non-fatal — might lack capability or route already exists

@@ -98,6 +98,7 @@ model company {
   // Isolation settings
   isolationEnabled             Boolean? @default(true) // Enable/disable auto isolation
   isolationIpPool              String?  @default("192.168.200.0/24") @db.VarChar(100) // IP pool for isolated users
+  isolationServerIp            String?  @db.VarChar(100) // VPS/billing server IP for MikroTik NAT redirect (must be IP, not hostname)
   isolationRateLimit           String?  @default("64k/64k") @db.VarChar(50) // Rate limit for isolated users
   isolationRedirectUrl         String?  @db.Text // URL to redirect isolated users
   isolationMessage             String?  @db.Text // Custom message for isolated users (deprecated - use templates)

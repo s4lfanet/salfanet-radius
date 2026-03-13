@@ -19,6 +19,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 
 interface IsolationSettings {
   isolationIpPool: string;
+  isolationServerIp: string;
   isolationRateLimit: string;
   baseUrl: string;
 }
@@ -29,6 +30,7 @@ export default function MikroTikSetupPage() {
   const [loading, setLoading] = useState(true);
   const [settings, setSettings] = useState<IsolationSettings>({
     isolationIpPool: '192.168.200.0/24',
+    isolationServerIp: '',
     isolationRateLimit: '64k/64k',
     baseUrl: '',
   });
@@ -46,6 +48,7 @@ export default function MikroTikSetupPage() {
       if (data.success) {
         setSettings({
           isolationIpPool: data.data.isolationIpPool || '192.168.200.0/24',
+          isolationServerIp: data.data.isolationServerIp || '',
           isolationRateLimit: data.data.isolationRateLimit || '64k/64k',
           baseUrl: data.data.baseUrl || '',
         });
@@ -141,12 +144,12 @@ add name=isolir \\
     comment="Profile untuk user yang diisolir"`;
 
   // Script 3: Firewall Filter (Allow DNS & Payment)
+  // Get server IP: use stored isolationServerIp first, fall back to extracting from baseUrl
   const getServerIp = () => {
+    if (settings.isolationServerIp) return settings.isolationServerIp;
     if (!settings.baseUrl) return 'YOUR_SERVER_IP';
     try {
       const url = new URL(settings.baseUrl);
-      // Extract IP from hostname, or return hostname for manual replacement
-      // MikroTik firewall needs IP, not hostname!
       return url.hostname;
     } catch {
       return 'YOUR_SERVER_IP';
@@ -398,23 +401,24 @@ ${firewallNatScript}
           </div>
         </div>
 
-        {/* ⚠️ IMPORTANT WARNING BOX */}
+        {/* ⚠️ IMPORTANT WARNING BOX — only shown when server IP is not explicitly configured */}
+        {!settings.isolationServerIp && (
         <div className="bg-gradient-to-r from-[#ff4466]/10 to-[#ff44cc]/10 border-2 border-[#ff4466]/50 rounded-lg p-4 mb-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="w-6 h-6 text-[#ff6b8a] flex-shrink-0 mt-0.5 drop-shadow-[0_0_10px_rgba(255,68,102,0.6)]" />
             <div className="flex-1">
               <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
-                ⚠️ PENTING: Ganti Hostname dengan IP Address!
+                ⚠️ Server IP belum dikonfigurasi!
               </h3>
               <div className="space-y-2 text-sm text-[#e0d0ff]/90">
                 <p>
                   <strong>MikroTik firewall TIDAK support hostname</strong>, hanya IP address!
                 </p>
                 <p>
-                  Di script ini, Anda akan melihat: <code className="bg-black/30 px-2 py-0.5 rounded text-[#00f7ff]">{getServerIp()}</code>
+                  Script ini menggunakan: <code className="bg-black/30 px-2 py-0.5 rounded text-[#ff4466]">{getServerIp()}</code> (dari Base URL, mungkin adalah hostname bukan IP)
                 </p>
                 <p>
-                  <strong className="text-[#ff6b8a]">Wajib diganti dengan IP ADDRESS server Anda:</strong>
+                  <strong className="text-[#ff6b8a]">Atur "IP Server (untuk MikroTik NAT)" di halaman Pengaturan Isolasi agar script benar!</strong>
                 </p>
                 <ul className="list-disc list-inside space-y-1 ml-4">
                   <li>✅ Contoh benar: <code className="bg-black/30 px-2 py-0.5 rounded text-[#00ff88]">103.50.100.150</code></li>
@@ -431,6 +435,7 @@ ${firewallNatScript}
             </div>
           </div>
         </div>
+        )}
 
         <div className="grid md:grid-cols-2 gap-4 mb-4">
           {/* Current Settings */}
@@ -443,6 +448,12 @@ ${firewallNatScript}
               <div>
                 <span className="text-muted-foreground dark:text-muted-foreground">IP Pool:</span>
                 <p className="font-mono font-semibold">{settings.isolationIpPool}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground dark:text-muted-foreground">Server IP (NAT):</span>
+                <p className={`font-mono font-semibold ${settings.isolationServerIp ? 'text-green-500' : 'text-amber-500'}`}>
+                  {settings.isolationServerIp || 'Belum diset — atur di pengaturan isolasi'}
+                </p>
               </div>
               <div>
                 <span className="text-muted-foreground dark:text-muted-foreground">Rate Limit:</span>
