@@ -535,7 +535,9 @@ set -e
 echo "[*] Deploying SALFANET RADIUS..."
 
 APP_DIR="/var/www/salfanet-radius"
-APP_USER="salfanet"
+APP_USER="$(stat -c '%U' "$APP_DIR" 2>/dev/null || echo salfanet)"
+SOURCE_DIR=""
+DEFAULT_BRANCH=""
 
 # Check if running as root
 if [ "$EUID" -ne 0 ]; then 
@@ -544,13 +546,57 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-cd ${APP_DIR}
+for candidate in "$APP_DIR" "/root/salfanet-radius" "/root/SALFANET-RADIUS-main"; do
+    if [ -f "$candidate/package.json" ]; then
+        SOURCE_DIR="$candidate"
+        break
+    fi
+done
 
-# Pull latest code (if using git)
-if [ -d ".git" ]; then
-    echo ">> Pulling latest code..."
-    git pull origin main
+if [ -z "$SOURCE_DIR" ]; then
+    echo "[ERROR] Source directory not found"
+    exit 1
 fi
+
+echo ">> Source directory: $SOURCE_DIR"
+echo ">> Active directory: $APP_DIR"
+
+# Pull latest code from source repo if available
+if [ -d "$SOURCE_DIR/.git" ]; then
+    echo ">> Pulling latest code from git source..."
+    DEFAULT_BRANCH=$(git -C "$SOURCE_DIR" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
+
+    if [ -z "$DEFAULT_BRANCH" ]; then
+        if git -C "$SOURCE_DIR" show-ref --verify --quiet refs/heads/master; then
+            DEFAULT_BRANCH="master"
+        elif git -C "$SOURCE_DIR" show-ref --verify --quiet refs/heads/main; then
+            DEFAULT_BRANCH="main"
+        else
+            DEFAULT_BRANCH="master"
+        fi
+    fi
+
+    git -C "$SOURCE_DIR" fetch origin
+    git -C "$SOURCE_DIR" checkout "$DEFAULT_BRANCH"
+    git -C "$SOURCE_DIR" pull --ff-only origin "$DEFAULT_BRANCH"
+fi
+
+# Sync latest source into active app dir when source repo is separate
+if [ "$SOURCE_DIR" != "$APP_DIR" ]; then
+    echo ">> Syncing source into active app directory..."
+    if command -v rsync >/dev/null 2>&1; then
+        rsync -a --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.next' \
+            --exclude='logs' \
+            "$SOURCE_DIR/" "$APP_DIR/"
+    else
+        cp -a "$SOURCE_DIR/." "$APP_DIR/"
+    fi
+fi
+
+cd ${APP_DIR}
 
 # Install dependencies
 echo ">> Installing dependencies..."
@@ -584,6 +630,7 @@ sudo su - ${APP_USER} -c "cd ${APP_DIR} && pm2 reload ecosystem.config.js --upda
 sudo su - ${APP_USER} -c 'pm2 save'
 
 echo "[OK] Deployment completed!"
+echo ">> Note: PM2 may show 2 salfanet-radius processes because cluster instances=2 is intentional."
 echo ""
 echo ">> Application status:"
 sudo su - ${APP_USER} -c 'pm2 list'
