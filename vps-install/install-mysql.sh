@@ -9,6 +9,98 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common.sh"
 
+MYSQL_SERVICE="mysql"
+
+detect_mysql_service() {
+    if systemctl list-unit-files 2>/dev/null | grep -q '^mysql\.service'; then
+        MYSQL_SERVICE="mysql"
+    elif systemctl list-unit-files 2>/dev/null | grep -q '^mariadb\.service'; then
+        MYSQL_SERVICE="mariadb"
+    else
+        MYSQL_SERVICE="mysql"
+    fi
+    print_info "Using MySQL service: ${MYSQL_SERVICE}"
+}
+
+mysql_service_ctl() {
+    local ACTION="$1"
+    systemctl "$ACTION" "$MYSQL_SERVICE"
+}
+
+wait_mysql_ready() {
+    local RETRIES=${1:-40}
+    local DELAY=${2:-2}
+    local i
+
+    for ((i=1; i<=RETRIES; i++)); do
+        if mysqladmin ping --silent >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep "$DELAY"
+    done
+
+    return 1
+}
+
+print_mysql_diagnostics() {
+    print_warning "MySQL diagnostics (last 40 lines):"
+    systemctl status "$MYSQL_SERVICE" --no-pager -l 2>/dev/null | tail -40 || true
+    journalctl -u "$MYSQL_SERVICE" -n 60 --no-pager 2>/dev/null || true
+}
+
+ensure_mysql_running() {
+    if systemctl is-active --quiet "$MYSQL_SERVICE"; then
+        return 0
+    fi
+
+    print_warning "${MYSQL_SERVICE} is not active, attempting to start..."
+    mysql_service_ctl start || true
+
+    if ! systemctl is-active --quiet "$MYSQL_SERVICE"; then
+        print_mysql_diagnostics
+        return 1
+    fi
+
+    if ! wait_mysql_ready 30 2; then
+        print_mysql_diagnostics
+        return 1
+    fi
+
+    return 0
+}
+
+mysql_root_exec() {
+    local SQL="$1"
+
+    # Try password auth first
+    if mysql -u root -p"${DB_ROOT_PASSWORD}" -e "$SQL" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # Fallback to socket auth (fresh Ubuntu/Debian installs)
+    if mysql -u root -e "$SQL" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    return 1
+}
+
+safe_restart_mysql_with_fallback() {
+    print_info "Restarting ${MYSQL_SERVICE} to apply config..."
+
+    if mysql_service_ctl restart >/dev/null 2>&1 && ensure_mysql_running; then
+        return 0
+    fi
+
+    print_warning "${MYSQL_SERVICE} failed after applying tuning config. Rolling back salfanet-perf.cnf..."
+    if [ -f /etc/mysql/mysql.conf.d/salfanet-perf.cnf ]; then
+        mv /etc/mysql/mysql.conf.d/salfanet-perf.cnf "/etc/mysql/mysql.conf.d/salfanet-perf.cnf.disabled.$(date +%s)" || true
+    fi
+
+    mysql_service_ctl restart >/dev/null 2>&1 || true
+    ensure_mysql_running
+}
+
 # ============================================================================
 # MYSQL INSTALLATION & CONFIGURATION
 # ============================================================================
@@ -17,6 +109,7 @@ remove_old_mysql() {
     print_info "Removing old MySQL installation (if exists)..."
     
     systemctl stop mysql 2>/dev/null || true
+    systemctl stop mariadb 2>/dev/null || true
     apt-get remove --purge -y mysql-server mysql-client mysql-common mysql-server-core-* mysql-client-core-* 2>/dev/null || true
     apt-get autoremove -y 2>/dev/null || true
     apt-get autoclean 2>/dev/null || true
@@ -31,33 +124,56 @@ install_mysql_server() {
         return 1
     }
     
-    # Start MySQL
-    systemctl start mysql
-    systemctl enable mysql
-    
-    wait_for_service "mysql" 30
+    detect_mysql_service
+
+    mysql_service_ctl start || {
+        print_error "Failed to start ${MYSQL_SERVICE} service"
+        print_mysql_diagnostics
+        return 1
+    }
+
+    mysql_service_ctl enable || true
+
+    ensure_mysql_running || {
+        print_error "${MYSQL_SERVICE} is not running after installation"
+        return 1
+    }
 }
 
 secure_mysql() {
     print_info "Configuring MySQL security..."
+
+    ensure_mysql_running || return 1
     
     # Set root password
-    mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_ROOT_PASSWORD}';" 2>/dev/null || true
+    mysql -u root -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_ROOT_PASSWORD}';" 2>/dev/null || true
+    mysql -u root -p"${DB_ROOT_PASSWORD}" -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_ROOT_PASSWORD}';" 2>/dev/null || true
     
     # Secure installation
-    mysql -u root -p${DB_ROOT_PASSWORD} -e "DELETE FROM mysql.user WHERE User='';" 2>/dev/null || true
-    mysql -u root -p${DB_ROOT_PASSWORD} -e "DROP DATABASE IF EXISTS test;" 2>/dev/null || true
-    mysql -u root -p${DB_ROOT_PASSWORD} -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';" 2>/dev/null || true
-    mysql -u root -p${DB_ROOT_PASSWORD} -e "FLUSH PRIVILEGES;" 2>/dev/null || true
+    mysql_root_exec "DELETE FROM mysql.user WHERE User='';" || true
+    mysql_root_exec "DROP DATABASE IF EXISTS test;" || true
+    mysql_root_exec "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%';" || true
+    mysql_root_exec "FLUSH PRIVILEGES;" || true
     
     print_success "MySQL secured"
 }
 
 create_database() {
     print_info "Creating database and user..."
+
+    ensure_mysql_running || return 1
+
+    if ! mysql_root_exec "SELECT 1;"; then
+        print_error "Cannot access MySQL as root (password/socket auth failed)"
+        return 1
+    fi
     
     # Check if database already exists
-    local DB_EXISTS=$(mysql -u root -p${DB_ROOT_PASSWORD} -e "SHOW DATABASES LIKE '${DB_NAME}';" 2>/dev/null | grep -c "${DB_NAME}" || true)
+    local DB_EXISTS
+    DB_EXISTS=$(mysql -N -B -u root -p"${DB_ROOT_PASSWORD}" -e "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='${DB_NAME}';" 2>/dev/null || echo "0")
+    if ! [[ "$DB_EXISTS" =~ ^[0-9]+$ ]]; then
+        DB_EXISTS=0
+    fi
     
     if [ "$DB_EXISTS" -eq "1" ]; then
         print_warning "Database ${DB_NAME} already exists!"
@@ -68,11 +184,11 @@ create_database() {
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             print_info "Creating backup of existing database..."
             local BACKUP_FILE="/root/salfanet_radius_backup_$(date +%Y%m%d_%H%M%S).sql"
-            mysqldump -u root -p${DB_ROOT_PASSWORD} ${DB_NAME} > ${BACKUP_FILE} 2>/dev/null || true
+            mysqldump -u root -p"${DB_ROOT_PASSWORD}" ${DB_NAME} > ${BACKUP_FILE} 2>/dev/null || true
             print_success "Database backed up to: ${BACKUP_FILE}"
             
             # Keep existing database, ensure user exists
-            mysql -u root -p${DB_ROOT_PASSWORD} <<EOF 2>/dev/null || true
+            mysql -u root -p"${DB_ROOT_PASSWORD}" <<EOF 2>/dev/null || true
 CREATE USER IF NOT EXISTS '${DB_USER}'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASSWORD}';
 ALTER USER IF EXISTS '${DB_USER}'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
@@ -80,13 +196,13 @@ FLUSH PRIVILEGES;
 EOF
         else
             print_info "Dropping existing database and user..."
-            mysql -u root -p${DB_ROOT_PASSWORD} <<EOF 2>/dev/null || true
+            mysql -u root -p"${DB_ROOT_PASSWORD}" <<EOF 2>/dev/null || true
 DROP DATABASE IF EXISTS ${DB_NAME};
 DROP USER IF EXISTS '${DB_USER}'@'localhost';
 FLUSH PRIVILEGES;
 EOF
             # Create fresh database
-            mysql -u root -p${DB_ROOT_PASSWORD} <<EOF
+            mysql -u root -p"${DB_ROOT_PASSWORD}" <<EOF
 CREATE DATABASE ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER '${DB_USER}'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
@@ -96,7 +212,7 @@ EOF
     else
         # Create fresh database and user
         print_info "Creating fresh database and user..."
-        mysql -u root -p${DB_ROOT_PASSWORD} <<EOF
+        mysql -u root -p"${DB_ROOT_PASSWORD}" <<EOF
 CREATE DATABASE ${DB_NAME} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER '${DB_USER}'@'localhost' IDENTIFIED WITH mysql_native_password BY '${DB_PASSWORD}';
 GRANT ALL PRIVILEGES ON ${DB_NAME}.* TO '${DB_USER}'@'localhost';
@@ -143,7 +259,6 @@ log_bin_trust_function_creators = 1
 # Character set
 character-set-server  = utf8mb4
 collation-server      = utf8mb4_unicode_ci
-mysql_native_password = ON
 
 # Connection & packet
 max_allowed_packet    = 64M
@@ -177,22 +292,27 @@ log_queries_not_using_indexes = 0
 EOF
     
     # Set timezone immediately (live, without restart)
-    mysql -u root -p${DB_ROOT_PASSWORD} -e "SET GLOBAL time_zone = '+07:00';" 2>/dev/null || true
-    mysql -u root -p${DB_ROOT_PASSWORD} -e "SET GLOBAL log_bin_trust_function_creators = 1;" 2>/dev/null || true
-    
-    # Restart MySQL to apply full config
-    systemctl restart mysql
-    sleep 2
+    # Restart MySQL to apply full config, with rollback if config breaks startup
+    if ! safe_restart_mysql_with_fallback; then
+        print_error "MySQL failed to restart even after fallback"
+        return 1
+    fi
+
+    mysql_root_exec "SET GLOBAL time_zone = '+07:00';" || true
+    mysql_root_exec "SET GLOBAL log_bin_trust_function_creators = 1;" || true
     
     # Verify timezone
-    local MYSQL_TZ=$(mysql -u root -p${DB_ROOT_PASSWORD} -N -e "SELECT @@global.time_zone;" 2>/dev/null)
+    local MYSQL_TZ
+    MYSQL_TZ=$(mysql -u root -p"${DB_ROOT_PASSWORD}" -N -e "SELECT @@global.time_zone;" 2>/dev/null || echo "unknown")
     print_success "MySQL timezone: ${MYSQL_TZ} | buffer_pool: ${BUFFER_POOL_MB}M | max_conn: ${MAX_CONN}"
 }
 
 test_mysql_connection() {
     print_info "Testing database connection..."
+
+    ensure_mysql_running || return 1
     
-    if mysql -u ${DB_USER} -p${DB_PASSWORD} -e "USE ${DB_NAME}; SELECT 1;" > /dev/null 2>&1; then
+    if mysql -u "${DB_USER}" -p"${DB_PASSWORD}" -e "USE ${DB_NAME}; SELECT 1;" > /dev/null 2>&1; then
         print_success "Database connection test successful"
         return 0
     else

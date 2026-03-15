@@ -185,6 +185,36 @@ fix_prisma_engines() {
     fi
 }
 
+ensure_mysql_ready_for_app_setup() {
+    print_info "Ensuring MySQL is running before Prisma/seed..."
+
+    local MYSQL_SERVICE="mysql"
+    if systemctl list-unit-files 2>/dev/null | grep -q '^mysql\.service'; then
+        MYSQL_SERVICE="mysql"
+    elif systemctl list-unit-files 2>/dev/null | grep -q '^mariadb\.service'; then
+        MYSQL_SERVICE="mariadb"
+    fi
+
+    if ! systemctl is-active --quiet "$MYSQL_SERVICE"; then
+        print_warning "${MYSQL_SERVICE} is not active, starting it..."
+        systemctl start "$MYSQL_SERVICE" || true
+    fi
+
+    local i
+    for ((i=1; i<=30; i++)); do
+        if mysql -u "${DB_USER}" -p"${DB_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
+            print_success "MySQL is ready for Prisma/seed"
+            return 0
+        fi
+        sleep 2
+    done
+
+    print_error "MySQL not ready after waiting. Diagnostics:"
+    systemctl status "$MYSQL_SERVICE" --no-pager -l 2>/dev/null | tail -40 || true
+    journalctl -u "$MYSQL_SERVICE" -n 50 --no-pager 2>/dev/null || true
+    return 1
+}
+
 setup_prisma() {
     print_step "Setting up Prisma ORM"
     
@@ -192,6 +222,8 @@ setup_prisma() {
     
     # Fix Prisma engine permissions first
     fix_prisma_engines
+
+    ensure_mysql_ready_for_app_setup || return 1
     
     # Disable Prisma update notifications
     export PRISMA_HIDE_UPDATE_MESSAGE=true
@@ -234,6 +266,8 @@ seed_database() {
     print_step "Seeding database with initial data"
     
     cd ${APP_DIR} || return 1
+
+    ensure_mysql_ready_for_app_setup || return 1
     
     print_info "Creating admin user, permissions, profiles, categories, and templates..."
     
