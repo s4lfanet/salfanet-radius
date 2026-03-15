@@ -129,6 +129,39 @@ Scripts in `vps-install/*.sh` have UTF-8 BOM when created on Windows. Run `sed -
 ### 9. VPS install must run from app directory
 `install-freeradius.sh` and other VPS scripts call `check_directory()` which requires CWD to contain "salfanet-radius". Always run from `/var/www/salfanet-radius`.
 
+### 10. UFW was previously configured but not auto-enabled
+Installer lama hanya menambahkan rule `ufw allow`, tetapi tidak menjalankan `ufw enable`. Current installer fix:
+- auto-detect SSH port aktif (`22` atau custom seperti `2020`)
+- allow SSH + `80/tcp` + `443/tcp`
+- set `default deny incoming`, `default allow outgoing`
+- run `ufw --force enable`
+- skip only for Proxmox LXC (`SKIP_UFW=true`)
+
+### 11. Web app inaccessible on Proxmox VM usually means NAT / public edge issue, not app issue
+If inside guest `ss -tulpn` shows Node.js on `:3000` and Nginx on `:80`/`:443`, but public IP still fails:
+- `:2020` is SSH/custom admin port, not web app URL
+- problem is usually DNAT / router / Proxmox firewall / provider security group
+- guest-side `ufw inactive` is not the same as host-side NAT missing
+- installer now includes external access diagnostics in `install-nginx.sh`
+
+### 12. Redis installer needed production hardening
+Redis failure pattern seen in production: `redis-server.service` crash-loop after install. Current installer fix ensures:
+- `bind 127.0.0.1 ::1`
+- `protected-mode yes`
+- `supervised systemd`
+- `daemonize no`
+- runtime/log/data directories exist with `redis:redis`
+- restart failure prints `systemctl status`, `journalctl`, and Redis log tail
+
+### 13. Payment callback pages must support both `token` and `order_id`
+Real-world issue: top-up success page received `order_id=TOPUP-TEMP-...` and showed `payment.paymentNotFound`.
+Current fix:
+- top-up direct flow now creates invoice first, then uses stable `orderId = invoice.invoiceNumber`
+- added `GET /api/payment/check-order` to resolve invoice/deposit status from `order_id`
+- `payment/success`, `payment/pending`, `payment/failed` now handle `order_id` fallback
+- added alias pages: `/payment/failure` and `/payment/cancel`
+- webhook now marks invoice `CANCELLED` for `expire|cancel|deny|failed`
+
 ---
 
 ## 🚀 Completed Features (by version)
