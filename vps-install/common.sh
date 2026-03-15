@@ -28,6 +28,13 @@ export DB_PASSWORD="salfanetradius123"
 export DB_ROOT_PASSWORD="root123"
 export INSTALL_LOG="/var/log/salfanet-vps-install.log"
 export INSTALL_INFO_FILE="${APP_DIR}/INSTALLATION_INFO.txt"
+export INSTALL_RUN_ID="install-$(date +%Y%m%d-%H%M%S)-$RANDOM"
+
+# Optional Telegram install notifications (minimal metadata only)
+export INSTALL_NOTIFY_TELEGRAM="false"
+export INSTALL_TELEGRAM_BOT_TOKEN=""
+export INSTALL_TELEGRAM_CHAT_ID=""
+export INSTALL_TELEGRAM_TOPIC_ID=""
 
 # Environment type — akan di-set oleh detect_environment() atau pilihan user
 # Nilai: vps | lxc | vm | bare
@@ -391,6 +398,112 @@ verify_installation() {
 }
 
 export -f verify_installation
+
+configure_install_telegram_notifications() {
+    echo ""
+    print_info "Opsional: Kirim notifikasi install ke Telegram (start/success/failed)"
+    print_info "Tidak mengirim password/token/.env/data sensitif."
+
+    local ENABLE_TELEGRAM="n"
+    read -t 20 -p "Aktifkan notifikasi Telegram installer? [y/N]: " ENABLE_TELEGRAM </dev/tty || ENABLE_TELEGRAM="n"
+    echo ""
+
+    if [[ ! "$ENABLE_TELEGRAM" =~ ^[Yy]$ ]]; then
+        export INSTALL_NOTIFY_TELEGRAM="false"
+        print_info "Notifikasi Telegram installer: nonaktif"
+        return 0
+    fi
+
+    local BOT_TOKEN=""
+    local CHAT_ID=""
+    local TOPIC_ID=""
+
+    read -t 60 -p "Telegram Bot Token: " BOT_TOKEN </dev/tty || BOT_TOKEN=""
+    read -t 60 -p "Telegram Chat ID: " CHAT_ID </dev/tty || CHAT_ID=""
+    read -t 30 -p "Telegram Topic ID (opsional, Enter untuk skip): " TOPIC_ID </dev/tty || TOPIC_ID=""
+    echo ""
+
+    if [ -z "$BOT_TOKEN" ] || [ -z "$CHAT_ID" ]; then
+        export INSTALL_NOTIFY_TELEGRAM="false"
+        print_warning "Bot Token/Chat ID kosong, notifikasi Telegram dinonaktifkan"
+        return 0
+    fi
+
+    export INSTALL_NOTIFY_TELEGRAM="true"
+    export INSTALL_TELEGRAM_BOT_TOKEN="$BOT_TOKEN"
+    export INSTALL_TELEGRAM_CHAT_ID="$CHAT_ID"
+    export INSTALL_TELEGRAM_TOPIC_ID="$TOPIC_ID"
+
+    print_success "Notifikasi Telegram installer: aktif"
+}
+
+export -f configure_install_telegram_notifications
+
+send_install_telegram_notification() {
+    local EVENT="$1"   # started | success | failed
+    local STATUS="$2"  # STARTED | SUCCESS | FAILED
+    local DETAIL="$3"
+
+    if [ "${INSTALL_NOTIFY_TELEGRAM:-false}" != "true" ]; then
+        return 0
+    fi
+
+    if [ -z "${INSTALL_TELEGRAM_BOT_TOKEN:-}" ] || [ -z "${INSTALL_TELEGRAM_CHAT_ID:-}" ]; then
+        return 0
+    fi
+
+    if ! command -v curl &>/dev/null; then
+        print_warning "curl tidak ditemukan, skip notifikasi Telegram installer"
+        return 0
+    fi
+
+    local HOSTNAME_VALUE
+    HOSTNAME_VALUE=$(hostname 2>/dev/null || echo "unknown-host")
+
+    local ACCESS_TARGET
+    ACCESS_TARGET="${VPS_DOMAIN:-${VPS_IP:-unknown}}"
+
+    local TIME_NOW
+    TIME_NOW=$(date '+%Y-%m-%d %H:%M:%S %Z')
+
+    local MESSAGE
+    MESSAGE=$(cat <<EOF
+[SALFANET-RADIUS INSTALL]
+Status  : ${STATUS}
+Event   : ${EVENT}
+Run ID  : ${INSTALL_RUN_ID}
+Host    : ${HOSTNAME_VALUE}
+Target  : ${ACCESS_TARGET}
+Env     : ${DEPLOY_ENV_LABEL:-unknown}
+Time    : ${TIME_NOW}
+Detail  : ${DETAIL:-n/a}
+EOF
+)
+
+    local TELEGRAM_URL="https://api.telegram.org/bot${INSTALL_TELEGRAM_BOT_TOKEN}/sendMessage"
+    local RESPONSE=""
+
+    if [ -n "${INSTALL_TELEGRAM_TOPIC_ID:-}" ]; then
+        RESPONSE=$(curl -sS --max-time 10 -X POST "$TELEGRAM_URL" \
+            -d "chat_id=${INSTALL_TELEGRAM_CHAT_ID}" \
+            -d "message_thread_id=${INSTALL_TELEGRAM_TOPIC_ID}" \
+            --data-urlencode "text=${MESSAGE}" 2>/dev/null || true)
+    else
+        RESPONSE=$(curl -sS --max-time 10 -X POST "$TELEGRAM_URL" \
+            -d "chat_id=${INSTALL_TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MESSAGE}" 2>/dev/null || true)
+    fi
+
+    if [[ "$RESPONSE" != *'"ok":true'* ]]; then
+        print_warning "Telegram notifikasi installer gagal dikirim (install tetap lanjut)"
+        return 0
+    fi
+
+    print_info "Telegram notifikasi installer terkirim: ${STATUS}"
+    return 0
+}
+
+export -f send_install_telegram_notification
 
 # ============================================================================
 # BANNER FUNCTION

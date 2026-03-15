@@ -36,6 +36,26 @@ done
 
 source "$SCRIPT_DIR/common.sh"
 
+INSTALL_FAILURE_NOTIFIED="false"
+
+notify_install_failure() {
+    local reason="$1"
+    if [ "${INSTALL_FAILURE_NOTIFIED}" != "true" ]; then
+        INSTALL_FAILURE_NOTIFIED="true"
+        send_install_telegram_notification "failed" "FAILED" "$reason" || true
+    fi
+}
+
+handle_unexpected_error() {
+    local line_no="$1"
+    local exit_code="$2"
+    notify_install_failure "Unexpected error at line ${line_no}, exit ${exit_code}"
+    print_error "Installer gagal di line ${line_no} (exit ${exit_code})"
+    exit "$exit_code"
+}
+
+trap 'handle_unexpected_error "$LINENO" "$?"' ERR
+
 # ============================================================================
 # STEP 0: PILIH ENVIRONMENT
 # ============================================================================
@@ -200,6 +220,8 @@ initialize_installer() {
         fi
     fi
 
+    configure_install_telegram_notifications
+
     export INSTALL_INFO_FILE="${APP_DIR}/INSTALLATION_INFO.txt"
     export NEXTAUTH_SECRET=$(generate_secret)
     print_info "Initialization selesai"
@@ -245,6 +267,7 @@ run_installation() {
     source "$SCRIPT_DIR/install-system.sh"
     install_system || {
         print_error "System setup failed!"
+        notify_install_failure "System setup failed"
         exit 1
     }
     
@@ -253,6 +276,7 @@ run_installation() {
     source "$SCRIPT_DIR/install-nodejs.sh"
     install_nodejs || {
         print_error "Node.js installation failed!"
+        notify_install_failure "Node.js installation failed"
         exit 1
     }
     
@@ -261,6 +285,7 @@ run_installation() {
     source "$SCRIPT_DIR/install-mysql.sh"
     install_mysql || {
         print_error "MySQL installation failed!"
+        notify_install_failure "MySQL installation failed"
         exit 1
     }
     
@@ -269,6 +294,7 @@ run_installation() {
     source "$SCRIPT_DIR/install-app.sh"
     install_app || {
         print_error "Application setup failed!"
+        notify_install_failure "Application setup failed"
         exit 1
     }
     
@@ -277,6 +303,7 @@ run_installation() {
     source "$SCRIPT_DIR/install-freeradius.sh"
     install_freeradius || {
         print_error "FreeRADIUS installation failed!"
+        notify_install_failure "FreeRADIUS installation failed"
         exit 1
     }
     
@@ -285,6 +312,7 @@ run_installation() {
     source "$SCRIPT_DIR/install-nginx.sh"
     install_nginx || {
         print_error "Nginx configuration failed!"
+        notify_install_failure "Nginx configuration failed"
         exit 1
     }
     
@@ -293,6 +321,7 @@ run_installation() {
     source "$SCRIPT_DIR/install-pm2.sh"
     install_pm2_and_build || {
         print_error "PM2 installation or build failed!"
+        notify_install_failure "PM2 installation or build failed"
         exit 1
     }
     
@@ -601,6 +630,9 @@ main() {
 
     # Konfirmasi sebelum mulai
     confirm_installation
+
+    # Install event start (safe: non-sensitive metadata only)
+    send_install_telegram_notification "started" "STARTED" "Installer execution started"
     
     # Run installation
     run_installation
@@ -608,6 +640,8 @@ main() {
     # Finalize
     create_installation_info
     show_final_summary
+
+    send_install_telegram_notification "success" "SUCCESS" "Installer completed successfully"
     
     # Log completion
     print_info "Installation log: $INSTALL_LOG"
