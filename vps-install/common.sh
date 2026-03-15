@@ -17,26 +17,26 @@ export WHITE='\033[1;37m'
 export NC='\033[0m' # No Color
 
 # Global configuration variables
-export NODE_VERSION="20"
-export APP_DIR="/var/www/salfanet-radius"
+export NODE_VERSION="${NODE_VERSION:-20}"
+export APP_DIR="${APP_DIR:-/var/www/salfanet-radius}"
 # APP_USER and APP_GROUP will be set in initialize_user_selection()
-export APP_USER=""
-export APP_GROUP=""
-export DB_NAME="salfanet_radius"
-export DB_USER="salfanet_user"
-export DB_PASSWORD="salfanetradius123"
-export DB_ROOT_PASSWORD="root123"
-export INSTALL_LOG="/var/log/salfanet-vps-install.log"
+export APP_USER="${APP_USER:-}"
+export APP_GROUP="${APP_GROUP:-}"
+export DB_NAME="${DB_NAME:-salfanet_radius}"
+export DB_USER="${DB_USER:-salfanet_user}"
+export DB_PASSWORD="${DB_PASSWORD:-salfanetradius123}"
+export DB_ROOT_PASSWORD="${DB_ROOT_PASSWORD:-root123}"
+export INSTALL_LOG="${INSTALL_LOG:-/var/log/salfanet-vps-install.log}"
 export INSTALL_INFO_FILE="${APP_DIR}/INSTALLATION_INFO.txt"
 
 # Environment type — akan di-set oleh detect_environment() atau pilihan user
 # Nilai: vps | lxc | vm | bare
 export DEPLOY_ENV="${DEPLOY_ENV:-}"
-export DEPLOY_ENV_LABEL=""
-export IS_CONTAINER=false
-export HAS_SYSTEMD=true
-export HAS_UFW=true
-export SKIP_UFW=false
+export DEPLOY_ENV_LABEL="${DEPLOY_ENV_LABEL:-}"
+export IS_CONTAINER="${IS_CONTAINER:-false}"
+export HAS_SYSTEMD="${HAS_SYSTEMD:-true}"
+export HAS_UFW="${HAS_UFW:-true}"
+export SKIP_UFW="${SKIP_UFW:-false}"
 
 # ============================================================================
 # LOGGING FUNCTIONS
@@ -498,11 +498,16 @@ export -f initialize_user_selection
 # ============================================================================
 
 initialize_logging() {
+    if [ "${INSTALL_LOG_INITIALIZED:-false}" = "true" ]; then
+        return 0
+    fi
+
     # Create log directory
     mkdir -p /var/log
     
     # Create/truncate log file
     : > "$INSTALL_LOG"
+    export INSTALL_LOG_INITIALIZED="true"
     
     print_info "Logging to: $INSTALL_LOG"
 }
@@ -516,5 +521,7 @@ export -f initialize_logging
 # Initialize logging when this script is sourced
 if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
     # Being sourced
-    initialize_logging
+    if [ "${INSTALL_LOG_INITIALIZED:-false}" != "true" ]; then
+        initialize_logging
+    fi
 fi

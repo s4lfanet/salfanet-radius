@@ -5,8 +5,8 @@ module.exports = {
       name: 'salfanet-radius',
       script: '.next/standalone/server.js', // standalone output — lebih hemat memory
       cwd: process.env.APP_DIR || '/var/www/salfanet-radius',
-      instances: 2,            // Gunakan kedua CPU core (2 thread)
-      exec_mode: 'cluster',    // Load balance antar 2 worker
+      instances: 1,            // Single instance per request
+      exec_mode: 'cluster',    // Keep cluster mode for optional future scaling
       watch: false,
       // ~370MB each, 740MB total for 2 workers — allows more headroom with 512MB MySQL
       max_memory_restart: '370M',
