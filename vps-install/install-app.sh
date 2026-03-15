@@ -52,6 +52,12 @@ copy_application_files() {
 
     cp -r "$SOURCE_DIR"/. "${APP_DIR}/"
 
+    if [ "$(realpath "$SOURCE_DIR")" != "$(realpath "$APP_DIR")" ]; then
+        print_info "Source repo remains at: $SOURCE_DIR"
+        print_info "Active application directory is: ${APP_DIR}"
+        print_info "PM2/Nginx will use only: ${APP_DIR}"
+    fi
+
     print_success "Application code copied successfully"
 }
 

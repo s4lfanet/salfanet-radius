@@ -351,24 +351,45 @@ cleanup_pm2_processes() {
     lsof -ti:3000 2>/dev/null | xargs -r kill -9 2>/dev/null || true
     
     # Cleanup root PM2 processes
+    pm2 delete all 2>/dev/null || true
     pm2 delete salfanet-radius 2>/dev/null || true
     pm2 delete salfanet-cron 2>/dev/null || true
     pm2 kill 2>/dev/null || true
-    
+
+    # Remove stale root PM2 dump so old processes don't resurrect on reboot
+    rm -f /root/.pm2/dump.pm2 /root/.pm2/dump.pm2.bak 2>/dev/null || true
+
     # Cleanup app user PM2 processes using su - for proper environment
+    sudo su - ${APP_USER} -c 'pm2 delete all 2>/dev/null || true'
     sudo su - ${APP_USER} -c 'pm2 delete salfanet-radius 2>/dev/null || true'
     sudo su - ${APP_USER} -c 'pm2 delete salfanet-cron 2>/dev/null || true'
     sudo su - ${APP_USER} -c 'pm2 kill 2>/dev/null || true'
+
+    # Remove stale PM2 dumps for app user as well
+    sudo su - ${APP_USER} -c 'rm -f ~/.pm2/dump.pm2 ~/.pm2/dump.pm2.bak 2>/dev/null || true'
+
+    # Stop root PM2 startup service if app should run as non-root to avoid duplicate resurrection
+    if [ -n "${APP_USER}" ] && [ "${APP_USER}" != "root" ]; then
+        systemctl stop pm2-root 2>/dev/null || true
+        systemctl disable pm2-root 2>/dev/null || true
+    fi
     
     # Kill any Node processes that might be lingering
     pkill -9 -f "node.*next-server" 2>/dev/null || true
     pkill -9 -f "PM2.*salfanet" 2>/dev/null || true
+    pkill -9 -f "/root/salfanet-radius" 2>/dev/null || true
+    pkill -9 -f "/home/.*/salfanet-radius" 2>/dev/null || true
+    pkill -9 -f "/var/www/salfanet-radius" 2>/dev/null || true
     
     # Final check on port 3000
     lsof -ti:3000 2>/dev/null | xargs -r kill -9 2>/dev/null || true
     
     # Wait for cleanup
     sleep 2
+
+    # Best-effort visibility for troubleshooting duplicate instances
+    print_info "Remaining salfanet-related processes after cleanup:"
+    ps -ef | grep -i salfanet | grep -v grep || true
     
     print_success "PM2 processes cleaned"
 }
@@ -394,6 +415,10 @@ start_pm2_app() {
         cat /tmp/pm2-start.log
         return 1
     fi
+
+    # Validate app cwd points to the intended APP_DIR only
+    print_info "Verifying PM2 working directories..."
+    sudo su - ${APP_USER} -c 'pm2 jlist' 2>/dev/null | grep -E '"name"|"pm_cwd"' || true
     
     # Save PM2 configuration for app user
     sudo su - ${APP_USER} -c 'pm2 save'
