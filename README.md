@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.10.28 — Bank Accounts dipindah ke menu Payment sebagai halaman terpisah
+> **Latest:** v2.11.0 — PWA (installable semua portal), Web Push Notifications (VAPID), halaman System Update admin
 
 ---
 
@@ -32,6 +32,9 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
 | **Security** | Session timeout 30 min, idle warning, RBAC, HTTPS/SSL |
 | **Multi-language** | Indonesian & English (i18n) |
+| **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
+| **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle, admin broadcast, FCM parallel |
+| **System Update** | One-click update dari GitHub via admin panel, live log streaming, no SSH required |
 | **Mobile App** | Flutter customer portal (WiFi control, invoice, payment) |
 
 ---

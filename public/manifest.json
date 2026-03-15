@@ -1,11 +1,11 @@
 {
-  "name": "Salfanet Customer Portal",
+  "name": "Salfanet Radius",
   "short_name": "Salfanet",
-  "description": "Portal pelanggan Salfanet untuk cek tagihan, notifikasi, dan layanan internet.",
-  "start_url": "/customer",
+  "description": "Billing & RADIUS management system untuk ISP/RTRW.NET",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
+  "orientation": "any",
   "background_color": "#03131d",
   "theme_color": "#06b6d4",
   "lang": "id-ID",
@@ -27,7 +27,40 @@
       "purpose": "any maskable"
     }
   ],
+  "shortcuts": [
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Buka panel admin",
+      "url": "/admin",
+      "icons": [{ "src": "/pwa/icon-192.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Portal Pelanggan",
+      "short_name": "Customer",
+      "description": "Buka portal pelanggan",
+      "url": "/customer",
+      "icons": [{ "src": "/pwa/icon-192.svg", "sizes": "192x192" }]
+    }
+  ],
   "screenshots": [
+    {
+      "src": "/pwa/screenshot-wide.svg",
+      "sizes": "1280x720",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Dashboard Salfanet Radius"
+    },
+    {
+      "src": "/pwa/screenshot-narrow.svg",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "Portal pelanggan Salfanet"
+    }
+  ]
+}
+
     {
       "src": "/pwa/screenshot-wide.svg",
       "sizes": "1280x720",
