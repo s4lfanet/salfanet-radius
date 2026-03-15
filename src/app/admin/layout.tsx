@@ -504,6 +504,19 @@ function AdminLayoutContent({
     registerGlobalToast(addToast);
     registerGlobalConfirm(confirm);
   }, [addToast, confirm]);
+
+  // Override root manifest with admin-specific manifest for PWA install
+  useEffect(() => {
+    const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    if (link) {
+      link.href = '/manifest-admin.json';
+    } else {
+      const newLink = document.createElement('link');
+      newLink.rel = 'manifest';
+      newLink.href = '/manifest-admin.json';
+      document.head.appendChild(newLink);
+    }
+  }, []);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [showIdleWarning, setShowIdleWarning] = useState(false);
   const [idleCountdown, setIdleCountdown] = useState(60);

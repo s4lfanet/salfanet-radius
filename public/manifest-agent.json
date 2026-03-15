@@ -1,0 +1,46 @@
+{
+  "id": "/agent",
+  "name": "Salfanet Agent",
+  "short_name": "Agent",
+  "description": "Portal Agent Salfanet - generate dan kelola voucher",
+  "start_url": "/agent",
+  "scope": "/agent/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0520",
+  "theme_color": "#8b5cf6",
+  "lang": "id-ID",
+  "categories": ["business", "utilities"],
+  "icons": [
+    {
+      "src": "/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/agent",
+      "icons": [{ "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Voucher",
+      "url": "/agent/voucher",
+      "icons": [{ "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

@@ -57,6 +57,19 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { addToast } = useToast();
 
+  // Override root manifest with customer-specific manifest for PWA install
+  useEffect(() => {
+    const link = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    if (link) {
+      link.href = '/manifest-customer.json';
+    } else {
+      const newLink = document.createElement('link');
+      newLink.rel = 'manifest';
+      newLink.href = '/manifest-customer.json';
+      document.head.appendChild(newLink);
+    }
+  }, []);
+
   // ── Persist notifications to localStorage ──────────────────────────────
   useEffect(() => {
     if (typeof window === 'undefined') return;

@@ -4,6 +4,7 @@ import TechnicianPortalLayout from '../TechnicianPortalLayout';
 export const metadata: Metadata = {
   title: 'Portal Teknisi - SALFANET RADIUS',
   description: 'Portal Teknisi untuk manajemen tiket dan pelanggan',
+  manifest: '/manifest-technician.json',
 };
 
 export const viewport: Viewport = {

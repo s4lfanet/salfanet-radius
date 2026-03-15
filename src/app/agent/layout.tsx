@@ -4,6 +4,7 @@ import AgentLayoutClient from './AgentLayoutClient';
 export const metadata: Metadata = {
   title: 'Agent Portal - SALFANET RADIUS',
   description: 'Portal Agent untuk Generate Voucher',
+  manifest: '/manifest-agent.json',
 };
 
 export const viewport: Viewport = {

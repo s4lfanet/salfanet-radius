@@ -1,0 +1,46 @@
+{
+  "id": "/technician",
+  "name": "Salfanet Teknisi",
+  "short_name": "Teknisi",
+  "description": "Portal Teknisi Salfanet - manajemen tiket lapangan dan pelanggan",
+  "start_url": "/technician",
+  "scope": "/technician/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0a0520",
+  "theme_color": "#f59e0b",
+  "lang": "id-ID",
+  "categories": ["business", "utilities"],
+  "icons": [
+    {
+      "src": "/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/technician/dashboard",
+      "icons": [{ "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Tiket",
+      "url": "/technician/tickets",
+      "icons": [{ "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

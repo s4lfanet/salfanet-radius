@@ -1,0 +1,46 @@
+{
+  "id": "/customer",
+  "name": "Salfanet Customer",
+  "short_name": "Customer",
+  "description": "Portal Pelanggan Salfanet - cek tagihan, paket, dan tiket",
+  "start_url": "/customer",
+  "scope": "/customer/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#03131d",
+  "theme_color": "#06b6d4",
+  "lang": "id-ID",
+  "categories": ["business", "utilities"],
+  "icons": [
+    {
+      "src": "/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Beranda",
+      "url": "/customer",
+      "icons": [{ "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Tagihan",
+      "url": "/customer/invoices",
+      "icons": [{ "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
