@@ -218,6 +218,68 @@ mysqldump -u salfanet_user -psalfanetradius123 salfanet_radius > backup.sql
 
 ---
 
+## 🧯 Troubleshooting Cepat
+
+### 1) Website tidak bisa diakses dari IP VPS
+
+Jika `Nginx` dan app sudah jalan di server tapi dari internet tetap tidak bisa akses, biasanya masalah ada di layer jaringan (NAT/forwarding/firewall external), bukan di aplikasi.
+
+```bash
+# Di VM/VPS guest
+ss -tulpn | grep -E ':80|:443|:3000'
+curl -I http://127.0.0.1:3000
+curl -I http://127.0.0.1
+systemctl status nginx --no-pager
+pm2 status
+```
+
+Jika semua check local di atas OK, cek mapping di host Proxmox/router/cloud firewall:
+
+1. `Public:2020 -> VM:22` (SSH)
+2. `Public:80 -> VM:80` (HTTP)
+3. `Public:443 -> VM:443` (HTTPS)
+
+Catatan: `IP:2020` adalah port SSH, bukan URL web aplikasi.
+
+### 2) Redis gagal start (`redis-server.service failed`)
+
+```bash
+systemctl status redis-server --no-pager
+journalctl -xeu redis-server.service --no-pager -n 120
+tail -n 120 /var/log/redis/redis-server.log
+redis-cli -h 127.0.0.1 ping
+```
+
+Jalankan ulang installer Redis terbaru (sudah termasuk hardening config + diagnostic output):
+
+```bash
+cd /var/www/salfanet-radius
+bash vps-install/install-redis.sh
+```
+
+### 3) PM2 jalan tapi web tetap blank/error
+
+```bash
+pm2 status
+pm2 logs salfanet-radius --lines 100
+cd /var/www/salfanet-radius
+npm run build
+pm2 restart ecosystem.config.js --update-env
+```
+
+### 4) Jalankan diagnosa Nginx otomatis dari installer
+
+Installer Nginx terbaru menambahkan self-check internal (`127.0.0.1:3000`, `127.0.0.1`) dan best-effort check publik (HTTP/HTTPS).
+
+```bash
+cd /var/www/salfanet-radius
+bash vps-install/install-nginx.sh
+```
+
+Jika warning menunjukkan HTTP publik tidak reachable, fokus perbaikan di NAT/port-forward/security-group, bukan di Next.js.
+
+---
+
 ## 🔐 Security
 
 ```bash
@@ -410,7 +472,7 @@ See [docs/](docs/) for full historical changelog.
 | [docs/GENIEACS-GUIDE.md](docs/GENIEACS-GUIDE.md) | GenieACS TR-069 setup & WiFi management |
 | [docs/AGENT_DEPOSIT_SYSTEM.md](docs/AGENT_DEPOSIT_SYSTEM.md) | Agent balance & deposit |
 | [docs/RADIUS-CONNECTIVITY.md](docs/RADIUS-CONNECTIVITY.md) | RADIUS architecture |
-| [docs/FREERADIUS-SETUP.md](docs/FREERADIUS-SETUP.md) | FreeRADIUS configuration guide |
+| [docs/FREERADIUS-SETUP.md](docs/FREERADIUS-SETUP.md) | FreeRADIUS configuration guide |                 2`QQQQQQQ `````````
 
 ## 📝 License
 
