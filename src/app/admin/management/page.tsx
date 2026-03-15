@@ -37,12 +37,12 @@ interface Permission {
 }
 
 const ROLES = [
-  { value: 'SUPER_ADMIN', label: 'Super Admin' },
-  { value: 'FINANCE', label: 'Finance' },
-  { value: 'CUSTOMER_SERVICE', label: 'Customer Service' },
-  { value: 'TECHNICIAN', label: 'Technician' },
-  { value: 'MARKETING', label: 'Marketing' },
-  { value: 'VIEWER', label: 'Viewer' },
+  { value: 'SUPER_ADMIN', translationKey: 'superAdmin' },
+  { value: 'FINANCE', translationKey: 'finance' },
+  { value: 'CUSTOMER_SERVICE', translationKey: 'customerService' },
+  { value: 'TECHNICIAN', translationKey: 'technician' },
+  { value: 'MARKETING', translationKey: 'marketing' },
+  { value: 'VIEWER', translationKey: 'viewer' },
 ];
 
 export default function ManagementPage() {
@@ -287,6 +287,11 @@ export default function ManagementPage() {
     }
   };
 
+  const getRoleLabel = (role: string) => {
+    const roleConfig = ROLES.find((item) => item.value === role);
+    return roleConfig ? t(`management.${roleConfig.translationKey}`) : role.replace('_', ' ');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -421,7 +426,7 @@ export default function ManagementPage() {
                         <button
                           onClick={() => handleEdit(user)}
                           className="p-1.5 text-primary hover:bg-primary/10 rounded transition-colors"
-                          title="Edit"
+                          title={t('management.editTooltip')}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -473,7 +478,7 @@ export default function ManagementPage() {
                 <tr className="border-b border-border bg-muted">
                   <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('management.username')}</th>
                   <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('management.email')}</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">Nomor HP</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">{t('management.phoneNumber')}</th>
                   <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t('management.role')}</th>
                   <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">{t('management.permissions')}</th>
                   <th className="px-3 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">{t('management.createdAt')}</th>
@@ -508,7 +513,7 @@ export default function ManagementPage() {
                       </td>
                       <td className="px-3 py-1.5">
                         <span className={`inline-flex px-1.5 py-0.5 text-[10px] font-medium rounded ${getRoleBadgeColor(user.role)}`}>
-                          {user.role.replace('_', ' ')}
+                          {getRoleLabel(user.role)}
                         </span>
                       </td>
                       <td className="px-3 py-1.5 hidden md:table-cell">
@@ -549,7 +554,7 @@ export default function ManagementPage() {
                             <button
                               onClick={() => handleEdit(user)}
                               className="p-1 text-primary hover:bg-primary/10 rounded transition-colors"
-                              title="Edit"
+                              title={t('management.editTooltip')}
                             >
                               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -593,8 +598,8 @@ export default function ManagementPage() {
                 <ModalInput type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
               </div>
               <div>
-                <ModalLabel>Nomor HP / WhatsApp <span className="text-muted-foreground text-[10px]">(untuk login OTP)</span></ModalLabel>
-                <ModalInput type="tel" placeholder="08xxxxxxxxxx" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                <ModalLabel>{t('management.phoneWhatsapp')} <span className="text-muted-foreground text-[10px]">({t('management.phoneWhatsappHint')})</span></ModalLabel>
+                <ModalInput type="tel" placeholder={t('management.phoneWhatsappPlaceholder')} value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
               </div>
               <div>
                 <ModalLabel required={!editingUser}>{t('management.password')} {editingUser && <span className="text-muted-foreground">({t('management.passwordHint')})</span>}</ModalLabel>
@@ -603,7 +608,7 @@ export default function ManagementPage() {
               <div>
                 <ModalLabel required>{t('management.role')}</ModalLabel>
                 <ModalSelect value={formData.role} onChange={(e) => handleRoleChange(e.target.value)}>
-                  {ROLES.filter((role) => role.value !== 'SUPER_ADMIN' || currentUserIsSuperAdmin).map((role) => (<option key={role.value} value={role.value} className="bg-[#0a0520]">{role.label}</option>))}
+                  {ROLES.filter((role) => role.value !== 'SUPER_ADMIN' || currentUserIsSuperAdmin).map((role) => (<option key={role.value} value={role.value} className="bg-[#0a0520]">{t(`management.${role.translationKey}`)}</option>))}
                 </ModalSelect>
                 <p className="text-[10px] text-muted-foreground mt-1">{t('management.roleAutoLoad')}</p>
               </div>
