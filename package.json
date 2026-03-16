@@ -6,7 +6,7 @@
     "dev": "next dev",
     "tunnel": "node scripts/start-ngrok.js",
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=1536 --max-semi-space-size=64' NEXT_TELEMETRY_DISABLED=1 next build",
-    "postbuild": "node -e \"const fs=require('fs'),path=require('path');const src='public',dst='.next/standalone/public';function copy(s,d){if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=path.join(s,f),dp=path.join(d,f);if(fs.statSync(sp).isDirectory()&&f!=='uploads'){copy(sp,dp)}else if(!fs.statSync(sp).isDirectory()){fs.copyFileSync(sp,dp)}}}copy(src,dst);console.log('[postbuild] public/ copied to .next/standalone/public/')\"",
+    "postbuild": "node -e \"const fs=require('fs'),path=require('path');const src='public',dst='.next/standalone/public';function copy(s,d){if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=path.join(s,f),dp=path.join(d,f);if(fs.statSync(sp).isDirectory()&&f!=='uploads'){copy(sp,dp)}else if(!fs.statSync(sp).isDirectory()){fs.copyFileSync(sp,dp)}}}copy(src,dst);console.log('[postbuild] public/ copied to .next/standalone/public/');if(fs.existsSync('.env')){fs.copyFileSync('.env','.next/standalone/.env');console.log('[postbuild] .env copied to .next/standalone/.env')}\"",
     "build:turbo": "next build --turbo",
     "build:vps": "cross-env NODE_OPTIONS='--max-old-space-size=1536 --max-semi-space-size=64' NEXT_TELEMETRY_DISABLED=1 next build",
     "build:low-mem": "cross-env NODE_OPTIONS='--max-old-space-size=1024 --max-semi-space-size=32' NEXT_TELEMETRY_DISABLED=1 next build",
