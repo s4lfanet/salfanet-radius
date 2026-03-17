@@ -90,7 +90,6 @@ rm -rf .next 2>/dev/null || true
 # ── Build ─────────────────────────────────────────────────
 echo ""
 log "Building application (this takes ~60s)..."
-
 # Clear env vars inherited from running Next.js server that can break build
 unset npm_lifecycle_event npm_lifecycle_script npm_package_name npm_package_version
 unset npm_config_cache npm_config_prefix NODE_APP_INSTANCE

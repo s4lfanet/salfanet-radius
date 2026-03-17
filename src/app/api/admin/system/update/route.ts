@@ -10,6 +10,23 @@ export const dynamic = 'force-dynamic';
 const LOG_FILE = '/tmp/salfanet-update.log';
 const PID_FILE = '/tmp/salfanet-update.pid';
 
+function getAppDir(): string {
+  const candidates = [
+    process.env.SALFANET_APP_DIR,
+    '/var/www/salfanet-radius',
+    path.resolve(process.cwd(), '../..'),
+    process.cwd(),
+  ].filter(Boolean) as string[];
+
+  for (const dir of candidates) {
+    if (existsSync(path.join(dir, 'package.json')) && existsSync(path.join(dir, 'scripts', 'update.sh'))) {
+      return dir;
+    }
+  }
+
+  return '/var/www/salfanet-radius';
+}
+
 function isUpdateRunning(): boolean {
   if (!existsSync(PID_FILE)) return false;
   try {
@@ -92,18 +109,20 @@ export async function POST(request: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const appDir = getAppDir();
+
   const { searchParams } = new URL(request.url);
 
   // ── Check only ─────────────────────────────────────────
   if (searchParams.get('action') === 'check') {
     try {
-      execSync('git fetch origin master --quiet', { cwd: process.cwd(), timeout: 15000 });
-      const local  = execSync('git rev-parse HEAD',          { cwd: process.cwd() }).toString().trim();
-      const remote = execSync('git rev-parse origin/master', { cwd: process.cwd() }).toString().trim();
+      execSync('git fetch origin master --quiet', { cwd: appDir, timeout: 15000 });
+      const local  = execSync('git rev-parse HEAD',          { cwd: appDir }).toString().trim();
+      const remote = execSync('git rev-parse origin/master', { cwd: appDir }).toString().trim();
 
       let changelog = '';
       if (local !== remote) {
-        changelog = execSync(`git log --oneline ${local}..${remote}`, { cwd: process.cwd() }).toString().trim();
+        changelog = execSync(`git log --oneline ${local}..${remote}`, { cwd: appDir }).toString().trim();
       }
 
       return NextResponse.json({
@@ -125,7 +144,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({})) as { force?: boolean };
   const args = body.force ? ['--force'] : [];
 
-  const scriptPath = path.join(process.cwd(), 'scripts/update.sh');
+  const scriptPath = path.join(appDir, 'scripts/update.sh');
   if (!existsSync(scriptPath)) {
     return NextResponse.json({ error: `update.sh not found at: ${scriptPath}` }, { status: 500 });
   }
@@ -149,7 +168,7 @@ export async function POST(request: Request) {
     const child = spawn('bash', [scriptPath, ...args], {
       detached: true,
       stdio: ['ignore', logFd, logFd],
-      cwd: '/var/www/salfanet-radius',
+      cwd: appDir,
       env: cleanEnv,
     });
 
