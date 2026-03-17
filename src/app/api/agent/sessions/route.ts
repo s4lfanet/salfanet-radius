@@ -1,8 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { RouterOSAPI } from 'node-routeros';
-import { getTimezoneOffsetMs, WIB_TIMEZONE } from '@/lib/timezone';
-import { formatInTimeZone } from 'date-fns-tz';
+import { getTimezoneOffsetMs } from '@/lib/timezone';
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '0 B';
@@ -139,16 +138,12 @@ export async function GET(request: NextRequest) {
       // matches the voucher "waktu digunakan" value seen in voucher list.
       let effectiveStartMs = rawStartMs;
       let effectiveStartTime: string | null = session.acctstarttime
-        ? formatInTimeZone(new Date(rawStartMs), WIB_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS")
+        ? new Date(rawStartMs).toISOString().replace('Z', '')
         : null;
 
       if (voucher?.firstLoginAt) {
         effectiveStartMs = new Date(voucher.firstLoginAt).getTime();
-        effectiveStartTime = formatInTimeZone(
-          new Date(effectiveStartMs),
-          WIB_TIMEZONE,
-          "yyyy-MM-dd'T'HH:mm:ss.SSS"
-        );
+        effectiveStartTime = new Date(effectiveStartMs).toISOString().replace('Z', '');
       }
 
       const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
@@ -170,7 +165,7 @@ export async function GET(request: NextRequest) {
         uploadFormatted: formatBytes(uploadBytes),
         downloadFormatted: formatBytes(downloadBytes),
         expiresAt: voucher?.expiresAt
-          ? formatInTimeZone(new Date(voucher.expiresAt), WIB_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS")
+          ? new Date(voucher.expiresAt).toISOString().replace('Z', '')
           : null,
         profileName: voucher?.profile?.name || null,
         routerName,
