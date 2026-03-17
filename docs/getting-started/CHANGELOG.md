@@ -4,6 +4,31 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.11.0] - 2026-03-17 (System Update Stabilization + Admin UI Spacing Polish)
+
+### ✅ System Update Reliability (Admin `/admin/system`)
+
+- Fix error `Failed to start update process: WriteStream { fd: null }` dengan mengganti stream fd ke `openSync` sebelum `spawn`.
+- Fix standalone runtime path issue (`process.cwd()` mengarah ke `.next/standalone`) dengan resolver app root (`getAppDir()`) untuk endpoint system info/update.
+- Hardening environment saat trigger update dari API: gunakan minimal sanitized env agar `next build` tidak rusak oleh variabel turunan PM2/Next.
+- SSE log streaming diperkuat: heartbeat periodik + header anti-buffering + auto-reconnect di frontend agar log live tidak kosong/stuck.
+- Update script kini menggunakan zero-downtime reload: `pm2 reload salfanet-radius --update-env` (cron tetap restart normal).
+
+### ✅ Nginx / Manifest Fix
+
+- Tambah rule static manifest berbasis regex agar semua manifest (`manifest-admin.json`, `manifest-agent.json`, dst.) dilayani langsung oleh Nginx.
+- Mencegah error 500 manifest saat jendela restart aplikasi.
+
+### ✅ UI Polish (Card Padding Precision)
+
+- Perbaikan padding/spacing card agar konten tidak mepet border di beberapa halaman admin:
+  - Push Notifications
+  - Manual Payments
+  - Network Trace
+- Penyesuaian jarak icon-title dan line-height heading untuk konsistensi visual.
+
+---
+
 ## [2.10.21] - 2026-03-05 (UI Fixes + CyberToastProvider + Docs Audit)
 
 ### ✅ UI Fixes
