@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
         type: sessionType,
         nasIpAddress: acct.nasipaddress,
         framedIpAddress: acct.framedipaddress || null,
-        macAddress: acct.callingstationid || null,
+        macAddress: acct.callingstationid || '-',
         calledStationId: acct.calledstationid || '-',
         startTime: effectiveStartTime,
         lastUpdate: acct.acctupdatetime
@@ -358,7 +358,7 @@ export async function GET(request: NextRequest) {
         return {
           ...s,
           framedIpAddress: s.framedIpAddress || redis.framedIp || null,
-          macAddress: s.macAddress || redis.callingStationId || null,
+          macAddress: s.macAddress || redis.callingStationId || '-',
         };
       });
     }
