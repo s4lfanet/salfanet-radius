@@ -27,6 +27,22 @@ All notable changes to SALFANET RADIUS will be documented in this file.
   - Network Trace
 - Penyesuaian jarak icon-title dan line-height heading untuk konsistensi visual.
 
+### ✅ Fix: Hotspot Profile Modal — i18n Key
+
+- Modal "Tambah Profil" hotspot menampilkan raw key `hotspot.eVoucherAccess` (huruf V kapital) alih-alih terjemahan.
+- Perbaikan: ganti key di `profile/page.tsx` dari `eVoucherAccess` → `evoucherAccess` agar cocok dengan `id.json`/`en.json`.
+- Commit: `f8e5702`
+
+### ✅ Fix: Dashboard — SESI HOTSPOT AKTIF selalu 0
+
+- Dashboard menampilkan `0` untuk SESI HOTSPOT AKTIF meskipun ada sesi aktif di halaman Sesi Hotspot.
+- **Root cause**: classifier lama memakai `service.includes('framed')` sebagai sinyal PPPoE. MikroTik hotspot bisa mengirim `Service-Type = Framed-User` yang mengandung kata "framed" → hotspot salah diklasifikasi sebagai PPPoE.
+- **Perbaikan**:
+  - Hapus pengecekan RADIUS attrs (`framedprotocol`, `servicetype`) — tidak reliable.
+  - Gunakan logika sederhana: jika username ada di `pppoeUser` → PPPoE, selainnya → Hotspot (konsisten dengan halaman Sesi).
+  - Tambahkan Redis `online:users` sebagai supplement untuk sesi yang sudah tercatat via Accounting hook tapi belum masuk `radacct`.
+- Commit: `667b158`
+
 ---
 
 ## [2.10.21] - 2026-03-05 (UI Fixes + CyberToastProvider + Docs Audit)

@@ -9,9 +9,10 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.10.27
+- **Version**: 2.11.0
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: March 2026
+- **Last Updated**: March 17, 2026
+- **Latest Commit**: `667b158`
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
 
@@ -31,6 +32,16 @@
 - **UI spacing polish (admin cards)**
   - Push Notifications page: explicit `CardHeader`/`CardContent` paddings, refined icon-title gaps.
   - Additional consistency fixes applied on Manual Payments and Network Trace pages.
+
+- **Fix: Hotspot profile modal i18n key** (`f8e5702`)
+  - Key `hotspot.eVoucherAccess` (capital V) → `hotspot.evoucherAccess` (lowercase) di `src/app/admin/hotspot/profile/page.tsx`.
+  - Locale files sudah benar (`evoucherAccess`) — hanya pemanggil di page.tsx yang salah casing.
+
+- **Fix: Dashboard SESI HOTSPOT AKTIF selalu 0** (`667b158`)
+  - Hapus pengecekan RADIUS attrs (`service.includes('framed')`) yang menyebabkan hotspot MikroTik (mengirim `Service-Type = Framed-User`) salah diklasifikasi sebagai PPPoE.
+  - Ganti ke logika sederhana: lookup `pppoeUser` → PPPoE, selainnya → Hotspot (sama seperti halaman Sesi).
+  - Tambah Redis `online:users` sebagai supplement agar sesi yang belum masuk `radacct` tetap terhitung.
+  - File: `src/app/api/dashboard/stats/route.ts`
 
 ---
 

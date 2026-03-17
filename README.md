@@ -351,6 +351,8 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 - Nginx manifest handling fixed for all manifest files
 - Zero-downtime reload on update (`pm2 reload salfanet-radius`)
 - Admin UI card spacing polish (Push Notifications, Manual Payments, Network Trace)
+- Fix: hotspot profile modal showing raw i18n key (`hotspot.evoucherAccess` case fix)
+- Fix: dashboard SESI HOTSPOT AKTIF counting 0 despite active sessions (classification logic simplified + Redis supplement)
 
 ### v2.10.28 — March 12, 2026
 - Bank Accounts moved to Payment menu as separate page
