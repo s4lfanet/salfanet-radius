@@ -20,6 +20,19 @@ function formatDuration(seconds: number): string {
   return `${s}s`;
 }
 
+function parseMikrotikUptime(uptime: string): number {
+  let seconds = 0;
+  const dMatch = uptime.match(/(\d+)d/);
+  const hMatch = uptime.match(/(\d+)h/);
+  const mMatch = uptime.match(/(\d+)m/);
+  const sMatch = uptime.match(/(\d+)s/);
+  if (dMatch) seconds += parseInt(dMatch[1], 10) * 86400;
+  if (hMatch) seconds += parseInt(hMatch[1], 10) * 3600;
+  if (mMatch) seconds += parseInt(mMatch[1], 10) * 60;
+  if (sMatch) seconds += parseInt(sMatch[1], 10);
+  return seconds;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -33,10 +46,12 @@ export async function GET(request: NextRequest) {
     const vouchers = await prisma.hotspotVoucher.findMany({
       where: {
         agentId,
-        status: { in: ['ACTIVE', 'WAITING'] }
       },
       select: {
+        id: true,
         code: true,
+        status: true,
+        batchCode: true,
         firstLoginAt: true,
         expiresAt: true,
         profile: { select: { name: true } },
@@ -75,7 +90,18 @@ export async function GET(request: NextRequest) {
 
     // ── Fetch live bytes from MikroTik /ip/hotspot/active/print ─────────────
     const liveTrafficMap = new Map<string, { uploadBytes: number; downloadBytes: number }>();
-    const nasIpSet = new Set(sessions.map(s => s.nasipaddress).filter(Boolean));
+    const liveHotspotSessions = new Map<string, {
+      uploadBytes: number;
+      downloadBytes: number;
+      framedIp: string | null;
+      macAddress: string | null;
+      nasIp: string;
+      uptime: string | null;
+    }>();
+    const nasIpSet = new Set([
+      ...sessions.map((s) => s.nasipaddress).filter(Boolean),
+      ...vouchers.map((v) => v.router?.nasname).filter(Boolean),
+    ]);
 
     if (nasIpSet.size > 0) {
       const routers = await prisma.router.findMany({
@@ -101,12 +127,20 @@ export async function GET(request: NextRequest) {
           await api.connect();
           const hotspotActive = await api.write('/ip/hotspot/active/print');
           await api.close();
+          const nasIp = r.ipAddress || r.nasname;
           for (const entry of hotspotActive) {
             const username: string = entry.user || entry.username || '';
             if (username) {
-              liveTrafficMap.set(username, {
-                uploadBytes:   parseInt(entry['bytes-in']  || '0'),
-                downloadBytes: parseInt(entry['bytes-out'] || '0'),
+              const uploadBytes = parseInt(entry['bytes-in'] || '0');
+              const downloadBytes = parseInt(entry['bytes-out'] || '0');
+              liveTrafficMap.set(username, { uploadBytes, downloadBytes });
+              liveHotspotSessions.set(username, {
+                uploadBytes,
+                downloadBytes,
+                framedIp: entry.address || entry['address'] || null,
+                macAddress: entry['mac-address'] || null,
+                nasIp,
+                uptime: entry.uptime || null,
               });
             }
           }
@@ -171,6 +205,54 @@ export async function GET(request: NextRequest) {
         routerName,
       };
     });
+
+    const sessionUsernames = new Set(sessionsWithProfile.map((session) => session.username));
+    const missingUsernames = [...liveHotspotSessions.keys()].filter(
+      (username) => voucherCodes.includes(username) && !sessionUsernames.has(username),
+    );
+
+    for (const username of missingUsernames) {
+      const liveData = liveHotspotSessions.get(username);
+      const voucher = vouchers.find((item) => item.code === username);
+      if (!liveData || !voucher) continue;
+
+      let effectiveStartMs = now;
+      let effectiveStartTime = new Date(now).toISOString().replace('Z', '');
+
+      if (voucher.firstLoginAt) {
+        effectiveStartMs = new Date(voucher.firstLoginAt).getTime();
+        effectiveStartTime = new Date(effectiveStartMs).toISOString().replace('Z', '');
+      } else if (liveData.uptime) {
+        const uptimeSec = parseMikrotikUptime(liveData.uptime);
+        effectiveStartMs = now - uptimeSec * 1000;
+        effectiveStartTime = new Date(effectiveStartMs).toISOString().replace('Z', '');
+      }
+
+      const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+
+      sessionsWithProfile.push({
+        id: `live-${username}`,
+        username,
+        nasIpAddress: liveData.nasIp,
+        nasPortId: '',
+        framedIpAddress: liveData.framedIp,
+        callingStationId: liveData.macAddress,
+        calledStationId: '',
+        acctSessionId: `live-${username}`,
+        acctStartTime: effectiveStartTime,
+        acctInputOctets: liveData.uploadBytes,
+        acctOutputOctets: liveData.downloadBytes,
+        acctSessionTime: duration,
+        durationFormatted: formatDuration(duration),
+        uploadFormatted: formatBytes(liveData.uploadBytes),
+        downloadFormatted: formatBytes(liveData.downloadBytes),
+        expiresAt: voucher.expiresAt
+          ? new Date(voucher.expiresAt).toISOString().replace('Z', '')
+          : null,
+        profileName: voucher.profile?.name || null,
+        routerName: voucher.router?.name || liveData.nasIp,
+      });
+    }
 
     return NextResponse.json({ sessions: sessionsWithProfile });
   } catch (error) {
