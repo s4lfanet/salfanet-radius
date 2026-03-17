@@ -133,10 +133,24 @@ export async function POST(request: Request) {
   try {
     const logFd = openSync(LOG_FILE, 'w');
 
+    // Build a clean environment: inherit all env vars but strip problematic ones
+    // that Next.js server sets and that can break child npm/next processes
+    const cleanEnv = { ...process.env } as NodeJS.ProcessEnv;
+    // Remove vars that cause "TypeError: generate is not a function" in next build
+    delete cleanEnv['NODE_OPTIONS'];
+    delete cleanEnv['npm_lifecycle_event'];
+    delete cleanEnv['npm_lifecycle_script'];
+    delete cleanEnv['npm_package_name'];
+    delete cleanEnv['npm_package_version'];
+    delete cleanEnv['npm_config_cache'];
+    delete cleanEnv['npm_config_prefix'];
+    delete cleanEnv['NODE_APP_INSTANCE'];
+
     const child = spawn('bash', [scriptPath, ...args], {
       detached: true,
       stdio: ['ignore', logFd, logFd],
-      cwd: process.cwd(),
+      cwd: '/var/www/salfanet-radius',
+      env: cleanEnv,
     });
 
     closeSync(logFd);
