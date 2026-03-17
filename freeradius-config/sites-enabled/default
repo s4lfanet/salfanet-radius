@@ -59,7 +59,7 @@ server default {
 
     post-auth {
         update reply {
-            Acct-Interim-Interval = 300
+            Acct-Interim-Interval = 60
         }
         sql
         #
