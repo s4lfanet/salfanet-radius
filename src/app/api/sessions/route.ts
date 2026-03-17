@@ -290,7 +290,7 @@ export async function GET(request: NextRequest) {
         type: sessionType,
         nasIpAddress: acct.nasipaddress,
         framedIpAddress: acct.framedipaddress || null,
-        macAddress: acct.callingstationid || '-',
+        macAddress: acct.callingstationid || null,
         calledStationId: acct.calledstationid || '-',
         startTime: effectiveStartTime,
         lastUpdate: acct.acctupdatetime
@@ -334,6 +334,34 @@ export async function GET(request: NextRequest) {
         dataSource: 'radius',
       };
     }), ...syntheticHotspotSessions];
+
+    // ── 4c. Redis enrichment for hotspot sessions missing MAC/IP ────────────
+    // Covers: radacct entry exists but callingstationid/framedipaddress are
+    // empty (MikroTik sent Accounting-Start without those attributes, but
+    // the REST hook captured them and stored in Redis).
+    const hotspotSessionsMissingData = allSessions.filter(
+      (s) => s.type === 'hotspot' && (!s.macAddress || !s.framedIpAddress),
+    );
+    if (hotspotSessionsMissingData.length > 0) {
+      const redisEnrich = await Promise.allSettled(
+        hotspotSessionsMissingData.map((s) => getOnlineUserDetail(s.username)),
+      );
+      const redisMap = new Map<string, Awaited<ReturnType<typeof getOnlineUserDetail>>>();
+      hotspotSessionsMissingData.forEach((s, i) => {
+        const r = redisEnrich[i];
+        if (r.status === 'fulfilled' && r.value) redisMap.set(s.username, r.value);
+      });
+      allSessions = allSessions.map((s) => {
+        if (s.type !== 'hotspot') return s;
+        const redis = redisMap.get(s.username);
+        if (!redis) return s;
+        return {
+          ...s,
+          framedIpAddress: s.framedIpAddress || redis.framedIp || null,
+          macAddress: s.macAddress || redis.callingStationId || null,
+        };
+      });
+    }
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────
     if (type) {

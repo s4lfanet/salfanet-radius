@@ -135,6 +135,29 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    // Redis enrichment for real radacct sessions missing MAC/IP.
+    // Covers the case where radacct has empty callingstationid/framedipaddress
+    // but the REST accounting hook stored them in Redis.
+    const realSessionsMissingData = sessionsWithProfile.filter(
+      (s) => !s.callingStationId || !s.framedIpAddress,
+    );
+    if (realSessionsMissingData.length > 0) {
+      const redisEnrich = await Promise.allSettled(
+        realSessionsMissingData.map((s) => getOnlineUserDetail(s.username)),
+      );
+      const redisMap = new Map<string, Awaited<ReturnType<typeof getOnlineUserDetail>>>();
+      realSessionsMissingData.forEach((s, i) => {
+        const r = redisEnrich[i];
+        if (r.status === 'fulfilled' && r.value) redisMap.set(s.username, r.value);
+      });
+      for (const s of sessionsWithProfile) {
+        const redis = redisMap.get(s.username);
+        if (!redis) continue;
+        if (!s.framedIpAddress) s.framedIpAddress = redis.framedIp || '';
+        if (!s.callingStationId) s.callingStationId = redis.callingStationId || '';
+      }
+    }
+
     // Synthetic sessions: AKTIF vouchers that have no active radacct entry.
     // This covers cases where MikroTik authenticated the user but no
     // Accounting-Start was recorded in radacct.
