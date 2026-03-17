@@ -79,6 +79,9 @@ export async function GET(request: NextRequest) {
     const TZ_OFFSET_MS = getTimezoneOffsetMs();
     const now = Date.now() + TZ_OFFSET_MS;
 
+    // Build set of voucher codes that have an active radacct entry
+    const activeRadacctCodes = new Set(sessions.map((s) => s.username));
+
     const sessionsWithProfile = sessions.map((session) => {
       const voucher = vouchers.find((v) => v.code === session.username);
       const routerName =
@@ -131,7 +134,45 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    return NextResponse.json({ sessions: sessionsWithProfile });
+    // Synthetic sessions: AKTIF vouchers that have no active radacct entry.
+    // This covers cases where MikroTik authenticated the user but no
+    // Accounting-Start was recorded in radacct.
+    const syntheticSessions = vouchers
+      .filter(
+        (v) =>
+          v.status === 'ACTIVE' &&
+          v.firstLoginAt !== null &&
+          !activeRadacctCodes.has(v.code),
+      )
+      .map((voucher) => {
+        const effectiveStartMs = new Date(voucher.firstLoginAt!).getTime();
+        const effectiveStartTime = new Date(effectiveStartMs).toISOString().replace('Z', '');
+        const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+        return {
+          id: `voucher-${voucher.id}`,
+          username: voucher.code,
+          nasIpAddress: voucher.router?.nasname || null,
+          nasPortId: null,
+          framedIpAddress: null,
+          callingStationId: null,
+          calledStationId: null,
+          acctSessionId: null,
+          acctStartTime: effectiveStartTime,
+          acctInputOctets: 0,
+          acctOutputOctets: 0,
+          acctSessionTime: duration,
+          durationFormatted: formatDuration(duration),
+          uploadFormatted: formatBytes(0),
+          downloadFormatted: formatBytes(0),
+          expiresAt: voucher.expiresAt
+            ? new Date(voucher.expiresAt).toISOString()
+            : null,
+          profileName: voucher.profile?.name || null,
+          routerName: voucher.router?.name || null,
+        };
+      });
+
+    return NextResponse.json({ sessions: [...sessionsWithProfile, ...syntheticSessions] });
   } catch (error) {
     console.error('Get agent sessions error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

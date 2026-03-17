@@ -170,7 +170,84 @@ export async function GET(request: NextRequest) {
     // Duration calc uses WIB-aware "now" so both sides are in the same space.
     const TZ_OFFSET_MS = getTimezoneOffsetMs();
     const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC epoch for duration calc
-    let allSessions = activeSessions.map((acct) => {
+    // ── 4b. Synthetic hotspot sessions: ACTIVE vouchers with no radacct record ──
+    // Covers cases where MikroTik authenticated successfully but no
+    // Accounting-Start was recorded in radacct.
+    // We query DB separately because allUsernames only contains codes already in radacct.
+    const activeHotspotUsernames = new Set(
+      activeSessions
+        .filter((s) => voucherByCode.has(s.username))
+        .map((s) => s.username),
+    );
+
+    const orphanedVoucherWhere: any = {
+      status: 'ACTIVE',
+      firstLoginAt: { not: null },
+      code: { notIn: [...activeHotspotUsernames] },
+    };
+    if (routerId) orphanedVoucherWhere.routerId = routerId;
+
+    const orphanedActiveVouchers = await prisma.hotspotVoucher.findMany({
+      where: orphanedVoucherWhere,
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        batchCode: true,
+        firstLoginAt: true,
+        expiresAt: true,
+        agent: { select: { id: true, name: true } },
+        profile: { select: { name: true } },
+        router: { select: { id: true, name: true, nasname: true } },
+      },
+    });
+
+    const syntheticHotspotSessions = orphanedActiveVouchers.map((voucher) => {
+        const effectiveStartMs = new Date(voucher.firstLoginAt!).getTime();
+        const effectiveStartTime = new Date(effectiveStartMs).toISOString();
+        const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+        const router =
+          voucher.router
+            ? { id: voucher.router.id, name: voucher.router.name }
+            : { id: 'unknown', name: 'Unknown' };
+        return {
+          id: `voucher-${voucher.id}`,
+          username: voucher.code,
+          sessionId: null,
+          type: 'hotspot' as const,
+          nasIpAddress: voucher.router?.nasname || null,
+          framedIpAddress: null,
+          macAddress: '-',
+          calledStationId: '-',
+          startTime: effectiveStartTime,
+          lastUpdate: null,
+          duration,
+          durationFormatted: formatDuration(duration),
+          uploadBytes: 0,
+          downloadBytes: 0,
+          totalBytes: 0,
+          uploadFormatted: formatBytes(0),
+          downloadFormatted: formatBytes(0),
+          totalFormatted: formatBytes(0),
+          router,
+          user: null,
+          voucher: {
+            id: voucher.id,
+            status: voucher.status,
+            profile: voucher.profile?.name ?? null,
+            batchCode: voucher.batchCode,
+            expiresAt: voucher.expiresAt
+              ? new Date(voucher.expiresAt).toISOString()
+              : null,
+            agent: voucher.agent
+              ? { id: voucher.agent.id, name: voucher.agent.name }
+              : null,
+          },
+          dataSource: 'radius' as const,
+        };
+      });
+
+    let allSessions = [...activeSessions.map((acct) => {
       const pppoeUser = pppoeByUsername.get(acct.username);
       const voucher = voucherByCode.get(acct.username);
       const sessionType: 'pppoe' | 'hotspot' = pppoeUser ? 'pppoe' : 'hotspot';
@@ -248,7 +325,7 @@ export async function GET(request: NextRequest) {
             : null,
         dataSource: 'radius',
       };
-    });
+    }), ...syntheticHotspotSessions];
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────
     if (type) {
