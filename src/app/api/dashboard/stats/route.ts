@@ -3,7 +3,7 @@ import { prisma } from "@/server/db/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/config";
 import { getRecentActivities } from "@/server/services/activity-log.service";
-import { cacheGetOrSet, redisDel, RedisKeys } from "@/server/cache/redis";
+import { cacheGetOrSet, redisDel, redisSMembers, isRedisAvailable, RedisKeys } from "@/server/cache/redis";
 import { nowWIB, startOfDayWIBtoUTC } from "@/lib/timezone";
 
 // Disable caching for this route - always fetch fresh data
@@ -69,93 +69,67 @@ export async function GET(request: NextRequest) {
     let activeSessionsHotspot = 0;
 
     try {
-      // ── Sumber kebenaran: radacct (konsisten dengan halaman Sesi) ──
-      // Active = acctstoptime IS NULL (sama persis dengan halaman Sesi)
-      // TIDAK menggunakan Redis fallback — Redis online:users bisa stale jika
-      // Accounting-Stop tidak terkirim, menghasilkan false positive di dashboard.
+      // ── Sumber kebenaran: radacct + Redis online-users ──
+      // Sama dengan halaman Sesi: if username ada di pppoeUser → PPPoE, else → Hotspot.
+      // Tidak menggunakan RADIUS attrs (servicetype/framedprotocol) karena MikroTik hotspot
+      // bisa mengirim Service-Type = Framed-User yang menyebabkan misklasifikasi.
+      //
+      // Supplement Redis: beberapa sesi mungkin sudah ada di Redis (via accounting hook)
+      // tetapi belum masuk radacct (Accounting-Start terlambat/hilang di rlm_sql).
       const activeRadacctSessions = await prisma.radacct.findMany({
         where: {
           acctstoptime: null,
         },
         select: {
           username: true,
-          servicetype: true,
-          framedprotocol: true,
         },
       });
 
-      const normalizeUsername = (u: string) => u.includes('@') ? u.split('@')[0] : u;
+      // Kumpulkan semua username aktif dari radacct
+      const onlineUsernames = new Set<string>(
+        activeRadacctSessions.map(s => s.username).filter(Boolean) as string[]
+      );
 
-      const uniqueUsernames = [...new Set(
-        activeRadacctSessions.map(s => s.username).filter(Boolean)
-      )] as string[];
+      // Supplement: tambahkan dari Redis online-users (sesi yg belum masuk radacct)
+      if (isRedisAvailable()) {
+        try {
+          const redisUsernames = await redisSMembers(RedisKeys.onlineUsers());
+          for (const u of redisUsernames) {
+            if (u) onlineUsernames.add(u);
+          }
+        } catch {
+          // Redis unavailable — gunakan radacct saja
+        }
+      }
 
-      const normalizedUsernames = [...new Set(
-        uniqueUsernames.map(normalizeUsername).filter(Boolean)
-      )];
+      const allUsernames = [...onlineUsernames];
 
-      if (uniqueUsernames.length > 0) {
-        // Kategorisasi yang lebih robust:
-        // 1) Hint dari RADIUS attrs (framedprotocol/servicetype)
-        // 2) Lookup username exact + normalized (user@realm -> user)
-        // 3) Fallback berdasarkan pola username
-        const [pppoeUsers, hotspotVouchers] = await Promise.all([
-          prisma.pppoeUser.findMany({
-            where: {
-              OR: [
-                { username: { in: uniqueUsernames } },
-                { username: { in: normalizedUsernames } },
-              ],
-            },
-            select: { username: true },
-          }),
-          prisma.hotspotVoucher.findMany({
-            where: {
-              OR: [
-                { code: { in: uniqueUsernames } },
-                { code: { in: normalizedUsernames } },
-              ],
-            },
-            select: { code: true },
-          }),
-        ]);
+      if (allUsernames.length > 0) {
+        // Klasifikasi sederhana: pppoeUser lookup → pppoe, selainnya → hotspot
+        // Konsisten dengan halaman Sesi PPPoE/Hotspot
+        const normalizeUsername = (u: string) => u.includes('@') ? u.split('@')[0] : u;
+        const normalizedUsernames = [...new Set(allUsernames.map(normalizeUsername))];
+
+        const pppoeUsers = await prisma.pppoeUser.findMany({
+          where: {
+            OR: [
+              { username: { in: allUsernames } },
+              { username: { in: normalizedUsernames } },
+            ],
+          },
+          select: { username: true },
+        });
 
         const pppoeUsernameSet = new Set(pppoeUsers.map(u => u.username.toLowerCase()));
-        const hotspotCodeSet = new Set(hotspotVouchers.map(v => v.code.toLowerCase()));
 
-        const classifySessionType = (username: string, serviceType?: string | null, framedProtocol?: string | null): 'pppoe' | 'hotspot' => {
+        for (const username of allUsernames) {
           const raw = username.toLowerCase();
           const normalized = normalizeUsername(username).toLowerCase();
-          const service = (serviceType || '').toLowerCase();
-          const protocol = (framedProtocol || '').toLowerCase();
-
-          // Prefer RADIUS hints first when available.
-          if (protocol.includes('ppp')) return 'pppoe';
-          if (service.includes('framed')) return 'pppoe';
-
-          // Then exact/normalized lookup.
-          if (hotspotCodeSet.has(raw) || hotspotCodeSet.has(normalized)) return 'hotspot';
-          if (pppoeUsernameSet.has(raw) || pppoeUsernameSet.has(normalized)) return 'pppoe';
-
-          // Heuristic fallback: PPPoE often uses realm-style username.
-          if (username.includes('@')) return 'pppoe';
-          return 'hotspot';
-        };
-
-        const usernameTypeMap = new Map<string, 'pppoe' | 'hotspot'>();
-        for (const s of activeRadacctSessions) {
-          if (!s.username) continue;
-          const detectedType = classifySessionType(s.username, s.servicetype, s.framedprotocol);
-          const prev = usernameTypeMap.get(s.username);
-          // If any active record for a username indicates PPPoE, keep PPPoE as stronger signal.
-          if (!prev || detectedType === 'pppoe') {
-            usernameTypeMap.set(s.username, detectedType);
+          if (pppoeUsernameSet.has(raw) || pppoeUsernameSet.has(normalized)) {
+            activeSessionsPPPoE++;
+          } else {
+            activeSessionsHotspot++;
           }
-        }
-
-        for (const type of usernameTypeMap.values()) {
-          if (type === 'pppoe') activeSessionsPPPoE++;
-          else activeSessionsHotspot++;
         }
       }
     } catch (e) {
