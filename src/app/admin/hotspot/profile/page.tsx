@@ -547,7 +547,7 @@ export default function HotspotProfilePage() {
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input type="checkbox" checked={formData.eVoucherAccess} onChange={(e) => setFormData({ ...formData, eVoucherAccess: e.target.checked })} className="rounded border-[#bc13fe]/50 bg-[#0a0520] text-[#00f7ff] focus:ring-[#00f7ff]" />
-                      <span className="text-xs text-foreground">{t('hotspot.eVoucherAccess')}</span>
+                      <span className="text-xs text-foreground">{t('hotspot.evoucherAccess')}</span>
                     </label>
                   </div>
                 </div>
