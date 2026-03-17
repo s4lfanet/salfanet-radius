@@ -3,6 +3,7 @@
 import React from 'react';
 import { DiagramProps, Port, DEFAULT_COLORS, PORT_STATUS_LABELS, FIBER_COLORS } from './types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatWIB } from '@/lib/timezone';
 
 /**
  * OTBDiagram Component  
@@ -389,7 +390,7 @@ export function OTBDiagram({
               <div>
                 <span className="text-gray-400">{t('network.diagram.installedAt')}:</span>
                 <span className="ml-2 text-white">
-                  {new Date(hoveredPort.installedAt).toLocaleDateString()}
+                  {formatWIB(hoveredPort.installedAt, 'dd MMM yyyy')}
                 </span>
               </div>
             )}

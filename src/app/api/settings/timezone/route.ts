@@ -143,7 +143,7 @@ export async function POST(req: NextRequest) {
 
     // 3. Update ecosystem.config.js
     try {
-      const ecosystemPath = path.join(process.cwd(), 'ecosystem.config.js');
+      const ecosystemPath = path.join(process.cwd(), 'production', 'ecosystem.config.js');
       let ecosystemContent = await fs.readFile(ecosystemPath, 'utf-8');
       
       // Update TZ in env object

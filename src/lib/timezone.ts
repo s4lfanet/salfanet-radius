@@ -91,7 +91,7 @@ export function getCurrentTimezone(): string {
 /**
  * Get timezone offset in milliseconds from the configured timezone offset string
  */
-function getTimezoneOffsetMs(): number {
+export function getTimezoneOffsetMs(): number {
   const offsetStr = getTimezoneOffset(currentTimezone);
   const match = offsetStr.match(/^([+-])(\d{2}):(\d{2})$/);
   if (!match) return 7 * 60 * 60 * 1000; // Default WIB +7

@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { formatWIB } from '@/lib/timezone';
 
 // GET - Get agent sales history grouped by month
 // Gets data from used vouchers (ACTIVE/EXPIRED) with agentId
@@ -82,10 +83,7 @@ export async function GET(
       return {
         year: parseInt(yearStr),
         month: parseInt(monthStr),
-        monthName: new Date(parseInt(yearStr), parseInt(monthStr) - 1).toLocaleString('id-ID', {
-          month: 'long',
-          year: 'numeric',
-        }),
+        monthName: formatWIB(new Date(parseInt(yearStr), parseInt(monthStr) - 1), 'MMMM yyyy'),
         total,
         count: monthSales.length,
       };

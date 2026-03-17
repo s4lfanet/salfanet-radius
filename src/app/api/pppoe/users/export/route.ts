@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { generateExcelBuffer, formatCurrencyExport, formatDateExport, generatePDFBuffer } from '@/lib/utils/export';
 import { checkAuth } from '@/server/middleware/api-auth';
+import { formatWIB } from '@/lib/timezone';
 
 export async function GET(req: NextRequest) {
   const auth = await checkAuth();
@@ -75,7 +76,7 @@ export async function GET(req: NextRequest) {
           headers,
           rows,
           summary,
-          generatedAt: new Date().toLocaleString('id-ID')
+          generatedAt: formatWIB(new Date())
         }
       });
     }

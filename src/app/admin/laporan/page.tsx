@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar, Activity } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatWIB } from '@/lib/timezone';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ReportType = 'invoice' | 'payment' | 'customer';
@@ -145,7 +146,7 @@ export default function LaporanPage() {
       doc.setFontSize(10);
       doc.setTextColor(80, 80, 80);
       doc.text(`Periode: ${dateFrom} s/d ${dateTo}`, 15, 26);
-      doc.text(`Dicetak: ${new Date().toLocaleString('id-ID')}`, 15, 32);
+      doc.text(`Dicetak: ${formatWIB(new Date())}`, 15, 32);
       doc.text(`Total data: ${rows.length} baris`, 15, 38);
 
       // Summary

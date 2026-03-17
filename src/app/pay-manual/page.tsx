@@ -18,6 +18,7 @@ import { CheckCircle, Upload, AlertTriangle, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
+import { formatWIB, nowWIB } from '@/lib/timezone';
 
 interface BankAccount {
   name: string;
@@ -52,7 +53,7 @@ function PayManualPageContent() {
   const [submitted, setSubmitted] = useState(false);
 
   // Form state
-  const [paymentDate, setPaymentDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [paymentDate, setPaymentDate] = useState(format(nowWIB(), 'yyyy-MM-dd'));
   const [selectedBank, setSelectedBank] = useState('');
   const [accountName, setAccountName] = useState('');
   const [amount, setAmount] = useState('');
@@ -318,7 +319,7 @@ function PayManualPageContent() {
               <div>
                 <Label className="text-muted-foreground">Jatuh Tempo</Label>
                 <div className="font-medium text-destructive">
-                  {format(new Date(invoice.dueDate), 'dd MMMM yyyy', { locale: localeId })}
+                  {formatWIB(invoice.dueDate, 'dd MMMM yyyy')}
                 </div>
               </div>
               <div className="pt-4 border-t">
@@ -380,7 +381,7 @@ function PayManualPageContent() {
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    max={format(new Date(), 'yyyy-MM-dd')}
+                    max={format(nowWIB(), 'yyyy-MM-dd')}
                     required
                   />
                 </div>

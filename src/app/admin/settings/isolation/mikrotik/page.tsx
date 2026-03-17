@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { formatWIB } from '@/lib/timezone';
 
 interface IsolationSettings {
   isolationIpPool: string;
@@ -316,7 +317,7 @@ add chain=dstnat \\
   const completeScript = `# ============================================
 # MIKROTIK ISOLATION SYSTEM SETUP
 # Auto-generated script from SALFANET RADIUS
-# Generated: ${new Date().toLocaleString('id-ID')}
+# Generated: ${formatWIB(new Date())}
 # ============================================
 # 
 # IMPORTANT NOTES:

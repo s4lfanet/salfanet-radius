@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
+import { getTimezoneOffsetMs } from '@/lib/timezone';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -32,7 +33,7 @@ export async function GET(req: NextRequest) {
   const tech = await verifyTechnician(req);
   if (!tech) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const TZ_OFFSET_MS = 7 * 60 * 60 * 1000; // WIB UTC+7
+  const TZ_OFFSET_MS = getTimezoneOffsetMs(); // Dynamic timezone offset
   const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
 
   // 1. Customer stats by status

@@ -1555,7 +1555,7 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
         });
 
         generated++;
-        const expiredAtStr = user.expiredAt ? new Date(user.expiredAt).toLocaleDateString('id-ID') : 'N/A';
+        const expiredAtStr = user.expiredAt ? formatWIB(user.expiredAt, 'd MMMM yyyy') : 'N/A';
         const statusLabel = isOverdue ? '(OVERDUE)' : '(PENDING)';
         console.log(`✅ Generated invoice ${invoiceNumber} for ${user.username} - Rp ${amount.toLocaleString()} (expires: ${expiredAtStr}) ${statusLabel}`);
       } catch (error: any) {

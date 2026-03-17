@@ -491,7 +491,7 @@ export default function IsolatedUsersMonitorPage() {
 
       {/* Footer */}
       <div className="text-center text-[10px] text-muted-foreground">
-        {t('isolatedUsers.lastUpdated', { time: new Date().toLocaleTimeString('id-ID') })}
+        {t('isolatedUsers.lastUpdated', { time: formatWIB(new Date(), 'HH:mm:ss') })}
       </div>
     </div>
   );

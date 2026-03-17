@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import axios from 'axios';
 import { nanoid } from 'nanoid';
+import { formatWIB } from '@/lib/timezone';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 This is a test message from WhatsApp Provider: *${provider.name}*
 
 Provider Type: ${provider.type.toUpperCase()}
-Test Time: ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
+Test Time: ${formatWIB(new Date())}
 
 If you receive this message, the provider is working correctly! ✅`;
 

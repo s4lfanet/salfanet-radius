@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Activity, Wifi, WifiOff, ArrowUp, ArrowDown } from 'lucide-react';
+import { formatWIB } from '@/lib/timezone';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer 
 } from 'recharts';
@@ -112,11 +113,7 @@ export default function TrafficChartMonitor() {
       if (data.success) {
         const currentTime = Date.now();
         const newPreviousData: PreviousData = {};
-        const timeLabel = new Date().toLocaleTimeString('id-ID', { 
-          hour: '2-digit', 
-          minute: '2-digit', 
-          second: '2-digit' 
-        });
+        const timeLabel = formatWIB(new Date(), 'HH:mm:ss');
 
         // Calculate rates and update previous data
         data.routers.forEach((router: RouterTraffic) => {

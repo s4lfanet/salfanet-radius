@@ -5,6 +5,7 @@
  * Can send alerts via WhatsApp/Email if service is down
  */
 
+import { formatWIB } from '@/lib/timezone';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { prisma } from '@/server/db/client';
@@ -197,7 +198,7 @@ async function sendAlert(message: string, severity: 'warning' | 'critical') {
                             <p><strong>Severity:</strong> ${severity.toUpperCase()}</p>
                             <p><strong>Message:</strong></p>
                             <p>${message}</p>
-                            <p><strong>Time:</strong> ${new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}</p>
+                            <p><strong>Time:</strong> ${formatWIB(new Date())}</p>
                         `,
                         text: message
                     });

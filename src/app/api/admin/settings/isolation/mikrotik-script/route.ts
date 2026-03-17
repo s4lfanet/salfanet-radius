@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { getIsolationSettings, getCidrRange } from '@/server/services/isolation.service';
+import { formatWIB } from '@/lib/timezone';
 
 // GET - Generate MikroTik script based on current isolation settings
 export async function GET(request: NextRequest) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
 # Generated automatically based on current isolation settings
 # IP Pool: ${settings.isolationIpPool}
 # Rate Limit: ${settings.isolationRateLimit}
-# Generated on: ${new Date().toLocaleString('id-ID')}
+# Generated on: ${formatWIB(new Date())}
 
 # ============================================
 # 1. IP Pool for Isolated Users

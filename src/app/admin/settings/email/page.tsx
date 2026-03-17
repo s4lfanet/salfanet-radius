@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatWIB } from '@/lib/timezone';
 import {
   Mail,
   Save,
@@ -1544,13 +1545,7 @@ function HistoryTab() {
                       </span>
                     )}
                     <span className="text-xs text-muted-foreground">
-                      {email.sentAt ? new Date(email.sentAt).toLocaleString('id-ID', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      }) : '-'}
+                      {formatWIB(email.sentAt)}
                     </span>
                   </div>
                   <div className="space-y-1 text-sm">
@@ -1604,13 +1599,7 @@ function HistoryTab() {
                   {filteredHistory.map((email) => (
                     <tr key={email.id} className="hover:bg-muted/50/50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                        {email.sentAt ? new Date(email.sentAt).toLocaleString('id-ID', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        }) : '-'}
+                        {formatWIB(email.sentAt)}
                       </td>
                       <td className="px-6 py-4 text-sm">
                         <div className="font-medium text-foreground">{email.toEmail}</div>

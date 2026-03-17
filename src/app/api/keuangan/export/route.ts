@@ -3,6 +3,7 @@ import ExcelJS from "exceljs";
 import { formatCurrencyExport, formatDateExport } from "@/lib/utils/export";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/config";
+import { formatWIB } from '@/lib/timezone';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from "@/lib/timezone";
 import { prisma } from '@/server/db/client';
 
@@ -144,7 +145,7 @@ async function exportToExcel(transactions: any[], stats: any) {
     Referensi: string;
     Catatan: string;
   }> = transactions.map((t) => ({
-    Tanggal: new Date(t.date).toLocaleDateString("id-ID"),
+    Tanggal: formatWIB(t.date, 'dd/MM/yyyy'),
     Deskripsi: t.description,
     Kategori: t.category.name,
     Tipe: t.type,
@@ -277,7 +278,7 @@ function exportToPDF(transactions: any[], stats: any) {
       headers,
       rows,
       summary,
-      generatedAt: new Date().toLocaleString('id-ID')
+      generatedAt: formatWIB(new Date())
     }
   });
 }

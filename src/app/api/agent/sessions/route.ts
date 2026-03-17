@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { RouterOSAPI } from 'node-routeros';
+import { getTimezoneOffsetMs } from '@/lib/timezone';
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '0 B';
@@ -117,7 +118,7 @@ export async function GET(request: NextRequest) {
 
     // Map sessions with live traffic merged in
     // All DB dates are WIB-as-UTC. Use WIB-aware "now" for duration calc.
-    const TZ_OFFSET_MS = -(new Date().getTimezoneOffset()) * 60000;
+    const TZ_OFFSET_MS = getTimezoneOffsetMs();
     const now = Date.now() + TZ_OFFSET_MS;
 
     const sessionsWithProfile = sessions.map((session: any) => {

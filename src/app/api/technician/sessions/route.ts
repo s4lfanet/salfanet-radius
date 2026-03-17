@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
+import { getTimezoneOffsetMs } from '@/lib/timezone';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
 
   const userMap = new Map(pppoeUsers.map((u) => [u.username, u]));
 
-  const TZ_OFFSET_MS = 7 * 60 * 60 * 1000;
+  const TZ_OFFSET_MS = getTimezoneOffsetMs();
   const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
 
   let sessions = onlineSessions.map((s) => {

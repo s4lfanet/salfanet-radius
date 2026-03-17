@@ -4,6 +4,7 @@ import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
+import { formatWIB } from '@/lib/timezone';
 
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
@@ -237,7 +238,7 @@ export async function POST(request: NextRequest) {
         });
 
         generated++;
-        const expiredAtStr = user.expiredAt ? new Date(user.expiredAt).toLocaleDateString('id-ID') : 'N/A';
+        const expiredAtStr = user.expiredAt ? formatWIB(user.expiredAt, 'd MMMM yyyy') : 'N/A';
         const statusLabel = isOverdue ? '(OVERDUE)' : '(PENDING)';
         console.log(`✅ Generated invoice ${invoiceNumber} for ${user.username} - ${amount} (expires: ${expiredAtStr}) ${statusLabel}`);
       } catch (error: any) {

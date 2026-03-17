@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { formatWIB } from '@/lib/timezone';
 import {
   UserCheck,
   LogOut,
@@ -457,7 +458,7 @@ function CoordinatorTasksContent() {
                   {task.scheduledDate && (
                     <div className="flex items-center gap-1.5 text-muted-foreground dark:text-muted-foreground">
                       <Calendar className="h-3.5 w-3.5" />
-                      {new Date(task.scheduledDate).toLocaleString('id-ID')}
+                      {formatWIB(task.scheduledDate)}
                     </div>
                   )}
                 </div>

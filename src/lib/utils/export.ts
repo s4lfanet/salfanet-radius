@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatWIB } from '@/lib/timezone';
 
 // PDF Export Utils for server-side (Node.js)
 export interface ExportOptions {
@@ -139,7 +140,7 @@ export function preparePDFData(
     dateRange: options.dateRange 
       ? `${formatDateExport(options.dateRange.start)} - ${formatDateExport(options.dateRange.end)}`
       : undefined,
-    generatedAt: formatDateExport(new Date(), 'long') + ' ' + new Date().toLocaleTimeString('id-ID'),
+    generatedAt: formatWIB(new Date()),
     headers,
     rows,
     summary
@@ -195,7 +196,7 @@ export function generatePDFBuffer(
   // Generated date
   doc.setFontSize(9);
   doc.setTextColor(120, 120, 120);
-  const generatedAt = `Generated: ${formatDateExport(new Date(), 'long')} ${new Date().toLocaleTimeString('id-ID')}`;
+  const generatedAt = `Generated: ${formatWIB(new Date())}`;
   doc.text(generatedAt, margin, yPos);
   yPos += 8;
 

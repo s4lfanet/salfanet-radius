@@ -1,4 +1,5 @@
 import { prisma } from '@/server/db/client';
+import { formatWIB } from '@/lib/timezone';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const nodemailer = require('nodemailer');
 
@@ -253,11 +254,7 @@ export const EmailService = {
     expiredAt?: Date;
   }): string {
     const expiredDate = data.expiredAt 
-      ? new Date(data.expiredAt).toLocaleDateString('id-ID', { 
-          day: 'numeric', 
-          month: 'long', 
-          year: 'numeric' 
-        })
+      ? formatWIB(data.expiredAt, 'd MMMM yyyy')
       : 'Tidak terbatas';
 
     return `
@@ -360,11 +357,7 @@ export const EmailService = {
     expiredAt: Date;
     daysLeft: number;
   }): string {
-    const expiredDate = new Date(data.expiredAt).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    const expiredDate = formatWIB(data.expiredAt, 'd MMMM yyyy');
 
     return `
 <!DOCTYPE html>
@@ -453,11 +446,7 @@ export const EmailService = {
     dueDate: Date;
     paymentUrl?: string;
   }): string {
-    const dueDate = new Date(data.dueDate).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
+    const dueDate = formatWIB(data.dueDate, 'd MMMM yyyy');
 
     return `
 <!DOCTYPE html>
@@ -556,13 +545,7 @@ export const EmailService = {
     paidAt: Date;
     method: string;
   }): string {
-    const paidDate = new Date(data.paidAt).toLocaleDateString('id-ID', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+    const paidDate = formatWIB(data.paidAt, 'd MMMM yyyy HH:mm');
 
     return `
 <!DOCTYPE html>
@@ -812,12 +795,7 @@ export const EmailService = {
       if (!template) {
         console.warn('[Email] No template found for payment-confirmation, using default');
         
-        const expiredDate = new Date(data.newExpiredAt).toLocaleDateString('id-ID', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-          timeZone: 'Asia/Jakarta',
-        });
+        const expiredDate = formatWIB(data.newExpiredAt, 'd MMMM yyyy');
 
         const defaultHtml = `
 <!DOCTYPE html>
@@ -917,12 +895,7 @@ export const EmailService = {
       }
 
       // Format expiry date
-      const expiredDate = new Date(data.newExpiredAt).toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'Asia/Jakarta',
-      });
+      const expiredDate = formatWIB(data.newExpiredAt, 'd MMMM yyyy');
 
       // Prepare variables
       const variables: Record<string, string> = {

@@ -91,7 +91,7 @@ export default function AgentPage() {
   const [monthlyHistory, setMonthlyHistory] = useState<MonthlyHistory[]>([]);
   const [selectedMonthDetail, setSelectedMonthDetail] = useState<MonthDetail | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const currentMonthName = new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+  const currentMonthName = formatWIB(new Date(), 'MMMM yyyy');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -767,7 +767,7 @@ export default function AgentPage() {
                 </button>
                 <div className="bg-[#00f7ff]/10 rounded-lg p-3 border border-[#00f7ff]/30">
                   <p className="text-xs font-semibold text-foreground">
-                    {new Date(selectedMonthDetail.year, selectedMonthDetail.month).toLocaleString('id-ID', { month: 'long', year: 'numeric' })}
+                    {formatWIB(new Date(selectedMonthDetail.year, selectedMonthDetail.month), 'MMMM yyyy')}
                   </p>
                   <div className="grid grid-cols-2 gap-3 mt-2">
                     <div>

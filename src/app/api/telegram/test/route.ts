@@ -2,6 +2,7 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { sendTelegramMessage } from '@/server/services/notifications/telegram.service';
+import { formatWIB } from '@/lib/timezone';
 
 // POST - Test Telegram connection
 export async function POST(request: NextRequest) {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    const now = formatWIB(new Date());
     const results = [];
 
     // 1. Send to General Chat (no topic)

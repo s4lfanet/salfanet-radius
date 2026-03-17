@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { formatWIB } from '@/lib/timezone';
 import { Loader2 } from 'lucide-react';
 
 interface Template {
@@ -438,7 +439,7 @@ export default function WhatsAppTemplatesPage() {
                         '{{otp}}': '123456', '{{kode}}': '123456', '{{token}}': 'TKN-ABC123',
                         '{{link}}': 'https://salfanet.net/bayar', '{{url}}': 'https://salfanet.net',
                         '{{year}}': new Date().getFullYear().toString(),
-                        '{{month}}': new Date().toLocaleDateString('id-ID', { month: 'long' }),
+                        '{{month}}': formatWIB(new Date(), 'MMMM'),
                       };
                       let rendered = message;
                       Object.entries(sampleVars).forEach(([k, v]) => {

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { CheckCircle2, Download, ArrowRight, Loader2, Calendar, User, CreditCard, Wallet } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatWIB } from '@/lib/timezone';
 
 interface Invoice { id: string; invoiceNumber: string; amount: number; status: string; paidAt: string | null; dueDate: string; customerName: string | null; customerPhone: string | null; customerUsername: string | null; user: { name: string; phone: string; username: string; expiredAt: string | null; } | null; }
 interface AgentDeposit { id: string; amount: number; status: string; paidAt: string | null; agentName: string; newBalance: number; }
@@ -168,7 +169,7 @@ function PaymentSuccessContent() {
                     <CreditCard className="w-4 h-4 text-[#00f7ff] mt-0.5" />
                     <div>
                       <p className="text-[10px] text-[#e0d0ff]/60">{t('payment.paymentDate')}</p>
-                      <p className="text-xs font-bold text-white">{new Date(deposit.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                      <p className="text-xs font-bold text-white">{formatWIB(deposit.paidAt)}</p>
                     </div>
                   </div>
                 )}
@@ -251,7 +252,7 @@ function PaymentSuccessContent() {
                   <CreditCard className="w-4 h-4 text-[#00f7ff] mt-0.5" />
                   <div>
                     <p className="text-[10px] text-[#e0d0ff]/60">{t('payment.paymentDate')}</p>
-                    <p className="text-xs font-bold text-white">{new Date(invoice.paidAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-xs font-bold text-white">{formatWIB(invoice.paidAt)}</p>
                   </div>
                 </div>
               )}
@@ -260,7 +261,7 @@ function PaymentSuccessContent() {
                   <Calendar className="w-4 h-4 text-[#ff44cc] mt-0.5" />
                   <div>
                     <p className="text-[10px] text-[#e0d0ff]/60">{t('payment.activeUntil')}</p>
-                    <p className="text-xs font-bold text-[#00ff88]">{new Date(expiryDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                    <p className="text-xs font-bold text-[#00ff88]">{formatWIB(expiryDate, 'd MMMM yyyy')}</p>
                   </div>
                 </div>
               )}

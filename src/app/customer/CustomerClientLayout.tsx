@@ -300,7 +300,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <Clock className="w-4 h-4 text-cyan-400/50" />
             <span className="text-xs text-muted-foreground">
-              {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              {formatWIB(new Date(), 'EEEE, d MMMM yyyy')}
             </span>
             {/* Bell */}
             <div className="relative">

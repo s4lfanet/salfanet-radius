@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, nowWIB } from '@/lib/timezone';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, nowWIB, formatWIB } from '@/lib/timezone';
 import { prisma } from '@/server/db/client';
 
 // ── Format Rupiah ────────────────────────────────────────────────────────────
@@ -11,9 +11,7 @@ function formatRupiah(amount: number): string {
 
 function formatDate(date: Date | null | undefined): string {
   if (!date) return '-';
-  return new Date(date).toLocaleDateString('id-ID', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-  });
+  return formatWIB(date, 'dd/MM/yyyy');
 }
 
 export async function GET(request: NextRequest) {

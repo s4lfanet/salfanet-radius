@@ -8,6 +8,7 @@ import {
     Zap, Loader2, Terminal
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { formatWIB } from '@/lib/timezone';
 
 interface RadiusStatus {
     running: boolean;
@@ -273,12 +274,12 @@ export default function FreeRADIUSStatusPage() {
                     <div className="border-t border-border px-6 py-4 bg-muted/20">
                         <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">{t('radius.started')}:</span>
-                            <span className="text-foreground font-mono">{new Date(status.startTime).toLocaleString()}</span>
+                            <span className="text-foreground font-mono">{formatWIB(status.startTime)}</span>
                         </div>
                         {status.lastRestart && (
                             <div className="flex items-center justify-between text-xs mt-1">
                                 <span className="text-muted-foreground">{t('radius.lastRestart')}:</span>
-                                <span className="text-foreground font-mono">{new Date(status.lastRestart).toLocaleString()}</span>
+                                <span className="text-foreground font-mono">{formatWIB(status.lastRestart)}</span>
                             </div>
                         )}
                     </div>

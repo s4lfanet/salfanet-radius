@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { RouterOSAPI } from 'node-routeros';
+import { getTimezoneOffsetMs } from '@/lib/timezone';
 
 // ─── Formatting helpers ─────────────────────────────────────────────────────
 
@@ -269,7 +270,7 @@ export async function GET(request: NextRequest) {
     // All DB dates are WIB-as-UTC (Prisma reads WIB DATETIME and appends Z).
     // Dates sent to client stay in WIB-as-UTC — frontend uses formatWIB().
     // Duration calc uses WIB-aware "now" so both sides are in the same space.
-    const TZ_OFFSET_MS = -(new Date().getTimezoneOffset()) * 60000;
+    const TZ_OFFSET_MS = getTimezoneOffsetMs();
     const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC epoch for duration calc
     let allSessions = activeSessions.map((acct) => {
       const pppoeUser = pppoeByUsername.get(acct.username);

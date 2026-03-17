@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises';
+import { formatWIB } from '@/lib/timezone';
 
 interface TelegramSendOptions {
   botToken: string;
@@ -124,7 +125,7 @@ export async function sendTelegramFile(
 export async function testTelegramConnection(
   options: TelegramSendOptions
 ): Promise<{ success: boolean; error?: string }> {
-  const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+  const now = formatWIB(new Date());
   const testMessage = `🤖 <b>SALFANET RADIUS - Test Connection</b>\n\n✅ Bot connection successful!\n\n📅 ${now} WIB`;
   
   return await sendTelegramMessage(options, testMessage);
@@ -143,7 +144,7 @@ export async function sendHealthReport(
     uptime: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+  const now = formatWIB(new Date());
   
   const statusEmoji = health.status === 'healthy' ? '🟢' : health.status === 'warning' ? '🟡' : '🔴';
   
@@ -170,7 +171,7 @@ export async function sendBackupToTelegram(
   filepath: string,
   filesize: number | bigint
 ): Promise<{ success: boolean; error?: string }> {
-  const now = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+  const now = formatWIB(new Date());
   const filename = filepath.split('/').pop() || 'backup.sql';
   const sizeMB = (Number(filesize) / 1024 / 1024).toFixed(2);
   
