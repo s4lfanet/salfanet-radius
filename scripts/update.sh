@@ -90,8 +90,17 @@ rm -rf .next 2>/dev/null || true
 # ── Build ─────────────────────────────────────────────────
 echo ""
 log "Building application (this takes ~60s)..."
-npm run build 2>&1 | grep -E 'error|Error|warning|Compiled|Generating|Page|Route|✓|✗|postbuild' | tail -20
-BUILD_EXIT=${PIPESTATUS[0]}
+
+# Clear env vars inherited from running Next.js server that can break build
+unset npm_lifecycle_event npm_lifecycle_script npm_package_name npm_package_version
+unset npm_config_cache npm_config_prefix NODE_APP_INSTANCE
+# Do NOT inherit NODE_OPTIONS from parent process (server may have different flags)
+unset NODE_OPTIONS
+
+npm run build > /tmp/salfanet-next-build.log 2>&1
+BUILD_EXIT=$?
+# Always show last 40 lines of build output in update log
+tail -40 /tmp/salfanet-next-build.log
 [ "$BUILD_EXIT" -ne 0 ] && err "npm run build failed (exit $BUILD_EXIT)"
 ok "Build completed"
 
