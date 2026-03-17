@@ -300,6 +300,7 @@
     "agent": "Agen",
     "evoucher": "E-Voucher",
     "invoices": "Tagihan",
+    "agentDeposits": "Deposit Agen",
     "payment": "Pembayaran",
     "paymentGateway": "Payment Gateway",
     "manualPayments": "Pembayaran Manual",

@@ -166,6 +166,12 @@ const menuGroups: MenuGroup[] = [
     titleKey: 'nav.catBillingTransactions',
     items: [
       {
+        titleKey: 'nav.agentDeposits',
+        icon: <Wallet className="w-4 h-4" />,
+        href: '/admin/hotspot/agent/deposits',
+        requiredPermission: 'hotspot.view',
+      },
+      {
         titleKey: 'nav.invoices',
         icon: <Receipt className="w-4 h-4" />,
         href: '/admin/invoices',
@@ -736,6 +742,9 @@ function AdminLayoutContent({
             const toastType =
               notif.type === 'new_ticket' ? 'info' :
               notif.type === 'manual_payment_submitted' ? 'info' :
+              notif.type === 'agent_deposit_request' ? 'info' :
+              notif.type === 'agent_deposit_approved' ? 'success' :
+              notif.type === 'agent_deposit_rejected' ? 'warning' :
               notif.type === 'payment_received' ? 'success' :
               notif.type === 'new_registration' ? 'info' :
               notif.type === 'user_expired' ? 'warning' :

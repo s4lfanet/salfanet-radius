@@ -100,6 +100,9 @@ export default function AgentDashboardPage() {
   const [paymentGateways, setPaymentGateways] = useState<{ provider: string; name: string }[]>([]);
   const [paymentMethods, setPaymentMethods] = useState<{ code: string; name: string; totalFee?: number; iconUrl?: string }[]>([]);
   const [loadingMethods, setLoadingMethods] = useState(false);
+  const [depositMode, setDepositMode] = useState<'gateway' | 'manual'>('gateway');
+  const [manualDepositNote, setManualDepositNote] = useState('');
+  const [creatingManualDeposit, setCreatingManualDeposit] = useState(false);
 
   // WhatsApp functionality
   const [selectedVouchers, setSelectedVouchers] = useState<string[]>([]);
@@ -453,6 +456,46 @@ export default function AgentDashboardPage() {
     }
   };
 
+  const handleCreateManualDepositRequest = async () => {
+    if (!agent) return;
+
+    const amount = parseInt(depositAmount);
+    if (isNaN(amount) || amount < 10000) {
+      await showError(t('agent.portal.minimumDeposit'));
+      return;
+    }
+
+    setCreatingManualDeposit(true);
+    try {
+      const res = await fetch('/api/agent/deposit/manual-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentId: agent.id,
+          amount,
+          note: manualDepositNote || undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Gagal membuat permintaan deposit manual');
+      }
+
+      await showSuccess('Permintaan deposit manual berhasil dikirim ke admin');
+      setShowDepositModal(false);
+      setDepositAmount('');
+      setDepositPaymentMethod('');
+      setPaymentMethods([]);
+      setManualDepositNote('');
+      await loadDashboard(agent.id);
+    } catch (error: any) {
+      await showError(error.message || 'Gagal membuat permintaan deposit manual');
+    } finally {
+      setCreatingManualDeposit(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -761,6 +804,31 @@ export default function AgentDashboardPage() {
             </div>
 
             <div className="p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDepositMode('gateway')}
+                  className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
+                    depositMode === 'gateway'
+                      ? 'bg-[#00f7ff]/20 border-[#00f7ff] text-[#00f7ff]'
+                      : 'bg-slate-100 dark:bg-[#0a0520] border-purple-300 dark:border-[#bc13fe]/30 text-slate-700 dark:text-[#e0d0ff]'
+                  }`}
+                >
+                  Bayar Otomatis
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDepositMode('manual')}
+                  className={`px-3 py-2 text-xs font-semibold rounded-lg border transition ${
+                    depositMode === 'manual'
+                      ? 'bg-[#00f7ff]/20 border-[#00f7ff] text-[#00f7ff]'
+                      : 'bg-slate-100 dark:bg-[#0a0520] border-purple-300 dark:border-[#bc13fe]/30 text-slate-700 dark:text-[#e0d0ff]'
+                  }`}
+                >
+                  Request Manual
+                </button>
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-slate-700 dark:text-[#e0d0ff] mb-1.5">{t('agent.portal.depositAmount')}</label>
                 <input
@@ -770,7 +838,7 @@ export default function AgentDashboardPage() {
                   onChange={(e) => {
                     setDepositAmount(e.target.value);
                     const parsed = parseInt(e.target.value);
-                    if (depositGateway && !isNaN(parsed) && parsed >= 10000) {
+                    if (depositMode === 'gateway' && depositGateway && !isNaN(parsed) && parsed >= 10000) {
                       loadPaymentMethods(depositGateway, parsed);
                     }
                   }}
@@ -780,97 +848,115 @@ export default function AgentDashboardPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-700 dark:text-[#e0d0ff] mb-1.5">{t('agent.portal.paymentMethod')}</label>
-                {paymentGateways.length > 0 ? (
-                  <select
-                    value={depositGateway}
-                    onChange={(e) => {
-                      setDepositGateway(e.target.value);
-                      const parsed = parseInt(depositAmount);
-                      if (!isNaN(parsed) && parsed >= 10000) {
-                        loadPaymentMethods(e.target.value, parsed);
-                      } else {
-                        setPaymentMethods([]);
-                        setDepositPaymentMethod('');
-                      }
-                    }}
-                    className="w-full px-3 py-2.5 text-sm bg-slate-100 dark:bg-[#0a0520] border-2 border-purple-300 dark:border-[#bc13fe]/30 rounded-xl text-white focus:border-[#00f7ff] outline-none"
-                  >
-                    {paymentGateways.map((gw) => (
-                      <option key={gw.provider} value={gw.provider} className="bg-white dark:bg-[#0a0520]">{gw.name}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <div className="text-sm text-[#ff6b8a] p-3 bg-[#ff4466]/10 rounded-xl border border-red-200 dark:border-[#ff4466]/30">
-                    {t('agent.portal.noPaymentGateway')}
-                  </div>
-                )}
-              </div>
-
-              {/* Payment method selection - only shown after amount + gateway selected */}
-              {depositGateway && parseInt(depositAmount) >= 10000 && (
-                <div>
-                  <label className="block text-xs font-medium text-slate-700 dark:text-[#e0d0ff] mb-2">
-                    Pilih Kanal Pembayaran
-                  </label>
-                  {loadingMethods ? (
-                    <div className="flex items-center gap-2 p-3 text-sm text-[#e0d0ff]/70">
-                      <div className="w-4 h-4 border-2 border-[#00f7ff]/30 border-t-[#00f7ff] rounded-full animate-spin"></div>
-                      Memuat metode pembayaran...
-                    </div>
-                  ) : paymentMethods.length === 0 ? (
-                    <div className="flex items-center justify-between p-3 bg-[#ff4466]/10 border border-[#ff4466]/30 rounded-xl">
-                      <p className="text-xs text-[#ff6b8a]">Gagal memuat metode pembayaran</p>
-                      <button
-                        onClick={() => loadPaymentMethods(depositGateway, parseInt(depositAmount))}
-                        className="text-xs text-[#00f7ff] hover:underline ml-2 flex-shrink-0"
-                        type="button"
+              {depositMode === 'gateway' ? (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 dark:text-[#e0d0ff] mb-1.5">{t('agent.portal.paymentMethod')}</label>
+                    {paymentGateways.length > 0 ? (
+                      <select
+                        value={depositGateway}
+                        onChange={(e) => {
+                          setDepositGateway(e.target.value);
+                          const parsed = parseInt(depositAmount);
+                          if (!isNaN(parsed) && parsed >= 10000) {
+                            loadPaymentMethods(e.target.value, parsed);
+                          } else {
+                            setPaymentMethods([]);
+                            setDepositPaymentMethod('');
+                          }
+                        }}
+                        className="w-full px-3 py-2.5 text-sm bg-slate-100 dark:bg-[#0a0520] border-2 border-purple-300 dark:border-[#bc13fe]/30 rounded-xl text-white focus:border-[#00f7ff] outline-none"
                       >
-                        Coba lagi
-                      </button>
-                    </div>
-                  ) : paymentMethods.length === 1 && (paymentMethods[0].code === 'snap' || paymentMethods[0].code === 'invoice') ? (
-                    <div className="p-3 bg-[#00f7ff]/10 rounded-xl border border-[#00f7ff]/30 text-sm text-[#00f7ff]">
-                      {paymentMethods[0].name}
-                    </div>
-                  ) : (
-                    <div className="grid gap-2 max-h-56 overflow-y-auto pr-1">
-                      {paymentMethods.map((method) => (
-                        <label
-                          key={method.code}
-                          className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
-                            depositPaymentMethod === method.code
-                              ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_10px_rgba(0,247,255,0.2)]'
-                              : 'border-[#bc13fe]/20 bg-[#0a0520] hover:border-[#bc13fe]/50'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="paymentMethod"
-                            value={method.code}
-                            checked={depositPaymentMethod === method.code}
-                            onChange={() => setDepositPaymentMethod(method.code)}
-                            className="sr-only"
-                          />
-                          {method.iconUrl && (
-                            <img src={method.iconUrl} alt={method.name} className="w-8 h-8 object-contain rounded" />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{method.name}</p>
-                            {method.totalFee !== undefined && method.totalFee > 0 && (
-                              <p className="text-xs text-[#e0d0ff]/60">
-                                Biaya: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(method.totalFee)}
-                              </p>
-                            )}
-                          </div>
-                          {depositPaymentMethod === method.code && (
-                            <div className="w-4 h-4 rounded-full bg-[#00f7ff] flex-shrink-0 shadow-[0_0_8px_rgba(0,247,255,0.6)]" />
-                          )}
-                        </label>
-                      ))}
+                        {paymentGateways.map((gw) => (
+                          <option key={gw.provider} value={gw.provider} className="bg-white dark:bg-[#0a0520]">{gw.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div className="text-sm text-[#ff6b8a] p-3 bg-[#ff4466]/10 rounded-xl border border-red-200 dark:border-[#ff4466]/30">
+                        {t('agent.portal.noPaymentGateway')}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Payment method selection - only shown after amount + gateway selected */}
+                  {depositGateway && parseInt(depositAmount) >= 10000 && (
+                    <div>
+                      <label className="block text-xs font-medium text-slate-700 dark:text-[#e0d0ff] mb-2">
+                        Pilih Kanal Pembayaran
+                      </label>
+                      {loadingMethods ? (
+                        <div className="flex items-center gap-2 p-3 text-sm text-[#e0d0ff]/70">
+                          <div className="w-4 h-4 border-2 border-[#00f7ff]/30 border-t-[#00f7ff] rounded-full animate-spin"></div>
+                          Memuat metode pembayaran...
+                        </div>
+                      ) : paymentMethods.length === 0 ? (
+                        <div className="flex items-center justify-between p-3 bg-[#ff4466]/10 border border-[#ff4466]/30 rounded-xl">
+                          <p className="text-xs text-[#ff6b8a]">Gagal memuat metode pembayaran</p>
+                          <button
+                            onClick={() => loadPaymentMethods(depositGateway, parseInt(depositAmount))}
+                            className="text-xs text-[#00f7ff] hover:underline ml-2 flex-shrink-0"
+                            type="button"
+                          >
+                            Coba lagi
+                          </button>
+                        </div>
+                      ) : paymentMethods.length === 1 && (paymentMethods[0].code === 'snap' || paymentMethods[0].code === 'invoice') ? (
+                        <div className="p-3 bg-[#00f7ff]/10 rounded-xl border border-[#00f7ff]/30 text-sm text-[#00f7ff]">
+                          {paymentMethods[0].name}
+                        </div>
+                      ) : (
+                        <div className="grid gap-2 max-h-56 overflow-y-auto pr-1">
+                          {paymentMethods.map((method) => (
+                            <label
+                              key={method.code}
+                              className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ${
+                                depositPaymentMethod === method.code
+                                  ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_10px_rgba(0,247,255,0.2)]'
+                                  : 'border-[#bc13fe]/20 bg-[#0a0520] hover:border-[#bc13fe]/50'
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="paymentMethod"
+                                value={method.code}
+                                checked={depositPaymentMethod === method.code}
+                                onChange={() => setDepositPaymentMethod(method.code)}
+                                className="sr-only"
+                              />
+                              {method.iconUrl && (
+                                <img src={method.iconUrl} alt={method.name} className="w-8 h-8 object-contain rounded" />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">{method.name}</p>
+                                {method.totalFee !== undefined && method.totalFee > 0 && (
+                                  <p className="text-xs text-[#e0d0ff]/60">
+                                    Biaya: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(method.totalFee)}
+                                  </p>
+                                )}
+                              </div>
+                              {depositPaymentMethod === method.code && (
+                                <div className="w-4 h-4 rounded-full bg-[#00f7ff] flex-shrink-0 shadow-[0_0_8px_rgba(0,247,255,0.6)]" />
+                              )}
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
+                </>
+              ) : (
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 dark:text-[#e0d0ff] mb-1.5">Catatan (opsional)</label>
+                  <textarea
+                    value={manualDepositNote}
+                    onChange={(e) => setManualDepositNote(e.target.value)}
+                    placeholder="Contoh: Transfer BCA a/n Agent"
+                    rows={3}
+                    className="w-full px-3 py-2.5 text-sm bg-slate-100 dark:bg-[#0a0520] border-2 border-purple-300 dark:border-[#bc13fe]/30 rounded-xl text-white focus:border-[#00f7ff] outline-none"
+                  />
+                  <p className="text-[11px] text-slate-500 dark:text-[#e0d0ff]/60 mt-1">
+                    Permintaan akan masuk ke admin untuk diverifikasi manual.
+                  </p>
                 </div>
               )}
 
@@ -892,21 +978,27 @@ export default function AgentDashboardPage() {
 
             <div className="px-5 py-4 border-t border-purple-200 dark:border-[#bc13fe]/20 flex gap-2 justify-end">
               <button
-                onClick={() => { setShowDepositModal(false); setDepositAmount(''); setPaymentMethods([]); setDepositPaymentMethod(''); }}
+                onClick={() => { setShowDepositModal(false); setDepositAmount(''); setPaymentMethods([]); setDepositPaymentMethod(''); setManualDepositNote(''); setDepositMode('gateway'); }}
                 className="px-4 py-2 text-sm text-slate-500 dark:text-[#e0d0ff]/70 hover:bg-purple-50 dark:hover:bg-[#bc13fe]/10 rounded-xl transition"
-                disabled={creatingDeposit}
+                disabled={creatingDeposit || creatingManualDeposit}
               >
                 {t('agent.portal.cancel')}
               </button>
               <button
-                onClick={handleCreateDeposit}
-                disabled={creatingDeposit || !depositAmount || parseInt(depositAmount) < 10000 || paymentGateways.length === 0}
+                onClick={depositMode === 'manual' ? handleCreateManualDepositRequest : handleCreateDeposit}
+                disabled={
+                  creatingDeposit ||
+                  creatingManualDeposit ||
+                  !depositAmount ||
+                  parseInt(depositAmount) < 10000 ||
+                  (depositMode === 'gateway' && paymentGateways.length === 0)
+                }
                 className="px-4 py-2 text-sm font-bold bg-gradient-to-r from-[#bc13fe] to-[#00f7ff] hover:from-[#a010e0] hover:to-[#00d4dd] text-white rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {creatingDeposit ? (
+                {creatingDeposit || creatingManualDeposit ? (
                   <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin inline-block mr-2"></div>{t('agent.portal.processing')}...</>
                 ) : (
-                  t('agent.portal.payNow')
+                  depositMode === 'manual' ? 'Kirim Permintaan' : t('agent.portal.payNow')
                 )}
               </button>
             </div>

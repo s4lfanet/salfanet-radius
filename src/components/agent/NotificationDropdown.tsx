@@ -58,6 +58,8 @@ export default function AgentNotificationDropdown({ agentId }: AgentNotification
   const getToastType = (type: string): 'success' | 'warning' | 'info' | 'error' => {
     switch (type) {
       case 'deposit_success': return 'success';
+      case 'deposit_request_submitted': return 'info';
+      case 'deposit_rejected': return 'warning';
       case 'voucher_generated': return 'success';
       case 'voucher_sold': return 'success';
       case 'low_balance': return 'warning';
@@ -160,6 +162,10 @@ export default function AgentNotificationDropdown({ agentId }: AgentNotification
         return <Bell className={`${iconClass} text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.6)]`} />;
       case 'deposit_success':
         return <Check className={`${iconClass} text-[#00ff88] drop-shadow-[0_0_8px_rgba(0,255,136,0.6)]`} />;
+      case 'deposit_request_submitted':
+        return <Bell className={`${iconClass} text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.6)]`} />;
+      case 'deposit_rejected':
+        return <X className={`${iconClass} text-[#ff6b8a] drop-shadow-[0_0_8px_rgba(255,107,138,0.6)]`} />;
       case 'low_balance':
         return <AlertTriangle className={`${iconClass} text-[#ff6b8a] drop-shadow-[0_0_8px_rgba(255,107,138,0.6)]`} />;
       case 'voucher_sold':
@@ -181,6 +187,10 @@ export default function AgentNotificationDropdown({ agentId }: AgentNotification
         return 'bg-[#00f7ff]/30 border-[#00f7ff]/70';
       case 'deposit_success':
         return 'bg-[#00ff88]/30 border-[#00ff88]/70';
+      case 'deposit_request_submitted':
+        return 'bg-[#00f7ff]/30 border-[#00f7ff]/70';
+      case 'deposit_rejected':
+        return 'bg-[#ff4466]/30 border-[#ff4466]/70';
       case 'low_balance':
         return 'bg-[#ff4466]/30 border-[#ff4466]/70';
       case 'voucher_sold':
