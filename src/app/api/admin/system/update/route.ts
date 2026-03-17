@@ -127,17 +127,28 @@ export async function POST(request: Request) {
 
   const scriptPath = path.join(process.cwd(), 'scripts/update.sh');
   if (!existsSync(scriptPath)) {
-    return NextResponse.json({ error: 'update.sh not found' }, { status: 500 });
+    return NextResponse.json({ error: `update.sh not found at: ${scriptPath}` }, { status: 500 });
   }
 
-  const logStream = createWriteStream(LOG_FILE, { flags: 'w' });
+  try {
+    const logStream = createWriteStream(LOG_FILE, { flags: 'w' });
 
-  const child = spawn('bash', [scriptPath, ...args], {
-    detached: true,
-    stdio: ['ignore', logStream, logStream],
-    cwd: process.cwd(),
-  });
-  child.unref();
+    const child = spawn('bash', [scriptPath, ...args], {
+      detached: true,
+      stdio: ['ignore', logStream, logStream],
+      cwd: process.cwd(),
+    });
 
-  return NextResponse.json({ started: true });
+    child.on('error', (err) => {
+      console.error('[System Update] spawn error:', err);
+    });
+
+    child.unref();
+
+    return NextResponse.json({ started: true, script: scriptPath });
+  } catch (e: any) {
+    const msg = e?.message || String(e);
+    console.error('[System Update] Failed to start:', msg);
+    return NextResponse.json({ error: `Failed to start update process: ${msg}` }, { status: 500 });
+  }
 }

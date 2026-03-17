@@ -32,6 +32,7 @@ export interface PushBroadcastInput {
   title: string;
   body: string;
   type?: string;
+  recipientRole?: 'customer' | 'agent' | 'technician' | 'all';
   targetType?: 'all' | 'active' | 'expired' | 'area' | 'selected';
   targetIds?: string[];
   sentBy?: string | null;
@@ -193,9 +194,30 @@ async function markSubscriptionsUsed(ids: string[]) {
   });
 }
 
+async function deactivateAgentSubscriptions(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.agentPushSubscription.updateMany({ where: { id: { in: ids } }, data: { isActive: false } });
+}
+
+async function markAgentSubscriptionsUsed(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.agentPushSubscription.updateMany({ where: { id: { in: ids } }, data: { lastUsedAt: new Date() } });
+}
+
+async function deactivateTechnicianSubscriptions(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.technicianPushSubscription.updateMany({ where: { id: { in: ids } }, data: { isActive: false } });
+}
+
+async function markTechnicianSubscriptionsUsed(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.technicianPushSubscription.updateMany({ where: { id: { in: ids } }, data: { lastUsedAt: new Date() } });
+}
+
 async function sendToStoredSubscriptions(
   subscriptions: StoredSubscription[],
   payload: PushNotificationPayload,
+  role: 'customer' | 'agent' | 'technician' = 'customer',
 ) {
   ensureVapidConfiguration();
 
@@ -229,8 +251,16 @@ async function sendToStoredSubscriptions(
   }
 
   await Promise.all([
-    deactivateSubscriptions(expiredIds),
-    markSubscriptionsUsed(usedIds),
+    role === 'agent'
+      ? deactivateAgentSubscriptions(expiredIds)
+      : role === 'technician'
+        ? deactivateTechnicianSubscriptions(expiredIds)
+        : deactivateSubscriptions(expiredIds),
+    role === 'agent'
+      ? markAgentSubscriptionsUsed(usedIds)
+      : role === 'technician'
+        ? markTechnicianSubscriptionsUsed(usedIds)
+        : markSubscriptionsUsed(usedIds),
   ]);
 
   return { sent, failed, total: subscriptions.length };
@@ -280,6 +310,86 @@ export async function removeWebPushSubscription(userId: string, endpoint?: strin
   return result.count;
 }
 
+export async function upsertAgentPushSubscription(agentId: string, subscription: WebPushSubscriptionInput, userAgent?: string | null) {
+  const endpoint = subscription.endpoint?.trim();
+  const p256dh = subscription.keys?.p256dh?.trim();
+  const auth = subscription.keys?.auth?.trim();
+
+  if (!endpoint || !p256dh || !auth) {
+    throw new Error('Invalid push subscription payload');
+  }
+
+  return prisma.agentPushSubscription.upsert({
+    where: { endpoint },
+    update: {
+      agentId,
+      p256dh,
+      auth,
+      userAgent: userAgent || null,
+      expirationTime: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+      isActive: true,
+      lastUsedAt: new Date(),
+    },
+    create: {
+      agentId,
+      endpoint,
+      p256dh,
+      auth,
+      userAgent: userAgent || null,
+      expirationTime: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+      isActive: true,
+      lastUsedAt: new Date(),
+    },
+  });
+}
+
+export async function removeAgentPushSubscription(agentId: string, endpoint?: string | null) {
+  const where: { agentId: string; endpoint?: string } = { agentId };
+  if (endpoint?.trim()) where.endpoint = endpoint.trim();
+  const result = await prisma.agentPushSubscription.deleteMany({ where });
+  return result.count;
+}
+
+export async function upsertTechnicianPushSubscription(technicianId: string, subscription: WebPushSubscriptionInput, userAgent?: string | null) {
+  const endpoint = subscription.endpoint?.trim();
+  const p256dh = subscription.keys?.p256dh?.trim();
+  const auth = subscription.keys?.auth?.trim();
+
+  if (!endpoint || !p256dh || !auth) {
+    throw new Error('Invalid push subscription payload');
+  }
+
+  return prisma.technicianPushSubscription.upsert({
+    where: { endpoint },
+    update: {
+      technicianId,
+      p256dh,
+      auth,
+      userAgent: userAgent || null,
+      expirationTime: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+      isActive: true,
+      lastUsedAt: new Date(),
+    },
+    create: {
+      technicianId,
+      endpoint,
+      p256dh,
+      auth,
+      userAgent: userAgent || null,
+      expirationTime: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+      isActive: true,
+      lastUsedAt: new Date(),
+    },
+  });
+}
+
+export async function removeTechnicianPushSubscription(technicianId: string, endpoint?: string | null) {
+  const where: { technicianId: string; endpoint?: string } = { technicianId };
+  if (endpoint?.trim()) where.endpoint = endpoint.trim();
+  const result = await prisma.technicianPushSubscription.deleteMany({ where });
+  return result.count;
+}
+
 export async function sendWebPushToUser(userId: string, payload: PushNotificationPayload): Promise<PushSendResult> {
   const subscriptions = await prisma.pushSubscription.findMany({
     where: {
@@ -321,7 +431,7 @@ export async function sendWebPushToUsers(userIds: string[], payload: PushNotific
 }
 
 export async function getPushDashboardStats() {
-  const [totalUsers, areas, totalBroadcasts, totalSubscriptions, subscribedUsers] = await Promise.all([
+  const [totalUsers, areas, totalBroadcasts, totalSubscriptions, subscribedUsers, agentSubscribers, technicianSubscribers] = await Promise.all([
     prisma.pppoeUser.count({
       where: { status: 'active' },
     }),
@@ -338,6 +448,16 @@ export async function getPushDashboardStats() {
       distinct: ['userId'],
       select: { userId: true },
     }),
+    prisma.agentPushSubscription.findMany({
+      where: { isActive: true },
+      distinct: ['agentId'],
+      select: { agentId: true },
+    }),
+    prisma.technicianPushSubscription.findMany({
+      where: { isActive: true },
+      distinct: ['technicianId'],
+      select: { technicianId: true },
+    }),
   ]);
 
   return {
@@ -346,6 +466,8 @@ export async function getPushDashboardStats() {
     totalSubscriptions,
     areas,
     totalBroadcasts,
+    agentSubscribers: agentSubscribers.length,
+    technicianSubscribers: technicianSubscribers.length,
   };
 }
 
@@ -407,21 +529,27 @@ async function getBroadcastTargets(targetType: PushBroadcastInput['targetType'],
   });
 }
 
+async function getAgentSubscriptions() {
+  const agents = await prisma.agentPushSubscription.findMany({
+    where: { isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return agents;
+}
+
+async function getTechnicianSubscriptions() {
+  const technicians = await prisma.technicianPushSubscription.findMany({
+    where: { isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return technicians;
+}
+
 export async function sendWebPushBroadcast(input: PushBroadcastInput) {
   const targetIds = input.targetIds || [];
-  const targets = await getBroadcastTargets(input.targetType || 'all', targetIds);
-  const subscriptions = targets.flatMap((target) => target.pushSubscriptions);
+  const recipientRole = input.recipientRole || 'customer';
 
-  if (subscriptions.length === 0) {
-    return {
-      broadcast: null,
-      sent: 0,
-      failed: 0,
-      total: 0,
-    };
-  }
-
-  const result = await sendToStoredSubscriptions(subscriptions, {
+  const notificationPayload = {
     title: input.title,
     body: input.body,
     url: typeof input.data?.link === 'string' ? input.data.link : undefined,
@@ -430,26 +558,62 @@ export async function sendWebPushBroadcast(input: PushBroadcastInput) {
       type: input.type || 'broadcast',
       ...(input.data || {}),
     },
-  });
+  };
+
+  let totalSent = 0;
+  let totalFailed = 0;
+  let totalCount = 0;
+
+  if (recipientRole === 'agent' || recipientRole === 'all') {
+    const agentSubs = await getAgentSubscriptions();
+    if (agentSubs.length > 0) {
+      const r = await sendToStoredSubscriptions(agentSubs, notificationPayload, 'agent');
+      totalSent += r.sent;
+      totalFailed += r.failed;
+      totalCount += r.total;
+    }
+  }
+
+  if (recipientRole === 'technician' || recipientRole === 'all') {
+    const techSubs = await getTechnicianSubscriptions();
+    if (techSubs.length > 0) {
+      const r = await sendToStoredSubscriptions(techSubs, notificationPayload, 'technician');
+      totalSent += r.sent;
+      totalFailed += r.failed;
+      totalCount += r.total;
+    }
+  }
+
+  if (recipientRole === 'customer' || recipientRole === 'all') {
+    const targets = await getBroadcastTargets(input.targetType || 'all', targetIds);
+    const customerSubs = targets.flatMap((t) => t.pushSubscriptions);
+    if (customerSubs.length > 0) {
+      const r = await sendToStoredSubscriptions(customerSubs, notificationPayload, 'customer');
+      totalSent += r.sent;
+      totalFailed += r.failed;
+      totalCount += r.total;
+    }
+  }
+
+  if (totalCount === 0) {
+    return { broadcast: null, sent: 0, failed: 0, total: 0 };
+  }
 
   const broadcast = await prisma.pushBroadcast.create({
     data: {
       title: input.title,
       body: input.body,
       type: input.type || 'broadcast',
-      targetType: input.targetType || 'all',
+      targetType: `${recipientRole}:${input.targetType || 'all'}`,
       targetIds: targetIds.length > 0 ? JSON.stringify(targetIds) : null,
-      sentCount: result.sent,
-      failedCount: result.failed,
+      sentCount: totalSent,
+      failedCount: totalFailed,
       sentBy: input.sentBy || null,
       data: input.data ? JSON.stringify(input.data) : null,
     },
   });
 
-  return {
-    broadcast,
-    ...result,
-  };
+  return { broadcast, sent: totalSent, failed: totalFailed, total: totalCount };
 }
 
 export function getPublicVapidKey() {

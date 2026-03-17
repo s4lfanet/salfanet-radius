@@ -140,14 +140,27 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const targetUrl = new URL(event.notification.data?.url || '/customer', self.location.origin).toString();
+  const data = event.notification.data || {};
+  const targetPath = data.url || data.link || '/customer';
+  const targetUrl = new URL(targetPath, self.location.origin).href;
+  const targetPathname = new URL(targetPath, self.location.origin).pathname;
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
-      for (const client of clients) {
-        if (client.url === targetUrl && 'focus' in client) {
-          return client.focus();
+      // Find an existing open window whose pathname starts with the target pathname
+      const existing = clients.find((c) => {
+        try {
+          const cu = new URL(c.url);
+          return cu.origin === self.location.origin && cu.pathname.startsWith(targetPathname);
+        } catch {
+          return false;
         }
+      });
+
+      if (existing && 'focus' in existing) {
+        // Tell the open tab to navigate to the exact URL (e.g. /customer/invoice/123)
+        existing.postMessage({ type: 'NOTIFICATION_CLICK', url: targetUrl, data });
+        return existing.focus();
       }
 
       if (self.clients.openWindow) {

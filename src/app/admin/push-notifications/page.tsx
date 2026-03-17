@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
@@ -63,6 +63,8 @@ interface Stats {
   usersWithTokens: number;
   areas: Area[];
   totalBroadcasts: number;
+  agentSubscribers?: number;
+  technicianSubscribers?: number;
 }
 
 interface Broadcast {
@@ -77,29 +79,99 @@ interface Broadcast {
   createdAt: string;
 }
 
-const NOTIFICATION_TYPE_DEFS = [
-  { value: 'broadcast', labelKey: 'pushNotif.types.broadcast', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
-  { value: 'tagihan', labelKey: 'pushNotif.types.tagihan', icon: ReceiptText, color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', activeColor: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25' },
-  { value: 'info', labelKey: 'pushNotif.types.info', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
-  { value: 'custom', labelKey: 'pushNotif.types.custom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
-];
+type RecipientRole = 'customer' | 'agent' | 'technician' | 'all';
 
-const QUICK_TEMPLATES = [
-  { key: 'broadcast', icon: Megaphone, labelKey: 'pushNotif.templates.announcement', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
-  { key: 'tagihan', icon: ReceiptText, labelKey: 'pushNotif.templates.billing', color: 'text-orange-500 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300' },
-  { key: 'maintenance', icon: Wrench, labelKey: 'pushNotif.templates.maintenance', color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
-  { key: 'gangguan', icon: AlertTriangle, labelKey: 'pushNotif.templates.disruption', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
-  { key: 'promo', icon: Gift, labelKey: 'pushNotif.templates.promo', color: 'text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:border-pink-300' },
-  { key: 'info', icon: Info, labelKey: 'pushNotif.templates.info', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
-];
+const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; label: string; icon: React.ComponentType<any>; color: string; activeColor: string }>> = {
+  customer: [
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'tagihan', label: 'Tagihan', icon: ReceiptText, color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', activeColor: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25' },
+    { value: 'gangguan', label: 'Gangguan', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
+    { value: 'promo', label: 'Promo', icon: Gift, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30', activeColor: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/25' },
+    { value: 'info', label: 'Info', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+  ],
+  technician: [
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'tugas_baru', label: 'Tugas Baru', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25' },
+    { value: 'jadwal', label: 'Jadwal', icon: Zap, color: 'bg-cyan-500/10 text-cyan-600 border-cyan-500/30', activeColor: 'bg-cyan-500 text-white border-cyan-500 shadow-lg shadow-cyan-500/25' },
+    { value: 'info_teknis', label: 'Info Teknis', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
+    { value: 'darurat', label: 'Darurat', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+  ],
+  agent: [
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'komisi', label: 'Komisi', icon: ReceiptText, color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', activeColor: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25' },
+    { value: 'registrasi_baru', label: 'Registrasi Baru', icon: Users, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
+    { value: 'target', label: 'Target', icon: Zap, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30', activeColor: 'bg-yellow-500 text-white border-yellow-500 shadow-lg shadow-yellow-500/25' },
+    { value: 'promo_agen', label: 'Promo Agen', icon: Gift, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30', activeColor: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+  ],
+  all: [
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'gangguan', label: 'Gangguan Jaringan', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
+    { value: 'maintenance', label: 'Maintenance', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+  ],
+};
 
-const TEMPLATE_KEYS: Record<string, { titleKey: string; bodyKey: string }> = {
-  broadcast: { titleKey: 'pushNotif.tpl.broadcastTitle', bodyKey: 'pushNotif.tpl.broadcastBody' },
-  tagihan: { titleKey: 'pushNotif.tpl.tagihanTitle', bodyKey: 'pushNotif.tpl.tagihanBody' },
-  info: { titleKey: 'pushNotif.tpl.infoTitle', bodyKey: 'pushNotif.tpl.infoBody' },
-  maintenance: { titleKey: 'pushNotif.tpl.maintenanceTitle', bodyKey: 'pushNotif.tpl.maintenanceBody' },
-  promo: { titleKey: 'pushNotif.tpl.promoTitle', bodyKey: 'pushNotif.tpl.promoBody' },
-  gangguan: { titleKey: 'pushNotif.tpl.gangguanTitle', bodyKey: 'pushNotif.tpl.gangguanBody' },
+const QUICK_TEMPLATES_BY_ROLE: Record<RecipientRole, Array<{ key: string; icon: React.ComponentType<any>; label: string; color: string }>> = {
+  customer: [
+    { key: 'cust_broadcast', icon: Megaphone, label: 'Pengumuman Umum', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
+    { key: 'cust_tagihan', icon: ReceiptText, label: 'Tagihan Jatuh Tempo', color: 'text-orange-500 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300' },
+    { key: 'cust_maintenance', icon: Wrench, label: 'Maintenance', color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
+    { key: 'cust_gangguan', icon: AlertTriangle, label: 'Gangguan Jaringan', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
+    { key: 'cust_promo', icon: Gift, label: 'Promo Spesial', color: 'text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:border-pink-300' },
+    { key: 'cust_info', icon: Info, label: 'Info Layanan', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
+  ],
+  technician: [
+    { key: 'tech_broadcast', icon: Megaphone, label: 'Pengumuman Teknisi', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
+    { key: 'tech_tugas', icon: Wrench, label: 'Ada Tugas Baru', color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
+    { key: 'tech_jadwal', icon: Zap, label: 'Perubahan Jadwal', color: 'text-cyan-600 bg-cyan-50 border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300' },
+    { key: 'tech_darurat', icon: AlertTriangle, label: 'Kondisi Darurat', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
+    { key: 'tech_maintenance', icon: Wrench, label: 'Jadwal Maintenance', color: 'text-amber-500 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
+    { key: 'tech_info', icon: Info, label: 'Info Teknis', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
+  ],
+  agent: [
+    { key: 'agent_broadcast', icon: Megaphone, label: 'Pengumuman Agen', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
+    { key: 'agent_komisi', icon: ReceiptText, label: 'Komisi Diterima', color: 'text-orange-500 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300' },
+    { key: 'agent_registrasi', icon: Users, label: 'Registrasi Baru', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
+    { key: 'agent_target', icon: Zap, label: 'Update Target', color: 'text-yellow-600 bg-yellow-50 border-yellow-200 hover:bg-yellow-100 hover:border-yellow-300' },
+    { key: 'agent_promo', icon: Gift, label: 'Promo Agen', color: 'text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:border-pink-300' },
+    { key: 'agent_info', icon: Info, label: 'Info Agen', color: 'text-cyan-500 bg-cyan-50 border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300' },
+  ],
+  all: [
+    { key: 'all_broadcast', icon: Megaphone, label: 'Pengumuman Semua', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
+    { key: 'all_gangguan', icon: AlertTriangle, label: 'Gangguan Jaringan', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
+    { key: 'all_maintenance', icon: Wrench, label: 'Maintenance', color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
+  ],
+};
+
+const TEMPLATE_CONTENT: Record<string, { title: string; body: string }> = {
+  // Customer templates
+  cust_broadcast: { title: '📢 Pengumuman dari Salfanet', body: 'Kepada pelanggan setia Salfanet, kami ingin menyampaikan informasi penting. Terima kasih atas kepercayaan Anda.' },
+  cust_tagihan: { title: '💳 Tagihan Internet Jatuh Tempo', body: 'Tagihan internet Anda akan segera jatuh tempo. Segera lakukan pembayaran agar layanan tetap aktif.' },
+  cust_maintenance: { title: '🔧 Jadwal Maintenance Jaringan', body: 'Akan dilakukan maintenance jaringan. Layanan internet mungkin terganggu sementara. Mohon maaf atas ketidaknyamanannya.' },
+  cust_gangguan: { title: '⚠️ Gangguan Jaringan', body: 'Saat ini terjadi gangguan pada jaringan kami. Tim teknis sedang bekerja untuk memulihkan layanan. Mohon maaf atas ketidaknyamanannya.' },
+  cust_promo: { title: '🎁 Promo Spesial Salfanet!', body: 'Dapatkan penawaran spesial dari Salfanet! Upgrade paket internet Anda dengan harga terbaik. Berlaku terbatas!' },
+  cust_info: { title: 'ℹ️ Informasi Layanan Salfanet', body: 'Kepada pelanggan Salfanet, berikut informasi penting terkait layanan kami. Harap dibaca dengan seksama.' },
+  // Technician templates
+  tech_broadcast: { title: '📢 Pengumuman untuk Teknisi', body: 'Kepada seluruh teknisi Salfanet, berikut pengumuman penting dari manajemen. Harap diperhatikan.' },
+  tech_tugas: { title: '🔧 Ada Tugas Baru untuk Anda', body: 'Anda mendapat penugasan baru. Segera cek aplikasi teknisi untuk detail pekerjaan dan lokasi pelanggan.' },
+  tech_jadwal: { title: '📅 Perubahan Jadwal Kerja', body: 'Terdapat perubahan pada jadwal kerja Anda. Silakan cek aplikasi teknisi untuk jadwal terbaru.' },
+  tech_darurat: { title: '🚨 Kondisi Darurat - Tindakan Segera', body: 'Terjadi kondisi darurat pada jaringan. Semua teknisi harap segera standby dan hubungi supervisor Anda.' },
+  tech_maintenance: { title: '🛠️ Jadwal Maintenance Terjadwal', body: 'Pengingat: ada jadwal maintenance terjadwal. Pastikan semua peralatan siap dan koordinasikan dengan tim.' },
+  tech_info: { title: 'ℹ️ Info Teknis Terbaru', body: 'Ada informasi teknis penting yang perlu diketahui seluruh teknisi. Harap baca dan implementasikan.' },
+  // Agent templates
+  agent_broadcast: { title: '📢 Pengumuman untuk Agen', body: 'Kepada seluruh agen Salfanet, berikut pengumuman penting dari manajemen. Harap diperhatikan.' },
+  agent_komisi: { title: '💰 Komisi Anda Telah Diproses', body: 'Komisi penjualan Anda telah diproses dan siap dicairkan. Cek aplikasi agen untuk detail komisi Anda.' },
+  agent_registrasi: { title: '🎉 Ada Registrasi Pelanggan Baru!', body: 'Ada pelanggan baru yang mendaftar melalui kode referral Anda. Terus tingkatkan penjualan untuk bonus lebih besar!' },
+  agent_target: { title: '🎯 Update Target Bulanan', body: 'Target penjualan bulan ini telah diperbarui. Cek aplikasi agen untuk melihat progress dan sisa target Anda.' },
+  agent_promo: { title: '🎁 Promo Spesial untuk Agen', body: 'Ada promo spesial yang bisa Anda tawarkan kepada calon pelanggan. Cek detail promo dan manfaatkan kesempatan ini!' },
+  agent_info: { title: 'ℹ️ Informasi Penting untuk Agen', body: 'Ada informasi penting yang perlu diketahui seluruh agen Salfanet. Harap baca dan pahami dengan seksama.' },
+  // All templates
+  all_broadcast: { title: '📢 Pengumuman Salfanet', body: 'Kepada seluruh pengguna, pelanggan, teknisi, dan agen Salfanet — berikut pengumuman penting dari manajemen.' },
+  all_gangguan: { title: '⚠️ Gangguan Jaringan Area', body: 'Saat ini terjadi gangguan pada jaringan di beberapa area. Tim teknis sedang bekerja keras untuk pemulihan. Mohon maaf atas gangguan yang terjadi.' },
+  all_maintenance: { title: '🔧 Scheduled Maintenance', body: 'Akan dilakukan pemeliharaan jaringan terjadwal. Teknisi harap standby, pelanggan mohon maaf atas gangguan sementara.' },
 };
 
 export default function PushNotificationsPage() {
@@ -113,6 +185,7 @@ export default function PushNotificationsPage() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   // Form state
+  const [recipientRole, setRecipientRole] = useState<RecipientRole>('customer');
   const [notifType, setNotifType] = useState('broadcast');
   const [targetType, setTargetType] = useState('all');
   const [selectedArea, setSelectedArea] = useState('');
@@ -156,11 +229,18 @@ export default function PushNotificationsPage() {
   };
 
   const applyTemplate = (key: string) => {
-    const tpl = TEMPLATE_KEYS[key];
+    const tpl = TEMPLATE_CONTENT[key];
     if (tpl) {
-      setTitle(t(tpl.titleKey));
-      setMessage(t(tpl.bodyKey));
+      setTitle(tpl.title);
+      setMessage(tpl.body);
     }
+  };
+
+  const handleRoleChange = (role: RecipientRole) => {
+    setRecipientRole(role);
+    setNotifType('broadcast');
+    setTargetType('all');
+    setSelectedArea('');
   };
 
   const handleSend = async () => {
@@ -169,16 +249,23 @@ export default function PushNotificationsPage() {
       return;
     }
 
-    const targetLabel = targetType === 'all' ? t('pushNotif.targetAll')
-      : targetType === 'active' ? t('pushNotif.targetActive')
-      : targetType === 'expired' ? t('pushNotif.targetExpired')
-      : targetType === 'area' && selectedArea
-        ? t('pushNotif.targetArea').replace('{name}', stats?.areas.find(a => a.id === selectedArea)?.name || selectedArea)
-        : t('pushNotif.targetSelected');
+    const roleLabel = recipientRole === 'customer' ? 'Pelanggan'
+      : recipientRole === 'technician' ? 'Teknisi'
+      : recipientRole === 'agent' ? 'Agen'
+      : 'Semua (Pelanggan + Teknisi + Agen)';
+
+    const targetLabel = recipientRole === 'agent' || recipientRole === 'technician'
+      ? `Semua ${roleLabel}`
+      : targetType === 'all' ? t('pushNotif.targetAll')
+        : targetType === 'active' ? t('pushNotif.targetActive')
+        : targetType === 'expired' ? t('pushNotif.targetExpired')
+        : targetType === 'area' && selectedArea
+          ? t('pushNotif.targetArea').replace('{name}', stats?.areas.find(a => a.id === selectedArea)?.name || selectedArea)
+          : t('pushNotif.targetSelected');
 
     const confirmed = await showConfirm(
       t('pushNotif.confirmSendTitle'),
-      t('pushNotif.confirmSendDesc').replace('{title}', title).replace('{target}', targetLabel)
+      `Kirim notifikasi "${title}" ke: ${roleLabel} — ${targetLabel}?`
     );
     if (!confirmed) return;
 
@@ -193,6 +280,7 @@ export default function PushNotificationsPage() {
           title: title.trim(),
           message: message.trim(),
           type: notifType,
+          recipientRole,
           targetType,
           targetIds,
           sentBy: (session?.user as any)?.username || 'admin',
@@ -223,27 +311,36 @@ export default function PushNotificationsPage() {
   };
 
   const getTypeBadge = (type: string) => {
-    const found = NOTIFICATION_TYPE_DEFS.find(nt => nt.value === type);
-    if (!found) return <Badge variant="outline">{type}</Badge>;
-    return (
-      <Badge className={`${found.color} border text-xs font-semibold`}>
-        {t(found.labelKey)}
-      </Badge>
-    );
+    // Search across all role type defs
+    for (const roleDefs of Object.values(NOTIFICATION_TYPES_BY_ROLE)) {
+      const found = roleDefs.find((nt) => nt.value === type);
+      if (found) {
+        return (
+          <Badge className={`${found.color} border text-xs font-semibold`}>
+            {found.label}
+          </Badge>
+        );
+      }
+    }
+    return <Badge variant="outline">{type}</Badge>;
   };
 
   const getTargetLabel = (tt: string) => {
-    switch (tt) {
-      case 'all': return t('pushNotif.allUsers');
-      case 'active': return t('pushNotif.activeUsers');
-      case 'expired': return t('pushNotif.expiredUsers');
-      case 'area': return t('pushNotif.perArea');
-      case 'selected': return t('pushNotif.selected');
-      default: return tt;
-    }
+    // New format: "role:targetType" e.g. "customer:all", "agent:all", "technician:all", "all:all"
+    const [role, target] = tt.includes(':') ? tt.split(':') : ['customer', tt];
+    const roleLabel = role === 'agent' ? 'Agen' : role === 'technician' ? 'Teknisi' : role === 'all' ? 'Semua' : 'Pelanggan';
+    const targetLabel = target === 'all' ? t('pushNotif.allUsers')
+      : target === 'active' ? t('pushNotif.activeUsers')
+      : target === 'expired' ? t('pushNotif.expiredUsers')
+      : target === 'area' ? t('pushNotif.perArea')
+      : target === 'selected' ? t('pushNotif.selected')
+      : target;
+    return `${roleLabel} — ${targetLabel}`;
   };
 
   const coveragePct = stats && stats.totalUsers > 0 ? Math.round((stats.usersWithTokens / stats.totalUsers) * 100) : 0;
+  const activeTypeDefs = NOTIFICATION_TYPES_BY_ROLE[recipientRole];
+  const activeTemplates = QUICK_TEMPLATES_BY_ROLE[recipientRole];
 
   return (
     <div className="space-y-6">
@@ -344,6 +441,42 @@ export default function PushNotificationsPage() {
 
         {/* Send Tab */}
         <TabsContent value="send" className="space-y-4 mt-4">
+          {/* Recipient Role Selector */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Users className="w-4 h-4 text-indigo-500" />
+                Kirim ke Siapa?
+              </CardTitle>
+              <CardDescription className="text-xs">Pilih penerima notifikasi ini</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {([
+                  { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.usersWithTokens ?? 0, unit: 'push' },
+                  { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: stats?.technicianSubscribers ?? 0, unit: 'terdaftar' },
+                  { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
+                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0), unit: 'total' },
+                ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<any>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
+                  const RoleIcon = role.icon;
+                  const active = recipientRole === role.value;
+                  return (
+                    <button
+                      key={role.value}
+                      onClick={() => handleRoleChange(role.value)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-2 transition-all duration-200
+                        ${active ? role.activeColor : `${role.color} hover:scale-[1.02]`}`}
+                    >
+                      <RoleIcon className="w-5 h-5" />
+                      <span className="text-xs font-bold">{role.label}</span>
+                      <span className={`text-[10px] font-medium ${active ? 'text-white/80' : 'text-muted-foreground'}`}>{role.count} {role.unit}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left: Form */}
             <div className="lg:col-span-2 space-y-4">
@@ -356,8 +489,8 @@ export default function PushNotificationsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {NOTIFICATION_TYPE_DEFS.map((nt) => {
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {activeTypeDefs.map((nt) => {
                       const Icon = nt.icon;
                       const active = notifType === nt.value;
                       return (
@@ -365,15 +498,12 @@ export default function PushNotificationsPage() {
                           key={nt.value}
                           onClick={() => {
                             setNotifType(nt.value);
-                            if (nt.value !== 'custom') {
-                              applyTemplate(nt.value);
-                            }
                           }}
                           className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all duration-200
                             ${active ? nt.activeColor : `${nt.color} hover:scale-[1.02]`}`}
                         >
                           <Icon className="w-6 h-6" />
-                          <span className="text-xs font-semibold text-center leading-tight">{t(nt.labelKey)}</span>
+                          <span className="text-xs font-semibold text-center leading-tight">{nt.label}</span>
                         </button>
                       );
                     })}
@@ -392,7 +522,7 @@ export default function PushNotificationsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {QUICK_TEMPLATES.map((tpl) => {
+                    {activeTemplates.map((tpl) => {
                       const Icon = tpl.icon;
                       return (
                         <button
@@ -401,7 +531,7 @@ export default function PushNotificationsPage() {
                           className={`flex items-center gap-2 px-3 py-2.5 text-xs font-medium rounded-lg border transition-all duration-150 ${tpl.color}`}
                         >
                           <Icon className="w-3.5 h-3.5 flex-shrink-0" />
-                          {t(tpl.labelKey)}
+                          {tpl.label}
                         </button>
                       );
                     })}
@@ -476,61 +606,101 @@ export default function PushNotificationsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div>
-                    <Label className="text-xs font-medium mb-1.5 block">{t('pushNotif.sendTo')}</Label>
-                    <Select value={targetType} onValueChange={setTargetType}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">🌐 {t('pushNotif.allCustomers')}</SelectItem>
-                        <SelectItem value="active">✅ {t('pushNotif.activeCustomers')}</SelectItem>
-                        <SelectItem value="expired">❌ {t('pushNotif.expiredCustomers')}</SelectItem>
-                        <SelectItem value="area">📍 {t('pushNotif.perArea')}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {recipientRole === 'customer' && (
+                    <>
+                      <div>
+                        <Label className="text-xs font-medium mb-1.5 block">{t('pushNotif.sendTo')}</Label>
+                        <Select value={targetType} onValueChange={setTargetType}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">🌐 {t('pushNotif.allCustomers')}</SelectItem>
+                            <SelectItem value="active">✅ {t('pushNotif.activeCustomers')}</SelectItem>
+                            <SelectItem value="expired">❌ {t('pushNotif.expiredCustomers')}</SelectItem>
+                            <SelectItem value="area">📍 {t('pushNotif.perArea')}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                  {targetType === 'area' && (
-                    <div>
-                      <Label className="text-xs font-medium mb-1.5 block">{t('pushNotif.selectArea')}</Label>
-                      <Select value={selectedArea} onValueChange={setSelectedArea}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('pushNotif.selectAreaPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {stats?.areas.map((area) => (
-                            <SelectItem key={area.id} value={area.id}>
-                              {area.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                      {targetType === 'area' && (
+                        <div>
+                          <Label className="text-xs font-medium mb-1.5 block">{t('pushNotif.selectArea')}</Label>
+                          <Select value={selectedArea} onValueChange={setSelectedArea}>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('pushNotif.selectAreaPlaceholder')} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {stats?.areas.map((area) => (
+                                <SelectItem key={area.id} value={area.id}>
+                                  {area.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </>
                   )}
 
-                  {/* Token Coverage Info */}
+                  {/* Subscriber info */}
                   <div className="rounded-xl bg-gradient-to-br from-muted/80 to-muted/40 p-4 space-y-2">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">{t('pushNotif.registeredPushLabel')}</span>
-                      <span className="font-bold text-emerald-600">{stats?.usersWithTokens ?? 0} {t('pushNotif.users')}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-muted-foreground">{t('pushNotif.totalCustomersLabel')}</span>
-                      <span className="font-semibold">{stats?.totalUsers ?? 0} {t('pushNotif.users')}</span>
-                    </div>
-                    {stats && stats.totalUsers > 0 && (
-                      <div className="pt-1.5">
-                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div
-                            className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-2 rounded-full transition-all"
-                            style={{ width: `${coveragePct}%` }}
-                          />
+                    {recipientRole === 'customer' && (
+                      <>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">{t('pushNotif.registeredPushLabel')}</span>
+                          <span className="font-bold text-emerald-600">{stats?.usersWithTokens ?? 0} {t('pushNotif.users')}</span>
                         </div>
-                        <p className="text-[11px] text-muted-foreground mt-1.5 text-center font-medium">
-                          {coveragePct}% coverage
-                        </p>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">{t('pushNotif.totalCustomersLabel')}</span>
+                          <span className="font-semibold">{stats?.totalUsers ?? 0} {t('pushNotif.users')}</span>
+                        </div>
+                        {stats && stats.totalUsers > 0 && (
+                          <div className="pt-1.5">
+                            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className="bg-gradient-to-r from-emerald-400 to-emerald-500 h-2 rounded-full transition-all"
+                                style={{ width: `${coveragePct}%` }}
+                              />
+                            </div>
+                            <p className="text-[11px] text-muted-foreground mt-1.5 text-center font-medium">
+                              {coveragePct}% coverage
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {recipientRole === 'technician' && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Teknisi dengan Push aktif</span>
+                        <span className="font-bold text-amber-600">{stats?.technicianSubscribers ?? 0} teknisi</span>
                       </div>
+                    )}
+                    {recipientRole === 'agent' && (
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Agen dengan Push aktif</span>
+                        <span className="font-bold text-emerald-600">{stats?.agentSubscribers ?? 0} agen</span>
+                      </div>
+                    )}
+                    {recipientRole === 'all' && (
+                      <>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Pelanggan</span>
+                          <span className="font-bold text-blue-600">{stats?.usersWithTokens ?? 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Teknisi</span>
+                          <span className="font-bold text-amber-600">{stats?.technicianSubscribers ?? 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Agen</span>
+                          <span className="font-bold text-emerald-600">{stats?.agentSubscribers ?? 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs border-t pt-2 mt-1">
+                          <span className="text-muted-foreground font-semibold">Total penerima</span>
+                          <span className="font-bold text-purple-600">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0)}</span>
+                        </div>
+                      </>
                     )}
                   </div>
                 </CardContent>
@@ -584,7 +754,7 @@ export default function PushNotificationsPage() {
                 className="w-full gap-2 h-12 text-base font-bold shadow-lg"
                 size="lg"
                 onClick={handleSend}
-                disabled={sending || !title.trim() || !message.trim() || (targetType === 'area' && !selectedArea)}
+                disabled={sending || !title.trim() || !message.trim() || (recipientRole === 'customer' && targetType === 'area' && !selectedArea)}
               >
                 {sending ? (
                   <>

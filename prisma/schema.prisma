@@ -66,6 +66,7 @@ model agent {
   deposits    agentDeposit[]
   vouchers    hotspotVoucher[]
   notifications agentNotification[]
+  pushSubscriptions agentPushSubscription[]
 
   @@index([phone])
   @@index([routerId])
@@ -808,6 +809,44 @@ model pushSubscription {
   @@map("push_subscriptions")
 }
 
+model agentPushSubscription {
+  id             String    @id @default(cuid())
+  agentId        String
+  agent          agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  endpoint       String    @unique @db.VarChar(500)
+  p256dh         String    @db.Text
+  auth           String    @db.Text
+  expirationTime DateTime?
+  userAgent      String?   @db.Text
+  isActive       Boolean   @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([agentId, isActive])
+  @@index([createdAt])
+  @@map("agent_push_subscriptions")
+}
+
+model technicianPushSubscription {
+  id             String      @id @default(cuid())
+  technicianId   String
+  technician     technician  @relation(fields: [technicianId], references: [id], onDelete: Cascade)
+  endpoint       String      @unique @db.VarChar(500)
+  p256dh         String      @db.Text
+  auth           String      @db.Text
+  expirationTime DateTime?
+  userAgent      String?     @db.Text
+  isActive       Boolean     @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([technicianId, isActive])
+  @@index([createdAt])
+  @@map("technician_push_subscriptions")
+}
+
 model transactionCategory {
   id           String        @id
   name         String        @unique
@@ -1509,6 +1548,7 @@ model technician {
   lastLoginAt   DateTime?
   otpTokens     technicianOtp[]
   workOrders    workOrder[]
+  pushSubscriptions technicianPushSubscription[]
 
   @@index([phoneNumber])
   @@index([isActive])

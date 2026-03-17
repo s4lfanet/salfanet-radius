@@ -139,17 +139,24 @@ export default function SystemUpdatePage() {
     setLog('');
     setUpdateDone(false);
 
-    const res = await fetch('/api/admin/system/update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ force }),
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      alert(data.error || 'Gagal memulai update');
-      return;
+    try {
+      const res = await fetch('/api/admin/system/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force }),
+      });
+
+      let data: any = {};
+      try { data = await res.json(); } catch { /* empty body */ }
+
+      if (!res.ok) {
+        alert(data.error || `Gagal memulai update (HTTP ${res.status})`);
+        return;
+      }
+      startSse();
+    } catch (e: any) {
+      alert('Gagal memulai update: ' + (e?.message || 'network error'));
     }
-    startSse();
   }
 
   async function handleCheck() {
@@ -159,18 +166,24 @@ export default function SystemUpdatePage() {
       const res = await fetch('/api/admin/system/update?action=check', {
         method: 'POST',
       });
-      const data = await res.json();
+      let data: any = {};
+      try { data = await res.json(); } catch { data = { error: `HTTP ${res.status}` }; }
       setCheckResult(data);
+    } catch (e: any) {
+      setCheckResult({ error: e?.message || 'network error' });
     } finally {
       setChecking(false);
     }
   }
 
   async function handleShowLastLog() {
-    const res = await fetch('/api/admin/system/update?action=status');
-    const data = await res.json();
-    setLog(data.log || '(log kosong)');
-    setShowLog(true);
+    try {
+      const res = await fetch('/api/admin/system/update?action=status');
+      let data: any = {};
+      try { data = await res.json(); } catch { /* ignore */ }
+      setLog(data.log || '(log kosong)');
+      setShowLog(true);
+    } catch { /* ignore */ }
   }
 
   return (

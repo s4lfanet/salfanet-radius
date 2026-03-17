@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
       title,
       body: message,
       type: body.type || 'broadcast',
+      recipientRole: body.recipientRole || 'customer',
       targetType: body.targetType || 'all',
       targetIds: Array.isArray(body.targetIds) ? body.targetIds : [],
       sentBy,

@@ -67,10 +67,10 @@ log "Applying code update..."
 git reset --hard origin/master 2>&1 || err "git reset --hard failed"
 ok "Code updated to $NEW_SHORT"
 
-# ── npm install (only if package.json changed) ────────────
-if echo "$CHANGED" | grep -qE '^package\.json$|^package-lock\.json$'; then
+# ── npm install (if package.json changed OR node_modules missing) ────
+if echo "$CHANGED" | grep -qE '^package\.json$|^package-lock\.json$' || [ ! -d node_modules ]; then
   echo ""
-  log "package.json changed — installing dependencies..."
+  log "package.json changed or node_modules missing — installing dependencies..."
   npm install 2>&1 | tail -5
   ok "npm install done"
 fi
@@ -80,17 +80,23 @@ if echo "$CHANGED" | grep -q '^prisma/schema\.prisma$'; then
   echo ""
   log "Prisma schema changed — running generate + db push..."
   npx prisma generate 2>&1 | tail -3
-  npx prisma db push 2>&1 | tail -5
+  npx prisma db push --accept-data-loss 2>&1 | tail -5
   ok "Prisma updated"
 fi
 
 # ── Build ─────────────────────────────────────────────────
 echo ""
 log "Building application (this takes ~60s)..."
-npm run build 2>&1 | grep -E 'error|Error|warning|Compiled|Generating|Page|Route|✓|✗' | tail -15
+npm run build 2>&1 | grep -E 'error|Error|warning|Compiled|Generating|Page|Route|✓|✗|postbuild' | tail -20
 BUILD_EXIT=${PIPESTATUS[0]}
 [ "$BUILD_EXIT" -ne 0 ] && err "npm run build failed (exit $BUILD_EXIT)"
 ok "Build completed"
+
+# ── Copy static assets to standalone ─────────────────────
+if [ -d ".next/static" ] && [ -d ".next/standalone" ]; then
+  cp -r .next/static .next/standalone/.next/static 2>/dev/null || true
+  ok "Static assets copied to standalone"
+fi
 
 # ── Restart PM2 ───────────────────────────────────────────
 echo ""
