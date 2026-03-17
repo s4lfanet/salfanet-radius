@@ -35,7 +35,6 @@ interface Credentials {
   server: string
   username: string
   password: string
-  ipsecSecret?: string
   vpnIp: string
   winboxPort?: number
   winboxRemote?: string
@@ -54,7 +53,7 @@ export default function VpnClientPage() {
   const [showModal, setShowModal] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState<Credentials | null>(null);
-  const [selectedVpnType, setSelectedVpnType] = useState<'l2tp' | 'sstp' | 'pptp'>('l2tp');
+  const [selectedVpnType, setSelectedVpnType] = useState<'l2tp' | 'pptp'>('l2tp');
   const [creating, setCreating] = useState(false);
   const [expandedRoutingPanels, setExpandedRoutingPanels] = useState<Set<string>>(new Set());
   const [showApplyRoutingModal, setShowApplyRoutingModal] = useState(false);
@@ -66,7 +65,7 @@ export default function VpnClientPage() {
     name: '',
     description: '',
     vpnServerId: '',
-    vpnType: 'l2tp' as 'l2tp' | 'sstp' | 'pptp',
+    vpnType: 'l2tp' as 'l2tp' | 'pptp',
   });
 
   useEffect(() => {
@@ -117,84 +116,13 @@ export default function VpnClientPage() {
     }
   };
 
-  const generateSstpVpsScript = (): string => {
-    if (!credentials) return '';
-    const user = credentials.username;
-    const serverHost = credentials.server;
-    const pass = credentials.password;
-    const vpnServer = vpnServers.find(s =>
-      clients.find(c => c.username === user && c.vpnServerId === s.id)
-    );
-    const subnet = vpnServer?.subnet || '10.20.30.0/24';
-    return [
-      `#!/bin/bash`,
-      `# ============================================================`,
-      `# Linux VPS: SSTP Connect ke MikroTik CHR`,
-      `# Jalankan sebagai root setelah install-vpn-client.sh`,
-      `# ============================================================`,
-      ``,
-      `# [1] Pastikan tools terinstall`,
-      `if ! command -v sstpc &>/dev/null; then`,
-      `  echo "ERROR: sstpc belum terinstall."`,
-      `  echo "Jalankan: bash /opt/salfanet-radius/vps-install/install-vpn-client.sh"`,
-      `  exit 1`,
-      `fi`,
-      ``,
-      `# [2] Tulis kredensial VPN`,
-      `mkdir -p /etc/vpn`,
-      `cat > /etc/vpn/vpn.conf << 'CONFEOF'`,
-      `VPN_SERVER=${serverHost}`,
-      `VPN_USER=${user}`,
-      `VPN_PASS=${pass}`,
-      `VPN_SUBNET=${subnet}`,
-      `CONFEOF`,
-      `chmod 600 /etc/vpn/vpn.conf`,
-      ``,
-      `# [3] Start dan enable VPN service`,
-      `systemctl daemon-reload`,
-      `systemctl start  sstp-vpn`,
-      `systemctl enable sstp-vpn`,
-      `echo "Menunggu koneksi (8 detik)..."`,
-      `sleep 8`,
-      ``,
-      `# [4] Verifikasi`,
-      `vpn-connect status`,
-      `echo ""`,
-      `echo "Jika ppp0 aktif, lanjut jalankan VPS Routing Script."`,
-      `echo "Jika gagal: journalctl -u sstp-vpn -n 30 --no-pager"`,
-    ].join('\n');
-  };
-
   const generateVpsRoutingScript = (client: VpnClient): string => {
     const server = vpnServers.find(s => s.id === client.vpnServerId);
     const subnet = server?.subnet || '10.20.30.0/24';
     const parts = subnet.split('/')[0].split('.');
     const gateway = `${parts[0]}.${parts[1]}.${parts[2]}.1`;
-    const isSSTP = (client.vpnType?.toLowerCase() === 'sstp');
-
-    const sstpPreamble: string[] = isSSTP ? [
-      `# ============================================================`,
-      `# [PRE] SSTP VPN Connect (jalankan SEBELUM routing)`,
-      `# ============================================================`,
-      `mkdir -p /etc/vpn`,
-      `cat > /etc/vpn/vpn.conf << 'CONFEOF'`,
-      `VPN_SERVER=${server?.host || '<IP_MIKROTIK>'}`,
-      `VPN_USER=${client.username}`,
-      `VPN_PASS=${client.password}`,
-      `VPN_SUBNET=${subnet}`,
-      `CONFEOF`,
-      `chmod 600 /etc/vpn/vpn.conf`,
-      `systemctl daemon-reload`,
-      `systemctl start sstp-vpn ; systemctl enable sstp-vpn`,
-      `echo "Tunggu koneksi (8 detik)..."`,
-      `sleep 8`,
-      `vpn-connect status`,
-      `ip addr show | grep -q ppp || { echo "ERROR: ppp0 tidak aktif. Cek: journalctl -u sstp-vpn -n 30"; exit 1; }`,
-      ``,
-    ] : [];
 
     return [
-      ...sstpPreamble,
       `#!/bin/bash`,
       `# ============================================================`,
       `# VPS Routing Setup -- RADIUS Server (${client.name})`,
@@ -289,7 +217,7 @@ export default function VpnClientPage() {
 
       if (result.success) {
         setCredentials(result.credentials);
-        setSelectedVpnType((result.credentials?.vpnType || 'l2tp') as 'l2tp' | 'sstp' | 'pptp');
+        setSelectedVpnType((result.credentials?.vpnType || 'l2tp') as 'l2tp' | 'pptp');
         setShowCredentials(true);
         setShowModal(false);
         loadClients();
@@ -352,14 +280,13 @@ export default function VpnClientPage() {
     const server = vpnServers.find(s => s.id === client.vpnServerId)
     if (!server) return
 
-    const clientVpnType = (client.vpnType?.toLowerCase() || 'l2tp') as 'l2tp' | 'sstp' | 'pptp'
+    const clientVpnType = (client.vpnType?.toLowerCase() || 'l2tp') as 'l2tp' | 'pptp'
     const radiusServer = clients.find(c => c.isRadiusServer)
 
     setCredentials({
       server: server.host,
       username: client.username,
       password: client.password,
-      ipsecSecret: clientVpnType === 'l2tp' ? 'salfanet-vpn-secret' : undefined,
       vpnIp: client.vpnIp,
       winboxPort: client.winboxPort || undefined,
       winboxRemote: client.winboxPort ? `${server.host}:${client.winboxPort}` : undefined,
@@ -415,7 +342,7 @@ export default function VpnClientPage() {
 # --- RADIUS not configured ---
 # Mark one VPN Client as "RADIUS Server" in admin panel first`
 
-    const scriptBase = (vpnCmd: string, ipsecLine: string, authLine: string, iface: string) =>
+    const scriptBase = (vpnCmd: string, iface: string) =>
 `# ============================================================
 # MikroTik VPN Client + RADIUS Setup Script
 # NAS: ${credentials.vpnIp}
@@ -442,21 +369,12 @@ ${radiusSection}`.trim()
 
     if (selectedVpnType === 'l2tp') {
       return scriptBase(
-        `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} ipsec-secret=${credentials.ipsecSecret} disabled=no name=l2tp-client-salfanet use-ipsec=yes add-default-route=no allow=mschap2 comment="SALFANET VPN"`,
-        ' use-ipsec=yes ipsec-secret=salfanet-vpn-secret',
-        ' allow=mschap2',
+        `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=l2tp-client-salfanet use-ipsec=no add-default-route=no allow=mschap2 comment="SALFANET VPN"`,
         'l2tp-client'
-      )
-    } else if (selectedVpnType === 'sstp') {
-      return scriptBase(
-        `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=sstp-client-salfanet add-default-route=no authentication=mschap2 comment="SALFANET VPN"`,
-        '', ' authentication=mschap2',
-        'sstp-client'
       )
     } else {
       return scriptBase(
         `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=pptp-client-salfanet add-default-route=no comment="SALFANET VPN"`,
-        '', '',
         'pptp-client'
       )
     }
@@ -807,8 +725,8 @@ ${radiusSection}`.trim()
                   <label className="block text-sm font-medium text-[#00f7ff] mb-2">
                     VPN Protocol <span className="text-red-400">*</span>
                   </label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['l2tp', 'sstp', 'pptp'] as const).map((type) => (
+                  <div className="grid grid-cols-2 gap-2">
+                    {(['l2tp', 'pptp'] as const).map((type) => (
                       <button
                         key={type}
                         type="button"
@@ -902,12 +820,6 @@ ${radiusSection}`.trim()
                     <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.password')}</p>
                     <p className="font-mono text-sm text-foreground">{credentials.password}</p>
                   </div>
-                  {credentials.ipsecSecret && (
-                    <div>
-                      <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.ipsecSecret')}</p>
-                      <p className="font-mono text-sm text-foreground">{credentials.ipsecSecret}</p>
-                    </div>
-                  )}
                   {credentials.winboxRemote && (
                     <div>
                       <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.winboxRemote')}</p>
@@ -949,7 +861,7 @@ ${radiusSection}`.trim()
                     {t('network.selectVpnType')}
                   </p>
                   <div className="flex gap-2 flex-wrap">
-                    {(['l2tp', 'sstp', 'pptp'] as const).map((type) => (
+                    {(['l2tp', 'pptp'] as const).map((type) => (
                       <button
                         key={type}
                         onClick={() => setSelectedVpnType(type)}
@@ -982,38 +894,6 @@ ${radiusSection}`.trim()
                     {generateMikroTikScript()}
                   </pre>
                 </div>
-
-                {/* SSTP Linux VPS Script — shown only when SSTP is selected */}
-                {selectedVpnType === 'sstp' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-sm font-medium text-[#00f7ff] uppercase tracking-wider">
-                          Linux VPS — SSTP Connect Script
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          Jalankan di VPS (RADIUS server) setelah install-vpn-client.sh
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => copyToClipboard(generateSstpVpsScript())}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black font-bold rounded-lg hover:shadow-[0_0_20px_rgba(0,247,255,0.4)] transition-all text-sm flex-shrink-0"
-                      >
-                        <Copy className="w-4 h-4" />
-                        Copy VPS Script
-                      </button>
-                    </div>
-                    <pre className="p-5 bg-slate-950 text-cyan-400 border border-[#00f7ff]/30 rounded-xl text-xs overflow-auto max-h-72 whitespace-pre font-mono">
-                      {generateSstpVpsScript()}
-                    </pre>
-                    <div className="mt-2 px-4 py-3 bg-[#00f7ff]/5 border border-[#00f7ff]/20 rounded-lg">
-                      <p className="text-xs text-[#00f7ff]/80">
-                        <strong>Prasyarat:</strong> install-vpn-client.sh harus sudah dijalankan di VPS ({`bash /opt/salfanet-radius/vps-install/install-vpn-client.sh`}).
-                        Script ini mengkonfigurasi <code className="px-1 py-0.5 bg-slate-800 rounded">/etc/vpn/vpn.conf</code> dan memulai <code className="px-1 py-0.5 bg-slate-800 rounded">sstp-vpn.service</code>.
-                      </p>
-                    </div>
-                  </div>
-                )}
 
                 {/* Important Notes */}
                 <div className="p-5 bg-amber-500/10 border border-amber-500/30 rounded-xl">

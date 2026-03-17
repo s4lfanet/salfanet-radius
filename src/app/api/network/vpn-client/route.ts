@@ -156,7 +156,9 @@ export async function POST(request: Request) {
 
   try {
     const { name, description, vpnServerId, vpnType: rawVpnType } = await request.json()
-    const vpnType: 'l2tp' | 'sstp' | 'pptp' | 'wireguard' = rawVpnType || 'l2tp'
+    const normalizedType = String(rawVpnType || 'l2tp').toLowerCase()
+    const vpnType: 'l2tp' | 'pptp' | 'wireguard' =
+      normalizedType === 'pptp' || normalizedType === 'wireguard' ? normalizedType : 'l2tp'
 
     // Validate VPN server ID
     if (!vpnServerId) {
@@ -392,8 +394,8 @@ ${radiusSection}
 `.trim()
     } else {
       const vpnTypeUpper = vpnType.toUpperCase()
-      const interfaceType = vpnType === 'sstp' ? 'sstp-client' : vpnType === 'pptp' ? 'pptp-client' : 'l2tp-client'
-      const ipsecLine = vpnType === 'l2tp' ? ' use-ipsec=yes ipsec-secret=salfanet-vpn-secret' : ''
+      const interfaceType = vpnType === 'pptp' ? 'pptp-client' : 'l2tp-client'
+      const ipsecLine = vpnType === 'l2tp' ? ' use-ipsec=no' : ''
       const authLine = vpnType === 'l2tp' ? ' allow=mschap2' : ' authentication=mschap2'
 
       nasSetupScript = `
@@ -441,7 +443,6 @@ ${radiusSection}
         server: vpnServer.host,
         username,
         password,
-        ipsecSecret: vpnType === 'l2tp' ? 'salfanet-vpn-secret' : undefined,
         vpnIp,
         winboxPort: winboxPort || undefined,
         winboxRemote: winboxPort ? `${vpnServer.host}:${winboxPort}` : undefined,

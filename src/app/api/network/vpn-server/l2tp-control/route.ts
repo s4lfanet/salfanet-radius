@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       vpnServerIp,
       l2tpUsername,
       l2tpPassword,
-      ipsecPsk,
       vpnSubnet,    // VPN subnet for routing (e.g., "10.20.30.0/24")
     } = await request.json();
 

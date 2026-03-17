@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         apiPort: parseInt(data.apiPort) || 8728,
         subnet: data.subnet || '10.20.30.0/24',
         l2tpEnabled: !!data.l2tpEnabled,
-        sstpEnabled: !!data.sstpEnabled,
+        sstpEnabled: false,
         pptpEnabled: !!data.pptpEnabled,
         openVpnEnabled: !!data.openVpnEnabled,
       },
@@ -105,7 +105,7 @@ export async function PUT(request: Request) {
       apiPort: parseInt(data.apiPort) || 8728,
       subnet: data.subnet,
       l2tpEnabled: !!data.l2tpEnabled,
-      sstpEnabled: !!data.sstpEnabled,
+      sstpEnabled: false,
       pptpEnabled: !!data.pptpEnabled,
       openVpnEnabled: !!data.openVpnEnabled,
     }

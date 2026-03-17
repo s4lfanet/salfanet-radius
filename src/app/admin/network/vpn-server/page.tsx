@@ -15,7 +15,6 @@ interface VpnServer {
   apiPort: number
   subnet: string
   l2tpEnabled: boolean
-  sstpEnabled: boolean
   pptpEnabled: boolean
   openVpnEnabled: boolean
   isActive: boolean
@@ -62,24 +61,15 @@ export default function VpnServerPage() {
   const [pptpLoading, setPptpLoading] = useState(false);
   const [pptpLogs, setPptpLogs] = useState<string[]>([]);
 
-  // SSTP VPN Control States
-  const [showSstpControl, setShowSstpControl] = useState(false);
-  const [sstpStatus, setSstpStatus] = useState<any>(null);
-  const [sstpLoading, setSstpLoading] = useState(false);
-  const [sstpLogs, setSstpLogs] = useState<string[]>([]);
   // --- Modal States --------------------------------------------------------
   const [showL2tpSshModal, setShowL2tpSshModal] = useState(false);
   const [pendingL2tpAction, setPendingL2tpAction] = useState('');
   const [pendingL2tpServer, setPendingL2tpServer] = useState<VpnServer | null>(null);
-  const [l2tpSshForm, setL2tpSshForm] = useState({ host: '', port: '22', username: 'root', password: '', vpnServerIp: '', l2tpUsername: '', l2tpPassword: '', ipsecPsk: '' });
+  const [l2tpSshForm, setL2tpSshForm] = useState({ host: '', port: '22', username: 'root', password: '', vpnServerIp: '', l2tpUsername: '', l2tpPassword: '' });
   const [showPptpSshModal, setShowPptpSshModal] = useState(false);
   const [pendingPptpAction, setPendingPptpAction] = useState('');
   const [pendingPptpServer, setPendingPptpServer] = useState<VpnServer | null>(null);
   const [pptpSshForm, setPptpSshForm] = useState({ host: '', port: '22', username: 'root', password: '', pptpServer: '', pptpUser: '', pptpPass: '' });
-  const [showSstpSshModal, setShowSstpSshModal] = useState(false);
-  const [pendingSstpAction, setPendingSstpAction] = useState('');
-  const [pendingSstpServer, setPendingSstpServer] = useState<VpnServer | null>(null);
-  const [sstpSshForm, setSstpSshForm] = useState({ host: '', port: '22', username: 'root', password: '', sstpServer: '', sstpUser: '', sstpPass: '' });
   const [showTestPasswordModal, setShowTestPasswordModal] = useState(false);
   const [testPasswordServer, setTestPasswordServer] = useState<VpnServer | null>(null);
   const [testPasswordValue, setTestPasswordValue] = useState('');
@@ -103,7 +93,6 @@ export default function VpnServerPage() {
     vpnServerIp: '',
     l2tpUsername: '',
     l2tpPassword: '',
-    ipsecPsk: '',
   });
 
   const [formData, setFormData] = useState({
@@ -114,7 +103,6 @@ export default function VpnServerPage() {
     apiPort: '8728',
     subnet: '10.20.30.0/24',
     l2tpEnabled: false,
-    sstpEnabled: false,
     pptpEnabled: false,
     openVpnEnabled: false,
   });
@@ -160,7 +148,7 @@ export default function VpnServerPage() {
   };
 
   const handleConnectL2tp = async () => {
-    const { host, port, username, password, vpnServerIp, l2tpUsername, l2tpPassword, ipsecPsk } = l2tpSshForm;
+    const { host, port, username, password, vpnServerIp, l2tpUsername, l2tpPassword } = l2tpSshForm;
     if (!host || !username || !password) { addToast({ type: 'error', title: 'SSH credentials wajib diisi' }); return; }
     if (!vpnServerIp || !l2tpUsername || !l2tpPassword) { addToast({ type: 'error', title: 'Detail koneksi L2TP wajib diisi semua' }); return; }
     // Block jika VPN Client tidak dikonfigurasi sebagai RADIUS Server
@@ -172,11 +160,11 @@ export default function VpnServerPage() {
     const server = editingServer!;
     const sshCreds = { host, port, username, password };
     setSavedSshCredentials(sshCreds);
-    setL2tpConfig({ vpnServerIp, l2tpUsername, l2tpPassword, ipsecPsk });
+    setL2tpConfig({ vpnServerIp, l2tpUsername, l2tpPassword });
     // Persist to localStorage so modal doesn't ask again on next open
     try {
       localStorage.setItem('l2tp_ssh_credentials', JSON.stringify(sshCreds));
-      localStorage.setItem('l2tp_config', JSON.stringify({ vpnServerIp, l2tpUsername, l2tpPassword, ipsecPsk }));
+      localStorage.setItem('l2tp_config', JSON.stringify({ vpnServerIp, l2tpUsername, l2tpPassword }));
     } catch {}
     await executeL2tpAction('status', server, sshCreds);
   };
@@ -196,7 +184,6 @@ export default function VpnServerPage() {
           vpnServerIp: l2tpConfig.vpnServerIp,
           l2tpUsername: l2tpConfig.l2tpUsername,
           l2tpPassword: l2tpConfig.l2tpPassword,
-          ipsecPsk: l2tpConfig.ipsecPsk,
         }),
       });
       const result = await response.json();
@@ -296,70 +283,6 @@ export default function VpnServerPage() {
     } catch (e: any) { showError('Gagal: ' + e.message); } finally { setPptpLoading(false); }
   };
 
-
-  // --- SSTP Control Handler ----------------------------------------------------
-  const handleSstpAction = async (action: string, server: VpnServer) => {
-    if (!savedSshCredentials) {
-      addToast({ type: 'error', title: 'Isi kredensial SSH terlebih dahulu di panel kontrol' });
-      return;
-    }
-    if (action === 'configure') {
-      setSstpLoading(true);
-      try {
-        const r = await fetch('/api/network/vpn-server/sstp-control', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'configure', ...savedSshCredentials, port: parseInt(savedSshCredentials.port), vpnServerIp: sstpSshForm.sstpServer, sstpUsername: sstpSshForm.sstpUser, sstpPassword: sstpSshForm.sstpPass }),
-        });
-        const res = await r.json();
-        if (res.success) { showSuccess(res.message || 'SSTP dikonfigurasi'); setTimeout(() => handleSstpAction('status', server), 2000); }
-        else showError(res.message || 'Konfigurasi SSTP gagal');
-      } catch (e: any) { showError('Gagal: ' + e.message); } finally { setSstpLoading(false); }
-      return;
-    }
-    setSstpLoading(true);
-    try {
-      const r = await fetch('/api/network/vpn-server/sstp-control', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, ...savedSshCredentials, port: parseInt(savedSshCredentials.port) }),
-      });
-      const res = await r.json();
-      if (res.success) {
-        if (action === 'status') setSstpStatus(res.result);
-        else if (action === 'logs') setSstpLogs(res.result?.logs || [res.result?.output || '']);
-        showSuccess(res.message);
-      } else showError(res.message || 'Operasi gagal');
-    } catch (e: any) { showError('Gagal: ' + e.message); } finally { setSstpLoading(false); }
-  };
-
-  const handleConnectSstp = async () => {
-    const { host, port, username, password } = sstpSshForm;
-    if (!host || !username || !password) { addToast({ type: 'error', title: 'SSH credentials wajib diisi' }); return; }
-    const server = editingServer!;
-    const sshCreds = { host, port, username, password };
-    setSavedSshCredentials(sshCreds);
-    if (sstpSshForm.sstpServer && sstpSshForm.sstpUser && sstpSshForm.sstpPass) {
-      setSstpLoading(true);
-      try {
-        const r = await fetch('/api/network/vpn-server/sstp-control', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'configure', ...sshCreds, port: parseInt(port), vpnServerIp: sstpSshForm.sstpServer, sstpUsername: sstpSshForm.sstpUser, sstpPassword: sstpSshForm.sstpPass }),
-        });
-        const res = await r.json();
-        if (res.success) { showSuccess(res.message || 'SSTP dikonfigurasi'); setTimeout(() => handleSstpAction('status', server), 2000); }
-        else showError(res.message || 'Konfigurasi SSTP gagal');
-      } catch (e: any) { showError('Gagal: ' + e.message); } finally { setSstpLoading(false); }
-      return;
-    }
-    setSstpLoading(true);
-    try {
-      const r = await fetch('/api/network/vpn-server/sstp-control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', ...sshCreds, port: parseInt(port) }) });
-      const res = await r.json();
-      if (res.success) { setSstpStatus(res.result); showSuccess(res.message); }
-      else showError(res.message || 'Gagal');
-    } catch (e: any) { showError('Gagal: ' + e.message); } finally { setSstpLoading(false); }
-  };
-
-
   // --- Manual Script Generator -------------------------------------------------
   const handleManualScript = (server: VpnServer) => {
     const [network] = server.subnet.split('/');
@@ -383,18 +306,15 @@ export default function VpnServerPage() {
 /ppp/profile/add name=vpn-profile local-address=${localAddr} remote-address=vpn-pool dns-server=8.8.8.8,8.8.4.4
 
 # --- Step 3: L2TP Server ---
-/interface/l2tp-server/server/set enabled=yes default-profile=vpn-profile use-ipsec=yes ipsec-secret=salfanet-vpn-secret
+/interface/l2tp-server/server/set enabled=yes default-profile=vpn-profile use-ipsec=no
 
-# --- Step 4: SSTP Server ---
-/interface/sstp-server/server/set enabled=yes default-profile=vpn-profile
-
-# --- Step 5: PPTP Server ---
+# --- Step 4: PPTP Server ---
 /interface/pptp-server/server/set enabled=yes default-profile=vpn-profile
 
-# --- Step 6: NAT Masquerade ---
+# --- Step 5: NAT Masquerade ---
 /ip/firewall/nat/add chain=srcnat action=masquerade comment="VPN NAT"
 
-# --- Step 7: Firewall Forward ---
+# --- Step 6: Firewall Forward ---
 /ip/firewall/filter/add chain=forward src-address=${vpnNet} dst-address=${vpnNet} action=accept comment="SALFANET-VPN-Forward"
 /ip/firewall/filter/add chain=input protocol=udp src-address=${vpnNet} dst-port=1812,1813,3799 action=accept comment="SALFANET-VPN-Forward-RADIUS"
 /ip/firewall/filter/add chain=input protocol=tcp src-address=${vpnNet} dst-port=8291,8728,8729 action=accept comment="SALFANET-VPN-Forward-API"
@@ -414,25 +334,21 @@ export default function VpnServerPage() {
 /ppp profile add name=vpn-profile local-address=${localAddr} remote-address=vpn-pool dns-server=8.8.8.8,8.8.4.4
 
 # --- Step 3: L2TP Server ---
-/interface l2tp-server server set enabled=yes default-profile=vpn-profile use-ipsec=yes ipsec-secret=salfanet-vpn-secret
+/interface l2tp-server server set enabled=yes default-profile=vpn-profile use-ipsec=no
 
-# --- Step 4: SSTP Server ---
-/interface sstp-server server set enabled=yes default-profile=vpn-profile
-
-# --- Step 5: PPTP Server ---
+# --- Step 4: PPTP Server ---
 /interface pptp-server server set enabled=yes default-profile=vpn-profile
 
-# --- Step 6: NAT Masquerade ---
+# --- Step 5: NAT Masquerade ---
 /ip firewall nat add chain=srcnat action=masquerade comment="VPN NAT"
 
-# --- Step 7: Firewall Forward ---
+# --- Step 6: Firewall Forward ---
 /ip firewall filter add chain=forward src-address=${vpnNet} dst-address=${vpnNet} action=accept comment="SALFANET-VPN-Forward"
 /ip firewall filter add chain=input protocol=udp src-address=${vpnNet} dst-port=1812,1813,3799 action=accept comment="SALFANET-VPN-Forward-RADIUS"
 /ip firewall filter add chain=input protocol=tcp src-address=${vpnNet} dst-port=8291,8728,8729 action=accept comment="SALFANET-VPN-Forward-API"
 
 # --- Verify ---
 /interface l2tp-server server print
-/interface sstp-server server print
 /interface pptp-server server print
 /ip pool print where name=vpn-pool
 /ppp profile print where name=vpn-profile`;
@@ -444,14 +360,14 @@ export default function VpnServerPage() {
   const handleAdd = () => {
     setEditingServer(null);
     setTestResult(null);
-    setFormData({ name: '', host: '', username: 'admin', password: '', apiPort: '8728', subnet: '10.20.30.0/24', l2tpEnabled: false, sstpEnabled: false, pptpEnabled: false, openVpnEnabled: false });
+    setFormData({ name: '', host: '', username: 'admin', password: '', apiPort: '8728', subnet: '10.20.30.0/24', l2tpEnabled: false, pptpEnabled: false, openVpnEnabled: false });
     setShowModal(true);
   }
 
   const handleEdit = (server: VpnServer) => {
     setEditingServer(server)
     setTestResult(null)
-    setFormData({ name: server.name, host: server.host, username: server.username, password: '', apiPort: server.apiPort.toString(), subnet: server.subnet, l2tpEnabled: server.l2tpEnabled, sstpEnabled: server.sstpEnabled, pptpEnabled: server.pptpEnabled, openVpnEnabled: server.openVpnEnabled })
+    setFormData({ name: server.name, host: server.host, username: server.username, password: '', apiPort: server.apiPort.toString(), subnet: server.subnet, l2tpEnabled: server.l2tpEnabled, pptpEnabled: server.pptpEnabled, openVpnEnabled: server.openVpnEnabled })
     setShowModal(true)
   }
 
@@ -643,8 +559,7 @@ export default function VpnServerPage() {
               const stepsHtml = allSteps.map(formatStep).join('');
               if (data.success) {
                 const protocols: string[] = [];
-                if (data.l2tp) protocols.push('L2TP/IPSec');
-                if (data.sstp) protocols.push('SSTP');
+                if (data.l2tp) protocols.push('L2TP');
                 if (data.pptp) protocols.push('PPTP');
                 const successMsg = (t('network.protocolsEnabled') || 'Protokol aktif: {protocols}').replace('{protocols}', protocols.join(', ')) + (data.rosVersion ? ` | RouterOS: ${data.rosVersion}` : '');
                 setSetupResultModal({ success: true, title: t('network.setupComplete') || 'Setup Selesai', message: successMsg, stepsHtml });
@@ -672,9 +587,8 @@ export default function VpnServerPage() {
 
   // Stats calculations
   const totalServers = servers.length;
-  const activeServers = servers.filter(s => s.l2tpEnabled || s.sstpEnabled || s.pptpEnabled || s.openVpnEnabled).length;
+  const activeServers = servers.filter(s => s.l2tpEnabled || s.pptpEnabled || s.openVpnEnabled).length;
   const l2tpServers = servers.filter(s => s.l2tpEnabled).length;
-  const sstpServers = servers.filter(s => s.sstpEnabled).length;
   const pptpServers = servers.filter(s => s.pptpEnabled).length;
 
   if (loading) {
@@ -696,7 +610,6 @@ export default function VpnServerPage() {
     <>
       {/* L2TP SSH Credential Modal — removed, form is now inline in L2TP Control modal */}
       {/* PPTP SSH Credential Modal — removed, form is now inline in PPTP Control modal */}
-      {/* SSTP SSH Credential Modal — removed, form is now inline in SSTP Control modal */}
       {/* Test Password Modal */}
       {showTestPasswordModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowTestPasswordModal(false)}>
@@ -726,7 +639,7 @@ export default function VpnServerPage() {
               <button onClick={() => setShowSetupPasswordModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
             </div>
             <div className="p-4">
-              <p className="text-sm text-muted-foreground mb-3">This will configure: L2TP/IPSec, SSTP, PPTP, IP Pool ({setupPasswordServer?.subnet}), PPP Profile, NAT.</p>
+              <p className="text-sm text-muted-foreground mb-3">This will configure: L2TP, PPTP, IP Pool ({setupPasswordServer?.subnet}), PPP Profile, NAT.</p>
               <label className="block text-sm font-medium text-[#00f7ff] mb-2">MikroTik Password:</label>
               <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" type="password" placeholder="Enter password..." value={setupPasswordValue} onChange={(e) => setSetupPasswordValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmitSetupPassword()} autoFocus />
             </div>
@@ -826,7 +739,7 @@ export default function VpnServerPage() {
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* Total Servers */}
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-[#bc13fe]/30 p-5 hover:border-[#bc13fe]/50 transition-all group">
               <div className="flex items-center justify-between mb-3">
@@ -856,16 +769,6 @@ export default function VpnServerPage() {
               </div>
               <p className="text-lg sm:text-2xl font-bold text-foreground">{l2tpServers}</p>
               <p className="text-xs text-muted-foreground mt-1">L2TP Aktif</p>
-            </div>
-            {/* SSTP Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-blue-500/30 p-5 hover:border-blue-500/50 transition-all group">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-blue-500/20 rounded-lg group-hover:bg-blue-500/30 transition-colors">
-                  <Shield className="w-5 h-5 text-blue-400" />
-                </div>
-              </div>
-              <p className="text-lg sm:text-2xl font-bold text-foreground">{sstpServers}</p>
-              <p className="text-xs text-muted-foreground mt-1">SSTP Aktif</p>
             </div>
             {/* PPTP Servers */}
             <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-orange-500/30 p-5 hover:border-orange-500/50 transition-all group">
@@ -924,11 +827,6 @@ export default function VpnServerPage() {
                             L2TP/IPSec
                           </span>
                         )}
-                        {server.sstpEnabled && (
-                          <span className="px-3 py-1.5 bg-blue-500/20 text-blue-400 border border-blue-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(59,130,246,0.2)]">
-                            SSTP
-                          </span>
-                        )}
                         {server.pptpEnabled && (
                           <span className="px-3 py-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(168,85,247,0.2)]">
                             PPTP
@@ -939,7 +837,7 @@ export default function VpnServerPage() {
                             OpenVPN
                           </span>
                         )}
-                        {!server.l2tpEnabled && !server.sstpEnabled && !server.pptpEnabled && !server.openVpnEnabled && (
+                        {!server.l2tpEnabled && !server.pptpEnabled && !server.openVpnEnabled && (
                           <span className="px-3 py-1.5 bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold rounded-lg">
                             {t('network.notConfigured')}
                           </span>
@@ -1019,7 +917,6 @@ export default function VpnServerPage() {
                               vpnServerIp: l2tpConfig.vpnServerIp || server.host,
                               l2tpUsername: l2tpConfig.l2tpUsername,
                               l2tpPassword: l2tpConfig.l2tpPassword,
-                              ipsecPsk: l2tpConfig.ipsecPsk,
                             }));
                             if (savedSshCredentials) {
                               setTimeout(() => executeL2tpAction('status', server, savedSshCredentials), 150);
@@ -1150,7 +1047,6 @@ export default function VpnServerPage() {
                     <div className="grid grid-cols-2 gap-3">
                       {[
                         { key: 'l2tpEnabled', label: 'L2TP/IPSec', color: 'green' },
-                        { key: 'sstpEnabled', label: 'SSTP', color: 'blue' },
                         { key: 'pptpEnabled', label: 'PPTP', color: 'purple' },                        { key: 'openVpnEnabled', label: 'OpenVPN', color: 'orange' },
                       ].map(({ key, label, color }) => (
                         <label key={key} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${(formData as any)[key] ? `bg-${color}-500/20 border-${color}-500/40` : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'}`}>
