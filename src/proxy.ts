@@ -198,6 +198,6 @@ export const config = {
   matcher: [
     '/admin/:path*',  // Admin routes (auth required)
     '/api/auth/callback/:path*',  // NextAuth callback - untuk admin login brute-force protection
-    '/((?!api|_next/static|_next/image|favicon.ico|logo.png).*)', // All other routes (for isolated IP check + security headers)
+    '/((?!api|_next/static|_next/image|favicon.ico|logo.png|manifest.json|manifest-admin.json|manifest-agent.json|manifest-customer.json|manifest-technician.json|pwa).*)', // All other routes (for isolated IP check + security headers)
   ],
 };
