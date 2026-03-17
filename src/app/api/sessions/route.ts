@@ -2,7 +2,6 @@
 import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { RouterOSAPI } from 'node-routeros';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 
 // ─── Formatting helpers ─────────────────────────────────────────────────────
@@ -18,20 +17,6 @@ function formatBytes(bytes: number): string {
   return `${value.toFixed(2)} ${units[exponent]}`;
 }
 
-/** Parse MikroTik uptime string like "3d9h5m3s" → seconds */
-function parseMikrotikUptime(uptime: string): number {
-  let seconds = 0;
-  const dMatch = uptime.match(/(\d+)d/);
-  const hMatch = uptime.match(/(\d+)h/);
-  const mMatch = uptime.match(/(\d+)m/);
-  const sMatch = uptime.match(/(\d+)s/);
-  if (dMatch) seconds += parseInt(dMatch[1]) * 86400;
-  if (hMatch) seconds += parseInt(hMatch[1]) * 3600;
-  if (mMatch) seconds += parseInt(mMatch[1]) * 60;
-  if (sMatch) seconds += parseInt(sMatch[1]);
-  return seconds;
-}
-
 function formatDuration(seconds: number): string {
   if (!seconds) return '0s';
   const hours = Math.floor(seconds / 3600);
@@ -42,17 +27,7 @@ function formatDuration(seconds: number): string {
   return `${remainingSeconds}s`;
 }
 
-/** Hard-limit an entire async operation to avoid hangs on connect OR write */
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Operation timed out after ${ms}ms`)), ms),
-    ),
-  ]);
-}
-
-// ─── Stale session cleanup ──────────────────────────────────────────────────
+// ─── Stale session cleanup ──────────────────────────────────────────────────────
 
 /**
  * Mark stale radacct sessions as stopped.
@@ -96,7 +71,6 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type'); // 'pppoe' | 'hotspot' | null (both)
     const routerId = searchParams.get('routerId');
     const search = searchParams.get('search');
-    const live = searchParams.get('live') === 'true'; // Merge live bytes from MikroTik API
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const limit = Number.parseInt(searchParams.get('limit') || '0', 10);
 
@@ -127,94 +101,6 @@ export async function GET(request: NextRequest) {
         routerByNasIp.set(r.ipAddress, { id: r.id, name: r.name });
         nasIpList.push(r.ipAddress);
       }
-    }
-
-    // ── 1.5. Fetch live bytes from MikroTik when live=true ──────────────────
-    // PPPoE: traffic bytes from /interface/print (rx-byte, tx-byte)
-    // Hotspot: traffic bytes from /ip/hotspot/active/print (bytes-in, bytes-out)
-    const liveTrafficMap = new Map<string, { uploadBytes: number; downloadBytes: number }>();
-    // Full hotspot session data from MikroTik (for synthesizing sessions missing from radacct)
-    const liveHotspotSessions = new Map<string, {
-      uploadBytes: number;
-      downloadBytes: number;
-      framedIp: string | null;
-      macAddress: string | null;
-      nasIp: string;
-      uptime: string | null;
-    }>();
-    if (live) {
-      const routerCredWhere: any = { isActive: true };
-      if (routerId) routerCredWhere.id = routerId;
-      const routersWithCreds = await prisma.router.findMany({
-        where: routerCredWhere,
-        select: { nasname: true, ipAddress: true, username: true, password: true, port: true },
-      });
-      await Promise.allSettled(routersWithCreds.map((r) =>
-        withTimeout((async () => {
-          const api = new RouterOSAPI({
-            host: r.ipAddress || r.nasname,
-            port: r.port || 8728,
-            user: r.username,
-            password: r.password,
-            timeout: 5,
-          });
-          try {
-            await api.connect();
-
-            // ── PPPoE: /interface/print (only when not filtering to hotspot-only)
-            if (!type || type === 'pppoe') {
-              try {
-                const pppoeIfaces = await api.write('/interface/print', ['?type=pppoe-in']);
-                for (const iface of pppoeIfaces) {
-                  const ifName: string = iface.name || '';
-                  const match = ifName.match(/^<pppoe-(.+)>$/);
-                  const username = match ? match[1] : '';
-                  if (username && iface.running === 'true') {
-                    liveTrafficMap.set(username, {
-                      // rx-byte = bytes received BY router FROM client → client's UPLOAD
-                      // tx-byte = bytes sent BY router TO client → client's DOWNLOAD
-                      uploadBytes:   parseInt(iface['rx-byte'] || '0'),
-                      downloadBytes: parseInt(iface['tx-byte'] || '0'),
-                    });
-                  }
-                }
-              } catch {
-                // PPPoE fetch failed for this router — ignore
-              }
-            }
-
-            // ── Hotspot: /ip/hotspot/active/print (only when not filtering to pppoe-only)
-            if (!type || type === 'hotspot') {
-              try {
-                const hotspotActive = await api.write('/ip/hotspot/active/print');
-                const nasIp = r.ipAddress || r.nasname;
-                for (const entry of hotspotActive) {
-                  const username: string = entry.user || entry.username || '';
-                  if (username) {
-                    const uploadBytes   = parseInt(entry['bytes-in']  || '0');
-                    const downloadBytes = parseInt(entry['bytes-out'] || '0');
-                    liveTrafficMap.set(username, { uploadBytes, downloadBytes });
-                    liveHotspotSessions.set(username, {
-                      uploadBytes,
-                      downloadBytes,
-                      framedIp: entry.address || entry['address'] || null,
-                      macAddress: entry['mac-address'] || null,
-                      nasIp,
-                      uptime: entry.uptime || null,
-                    });
-                  }
-                }
-              } catch {
-                // Hotspot active fetch failed for this router — ignore
-              }
-            }
-
-            await api.close();
-          } catch {
-            // Connection failed for this router — keep stale radacct data as fallback
-          }
-        })(), 5000),
-      ));
     }
 
     // ── 2. Query radacct for active sessions ────────────────────────────────
@@ -308,10 +194,9 @@ export async function GET(request: NextRequest) {
 
       const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
 
-      // Use live traffic from MikroTik API if available, fallback to radacct data
-      const liveBytes = liveTrafficMap.get(acct.username);
-      const uploadBytes   = liveBytes ? liveBytes.uploadBytes   : Number(acct.acctinputoctets  ?? 0);
-      const downloadBytes = liveBytes ? liveBytes.downloadBytes : Number(acct.acctoutputoctets ?? 0);
+      // Use radacct bytes (updated by Interim-Update packets from router)
+      const uploadBytes   = Number(acct.acctinputoctets  ?? 0);
+      const downloadBytes = Number(acct.acctoutputoctets ?? 0);
       const router = routerByNasIp.get(acct.nasipaddress) || { id: 'unknown', name: acct.nasipaddress };
       return {
         id: String(acct.radacctid),
@@ -365,95 +250,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // ── 4.5. Synthesize sessions for hotspot users active in MikroTik but missing from radacct ──
-    if (live && liveHotspotSessions.size > 0) {
-      const radacctUsernames = new Set(allSessions.map((s) => s.username));
-      const missingUsernames = [...liveHotspotSessions.keys()].filter(
-        (u) => !radacctUsernames.has(u),
-      );
-
-      if (missingUsernames.length > 0) {
-        // Fetch vouchers for users that are in MikroTik but not in radacct
-        const extraVouchers = await prisma.hotspotVoucher.findMany({
-          where: { code: { in: missingUsernames } },
-          select: {
-            id: true,
-            code: true,
-            status: true,
-            batchCode: true,
-            firstLoginAt: true,
-            expiresAt: true,
-            agent: { select: { id: true, name: true } },
-            profile: { select: { name: true } },
-          },
-        });
-        const extraVoucherByCode = new Map(extraVouchers.map((v) => [v.code, v]));
-
-        for (const username of missingUsernames) {
-          const liveData = liveHotspotSessions.get(username)!;
-          const voucher = extraVoucherByCode.get(username);
-          if (!voucher) continue; // Skip unknown usernames
-
-          // Compute start time: prefer voucher firstLoginAt (true UTC), then MikroTik uptime
-          let effectiveStartMs: number = now;
-          let effectiveStartTime: string = new Date(now).toISOString();
-          if (voucher.firstLoginAt) {
-            effectiveStartMs = new Date(voucher.firstLoginAt).getTime();
-            effectiveStartTime = new Date(effectiveStartMs).toISOString();
-          } else if (liveData.uptime) {
-            const uptimeSec = parseMikrotikUptime(liveData.uptime);
-            effectiveStartMs = now - uptimeSec * 1000;
-            effectiveStartTime = new Date(effectiveStartMs).toISOString();
-          }
-
-          const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
-          const router = routerByNasIp.get(liveData.nasIp) || {
-            id: 'live',
-            name: liveData.nasIp,
-          };
-
-          allSessions.push({
-            id: `live-${username}`,
-            username,
-            sessionId: `live-${username}`,
-            type: 'hotspot' as const,
-            nasIpAddress: liveData.nasIp,
-            framedIpAddress: liveData.framedIp || null,
-            macAddress: liveData.macAddress || '-',
-            calledStationId: '-',
-            startTime: effectiveStartTime,
-            lastUpdate: null,
-            duration,
-            durationFormatted: formatDuration(duration),
-            uploadBytes: liveData.uploadBytes,
-            downloadBytes: liveData.downloadBytes,
-            totalBytes: liveData.uploadBytes + liveData.downloadBytes,
-            uploadFormatted: formatBytes(liveData.uploadBytes),
-            downloadFormatted: formatBytes(liveData.downloadBytes),
-            totalFormatted: formatBytes(
-              liveData.uploadBytes + liveData.downloadBytes,
-            ),
-            router: { id: router.id, name: router.name },
-            user: null,
-            voucher: {
-              id: voucher.id,
-              status: voucher.status,
-              profile: voucher.profile?.name ?? null,
-              batchCode: voucher.batchCode,
-              expiresAt: voucher.expiresAt
-                ? new Date(voucher.expiresAt).toISOString()
-                : null,
-              agent: voucher.agent
-                ? { id: voucher.agent.id, name: voucher.agent.name }
-                : null,
-            },
-            dataSource: 'live',
-          });
-        }
-      }
-    }
-
-    // ── 5. Filter by session type ───────────────────────────────────────────
+    // ── 5. Filter by session type ─────────────────────────────────────────────────
     if (type) {
       allSessions = allSessions.filter((s) => s.type === type);
     }
@@ -514,7 +311,6 @@ export async function GET(request: NextRequest) {
           limit > 0 ? Math.max(1, Math.ceil(allSessions.length / limit)) : 1,
       },
       mode: 'radius',
-      liveTraffic: liveTrafficMap.size > 0,
     });
   } catch (error) {
     console.error('[Sessions API] Failed to list active sessions', error);
