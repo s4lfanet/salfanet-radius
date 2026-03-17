@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { spawn, execSync } from 'child_process';
-import { createWriteStream, existsSync, readFileSync } from 'fs';
+import { openSync, closeSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
 
 export const dynamic = 'force-dynamic';
@@ -131,13 +131,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    const logStream = createWriteStream(LOG_FILE, { flags: 'w' });
+    const logFd = openSync(LOG_FILE, 'w');
 
     const child = spawn('bash', [scriptPath, ...args], {
       detached: true,
-      stdio: ['ignore', logStream, logStream],
+      stdio: ['ignore', logFd, logFd],
       cwd: process.cwd(),
     });
+
+    closeSync(logFd);
 
     child.on('error', (err) => {
       console.error('[System Update] spawn error:', err);
