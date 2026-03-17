@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
         uploadFormatted: formatBytes(uploadBytes),
         downloadFormatted: formatBytes(downloadBytes),
         expiresAt: voucher?.expiresAt
-          ? new Date(voucher.expiresAt).toISOString().replace('Z', '')
+          ? new Date(voucher.expiresAt).toISOString()
           : null,
         profileName: voucher?.profile?.name || null,
         routerName,
@@ -247,7 +247,7 @@ export async function GET(request: NextRequest) {
         uploadFormatted: formatBytes(liveData.uploadBytes),
         downloadFormatted: formatBytes(liveData.downloadBytes),
         expiresAt: voucher.expiresAt
-          ? new Date(voucher.expiresAt).toISOString().replace('Z', '')
+          ? new Date(voucher.expiresAt).toISOString()
           : null,
         profileName: voucher.profile?.name || null,
         routerName: voucher.router?.name || liveData.nasIp,
