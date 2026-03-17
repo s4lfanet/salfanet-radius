@@ -345,127 +345,25 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 
 ## 📝 Changelog
 
+### v2.11.0 — March 17, 2026
+- System Update admin hardened (spawn fd fix, app root resolver, sanitized env)
+- Live update log stabilized (SSE heartbeat, anti-buffering, auto reconnect)
+- Nginx manifest handling fixed for all manifest files
+- Zero-downtime reload on update (`pm2 reload salfanet-radius`)
+- Admin UI card spacing polish (Push Notifications, Manual Payments, Network Trace)
+
 ### v2.10.28 — March 12, 2026
 - Bank Accounts moved to Payment menu as separate page
 
 ### v2.10.x — March 2026 (Performance)
 - Fixed N+1 query in PPPoE user listing (1 query instead of N+1)
-- Invoice stats now parallel (`Promise.all`) — ~7× faster
+- Invoice stats now parallel (`Promise.all`) — ~7x faster
 - cron_history auto-cleanup (daily 4 AM, keep last 50 per job type)
 - MySQL auto-tuned to server RAM during install
 - Nginx global tuning: upstream keepalive, epoll, open_file_cache
 - PM2: removed `--optimize-for-size`, increased heap
 
-### v2.10.0 — February 2026
-- L2TP watchdog auto-reconnect
-- Isolation template preview uses company baseUrl
-- Removed "Setup Isolir di Router" button (system uses NAT redirect)
-
-### v2.9.x — January 2026
-- Mobile app (Flutter) customer portal
-- Suspend/restore system
-- GenieACS ONT reboot support
-
-See [docs/](docs/) for full historical changelog.
-
-  - Auth: Login/Logout tracking
-  - PPPoE: User CRUD operations
-  - Session: Disconnect logging
-  - Payment: Webhook logging
-  - Invoice: Generation logging
-  - Transaction: Income/expense CRUD
-  - WhatsApp: Broadcast logging
-  - Network: Router CRUD
-  - System: RADIUS restart
-- ✅ **Automatic Log Cleanup** - Cron job daily at 2 AM (30 days retention)
-- ✅ **Voucher Performance** - Up to 70% faster using Prisma createMany
-- ✅ **Voucher Limit Increased** - 500 → 25,000 vouchers per batch
-- ✅ **Voucher Pagination** - Complete pagination system (50-1000 per page)
-- ✅ **Voucher Stats Accuracy** - Stats show ALL vouchers, not just current page
-- ✅ **Modal Redesign** - Modern 2-column layout with better UX
-- ✅ **Notification Z-Index Fixed** - Notifications appear above all modals (z-index: 999999)
-- ✅ **Notification Flow** - Dialog closes before showing success notification
-- ✅ **Dashboard Bug Fix** - Fixed revenue Rp 0 → Rp 3,000
-- ✅ Fixed total users count (0 → correct value)
-- ✅ Fixed date range queries for transactions (UTC timezone issue)
-- ✅ Simplified date boundary calculations
-- ✅ **Chart Label Fix** - Category names no longer truncated
-- ✅ Increased chart bottom margin for better label visibility
-- ✅ **Subdomain Migration** - http://IP:3005 → https://server.salfa.my.id
-- ✅ **SSL Certificate** - Self-signed certificate configured
-- ✅ **Nginx HTTPS** - HTTP→HTTPS redirect enabled
-- ✅ **Cloudflare Integration** - Domain via Cloudflare CDN
-- ✅ Updated NEXTAUTH_URL to use subdomain
-- ✅ PM2 restart with --update-env flag
-
-### December 6, 2025 (v2.3) - Session & Network Improvements
-- ✅ **Session Timeout** - Auto logout setelah 30 menit tidak aktif
-- ✅ **Idle Warning Popup** - Warning 1 menit sebelum logout dengan countdown
-- ✅ **Stay Logged In** - Tombol perpanjang sesi dari warning popup
-- ✅ **Fix Logout Redirect** - Gunakan `redirect: false` + manual redirect untuk hindari NEXTAUTH_URL issue
-- ✅ **Router GPS** - Tambah koordinat GPS untuk router/NAS dengan Map Picker
-- ✅ **Auto GPS** - Deteksi lokasi otomatis dari browser (HTTPS required)
-- ✅ **OLT Uplink Config** - Konfigurasi uplink dari router ke OLT dengan interface dropdown
-- ✅ **MikroTik Interfaces API** - Endpoint baru untuk fetch interface dari router
-- ✅ **Network Map Enhancement** - Tampilkan uplink info di popup router
-- ✅ **Fix Layout Loading** - Perbaiki sidebar tidak muncul saat pertama login
-- ✅ **Installer Baru** - `vps-install-local.sh` untuk VPS tanpa root access
-
-### December 5, 2025 (v2.2) - FTTH Network Management
-- ✅ **Network Map** - Visualisasi interaktif jaringan FTTH di peta
-- ✅ **OLT Management** - CRUD OLT dengan assignment router
-- ✅ **ODC Management** - CRUD ODC terhubung ke OLT  
-- ✅ **ODP Management** - CRUD ODP dengan parent ODC/ODP
-- ✅ **Customer Assignment** - Assign pelanggan ke port ODP
-- ✅ **Sync PPPoE MikroTik** - Import PPPoE secrets dari MikroTik
-- ✅ **WhatsApp Maintenance Template** - Template gangguan/maintenance
-- ✅ **FreeRADIUS BOM Fix** - Auto remove UTF-16 BOM dari config files
-
-### December 4, 2025 (v2.1.5) - System Improvements
-- ✅ **Admin Management** - Fixed permission checkboxes not showing
-- ✅ **Settings/Cron** - Complete page rewrite with teal theme
-- ✅ **Settings/Database** - Complete page rewrite with Telegram backup
-- ✅ **Agent Dashboard** - Fixed API paths, Router column added to voucher table
-- ✅ **Payment Gateway** - Added validation for deposit (show error if not configured)
-- ✅ **WhatsApp Providers** - Multi-provider support (Fonnte, WAHA, GOWA, MPWA, Wablas)
-- ✅ **FreeRADIUS Config** - Updated backup configs from production
-- ✅ **Install Wizard** - Added FreeRADIUS config restore option
-- ✅ **vps-install.sh** - Updated with FreeRADIUS config restore
-
-### December 4, 2025 (v2.1) - GenieACS WiFi Management
-- ✅ **GenieACS TR-069 Integration** - Complete CPE management via Web UI
-- ✅ **WiFi Configuration** - Edit SSID, password, security mode (WPA/WPA2/Open)
-- ✅ **Real-time Updates** - Changes applied instantly without waiting periodic inform
-- ✅ **Task Monitoring** - Track all TR-069 tasks with auto-refresh
-- ✅ **Multi-WLAN Support** - Manage WiFi 2.4GHz, 5GHz, and Guest networks
-- ✅ **Force Sync** - Manual connection request trigger
-- ✅ **Device Details** - View ONT info, uptime, RX power, WiFi clients
-- ✅ Fixed GenieACS menu structure (separate from Settings)
-
-### December 3, 2025 (v2.0)
-- ✅ **RADIUS CoA Support** - Real-time speed changes & disconnect
-- ✅ CoA sent directly to MikroTik NAS (not FreeRADIUS)
-- ✅ Auto-sync profile changes to active sessions
-- ✅ `/api/radius/coa` endpoint for CoA operations
-- ✅ Router secret from database for CoA authentication
-- ✅ Fixed FreeRADIUS PPPoE authentication
-- ✅ Disabled `filter_username` policy for realm-style usernames
-- ✅ Added conditional REST for voucher-only post-auth
-- ✅ Fixed post-auth API to allow unmanaged vouchers
-- ✅ Added NAS-IP-Address sync for PPPoE users
-- ✅ Updated FreeRADIUS config backup
-
-### December 2, 2025
-- ✅ Agent voucher system with balance management
-- ✅ Router/NAS assignment for vouchers
-- ✅ Fixed generate-voucher routerId handling
-- ✅ Multi-router support improvements
-
-### Previous Updates
-- Agent deposit system with payment gateway
-- GenieACS integration for TR-069
-- Real-time bandwidth monitoring
-- Session disconnect via MikroTik API
+See full changelog: [docs/getting-started/CHANGELOG.md](docs/getting-started/CHANGELOG.md)
 
 ## 📚 Documentation
 
@@ -475,7 +373,7 @@ See [docs/](docs/) for full historical changelog.
 | [docs/GENIEACS-GUIDE.md](docs/GENIEACS-GUIDE.md) | GenieACS TR-069 setup & WiFi management |
 | [docs/AGENT_DEPOSIT_SYSTEM.md](docs/AGENT_DEPOSIT_SYSTEM.md) | Agent balance & deposit |
 | [docs/RADIUS-CONNECTIVITY.md](docs/RADIUS-CONNECTIVITY.md) | RADIUS architecture |
-| [docs/FREERADIUS-SETUP.md](docs/FREERADIUS-SETUP.md) | FreeRADIUS configuration guide |                 2`QQQQQQQ `````````
+| [docs/FREERADIUS-SETUP.md](docs/FREERADIUS-SETUP.md) | FreeRADIUS configuration guide |
 
 ## 📝 License
 
