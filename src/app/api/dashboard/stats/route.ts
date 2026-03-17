@@ -77,22 +77,84 @@ export async function GET(request: NextRequest) {
         where: {
           acctstoptime: null,
         },
-        select: { username: true },
+        select: {
+          username: true,
+          servicetype: true,
+          framedprotocol: true,
+        },
       });
+
+      const normalizeUsername = (u: string) => u.includes('@') ? u.split('@')[0] : u;
 
       const uniqueUsernames = [...new Set(
         activeRadacctSessions.map(s => s.username).filter(Boolean)
       )] as string[];
 
+      const normalizedUsernames = [...new Set(
+        uniqueUsernames.map(normalizeUsername).filter(Boolean)
+      )];
+
       if (uniqueUsernames.length > 0) {
-        // Kategorisasi: cek apakah username adalah PPPoE atau Hotspot via DB
-        const pppoeUsers = await prisma.pppoeUser.findMany({
-          where: { username: { in: uniqueUsernames } },
-          select: { username: true },
-        });
-        const pppoeUsernameSet = new Set(pppoeUsers.map(u => u.username));
-        for (const username of uniqueUsernames) {
-          if (pppoeUsernameSet.has(username)) activeSessionsPPPoE++;
+        // Kategorisasi yang lebih robust:
+        // 1) Hint dari RADIUS attrs (framedprotocol/servicetype)
+        // 2) Lookup username exact + normalized (user@realm -> user)
+        // 3) Fallback berdasarkan pola username
+        const [pppoeUsers, hotspotVouchers] = await Promise.all([
+          prisma.pppoeUser.findMany({
+            where: {
+              OR: [
+                { username: { in: uniqueUsernames } },
+                { username: { in: normalizedUsernames } },
+              ],
+            },
+            select: { username: true },
+          }),
+          prisma.hotspotVoucher.findMany({
+            where: {
+              OR: [
+                { code: { in: uniqueUsernames } },
+                { code: { in: normalizedUsernames } },
+              ],
+            },
+            select: { code: true },
+          }),
+        ]);
+
+        const pppoeUsernameSet = new Set(pppoeUsers.map(u => u.username.toLowerCase()));
+        const hotspotCodeSet = new Set(hotspotVouchers.map(v => v.code.toLowerCase()));
+
+        const classifySessionType = (username: string, serviceType?: string | null, framedProtocol?: string | null): 'pppoe' | 'hotspot' => {
+          const raw = username.toLowerCase();
+          const normalized = normalizeUsername(username).toLowerCase();
+          const service = (serviceType || '').toLowerCase();
+          const protocol = (framedProtocol || '').toLowerCase();
+
+          // Prefer RADIUS hints first when available.
+          if (protocol.includes('ppp')) return 'pppoe';
+          if (service.includes('framed')) return 'pppoe';
+
+          // Then exact/normalized lookup.
+          if (hotspotCodeSet.has(raw) || hotspotCodeSet.has(normalized)) return 'hotspot';
+          if (pppoeUsernameSet.has(raw) || pppoeUsernameSet.has(normalized)) return 'pppoe';
+
+          // Heuristic fallback: PPPoE often uses realm-style username.
+          if (username.includes('@')) return 'pppoe';
+          return 'hotspot';
+        };
+
+        const usernameTypeMap = new Map<string, 'pppoe' | 'hotspot'>();
+        for (const s of activeRadacctSessions) {
+          if (!s.username) continue;
+          const detectedType = classifySessionType(s.username, s.servicetype, s.framedprotocol);
+          const prev = usernameTypeMap.get(s.username);
+          // If any active record for a username indicates PPPoE, keep PPPoE as stronger signal.
+          if (!prev || detectedType === 'pppoe') {
+            usernameTypeMap.set(s.username, detectedType);
+          }
+        }
+
+        for (const type of usernameTypeMap.values()) {
+          if (type === 'pppoe') activeSessionsPPPoE++;
           else activeSessionsHotspot++;
         }
       }
