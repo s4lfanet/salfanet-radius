@@ -343,7 +343,7 @@ export default function PushNotificationsPage() {
   const activeTemplates = QUICK_TEMPLATES_BY_ROLE[recipientRole];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -427,7 +427,7 @@ export default function PushNotificationsPage() {
       </div>
 
       {/* Main Tabs */}
-      <Tabs defaultValue="send">
+      <Tabs defaultValue="send" className="space-y-4">
         <TabsList className="bg-muted/50 p-1 rounded-xl">
           <TabsTrigger value="send" className="gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
             <Send className="w-4 h-4" />
@@ -440,7 +440,7 @@ export default function PushNotificationsPage() {
         </TabsList>
 
         {/* Send Tab */}
-        <TabsContent value="send" className="space-y-4 mt-4">
+        <TabsContent value="send" className="space-y-5 mt-4">
           {/* Recipient Role Selector */}
           <Card>
             <CardHeader className="pb-3">
@@ -450,7 +450,7 @@ export default function PushNotificationsPage() {
               </CardTitle>
               <CardDescription className="text-xs">Pilih penerima notifikasi ini</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0 pb-5">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {([
                   { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.usersWithTokens ?? 0, unit: 'push' },
@@ -477,7 +477,7 @@ export default function PushNotificationsPage() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Left: Form */}
             <div className="lg:col-span-2 space-y-4">
               {/* Tipe Notifikasi */}
@@ -488,7 +488,7 @@ export default function PushNotificationsPage() {
                     {t('pushNotif.notificationType')}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0 pb-5">
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {activeTypeDefs.map((nt) => {
                       const Icon = nt.icon;
@@ -520,7 +520,7 @@ export default function PushNotificationsPage() {
                   </CardTitle>
                   <CardDescription className="text-xs">{t('pushNotif.clickToAutoFill')}</CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0 pb-5">
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {activeTemplates.map((tpl) => {
                       const Icon = tpl.icon;
@@ -547,7 +547,7 @@ export default function PushNotificationsPage() {
                     {t('pushNotif.notificationContent')}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-0 pb-5">
                   <div>
                     <Label htmlFor="title" className="text-xs font-medium mb-1.5 block">
                       {t('pushNotif.titleLabel')} <span className="text-red-500">*</span>
@@ -605,7 +605,7 @@ export default function PushNotificationsPage() {
                     {t('pushNotif.targetRecipient')}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 pt-0 pb-5">
                   {recipientRole === 'customer' && (
                     <>
                       <div>
@@ -818,9 +818,9 @@ export default function PushNotificationsPage() {
               ) : (
                 <>
                 {/* Mobile Card View */}
-                <div className="block md:hidden space-y-3">
+                <div className="block md:hidden space-y-3.5">
                   {broadcasts.map((bc) => (
-                    <div key={bc.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+                    <div key={bc.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3.5">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold leading-tight">{bc.title}</p>
@@ -862,7 +862,7 @@ export default function PushNotificationsPage() {
                 </div>
 
                 {/* Desktop Table */}
-                <div className="overflow-x-auto -mx-6 hidden md:block">
+                <div className="overflow-x-auto hidden md:block">
                   <Table>
                     <TableHeader>
                       <TableRow className="hover:bg-transparent">
