@@ -38,6 +38,8 @@ import {
   Activity,
   Cable,
   GitBranch,
+  Mail,
+  MessageCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
@@ -72,14 +74,41 @@ const menuGroups: MenuGroup[] = [
         href: '/admin',
         requiredPermission: 'dashboard.view',
       },
+    ],
+  },
+  {
+    titleKey: 'nav.catNotifikasi',
+    items: [
       {
-        titleKey: 'nav.communication',
+        titleKey: 'nav.notifications',
         icon: <Bell className="w-4 h-4" />,
+        href: '/admin/notifications',
+        badge: 'notifications',
         requiredPermission: 'dashboard.view',
-        children: [
-          { titleKey: 'nav.notifications', href: '/admin/notifications', badge: 'notifications', requiredPermission: 'dashboard.view' },
-          { titleKey: 'nav.pushNotifications', href: '/admin/notifications/push', requiredPermission: 'dashboard.view' },
-        ],
+      },
+      {
+        titleKey: 'nav.pushNotifications',
+        icon: <Bell className="w-4 h-4" />,
+        href: '/admin/notifications/push',
+        requiredPermission: 'dashboard.view',
+      },
+      {
+        titleKey: 'nav.whatsapp',
+        icon: <MessageCircle className="w-4 h-4" />,
+        href: '/admin/settings/whatsapp',
+        requiredPermission: 'whatsapp.view',
+      },
+      {
+        titleKey: 'nav.email',
+        icon: <Mail className="w-4 h-4" />,
+        href: '/admin/settings/email',
+        requiredPermission: 'settings.view',
+      },
+      {
+        titleKey: 'nav.isolationTemplates',
+        icon: <FileText className="w-4 h-4" />,
+        href: '/admin/settings/isolation/templates',
+        requiredPermission: 'settings.view',
       },
     ],
   },
@@ -118,7 +147,6 @@ const menuGroups: MenuGroup[] = [
         children: [
           { titleKey: 'nav.isolatedUsers', href: '/admin/isolated-users', requiredPermission: 'customers.view' },
           { titleKey: 'nav.isolationSettings', href: '/admin/settings/isolation', requiredPermission: 'settings.view' },
-          { titleKey: 'nav.isolationTemplates', href: '/admin/settings/isolation/templates', requiredPermission: 'settings.view' },
           { titleKey: 'nav.mikrotikSetup', href: '/admin/settings/isolation/mikrotik', requiredPermission: 'settings.view' },
         ],
       },
@@ -281,8 +309,6 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'settings.view',
         children: [
           { titleKey: 'nav.company', href: '/admin/settings/company', requiredPermission: 'settings.company' },
-          { titleKey: 'nav.email', href: '/admin/settings/email', requiredPermission: 'settings.view' },
-          { titleKey: 'nav.whatsapp', href: '/admin/settings/whatsapp', requiredPermission: 'whatsapp.view' },
           { titleKey: 'nav.database', href: '/admin/settings/database', requiredPermission: 'settings.view' },
           { titleKey: 'nav.cronJobs', href: '/admin/settings/cron', requiredPermission: 'settings.cron' },
           { titleKey: 'nav.genieacs', href: '/admin/settings/genieacs', requiredPermission: 'settings.genieacs' },

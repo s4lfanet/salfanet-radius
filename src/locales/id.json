@@ -273,10 +273,11 @@
   },
   "nav": {
     "catOverview": "Overview",
+    "catNotifikasi": "Notifikasi",
     "catCustomer": "Pelanggan",
     "catNetwork": "Jaringan",
     "catManagement": "Manajemen",
-    "dashboard": "Dasbor",
+    "dashboard": "Dashboard",
     "communication": "Komunikasi",
     "notifications": "Notifikasi",
     "pushNotifications": "Push Notifikasi",
@@ -388,7 +389,7 @@
     "laporanAnalitik": "Analitik Advanced"
   },
   "dashboard": {
-    "title": "Dasbor",
+    "title": "Dashboard",
     "subtitle": "Ringkasan sistem",
     "totalUsers": "Total Pengguna",
     "activeSessions": "Sesi Aktif",
