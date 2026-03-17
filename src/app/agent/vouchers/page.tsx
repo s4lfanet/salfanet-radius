@@ -1,6 +1,6 @@
 ﻿'use client';
 import { showSuccess, showError } from '@/lib/sweetalert';
-import { formatWIB } from '@/lib/timezone';
+import { format } from 'date-fns';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -71,6 +71,18 @@ export default function AgentVouchersPage() {
     setAgent(agentData);
     loadVouchers(agentData.id);
   }, [router]);
+
+  // API /api/agent/dashboard returns voucher datetimes as local datetime strings
+  // (without timezone suffix), same pattern used by admin voucher page.
+  const formatLocal = (date: Date | string | null, formatStr: string) => {
+    if (!date) return '-';
+    try {
+      const d = typeof date === 'string' ? new Date(date) : date;
+      return format(d, formatStr);
+    } catch {
+      return '-';
+    }
+  };
 
   const loadVouchers = async (agentId: string, page = 1, status = '', profileId = '', search = '', limit = 20) => {
     try {
@@ -350,17 +362,17 @@ export default function AgentVouchersPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 dark:text-[#e0d0ff]/60">
-                      {voucher.firstLoginAt ? formatWIB(voucher.firstLoginAt, 'dd MMM yyyy HH:mm') : '-'}
+                      {voucher.firstLoginAt ? formatLocal(voucher.firstLoginAt, 'dd MMM yyyy HH:mm') : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {voucher.expiresAt ? (
                         <span className={new Date(voucher.expiresAt) < new Date() ? 'text-[#ff6b8a]' : 'text-slate-500 dark:text-[#e0d0ff]/60'}>
-                          {formatWIB(voucher.expiresAt, 'dd MMM yyyy HH:mm')}
+                          {formatLocal(voucher.expiresAt, 'dd MMM yyyy HH:mm')}
                         </span>
                       ) : '-'}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-500 dark:text-[#e0d0ff]/60">
-                      {voucher.createdAt ? formatWIB(voucher.createdAt, 'dd MMM yyyy HH:mm') : '-'}
+                      {voucher.createdAt ? formatLocal(voucher.createdAt, 'dd MMM yyyy HH:mm') : '-'}
                     </td>
                   </tr>
                 ))
