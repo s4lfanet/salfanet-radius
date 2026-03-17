@@ -12,11 +12,17 @@
 - **Version**: 2.11.0
 - **Status**: Production-ready, deployed di VPS
 - **Last Updated**: March 17, 2026
-- **Latest Commit**: `667b158`
+- **Latest Commit**: See GitHub
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
 
 ### Recent Patch Log (March 2026)
+
+- **Fix: MapPicker z-index behind form modal**
+  - `MapPicker` membuat `fixed` overlay tanpa `createPortal`, sehingga ancestor layout (sidebar, transform) membentuk stacking context yang menjebak z-index-nya di bawah `SimpleModal` portal.
+  - Fix: tambah `createPortal(jsx, document.body)` pada return `MapPicker` agar render di root level (sama seperti `SimpleModal`).
+  - File: `src/components/MapPicker.tsx`
+  - Mempengaruhi: tambah/edit pelanggan PPPoE (`/admin/pppoe/users`), fiber joint closures, ODCs, dan semua halaman yang menggunakan `MapPicker` di atas form modal.
 
 - **System Update hardening (admin `/admin/system`)**
   - Fix spawn stdio issue (`fd: null`) by using `openSync` for log fd.

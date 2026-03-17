@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Layers, MapPin, Navigation } from 'lucide-react';
 import { showError } from '@/lib/sweetalert';
 
@@ -189,7 +190,7 @@ export default function MapPicker({
 
   if (!isOpen || !isMounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" style={{ zIndex: 10001 }}>
       <div className="bg-gradient-to-br from-slate-900 to-[#1a0f35] rounded-xl sm:rounded-2xl shadow-[0_0_50px_rgba(188,19,254,0.3)] border-2 border-[#bc13fe]/30 w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
@@ -310,6 +311,7 @@ export default function MapPicker({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

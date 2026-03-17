@@ -4,6 +4,18 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.11.1] - 2026-03-17 (MapPicker Z-Index Fix)
+
+### ✅ Fix: Popup Peta Muncul di Belakang Form Modal
+
+- Popup peta (MapPicker) muncul di belakang form "Tambah Pelanggan" / "Edit PPPoE User" dan form lainnya yang menggunakan `SimpleModal`.
+- **Root cause**: `MapPicker` merender `<div style={{ zIndex: 10001 }}>` langsung di dalam DOM tree halaman. Layout parent (sidebar, animasi) membentuk stacking context sendiri yang menjebak z-index `MapPicker` sehingga tidak bisa melampaui `SimpleModal` yang menggunakan `createPortal` di root.
+- **Perbaikan**: Tambahkan `createPortal(jsx, document.body)` pada return statement `MapPicker` agar dirender langsung di `document.body` (level root), sama seperti `SimpleModal`.
+- File: `src/components/MapPicker.tsx`
+- Halaman yang terpengaruh: `/admin/pppoe/users` (tambah/edit pelanggan), fiber joint closures, ODCs, dan semua halaman dengan `MapPicker` di atas form modal.
+
+---
+
 ## [2.11.0] - 2026-03-17 (System Update Stabilization + Admin UI Spacing Polish)
 
 ### ✅ System Update Reliability (Admin `/admin/system`)

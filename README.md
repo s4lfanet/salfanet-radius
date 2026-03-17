@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.11.0 — PWA (installable semua portal), Web Push Notifications (VAPID), System Update admin (stabil + live log SSE), dan UI spacing polish untuk card layout admin
+> **Latest:** v2.11.0 — PWA (installable semua portal), Web Push Notifications (VAPID), System Update admin (stabil + live log SSE), UI spacing polish untuk card layout admin; Fix MapPicker z-index (popup peta muncul di depan form modal)
 
 ---
 
