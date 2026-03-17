@@ -247,7 +247,34 @@
     "checkStatusFailed": "Gagal mengecek status",
     "otpServiceUnavailable": "Layanan WhatsApp mungkin sedang tidak tersedia",
     "created": "Berhasil dibuat",
-    "updated": "Berhasil diperbarui"
+    "updated": "Berhasil diperbarui",
+    "allOdc": "Semua ODC",
+    "allOlt": "Semua OLT",
+    "attention": "Perhatian",
+    "autoGPS": "GPS Otomatis",
+    "confirmReset": "Konfirmasi Reset",
+    "customer": "Pelanggan",
+    "customerCable": "Kabel Pelanggan",
+    "deleteConfirm": "Apakah Anda yakin ingin menghapus data ini?",
+    "deleteError": "Gagal menghapus data",
+    "deleted": "Berhasil dihapus",
+    "gpsFailed": "Gagal mendapatkan lokasi GPS",
+    "importError": "Gagal mengimpor data",
+    "invalidAmount": "Jumlah tidak valid",
+    "invoice": "Invoice",
+    "loadError": "Gagal memuat data",
+    "loadingMap": "Memuat peta...",
+    "location": "Lokasi",
+    "mainCable": "Kabel Utama",
+    "maintenance": "Pemeliharaan",
+    "month": "Bulan",
+    "myLocation": "Lokasi Saya",
+    "networkVisualization": "Visualisasi Jaringan",
+    "noResults": "Tidak ada hasil ditemukan",
+    "openMap": "Buka Peta",
+    "pickOnMap": "Pilih di Peta",
+    "saveError": "Gagal menyimpan data",
+    "yourLocation": "Lokasi Anda"
   },
   "auth": {
     "login": "Masuk",
@@ -392,7 +419,8 @@
     "catReports": "Laporan",
     "laporan": "Laporan & Analitik",
     "laporanData": "Data & Export",
-    "laporanAnalitik": "Analitik Advanced"
+    "laporanAnalitik": "Analitik Advanced",
+    "backToDashboard": "Kembali ke Dashboard"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -776,7 +804,23 @@
     "additionalMessage": "Pesan Tambahan (Opsional)",
     "additionalInvoicePlaceholder": "Tambahkan pesan khusus untuk invoice ini...",
     "paymentReceiptInfo": "Bukti pembayaran akan dikirim ke {count} user yang dipilih. Pastikan user sudah melakukan pembayaran invoice bulan ini.",
-    "additionalThankYouPlaceholder": "Tambahkan ucapan terima kasih atau informasi lainnya..."
+    "additionalThankYouPlaceholder": "Tambahkan ucapan terima kasih atau informasi lainnya...",
+    "balanceLabel": "Saldo",
+    "csvExcelFormat": "Format CSV/Excel",
+    "customer": "Pelanggan PPPoE",
+    "deleteRegistrationConfirm": "Hapus pendaftaran ini?",
+    "disabledLabel": "Nonaktif",
+    "groupLabel": "Grup",
+    "leaveEmptyForAuto": "Kosongkan untuk otomatis",
+    "monthlyDueDateLabel": "Tanggal Jatuh Tempo Bulanan",
+    "nasLabel": "NAS",
+    "packageFee": "Biaya Paket",
+    "selectRouter": "Pilih Router",
+    "statusLabel": "Status",
+    "syncPppoeDesc": "Sinkronisasi data PPPoE dari MikroTik ke sistem",
+    "syncPppoeTitle": "Sinkronisasi PPPoE",
+    "totalBilling": "Total Tagihan",
+    "uploadCsvOrExcel": "Upload CSV atau Excel"
   },
   "hotspot": {
     "title": "Voucher Hotspot",
@@ -870,7 +914,57 @@
     "notes": "Keterangan",
     "qtyDesc": "Total voucher yang dibuat dalam batch tersebut",
     "stockDesc": "Voucher yang masih tersedia (status WAITING)",
-    "soldDesc": "Voucher yang sudah terpakai (status ACTIVE atau EXPIRED)"
+    "soldDesc": "Voucher yang sudah terpakai (status ACTIVE atau EXPIRED)",
+    "activePeriod": "Periode Aktif",
+    "agentBalanceConfirm": "Konfirmasi sesuaikan saldo agent ini?",
+    "allRoutersGlobal": "Semua Router (Global)",
+    "alphaNum": "Alfanumerik",
+    "assignmentOptions": "Opsi Penugasan",
+    "batch": "Batch",
+    "cancelOrderConfirm": "Yakin ingin membatalkan pesanan ini?",
+    "changeAgentStatus": "Ubah Status Agent",
+    "codeConfiguration": "Konfigurasi Kode",
+    "csvFile": "File CSV",
+    "dataQuotaLabel": "Kuota Data",
+    "deleteAgentConfirm": "Hapus agent ini? Semua data terkait akan ikut terhapus.",
+    "deleteAgentsBtn": "Hapus Agent Terpilih",
+    "deleteAgentsConfirm": "Hapus semua agent yang dipilih? Tindakan ini tidak dapat dibatalkan.",
+    "deleteMultipleAgents": "Hapus Beberapa Agent",
+    "failedDeleteProfile": "Gagal menghapus profil",
+    "failedPrefix": "Gagal",
+    "failedSaveProfile": "Gagal menyimpan profil",
+    "first": "Pertama",
+    "firstLogin": "Login Pertama",
+    "generated": "Dibuat",
+    "items": "item",
+    "last": "Terakhir",
+    "lastLoginLabel": "Login Terakhir",
+    "lengthLabel": "Panjang Kode",
+    "lockMacAddress": "Kunci MAC Address",
+    "lockMacDesc": "Voucher hanya bisa digunakan dari satu perangkat (MAC address pertama yang login)",
+    "lowercase": "Huruf Kecil",
+    "maxPerBatch": "Maks per Batch",
+    "next": "Selanjutnya",
+    "noAgent": "Tidak ada agent",
+    "notLoggedIn": "Belum Login",
+    "numeric": "Numerik",
+    "perPage": "per halaman",
+    "prefixOptional": "Prefix (opsional)",
+    "previous": "Sebelumnya",
+    "profileDeletedSuccess": "Profil berhasil dihapus",
+    "profileSavedSuccess": "Profil berhasil disimpan",
+    "rateLimitMikrotik": "Rate Limit MikroTik",
+    "resendVouchersConfirm": "Kirim ulang voucher yang dipilih ke WhatsApp?",
+    "setStatusForAgents": "Atur status untuk agent terpilih",
+    "showing": "Menampilkan",
+    "stockLabel": "Stok Voucher",
+    "totalValue": "Total Nilai",
+    "updateStatus": "Perbarui Status",
+    "uppercase": "Huruf Besar",
+    "usageDurationLabel": "Durasi Penggunaan",
+    "userPassDiff": "Username & Password Berbeda",
+    "userPassSame": "Username = Password",
+    "voucherLabel": "Voucher"
   },
   "agent": {
     "title": "Manajemen Agen",
@@ -1116,7 +1210,19 @@
     "exportFailed": "Export gagal",
     "pdfExportFailed": "PDF export gagal",
     "failedGetInvoiceData": "Gagal mendapatkan data invoice",
-    "failedPrintInvoice": "Gagal mencetak invoice"
+    "failedPrintInvoice": "Gagal mencetak invoice",
+    "broadcastBilling": "Broadcast Tagihan",
+    "deleteConfirm": "Hapus invoice ini? Tindakan ini tidak dapat dibatalkan.",
+    "deleteInvoice": "Hapus Invoice",
+    "deleted": "Invoice berhasil dihapus",
+    "pdfDate": "Tanggal",
+    "pdfDue": "Jatuh Tempo",
+    "pdfHeaderDesc": "Tagihan untuk layanan internet",
+    "pdfInvoice": "INVOICE",
+    "pdfNo": "No.",
+    "pdfPaid": "LUNAS",
+    "pdfPaidOn": "Dibayar Pada",
+    "pdfStatus": "Status"
   },
   "keuangan": {
     "title": "Transaksi",
@@ -1146,7 +1252,17 @@
     "categoryNameRequired": "Nama kategori wajib diisi",
     "failedSaveCategory": "Gagal menyimpan kategori",
     "selectDateRange": "Pilih rentang tanggal terlebih dahulu",
-    "exportFailed": "Gagal ekspor"
+    "exportFailed": "Gagal ekspor",
+    "hotspotLabel": "Hotspot",
+    "installLabel": "Pemasangan",
+    "pdfBalance": "Saldo",
+    "pdfDate": "Tanggal",
+    "pdfExpense": "Pengeluaran",
+    "pdfFilenamePrefix": "laporan-keuangan",
+    "pdfIncome": "Pendapatan",
+    "pdfTitle": "Laporan Keuangan",
+    "pppoeLabel": "PPPoE",
+    "searchPlaceholder": "Cari transaksi..."
   },
   "sessions": {
     "title": "Sesi Aktif",
@@ -1413,7 +1529,9 @@
     "deviceStatusPrefix": "Status device",
     "deviceAlreadyConnected": "Device sudah terhubung",
     "failedFetchQr": "Gagal memuat QR code",
-    "errorFetchingQr": "Error mengambil QR code"
+    "errorFetchingQr": "Error mengambil QR code",
+    "copyBtn": "Salin",
+    "templateWhatsapp": "Template WhatsApp"
   },
   "network": {
     "title": "Jaringan",
@@ -1813,7 +1931,22 @@
       "filterByType": "Filter Tipe",
       "filterByStatus": "Filter Status",
       "clearFilters": "Hapus Filter"
-    }
+    },
+    "configureOdc": "Konfigurasi ODC",
+    "copyVpsScript": "Salin Script VPS",
+    "deleteRouterConfirm": "Hapus router ini? Semua pelanggan terkait akan kehilangan koneksi.",
+    "failedSaveRouter": "Gagal menyimpan router",
+    "odc": {
+      "title": "ODC"
+    },
+    "odp": {
+      "title": "ODP"
+    },
+    "oltSelectLabel": "Pilih OLT",
+    "routerUpdated": "Router berhasil diperbarui",
+    "vpsRoutingNote": "Catatan Routing VPS",
+    "vpsRoutingSetup": "Setup Routing VPS",
+    "vpsRoutingSetupDesc": "Konfigurasi routing VPS untuk jaringan PPPoE"
   },
   "settings": {
     "title": "Pengaturan",
@@ -2003,7 +2136,21 @@
     "restarting": "Restarting...",
     "processing": "Memproses...",
     "savingAndApplying": "Menyimpan dan menerapkan perubahan timezone...",
-    "companyNamePlaceholder": "Nama perusahaan Anda"
+    "companyNamePlaceholder": "Nama perusahaan Anda",
+    "autoRestartFailed": "Gagal auto-restart layanan",
+    "connectionsLabel": "Koneksi",
+    "dailyOption": "Setiap Hari",
+    "databaseSize": "Ukuran Database",
+    "enableAutoBackup": "Aktifkan Auto Backup",
+    "every12Hours": "Setiap 12 Jam",
+    "every6Hours": "Setiap 6 Jam",
+    "lastBackup": "Backup Terakhir",
+    "restartManually": "Restart Manual",
+    "servicesRestarting": "Layanan sedang direstart...",
+    "tablesLabel": "Tabel",
+    "timezoneApplied": "Timezone berhasil diterapkan",
+    "uptimeLabel": "Uptime",
+    "weeklySunday": "Setiap Minggu (Ahad)"
   },
   "genieacs": {
     "title": "Pengaturan GenieACS",
@@ -2285,7 +2432,11 @@
     "failedToggle": "Gagal mengubah status parameter",
     "labelRequired": "Label wajib diisi",
     "paramNameRequired": "Nama parameter wajib diisi",
-    "pathRequired": "Minimal satu parameter path diperlukan"
+    "pathRequired": "Minimal satu parameter path diperlukan",
+    "deviceName": "Nama Perangkat",
+    "dns": "DNS",
+    "pppoeIp": "IP PPPoE",
+    "tr069Ip": "IP TR-069"
   },
   "isolation": {
     "title": "Pengaturan Isolasi",
@@ -2449,7 +2600,28 @@
     "failedToSave": "Gagal menyimpan config",
     "failedToLoad": "Gagal memuat konfigurasi payment gateway",
     "failedCopyWebhook": "Gagal menyalin webhook URL",
-    "webhookCopied": "Webhook URL disalin!"
+    "webhookCopied": "Webhook URL disalin!",
+    "amountLabel": "Jumlah",
+    "apiKeyLabel": "API Key",
+    "apiKeySimple": "API Key",
+    "clientKeyLabel": "Client Key",
+    "detailLabel": "Detail",
+    "enableTripay": "Aktifkan Tripay",
+    "environmentLabel": "Environment",
+    "errorLabel": "Error",
+    "gatewayLabel": "Payment Gateway",
+    "merchantCodeLabel": "Merchant Code",
+    "orderIdLabel": "Order ID",
+    "payloadLabel": "Payload",
+    "paymentGatewayId": "ID Gateway",
+    "privateKeyLabel": "Private Key",
+    "responseLabel": "Response",
+    "serverKeyLabel": "Server Key",
+    "snapDesc": "Snap Popup – tampilkan semua metode pembayaran Midtrans dalam satu popup",
+    "successLabel": "Sukses",
+    "timestampLabel": "Waktu",
+    "transactionIdLabel": "ID Transaksi",
+    "webhookTokenLabel": "Webhook Token"
   },
   "management": {
     "title": "Manajemen Pengguna",
@@ -2633,7 +2805,9 @@
     "updateSuccess": "Update berhasil diselesaikan!",
     "restarting": "Server sedang restart, harap tunggu...",
     "updateLog": "Log Update",
-    "waitingLog": "Menunggu output update..."
+    "waitingLog": "Menunggu output update...",
+    "restartRadius": "Restart RADIUS?",
+    "restartRadiusWarning": "Ini akan memutuskan sementara semua sesi aktif."
   },
   "inventory": {
     "items": "Barang",
@@ -2721,7 +2895,12 @@
     "adjustmentDesc": "Penyesuaian (Koreksi)",
     "enterNewStock": "Masukkan total stok baru",
     "total": "Total",
-    "user": "User"
+    "user": "User",
+    "descriptionLabel": "Deskripsi",
+    "itemLabel": "Item",
+    "notesLabel": "Catatan",
+    "quantityLabel": "Jumlah",
+    "recordStockMovement": "Catat Pergerakan Stok"
   },
   "technician": {
     "login": "Login Teknisi",
@@ -3355,7 +3534,9 @@
     "time": "Waktu",
     "viewProof": "Lihat Bukti",
     "approve": "Setujui",
-    "reject": "Tolak"
+    "reject": "Tolak",
+    "createInvoice": "Buat Invoice",
+    "selectPackage": "Pilih Paket"
   },
   "manualPayment": {
     "title": "Pembayaran Manual",
@@ -3655,7 +3836,8 @@
     "deleteConfirm": "Hapus Item?",
     "deleteWarning": "Anda tidak akan dapat mengembalikan ini!",
     "createSuccess": "Item berhasil dibuat",
-    "requiredFields": "Username dan Nilai wajib diisi"
+    "requiredFields": "Username dan Nilai wajib diisi",
+    "success": "RADIUS berhasil"
   },
   "pushNotif": {
     "title": "Web Push Notifications",
@@ -4250,5 +4432,62 @@
     "deleteFailedODP": "Gagal menghapus ODP.",
     "viewOnMap": "Lihat di peta",
     "delete": "Hapus"
+  },
+  "error": {
+    "loadFailed": "Gagal memuat halaman"
+  },
+  "manualPayments": {
+    "accountNumber": "Nomor Rekening",
+    "deleteConfirm": "Hapus data pembayaran manual ini?",
+    "statusLabel": "Status",
+    "totalLabel": "Total"
+  },
+  "olt": {
+    "add": "Tambah OLT",
+    "edit": "Edit OLT",
+    "followRoad": "Ikuti Jalan",
+    "import": "Import OLT",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "model": "Model",
+    "monitoring": {
+      "title": "Monitoring OLT"
+    },
+    "name": "Nama OLT",
+    "snmpCommunity": "SNMP Community",
+    "sshEnabled": "SSH Aktif",
+    "subtitle": "Kelola perangkat Optical Line Terminal",
+    "telnetEnabled": "Telnet Aktif",
+    "title": "OLT",
+    "uploadRouters": "Upload Routers",
+    "vendor": "Vendor"
+  },
+  "topup": {
+    "amount": "Jumlah",
+    "approve": "Setujui",
+    "approveConfirmButton": "Ya, Setujui",
+    "approveConfirmDesc": "Saldo agent akan bertambah sesuai nominal yang diminta.",
+    "approveConfirmTitle": "Setujui Deposit?",
+    "approveSuccess": "Deposit berhasil disetujui",
+    "approved": "Disetujui",
+    "failedApprove": "Gagal menyetujui deposit",
+    "failedLoadRequests": "Gagal memuat permintaan top-up",
+    "failedProcess": "Gagal memproses permintaan",
+    "failedReject": "Gagal menolak deposit",
+    "method": "Metode",
+    "noRequests": "Tidak ada permintaan top-up",
+    "note": "Catatan",
+    "paymentProof": "Bukti Transfer",
+    "pending": "Menunggu",
+    "reject": "Tolak",
+    "rejectConfirmButton": "Ya, Tolak",
+    "rejectConfirmDesc": "Permintaan deposit ini akan ditolak dan agent tidak akan mendapatkan saldo.",
+    "rejectConfirmTitle": "Tolak Deposit?",
+    "rejectSuccess": "Deposit berhasil ditolak",
+    "rejected": "Ditolak",
+    "requestsDesc": "Kelola permintaan top-up saldo dari agent",
+    "requestsTitle": "Permintaan Top-Up",
+    "time": "Waktu",
+    "viewProof": "Lihat Bukti"
   }
 }
