@@ -183,15 +183,26 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Synthetic sessions: AKTIF vouchers that have no active radacct entry.
-    // This covers cases where MikroTik authenticated the user but no
-    // Accounting-Start was recorded in radacct.
-    // Enrich with Redis data (MAC/IP/bytes) if available from REST accounting hook.
+    // Synthetic sessions: ACTIVE vouchers that have no radacct record at all.
+    // A voucher is orphaned only if it authenticated (firstLoginAt set) but no
+    // Accounting-Start was ever recorded — not even a stopped entry.
+    // Vouchers with a stopped radacct entry properly disconnected; exclude them.
+    const stoppedCodes = await prisma.radacct.findMany({
+      where: {
+        username: { in: voucherCodes },
+        acctstoptime: { not: null },
+      },
+      select: { username: true },
+      distinct: ['username'],
+    });
+    const stoppedCodeSet = new Set(stoppedCodes.map(s => s.username));
+
     const orphanedVouchers = vouchers.filter(
       (v) =>
         v.status === 'ACTIVE' &&
         v.firstLoginAt !== null &&
-        !activeRadacctCodes.has(v.code),
+        !activeRadacctCodes.has(v.code) &&
+        !stoppedCodeSet.has(v.code),
     );
 
     const redisDetails = await Promise.allSettled(

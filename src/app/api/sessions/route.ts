@@ -213,7 +213,7 @@ export async function GET(request: NextRequest) {
     };
     if (routerId) orphanedVoucherWhere.routerId = routerId;
 
-    const orphanedActiveVouchers = await prisma.hotspotVoucher.findMany({
+    let orphanedActiveVouchers = await prisma.hotspotVoucher.findMany({
       where: orphanedVoucherWhere,
       select: {
         id: true,
@@ -227,6 +227,19 @@ export async function GET(request: NextRequest) {
         router: { select: { id: true, name: true, nasname: true } },
       },
     });
+
+    // Filter out vouchers that have a stopped radacct record — they properly
+    // disconnected and are NOT currently online.
+    if (orphanedActiveVouchers.length > 0) {
+      const orphanCodes = orphanedActiveVouchers.map(v => v.code);
+      const accountedOrphans = await prisma.radacct.findMany({
+        where: { username: { in: orphanCodes } },
+        select: { username: true },
+        distinct: ['username'],
+      });
+      const accountedSet = new Set(accountedOrphans.map(r => r.username));
+      orphanedActiveVouchers = orphanedActiveVouchers.filter(v => !accountedSet.has(v.code));
+    }
 
     const orphanedRedisDetails = await Promise.allSettled(
       orphanedActiveVouchers.map((v) => getOnlineUserDetail(v.code)),

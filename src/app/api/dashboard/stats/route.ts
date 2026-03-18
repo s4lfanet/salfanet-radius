@@ -122,22 +122,37 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // Supplement: count ACTIVE vouchers not in radacct/Redis (synthetic sessions)
-      const hotspotCodesInRadacctOrRedis = new Set(
-        [...onlineUsernames].filter(u => {
-          const raw = u.toLowerCase();
-          const normalized = normalizeUsername(u).toLowerCase();
-          return !pppoeUsernameSet.has(raw) && !pppoeUsernameSet.has(normalized);
-        })
-      );
-      const orphanActiveCount = await prisma.hotspotVoucher.count({
-        where: {
-          status: 'ACTIVE',
-          firstLoginAt: { not: null },
-          code: { notIn: [...hotspotCodesInRadacctOrRedis] },
-        },
+      // Supplement: count truly orphaned ACTIVE vouchers.
+      // A voucher is "orphaned" only if it authenticated (firstLoginAt set) but no
+      // Accounting-Start arrived — i.e. the code does NOT appear in radacct at all
+      // (neither active nor stopped). Vouchers with a stopped session have properly
+      // disconnected and must NOT be counted as online.
+      const activeCandidates = await prisma.hotspotVoucher.findMany({
+        where: { status: 'ACTIVE', firstLoginAt: { not: null } },
+        select: { code: true },
       });
-      activeSessionsHotspot += orphanActiveCount;
+      if (activeCandidates.length > 0) {
+        const candidateCodes = activeCandidates.map(v => v.code);
+        // Find which candidates have ANY radacct record (active or stopped)
+        const accountedInRadacct = await prisma.radacct.findMany({
+          where: { username: { in: candidateCodes } },
+          select: { username: true },
+          distinct: ['username'],
+        });
+        const accountedSet = new Set(accountedInRadacct.map(r => r.username));
+        // Also exclude Redis-confirmed online codes
+        const hotspotCodesInRedis = new Set(
+          [...onlineUsernames].filter(u => {
+            const raw = u.toLowerCase();
+            const norm = normalizeUsername(u).toLowerCase();
+            return !pppoeUsernameSet.has(raw) && !pppoeUsernameSet.has(norm);
+          })
+        );
+        const orphanCount = candidateCodes.filter(
+          code => !accountedSet.has(code) && !hotspotCodesInRedis.has(code)
+        ).length;
+        activeSessionsHotspot += orphanCount;
+      }
     } catch (e) {
       console.error('[Dashboard] Error counting active sessions:', e);
     }
