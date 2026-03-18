@@ -239,11 +239,10 @@ export async function createPppoeUser(
       data: { username, attribute: 'Cleartext-Password', op: ':=', value: password },
     });
 
-    if (router) {
-      await prisma.radcheck.create({
-        data: { username, attribute: 'NAS-IP-Address', op: '==', value: router.nasname },
-      });
-    }
+    // NOTE: NAS-IP-Address is NOT stored in radcheck.
+    // FreeRADIUS treats radcheck as check items — if NAS-IP-Address doesn't match
+    // the incoming request (VPN, NAT, different source IP), auth fails entirely.
+    // NAS restriction is handled at the app level via REST authorize hook.
 
     await prisma.radusergroup.create({
       data: { username, groupname: profile.groupName, priority: 0 },
@@ -411,11 +410,7 @@ export async function updatePppoeUser(
         data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password },
       });
 
-      if (router) {
-        await prisma.radcheck.create({
-          data: { username: newUsername, attribute: 'NAS-IP-Address', op: '==', value: router.nasname },
-        });
-      }
+      // NOTE: NAS-IP-Address NOT stored in radcheck (breaks auth in VPN/NAT setups)
 
       await prisma.radusergroup.create({
         data: { username: newUsername, groupname: newProfile.groupName, priority: 0 },

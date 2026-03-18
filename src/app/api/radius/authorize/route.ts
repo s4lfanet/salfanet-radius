@@ -23,11 +23,7 @@ export async function POST(request: NextRequest) {
     username = body.username;
 
     if (!username) {
-      return NextResponse.json({
-        success: false,
-        action: "ignore",
-        message: "No username provided"
-      });
+      return NextResponse.json({});
     }
 
     // Check if this is a hotspot voucher
@@ -113,11 +109,9 @@ export async function POST(request: NextRequest) {
       }
 
       // PPPoE user is active or not found, allow to continue to normal auth
-      return NextResponse.json({
-        success: true,
-        action: "allow",
-        message: pppoeUser ? `PPPoE user ${pppoeUser.status}` : "Not a voucher or PPPoE user"
-      });
+      // Return empty object — FreeRADIUS REST module parses JSON keys as RADIUS attributes.
+      // Keys like "success", "action" are not valid RADIUS attributes and produce warnings.
+      return NextResponse.json({});
     }
 
     const now = new Date();
@@ -186,9 +180,6 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({
       "control:Cleartext-Password": username,
-      success: true,
-      action: "allow",
-      status: voucher.status,
     });
 
   } catch (error: any) {
@@ -198,12 +189,8 @@ export async function POST(request: NextRequest) {
     // Do NOT set Cleartext-Password here — hotspot voucher passwords are stored
     // in radcheck (via hotspot-sync), and PPPoE user passwords are in radcheck too.
     // Setting username as Cleartext-Password would break PPPoE auth when username ≠ password.
-    return NextResponse.json({
-      success: true,
-      action: "allow",
-      message: "Error but allowing — SQL radcheck will handle",
-      error: error.message
-    });
+    // Return empty object so FreeRADIUS REST doesn't fail on invalid attribute names.
+    return NextResponse.json({});
   }
 }
 

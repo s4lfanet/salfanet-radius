@@ -313,17 +313,7 @@ export async function POST(request: NextRequest) {
               },
             });
 
-            // Add NAS-IP-Address if router has IP
-            if (router.nasname) {
-              await prisma.radcheck.create({
-                data: {
-                  username: secret.name,
-                  attribute: 'NAS-IP-Address',
-                  op: '==',
-                  value: router.nasname,
-                },
-              });
-            }
+            // NOTE: NAS-IP-Address NOT stored in radcheck (breaks auth in VPN/NAT setups)
 
             // Add Framed-IP-Address if user has static IP
             if (secret['remote-address']) {
