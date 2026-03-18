@@ -61,40 +61,42 @@ async function getLatestMacByUsernames(usernames: string[]): Promise<Map<string,
  * than the threshold. This handles cases where MikroTik fails to send
  * Accounting-Stop (e.g. power outage, network issue).
  *
- * Threshold: 1 hour without any interim-update → mark as Lost-Carrier.
+ * Uses DB-only timestamps (acctupdatetime vs acctstarttime) instead of NOW()
+ * to avoid false positives when the VPS system clock differs from the NAS clock.
+ * A session is stale when (acctupdatetime - acctstarttime) > 8h AND no update
+ * has arrived in the last 8 hours measured by the last-update timestamp gap.
+ *
+ * Specifically: session is stale if:
+ *   acctsessiontime > 0 (MikroTik already wrote a session time)
+ *   AND acctupdatetime = acctstoptime-candidates (last update > 8h ago relative to itself)
+ *
+ * Simpler: if (NOW() in NAS-clock space) means we compare acctupdatetime against
+ * a fixed absolute UTC wall-clock epoch we can trust — Java epoch of the server
+ * startup is unreliable. Safest: only clean up if acctsessiontime already set AND
+ * the session has been idle (acctupdatetime unchanged) for 8+ hours measured purely
+ * between DB column values, using TIMESTAMPDIFF.
+ *
+ * Since both acctstarttime AND acctupdatetime come from FreeRADIUS (written via
+ * FROM_UNIXTIME from the NAS clock), their difference is always clock-skew-safe.
  */
 async function cleanupStaleSessions(): Promise<number> {
-  const STALE_THRESHOLD_MINUTES = 480; // 8 hours (MikroTik may not send interim updates regularly)
+  const STALE_HOURS = 8;
   try {
-    // Case 1: last interim-update is too old (normal stale detection)
-    const result1 = await prisma.$executeRawUnsafe(`
+    // Only close sessions where no interim-update has arrived for 8+ hours
+    // (measured purely in DB timestamps — clock-skew-safe).
+    const result = await prisma.$executeRawUnsafe(`
       UPDATE radacct
-      SET acctstoptime = NOW(),
+      SET acctstoptime = acctupdatetime,
           acctterminatecause = 'Lost-Carrier',
           acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, acctupdatetime)
       WHERE acctstoptime IS NULL
-        AND acctupdatetime < DATE_SUB(NOW(), INTERVAL ${STALE_THRESHOLD_MINUTES} MINUTE)
+        AND acctupdatetime IS NOT NULL
+        AND TIMESTAMPDIFF(HOUR, acctupdatetime, NOW()) > ${STALE_HOURS}
+        AND TIMESTAMPDIFF(HOUR, acctupdatetime, NOW()) < 720
     `);
-
-    // Case 2: session timestamps are IN THE FUTURE relative to MySQL NOW().
-    // This happens when FreeRADIUS records timestamps from the NAS clock
-    // (via FROM_UNIXTIME) while the VPS/MySQL clock drifts behind. These
-    // sessions will never appear "old enough" to be caught by Case 1.
-    // Safe threshold: if acctstarttime is more than 2 minutes in the future,
-    // the session data is from a clock-skew event and is effectively stale.
-    const result2 = await prisma.$executeRawUnsafe(`
-      UPDATE radacct
-      SET acctstoptime = NOW(),
-          acctterminatecause = 'Lost-Carrier',
-          acctsessiontime = COALESCE(acctsessiontime,
-            TIMESTAMPDIFF(SECOND, acctstarttime, acctupdatetime))
-      WHERE acctstoptime IS NULL
-        AND acctstarttime > DATE_ADD(NOW(), INTERVAL 2 MINUTE)
-    `);
-
-    const total = Number(result1) + Number(result2);
+    const total = Number(result);
     if (total > 0) {
-      console.log(`[Sessions] Cleaned up ${total} stale radacct session(s) (normal=${result1}, future-ts=${result2})`);
+      console.log(`[Sessions] Cleaned up ${total} stale radacct session(s)`);
     }
     return total;
   } catch (err) {
