@@ -53,7 +53,7 @@ export default function VpnClientPage() {
   const [showModal, setShowModal] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState<Credentials | null>(null);
-  const [selectedVpnType, setSelectedVpnType] = useState<'l2tp' | 'pptp'>('l2tp');
+  const [selectedVpnType, setSelectedVpnType] = useState<'l2tp' | 'pptp' | 'sstp'>('l2tp');
   const [creating, setCreating] = useState(false);
   const [expandedRoutingPanels, setExpandedRoutingPanels] = useState<Set<string>>(new Set());
   const [showApplyRoutingModal, setShowApplyRoutingModal] = useState(false);
@@ -65,7 +65,7 @@ export default function VpnClientPage() {
     name: '',
     description: '',
     vpnServerId: '',
-    vpnType: 'l2tp' as 'l2tp' | 'pptp',
+    vpnType: 'l2tp' as 'l2tp' | 'pptp' | 'sstp',
   });
 
   useEffect(() => {
@@ -217,7 +217,8 @@ export default function VpnClientPage() {
 
       if (result.success) {
         setCredentials(result.credentials);
-        setSelectedVpnType((result.credentials?.vpnType || 'l2tp') as 'l2tp' | 'pptp');
+        const createdType = String(result.credentials?.vpnType || 'l2tp').toLowerCase();
+        setSelectedVpnType(createdType === 'pptp' || createdType === 'sstp' ? createdType : 'l2tp');
         setShowCredentials(true);
         setShowModal(false);
         loadClients();
@@ -280,7 +281,8 @@ export default function VpnClientPage() {
     const server = vpnServers.find(s => s.id === client.vpnServerId)
     if (!server) return
 
-    const clientVpnType = (client.vpnType?.toLowerCase() || 'l2tp') as 'l2tp' | 'pptp'
+    const normalizedClientType = String(client.vpnType || 'l2tp').toLowerCase()
+    const clientVpnType = (normalizedClientType === 'pptp' || normalizedClientType === 'sstp' ? normalizedClientType : 'l2tp') as 'l2tp' | 'pptp' | 'sstp'
     const radiusServer = clients.find(c => c.isRadiusServer)
 
     setCredentials({
@@ -369,8 +371,13 @@ ${radiusSection}`.trim()
 
     if (selectedVpnType === 'l2tp') {
       return scriptBase(
-        `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=l2tp-client-salfanet use-ipsec=no add-default-route=no allow=mschap2 comment="SALFANET VPN"`,
+        `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=l2tp-client-salfanet use-ipsec=yes ipsec-secret=salfanet-vpn-secret add-default-route=no allow=mschap2 comment="SALFANET VPN"`,
         'l2tp-client'
+      )
+    } else if (selectedVpnType === 'sstp') {
+      return scriptBase(
+        `add connect-to=${credentials.server} port=992 user=${credentials.username} password=${credentials.password} disabled=no name=sstp-client-salfanet add-default-route=no authentication=mschap2 certificate=none comment="SALFANET VPN"`,
+        'sstp-client'
       )
     } else {
       return scriptBase(
@@ -726,7 +733,7 @@ ${radiusSection}`.trim()
                     VPN Protocol <span className="text-red-400">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
-                    {(['l2tp', 'pptp'] as const).map((type) => (
+                    {(['l2tp', 'pptp', 'sstp'] as const).map((type) => (
                       <button
                         key={type}
                         type="button"
@@ -861,7 +868,7 @@ ${radiusSection}`.trim()
                     {t('network.selectVpnType')}
                   </p>
                   <div className="flex gap-2 flex-wrap">
-                    {(['l2tp', 'pptp'] as const).map((type) => (
+                    {(['l2tp', 'pptp', 'sstp'] as const).map((type) => (
                       <button
                         key={type}
                         onClick={() => setSelectedVpnType(type)}

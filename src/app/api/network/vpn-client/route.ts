@@ -158,7 +158,7 @@ export async function POST(request: Request) {
     const { name, description, vpnServerId, vpnType: rawVpnType } = await request.json()
     const normalizedType = String(rawVpnType || 'l2tp').toLowerCase()
     const vpnType: 'l2tp' | 'pptp' | 'sstp' | 'wireguard' =
-      normalizedType === 'pptp' || normalizedType === 'sstp' || normalizedType === 'wireguard' ? normalizedType : 'l2tp'
+      normalizedType === 'pptp' || normalizedType === 'sstp' || normalizedType === 'wireguard' ? normalizedType as any : 'l2tp'
 
     // Validate VPN server ID
     if (!vpnServerId) {

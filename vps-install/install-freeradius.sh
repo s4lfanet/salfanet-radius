@@ -364,6 +364,65 @@ PYEOF
     print_success "clients.d configured"
 }
 
+configure_openssl_mschapv2() {
+    # Ubuntu 22.04+ / OpenSSL 3.x disables legacy algorithms (MD4) by default.
+    # MS-CHAPv2 (used by MikroTik PPPoE) requires MD4 for NT hash computation.
+    # Without this patch, FreeRADIUS mschap module links against libssl but
+    # EVP_md4() returns NULL because the legacy provider is not loaded, causing
+    # all MS-CHAPv2/MS-CHAP auth attempts to fail with "unknown message digest".
+    print_info "Configuring OpenSSL legacy provider for MS-CHAPv2 / MD4 support..."
+
+    local OPENSSL_CNF="/etc/ssl/openssl.cnf"
+    if [ ! -f "$OPENSSL_CNF" ]; then
+        print_warning "OpenSSL config not found at $OPENSSL_CNF — skipping (non-critical for non-Ubuntu installs)"
+        return 0
+    fi
+
+    if grep -q 'legacy_sect' "$OPENSSL_CNF"; then
+        print_success "OpenSSL legacy provider already enabled"
+        return 0
+    fi
+
+    # Backup original
+    cp "${OPENSSL_CNF}" "${OPENSSL_CNF}.bak.$(date +%Y%m%d%H%M%S)"
+
+    python3 - "${OPENSSL_CNF}" << 'PYEOF'
+import sys
+
+cnf = sys.argv[1]
+with open(cnf, 'r') as f:
+    content = f.read()
+
+# 1. Add openssl_conf directive at the top (before any section header)
+if 'openssl_conf = openssl_init' not in content:
+    content = 'openssl_conf = openssl_init\n\n' + content
+
+# 2. Append provider sections if not present
+if '[openssl_init]' not in content:
+    content += """
+[openssl_init]
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+legacy = legacy_sect
+
+[default_sect]
+activate = 1
+
+[legacy_sect]
+activate = 1
+"""
+
+with open(cnf, 'w') as f:
+    f.write(content)
+
+print("Patched: OpenSSL legacy provider enabled (MD4/MS-CHAPv2 support)")
+PYEOF
+
+    print_success "OpenSSL legacy provider configured (MD4 enabled for MS-CHAPv2)"
+}
+
 configure_pppoe_support() {
     print_info "Configuring PPPoE realm support..."
     
@@ -568,6 +627,7 @@ install_freeradius() {
     enable_modules
     configure_clients_d
     configure_pppoe_support
+    configure_openssl_mschapv2
     configure_firewall
     configure_sudoers
     # Fix file ownership BEFORE starting FreeRADIUS.
@@ -587,6 +647,7 @@ install_freeradius() {
     echo "  CoA Port: 3799/UDP"
     echo "  SQL Module: Enabled (${DB_NAME})"
     echo "  REST API: Enabled (http://localhost:3000)"
+    echo "  MS-CHAPv2: Enabled (OpenSSL legacy provider / MD4)"
     echo ""
     print_info "Debug mode: freeradius -X"
     print_info "Test auth: radtest username password localhost 0 testing123"

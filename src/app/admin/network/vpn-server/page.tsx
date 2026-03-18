@@ -15,6 +15,7 @@ interface VpnServer {
   apiPort: number
   subnet: string
   l2tpEnabled: boolean
+  sstpEnabled: boolean
   pptpEnabled: boolean
   openVpnEnabled: boolean
   isActive: boolean
@@ -103,6 +104,7 @@ export default function VpnServerPage() {
     apiPort: '8728',
     subnet: '10.20.30.0/24',
     l2tpEnabled: false,
+    sstpEnabled: false,
     pptpEnabled: false,
     openVpnEnabled: false,
   });
@@ -360,14 +362,14 @@ export default function VpnServerPage() {
   const handleAdd = () => {
     setEditingServer(null);
     setTestResult(null);
-    setFormData({ name: '', host: '', username: 'admin', password: '', apiPort: '8728', subnet: '10.20.30.0/24', l2tpEnabled: false, pptpEnabled: false, openVpnEnabled: false });
+    setFormData({ name: '', host: '', username: 'admin', password: '', apiPort: '8728', subnet: '10.20.30.0/24', l2tpEnabled: false, sstpEnabled: false, pptpEnabled: false, openVpnEnabled: false });
     setShowModal(true);
   }
 
   const handleEdit = (server: VpnServer) => {
     setEditingServer(server)
     setTestResult(null)
-    setFormData({ name: server.name, host: server.host, username: server.username, password: '', apiPort: server.apiPort.toString(), subnet: server.subnet, l2tpEnabled: server.l2tpEnabled, pptpEnabled: server.pptpEnabled, openVpnEnabled: server.openVpnEnabled })
+    setFormData({ name: server.name, host: server.host, username: server.username, password: '', apiPort: server.apiPort.toString(), subnet: server.subnet, l2tpEnabled: server.l2tpEnabled, sstpEnabled: server.sstpEnabled, pptpEnabled: server.pptpEnabled, openVpnEnabled: server.openVpnEnabled })
     setShowModal(true)
   }
 
@@ -560,6 +562,7 @@ export default function VpnServerPage() {
               if (data.success) {
                 const protocols: string[] = [];
                 if (data.l2tp) protocols.push('L2TP');
+                if (data.sstp) protocols.push('SSTP');
                 if (data.pptp) protocols.push('PPTP');
                 const successMsg = (t('network.protocolsEnabled') || 'Protokol aktif: {protocols}').replace('{protocols}', protocols.join(', ')) + (data.rosVersion ? ` | RouterOS: ${data.rosVersion}` : '');
                 setSetupResultModal({ success: true, title: t('network.setupComplete') || 'Setup Selesai', message: successMsg, stepsHtml });
@@ -587,9 +590,9 @@ export default function VpnServerPage() {
 
   // Stats calculations
   const totalServers = servers.length;
-  const activeServers = servers.filter(s => s.l2tpEnabled || s.pptpEnabled || s.openVpnEnabled).length;
+  const activeServers = servers.filter(s => s.l2tpEnabled || s.sstpEnabled || s.pptpEnabled).length;
   const l2tpServers = servers.filter(s => s.l2tpEnabled).length;
-  const pptpServers = servers.filter(s => s.pptpEnabled).length;
+  const sstpServers = servers.filter(s => s.sstpEnabled).length;
 
   if (loading) {
     return (
@@ -639,7 +642,7 @@ export default function VpnServerPage() {
               <button onClick={() => setShowSetupPasswordModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
             </div>
             <div className="p-4">
-              <p className="text-sm text-muted-foreground mb-3">This will configure: L2TP, PPTP, IP Pool ({setupPasswordServer?.subnet}), PPP Profile, NAT.</p>
+              <p className="text-sm text-muted-foreground mb-3">This will configure: L2TP, SSTP (port 992), PPTP, IP Pool ({setupPasswordServer?.subnet}), PPP Profile, NAT.</p>
               <label className="block text-sm font-medium text-[#00f7ff] mb-2">MikroTik Password:</label>
               <input className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm" type="password" placeholder="Enter password..." value={setupPasswordValue} onChange={(e) => setSetupPasswordValue(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSubmitSetupPassword()} autoFocus />
             </div>
@@ -770,15 +773,15 @@ export default function VpnServerPage() {
               <p className="text-lg sm:text-2xl font-bold text-foreground">{l2tpServers}</p>
               <p className="text-xs text-muted-foreground mt-1">L2TP Aktif</p>
             </div>
-            {/* PPTP Servers */}
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-orange-500/30 p-5 hover:border-orange-500/50 transition-all group">
+            {/* SSTP Servers */}
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-cyan-500/30 p-5 hover:border-cyan-500/50 transition-all group">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-orange-500/20 rounded-lg group-hover:bg-orange-500/30 transition-colors">
-                  <Shield className="w-5 h-5 text-orange-400" />
+                <div className="p-2 bg-cyan-500/20 rounded-lg group-hover:bg-cyan-500/30 transition-colors">
+                  <Shield className="w-5 h-5 text-cyan-400" />
                 </div>
               </div>
-              <p className="text-lg sm:text-2xl font-bold text-foreground">{pptpServers}</p>
-              <p className="text-xs text-muted-foreground mt-1">PPTP Aktif</p>
+              <p className="text-lg sm:text-2xl font-bold text-foreground">{sstpServers}</p>
+              <p className="text-xs text-muted-foreground mt-1">SSTP Aktif</p>
             </div>
           </div>
 
@@ -827,17 +830,17 @@ export default function VpnServerPage() {
                             L2TP/IPSec
                           </span>
                         )}
+                        {server.sstpEnabled && (
+                          <span className="px-3 py-1.5 bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                            SSTP
+                          </span>
+                        )}
                         {server.pptpEnabled && (
                           <span className="px-3 py-1.5 bg-purple-500/20 text-purple-400 border border-purple-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(168,85,247,0.2)]">
                             PPTP
                           </span>
                         )}
-                        {server.openVpnEnabled && (
-                          <span className="px-3 py-1.5 bg-orange-500/20 text-orange-400 border border-orange-500/40 text-xs font-bold rounded-lg shadow-[0_0_15px_rgba(249,115,22,0.2)]">
-                            OpenVPN
-                          </span>
-                        )}
-                        {!server.l2tpEnabled && !server.pptpEnabled && !server.openVpnEnabled && (
+                        {!server.l2tpEnabled && !server.sstpEnabled && !server.pptpEnabled && (
                           <span className="px-3 py-1.5 bg-amber-500/20 text-amber-400 border border-amber-500/40 text-xs font-bold rounded-lg">
                             {t('network.notConfigured')}
                           </span>
@@ -1047,7 +1050,8 @@ export default function VpnServerPage() {
                     <div className="grid grid-cols-2 gap-3">
                       {[
                         { key: 'l2tpEnabled', label: 'L2TP/IPSec', color: 'green' },
-                        { key: 'pptpEnabled', label: 'PPTP', color: 'purple' },                        { key: 'openVpnEnabled', label: 'OpenVPN', color: 'orange' },
+                        { key: 'sstpEnabled', label: 'SSTP (port 992)', color: 'cyan' },
+                        { key: 'pptpEnabled', label: 'PPTP', color: 'purple' },
                       ].map(({ key, label, color }) => (
                         <label key={key} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all ${(formData as any)[key] ? `bg-${color}-500/20 border-${color}-500/40` : 'bg-slate-900/50 border-slate-700/50 hover:border-slate-600'}`}>
                           <input

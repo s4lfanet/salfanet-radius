@@ -68,9 +68,9 @@ export async function POST(request: Request) {
         apiPort: parseInt(data.apiPort) || 8728,
         subnet: data.subnet || '10.20.30.0/24',
         l2tpEnabled: !!data.l2tpEnabled,
-        sstpEnabled: false,
+        sstpEnabled: !!data.sstpEnabled,
         pptpEnabled: !!data.pptpEnabled,
-        openVpnEnabled: !!data.openVpnEnabled,
+        openVpnEnabled: false,
       },
     })
 
@@ -105,9 +105,9 @@ export async function PUT(request: Request) {
       apiPort: parseInt(data.apiPort) || 8728,
       subnet: data.subnet,
       l2tpEnabled: !!data.l2tpEnabled,
-      sstpEnabled: false,
+      sstpEnabled: !!data.sstpEnabled,
       pptpEnabled: !!data.pptpEnabled,
-      openVpnEnabled: !!data.openVpnEnabled,
+      openVpnEnabled: false,
     }
 
     // Only update password if provided

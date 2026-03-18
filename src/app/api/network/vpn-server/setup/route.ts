@@ -12,8 +12,9 @@ export const maxDuration = 90
 const CONNECT_TIMEOUT = 20_000  // 20 s
 const CMD_TIMEOUT     = 12_000  // 12 s per command
 
-async function connectApi(host: string, user: string, password: string, port: number): Promise<any> {
-  const api = new RouterOSAPI({ host, user, password, port, timeout: Math.ceil(CMD_TIMEOUT / 1000) })
+async function connectApi(host: string, user: string, password: string, port: number, timeoutSec?: number): Promise<any> {
+  const t = timeoutSec ?? Math.ceil(CMD_TIMEOUT / 1000)
+  const api = new RouterOSAPI({ host, user, password, port, timeout: t })
   await Promise.race([
     api.connect(),
     new Promise<never>((_, reject) =>
@@ -28,12 +29,13 @@ async function cmd(
   command: string,
   params: string[],
   label: string,
+  timeoutMs = CMD_TIMEOUT,
 ): Promise<{ ok: boolean; data?: any; error?: string }> {
   try {
     const data = await Promise.race([
       api.write(command, params),
       new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Command timed out after ${CMD_TIMEOUT / 1000}s`)), CMD_TIMEOUT)
+        setTimeout(() => reject(new Error(`Command timed out after ${timeoutMs / 1000}s`)), timeoutMs)
       ),
     ])
     return { ok: true, data }
@@ -88,6 +90,7 @@ export async function POST(request: Request) {
     let l2tp      = false
     let sstp      = false
     let pptp      = false
+    let openVpn   = false
     let rosVersion = 'unknown'
 
     const step = async (s: string) => { steps.push(s); await send({ step: s }) }
@@ -192,6 +195,8 @@ export async function POST(request: Request) {
       pptp = r.ok
       await step(r.ok ? '✅ PPTP Server enabled' : `❌ PPTP: ${r.error}`)
 
+      await step('ℹ️ OpenVPN type is disabled and skipped in auto-setup.')
+
       // ── NAT Masquerade ────────────────────────────────────────────────
       // Use cmd() directly — it already handles "already exists" as ok:true
       r = await cmd(api, '/ip/firewall/nat/add', ['=chain=srcnat', '=action=masquerade', '=comment=VPN NAT'], 'nat-add')
@@ -224,12 +229,12 @@ export async function POST(request: Request) {
         if (serverId) {
           vpnServer = await prisma.vpnServer.update({
             where: { id: serverId },
-            data: { l2tpEnabled: l2tp, sstpEnabled: sstp, pptpEnabled: pptp },
+            data: { l2tpEnabled: l2tp, sstpEnabled: sstp, pptpEnabled: pptp, openVpnEnabled: false },
           })
           await step('✅ Database updated')
         } else if (name && host) {
           vpnServer = await prisma.vpnServer.create({
-            data: { name, host, username, password, apiPort: port, subnet: vpnSubnet, l2tpEnabled: l2tp, sstpEnabled: sstp, pptpEnabled: pptp },
+            data: { name, host, username, password, apiPort: port, subnet: vpnSubnet, l2tpEnabled: l2tp, sstpEnabled: sstp, pptpEnabled: pptp, openVpnEnabled: false },
           })
           await step('✅ Server created in database')
         }
@@ -237,12 +242,12 @@ export async function POST(request: Request) {
         await step(`⚠️ DB update failed: ${dbErr.message}`)
       }
 
-      await send({ done: true, success: l2tp || sstp || pptp, l2tp, sstp, pptp, steps, rosVersion, message: 'VPN Server configured!', server: vpnServer })
+      await send({ done: true, success: l2tp || sstp || pptp || openVpn, l2tp, sstp, pptp, openVpn, steps, rosVersion, message: 'VPN Server configured!', server: vpnServer })
 
     } catch (error: any) {
       if (api) try { await api.close() } catch { /* ignore */ }
       await step(`❌ Fatal error: ${error.message || error}`)
-      await send({ done: true, success: false, l2tp, sstp, pptp, steps, message: `Setup failed: ${error.message || error}`, rosVersion })
+      await send({ done: true, success: false, l2tp, sstp, pptp, openVpn, steps, message: `Setup failed: ${error.message || error}`, rosVersion })
     } finally {
       try { await writer.close() } catch { /* ignore */ }
     }
