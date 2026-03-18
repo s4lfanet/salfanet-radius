@@ -3,7 +3,7 @@ import { prisma } from "@/server/db/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/config";
 import { getRecentActivities } from "@/server/services/activity-log.service";
-import { cacheGetOrSet, redisDel, redisSMembers, isRedisAvailable, RedisKeys } from "@/server/cache/redis";
+import { cacheGetOrSet, redisDel, redisSMembers, redisSRem, isRedisAvailable, RedisKeys, getRedisClient } from "@/server/cache/redis";
 import { nowWIB, startOfDayWIBtoUTC } from "@/lib/timezone";
 
 // Disable caching for this route - always fetch fresh data
@@ -83,11 +83,34 @@ export async function GET(request: NextRequest) {
       );
 
       // Supplement: tambahkan dari Redis online-users (sesi yg belum masuk radacct)
+      // Hanya tambahkan username yang TIDAK ada di radacct sama sekali (bukan active atau stopped).
+      // Ini mencegah entri Redis basi (Accounting-Stop tidak diterima) dihitung sebagai online.
       if (isRedisAvailable()) {
         try {
           const redisUsernames = await redisSMembers(RedisKeys.onlineUsers());
-          for (const u of redisUsernames) {
-            if (u) onlineUsernames.add(u);
+          // Hanya proses username yang belum ada di radacct active
+          const newFromRedis = redisUsernames.filter(u => u && !onlineUsernames.has(u));
+          if (newFromRedis.length > 0) {
+            // Cross-check: jika username sudah ada di radacct (stopped), berarti Redis basi
+            const stoppedInRadacct = await prisma.radacct.findMany({
+              where: { username: { in: newFromRedis }, acctstoptime: { not: null } },
+              select: { username: true },
+              distinct: ['username'],
+            });
+            const staleRedisUsers = new Set(stoppedInRadacct.map(r => r.username));
+            for (const u of newFromRedis) {
+              if (!staleRedisUsers.has(u)) onlineUsernames.add(u);
+            }
+            // Background: auto-clean entri Redis yang basi
+            if (staleRedisUsers.size > 0) {
+              const client = getRedisClient();
+              if (client) {
+                for (const staleUser of staleRedisUsers) {
+                  client.srem(RedisKeys.onlineUsers(), staleUser).catch(() => {});
+                  client.del(RedisKeys.onlineUserDetail(staleUser)).catch(() => {});
+                }
+              }
+            }
           }
         } catch {
           // Redis unavailable — gunakan radacct saja
