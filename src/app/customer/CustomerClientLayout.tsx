@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, MessageSquare, User, Receipt, Shield, Menu, X, Package, Clock, LogOut, Bell, CheckCircle2, XCircle, RefreshCw, Trash2, Wifi, FileText, PauseCircle, Gift, Sun, Moon } from 'lucide-react';
@@ -36,7 +36,7 @@ interface NotifEvent {
   timestamp: string;
 }
 
-// ─── Inner layout ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Inner layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -52,7 +52,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const { addToast } = useToast();
 
-  // ── Persist notifications to localStorage ──────────────────────────────
+  // â”€â”€ Persist notifications to localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -202,7 +202,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      {/* ── DESKTOP SIDEBAR ─────────────────────────────── */}
+      {/* â”€â”€ DESKTOP SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <aside
         className={cn(
           'fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out',
@@ -289,7 +289,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* ── MAIN CONTENT ────────────────────────────────── */}
+      {/* â”€â”€ MAIN CONTENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="lg:ml-64 flex flex-col min-h-screen">
         {/* Desktop Header */}
         <header className="hidden lg:flex sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-cyan-500/20 items-center justify-between px-6 py-3">
@@ -339,18 +339,18 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                               <div className={`mt-0.5 p-1 rounded-lg flex-shrink-0 ${
                                 n.type === 'payment_success' ? 'bg-green-500/20' :
                                 n.type === 'payment_rejected' ? 'bg-red-500/20' :
-                                n.type === 'package_changed' ? 'bg-purple-500/20' : 'bg-cyan-500/20'
+                                n.type === 'package_changed' ? 'bg-blue-500/20' : 'bg-cyan-500/20'
                               }`}>
                                 {n.type === 'payment_success' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
                                 {n.type === 'payment_rejected' && <XCircle className="w-3 h-3 text-red-400" />}
-                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-purple-400" />}
+                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-blue-400" />}
                                 {n.type !== 'payment_success' && n.type !== 'payment_rejected' && n.type !== 'package_changed' && <Bell className="w-3 h-3 text-cyan-400" />}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className={`text-xs font-bold mb-0.5 ${
                                   n.type === 'payment_success' ? 'text-green-400' :
                                   n.type === 'payment_rejected' ? 'text-red-400' :
-                                  n.type === 'package_changed' ? 'text-purple-400' : 'text-cyan-400'
+                                  n.type === 'package_changed' ? 'text-blue-400' : 'text-cyan-400'
                                 }`}>{n.title}</p>
                                 <p className="text-[11px] text-muted-foreground leading-tight">{n.message}</p>
                                 <p className="text-[10px] text-muted-foreground/50 mt-1">{formatWIB(n.timestamp, 'dd MMM yyyy HH:mm')}</p>
@@ -369,7 +369,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 </>
               )}
             </div>
-            {/* Theme Toggle — Desktop */}
+            {/* Theme Toggle â€” Desktop */}
             <button
               onClick={toggleTheme}
               className="p-2 flex items-center justify-center rounded-xl hover:bg-cyan-500/10 border border-transparent hover:border-cyan-500/20 transition-all"
@@ -449,18 +449,18 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                               <div className={`mt-0.5 p-1 rounded-lg flex-shrink-0 ${
                                 n.type === 'payment_success' ? 'bg-green-500/20' :
                                 n.type === 'payment_rejected' ? 'bg-red-500/20' :
-                                n.type === 'package_changed' ? 'bg-purple-500/20' : 'bg-cyan-500/20'
+                                n.type === 'package_changed' ? 'bg-blue-500/20' : 'bg-cyan-500/20'
                               }`}>
                                 {n.type === 'payment_success' && <CheckCircle2 className="w-3 h-3 text-green-400" />}
                                 {n.type === 'payment_rejected' && <XCircle className="w-3 h-3 text-red-400" />}
-                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-purple-400" />}
+                                {n.type === 'package_changed' && <Package className="w-3 h-3 text-blue-400" />}
                                 {n.type !== 'payment_success' && n.type !== 'payment_rejected' && n.type !== 'package_changed' && <Bell className="w-3 h-3 text-cyan-400" />}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <p className={`text-xs font-bold mb-0.5 ${
                                   n.type === 'payment_success' ? 'text-green-400' :
                                   n.type === 'payment_rejected' ? 'text-red-400' :
-                                  n.type === 'package_changed' ? 'text-purple-400' : 'text-cyan-400'
+                                  n.type === 'package_changed' ? 'text-blue-400' : 'text-cyan-400'
                                 }`}>{n.title}</p>
                                 <p className="text-[11px] text-muted-foreground leading-tight">{n.message}</p>
                                 <p className="text-[10px] text-muted-foreground/50 mt-1">{formatWIB(n.timestamp, 'dd MMM yyyy HH:mm')}</p>
@@ -479,7 +479,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                   </>
                 )}
               </div>
-              {/* Theme Toggle — Mobile */}
+              {/* Theme Toggle â€” Mobile */}
               <button
                 onClick={toggleTheme}
                 className="p-2 flex items-center justify-center hover:bg-cyan-500/20 rounded-xl transition-all border border-cyan-500/30"
@@ -506,7 +506,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ─── Bridge for global showSuccess/showError helpers ─────────────────────────
+// â”€â”€â”€ Bridge for global showSuccess/showError helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function CustomerToastBridge() {
   const { addToast, confirm } = useToast();
   useEffect(() => {
@@ -516,7 +516,7 @@ function CustomerToastBridge() {
   return null;
 }
 
-// ─── Root export: wrap with CyberToastProvider ───────────────────────────────
+// â”€â”€â”€ Root export: wrap with CyberToastProvider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CustomerLayout({ children }: { children: React.ReactNode }) {
   return (
     <CyberToastProvider>

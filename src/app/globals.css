@@ -75,8 +75,8 @@
   /* Default to Dark Neon Theme - No Light Mode */
   --radius: 0.75rem;
   
-  /* Modern Background - Slate */
-  --background: #0f172a;
+  /* Modern Background - Deep Navy */
+  --background: #0a0e1a;
   --foreground: #ffffff;
   
   /* Card Colors - Brighter */
@@ -123,8 +123,8 @@
   --chart-4: #10b981;
   --chart-5: #f59e0b;
   
-  /* Sidebar - Modern Slate */
-  --sidebar: #0f172a;
+  /* Sidebar - Deep Navy */
+  --sidebar: #0b1120;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #06b6d4;
   --sidebar-primary-foreground: #ffffff;
@@ -138,7 +138,7 @@
 
 /* Force dark class to have same values */
 .dark {
-  --background: #0f172a;
+  --background: #0a0e1a;
   --foreground: #ffffff;
   --card: rgba(30, 41, 59, 0.9);
   --card-foreground: #ffffff;
@@ -168,7 +168,7 @@
   --chart-3: #8b5cf6;
   --chart-4: #10b981;
   --chart-5: #f59e0b;
-  --sidebar: #0f172a;
+  --sidebar: #0b1120;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #06b6d4;
   --sidebar-primary-foreground: #ffffff;
@@ -1040,7 +1040,7 @@ div[style*="z-index: 9999"].fixed.inset-0 {
 .fixed.inset-0 > div[class*="bg-gradient-to"],
 .fixed.inset-0 > div[class*="bg-card"],
 .fixed.inset-0 > div[class*="bg-\\[#1e1b2e\\]"],
-.fixed.inset-0 > div[class*="bg-\\[#1a0f35\\]"],
+.fixed.inset-0 > div[class*="bg-\\[#0f172a\\]"],
 .fixed.inset-0 > div[class*="bg-slate"],
 .fixed.inset-0 > div[class*="max-w-"] {
   animation: modalContentIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -1129,19 +1129,19 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   }
   
   ::-webkit-scrollbar-track {
-    background: #0a0a0f;
+    background: #0a0e1a;
     border-radius: 4px;
   }
   
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #00ffff 0%, #ff00ff 100%);
+    background: linear-gradient(180deg, #06b6d4 0%, #3b82f6 100%);
     border-radius: 4px;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #00ffff 0%, #ff00ff 50%, #00ffff 100%);
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+    background: linear-gradient(180deg, #06b6d4 0%, #3b82f6 50%, #06b6d4 100%);
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
   }
   
   /* Light mode scrollbar */
@@ -1164,7 +1164,7 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   }
   
   .cyber-scrollbar::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(0, 255, 255, 0.5), rgba(255, 0, 255, 0.5));
+    background: linear-gradient(180deg, rgba(6, 182, 212, 0.5), rgba(59, 130, 246, 0.5));
     border-radius: 3px;
   }
   
@@ -1267,20 +1267,20 @@ div[style*="z-index: 9999"].fixed.inset-0 {
       0 0 80px rgba(0, 255, 255, 0.2);
   }
   
-  /* Magenta Glow */
+  /* Blue Glow */
   .neon-glow-magenta {
     box-shadow: 
-      0 0 5px rgba(255, 0, 255, 0.5),
-      0 0 10px rgba(255, 0, 255, 0.3),
-      0 0 20px rgba(255, 0, 255, 0.2);
+      0 0 5px rgba(59, 130, 246, 0.5),
+      0 0 10px rgba(59, 130, 246, 0.3),
+      0 0 20px rgba(59, 130, 246, 0.2);
   }
   
-  /* Purple Glow */
+  /* Blue-Violet Glow */
   .neon-glow-purple {
     box-shadow: 
-      0 0 5px rgba(147, 51, 234, 0.5),
-      0 0 10px rgba(147, 51, 234, 0.3),
-      0 0 20px rgba(147, 51, 234, 0.2);
+      0 0 5px rgba(59, 130, 246, 0.5),
+      0 0 10px rgba(59, 130, 246, 0.3),
+      0 0 20px rgba(59, 130, 246, 0.2);
   }
   
   /* Green Glow */
@@ -1308,10 +1308,10 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   }
   
   .neon-border-magenta {
-    border-color: rgba(255, 0, 255, 0.5);
+    border-color: rgba(59, 130, 246, 0.5);
     box-shadow: 
-      0 0 5px rgba(255, 0, 255, 0.3),
-      inset 0 0 5px rgba(255, 0, 255, 0.1);
+      0 0 5px rgba(59, 130, 246, 0.3),
+      inset 0 0 5px rgba(59, 130, 246, 0.1);
   }
   
   /* Neon Text Effects */
@@ -1324,9 +1324,9 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   
   .neon-text-magenta {
     text-shadow: 
-      0 0 5px rgba(255, 0, 255, 0.8),
-      0 0 10px rgba(255, 0, 255, 0.6),
-      0 0 20px rgba(255, 0, 255, 0.4);
+      0 0 5px rgba(59, 130, 246, 0.8),
+      0 0 10px rgba(59, 130, 246, 0.6),
+      0 0 20px rgba(59, 130, 246, 0.4);
   }
 
   /* ===========================================
@@ -1335,27 +1335,27 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   
   .cyber-gradient {
     background: linear-gradient(135deg, 
-      #0a0a0f 0%, 
-      #0f0f18 50%, 
-      #0a0a0f 100%);
+      #0a0e1a 0%, 
+      #0f172a 50%, 
+      #0a0e1a 100%);
   }
   
   .cyber-gradient-primary {
     background: linear-gradient(135deg,
-      #00ffff 0%,
-      #ff00ff 100%);
+      #06b6d4 0%,
+      #3b82f6 100%);
   }
   
   .cyber-gradient-subtle {
     background: linear-gradient(135deg,
-      rgba(0, 255, 255, 0.1) 0%,
-      rgba(255, 0, 255, 0.1) 100%);
+      rgba(6, 182, 212, 0.1) 0%,
+      rgba(59, 130, 246, 0.1) 100%);
   }
   
   .cyber-gradient-radial {
     background: radial-gradient(
       ellipse at center,
-      rgba(0, 255, 255, 0.1) 0%,
+      rgba(6, 182, 212, 0.1) 0%,
       transparent 70%
     );
   }
@@ -1374,15 +1374,15 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   .glass-card {
     @apply bg-black/40 backdrop-blur-xl border border-white/10;
     box-shadow: 
-      0 0 20px rgba(0, 255, 255, 0.1),
+      0 0 20px rgba(6, 182, 212, 0.1),
       inset 0 1px 0 rgba(255, 255, 255, 0.1);
   }
   
   .glass-neon {
     @apply bg-black/60 backdrop-blur-xl border-2 border-cyan-500/30;
     box-shadow: 
-      0 0 30px rgba(0, 255, 255, 0.15),
-      inset 0 0 20px rgba(0, 255, 255, 0.02);
+      0 0 30px rgba(6, 182, 212, 0.15),
+      inset 0 0 20px rgba(6, 182, 212, 0.02);
   }
 
   /* ===========================================
@@ -1401,8 +1401,8 @@ div[style*="z-index: 9999"].fixed.inset-0 {
       0deg,
       transparent,
       transparent 2px,
-      rgba(0, 255, 255, 0.03) 2px,
-      rgba(0, 255, 255, 0.03) 4px
+      rgba(6, 182, 212, 0.03) 2px,
+      rgba(6, 182, 212, 0.03) 4px
     );
     pointer-events: none;
     z-index: 1;
@@ -1426,14 +1426,14 @@ div[style*="z-index: 9999"].fixed.inset-0 {
      =========================================== */
   
   .gradient-text {
-    background: linear-gradient(90deg, #00ffff, #ff00ff);
+    background: linear-gradient(90deg, #06b6d4, #3b82f6);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   
   .gradient-text-primary {
-    background: linear-gradient(90deg, #00ffff, #00aaff);
+    background: linear-gradient(90deg, #06b6d4, #3b82f6);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

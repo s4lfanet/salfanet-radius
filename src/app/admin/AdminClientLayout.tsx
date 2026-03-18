@@ -778,13 +778,13 @@ function AdminLayoutContent({
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
         </div>
 
         <div className="flex flex-col items-center gap-4 relative z-10">
           <div className="relative">
             <div className="w-12 h-12 border-3 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin shadow-[0_0_20px_rgba(0,255,255,0.3)]" />
-            <div className="absolute inset-0 w-12 h-12 border-3 border-pink-500/20 border-b-pink-400 rounded-full animate-spin animate-reverse" style={{ animationDuration: '1.5s' }} />
+            <div className="absolute inset-0 w-12 h-12 border-3 border-blue-500/20 border-b-blue-400 rounded-full animate-spin animate-reverse" style={{ animationDuration: '1.5s' }} />
           </div>
           <p className="text-sm text-cyan-400/80 font-medium tracking-wider uppercase animate-pulse">{t('common.loading')}</p>
         </div>
@@ -802,13 +802,13 @@ function AdminLayoutContent({
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
         </div>
 
         <div className="flex flex-col items-center gap-4 relative z-10">
           <div className="relative">
             <div className="w-12 h-12 border-3 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin shadow-[0_0_20px_rgba(0,255,255,0.3)]" />
-            <div className="absolute inset-0 w-12 h-12 border-3 border-pink-500/20 border-b-pink-400 rounded-full animate-spin animate-reverse" style={{ animationDuration: '1.5s' }} />
+            <div className="absolute inset-0 w-12 h-12 border-3 border-blue-500/20 border-b-blue-400 rounded-full animate-spin animate-reverse" style={{ animationDuration: '1.5s' }} />
           </div>
           <p className="text-sm text-cyan-400/80 font-medium tracking-wider uppercase animate-pulse">{t('common.redirectingToLogin')}</p>
         </div>
@@ -822,14 +822,14 @@ function AdminLayoutContent({
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Primary glow orbs */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/5 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-500/5 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-purple-500/3 rounded-full blur-[80px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/5 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-blue-500/3 rounded-full blur-[80px]" />
 
         {/* Scan lines overlay */}
-        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,255,0.01)_2px,rgba(0,255,255,0.01)_4px)]" />
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(6,182,212,0.01)_2px,rgba(6,182,212,0.01)_4px)]" />
 
         {/* Grid pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,255,255,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.02)_1px,transparent_1px)] bg-[size:50px_50px]" />
       </div>
 
       {/* Mobile overlay - tap or swipe to close */}
@@ -857,7 +857,7 @@ function AdminLayoutContent({
           'fixed top-0 left-0 z-50 h-dvh w-[280px] sm:w-64 transition-transform duration-300 ease-out',
           'bg-background/95 backdrop-blur-xl',
           'border-r border-cyan-500/20',
-          'shadow-[5px_0_30px_rgba(0,255,255,0.1),inset_-1px_0_0_rgba(255,255,255,0.05)]',
+          'shadow-[5px_0_30px_rgba(6,182,212,0.1),inset_-1px_0_0_rgba(255,255,255,0.05)]',
           'safe-area-inset-left',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
@@ -867,13 +867,13 @@ function AdminLayoutContent({
 
         <div className="flex flex-col h-full">
           {/* Logo - compact on mobile with safe area */}
-          <div className="flex-shrink-0 flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 via-transparent to-pink-500/5">
+          <div className="flex-shrink-0 flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 via-transparent to-blue-500/5">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-400 flex items-center justify-center border border-cyan-400/50 shadow-[0_0_20px_rgba(0,255,255,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] animate-[neonPulse_3s_ease-in-out_infinite]">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-400 flex items-center justify-center border border-cyan-400/50 shadow-[0_0_20px_rgba(6,182,212,0.4),inset_0_1px_0_rgba(255,255,255,0.2)] animate-[neonPulse_3s_ease-in-out_infinite]">
                 <span className="text-black font-black text-xs sm:text-sm">{company.name.charAt(0)}</span>
               </div>
               <div className="min-w-0 flex-1">
-                <h1 className="text-[11px] sm:text-xs font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-cyan-300 to-pink-400 drop-shadow-[0_0_10px_rgba(0,255,255,0.5)] truncate max-w-[130px] sm:max-w-[110px]">
+                <h1 className="text-[11px] sm:text-xs font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-cyan-300 to-blue-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.5)] truncate max-w-[130px] sm:max-w-[110px]">
                   {company.name}
                 </h1>
                 <p className="text-[9px] sm:text-[10px] text-cyan-400/60 tracking-[0.15em] sm:tracking-[0.2em] uppercase font-medium">{t('common.billingSystem')}</p>
@@ -920,13 +920,13 @@ function AdminLayoutContent({
           </div>
 
           {/* User - fixed at bottom */}
-          <div className="flex-shrink-0 px-2.5 py-2 border-t border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 via-transparent to-pink-500/5">
+          <div className="flex-shrink-0 px-2.5 py-2 border-t border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 via-transparent to-blue-500/5">
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-primary/20 transition-all duration-300 border border-transparent hover:border-primary/30 group"
               >
-                <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-pink-500 rounded-lg flex items-center justify-center text-white text-sm font-black shadow-[0_0_15px_rgba(0,255,255,0.3)] group-hover:shadow-[0_0_20px_rgba(0,255,255,0.5)] transition-shadow">
+                <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center text-white text-sm font-black shadow-[0_0_15px_rgba(6,182,212,0.3)] group-hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] transition-shadow">
                   {session?.user?.name?.charAt(0).toUpperCase() || 'A'}
                 </div>
                 <div className="flex-1 min-w-0 text-left">
@@ -943,7 +943,7 @@ function AdminLayoutContent({
               {showUserMenu && (
                 <div className="absolute bottom-full left-0 right-0 mb-2 bg-background/95 backdrop-blur-xl rounded-xl shadow-[0_0_30px_rgba(0,0,0,0.5),0_0_10px_rgba(0,255,255,0.1)] border border-cyan-500/20 overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
                   <div className="absolute top-0 left-2 right-2 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-                  <div className="p-3 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-transparent to-pink-500/10">
+                  <div className="p-3 border-b border-cyan-500/20 bg-gradient-to-r from-cyan-500/10 via-transparent to-blue-500/10">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-medium">{t('auth.signedInAs')}</p>
                     <p className="text-xs font-bold text-cyan-400 truncate mt-1">
                       {(session?.user as any)?.username}
@@ -966,7 +966,7 @@ function AdminLayoutContent({
       {/* Main */}
       <div className="lg:pl-64 min-h-screen flex flex-col relative z-10 transition-all duration-300">
         {/* Header - optimized for mobile */}
-        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-cyan-500/20 shadow-[0_4px_30px_rgba(0,0,0,0.3),0_0_15px_rgba(0,255,255,0.05)] safe-area-inset-top">
+        <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-cyan-500/20 shadow-[0_4px_30px_rgba(0,0,0,0.3),0_0_15px_rgba(6,182,212,0.05)] safe-area-inset-top">
           {/* Top neon line */}
           <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
 
@@ -981,7 +981,7 @@ function AdminLayoutContent({
 
             {/* Mobile title - show on small screens */}
             <div className="flex-1 sm:hidden min-w-0">
-              <h1 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400 truncate">
+              <h1 className="text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 truncate">
                 {company.name}
               </h1>
             </div>
@@ -1024,7 +1024,7 @@ function AdminLayoutContent({
       {showIdleWarning && (
         <div className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
           {/* Scan lines */}
-          <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,255,0.02)_2px,rgba(0,255,255,0.02)_4px)]" />
+          <div className="absolute inset-0 pointer-events-none bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(6,182,212,0.02)_2px,rgba(6,182,212,0.02)_4px)]" />
 
           <div className="relative bg-background/95 backdrop-blur-xl border-2 border-cyan-500/30 rounded-2xl shadow-[0_0_50px_rgba(0,255,255,0.2),0_0_100px_rgba(255,0,255,0.1)] max-w-sm w-full p-6 animate-in zoom-in-95 duration-300">
             {/* Top neon line */}
@@ -1033,8 +1033,8 @@ function AdminLayoutContent({
             {/* Corner accents */}
             <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-cyan-400 rounded-tl-lg" />
             <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-cyan-400 rounded-tr-lg" />
-            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-pink-400 rounded-bl-lg" />
-            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-pink-400 rounded-br-lg" />
+            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-blue-400 rounded-bl-lg" />
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-400 rounded-br-lg" />
 
             <div className="flex items-center gap-4 mb-6">
               <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.3)] animate-pulse">
@@ -1130,7 +1130,7 @@ export default function AdminLayout({
           {/* Background effects */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
-            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
+            <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[70px] animate-pulse delay-1000" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
           </div>
 
           <div className="relative">

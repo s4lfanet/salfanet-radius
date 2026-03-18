@@ -86,6 +86,7 @@ export async function POST(request: Request) {
     const startTime = Date.now()
     let api: any  = null
     let l2tp      = false
+    let sstp      = false
     let pptp      = false
     let rosVersion = 'unknown'
 
@@ -164,17 +165,29 @@ export async function POST(request: Request) {
         }
       }
 
-      // ── L2TP Server ───────────────────────────────────────────────────
+      // ── L2TP Server (with IPsec + Preshared Key) ─────────────────────
       r = await cmd(api, '/interface/l2tp-server/server/set', [
         '=enabled=yes', '=default-profile=vpn-profile',
-        '=use-ipsec=no',
+        '=authentication=mschap2',
+        '=use-ipsec=yes',
+        '=ipsec-secret=salfanet-vpn-secret',
       ], 'l2tp-set')
       l2tp = r.ok
-      await step(r.ok ? '✅ L2TP Server enabled' : `❌ L2TP: ${r.error}`)
+      await step(r.ok ? '✅ L2TP Server enabled (IPsec + Preshared Key)' : `❌ L2TP: ${r.error}`)
+
+      // ── SSTP Server (port 992) ────────────────────────────────────────
+      r = await cmd(api, '/interface/sstp-server/server/set', [
+        '=enabled=yes', '=default-profile=vpn-profile',
+        '=authentication=mschap2',
+        '=port=992',
+      ], 'sstp-set')
+      sstp = r.ok
+      await step(r.ok ? '✅ SSTP Server enabled (port 992)' : `❌ SSTP: ${r.error}`)
 
       // ── PPTP Server ───────────────────────────────────────────────────
       r = await cmd(api, '/interface/pptp-server/server/set', [
         '=enabled=yes', '=default-profile=vpn-profile',
+        '=authentication=mschap2',
       ], 'pptp-set')
       pptp = r.ok
       await step(r.ok ? '✅ PPTP Server enabled' : `❌ PPTP: ${r.error}`)
@@ -211,12 +224,12 @@ export async function POST(request: Request) {
         if (serverId) {
           vpnServer = await prisma.vpnServer.update({
             where: { id: serverId },
-            data: { l2tpEnabled: l2tp, sstpEnabled: false, pptpEnabled: pptp },
+            data: { l2tpEnabled: l2tp, sstpEnabled: sstp, pptpEnabled: pptp },
           })
           await step('✅ Database updated')
         } else if (name && host) {
           vpnServer = await prisma.vpnServer.create({
-            data: { name, host, username, password, apiPort: port, subnet: vpnSubnet, l2tpEnabled: l2tp, sstpEnabled: false, pptpEnabled: pptp },
+            data: { name, host, username, password, apiPort: port, subnet: vpnSubnet, l2tpEnabled: l2tp, sstpEnabled: sstp, pptpEnabled: pptp },
           })
           await step('✅ Server created in database')
         }
@@ -224,12 +237,12 @@ export async function POST(request: Request) {
         await step(`⚠️ DB update failed: ${dbErr.message}`)
       }
 
-      await send({ done: true, success: l2tp || pptp, l2tp, pptp, steps, rosVersion, message: 'VPN Server configured!', server: vpnServer })
+      await send({ done: true, success: l2tp || sstp || pptp, l2tp, sstp, pptp, steps, rosVersion, message: 'VPN Server configured!', server: vpnServer })
 
     } catch (error: any) {
       if (api) try { await api.close() } catch { /* ignore */ }
       await step(`❌ Fatal error: ${error.message || error}`)
-      await send({ done: true, success: false, l2tp, pptp, steps, message: `Setup failed: ${error.message || error}`, rosVersion })
+      await send({ done: true, success: false, l2tp, sstp, pptp, steps, message: `Setup failed: ${error.message || error}`, rosVersion })
     } finally {
       try { await writer.close() } catch { /* ignore */ }
     }

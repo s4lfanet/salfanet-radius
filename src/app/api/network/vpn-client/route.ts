@@ -157,8 +157,8 @@ export async function POST(request: Request) {
   try {
     const { name, description, vpnServerId, vpnType: rawVpnType } = await request.json()
     const normalizedType = String(rawVpnType || 'l2tp').toLowerCase()
-    const vpnType: 'l2tp' | 'pptp' | 'wireguard' =
-      normalizedType === 'pptp' || normalizedType === 'wireguard' ? normalizedType : 'l2tp'
+    const vpnType: 'l2tp' | 'pptp' | 'sstp' | 'wireguard' =
+      normalizedType === 'pptp' || normalizedType === 'sstp' || normalizedType === 'wireguard' ? normalizedType : 'l2tp'
 
     // Validate VPN server ID
     if (!vpnServerId) {
@@ -394,9 +394,10 @@ ${radiusSection}
 `.trim()
     } else {
       const vpnTypeUpper = vpnType.toUpperCase()
-      const interfaceType = vpnType === 'pptp' ? 'pptp-client' : 'l2tp-client'
-      const ipsecLine = vpnType === 'l2tp' ? ' use-ipsec=no' : ''
+      const interfaceType = vpnType === 'pptp' ? 'pptp-client' : vpnType === 'sstp' ? 'sstp-client' : 'l2tp-client'
+      const ipsecLine = vpnType === 'l2tp' ? ' use-ipsec=yes ipsec-secret=salfanet-vpn-secret' : ''
       const authLine = vpnType === 'l2tp' ? ' allow=mschap2' : ' authentication=mschap2'
+      const portLine = vpnType === 'sstp' ? ' port=992' : ''
 
       nasSetupScript = `
 # ============================================
@@ -414,7 +415,7 @@ ${radiusSection}
 /user add name=${apiUsername} group=api-users password=${apiPassword} comment="API User for Remote Access"
 
 # --- STEP 3: Setup ${vpnTypeUpper} Client ---
-/interface ${interfaceType} add name=${interfaceType}-salfanet connect-to=${vpnServer.host} user=${username} password=${password}${ipsecLine} disabled=no${authLine} add-default-route=no comment="SALFANET VPN"
+/interface ${interfaceType} add name=${interfaceType}-salfanet connect-to=${vpnServer.host} user=${username} password=${password}${ipsecLine}${portLine} disabled=no${authLine} add-default-route=no comment="SALFANET VPN"
 
 # --- STEP 4: Tunggu koneksi (10 detik) ---
 :delay 10s

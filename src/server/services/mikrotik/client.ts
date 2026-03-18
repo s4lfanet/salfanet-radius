@@ -185,11 +185,12 @@ export class MikroTikConnection {
     try {
       if (!this.conn) await this.connect()
 
-      // Enable SSTP Server
+      // Enable SSTP Server on port 992 (non-default, avoids conflict with HTTPS 443)
       await this.conn!.write('/interface/sstp-server/server/set', [
         '=enabled=yes',
         '=default-profile=vpn-profile',
         '=authentication=mschap2',
+        '=port=992',
       ])
 
       return true
