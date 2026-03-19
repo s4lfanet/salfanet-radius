@@ -77,26 +77,35 @@ export async function GET(request: NextRequest) {
 
       if (allUsernames.length > 0) {
         const normalizedUsernames = [...new Set(allUsernames.map(normalizeUsername))];
-        const pppoeUsers = await prisma.pppoeUser.findMany({
-          where: {
-            OR: [
-              { username: { in: allUsernames } },
-              { username: { in: normalizedUsernames } },
-            ],
-          },
-          select: { username: true },
-        });
+        const [pppoeUsers, hotspotVouchers] = await Promise.all([
+          prisma.pppoeUser.findMany({
+            where: {
+              OR: [
+                { username: { in: allUsernames } },
+                { username: { in: normalizedUsernames } },
+              ],
+            },
+            select: { username: true },
+          }),
+          prisma.hotspotVoucher.findMany({
+            where: { code: { in: allUsernames } },
+            select: { code: true },
+          }),
+        ]);
 
         pppoeUsernameSet = new Set(pppoeUsers.map(u => u.username.toLowerCase()));
+        const hotspotVoucherSet = new Set(hotspotVouchers.map(v => v.code));
 
         for (const username of allUsernames) {
           const raw = username.toLowerCase();
           const normalized = normalizeUsername(username).toLowerCase();
           if (pppoeUsernameSet.has(raw) || pppoeUsernameSet.has(normalized)) {
             activeSessionsPPPoE++;
-          } else {
+          } else if (hotspotVoucherSet.has(username)) {
+            // Only count as hotspot if username is a registered voucher code
             activeSessionsHotspot++;
           }
+          // else: unregistered user — skip entirely (ghost session)
         }
       }
 
