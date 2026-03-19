@@ -46,7 +46,7 @@ export async function getIsolationSettings() {
         isolationEnabled: true,
         isolationIpPool: '192.168.200.0/24',
         isolationServerIp: undefined as string | undefined,
-        isolationRateLimit: '128k/128k',
+        isolationRateLimit: '64k/64k',
         isolationRedirectUrl: '',
         isolationAllowDns: true,
         isolationAllowPayment: true,

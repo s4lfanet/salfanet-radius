@@ -172,6 +172,13 @@ async function runCronJob(jobType, description, options = {}) {
 
 // ==================== CRON SCHEDULES ====================
 
+// Startup: run FreeRADIUS health check immediately so radgroupreply (isolir) and
+// pool-isolir VPS route are initialized before the first scheduled run (5 min).
+setTimeout(async () => {
+  console.log('[CRON SERVICE] Startup: running freeradius_health to seed isolir radgroupreply...');
+  await runCronJob('freeradius_health', 'FreeRADIUS Health Check (startup)');
+}, 10000); // 10s delay so Next.js app is fully up before we call the API
+
 // 1. Hotspot Voucher Sync - Every minute
 cron.schedule('* * * * *', async () => {
   await runCronJob('hotspot_sync', 'Hotspot Voucher Sync');

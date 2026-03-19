@@ -161,6 +161,27 @@ ${gatewayRadiusEntry}
 # ============================================
 
 # ============================================
+# ISOLATION FIREWALL — Redirect & Walled Garden
+# ============================================
+# Hapus rules lama (jika ada)
+/ip firewall filter remove [find where comment~"SALFANET-ISOLIR"]
+/ip firewall nat remove [find where comment~"SALFANET-ISOLIR"]
+
+# Allow DNS untuk user isolated (wajib agar redirect bisa resolve hostname)
+/ip firewall filter add chain=forward protocol=udp dst-port=53 src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow DNS UDP" place-before=0
+/ip firewall filter add chain=forward protocol=tcp dst-port=53 src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow DNS TCP" place-before=0
+
+# Allow akses ke billing/isolated page (HTTP + HTTPS)
+/ip firewall filter add chain=forward dst-address=${radiusServerIp} dst-port=80,443 protocol=tcp src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow billing HTTP/S" place-before=0
+
+# Blokir semua internet lain untuk user isolated
+/ip firewall filter add chain=forward src-address=192.168.200.0/24 action=drop comment="SALFANET-ISOLIR Block internet"
+
+# NAT: Redirect HTTP (port 80) dari user isolated ke halaman /isolated di billing server
+# User membuka browser → diarahkan ke https://${radiusServerIp}/isolated?ip=
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=80 protocol=tcp src-address=192.168.200.0/24 to-addresses=${radiusServerIp} to-ports=80 comment="SALFANET-ISOLIR Redirect HTTP to billing"
+
+# ============================================
 # FIREWALL RULES — RADIUS & CoA
 # ============================================
 # Hapus rules lama
