@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
+import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
 
 // ─── Formatting helpers ─────────────────────────────────────────────────────
 
@@ -117,6 +118,7 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type'); // 'pppoe' | 'hotspot' | null (both)
     const routerId = searchParams.get('routerId');
     const search = searchParams.get('search');
+    const useLiveTraffic = searchParams.get('live') === 'true';
     const page = Number.parseInt(searchParams.get('page') || '1', 10);
     const limit = Number.parseInt(searchParams.get('limit') || '0', 10);
 
@@ -134,6 +136,9 @@ export async function GET(request: NextRequest) {
         name: true,
         nasname: true,
         ipAddress: true,
+        username: true,
+        password: true,
+        port: true,
       },
     });
 
@@ -455,6 +460,46 @@ export async function GET(request: NextRequest) {
         const historicalMac = historicalMacMap.get(s.username);
         return historicalMac ? { ...s, macAddress: historicalMac } : s;
       });
+    }
+
+    // ── 4d. Optional live hotspot fallback from MikroTik API ──────────────
+    // If radacct is delayed/missing for hotspot (common when Accounting-Start
+    // does not arrive), patch hotspot bytes using live API counters.
+    if (useLiveTraffic && (type === null || type === 'hotspot')) {
+      const hotspotUsernames = new Set(
+        allSessions
+          .filter((s) => s.type === 'hotspot')
+          .map((s) => s.username),
+      );
+
+      if (hotspotUsernames.size > 0) {
+        const liveMap = await fetchLiveHotspotTrafficMap(routers, hotspotUsernames);
+        const mutableSessions = allSessions as Array<any>;
+        for (const s of mutableSessions) {
+          if (s.type !== 'hotspot') continue;
+          const live = liveMap.get(s.username);
+          if (!live) continue;
+
+          const uploadBytes = live.uploadBytes;
+          const downloadBytes = live.downloadBytes;
+          const totalBytes = uploadBytes + downloadBytes;
+
+          s.sessionId = s.sessionId || live.sessionId || '';
+          s.framedIpAddress = s.framedIpAddress || live.ipAddress || null;
+          s.macAddress =
+            s.macAddress && s.macAddress !== '-'
+              ? s.macAddress
+              : (live.macAddress || s.macAddress || '-');
+          s.uploadBytes = uploadBytes;
+          s.downloadBytes = downloadBytes;
+          s.totalBytes = totalBytes;
+          s.uploadFormatted = formatBytes(uploadBytes);
+          s.downloadFormatted = formatBytes(downloadBytes);
+          s.totalFormatted = formatBytes(totalBytes);
+          s.lastUpdate = new Date().toISOString();
+          s.dataSource = s.dataSource === 'radius' ? 'radius+realtime' : s.dataSource;
+        }
+      }
     }
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────

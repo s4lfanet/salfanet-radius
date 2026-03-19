@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
+import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
 
 
 function formatBytes(bytes: number): string {
@@ -68,7 +69,17 @@ export async function GET(request: NextRequest) {
         firstLoginAt: true,
         expiresAt: true,
         profile: { select: { name: true } },
-        router: { select: { name: true, nasname: true } }
+        router: {
+          select: {
+            id: true,
+            name: true,
+            nasname: true,
+            ipAddress: true,
+            port: true,
+            username: true,
+            password: true,
+          },
+        }
       }
     });
 
@@ -241,7 +252,7 @@ export async function GET(request: NextRequest) {
         };
       });
 
-    const allSessions = [...sessionsWithProfile, ...syntheticSessions];
+    let allSessions = [...sessionsWithProfile, ...syntheticSessions];
 
     // Historical MAC fallback from radacct.
     const missingMacUsernames = [
@@ -257,6 +268,59 @@ export async function GET(request: NextRequest) {
         if (s.callingStationId) continue;
         const historicalMac = historicalMacMap.get(s.username);
         if (historicalMac) s.callingStationId = historicalMac;
+      }
+    }
+
+    // Live hotspot fallback from MikroTik API.
+    // Needed when radacct active row is missing/delayed and synthetic session
+    // is shown with 0-byte counters.
+    const routerMap = new Map<string, {
+      id: string;
+      name: string;
+      nasname: string;
+      ipAddress: string | null;
+      port: number | null;
+      username: string;
+      password: string;
+    }>();
+
+    for (const v of vouchers) {
+      if (!v.router) continue;
+      if (!v.router.username || !v.router.password) continue;
+      if (!routerMap.has(v.router.id)) {
+        routerMap.set(v.router.id, {
+          id: v.router.id,
+          name: v.router.name,
+          nasname: v.router.nasname,
+          ipAddress: v.router.ipAddress,
+          port: v.router.port,
+          username: v.router.username,
+          password: v.router.password,
+        });
+      }
+    }
+
+    const routers = [...routerMap.values()];
+    if (routers.length > 0 && allSessions.length > 0) {
+      const targetUsernames = new Set(allSessions.map((s) => s.username));
+      const liveMap = await fetchLiveHotspotTrafficMap(routers, targetUsernames);
+
+      const mutableSessions = allSessions as Array<any>;
+      for (const s of mutableSessions) {
+        const live = liveMap.get(s.username);
+        if (!live) continue;
+
+        const uploadBytes = live.uploadBytes;
+        const downloadBytes = live.downloadBytes;
+
+        s.acctSessionId = s.acctSessionId || live.sessionId || '';
+        s.framedIpAddress = s.framedIpAddress || live.ipAddress || '';
+        s.callingStationId = s.callingStationId || live.macAddress || '';
+        s.acctInputOctets = uploadBytes;
+        s.acctOutputOctets = downloadBytes;
+        s.uploadFormatted = formatBytes(uploadBytes);
+        s.downloadFormatted = formatBytes(downloadBytes);
+        s.routerName = s.routerName || live.routerName;
       }
     }
 
