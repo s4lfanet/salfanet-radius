@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { getOnlineUserDetail } from '@/server/cache/online-users.cache';
+import { RouterOSAPI } from 'node-routeros';
 
 // ─── Formatting helpers ─────────────────────────────────────────────────────
 
@@ -50,6 +51,94 @@ async function getLatestMacByUsernames(usernames: string[]): Promise<Map<string,
       map.set(row.username, row.callingstationid);
     }
   }
+  return map;
+}
+
+// ─── Live MikroTik enrichment ────────────────────────────────────────────────
+
+interface LiveSessionData {
+  framedIpAddress: string;
+  uploadBytes: number;
+  downloadBytes: number;
+  uptimeSeconds: number;
+  macAddress?: string;
+}
+
+/**
+ * Query each router's MikroTik API for live hotspot + PPPoE sessions.
+ * Returns a map of username → live data, used to enrich sessions when live=true.
+ * Errors per-router are swallowed so a single offline router doesn't break the page.
+ */
+async function getLiveSessionsFromMikrotik(
+  routers: Array<{ id: string; name: string; ipAddress: string; nasname: string; username: string; password: string; port: number }>,
+): Promise<Map<string, LiveSessionData>> {
+  const map = new Map<string, LiveSessionData>();
+
+  await Promise.allSettled(routers.map(async (router) => {
+    const api = new RouterOSAPI({
+      host: router.ipAddress || router.nasname,
+      port: router.port || 8728,
+      user: router.username,
+      password: router.password,
+      timeout: 8,
+    });
+    try {
+      await api.connect();
+
+      const [hotspotUsers, pppUsers] = await Promise.all([
+        api.write('/ip/hotspot/active/print').catch(() => [] as any[]),
+        api.write('/ppp/active/print').catch(() => [] as any[]),
+      ]);
+
+      await api.close().catch(() => {});
+
+      for (const u of hotspotUsers as any[]) {
+        const username = u.user || u.username || '';
+        if (!username) continue;
+        let secs = 0;
+        const ut = u.uptime || '';
+        const w = ut.match(/(\d+)w/), d = ut.match(/(\d+)d/), h = ut.match(/(\d+)h/);
+        const m = ut.match(/(\d+)m/), s = ut.match(/(\d+)s/);
+        if (w) secs += parseInt(w[1]) * 7 * 86400;
+        if (d) secs += parseInt(d[1]) * 86400;
+        if (h) secs += parseInt(h[1]) * 3600;
+        if (m) secs += parseInt(m[1]) * 60;
+        if (s) secs += parseInt(s[1]);
+        map.set(username, {
+          framedIpAddress: u.address || '',
+          uploadBytes: parseInt(u['bytes-in'] || '0'),
+          downloadBytes: parseInt(u['bytes-out'] || '0'),
+          uptimeSeconds: secs,
+          macAddress: u['mac-address'] || undefined,
+        });
+      }
+
+      for (const u of pppUsers as any[]) {
+        const username = u.name || u.username || '';
+        if (!username) continue;
+        let secs = 0;
+        const ut = u.uptime || '';
+        const w = ut.match(/(\d+)w/), d = ut.match(/(\d+)d/), h = ut.match(/(\d+)h/);
+        const m = ut.match(/(\d+)m/), s = ut.match(/(\d+)s/);
+        if (w) secs += parseInt(w[1]) * 7 * 86400;
+        if (d) secs += parseInt(d[1]) * 86400;
+        if (h) secs += parseInt(h[1]) * 3600;
+        if (m) secs += parseInt(m[1]) * 60;
+        if (s) secs += parseInt(s[1]);
+        map.set(username, {
+          framedIpAddress: u.address || u['local-address'] || '',
+          uploadBytes: parseInt(u['bytes-in'] || '0'),
+          downloadBytes: parseInt(u['bytes-out'] || '0'),
+          uptimeSeconds: secs,
+          macAddress: u['caller-id'] || undefined,
+        });
+      }
+    } catch {
+      // MikroTik offline or unreachable — skip this router
+      try { await api.close(); } catch { /* ignore */ }
+    }
+  }));
+
   return map;
 }
 
@@ -135,6 +224,9 @@ export async function GET(request: NextRequest) {
         name: true,
         nasname: true,
         ipAddress: true,
+        username: true,
+        password: true,
+        port: true,
       },
     });
 
@@ -493,6 +585,34 @@ export async function GET(request: NextRequest) {
         const historicalMac = historicalMacMap.get(s.username);
         return historicalMac ? { ...s, macAddress: historicalMac } : s;
       });
+    }
+
+    // ── 4e. Live MikroTik enrichment (only when ?live=true) ──────────────
+    // Calls RouterOS API to get real-time IP, upload/download and uptime.
+    // Overrides radacct/Redis values so the UI always shows current data
+    // even when FreeRADIUS accounting is missing or delayed.
+    const live = searchParams.get('live') === 'true';
+    if (live && routers.length > 0) {
+      const liveMap = await getLiveSessionsFromMikrotik(routers as any).catch(() => new Map<string, LiveSessionData>());
+      if (liveMap.size > 0) {
+        allSessions = allSessions.map((s) => {
+          const ld = liveMap.get(s.username);
+          if (!ld) return s;
+          return {
+            ...s,
+            framedIpAddress: ld.framedIpAddress || s.framedIpAddress,
+            uploadBytes: ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes,
+            downloadBytes: ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes,
+            duration: ld.uptimeSeconds > 0 ? ld.uptimeSeconds : s.duration,
+            uploadFormatted: formatBytes(ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes),
+            downloadFormatted: formatBytes(ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes),
+            totalBytes: (ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes) + (ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes),
+            totalFormatted: formatBytes((ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes) + (ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes)),
+            macAddress: s.macAddress && s.macAddress !== '-' ? s.macAddress : (ld.macAddress || s.macAddress),
+            lastUpdate: new Date().toISOString(), // indicates live data
+          };
+        });
+      }
     }
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────
