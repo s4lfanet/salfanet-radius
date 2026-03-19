@@ -595,21 +595,24 @@ export async function GET(request: NextRequest) {
     if (live && routers.length > 0) {
       const liveMap = await getLiveSessionsFromMikrotik(routers as any).catch(() => new Map<string, LiveSessionData>());
       if (liveMap.size > 0) {
-        allSessions = allSessions.map((s) => {
+        // Cast to any[] to avoid TypeScript union-spread issues; the shape is preserved
+        (allSessions as any[]).forEach((s, idx) => {
           const ld = liveMap.get(s.username);
-          if (!ld) return s;
-          return {
+          if (!ld) return;
+          const up = ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes;
+          const down = ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes;
+          (allSessions as any[])[idx] = {
             ...s,
             framedIpAddress: ld.framedIpAddress || s.framedIpAddress,
-            uploadBytes: ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes,
-            downloadBytes: ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes,
+            uploadBytes: up,
+            downloadBytes: down,
             duration: ld.uptimeSeconds > 0 ? ld.uptimeSeconds : s.duration,
-            uploadFormatted: formatBytes(ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes),
-            downloadFormatted: formatBytes(ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes),
-            totalBytes: (ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes) + (ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes),
-            totalFormatted: formatBytes((ld.uploadBytes > 0 ? ld.uploadBytes : s.uploadBytes) + (ld.downloadBytes > 0 ? ld.downloadBytes : s.downloadBytes)),
+            uploadFormatted: formatBytes(up),
+            downloadFormatted: formatBytes(down),
+            totalBytes: up + down,
+            totalFormatted: formatBytes(up + down),
             macAddress: s.macAddress && s.macAddress !== '-' ? s.macAddress : (ld.macAddress || s.macAddress),
-            lastUpdate: new Date().toISOString(), // indicates live data
+            lastUpdate: new Date().toISOString(),
           };
         });
       }
