@@ -34,48 +34,46 @@ async function runCronJob(jobType, description, options = {}) {
   const maxRetries = 3;
   let lastError = null;
 
-  try {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        console.log(`[CRON] Running ${description} (attempt ${attempt}/${maxRetries})...`);
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[CRON] Running ${description} (attempt ${attempt}/${maxRetries})...`);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-        const response = await fetch(`${API_URL}/api/cron`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'User-Agent': 'SALFANET-CRON-SERVICE',
-          },
-          body: JSON.stringify({ type: jobType }),
-          signal: controller.signal,
-        });
+      const response = await fetch(`${API_URL}/api/cron`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'SALFANET-CRON-SERVICE',
+        },
+        body: JSON.stringify({ type: jobType }),
+        signal: controller.signal,
+      });
 
-        clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
-        const result = await response.json();
-        console.log(`[CRON] ${description} completed:`, result.success ? '✓' : '✗', result.message || '');
-        return result;
-      } catch (error) {
-        lastError = error;
-        console.error(`[CRON] ${description} failed (attempt ${attempt}):`, error.message);
+      const result = await response.json();
+      console.log(`[CRON] ${description} completed:`, result.success ? '✓' : '✗', result.message || '');
+      return result;
+    } catch (error) {
+      lastError = error;
+      console.error(`[CRON] ${description} failed (attempt ${attempt}):`, error.message);
 
-        if (attempt < maxRetries) {
-          const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-          console.log(`[CRON] Retrying in ${waitTime}ms...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
+      if (attempt < maxRetries) {
+        const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+        console.log(`[CRON] Retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
-
-    console.error(`[CRON] ${description} failed after ${maxRetries} attempts`);
-    return { success: false, error: lastError?.message || 'Unknown error' };
   }
+
+  console.error(`[CRON] ${description} failed after ${maxRetries} attempts`);
+  return { success: false, error: lastError?.message || 'Unknown error' };
 }
 
 // ==================== CRON SCHEDULES ====================
