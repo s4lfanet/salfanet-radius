@@ -4,6 +4,65 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.11.4] - 2026-03-19 (Duplicate Notification Fix + Sessions Traffic Auto-Refresh)
+
+### ✅ Fix: Duplicate Toast Notifications
+
+- **Agent portal**: `AgentNotificationDropdown` was mounted TWICE (desktop + mobile header), each with its own polling and toast logic. Both instances independently detected "new" notifications and showed toasts, causing double toast for every notification.
+  - Added `enableToasts` prop — mobile instance now renders dropdown UI only, no toasts
+  - Added module-level polling dedup (`_agentPollingInstance`) — only first mounted instance polls
+- **Technician portal**: `NotificationBell` was mounted TWICE (desktop + mobile header), both polling independently.
+  - Added module-level polling dedup — only primary instance sets up interval
+- **Admin portal**: `NotificationDropdown` component polled every 30s independently on top of layout's 30s polling (wasteful double API calls).
+  - Reduced dropdown polling interval to 60s (layout already handles 30s toast polling)
+
+### ✅ Fix: Admin Sessions Traffic Not Updating
+
+- `fetchSessions()` called `setLoading(true)` on every 10s auto-refresh, causing full-page spinner to replace the sessions table briefly every 10 seconds. This made traffic data appear frozen.
+  - Added `silent` parameter to `fetchSessions()` — auto-refresh now uses `silent=true` to skip the loading spinner
+  - Initial load and manual refresh still show the loading indicator
+
+### ✅ Fix: Agent Sessions Traffic Stops Updating
+
+- Added `visibilitychange` event handler to agent sessions page — refreshes data immediately when browser tab becomes visible (browsers throttle `setInterval` in background tabs)
+- Same `visibilitychange` handler added to admin sessions page
+
+### Files Changed
+- `src/components/agent/NotificationDropdown.tsx` — enableToasts prop, module-level polling dedup
+- `src/app/agent/AgentLayoutClient.tsx` — mobile instance gets `enableToasts={false}`
+- `src/app/technician/TechnicianPortalLayout.tsx` — module-level polling dedup for NotificationBell
+- `src/components/NotificationDropdown.tsx` — polling interval 30s → 60s
+- `src/app/admin/sessions/page.tsx` — silent auto-refresh + visibilitychange handler
+- `src/app/agent/sessions/page.tsx` — visibilitychange handler
+
+---
+
+## [2.11.3] - 2026-03-19 (Full Redis Removal + Hotspot Traffic Real-time)
+
+### ✅ Enhancement: Complete Redis Removal
+
+- Removed ALL Redis (`ioredis`) usage from entire codebase:
+  - Deleted `src/server/cache/redis.ts`, `src/server/cache/online-users.cache.ts`, `vps-install/install-redis.sh`
+  - Removed `ioredis` from `package.json`
+  - Removed `REDIS_URL` from `.env.example`
+  - Cleaned Redis references from `cron-service.js` (removed distributed lock + `sync_online_users` schedule)
+  - Cleaned installer scripts (`vps-installer.sh`, `vps-uninstaller.sh`)
+  - Fixed `cron-service.js` syntax error from dangling try block after Redis lock removal
+- All online user tracking now relies on FreeRADIUS `radacct` (single source of truth)
+
+### ✅ Fix: Hotspot Upload/Download Traffic Not Real-time
+
+- **Root cause**: `Acct-Interim-Interval = 300` in FreeRADIUS `post-auth` — MikroTik only sent traffic bytes every 5 minutes
+  - Changed to `Acct-Interim-Interval = 60` (1 minute) in both `freeradius-config/sites-available/default` and `sites-enabled/default`
+  - Reloaded FreeRADIUS on VPS (`systemctl reload freeradius`)
+- **Agent sessions page**: Had no auto-refresh — added 30s silent auto-refresh interval
+  - `loadSessions(agentId, silent)` — `silent=true` skips loading spinner on background refresh
+
+### Note
+- Only NEW sessions (after FreeRADIUS reload) get the 60s interval. Existing sessions retain old 300s interval until reconnect.
+
+---
+
 ## [2.11.2] - 2026-03-18 (Manual Agent Deposit Proof + Admin Bank Target)
 
 ### ✅ Enhancement: Manual Deposit Agent End-to-End
