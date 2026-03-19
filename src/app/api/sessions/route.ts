@@ -360,6 +360,16 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Re-derive timestamps from VPS's real clock to correct for NAS clock drift.
+      // NAS (MikroTik) sends UNIX epoch based on its LOCAL clock, which may be
+      // wrong (e.g. hours ahead/behind). Since duration = DB(update) - DB(start)
+      // cancels the NAS clock offset, we use:
+      //   real startTime (WIB-as-UTC) = VPS_now - duration
+      //   real lastUpdate (WIB-as-UTC) ≈ VPS_now (last interim was ≤ 300s ago)
+      if (acct.acctstarttime && duration > 0) {
+        effectiveStartTime = new Date(now - duration * 1000).toISOString();
+      }
+
       // Use radacct bytes (updated by Interim-Update packets from router)
       const uploadBytes   = Number(acct.acctinputoctets  ?? 0);
       const downloadBytes = Number(acct.acctoutputoctets ?? 0);
@@ -375,7 +385,7 @@ export async function GET(request: NextRequest) {
         calledStationId: acct.calledstationid || '-',
         startTime: effectiveStartTime,
         lastUpdate: acct.acctupdatetime
-          ? new Date(acct.acctupdatetime).toISOString()
+          ? new Date(now).toISOString()  // VPS real time ≈ last interim-update time (±300s)
           : null,
         duration,
         durationFormatted: formatDuration(duration),
