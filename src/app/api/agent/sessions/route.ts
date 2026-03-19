@@ -95,6 +95,7 @@ export async function GET(request: NextRequest) {
         calledstationid: true,
         acctsessionid: true,
         acctstarttime: true,
+        acctupdatetime: true,
         acctinputoctets: true,
         acctoutputoctets: true,
         acctsessiontime: true,
@@ -134,7 +135,18 @@ export async function GET(request: NextRequest) {
         effectiveStartTime = new Date(effectiveStartMs).toISOString().replace('Z', '');
       }
 
-      const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+      // Prefer DB-based duration (acctupdatetime - acctstarttime) to avoid
+      // VPS clock vs NAS clock skew. Fall back to acctsessiontime, then VPS clock.
+      let duration: number;
+      const rawUpdateMs = session.acctupdatetime ? new Date(session.acctupdatetime).getTime() : 0;
+      if (rawUpdateMs > effectiveStartMs) {
+        duration = Math.floor((rawUpdateMs - effectiveStartMs) / 1000);
+      } else {
+        duration = Number(session.acctsessiontime ?? 0);
+        if (duration === 0) {
+          duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+        }
+      }
 
       return {
         id: session.radacctid.toString(),

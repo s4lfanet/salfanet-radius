@@ -82,6 +82,8 @@ export async function POST(request: NextRequest) {
     // ==================== INTERIM UPDATE ====================
     else if (normalizedStatus === "interim-update" || normalizedStatus === "alive") {
       // Update framedIp, MAC, dan bytes di Redis
+      // PENTING: JUGA reset TTL agar key tidak expire selama sesi masih aktif.
+      // Tanpa EXPIRE, key 2-jam-TTL dari Accounting-Start akan expire meski interim terus masuk.
       const client = await import("@/server/cache/redis").then(m => m.getRedisClient());
       if (client) {
         const detailKey = RedisKeys.onlineUserDetail(username);
@@ -91,6 +93,8 @@ export async function POST(request: NextRequest) {
         if (inputOctets != null) updates.inputOctets = String(Number(inputOctets));
         if (outputOctets != null) updates.outputOctets = String(Number(outputOctets));
         await client.hset(detailKey, updates).catch(() => {});
+        // Reset TTL: sesi aktif yang terus mengirim interim tidak boleh expire
+        await client.expire(detailKey, 7200).catch(() => {});
       }
     }
 
