@@ -7,7 +7,6 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { sendAdminCreateUser } from '@/server/services/notifications/whatsapp-templates.service';
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
-import { redisDel, RedisKeys } from '@/server/cache/redis';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';
@@ -478,9 +477,8 @@ export async function updatePppoeUser(
     }
   }
 
-  // Status change: invalidate auth cache + CoA disconnect
+  // Status change: CoA disconnect
   if (data.status && data.status !== currentUser.status) {
-    await redisDel(RedisKeys.radiusAuth(currentUser.username));
     if (['blocked', 'stop', 'isolated'].includes(data.status)) {
       try {
         const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');

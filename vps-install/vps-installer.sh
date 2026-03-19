@@ -296,31 +296,6 @@ run_installation() {
         exit 1
     }
     
-    # Step 8: Redis Cache (Optional — Direkomendasikan)
-    echo ""
-    print_info "Step 8 (Opsional, Recommended): Redis Cache"
-    print_info "  Meningkatkan performa: cache RADIUS auth, dashboard, online tracking"
-    print_info "  Waktu: ~2 menit | RAM: 64-256MB"
-    echo ""
-    INSTALL_REDIS_ANSWER="y"
-    read -t 20 -p "Install Redis sekarang? [Y/n]: " INSTALL_REDIS_ANSWER </dev/tty || INSTALL_REDIS_ANSWER="y"
-    echo ""
-    if [[ ! "$INSTALL_REDIS_ANSWER" =~ ^[Nn]$ ]]; then
-        print_info "Running Step 8: Redis Cache Installer..."
-        source "$SCRIPT_DIR/install-redis.sh"
-        install_redis || {
-            print_warning "Redis install gagal (non-kritis, aplikasi tetap berjalan tanpa Redis)"
-            print_info "Untuk install Redis nanti, jalankan:"
-            print_info "  bash ${APP_DIR}/vps-install/install-redis.sh"
-        }
-        export REDIS_INSTALLED="true"
-    else
-        print_info "Redis dilewati."
-        print_info "Untuk install Redis kapan saja, jalankan:"
-        print_info "  bash ${APP_DIR}/vps-install/install-redis.sh"
-        export REDIS_INSTALLED="false"
-    fi
-
     # Step 9: Customer Android APK Builder (Optional)
     echo ""
     print_info "Step 9 (Optional): Customer Android APK Builder"
@@ -424,13 +399,6 @@ Application URL : $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}" || 
 Admin Panel     : $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}/admin" || echo "http://${VPS_IP}/admin")
 Default Login   : Lihat database seeders
 Firewall (UFW)  : $([ "${SKIP_UFW}" = "true" ] && echo "DILEWATI - konfigurasi di Proxmox host" || echo "$(ufw status 2>/dev/null | head -1 | sed 's/^Status: //')")
-
-[>] REDIS CACHE
------------------
-Redis Status    : $([ "${REDIS_INSTALLED:-false}" = "true" ] && echo "Terinstall" || echo "Tidak diinstall (opsional)")
-Redis URL       : $([ "${REDIS_INSTALLED:-false}" = "true" ] && echo "redis://127.0.0.1:6379" || echo "N/A")
-Install Redis   : bash ${APP_DIR}/vps-install/install-redis.sh
-Redis Status Cek: bash ${APP_DIR}/vps-install/install-redis.sh --status
 
 [>] CUSTOMER MOBILE APP
 -----------------------

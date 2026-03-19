@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { disconnectMultiplePPPoEUsers } from '@/server/services/radius/coa-handler.service';
-import { redisDel, RedisKeys } from '@/server/cache/redis';
 
 export async function PUT(request: Request) {
   try {
@@ -48,9 +47,6 @@ export async function PUT(request: Request) {
       where: { id: { in: userIds } },
       data: { status },
     });
-
-    // Invalidate Redis auth cache for all affected users
-    await Promise.all(users.map(u => redisDel(RedisKeys.radiusAuth(u.username))));
 
     // Update RADIUS for each user based on status
     for (const user of users) {

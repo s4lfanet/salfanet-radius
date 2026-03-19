@@ -351,12 +351,6 @@ async function restoreUserInRADIUS(username: string, groupName?: string, ipAddre
     `
   }
 
-  // 5. Invalidate Redis authorize cache
-  try {
-    const { redisDel, RedisKeys } = await import('@/server/cache/redis')
-    await redisDel(RedisKeys.radiusAuth(username))
-  } catch { /* Redis optional */ }
-
   // 6. Disconnect active session so user reconnects with restored group
   try {
     const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service')

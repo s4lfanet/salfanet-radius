@@ -66,7 +66,6 @@
     "date-fns-tz": "^3.2.0",
     "exceljs": "^4.4.0",
     "firebase-admin": "^13.6.1",
-    "ioredis": "^5.5.0",
     "jsonwebtoken": "^9.0.3",
     "jspdf": "^4.2.0",
     "jspdf-autotable": "^5.0.7",

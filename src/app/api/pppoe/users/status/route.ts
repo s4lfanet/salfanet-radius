@@ -4,7 +4,6 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
 import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { redisDel, RedisKeys } from '@/server/cache/redis';
 
 export async function PUT(request: Request) {
   try {
@@ -59,9 +58,6 @@ export async function PUT(request: Request) {
       where: { id: userId },
       data: { status },
     });
-
-    // Invalidate Redis auth cache so RADIUS picks up new status immediately
-    await redisDel(RedisKeys.radiusAuth(currentUser.username));
 
     // Use current user data for RADIUS operations
     const user = currentUser;

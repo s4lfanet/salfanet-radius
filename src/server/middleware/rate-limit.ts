@@ -1,9 +1,7 @@
 ﻿/**
  * API Rate Limiting Utility
  *
- * Menggunakan Redis jika tersedia, fallback ke in-memory store.
- * Redis memberikan rate limiting persisten yang survive server restart
- * dan bekerja dengan benar jika ada multiple PM2 workers.
+ * Menggunakan in-memory store.
  *
  * Usage:
  * ```typescript
@@ -20,7 +18,6 @@
  */
 
 import { NextRequest } from 'next/server';
-import { redisIncr, redisGet, RedisKeys, isRedisAvailable } from '@/server/cache/redis';
 
 interface RateLimitConfig {
   max: number; // Maximum requests
@@ -35,7 +32,7 @@ interface RateLimitStore {
   };
 }
 
-// In-memory fallback store (digunakan saat Redis tidak tersedia)
+// In-memory store
 const store: RateLimitStore = {};
 
 // Cleanup old entries every 5 minutes
@@ -68,7 +65,7 @@ function getClientId(request: NextRequest): string {
 /**
  * Check if request should be rate limited
  *
- * Menggunakan Redis jika tersedia, fallback ke in-memory store.
+ * Menggunakan in-memory store.
  *
  * @param request - NextRequest object
  * @param config - Rate limit configuration
@@ -80,19 +77,7 @@ export async function rateLimit(
 ): Promise<boolean> {
   const clientId = getClientId(request);
 
-  // ---- Redis path ----
-  if (isRedisAvailable()) {
-    try {
-      const key = RedisKeys.rateLimit(clientId);
-      const ttlSeconds = Math.ceil(config.windowMs / 1000);
-      const count = await redisIncr(key, ttlSeconds);
-      return count > config.max;
-    } catch {
-      // Redis error — fall through ke in-memory
-    }
-  }
-
-  // ---- In-memory fallback ----
+  // ---- In-memory store ----
   const now = Date.now();
   let client = store[clientId];
 

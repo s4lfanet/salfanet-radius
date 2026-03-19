@@ -1,9 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { cacheGetOrSet, RedisKeys } from '@/server/cache/redis';
 
-// Dashboard data cached 30 detik per user (has live RADIUS session)
-const DASHBOARD_CACHE_TTL = 30;
+
 
 /**
  * Get Customer Dashboard Data
@@ -69,11 +67,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Wrap semua DB queries dalam Redis cache 30 detik per userId
-    const dashboardData = await cacheGetOrSet(
-      RedisKeys.customerDashboard(user.id),
-      DASHBOARD_CACHE_TTL,
-      async () => {
+    // Fetch dashboard data
+    const dashboardData = await (async () => {
 
     // Get active session from RADIUS
     const activeSession = await prisma.radacct.findFirst({
@@ -183,8 +178,8 @@ export async function GET(request: NextRequest) {
       },
     };
 
-      } // end cacheGetOrSet fetcher
-    ); // end cacheGetOrSet
+      } // end fetcher
+    )(); // end async IIFE
 
     return NextResponse.json({
       success: true,

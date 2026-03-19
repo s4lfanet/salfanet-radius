@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { generateTransactionId, generateCategoryId } from '@/server/services/billing/invoice.service';
-import { redisDel, RedisKeys } from '@/server/cache/redis';
 
 export async function POST(
   request: NextRequest,
@@ -100,9 +99,6 @@ export async function POST(
       data: { status: 'active' },
       select: { username: true },
     });
-
-    // Invalidate Redis auth cache so RADIUS picks up restored status immediately
-    await redisDel(RedisKeys.radiusAuth(updatedUser.username));
 
     // Restore RADIUS tables so the user reconnects with correct profile.
     // Critical when user was isolated (radusergroup = 'isolir') — without this

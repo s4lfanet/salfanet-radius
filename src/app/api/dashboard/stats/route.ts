@@ -3,14 +3,13 @@ import { prisma } from "@/server/db/client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/config";
 import { getRecentActivities } from "@/server/services/activity-log.service";
-import { cacheGetOrSet, redisDel, redisSMembers, redisSRem, isRedisAvailable, RedisKeys, getRedisClient } from "@/server/cache/redis";
 import { nowWIB, startOfDayWIBtoUTC } from "@/lib/timezone";
 
 // Disable caching for this route - always fetch fresh data
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-const STATS_CACHE_TTL = 30; // 30 detik — cukup fresh untuk dashboard
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -37,16 +36,7 @@ export async function GET(request: NextRequest) {
     }
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
 
-    // Force refresh jika query param ?refresh=1
-    if (searchParams.get('refresh') === '1') {
-      await redisDel(`${RedisKeys.dashboardStats()}:${monthKey}`);
-    }
-
-    // Wrap semua DB queries dalam cache Redis 30 detik
-    const result = await cacheGetOrSet(
-      `${RedisKeys.dashboardStats()}:${monthKey}`,
-      STATS_CACHE_TTL,
-      async () => {
+    const result = await (async () => {
     const now = nowWIB();
     const startOfMonth = new Date(Date.UTC(selectedYear, selectedMonth, 1));
     const startOfNextMonth = new Date(Date.UTC(selectedYear, selectedMonth + 1, 1));
@@ -69,7 +59,7 @@ export async function GET(request: NextRequest) {
     let activeSessionsHotspot = 0;
 
     try {
-      // ── Sumber kebenaran: radacct + Redis online-users ──
+      // ── Sumber kebenaran: radacct ──
       // Sama dengan halaman Sesi: if username ada di pppoeUser → PPPoE, else → Hotspot.
       const normalizeUsername = (u: string) => u.includes('@') ? u.split('@')[0] : u;
 
@@ -81,41 +71,6 @@ export async function GET(request: NextRequest) {
       const onlineUsernames = new Set<string>(
         activeRadacctSessions.map(s => s.username).filter(Boolean) as string[]
       );
-
-      // Supplement: tambahkan dari Redis online-users (sesi yg belum masuk radacct)
-      // Hanya tambahkan username yang TIDAK ada di radacct sama sekali (bukan active atau stopped).
-      // Ini mencegah entri Redis basi (Accounting-Stop tidak diterima) dihitung sebagai online.
-      if (isRedisAvailable()) {
-        try {
-          const redisUsernames = await redisSMembers(RedisKeys.onlineUsers());
-          // Hanya proses username yang belum ada di radacct active
-          const newFromRedis = redisUsernames.filter(u => u && !onlineUsernames.has(u));
-          if (newFromRedis.length > 0) {
-            // Cross-check: jika username sudah ada di radacct (stopped), berarti Redis basi
-            const stoppedInRadacct = await prisma.radacct.findMany({
-              where: { username: { in: newFromRedis }, acctstoptime: { not: null } },
-              select: { username: true },
-              distinct: ['username'],
-            });
-            const staleRedisUsers = new Set(stoppedInRadacct.map(r => r.username));
-            for (const u of newFromRedis) {
-              if (!staleRedisUsers.has(u)) onlineUsernames.add(u);
-            }
-            // Background: auto-clean entri Redis yang basi
-            if (staleRedisUsers.size > 0) {
-              const client = getRedisClient();
-              if (client) {
-                for (const staleUser of staleRedisUsers) {
-                  client.srem(RedisKeys.onlineUsers(), staleUser).catch(() => {});
-                  client.del(RedisKeys.onlineUserDetail(staleUser)).catch(() => {});
-                }
-              }
-            }
-          }
-        } catch {
-          // Redis unavailable — gunakan radacct saja
-        }
-      }
 
       const allUsernames = [...onlineUsernames];
       let pppoeUsernameSet = new Set<string>();
@@ -172,16 +127,8 @@ export async function GET(request: NextRequest) {
           distinct: ['username'],
         });
         const accountedSet = new Set(accountedInRadacct.map(r => r.username));
-        // Also exclude Redis-confirmed online codes
-        const hotspotCodesInRedis = new Set(
-          [...onlineUsernames].filter(u => {
-            const raw = u.toLowerCase();
-            const norm = normalizeUsername(u).toLowerCase();
-            return !pppoeUsernameSet.has(raw) && !pppoeUsernameSet.has(norm);
-          })
-        );
         const orphanCount = candidateCodes.filter(
-          code => !accountedSet.has(code) && !hotspotCodesInRedis.has(code)
+          code => !accountedSet.has(code)
         ).length;
         activeSessionsHotspot += orphanCount;
       }
@@ -392,7 +339,7 @@ export async function GET(request: NextRequest) {
       monthKey,
       isCurrentMonth,
     };
-    }) // end cacheGetOrSet
+    })(); // end async IIFE
 
     return NextResponse.json({ success: true, ...result });
   } catch (error: any) {

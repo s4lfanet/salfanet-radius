@@ -1,13 +1,11 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
-import { redisGet, redisSet, redisDel, RedisKeys } from "@/server/cache/redis";
 
 /**
  * RADIUS Authorize Hook
  * Called BEFORE authentication to check if voucher is allowed to login
  *
- * Menggunakan Redis cache (TTL 60 detik) untuk PPPoE user status.
- * Mengurangi beban MySQL saat banyak user reconnect bersamaan.
+ * Queries DB langsung untuk PPPoE user status.
  *
  * Returns reject if:
  * 1. Voucher is expired
@@ -34,29 +32,17 @@ export async function POST(request: NextRequest) {
 
     // If not a voucher, check if it's a PPPoE user
     if (!voucher) {
-      // ---- Redis cache untuk PPPoE user status ----
-      const cacheKey = RedisKeys.radiusAuth(username);
-      let pppoeUser: { id: string; username: string; status: string; expiredAt: Date | null; name: string | null } | null = null;
-      const cached = await redisGet(cacheKey);
-
-      if (cached !== null) {
-        pppoeUser = JSON.parse(cached);
-      } else {
-        pppoeUser = await prisma.pppoeUser.findUnique({
-          where: { username },
-          select: {
-            id: true,
-            username: true,
-            status: true,
-            expiredAt: true,
-            name: true,
-          },
-        });
-        // Cache 60 detik (status tidak berubah terlalu sering)
-        if (pppoeUser !== null) {
-          await redisSet(cacheKey, JSON.stringify(pppoeUser), 60);
-        }
-      }
+      // ---- Query DB langsung untuk PPPoE user status ----
+      const pppoeUser = await prisma.pppoeUser.findUnique({
+        where: { username },
+        select: {
+          id: true,
+          username: true,
+          status: true,
+          expiredAt: true,
+          name: true,
+        },
+      });
 
       // Check if PPPoE user is blocked, stopped, or expired
       // NOTE: isolated users are NOT rejected - they login with restricted access
@@ -98,8 +84,6 @@ export async function POST(request: NextRequest) {
         if (pppoeUser.expiredAt && now > new Date(pppoeUser.expiredAt)) {
           const message = 'Masa Aktif Habis - Segera Bayar Tagihan';
           console.log(`[AUTHORIZE] REJECT: PPPoE user ${username} expired at ${pppoeUser.expiredAt}`);
-          // Invalidate cache agar status terbaru bisa diambil setelah dibayar
-          await redisDel(RedisKeys.radiusAuth(username));
           await logRejection(username, message);
           return NextResponse.json({
             "control:Auth-Type": "Reject",

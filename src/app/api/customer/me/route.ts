@@ -1,9 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { cacheGetOrSet, RedisKeys } from '@/server/cache/redis';
 
-// Profile data cached 60 detik per user (jarang berubah)
-const ME_CACHE_TTL = 60;
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,11 +30,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get user data — cached per userId 60 detik (profile jarang berubah)
-    const user = await cacheGetOrSet(
-      RedisKeys.customerMe(session.userId),
-      ME_CACHE_TTL,
-      () => prisma.pppoeUser.findUnique({
+    // Get user data
+    const user = await prisma.pppoeUser.findUnique({
         where: { id: session.userId },
         select: {
           id: true,
@@ -59,8 +54,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-      })
-    );
+    });
 
     if (!user) {
       return NextResponse.json(

@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { redisDel, RedisKeys } from '@/server/cache/redis';
 
 /**
  * Get Customer Profile
@@ -141,12 +140,6 @@ export async function PATCH(request: NextRequest) {
       data: updateData,
       select: { id: true, name: true, phone: true, email: true },
     });
-
-    // Invalidate cache agar data segar setelah update profil
-    await Promise.all([
-      redisDel(RedisKeys.customerMe(session.userId)),
-      redisDel(RedisKeys.customerDashboard(session.userId)),
-    ]);
 
     return NextResponse.json({
       success: true,

@@ -271,21 +271,7 @@ export async function POST(request: NextRequest) {
         }
 
       case 'sync_online_users':
-        try {
-          const { syncOnlineUsersFromDB } = await import('@/server/cache/online-users.cache')
-          const { isRedisAvailable } = await import('@/server/cache/redis')
-          if (!isRedisAvailable()) {
-            return NextResponse.json({ success: true, message: 'Redis not available, skipped', synced: 0, removed: 0 })
-          }
-          const syncResult = await syncOnlineUsersFromDB()
-          return NextResponse.json({
-            success: true,
-            message: `Synced ${syncResult.synced} users, removed ${syncResult.removed} stale`,
-            ...syncResult,
-          })
-        } catch (syncErr: any) {
-          return NextResponse.json({ success: false, error: syncErr.message })
-        }
+        return NextResponse.json({ success: true, message: 'Redis removed, sync not needed', synced: 0, removed: 0 })
 
       case 'suspend_check':
         try {

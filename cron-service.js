@@ -19,87 +19,10 @@ try {
 }
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
-const REDIS_URL = process.env.REDIS_URL || null;
 
 console.log('[CRON SERVICE] Starting cron service...');
 console.log('[CRON SERVICE] API URL:', API_URL);
 console.log('[CRON SERVICE] Node version:', process.version);
-console.log('[CRON SERVICE] Redis:', REDIS_URL ? 'Enabled (' + REDIS_URL.replace(/:\/\/.*@/, '://***@') + ')' : 'Disabled (in-process mode)');
-
-// ==================== REDIS DISTRIBUTED LOCK ====================
-
-let redisClient = null;
-
-if (REDIS_URL) {
-  try {
-    const Redis = require('ioredis');
-    redisClient = new Redis(REDIS_URL, {
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      connectTimeout: 3000,
-      commandTimeout: 2000,
-      retryStrategy: (times) => times >= 3 ? null : Math.min(times * 500, 2000),
-    });
-    redisClient.on('connect', () => console.log('[CRON] Redis connected'));
-    redisClient.on('error', (err) => {
-      if (redisClient) console.warn('[CRON] Redis error (fallback mode):', err.message);
-    });
-  } catch (err) {
-    console.warn('[CRON] ioredis not available, running without distributed lock:', err.message);
-    redisClient = null;
-  }
-}
-
-/**
- * Acquire distributed lock via Redis SET NX.
- * Mencegah 2 proses PM2 menjalankan job yang sama bersamaan.
- * @param {string} lockKey - Unique key untuk job
- * @param {number} ttlSeconds - Berapa lama lock valid (timeout)
- * @returns {Promise<boolean>} true jika berhasil acquire lock
- */
-async function acquireLock(lockKey, ttlSeconds) {
-  if (!redisClient) return true; // Tidak ada Redis, anggap lock selalu berhasil
-  try {
-    const result = await redisClient.set(
-      `lock:cron:${lockKey}`,
-      process.pid.toString(),
-      'EX', ttlSeconds,
-      'NX'
-    );
-    return result === 'OK';
-  } catch {
-    return true; // Redis error — allow execution
-  }
-}
-
-async function releaseLock(lockKey) {
-  if (!redisClient) return;
-  try {
-    await redisClient.del(`lock:cron:${lockKey}`);
-  } catch { /* ignore */ }
-}
-
-/**
- * Sync online users ke Redis dari radacct DB.
- * Dipanggil via API endpoint agar bisa menggunakan Prisma.
- */
-async function syncOnlineUsers() {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000);
-    const response = await fetch(`${API_URL}/api/cron`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'User-Agent': 'SALFANET-CRON-SERVICE' },
-      body: JSON.stringify({ type: 'sync_online_users' }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    const data = await response.json();
-    console.log('[CRON] Online users sync:', data.success ? '✓' : '✗', data.message || '');
-  } catch (err) {
-    console.warn('[CRON] Online users sync failed (non-critical):', err.message);
-  }
-}
 
 /**
  * Execute cron job via API endpoint.
@@ -108,18 +31,8 @@ async function syncOnlineUsers() {
  * @param {{ lockTtl?: number }} [options] - lockTtl: detik lock (0 = no lock)
  */
 async function runCronJob(jobType, description, options = {}) {
-  const { lockTtl = 0 } = options;
   const maxRetries = 3;
   let lastError = null;
-
-  // Distributed lock — hanya untuk job yang TIDAK boleh double-run
-  if (lockTtl > 0 && redisClient) {
-    const locked = await acquireLock(jobType, lockTtl);
-    if (!locked) {
-      console.log(`[CRON] ${description} — skipped (already running on another process)`);
-      return { success: true, skipped: true };
-    }
-  }
 
   try {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -162,11 +75,6 @@ async function runCronJob(jobType, description, options = {}) {
 
     console.error(`[CRON] ${description} failed after ${maxRetries} attempts`);
     return { success: false, error: lastError?.message || 'Unknown error' };
-  } finally {
-    // Release lock setelah selesai (atau setelah semua retry gagal)
-    if (lockTtl > 0 && redisClient) {
-      await releaseLock(jobType);
-    }
   }
 }
 
@@ -251,13 +159,6 @@ cron.schedule('*/5 * * * *', async () => {
   await runCronJob('pppoe_session_sync', 'PPPoE Session Sync', { lockTtl: 120 });
 });
 
-// 14. Sync Online Users ke Redis - Every 5 minutes (jika Redis tersedia)
-if (REDIS_URL) {
-  cron.schedule('*/5 * * * *', async () => {
-    await syncOnlineUsers();
-  });
-}
-
 // 15. Suspend Check - Every hour (activate/restore suspended users)
 cron.schedule('0 * * * *', async () => {
   await runCronJob('suspend_check', 'Suspend Check');
@@ -285,9 +186,6 @@ console.log('  - Webhook Log Cleanup: Daily at 3 AM [LOCKED]');
 console.log('  - FreeRADIUS Health Check: Every 5 minutes')
 console.log('  - PPPoE Session Sync: Every 5 minutes [LOCKED]');
 console.log('  - Suspend Check: Every hour');
-if (REDIS_URL) {
-  console.log('  - Sync Online Users (Redis): Every 5 minutes');
-}
 
 // Keep the process running
 process.on('SIGINT', () => {

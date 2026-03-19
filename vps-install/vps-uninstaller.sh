@@ -352,28 +352,6 @@ remove_pm2() {
     fi
 }
 
-remove_redis() {
-    print_step "Removing Redis"
-
-    if command -v redis-cli >/dev/null 2>&1 || systemctl list-units --all 2>/dev/null | grep -q redis; then
-        print_info "Stopping Redis service..."
-        systemctl stop redis-server 2>/dev/null || systemctl stop redis 2>/dev/null || true
-        systemctl disable redis-server 2>/dev/null || systemctl disable redis 2>/dev/null || true
-
-        read -p "Remove Redis packages? [y/N]: " REMOVE_REDIS </dev/tty
-        if [[ "$REMOVE_REDIS" =~ ^[Yy]$ ]]; then
-            apt-get purge -y redis-server redis-tools 2>/dev/null || true
-            apt-get autoremove -y 2>/dev/null || true
-            rm -rf /etc/redis /var/lib/redis /var/log/redis 2>/dev/null || true
-            print_success "Redis removed"
-        else
-            print_info "Redis package kept (service stopped)"
-        fi
-    else
-        print_info "Redis not installed (skipping)"
-    fi
-}
-
 remove_nodejs() {
     print_step "Removing Node.js"
     
@@ -483,7 +461,6 @@ main() {
     remove_database
     remove_freeradius
     remove_nginx_config
-    remove_redis
     remove_user
     remove_pm2
     clean_firewall
