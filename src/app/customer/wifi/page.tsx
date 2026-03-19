@@ -258,10 +258,10 @@ export default function CustomerWiFiPage() {
 
   // ─── Main view ───────────────────────────────────────────────────────────────
   return (
-    <div className="p-3 lg:p-6 space-y-4">
+    <div className="p-4 sm:p-5 lg:p-6 space-y-4 sm:space-y-5">
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-lg font-bold text-white flex items-center gap-2">
             <Wifi className="w-5 h-5 text-cyan-400" />
@@ -289,7 +289,7 @@ export default function CustomerWiFiPage() {
       </div>
 
       {/* Device Info Card */}
-      <CyberCard>
+      <CyberCard className="p-4 sm:p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-cyan-400/10 flex items-center justify-center">
             <Router className="w-5 h-5 text-cyan-400" />
@@ -351,7 +351,7 @@ export default function CustomerWiFiPage() {
         const bandLabel = wlan.band === '5GHz' ? '5 GHz' : '2.4 GHz';
 
         return (
-          <CyberCard key={wlan.index}>
+          <CyberCard key={wlan.index} className="p-4 sm:p-5">
             {/* WLAN Header */}
             <div className="flex items-center gap-3 mb-4">
               <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center">
@@ -388,7 +388,7 @@ export default function CustomerWiFiPage() {
                       <span className="text-slate-400 text-xs">{wlan.totalAssociations} perangkat terhubung</span>
                     </div>
                   )}
-                  <div className="mt-4">
+                  <div className="mt-5 pt-1">
                     <CyberButton
                       onClick={() => startEdit(wlan)}
                       disabled={!!editing && !isEditing}
@@ -484,7 +484,7 @@ export default function CustomerWiFiPage() {
 
       {/* Connected Devices */}
       {device.connectedHosts.length > 0 && (
-        <CyberCard>
+        <CyberCard className="p-4 sm:p-5">
           <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
             <Monitor className="w-4 h-4 text-violet-400" />
             Perangkat Terhubung
@@ -513,7 +513,7 @@ export default function CustomerWiFiPage() {
       )}
 
       {/* Info Box */}
-      <CyberCard className="border-blue-500/20 bg-blue-500/5">
+      <CyberCard className="p-4 sm:p-5 border-blue-500/20 bg-blue-500/5">
         <div className="flex items-start gap-3">
           <Info className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
           <p className="text-xs text-slate-400">
