@@ -71,7 +71,9 @@ ok "Code updated to $NEW_SHORT"
 if echo "$CHANGED" | grep -qE '^package\.json$|^package-lock\.json$' || [ ! -d node_modules ]; then
   echo ""
   log "package.json changed or node_modules missing — installing dependencies..."
-  npm install 2>&1 | tail -5
+  # Force include devDependencies — they are required for `next build`
+  # (TypeScript, @types/*, tailwindcss, etc.)
+  NODE_ENV=development npm install --include=dev 2>&1 | tail -5
   ok "npm install done"
 fi
 

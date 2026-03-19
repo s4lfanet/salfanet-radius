@@ -170,7 +170,7 @@ export async function POST(request: Request) {
       SHELL: process.env.SHELL || '/bin/bash',
       LANG: process.env.LANG || 'C.UTF-8',
       TERM: process.env.TERM || 'xterm',
-      NODE_ENV: process.env.NODE_ENV || 'production',
+      NODE_ENV: 'development', // must be development so npm install includes devDeps needed by next build
       NEXT_TELEMETRY_DISABLED: '1',
       SALFANET_APP_DIR: appDir,
     };
