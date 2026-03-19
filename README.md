@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.11.1 — MapPicker z-index fix (popup peta muncul di depan form modal); Hapus bahasa Inggris — full Bahasa Indonesia only
+> **Latest:** v2.11.4 — Duplicate Notification Fix + Sessions Traffic Auto-Refresh
 
 ---
 

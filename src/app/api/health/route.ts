@@ -34,7 +34,7 @@ export async function GET() {
         rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
       },
       database: 'connected',
-      version: process.env.npm_package_version || '2.10.7',
+      version: process.env.npm_package_version || 'unknown',
     }, { status: 200 });
   } catch (error) {
     return NextResponse.json({

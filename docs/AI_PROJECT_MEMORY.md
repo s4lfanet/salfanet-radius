@@ -9,9 +9,9 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.11.2
+- **Version**: 2.11.4
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: March 18, 2026
+- **Last Updated**: March 19, 2026
 - **Latest Commit**: See GitHub
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
