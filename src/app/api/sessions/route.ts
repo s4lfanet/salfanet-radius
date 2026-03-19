@@ -400,12 +400,13 @@ export async function GET(request: NextRequest) {
         macAddress: acct.callingstationid || '',
         calledStationId: acct.calledstationid || '-',
         startTime: effectiveStartTime,
-        // Keep DB value as source of truth. `acctupdatetime` comes from RADIUS
-        // accounting updates and is already in the same WIB-as-UTC space
-        // as other session timestamps displayed by formatWIB().
-        lastUpdate: acct.acctupdatetime
-          ? new Date(acct.acctupdatetime).toISOString()
-          : null,
+        // Re-derive lastUpdate from VPS clock to cancel NAS clock drift.
+        // acctupdatetime has the same skew as acctstarttime (both come from
+        // NAS-clock epoch via FROM_UNIXTIME). Since startTime was re-derived
+        // as (VPS_now - duration), lastUpdate ≈ VPS_now for active sessions.
+        lastUpdate: acct.acctstarttime && duration > 0
+          ? new Date(now).toISOString()
+          : (acct.acctupdatetime ? new Date(acct.acctupdatetime).toISOString() : null),
         duration,
         durationFormatted: formatDuration(duration),
         uploadBytes,
