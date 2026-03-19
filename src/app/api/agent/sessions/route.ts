@@ -193,14 +193,19 @@ export async function GET(request: NextRequest) {
         username: { in: voucherCodes },
         acctstoptime: { not: null },
       },
-      select: { username: true, acctstoptime: true },
+      select: { username: true, acctstoptime: true, framedipaddress: true },
       orderBy: { acctstoptime: 'desc' },
     });
     // Build map: username → latest stop time
     const latestStopMap = new Map<string, Date>();
+    // Build map: username → IP from most recent radacct row as fallback
+    const lastKnownIpMap = new Map<string, string>();
     for (const r of stoppedRows) {
       if (r.acctstoptime && !latestStopMap.has(r.username)) {
         latestStopMap.set(r.username, new Date(r.acctstoptime));
+      }
+      if (r.framedipaddress && !lastKnownIpMap.has(r.username)) {
+        lastKnownIpMap.set(r.username, r.framedipaddress);
       }
     }
 
@@ -235,7 +240,7 @@ export async function GET(request: NextRequest) {
           username: voucher.code,
           nasIpAddress: voucher.router?.nasname || null,
           nasPortId: null,
-          framedIpAddress: redis?.framedIp || null,
+          framedIpAddress: redis?.framedIp || lastKnownIpMap.get(voucher.code) || null,
           callingStationId: redis?.callingStationId || null,
           calledStationId: null,
           acctSessionId: redis?.sessionId || null,

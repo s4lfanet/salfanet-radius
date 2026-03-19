@@ -259,11 +259,16 @@ export async function GET(request: NextRequest) {
     // This means they properly disconnected after this login.
     // Vouchers with only OLD stop records (before firstLoginAt) have a new login
     // that isn't yet in radacct — they should show as synthetic.
+    // lastKnownIpMap: fallback IP from the most recent radacct row (even if stopped).
+    // Needed because cleanupStaleSessions() may have marked the active row as stopped
+    // before the active-session query runs, turning the session into a synthetic one
+    // with no Redis entry — the framedipaddress in radacct is the only IP source left.
+    const lastKnownIpMap = new Map<string, string>();
     if (orphanedActiveVouchers.length > 0) {
       const orphanCodes = orphanedActiveVouchers.map(v => v.code);
       const stoppedRows = await prisma.radacct.findMany({
         where: { username: { in: orphanCodes }, acctstoptime: { not: null } },
-        select: { username: true, acctstoptime: true },
+        select: { username: true, acctstoptime: true, framedipaddress: true },
         orderBy: { acctstoptime: 'desc' },
       });
       // Build map: username → latest stop time
@@ -271,6 +276,9 @@ export async function GET(request: NextRequest) {
       for (const r of stoppedRows) {
         if (r.acctstoptime && !latestStopMap.has(r.username)) {
           latestStopMap.set(r.username, new Date(r.acctstoptime));
+        }
+        if (r.framedipaddress && !lastKnownIpMap.has(r.username)) {
+          lastKnownIpMap.set(r.username, r.framedipaddress);
         }
       }
       orphanedActiveVouchers = orphanedActiveVouchers.filter(v => {
@@ -302,7 +310,7 @@ export async function GET(request: NextRequest) {
           sessionId: redis?.sessionId || null,
           type: 'hotspot' as const,
           nasIpAddress: voucher.router?.nasname || null,
-          framedIpAddress: redis?.framedIp || null,
+          framedIpAddress: redis?.framedIp || lastKnownIpMap.get(voucher.code) || null,
           macAddress: redis?.callingStationId || '-',
           calledStationId: '-',
           startTime: effectiveStartTime,
