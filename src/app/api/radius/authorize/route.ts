@@ -92,10 +92,15 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // PPPoE user is active or not found, allow to continue to normal auth
-      // Return empty object — FreeRADIUS REST module parses JSON keys as RADIUS attributes.
-      // Keys like "success", "action" are not valid RADIUS attributes and produce warnings.
-      return NextResponse.json({});
+      // PPPoE user not found in database — REJECT.
+      // Users not registered in the system (neither in pppoeUser nor hotspotVoucher)
+      // must not be allowed to authenticate.
+      console.log(`[AUTHORIZE] REJECT: User ${username} not found in database`);
+      await logRejection(username, 'User Tidak Terdaftar');
+      return NextResponse.json({
+        "control:Auth-Type": "Reject",
+        "reply:Reply-Message": "User Tidak Terdaftar"
+      }, { status: 200 });
     }
 
     const now = new Date();

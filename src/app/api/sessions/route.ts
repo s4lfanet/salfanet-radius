@@ -336,7 +336,12 @@ export async function GET(request: NextRequest) {
         };
       });
 
-    let allSessions = [...activeSessions.map((acct) => {
+    // Only show sessions for users registered in the database.
+    // Sessions where the username is not in pppoeUser OR hotspotVoucher are
+    // from unregistered/ghost users and must be excluded from all views.
+    let allSessions = [...activeSessions
+      .filter((acct) => pppoeByUsername.has(acct.username) || voucherByCode.has(acct.username))
+      .map((acct) => {
       const pppoeUser = pppoeByUsername.get(acct.username);
       const voucher = voucherByCode.get(acct.username);
       const sessionType: 'pppoe' | 'hotspot' = pppoeUser ? 'pppoe' : 'hotspot';
