@@ -499,9 +499,10 @@ export async function GET(request: NextRequest) {
           s.uploadFormatted = formatBytes(uploadBytes);
           s.downloadFormatted = formatBytes(downloadBytes);
           s.totalFormatted = formatBytes(totalBytes);
-          // Only synthesize lastUpdate when DB update time is missing.
-          // Use WIB-as-UTC epoch to stay consistent with formatWIB().
-          s.lastUpdate = s.lastUpdate || new Date(Date.now() + TZ_OFFSET_MS).toISOString();
+          // For live hotspot overlay, lastUpdate should represent the live
+          // poll moment (not stale acctupdatetime from DB which may differ
+          // by timezone source). Store in WIB-as-UTC space for formatWIB().
+          s.lastUpdate = new Date(Date.now() + TZ_OFFSET_MS).toISOString();
           s.dataSource = s.dataSource === 'radius' ? 'radius+realtime' : s.dataSource;
         }
       }
