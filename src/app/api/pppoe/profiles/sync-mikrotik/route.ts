@@ -4,7 +4,27 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { RouterOSAPI } from 'node-routeros';
 
-// POST - Sync a PPPoE profile (PPP profile) to MikroTik via RouterOS API
+// GET - List all active routers (for picker UI)
+export async function GET() {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const routers = await prisma.router.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, nasname: true, ipAddress: true, shortname: true, description: true },
+      orderBy: { name: 'asc' },
+    });
+
+    return NextResponse.json({ routers });
+  } catch (error) {
+    console.error('Get routers error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);

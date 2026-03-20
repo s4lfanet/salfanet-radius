@@ -28,6 +28,15 @@ interface PPPoEProfile {
 
 type UnitType = 'Mbps' | 'Kbps';
 
+interface RouterOption {
+  id: string;
+  name: string;
+  nasname: string;
+  ipAddress: string;
+  shortname: string;
+  description: string | null;
+}
+
 const defaultForm = {
   name: '', description: '', price: '', hpp: '', ppnActive: false, ppnRate: '11',
   downloadSpeed: '10', uploadSpeed: '10', speedUnit: 'Mbps' as UnitType,
@@ -54,6 +63,12 @@ export default function PPPoEProfilesPage() {
   // Sync state
   const [syncingRadiusId, setSyncingRadiusId] = useState<string | null>(null);
   const [syncingMikrotikId, setSyncingMikrotikId] = useState<string | null>(null);
+
+  // Router picker state
+  const [syncMikrotikTarget, setSyncMikrotikTarget] = useState<PPPoEProfile | null>(null);
+  const [routers, setRouters] = useState<RouterOption[]>([]);
+  const [selectedRouterId, setSelectedRouterId] = useState<string>('');
+  const [loadingRouters, setLoadingRouters] = useState(false);
 
   // Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -204,12 +219,29 @@ export default function PPPoEProfilesPage() {
   };
 
   const handleSyncMikrotik = async (profile: PPPoEProfile) => {
-    setSyncingMikrotikId(profile.id);
+    setSyncMikrotikTarget(profile);
+    setLoadingRouters(true);
+    setSelectedRouterId('');
+    try {
+      const res = await fetch('/api/pppoe/profiles/sync-mikrotik');
+      const data = await res.json();
+      const list: RouterOption[] = data.routers || [];
+      setRouters(list);
+      if (list.length === 1) setSelectedRouterId(list[0].id);
+    } catch { setRouters([]); }
+    finally { setLoadingRouters(false); }
+  };
+
+  const handleConfirmSyncMikrotik = async () => {
+    if (!syncMikrotikTarget || !selectedRouterId) return;
+    const target = syncMikrotikTarget;
+    setSyncMikrotikTarget(null);
+    setSyncingMikrotikId(target.id);
     try {
       const res = await fetch('/api/pppoe/profiles/sync-mikrotik', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: profile.id }),
+        body: JSON.stringify({ id: target.id, routerId: selectedRouterId }),
       });
       const result = await res.json();
       if (res.ok) {
@@ -218,7 +250,7 @@ export default function PPPoEProfilesPage() {
       } else {
         await showError(result.error || 'Gagal sync ke MikroTik');
       }
-    } catch (e) { await showError('Gagal sync ke MikroTik'); }
+    } catch { await showError('Gagal sync ke MikroTik'); }
     finally { setSyncingMikrotikId(null); }
   };
 
@@ -929,7 +961,7 @@ export default function PPPoEProfilesPage() {
                     <Radio className="h-3.5 w-3.5" />Sync FreeRADIUS
                   </button>
                   <button
-                    onClick={() => { handleSyncMikrotik(detailProfile); setDetailProfile(null); }}
+                    onClick={() => { setDetailProfile(null); handleSyncMikrotik(detailProfile); }}
                     disabled={syncingMikrotikId === detailProfile.id}
                     className="flex items-center justify-center gap-2 px-3 py-2 text-xs border border-purple-500/30 text-purple-400 hover:bg-purple-500/10 rounded-lg transition-colors"
                   >
@@ -945,6 +977,64 @@ export default function PPPoEProfilesPage() {
               </ModalFooter>
             </>
           )}
+        </SimpleModal>
+
+        {/* Router Picker Modal */}
+        <SimpleModal isOpen={!!syncMikrotikTarget} onClose={() => setSyncMikrotikTarget(null)} size="sm">
+          <ModalHeader>
+            <h2 className="text-base font-bold text-foreground">Pilih Router MikroTik</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Sync paket <span className="font-semibold text-purple-400">{syncMikrotikTarget?.name}</span> ke router
+            </p>
+          </ModalHeader>
+          <ModalBody>
+            {loadingRouters ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground text-sm">
+                <RotateCcw className="h-4 w-4 animate-spin mr-2" />Memuat daftar router...
+              </div>
+            ) : routers.length === 0 ? (
+              <div className="text-center py-6 text-sm text-muted-foreground">
+                Tidak ada router aktif yang tersedia.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {routers.map(r => (
+                  <label
+                    key={r.id}
+                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      selectedRouterId === r.id
+                        ? 'border-purple-500/60 bg-purple-500/10'
+                        : 'border-border hover:border-purple-500/30 hover:bg-purple-500/5'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="routerPicker"
+                      value={r.id}
+                      checked={selectedRouterId === r.id}
+                      onChange={() => setSelectedRouterId(r.id)}
+                      className="mt-0.5 accent-purple-500"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-foreground">{r.name || r.shortname}</div>
+                      <div className="text-xs text-muted-foreground">{r.ipAddress || r.nasname}</div>
+                      {r.description && <div className="text-xs text-muted-foreground/70 mt-0.5">{r.description}</div>}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={() => setSyncMikrotikTarget(null)}>Batal</ModalButton>
+            <ModalButton
+              variant="primary"
+              onClick={handleConfirmSyncMikrotik}
+              disabled={!selectedRouterId || loadingRouters}
+            >
+              <Wifi className="h-3.5 w-3.5 mr-1.5" />Sync ke MikroTik
+            </ModalButton>
+          </ModalFooter>
         </SimpleModal>
 
         {/* Delete Dialog */}
