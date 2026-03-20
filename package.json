@@ -25,6 +25,8 @@
     "test:scan": "node scripts/scan-api-endpoints.js",
     "test:integration": "vitest run tests/api-integration.test.ts",
     "test:watch": "vitest watch",
+    "clean:local": "node -e \"const fs=require('fs');const rm=(p)=>{try{if(fs.existsSync(p))fs.rmSync(p,{recursive:true,force:true});}catch(e){console.error('[clean:local] failed:',p,e.message);process.exitCode=1;}};['.next','tsconfig.tsbuildinfo','coverage','test-results','.turbo','.cache'].forEach(rm);console.log('[clean:local] done');\"",
+    "clean:all": "npm run clean:local && npm run cleanup",
     "cleanup": "node scripts/remove-console-logs.js",
     "cleanup:dry": "node scripts/remove-console-logs.js --dry-run",
     "deploy": "bash smart-deploy.sh",
