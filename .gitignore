@@ -6,25 +6,20 @@ node_modules/
 .pnp
 .pnp.js
 
-# Testing
-coverage/
-test-results/
-
-# Next.js
-/.next/
-/out/
-.next
-out
-
-# Production build
+# Next.js / build outputs
+.next/
+out/
 build/
 dist/
 
-# Misc
-.DS_Store
-*.pem
+# Testing outputs
+coverage/
+test-results/
 
-# Debug
+# Logs
+logs/
+*.log
+build-error.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -34,26 +29,16 @@ lerna-debug.log*
 # Local env files
 .env
 .env*.local
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Vercel
-.vercel
 
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# IDE
+# IDE / editor
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Reference folder — not part of production
-billing-radius/
 *~
 .fleet/
 .vscode-test/
@@ -63,37 +48,36 @@ Thumbs.db
 .DS_Store
 desktop.ini
 
-# Logs
-logs/
-*.log
-/logs
-
-# PM2
+# PM2 runtime files
 .pm2
 pids/
 *.pid
 *.seed
 *.pid.lock
 
-# Backup files
+# Backup / temporary files
 backup/
 backups/
+tmp/
+temp/
+*.tmp
 *.sql
 *.backup
 *.bak
 *.old
 
-# Prisma
+# Prisma local databases
 prisma/*.db
 prisma/*.db-journal
 
-# Temp files
-tmp/
-temp/
-*.tmp
+# Cache
+.cache/
+.parcel-cache/
+.turbo/
+.github-cache/
 
-# Build error logs
-build-error.log
+# Reference folder — not part of production
+billing-radius/
 
 # Manual debug artifacts
 capture-result.txt
@@ -103,14 +87,8 @@ fresh-test.txt
 test-result-output.txt
 test3-result.txt
 
-# Cache
-.cache/
-.parcel-cache/
-.turbo/
-
-# System files  
-.git/
-.github-cache/
+# Vercel
+.vercel
 
 # Firebase service account (jangan di-commit)
 *firebase-service-account*.json
