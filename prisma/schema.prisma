@@ -431,6 +431,7 @@ model pppoeProfile {
   groupName      String
   hpp            Int?                        // Harga Modal / Biaya Pokok Penjualan
   ppnActive      Boolean                     @default(false) // PPN aktif
+  ppnRate        Int                         @default(11)    // Tarif PPN (%)
   isActive       Boolean                     @default(true)
   lastSyncAt     DateTime?
   syncedToRadius Boolean                     @default(false)

@@ -18,7 +18,7 @@ import {
 
 interface PPPoEProfile {
   id: string; name: string; description: string | null; price: number;
-  hpp?: number | null; ppnActive?: boolean;
+  hpp?: number | null; ppnActive?: boolean; ppnRate?: number | null;
   downloadSpeed: number; uploadSpeed: number; groupName: string;
   rateLimit?: string;
   validityValue: number; validityUnit: 'DAYS' | 'MONTHS';
@@ -28,7 +28,7 @@ interface PPPoEProfile {
 type UnitType = 'Mbps' | 'Kbps';
 
 const defaultForm = {
-  name: '', description: '', price: '', hpp: '', ppnActive: false,
+  name: '', description: '', price: '', hpp: '', ppnActive: false, ppnRate: '11',
   downloadSpeed: '10', uploadSpeed: '10', speedUnit: 'Mbps' as UnitType,
   burstDownload: '', burstUpload: '',
   burstThresholdDownload: '', burstThresholdUpload: '', burstTime: '8',
@@ -113,6 +113,7 @@ export default function PPPoEProfilesPage() {
         validityUnit: formData.validityUnit,
         sharedUser: formData.sharedUser,
         isActive: formData.isActive,
+        ppnRate: formData.ppnActive ? (parseInt(formData.ppnRate) || 11) : null,
       };
       const res = await fetch('/api/pppoe/profiles', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
@@ -155,6 +156,7 @@ export default function PPPoEProfilesPage() {
       burstThresholdDownload: thDl, burstThresholdUpload: thUl, burstTime: burstT,
       groupName: profile.groupName, validityValue: profile.validityValue.toString(), validityUnit: profile.validityUnit,
       sharedUser: profile.sharedUser, isActive: profile.isActive,
+      ppnRate: profile.ppnRate?.toString() || '11',
     });
     setIsDialogOpen(true);
   };
@@ -460,7 +462,7 @@ export default function PPPoEProfilesPage() {
                   className="w-full flex items-center gap-2 px-4 py-3 text-xs font-medium hover:bg-muted/50 transition-colors text-left">
                   {showBurst ? <ChevronDown className="h-3.5 w-3.5 text-[#00f7ff]" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                   <span>Pengaturan Burst (MikroTik)</span>
-                  <span className="text-[10px] font-normal text-muted-foreground ml-1">opsional â€“ kecepatan sementara saat awal koneksi</span>
+                  <span className="text-[10px] font-normal text-muted-foreground ml-1">opsional — kecepatan sementara saat awal koneksi</span>
                 </button>
                 {showBurst && (
                   <div className="px-4 pb-4 space-y-3 border-t border-border bg-muted/20">
@@ -469,22 +471,22 @@ export default function PPPoEProfilesPage() {
                     </p>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <ModalLabel>Burst Download (Mbps)</ModalLabel>
+                        <ModalLabel>Burst Download ({formData.speedUnit})</ModalLabel>
                         <ModalInput type="number" min="0" value={formData.burstDownload} onChange={(e) => setFormData({ ...formData, burstDownload: e.target.value })} placeholder={formData.downloadSpeed ? String(parseInt(formData.downloadSpeed) * 2) : '20'} />
                       </div>
                       <div>
-                        <ModalLabel>Burst Upload (Mbps)</ModalLabel>
+                        <ModalLabel>Burst Upload ({formData.speedUnit})</ModalLabel>
                         <ModalInput type="number" min="0" value={formData.burstUpload} onChange={(e) => setFormData({ ...formData, burstUpload: e.target.value })} placeholder={formData.uploadSpeed ? String(parseInt(formData.uploadSpeed) * 2) : '20'} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <ModalLabel>Threshold Download (Mbps)</ModalLabel>
+                        <ModalLabel>Threshold Download ({formData.speedUnit})</ModalLabel>
                         <ModalInput type="number" min="0" value={formData.burstThresholdDownload} onChange={(e) => setFormData({ ...formData, burstThresholdDownload: e.target.value })} placeholder={formData.downloadSpeed ? String(Math.round(parseInt(formData.downloadSpeed) * 0.8)) : '8'} />
                         <p className="text-[9px] text-muted-foreground mt-0.5">Kosong = pakai kecepatan normal</p>
                       </div>
                       <div>
-                        <ModalLabel>Threshold Upload (Mbps)</ModalLabel>
+                        <ModalLabel>Threshold Upload ({formData.speedUnit})</ModalLabel>
                         <ModalInput type="number" min="0" value={formData.burstThresholdUpload} onChange={(e) => setFormData({ ...formData, burstThresholdUpload: e.target.value })} placeholder={formData.uploadSpeed ? String(Math.round(parseInt(formData.uploadSpeed) * 0.8)) : '8'} />
                         <p className="text-[9px] text-muted-foreground mt-0.5">Kosong = pakai kecepatan normal</p>
                       </div>
@@ -512,9 +514,29 @@ export default function PPPoEProfilesPage() {
               </div>
 
               {/* PPN */}
-              <div className="flex items-center gap-2 p-3 border border-border rounded-lg">
-                <input type="checkbox" id="ppnActive" checked={formData.ppnActive} onChange={(e) => setFormData({ ...formData, ppnActive: e.target.checked })} className="rounded border-border bg-muted text-primary focus:ring-primary" />
-                <label htmlFor="ppnActive" className="text-xs text-foreground cursor-pointer">PPN aktif (Pajak Pertambahan Nilai)</label>
+              <div className="border border-border rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 p-3">
+                  <input type="checkbox" id="ppnActive" checked={formData.ppnActive} onChange={(e) => setFormData({ ...formData, ppnActive: e.target.checked })} className="rounded border-border bg-muted text-primary focus:ring-primary" />
+                  <label htmlFor="ppnActive" className="text-xs text-foreground cursor-pointer">PPN aktif (Pajak Pertambahan Nilai)</label>
+                </div>
+                {formData.ppnActive && (
+                  <div className="px-3 pb-3 space-y-2 border-t border-border bg-muted/20">
+                    <div className="flex items-center gap-2 pt-2">
+                      <ModalInput
+                        type="number" min="1" max="100"
+                        value={formData.ppnRate}
+                        onChange={(e) => setFormData({ ...formData, ppnRate: e.target.value })}
+                        className="w-20"
+                      />
+                      <span className="text-xs text-muted-foreground">% (PPN Indonesia = 11%)</span>
+                    </div>
+                    {formData.price && (
+                      <div className="text-[10px] text-[#00f7ff]">
+                        Total termasuk PPN: Rp {Math.round(parseInt(formData.price) * (1 + (parseInt(formData.ppnRate) || 11) / 100)).toLocaleString('id-ID')}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Masa Aktif */}
