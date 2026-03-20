@@ -426,18 +426,48 @@ export default function PPPoEProfilesPage() {
                         <p className="text-[9px] text-muted-foreground mt-0.5">{profile.validityValue} {profile.validityUnit === 'MONTHS' ? 'Bulan' : 'Hari'}</p>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className="font-mono text-[11px] text-foreground">{profile.groupName}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#bc13fe]/10 text-[#bc13fe] border border-[#bc13fe]/30">{profile.groupName}</span>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className="font-mono text-xs font-medium text-foreground">{profile.downloadSpeed}M/{profile.uploadSpeed}M</span>
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs text-foreground">↓ {profile.downloadSpeed} Mbps</span>
+                          <span className="text-xs text-muted-foreground">↑ {profile.uploadSpeed} Mbps</span>
+                        </div>
                         {profile.rateLimit && profile.rateLimit.includes(' ') && (
                           <p className="text-[9px] text-muted-foreground mt-0.5 font-mono truncate max-w-[120px]">{profile.rateLimit}</p>
                         )}
                       </td>
                       <td className="px-3 py-2.5">
-                        <p className="text-xs font-medium text-foreground">Rp {profile.price.toLocaleString('id-ID')}</p>
-                        {profile.hpp && <p className="text-[9px] text-muted-foreground">HPP: Rp {profile.hpp.toLocaleString('id-ID')}</p>}
-                        {profile.ppnActive && <p className="text-[9px] text-[#00f7ff]">+PPN {profile.ppnRate ?? 11}%</p>}
+                        <div className="space-y-0.5 text-[11px]">
+                          {profile.hpp != null && (
+                            <div className="flex justify-between gap-4">
+                              <span className="text-muted-foreground">Modal</span>
+                              <span className="text-muted-foreground">Rp {profile.hpp.toLocaleString('id-ID')}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between gap-4">
+                            <span className="text-muted-foreground">Jual</span>
+                            <span className="font-semibold text-foreground">Rp {profile.price.toLocaleString('id-ID')}</span>
+                          </div>
+                          {profile.hpp != null && (
+                            <div className="flex justify-between gap-4">
+                              <span className="text-muted-foreground">Fee</span>
+                              <span className="text-green-400">Rp {(profile.price - profile.hpp).toLocaleString('id-ID')}</span>
+                            </div>
+                          )}
+                          {profile.ppnActive && (
+                            <>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">PPN</span>
+                                <span className="text-yellow-400">{profile.ppnRate ?? 11}%</span>
+                              </div>
+                              <div className="flex justify-between gap-4">
+                                <span className="text-muted-foreground">Final</span>
+                                <span className="font-bold text-orange-400">Rp {Math.round(profile.price * (1 + (profile.ppnRate ?? 11) / 100)).toLocaleString('id-ID')}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </td>
                       <td className="px-3 py-2.5 text-center">
                         <span className="text-sm font-semibold text-foreground">{profile.userCount ?? 0}</span>
@@ -458,31 +488,31 @@ export default function PPPoEProfilesPage() {
                         )}
                       </td>
                       <td className="px-3 py-2.5 text-center">
-                        {profile.rateLimit ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-1" />Terkonfigurasi</span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-muted text-muted-foreground border border-border"><XCircle className="h-2.5 w-2.5 mr-1" />Belum</span>
-                        )}
+                        <button
+                          title="Sync ke MikroTik"
+                          onClick={() => handleSyncMikrotik(profile)}
+                          disabled={syncingMikrotikId === profile.id}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-medium bg-purple-500/10 text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors disabled:opacity-40"
+                        >
+                          {syncingMikrotikId === profile.id
+                            ? <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+                            : <Wifi className="h-2.5 w-2.5" />}
+                          Sync MK
+                        </button>
                       </td>
                       <td className="px-3 py-2.5 text-right">
                         <div className="flex justify-end items-center gap-0.5">
-                          <button
-                            title="Lihat Detail"
-                            onClick={() => setDetailProfile(profile)}
-                            className="p-1.5 text-muted-foreground hover:text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded transition-colors"
-                          ><Eye className="h-3.5 w-3.5" /></button>
                           <button
                             title="Sync ke FreeRADIUS"
                             onClick={() => handleSyncRadius(profile)}
                             disabled={syncingRadiusId === profile.id}
                             className="p-1.5 text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors disabled:opacity-40"
-                          >{syncingRadiusId === profile.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Radio className="h-3.5 w-3.5" />}</button>
+                          >{syncingRadiusId === profile.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}</button>
                           <button
-                            title="Sync ke MikroTik"
-                            onClick={() => handleSyncMikrotik(profile)}
-                            disabled={syncingMikrotikId === profile.id}
-                            className="p-1.5 text-muted-foreground hover:text-purple-400 hover:bg-purple-400/10 rounded transition-colors disabled:opacity-40"
-                          >{syncingMikrotikId === profile.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}</button>
+                            title="Lihat Detail"
+                            onClick={() => setDetailProfile(profile)}
+                            className="p-1.5 text-muted-foreground hover:text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded transition-colors"
+                          ><Eye className="h-3.5 w-3.5" /></button>
                           <button
                             title="Edit"
                             onClick={() => handleEdit(profile)}
@@ -518,7 +548,18 @@ export default function PPPoEProfilesPage() {
                 <ModalInput
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    const autoGroup = name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_-]/g, '');
+                    setFormData(prev => ({
+                      ...prev,
+                      name,
+                      // Only auto-fill groupName if it hasn't been manually edited
+                      groupName: prev.groupName === '' || prev.groupName === prev.name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_-]/g, '')
+                        ? autoGroup
+                        : prev.groupName,
+                    }));
+                  }}
                   placeholder="Contoh: Paket 10 Mbps"
                   required
                   className={fieldErrors['name'] ? 'border-[#ff4466]' : ''}
@@ -535,7 +576,12 @@ export default function PPPoEProfilesPage() {
                   placeholder="Auto-generate dari nama paket"
                   className={`font-mono ${fieldErrors['groupName'] ? 'border-[#ff4466]' : ''}`}
                 />
-                <p className="text-[9px] text-muted-foreground mt-1">{t('pppoe.matchMikrotik')}</p>
+                <p className="text-[9px] text-muted-foreground mt-1">
+                  {formData.groupName && formData.groupName === formData.name.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9_-]/g, '')
+                    ? <span>Auto-generate · <button type="button" className="text-primary hover:underline" onClick={() => setFormData(prev => ({...prev, groupName: ''}))}>Edit untuk kustomisasi</button></span>
+                    : 'Harus sama dengan PPP profile MikroTik'
+                  }
+                </p>
               </div>
 
               {/* Kecepatan */}
@@ -624,6 +670,17 @@ export default function PPPoEProfilesPage() {
               <div>
                 <ModalLabel required>Harga Jual (IDR)</ModalLabel>
                 <ModalInput type="number" min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="150000" required className={fieldErrors['price'] ? 'border-[#ff4466]' : ''} />
+                {(formData.price && formData.hpp) || (formData.price && formData.ppnActive) ? (
+                  <p className="text-[10px] text-green-400 mt-1">
+                    {formData.hpp && formData.price && parseInt(formData.price) > 0 && parseInt(formData.hpp) > 0 && (
+                      <span>Fee reseller: Rp {(parseInt(formData.price) - parseInt(formData.hpp)).toLocaleString('id-ID')}</span>
+                    )}
+                    {formData.hpp && formData.price && parseInt(formData.price) > 0 && parseInt(formData.hpp) > 0 && formData.ppnActive && ' · '}
+                    {formData.ppnActive && formData.price && parseInt(formData.price) > 0 && (
+                      <span>Harga + PPN {formData.ppnRate || 11}%: Rp {Math.round(parseInt(formData.price) * (1 + (parseInt(formData.ppnRate) || 11) / 100)).toLocaleString('id-ID')}</span>
+                    )}
+                  </p>
+                ) : null}
               </div>
 
               {/* PPN */}
