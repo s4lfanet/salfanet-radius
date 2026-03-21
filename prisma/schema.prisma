@@ -418,6 +418,26 @@ model registrationRequest {
   @@map("registration_requests")
 }
 
+model pppoeCustomer {
+  id           String      @id
+  customerId   String      @unique @db.VarChar(10) // 8-char display ID e.g. "75258953"
+  name         String
+  phone        String
+  email        String?
+  address      String?     @db.Text
+  idCardNumber String?     @db.VarChar(50)
+  idCardPhoto  String?     @db.VarChar(500)
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  pppoeUsers   pppoeUser[]
+
+  @@index([phone])
+  @@index([customerId])
+  @@index([isActive])
+  @@map("pppoe_customers")
+}
+
 model pppoeProfile {
   id             String                      @id
   name           String                      @unique
@@ -465,6 +485,8 @@ model pppoeUser {
   id               String         @id
   username         String         @unique
   customerId       String?        @unique @map("customer_id") @db.VarChar(8)
+  pppoeCustomerId  String?        @map("pppoe_customer_id")
+  pppoeCustomer    pppoeCustomer? @relation(fields: [pppoeCustomerId], references: [id], onDelete: SetNull)
   password         String
   profileId        String
   areaId           String?
@@ -531,6 +553,7 @@ model pppoeUser {
   @@index([autoRenewal])
   @@index([referralCode])
   @@index([referredById])
+  @@index([pppoeCustomerId])
   // Performance indexes: common lookup patterns
   @@index([phone])               // customer login by phone number
   @@index([expiredAt])           // cron auto-isolate expired users

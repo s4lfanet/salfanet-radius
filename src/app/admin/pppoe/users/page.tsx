@@ -3,6 +3,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Plus, Pencil, Trash2, Users, CheckCircle2, MapPin, Map, MoreVertical,
   Shield, ShieldOff, Ban, Download, Upload, Search, Filter, X, Eye, EyeOff, RefreshCcw, DollarSign, Loader2, Zap,
@@ -31,6 +32,7 @@ interface PppoeUser {
   address: string | null; latitude: number | null; longitude: number | null;
   status: string; ipAddress: string | null; expiredAt: string | null;
   customerId: string | null;
+  pppoeCustomerId?: string | null;
   syncedToRadius: boolean; createdAt: string; updatedAt: string;
   subscriptionType?: 'PREPAID' | 'POSTPAID';
   billingDay?: number | null;
@@ -54,6 +56,9 @@ interface Area { id: string; name: string; }
 export default function PppoeUsersPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pppoeCustomerIdFilter = searchParams.get('pppoeCustomerId') || '';
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<PppoeUser[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -609,7 +614,8 @@ export default function PppoeUsersPage() {
     const matchesProfile = filterProfile === '' || user.profile.id === filterProfile;
     const matchesRouter = filterRouter === '' || (filterRouter === 'global' ? !user.routerId : user.routerId === filterRouter);
     const matchesStatus = filterStatus === '' || user.status === filterStatus;
-    return matchesSearch && matchesProfile && matchesRouter && matchesStatus;
+    const matchesCustomer = pppoeCustomerIdFilter === '' || (user as any).pppoeCustomerId === pppoeCustomerIdFilter;
+    return matchesSearch && matchesProfile && matchesRouter && matchesStatus && matchesCustomer;
   }).sort((a, b) => {
     let aVal: any, bVal: any;
 
@@ -751,7 +757,7 @@ export default function PppoeUsersPage() {
             <button onClick={handleExportExcel} className="inline-flex items-center px-2 py-1.5 text-xs border border-success text-success rounded hover:bg-success/10"><Download className="h-3 w-3 mr-1" />Excel</button>
             <button onClick={handleExportPDF} className="inline-flex items-center px-2 py-1.5 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10"><Download className="h-3 w-3 mr-1" />PDF</button>
             <button onClick={() => setIsImportDialogOpen(true)} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted"><Upload className="h-3 w-3 mr-1" />{t('common.import')}</button>
-            {canCreate && (<button onClick={() => { resetForm(); setEditingUser(null); setIsDialogOpen(true); }} className="inline-flex items-center px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-white rounded"><Plus className="h-3 w-3 mr-1" />{t('pppoe.addUser')}</button>)}
+            {canCreate && (<button onClick={() => router.push('/admin/pppoe/users/new')} className="inline-flex items-center px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-white rounded"><Plus className="h-3 w-3 mr-1" />{t('pppoe.addUser')}</button>)}
           </div>
         </div>
 
@@ -900,76 +906,88 @@ export default function PppoeUsersPage() {
               <thead className="bg-gray-50 bg-muted/50">
                 <tr>
                   <th className="px-2 py-2 text-center w-8"><input type="checkbox" checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0} onChange={toggleSelectAll} className="rounded border-gray-300 w-3 h-3" /></th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted" onClick={() => handleSort('username')}>
-                    <div className="flex items-center gap-1">{t('pppoe.username')} <ArrowUpDown className="w-3 h-3" /></div>
-                  </th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">ID</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted" onClick={() => handleSort('name')}>
-                    <div className="flex items-center gap-1">{t('common.name')} <ArrowUpDown className="w-3 h-3" /></div>
+                    <div className="flex items-center gap-1">Data Pelanggan <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden md:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('customerId')}>
-                    <div className="flex items-center gap-1">{t('pppoe.customerId')} <ArrowUpDown className="w-3 h-3" /></div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden md:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('phone')}>
-                    <div className="flex items-center gap-1">{t('common.phone')} <ArrowUpDown className="w-3 h-3" /></div>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted" onClick={() => handleSort('username')}>
+                    <div className="flex items-center gap-1">PPPoE <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('profile')}>
-                    <div className="flex items-center gap-1">{t('pppoe.profile')} <ArrowUpDown className="w-3 h-3" /></div>
+                    <div className="flex items-center gap-1">Paket <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('area')}>
-                    <div className="flex items-center gap-1">{t('common.area')} <ArrowUpDown className="w-3 h-3" /></div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('balance')}>
-                    <div className="flex items-center gap-1">{t('pppoe.balanceLabel')} <ArrowUpDown className="w-3 h-3" /></div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden xl:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('createdAt')}>
-                    <div className="flex items-center gap-1">{t('pppoe.registeredDate')} <ArrowUpDown className="w-3 h-3" /></div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden xl:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('updatedAt')}>
-                    <div className="flex items-center gap-1">{t('pppoe.renewedDate')} <ArrowUpDown className="w-3 h-3" /></div>
-                  </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden sm:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('expiredAt')}>
-                    <div className="flex items-center gap-1">{t('pppoe.expired')} <ArrowUpDown className="w-3 h-3" /></div>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell">Network</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden xl:table-cell">Teknis</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden sm:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('createdAt')}>
+                    <div className="flex items-center gap-1">Tanggal <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted" onClick={() => handleSort('status')}>
-                    <div className="flex items-center gap-1">{t('pppoe.status')} <ArrowUpDown className="w-3 h-3" /></div>
+                    <div className="flex items-center gap-1">Status <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
-                  <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase"></th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden md:table-cell">RADIUS</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filteredUsers.length === 0 ? (
-                  <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-xs">{users.length === 0 ? t('pppoe.noUsers') : t('pppoe.noMatch')}</td></tr>
+                  <tr><td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-xs">{users.length === 0 ? t('pppoe.noUsers') : t('pppoe.noMatch')}</td></tr>
                 ) : (
                   filteredUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-muted/50">
                       <td className="px-2 py-2 text-center"><input type="checkbox" checked={selectedUsers.has(user.id)} onChange={() => toggleSelectUser(user.id)} className="rounded border-gray-300 w-3 h-3" /></td>
-                      <td className="px-3 py-2"><p className="font-medium text-xs">{user.username}</p>{user.ipAddress && <p className="text-[10px] text-muted-foreground">IP: {user.ipAddress}</p>}</td>
-                      <td className="px-3 py-2"><p className="text-xs">{user.name}</p>{user.email && <p className="text-[10px] text-muted-foreground truncate max-w-[120px]">{user.email}</p>}</td>
-                      <td className="px-3 py-2 text-xs hidden md:table-cell font-mono font-medium">{user.customerId || '-'}</td>
-                      <td className="px-3 py-2 text-xs hidden md:table-cell">{user.phone}</td>
-                      <td className="px-3 py-2 hidden lg:table-cell"><span className="text-xs font-medium">{user.profile.name}</span><br /><span className="text-[10px] text-muted-foreground font-mono">{user.profile.groupName}</span></td>
-                      <td className="px-3 py-2 text-xs hidden lg:table-cell">{user.area?.name || '-'}</td>
-                      <td className="px-3 py-2 hidden lg:table-cell">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-xs font-semibold text-primary">
-                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format((user as any).balance || 0)}
-                          </span>
-                          {(user as any).autoRenewal && (
-                            <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 w-fit">
-                              <Zap className="h-2 w-2 mr-0.5" />Auto
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 text-[10px] text-muted-foreground hidden xl:table-cell">{formatWIB(user.createdAt, 'dd/MM/yyyy HH:mm')}</td>
-                      <td className="px-3 py-2 text-[10px] text-muted-foreground hidden xl:table-cell">{formatWIB(user.updatedAt, 'dd/MM/yyyy HH:mm')}</td>
-                      <td className="px-3 py-2 text-xs hidden sm:table-cell">{user.expiredAt ? <span className={isExpired(user.expiredAt) ? 'text-destructive font-medium' : ''}>{formatWIB(user.expiredAt, 'dd/MM/yyyy')}</span> : '-'}</td>
+                      {/* ID */}
+                      <td className="px-3 py-2 text-[10px] font-mono font-medium text-muted-foreground">{user.customerId || '-'}</td>
+                      {/* Data Pelanggan */}
                       <td className="px-3 py-2">
-                        <div className="flex flex-col gap-0.5">
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${user.status === 'active' ? 'bg-success/20 text-success dark:bg-green-900/30' : user.status === 'isolated' ? 'bg-warning/20 text-warning dark:bg-yellow-900/30' : 'bg-destructive/20 text-destructive dark:bg-red-900/30'}`}>{user.status}</span>
-                          {user.syncedToRadius && <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent/20 text-accent dark:bg-purple-900/30"><CheckCircle2 className="h-2 w-2 mr-0.5" />{t('pppoe.synced')}</span>}
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <div>
+                            <p className="text-xs font-semibold">{user.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{user.phone}</p>
+                            {user.email && <p className="text-[10px] text-[#00f7ff] truncate max-w-[140px]">{user.email}</p>}
+                          </div>
                         </div>
                       </td>
+                      {/* PPPoE */}
+                      <td className="px-3 py-2">
+                        <p className="text-xs font-mono font-medium flex items-center gap-1"><span className="text-muted-foreground text-[10px]">User:</span> {user.username}</p>
+                        <p className="text-[10px] text-muted-foreground flex items-center gap-1"><span className="text-[10px]">Pass:</span> ••••••</p>
+                        {user.ipAddress && <p className="text-[10px] text-muted-foreground">IP: {user.ipAddress}</p>}
+                      </td>
+                      {/* Paket */}
+                      <td className="px-3 py-2 hidden lg:table-cell">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">{user.profile.name}</span>
+                        <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{user.profile.groupName}</p>
+                      </td>
+                      {/* Network */}
+                      <td className="px-3 py-2 hidden lg:table-cell">
+                        <p className="text-[10px]"><span className="text-muted-foreground">NAS:</span> {user.router?.name || '-'}</p>
+                        <p className="text-[10px]"><span className="text-muted-foreground">IP:</span> {user.ipAddress || '-'}</p>
+                      </td>
+                      {/* Teknis */}
+                      <td className="px-3 py-2 hidden xl:table-cell">
+                        {user.address && <p className="text-[10px] text-muted-foreground truncate max-w-[140px] flex items-center gap-0.5"><MapPin className="h-2.5 w-2.5 flex-shrink-0" />{user.address}</p>}
+                        {user.latitude && user.longitude && <p className="text-[10px] text-[#00f7ff]">{Number(user.latitude).toFixed(4)}, {Number(user.longitude).toFixed(4)}</p>}
+                        {user.followRoad && <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Follow Road</span>}
+                      </td>
+                      {/* Tanggal */}
+                      <td className="px-3 py-2 text-[10px] hidden sm:table-cell">
+                        <p><span className="text-muted-foreground">Daftar:</span> {formatWIB(user.createdAt, 'dd MMM yyyy')}</p>
+                        <p className={user.expiredAt && isExpired(user.expiredAt) ? 'text-destructive font-medium' : ''}><span className="text-muted-foreground">Expired:</span> {user.expiredAt ? formatWIB(user.expiredAt, 'dd MMM yyyy') : '-'}</p>
+                      </td>
+                      {/* Status */}
+                      <td className="px-3 py-2">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${user.status === 'active' ? 'bg-success/20 text-success dark:bg-green-900/30' : user.status === 'isolated' ? 'bg-warning/20 text-warning dark:bg-yellow-900/30' : 'bg-destructive/20 text-destructive dark:bg-red-900/30'}`}>{user.status}</span>
+                      </td>
+                      {/* RADIUS */}
+                      <td className="px-3 py-2 hidden md:table-cell">
+                        {user.syncedToRadius ? (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent/20 text-accent dark:bg-purple-900/30"><CheckCircle2 className="h-2 w-2 mr-0.5" />Synced</span>
+                        ) : (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">Not synced</span>
+                        )}
+                      </td>
+                      {/* Aksi */}
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-0.5">
                           <div className="relative">
@@ -993,8 +1011,9 @@ export default function PppoeUsersPage() {
                           >
                             <Wallet className="h-3 w-3" />
                           </button>
-                          <button onClick={() => handleEdit(user)} className="p-1 text-muted-foreground hover:bg-muted rounded"><Pencil className="h-3 w-3" /></button>
-                          <button onClick={() => setDeleteUserId(user.id)} className="p-1 text-destructive hover:bg-destructive/10 rounded"><Trash2 className="h-3 w-3" /></button>
+                          <button onClick={() => handleEdit(user)} className="p-1 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded" title="Edit"><Pencil className="h-3 w-3" /></button>
+                          <button onClick={() => handleStatusChange(user.id, 'isolated')} className="p-1 text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded" title="Isolir"><Shield className="h-3 w-3" /></button>
+                          <button onClick={() => setDeleteUserId(user.id)} className="p-1 text-destructive hover:bg-destructive/10 rounded" title="Hapus"><Trash2 className="h-3 w-3" /></button>
                           {invoiceCounts[user.id] > 0 ? (
                             <button
                               onClick={() => handleMarkAllPaid(user.id, user.name)}

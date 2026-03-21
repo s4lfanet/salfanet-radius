@@ -116,6 +116,7 @@ const menuGroups: MenuGroup[] = [
         icon: <Users className="w-4 h-4" />,
         requiredPermission: 'customers.view',
         children: [
+          { titleKey: 'nav.pppoeCustomers', href: '/admin/pppoe/customers', requiredPermission: 'customers.view' },
           { titleKey: 'nav.users', href: '/admin/pppoe/users', requiredPermission: 'customers.view' },
           { titleKey: 'nav.profiles', href: '/admin/pppoe/profiles', requiredPermission: 'customers.view' },
           { titleKey: 'nav.areas', href: '/admin/pppoe/areas', requiredPermission: 'customers.view' },
