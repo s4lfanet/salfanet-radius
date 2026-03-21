@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const rateLimit = profile.rateLimit || `${profile.downloadSpeed}M/${profile.uploadSpeed}M`;
-    const mikrotikProfileName = profile.mikrotikProfileName || profile.groupName;
+    const mikrotikProfileName = profile.groupName;
 
     // Upsert radgroupreply: Mikrotik-Group
     const existingGroup = await prisma.radgroupreply.findFirst({

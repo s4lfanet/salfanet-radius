@@ -43,7 +43,7 @@ const defaultForm = {
   downloadSpeed: '10', uploadSpeed: '10', speedUnit: 'Mbps' as UnitType,
   burstDownload: '', burstUpload: '',
   burstThresholdDownload: '', burstThresholdUpload: '', burstTime: '8',
-  groupName: '', mikrotikProfileName: '', ipPoolName: '', validityValue: '1', validityUnit: 'MONTHS' as 'DAYS' | 'MONTHS',
+  groupName: '', ipPoolName: '', validityValue: '1', validityUnit: 'MONTHS' as 'DAYS' | 'MONTHS',
   sharedUser: true, isActive: true,
 };
 
@@ -70,8 +70,8 @@ export default function PPPoEProfilesPage() {
   const [routers, setRouters] = useState<RouterOption[]>([]);
   const [selectedRouterId, setSelectedRouterId] = useState<string>('');
   const [loadingRouters, setLoadingRouters] = useState(false);
-  const [syncMikrotikProfileName, setSyncMikrotikProfileName] = useState('');
   const [syncIpPoolName, setSyncIpPoolName] = useState('');
+  const [syncLocalAddress, setSyncLocalAddress] = useState('');
 
   // Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -117,7 +117,6 @@ export default function PPPoEProfilesPage() {
   };
 
   const getAutoGroupName = (name: string) => name.trim();
-  const getAutoMikrotikProfileName = (name: string) => name.trim();
   const isAutoFilledField = (value: string, previousName: string, resolver: (name: string) => string) => {
     const previousAutoValue = resolver(previousName);
     return value.trim() === '' || value === previousAutoValue;
@@ -126,8 +125,8 @@ export default function PPPoEProfilesPage() {
   const closeSyncMikrotikModal = () => {
     setSyncMikrotikTarget(null);
     setSelectedRouterId('');
-    setSyncMikrotikProfileName('');
     setSyncIpPoolName('');
+    setSyncLocalAddress('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,7 +134,6 @@ export default function PPPoEProfilesPage() {
     try {
       const method = editingProfile ? 'PUT' : 'POST';
       const generatedGroupName = formData.groupName.trim() || getAutoGroupName(formData.name);
-      const generatedMikrotikProfileName = formData.mikrotikProfileName.trim() || getAutoMikrotikProfileName(formData.name);
       const rateLimit = buildRateLimit(formData, showBurst);
       const dlMbps = speedToMbps(formData.downloadSpeed, formData.speedUnit);
       const ulMbps = speedToMbps(formData.uploadSpeed, formData.speedUnit);
@@ -144,7 +142,6 @@ export default function PPPoEProfilesPage() {
         name: formData.name,
         description: formData.description || undefined,
         groupName: generatedGroupName,
-        mikrotikProfileName: generatedMikrotikProfileName,
         ipPoolName: formData.ipPoolName.trim() || null,
         price: parseInt(formData.price),
         hpp: formData.hpp ? parseInt(formData.hpp) : null,
@@ -197,7 +194,7 @@ export default function PPPoEProfilesPage() {
       downloadSpeed: profile.downloadSpeed.toString(), uploadSpeed: profile.uploadSpeed.toString(), speedUnit: 'Mbps',
       burstDownload: burstDl, burstUpload: burstUl,
       burstThresholdDownload: thDl, burstThresholdUpload: thUl, burstTime: burstT,
-      groupName: profile.groupName, mikrotikProfileName: profile.mikrotikProfileName || profile.groupName || profile.name, ipPoolName: profile.ipPoolName || '', validityValue: profile.validityValue.toString(), validityUnit: profile.validityUnit,
+      groupName: profile.groupName, ipPoolName: profile.ipPoolName || '', validityValue: profile.validityValue.toString(), validityUnit: profile.validityUnit,
       sharedUser: profile.sharedUser, isActive: profile.isActive,
       ppnRate: profile.ppnRate?.toString() || '11',
     });
@@ -217,7 +214,7 @@ export default function PPPoEProfilesPage() {
     finally { setDeleteProfileId(null); }
   };
 
-  const resetForm = () => { setFormData({ ...defaultForm, groupName: '', mikrotikProfileName: '', ipPoolName: '' }); setShowBurst(false); setFieldErrors({}); };
+  const resetForm = () => { setFormData({ ...defaultForm, groupName: '', ipPoolName: '' }); setShowBurst(false); setFieldErrors({}); };
 
   const handleSyncRadius = async (profile: PPPoEProfile) => {
     setSyncingRadiusId(profile.id);
@@ -242,8 +239,8 @@ export default function PPPoEProfilesPage() {
     setSyncMikrotikTarget(profile);
     setLoadingRouters(true);
     setSelectedRouterId('');
-    setSyncMikrotikProfileName(profile.mikrotikProfileName || profile.groupName || profile.name);
     setSyncIpPoolName(profile.ipPoolName || '');
+    setSyncLocalAddress('');
     try {
       const res = await fetch('/api/pppoe/profiles/sync-mikrotik');
       const data = await res.json();
@@ -255,7 +252,7 @@ export default function PPPoEProfilesPage() {
   };
 
   const handleConfirmSyncMikrotik = async () => {
-    if (!syncMikrotikTarget || !selectedRouterId || !syncMikrotikProfileName.trim()) return;
+    if (!syncMikrotikTarget || !selectedRouterId) return;
     const target = syncMikrotikTarget;
     closeSyncMikrotikModal();
     setSyncingMikrotikId(target.id);
@@ -263,7 +260,7 @@ export default function PPPoEProfilesPage() {
       const res = await fetch('/api/pppoe/profiles/sync-mikrotik', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: target.id, routerId: selectedRouterId, mikrotikProfileName: syncMikrotikProfileName.trim(), ipPoolName: syncIpPoolName.trim() }),
+        body: JSON.stringify({ id: target.id, routerId: selectedRouterId, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim() }),
       });
       const result = await res.json();
       if (res.ok) {
@@ -605,16 +602,12 @@ export default function PPPoEProfilesPage() {
                   onChange={(e) => {
                     const name = e.target.value;
                     const autoGroup = getAutoGroupName(name);
-                    const autoMikrotikProfile = getAutoMikrotikProfileName(name);
                     setFormData(prev => ({
                       ...prev,
                       name,
                       groupName: isAutoFilledField(prev.groupName, prev.name, getAutoGroupName)
                         ? autoGroup
                         : prev.groupName,
-                      mikrotikProfileName: isAutoFilledField(prev.mikrotikProfileName, prev.name, getAutoMikrotikProfileName)
-                        ? autoMikrotikProfile
-                        : prev.mikrotikProfileName,
                     }));
                   }}
                   placeholder="Contoh: Paket 10 Mbps"
@@ -636,37 +629,22 @@ export default function PPPoEProfilesPage() {
                 <p className="text-[9px] text-muted-foreground mt-1">
                   {formData.groupName && formData.groupName === getAutoGroupName(formData.name)
                     ? <span>Auto-generate · <button type="button" className="text-primary hover:underline" onClick={() => setFormData(prev => ({...prev, groupName: ''}))}>Edit untuk kustomisasi</button></span>
-                    : 'Dipakai sebagai nama group di FreeRADIUS dan bisa diisi manual'
+                    : 'Dipakai sebagai Group RADIUS dan otomatis jadi nama PPP Profile MikroTik'
                   }
                 </p>
               </div>
 
-              {/* MikroTik PPP Profile */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <ModalLabel required>PPP Profile MikroTik</ModalLabel>
-                  <ModalInput
-                    type="text"
-                    value={formData.mikrotikProfileName}
-                    onChange={(e) => setFormData({ ...formData, mikrotikProfileName: e.target.value })}
-                    placeholder="Default mengikuti nama paket"
-                  />
-                  <p className="text-[9px] text-muted-foreground mt-1">
-                    Nama profile `/ppp/profile` di MikroTik. Default sama dengan nama paket, tapi bisa diubah manual.
-                  </p>
-                </div>
-                <div>
-                  <ModalLabel>IP Pool MikroTik</ModalLabel>
-                  <ModalInput
-                    type="text"
-                    value={formData.ipPoolName}
-                    onChange={(e) => setFormData({ ...formData, ipPoolName: e.target.value })}
-                    placeholder="contoh: pppoe-pool"
-                  />
-                  <p className="text-[9px] text-[#ffd84d] mt-1">
-                    Isi nama pool dari MikroTik (`/ip pool`), bukan range IP.
-                  </p>
-                </div>
+              <div>
+                <ModalLabel>IP Pool MikroTik Default</ModalLabel>
+                <ModalInput
+                  type="text"
+                  value={formData.ipPoolName}
+                  onChange={(e) => setFormData({ ...formData, ipPoolName: e.target.value })}
+                  placeholder="contoh: pppoe-pool"
+                />
+                <p className="text-[9px] text-[#ffd84d] mt-1">
+                  Default untuk sync MikroTik. Bisa diganti lagi saat sync/re-sync.
+                </p>
               </div>
 
               {/* Kecepatan */}
@@ -1037,7 +1015,7 @@ export default function PPPoEProfilesPage() {
           <ModalHeader>
             <h2 className="text-base font-bold text-foreground">Pilih Router MikroTik</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Sync paket <span className="font-semibold text-purple-400">{syncMikrotikTarget?.name}</span> ke router dan buat/update PPP profile
+              Sync paket <span className="font-semibold text-purple-400">{syncMikrotikTarget?.name}</span> ke router. PPP profile otomatis pakai Group RADIUS: <span className="font-mono">{syncMikrotikTarget?.groupName}</span>
             </p>
           </ModalHeader>
           <ModalBody>
@@ -1080,15 +1058,6 @@ export default function PPPoEProfilesPage() {
 
             <div className="grid grid-cols-1 gap-3 mt-4 border-t border-border pt-4">
               <div>
-                <ModalLabel required>Nama PPP Profile MikroTik</ModalLabel>
-                <ModalInput
-                  type="text"
-                  value={syncMikrotikProfileName}
-                  onChange={(e) => setSyncMikrotikProfileName(e.target.value)}
-                  placeholder="Contoh: Paket 10 Mbps"
-                />
-              </div>
-              <div>
                 <ModalLabel>Nama Pool</ModalLabel>
                 <ModalInput
                   type="text"
@@ -1100,6 +1069,18 @@ export default function PPPoEProfilesPage() {
                   Isi nama pool dari MikroTik (`/ip pool`), bukan range IP.
                 </p>
               </div>
+              <div>
+                <ModalLabel>IP Lokal PPP (opsional)</ModalLabel>
+                <ModalInput
+                  type="text"
+                  value={syncLocalAddress}
+                  onChange={(e) => setSyncLocalAddress(e.target.value)}
+                  placeholder="contoh: 10.10.10.1"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Jika diisi akan diset sebagai `local-address` pada PPP profile.
+                </p>
+              </div>
             </div>
           </ModalBody>
           <ModalFooter>
@@ -1107,9 +1088,9 @@ export default function PPPoEProfilesPage() {
             <ModalButton
               variant="primary"
               onClick={handleConfirmSyncMikrotik}
-              disabled={!selectedRouterId || loadingRouters || !syncMikrotikProfileName.trim()}
+              disabled={!selectedRouterId || loadingRouters}
             >
-              <Wifi className="h-3.5 w-3.5 mr-1.5" />Sync ke MikroTik
+              <Wifi className="h-3.5 w-3.5 mr-1.5" />{syncMikrotikTarget?.ipPoolName ? 'Re-sync MikroTik' : 'Sync ke MikroTik'}
             </ModalButton>
           </ModalFooter>
         </SimpleModal>

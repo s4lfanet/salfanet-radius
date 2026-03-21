@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     const finalGroupName = String(groupName).trim();
-    const finalMikrotikProfileName = String(mikrotikProfileName || name || groupName).trim();
+    const finalMikrotikProfileName = finalGroupName;
     const finalIpPoolName = typeof ipPoolName === 'string' ? ipPoolName.trim() || null : null;
 
     // Create profile
@@ -243,9 +243,7 @@ export async function PUT(request: NextRequest) {
 
     // Check if groupName changed and new one already exists
     const normalizedGroupName = typeof groupName === 'string' ? groupName.trim() : undefined;
-    const normalizedMikrotikProfileName = typeof mikrotikProfileName === 'string'
-      ? mikrotikProfileName.trim()
-      : undefined;
+    const normalizedMikrotikProfileName = undefined;
     const normalizedIpPoolName = typeof ipPoolName === 'string'
       ? ipPoolName.trim() || null
       : undefined;
@@ -268,7 +266,7 @@ export async function PUT(request: NextRequest) {
     if (name) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (normalizedGroupName) updateData.groupName = normalizedGroupName;
-    if (normalizedMikrotikProfileName !== undefined) updateData.mikrotikProfileName = normalizedMikrotikProfileName || (name || currentProfile.name);
+    if (normalizedGroupName) updateData.mikrotikProfileName = normalizedGroupName;
     if (normalizedIpPoolName !== undefined) updateData.ipPoolName = normalizedIpPoolName;
     if (price) updateData.price = parseInt(price);
     if (downloadSpeed !== undefined) updateData.downloadSpeed = parseInt(downloadSpeed.toString());
@@ -293,7 +291,7 @@ export async function PUT(request: NextRequest) {
       try {
         const oldGroupName = currentProfile.groupName;
         const newGroupName = normalizedGroupName || currentProfile.groupName;
-        const newMikrotikProfileName = normalizedMikrotikProfileName || profile.mikrotikProfileName || newGroupName;
+        const newMikrotikProfileName = newGroupName;
         const newDownload = downloadSpeed !== undefined ? downloadSpeed : currentProfile.downloadSpeed;
         const newUpload = uploadSpeed !== undefined ? uploadSpeed : currentProfile.uploadSpeed;
         // Use full rateLimit if provided, otherwise simple format

@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, routerId, mikrotikProfileName, ipPoolName } = await request.json();
+    const { id, routerId, ipPoolName, localAddress } = await request.json();
     if (!id) {
       return NextResponse.json({ error: 'Profile ID is required' }, { status: 400 });
     }
@@ -43,15 +43,16 @@ export async function POST(request: NextRequest) {
     }
 
     const rateLimit = profile.rateLimit || `${profile.downloadSpeed}M/${profile.uploadSpeed}M`;
-    const resolvedMikrotikProfileName = String(mikrotikProfileName || profile.mikrotikProfileName || profile.groupName || profile.name).trim();
+    const resolvedMikrotikProfileName = String(profile.groupName || profile.name).trim();
     const resolvedIpPoolName = typeof ipPoolName === 'string' ? ipPoolName.trim() : (profile.ipPoolName || '');
+    const resolvedLocalAddress = typeof localAddress === 'string' ? localAddress.trim() : '';
 
     if (!resolvedMikrotikProfileName) {
       return NextResponse.json({ error: 'Nama PPP Profile MikroTik wajib diisi' }, { status: 400 });
     }
 
     if (
-      profile.mikrotikProfileName !== resolvedMikrotikProfileName ||
+      profile.groupName !== resolvedMikrotikProfileName ||
       (profile.ipPoolName || '') !== resolvedIpPoolName
     ) {
       await prisma.pppoeProfile.update({
@@ -97,8 +98,13 @@ export async function POST(request: NextRequest) {
           `=.id=${profileId}`,
           `=name=${resolvedMikrotikProfileName}`,
           `=rate-limit=${rateLimit}`,
-          `=remote-address=${resolvedIpPoolName}`,
         ];
+        if (resolvedIpPoolName) {
+          updateParams.push(`=remote-address=${resolvedIpPoolName}`);
+        }
+        if (resolvedLocalAddress) {
+          updateParams.push(`=local-address=${resolvedLocalAddress}`);
+        }
         if (sharedUserLimit) {
           updateParams.push(`=only-one=${sharedUserLimit}`);
         }
@@ -114,6 +120,9 @@ export async function POST(request: NextRequest) {
         if (resolvedIpPoolName) {
           createParams.push(`=remote-address=${resolvedIpPoolName}`);
         }
+        if (resolvedLocalAddress) {
+          createParams.push(`=local-address=${resolvedLocalAddress}`);
+        }
         if (sharedUserLimit) {
           createParams.push(`=only-one=${sharedUserLimit}`);
         }
@@ -124,7 +133,7 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Profile "${profile.name}" disinkronkan ke MikroTik ${router.ipAddress || router.nasname} dengan PPP Profile "${resolvedMikrotikProfileName}"${resolvedIpPoolName ? ` dan IP Pool "${resolvedIpPoolName}"` : ''}`,
+        message: `Profile "${profile.name}" berhasil re-sync ke MikroTik ${router.ipAddress || router.nasname} dengan PPP Profile "${resolvedMikrotikProfileName}"${resolvedIpPoolName ? ` dan IP Pool "${resolvedIpPoolName}"` : ''}${resolvedLocalAddress ? ` serta Local IP "${resolvedLocalAddress}"` : ''}`,
         router: { id: router.id, name: router.name || router.nasname, ip: router.ipAddress || router.nasname },
       });
     } catch (mkError: any) {
