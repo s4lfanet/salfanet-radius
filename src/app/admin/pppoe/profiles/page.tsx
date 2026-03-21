@@ -267,7 +267,7 @@ export default function PPPoEProfilesPage() {
           setSelectedRouterId(profile.lastRouterId || '');
           setSyncIpPoolName(profile.ipPoolName || '');
           setSyncLocalAddress(profile.localAddress || '');
-          await showError(`Auto re-sync gagal: ${result.error || 'Error'}\nSilakan cek konfigurasi dan coba lagi lewat modal.`);
+          await showError(result.error || 'Gagal sync ke MikroTik');
         }
       } catch { await showError('Gagal sync ke MikroTik'); }
       finally { setSyncingMikrotikId(null); }
@@ -301,6 +301,28 @@ export default function PPPoEProfilesPage() {
       }
     } catch { await showError('Gagal sync ke MikroTik'); }
     finally { setSyncingMikrotikId(null); }
+  };
+
+  const [testingConnection, setTestingConnection] = useState(false);
+  const handleTestConnection = async () => {
+    if (!selectedRouterId) return;
+    setTestingConnection(true);
+    try {
+      const res = await fetch('/api/pppoe/profiles/sync-mikrotik', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ routerId: selectedRouterId }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        const okPort = result.results?.find((r: any) => r.success);
+        await showSuccess(`✅ Koneksi berhasil ke ${result.host}\nRouter: ${result.routerName}\nIdentity: ${okPort?.identity}\nPort: ${okPort?.port}`);
+      } else {
+        const detail = result.results?.map((r: any) => `  Port ${r.port}: ${r.success ? '✅' : '❌ ' + r.error}`).join('\n') || '';
+        await showError(`❌ Gagal konek ke ${result.host}\n\n${detail}\n\n${result.hint || ''}`);
+      }
+    } catch { await showError('Gagal test koneksi'); }
+    finally { setTestingConnection(false); }
   };
 
   // Export CSV
@@ -1098,6 +1120,13 @@ export default function PPPoEProfilesPage() {
           </ModalBody>
           <ModalFooter>
             <ModalButton variant="secondary" onClick={closeSyncMikrotikModal}>Batal</ModalButton>
+            <ModalButton
+              variant="secondary"
+              onClick={handleTestConnection}
+              disabled={!selectedRouterId || testingConnection}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 mr-1.5${testingConnection ? ' animate-spin' : ''}`} />Test Koneksi
+            </ModalButton>
             <ModalButton
               variant="primary"
               onClick={handleConfirmSyncMikrotik}
