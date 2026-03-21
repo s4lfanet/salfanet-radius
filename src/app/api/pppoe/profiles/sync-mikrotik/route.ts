@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, routerId, ipPoolName, localAddress } = await request.json();
+    const { id, routerId, ipPoolName, localAddress, poolRanges } = await request.json();
     if (!id) {
       return NextResponse.json({ error: 'Profile ID is required' }, { status: 400 });
     }
@@ -168,6 +168,7 @@ export async function POST(request: NextRequest) {
     const resolvedMikrotikProfileName = String(profile.groupName || profile.name).trim();
     const resolvedIpPoolName = typeof ipPoolName === 'string' ? ipPoolName.trim() : (profile.ipPoolName || '');
     const resolvedLocalAddress = typeof localAddress === 'string' ? localAddress.trim() : '';
+    const resolvedPoolRanges = typeof poolRanges === 'string' ? poolRanges.trim() : '';
 
     if (!resolvedMikrotikProfileName) {
       return NextResponse.json({ error: 'Nama PPP Profile MikroTik wajib diisi' }, { status: 400 });
@@ -205,7 +206,37 @@ export async function POST(request: NextRequest) {
       debug.push(`✅ Connected to ${host}:${port} (user: ${router.username})`);
 
       try {
-        // Fetch all profiles
+        // STEP 1: Ensure IP pool exists (create if needed) before touching PPP profile
+        if (resolvedIpPoolName) {
+          const poolPrintResult = await apiCmd(api, '/ip/pool/print', [], 'pool/print');
+          if (!poolPrintResult.ok) throw new Error(`Gagal baca daftar pool: ${poolPrintResult.error}`);
+
+          const allPools: any[] = poolPrintResult.data || [];
+          const existingPool = allPools.find((p: any) => p['name'] === resolvedIpPoolName);
+          debug.push(`🏊 Pools di MikroTik: ${allPools.length}, target: "${resolvedIpPoolName}", exists: ${!!existingPool}`);
+
+          if (!existingPool) {
+            if (!resolvedPoolRanges) {
+              throw new Error(
+                `Pool "${resolvedIpPoolName}" tidak ditemukan di MikroTik. ` +
+                `Isi kolom "IP Range Pool" di modal untuk membuat pool baru secara otomatis.`
+              );
+            }
+            debug.push(`➕ Membuat pool "${resolvedIpPoolName}" dengan ranges="${resolvedPoolRanges}"`);
+            const createPoolResult = await apiCmd(
+              api, '/ip/pool/add',
+              [`=name=${resolvedIpPoolName}`, `=ranges=${resolvedPoolRanges}`],
+              'pool/add'
+            );
+            if (!createPoolResult.ok) throw new Error(`Gagal buat pool "${resolvedIpPoolName}": ${createPoolResult.error}`);
+            debug.push(`✅ Pool "${resolvedIpPoolName}" berhasil dibuat`);
+            warnings.push(`Pool "${resolvedIpPoolName}" (${resolvedPoolRanges}) dibuat otomatis di MikroTik`);
+          } else {
+            debug.push(`✅ Pool "${resolvedIpPoolName}" sudah ada, skip buat pool`);
+          }
+        }
+
+        // STEP 2: Create/update PPP profile
         const printResult = await apiCmd(api, '/ppp/profile/print', [], 'profile/print');
         if (!printResult.ok) throw new Error(`Gagal baca profile list: ${printResult.error}`);
 
@@ -215,28 +246,6 @@ export async function POST(request: NextRequest) {
 
         const sharedUserLimit = profile.sharedUser ? 'no' : 'yes';
 
-        // Helper: try write with pool/IP params, fallback to without if RouterOS rejects them
-        const tryWrite = async (command: string, params: string[]): Promise<string[]> => {
-          debug.push(`📝 ${command}: ${params.join(' ')}`);
-          const result = await apiCmd(api, command, params, command);
-          if (result.ok) return params;
-
-          const errLower = (result.error || '').toLowerCase();
-          const isPoolError = errLower.includes('no such item') || errLower.includes('invalid ip') || errLower.includes('bad ip');
-
-          // If error is related to pool/localAddress, strip those and retry
-          if (isPoolError && (resolvedIpPoolName || resolvedLocalAddress)) {
-            const reduced = params.filter(p => !p.startsWith('=remote-address=') && !p.startsWith('=local-address='));
-            debug.push(`⚠️ Pool/IP error: ${result.error} — retrying without pool/localAddress`);
-            warnings.push(`Pool "${resolvedIpPoolName}" atau Local IP "${resolvedLocalAddress}" tidak ditemukan di MikroTik — profile disimpan tanpa remote-address/local-address`);
-            const retry = await apiCmd(api, command, reduced, command + ' (no pool)');
-            if (!retry.ok) throw new Error(`${command} gagal: ${retry.error}`);
-            return reduced;
-          }
-
-          throw new Error(`${command} gagal: ${result.error}`);
-        };
-
         let action: string;
 
         if (existingProfile) {
@@ -245,14 +254,18 @@ export async function POST(request: NextRequest) {
           const updateParams: string[] = [`=.id=${profileId}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
           if (resolvedIpPoolName) updateParams.push(`=remote-address=${resolvedIpPoolName}`);
           if (resolvedLocalAddress) updateParams.push(`=local-address=${resolvedLocalAddress}`);
-          await tryWrite('/ppp/profile/set', updateParams);
+          debug.push(`📝 /ppp/profile/set: ${updateParams.join(' ')}`);
+          const updateResult = await apiCmd(api, '/ppp/profile/set', updateParams, 'profile/set');
+          if (!updateResult.ok) throw new Error(`Gagal update PPP profile: ${updateResult.error}`);
           action = 'updated';
         } else {
-          debug.push(`➕ Creating new profile`);
+          debug.push(`➕ Creating new PPP profile`);
           const createParams: string[] = [`=name=${resolvedMikrotikProfileName}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
           if (resolvedIpPoolName) createParams.push(`=remote-address=${resolvedIpPoolName}`);
           if (resolvedLocalAddress) createParams.push(`=local-address=${resolvedLocalAddress}`);
-          await tryWrite('/ppp/profile/add', createParams);
+          debug.push(`📝 /ppp/profile/add: ${createParams.join(' ')}`);
+          const createResult = await apiCmd(api, '/ppp/profile/add', createParams, 'profile/add');
+          if (!createResult.ok) throw new Error(`Gagal buat PPP profile: ${createResult.error}`);
           action = 'created';
         }
 

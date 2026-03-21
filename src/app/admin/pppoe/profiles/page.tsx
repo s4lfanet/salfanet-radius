@@ -72,6 +72,7 @@ export default function PPPoEProfilesPage() {
   const [selectedRouterId, setSelectedRouterId] = useState<string>('');
   const [syncIpPoolName, setSyncIpPoolName] = useState('');
   const [syncLocalAddress, setSyncLocalAddress] = useState('');
+  const [syncPoolRanges, setSyncPoolRanges] = useState('');
 
   // Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -135,6 +136,7 @@ export default function PPPoEProfilesPage() {
     setSelectedRouterId('');
     setSyncIpPoolName('');
     setSyncLocalAddress('');
+    setSyncPoolRanges('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -291,7 +293,7 @@ export default function PPPoEProfilesPage() {
       const res = await fetch('/api/pppoe/profiles/sync-mikrotik', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: target.id, routerId: selectedRouterId, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim() }),
+        body: JSON.stringify({ id: target.id, routerId: selectedRouterId, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim(), poolRanges: syncPoolRanges.trim() }),
       });
       const result = await res.json();
       if (res.ok) {
@@ -1116,8 +1118,21 @@ export default function PPPoEProfilesPage() {
                   onChange={(e) => setSyncIpPoolName(e.target.value)}
                   placeholder="contoh: pppoe-pool"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Nama IP pool di MikroTik (<code>/ip pool</code>). Jika belum ada, isi juga kolom IP Range di bawah.
+                </p>
+              </div>
+              <div>
+                <ModalLabel>IP Range Pool (jika pool belum ada di MikroTik)</ModalLabel>
+                <ModalInput
+                  type="text"
+                  value={syncPoolRanges}
+                  onChange={(e) => setSyncPoolRanges(e.target.value)}
+                  placeholder="contoh: 192.168.10.100-192.168.10.200"
+                  disabled={!syncIpPoolName.trim()}
+                />
                 <p className="text-xs text-[#ffd84d] mt-1">
-                  Isi nama pool dari MikroTik (`/ip pool`), bukan range IP.
+                  Kosongkan jika pool sudah ada. Diisi → pool akan dibuat otomatis sebelum PPP profile.
                 </p>
               </div>
               <div>
