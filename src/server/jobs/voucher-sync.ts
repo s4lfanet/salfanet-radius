@@ -1490,7 +1490,15 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
           continue;
         }
 
-        const amount = user.profile.price;
+        const baseAmount = user.profile.price;
+
+        // Calculate PPN if enabled on profile
+        let invoiceAmount = baseAmount;
+        let taxRate: number | null = null;
+        if (user.profile.ppnActive && user.profile.ppnRate > 0) {
+          taxRate = user.profile.ppnRate;
+          invoiceAmount = Math.round(baseAmount + (baseAmount * taxRate / 100));
+        }
 
         // Calculate due date based on subscription type
         let dueDate: Date;
@@ -1544,8 +1552,9 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
             customerPhone: user.phone,
             customerEmail: user.email,
             customerUsername: user.username,
-            amount,
-            baseAmount: amount,
+            amount: invoiceAmount,
+            baseAmount: baseAmount,
+            ...(taxRate !== null && { taxRate }),
             dueDate: dueDate,
             status: invoiceStatus as any,
             paymentToken,
@@ -1557,7 +1566,8 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
         generated++;
         const expiredAtStr = user.expiredAt ? formatWIB(user.expiredAt, 'd MMMM yyyy') : 'N/A';
         const statusLabel = isOverdue ? '(OVERDUE)' : '(PENDING)';
-        console.log(`✅ Generated invoice ${invoiceNumber} for ${user.username} - Rp ${amount.toLocaleString()} (expires: ${expiredAtStr}) ${statusLabel}`);
+        const ppnLabel = taxRate ? ` (incl. PPN ${taxRate}%)` : '';
+        console.log(`✅ Generated invoice ${invoiceNumber} for ${user.username} - Rp ${invoiceAmount.toLocaleString()}${ppnLabel} (expires: ${expiredAtStr}) ${statusLabel}`);
       } catch (error: any) {
         errors.push(`${user.username}: ${error.message}`);
         console.error(`❌ Error generating invoice for ${user.username}:`, error);

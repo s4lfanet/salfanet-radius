@@ -123,12 +123,23 @@ export async function POST(
     const paymentToken = crypto.randomBytes(32).toString('hex');
     const paymentLink = `${baseUrl}/pay/${paymentToken}`;
     
+    // Calculate PPN if enabled on profile
+    const extendBaseAmount = newProfile.price;
+    let extendAmount = extendBaseAmount;
+    let extendTaxRate: number | null = null;
+    if (newProfile.ppnActive && newProfile.ppnRate > 0) {
+      extendTaxRate = newProfile.ppnRate;
+      extendAmount = Math.round(extendBaseAmount + (extendBaseAmount * extendTaxRate / 100));
+    }
+
     await prisma.invoice.create({
       data: {
         id: generateInvoiceId(),
         invoiceNumber,
         userId: id,
-        amount: newProfile.price,
+        amount: extendAmount,
+        baseAmount: extendBaseAmount,
+        ...(extendTaxRate !== null && { taxRate: extendTaxRate }),
         status: 'PAID',
         dueDate: newExpiredAt,
         paidAt: now,
@@ -161,7 +172,7 @@ export async function POST(
         id: await generateTransactionId(),
         categoryId: category.id,
         type: 'INCOME',
-        amount: newProfile.price,
+        amount: extendAmount,
         description: `Perpanjangan langganan ${user.username} - ${newProfile.name}${profileChanged ? ' (paket diubah)' : ''}`,
         reference: invoiceNumber,
         date: now,
@@ -177,7 +188,7 @@ export async function POST(
       year: 'numeric',
     }).format(newExpiredAt);
     
-    const formattedAmount = new Intl.NumberFormat('id-ID').format(newProfile.price);
+    const formattedAmount = new Intl.NumberFormat('id-ID').format(extendAmount);
 
     // Send WhatsApp notification if phone available
     if (user.phone) {
@@ -268,7 +279,7 @@ export async function POST(
       success: true,
       user: updatedUser,
       extended: `${extendedDays} hari`,
-      amount: newProfile.price,
+      amount: extendAmount,
       profileChanged,
       newExpiredAt: newExpiredAt.toISOString(),
       notificationSent: {

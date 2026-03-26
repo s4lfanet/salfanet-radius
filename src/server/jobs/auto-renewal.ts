@@ -58,7 +58,15 @@ export async function processAutoRenewal() {
     for (const user of users) {
       try {
         // Check if user has enough balance
-        const packagePrice = user.profile.price
+        const packageBasePrice = user.profile.price
+        
+        // Calculate PPN if enabled
+        let packagePrice = packageBasePrice
+        let autoRenewalTaxRate: number | null = null
+        if (user.profile.ppnActive && user.profile.ppnRate > 0) {
+          autoRenewalTaxRate = user.profile.ppnRate
+          packagePrice = Math.round(packageBasePrice + (packageBasePrice * autoRenewalTaxRate / 100))
+        }
         
         if (user.balance < packagePrice) {
           console.log(`[Auto-Renewal] User ${user.username} - Insufficient balance (${user.balance} < ${packagePrice})`)
@@ -89,6 +97,8 @@ export async function processAutoRenewal() {
             invoiceNumber,
             userId: user.id,
             amount: packagePrice,
+            baseAmount: packageBasePrice,
+            ...(autoRenewalTaxRate !== null && { taxRate: autoRenewalTaxRate }),
             dueDate: user.expiredAt!,
             status: 'PENDING',
             invoiceType: 'RENEWAL',

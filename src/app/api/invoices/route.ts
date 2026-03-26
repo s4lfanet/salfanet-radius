@@ -202,6 +202,7 @@ export async function POST(request: NextRequest) {
         customerPhone: user.phone,
         customerUsername: user.username,
         amount,
+        baseAmount: amount,
         dueDate: calculatedDueDate,
         status: 'PENDING',
         paymentToken,

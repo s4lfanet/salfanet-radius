@@ -37,7 +37,16 @@ export async function POST(
       );
     }
 
-    const amount = user.profile.price;
+    const basePrice = user.profile.price;
+
+    // Calculate PPN if enabled on profile
+    let amount = basePrice;
+    let renewalTaxRate: number | null = null;
+    if (user.profile.ppnActive && user.profile.ppnRate > 0) {
+      renewalTaxRate = user.profile.ppnRate;
+      amount = Math.round(basePrice + (basePrice * renewalTaxRate / 100));
+    }
+
     const now = new Date();
     const expiredAt = user.expiredAt ? new Date(user.expiredAt) : null;
 
@@ -109,6 +118,8 @@ export async function POST(
             customerUsername: user.username,
             customerEmail: user.email,
             amount,
+            baseAmount: basePrice,
+            ...(renewalTaxRate !== null && { taxRate: renewalTaxRate }),
             dueDate: newExpiredDate,
             status: 'PENDING',
             paymentToken,

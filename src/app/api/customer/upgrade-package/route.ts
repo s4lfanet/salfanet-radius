@@ -124,13 +124,22 @@ export async function POST(request: NextRequest) {
     const paymentTokenString = `${invoiceNumber}-${Date.now()}`;
     const paymentToken = crypto.createHash('sha256').update(paymentTokenString).digest('hex');
 
+    // Calculate PPN if enabled on package profile
+    const pkgBaseAmount = package_data.price;
+    let pkgAmount = pkgBaseAmount;
+    let pkgTaxRate: number | null = null;
+    if (package_data.ppnActive && package_data.ppnRate > 0) {
+      pkgTaxRate = package_data.ppnRate;
+      pkgAmount = Math.round(pkgBaseAmount + (pkgBaseAmount * pkgTaxRate / 100));
+    }
+
     // Create invoice with package upgrade metadata
     const invoice = await prisma.invoice.create({
       data: {
         id: nanoid(),
         invoiceNumber,
         userId: user.id,
-        amount: package_data.price,
+        amount: pkgAmount,
         status: 'PENDING',
         dueDate,
         customerName: user.name,
@@ -138,15 +147,16 @@ export async function POST(request: NextRequest) {
         customerEmail: user.email,
         customerUsername: user.username,
         invoiceType: 'ADDON',
-        baseAmount: package_data.price,
+        baseAmount: pkgBaseAmount,
+        ...(pkgTaxRate !== null && { taxRate: pkgTaxRate }),
         paymentToken,
         additionalFees: {
           items: [
             {
               description: `${actionLabel} ke ${package_data.name}`,
               quantity: 1,
-              unitPrice: package_data.price,
-              amount: package_data.price,
+              unitPrice: pkgBaseAmount,
+              amount: pkgAmount,
               metadata: {
                 type: 'package_change',
                 newPackageId: packageId,

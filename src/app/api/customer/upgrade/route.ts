@@ -78,12 +78,21 @@ export async function POST(request: NextRequest) {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + 7);
 
+    // Calculate PPN if enabled on profile
+    const upgradeBaseAmount = newProfile.price;
+    let upgradeAmount = upgradeBaseAmount;
+    let upgradeTaxRate: number | null = null;
+    if (newProfile.ppnActive && newProfile.ppnRate > 0) {
+      upgradeTaxRate = newProfile.ppnRate;
+      upgradeAmount = Math.round(upgradeBaseAmount + (upgradeBaseAmount * upgradeTaxRate / 100));
+    }
+
     // Store package upgrade metadata in additionalFees
     const additionalFees = {
       items: [
         {
           name: `Upgrade ke ${newProfile.name}`,
-          amount: newProfile.price,
+          amount: upgradeAmount,
           metadata: {
             type: 'package_upgrade',
             oldPackageId: pppoeUser.profileId,
@@ -100,7 +109,7 @@ export async function POST(request: NextRequest) {
         id: `inv-${Date.now()}`,
         userId: pppoeUser.id,
         invoiceNumber: invoiceNumber,
-        amount: newProfile.price,
+        amount: upgradeAmount,
         dueDate: dueDate,
         status: 'PENDING',
         paymentToken: paymentToken,
@@ -108,9 +117,10 @@ export async function POST(request: NextRequest) {
         customerPhone: pppoeUser.phone,
         customerEmail: pppoeUser.email || `${pppoeUser.username}@customer.com`,
         customerUsername: pppoeUser.username,
-        invoiceType: 'ADDON', // Upgrade is an addon service
-        baseAmount: newProfile.price,
-        additionalFees: additionalFees // Store upgrade metadata
+        invoiceType: 'ADDON',
+        baseAmount: upgradeBaseAmount,
+        ...(upgradeTaxRate !== null && { taxRate: upgradeTaxRate }),
+        additionalFees: additionalFees
       }
     });
 

@@ -991,7 +991,18 @@ export default function PppoeUsersPage() {
                       {/* Teknis */}
                       <td className="px-3 py-2 hidden xl:table-cell">
                         {user.address && <p className="text-[10px] text-muted-foreground truncate max-w-[140px] flex items-center gap-0.5"><MapPin className="h-2.5 w-2.5 flex-shrink-0" />{user.address}</p>}
-                        {user.latitude && user.longitude && <p className="text-[10px] text-[#00f7ff]">{Number(user.latitude).toFixed(4)}, {Number(user.longitude).toFixed(4)}</p>}
+                        {user.latitude && user.longitude && (
+                          <a
+                            href={`https://www.google.com/maps?q=${Number(user.latitude)},${Number(user.longitude)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-0.5 text-[10px] text-[#00f7ff] hover:text-[#00f7ff]/80 hover:underline cursor-pointer"
+                            title="Buka di Google Maps"
+                          >
+                            <MapPin className="h-2.5 w-2.5 flex-shrink-0" />
+                            {Number(user.latitude).toFixed(4)}, {Number(user.longitude).toFixed(4)}
+                          </a>
+                        )}
                         {user.followRoad && <span className="inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Follow Road</span>}
                       </td>
                       {/* Tanggal */}

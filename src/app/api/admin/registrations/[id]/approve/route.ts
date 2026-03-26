@@ -281,17 +281,25 @@ export async function POST(
     const invoiceNumber = `${prefix}${String(count + 1).padStart(4, '0')}`;
 
     // Calculate invoice amounts based on subscription type
-    let totalAmount: number;
+    let baseAmount: number;
     let invoiceType: string;
     
     if (subscriptionType === 'PREPAID') {
       // PREPAID: installation + first month subscription
-      totalAmount = Math.round(Number(fee)) + registration.profile.price;
+      baseAmount = Math.round(Number(fee)) + registration.profile.price;
       invoiceType = 'INSTALLATION';
     } else {
       // POSTPAID: installation only
-      totalAmount = Math.round(Number(fee));
+      baseAmount = Math.round(Number(fee));
       invoiceType = 'INSTALLATION';
+    }
+
+    // Calculate PPN if enabled on profile
+    let invoiceAmount = baseAmount;
+    let taxRate: number | null = null;
+    if (registration.profile.ppnActive && registration.profile.ppnRate > 0) {
+      taxRate = registration.profile.ppnRate;
+      invoiceAmount = Math.round(baseAmount + (baseAmount * taxRate / 100));
     }
 
     // Get company baseUrl from database
@@ -308,8 +316,9 @@ export async function POST(
         id: crypto.randomUUID(),
         invoiceNumber,
         userId: pppoeUser.id,
-        amount: totalAmount,
-        baseAmount: totalAmount, // Set base amount same as total for now
+        amount: invoiceAmount,
+        baseAmount: baseAmount,
+        ...(taxRate !== null && { taxRate }),
         status: 'PENDING',
         dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         customerName: registration.name,
@@ -354,7 +363,7 @@ export async function POST(
           profile: registration.profile.name,
           installationFee: Math.round(Number(fee)),
           invoiceNumber: invoice.invoiceNumber,
-          totalAmount: totalAmount,
+          totalAmount: invoiceAmount,
           dueDate: invoice.dueDate,
           paymentLink: paymentLink,
           paymentToken: paymentToken,
@@ -380,7 +389,7 @@ export async function POST(
       invoice: {
         id: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
-        amount: totalAmount,
+        amount: invoiceAmount,
         paymentLink,
       },
     });

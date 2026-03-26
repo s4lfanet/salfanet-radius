@@ -158,8 +158,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Create invoice for renewal
-    const amount = targetProfile.price;
-    console.log('💰 Amount:', amount);
+    const baseAmount = targetProfile.price;
+    
+    // Calculate PPN if enabled on profile
+    let amount = baseAmount;
+    let renewTaxRate: number | null = null;
+    if (targetProfile.ppnActive && targetProfile.ppnRate > 0) {
+      renewTaxRate = targetProfile.ppnRate;
+      amount = Math.round(baseAmount + (baseAmount * renewTaxRate / 100));
+    }
+    
+    console.log('💰 Amount:', amount, renewTaxRate ? `(incl. PPN ${renewTaxRate}%)` : '');
 
     // Generate invoice number with retry for uniqueness
     const year = now.getFullYear();
@@ -215,6 +224,8 @@ export async function POST(request: NextRequest) {
             customerUsername: user.username,
             customerEmail: user.email,
             amount,
+            baseAmount: baseAmount,
+            ...(renewTaxRate !== null && { taxRate: renewTaxRate }),
             dueDate: newExpiredDate,
             status: 'PENDING',
             paymentToken,
