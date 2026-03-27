@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Get isolation settings error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -185,7 +185,7 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error('Update isolation settings error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

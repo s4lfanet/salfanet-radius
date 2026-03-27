@@ -157,7 +157,7 @@ add action=memory topics=radius
   } catch (error: any) {
     console.error('Generate MikroTik script error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

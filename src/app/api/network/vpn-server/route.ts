@@ -4,6 +4,9 @@ import { authOptions } from '@/server/auth/config'
 import { prisma } from '@/server/db/client'
 import crypto from 'crypto'
 
+if (!process.env.ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
+  throw new Error('ENCRYPTION_KEY is required in production.');
+}
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-this-32'; // Must be 32 chars
 const ALGORITHM = 'aes-256-cbc';
 

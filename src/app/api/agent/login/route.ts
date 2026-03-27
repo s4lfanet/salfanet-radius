@@ -1,9 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 // POST - Agent login with phone number
 export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, RateLimitPresets.strict);
+    if (limited) {
+      return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+    }
+
     const body = await request.json();
     const { phone } = body;
 

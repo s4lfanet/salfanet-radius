@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { jwtVerify } from 'jose';
+import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 
 async function verifyTechnicianAuth(req: NextRequest) {
   try {
@@ -9,9 +10,7 @@ async function verifyTechnicianAuth(req: NextRequest) {
       return null;
     }
 
-    const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
-    );
+    const secret = TECH_JWT_SECRET;
 
     const { payload } = await jwtVerify(token, secret);
     if (payload.type === 'admin_user') {

@@ -32,7 +32,7 @@ export async function GET(
     return NextResponse.json({
       success: true,
       permissions: [],
-      warning: 'Failed to load permissions: ' + error.message
+      warning: 'Failed to load permissions'
     });
   }
 }
@@ -65,7 +65,7 @@ export async function PUT(
   } catch (error: any) {
     console.error('Update user permissions error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -89,7 +89,7 @@ export async function DELETE(
   } catch (error: any) {
     console.error('Reset user permissions error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

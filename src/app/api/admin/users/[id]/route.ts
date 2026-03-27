@@ -102,7 +102,7 @@ export async function PUT(
   } catch (error: any) {
     console.error('Update admin user error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -154,7 +154,7 @@ export async function DELETE(
   } catch (error: any) {
     console.error('Delete admin user error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

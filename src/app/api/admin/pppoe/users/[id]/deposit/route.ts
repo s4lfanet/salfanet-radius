@@ -88,7 +88,7 @@ export async function POST(
   } catch (error: any) {
     console.error('[Deposit Error]', error)
     return NextResponse.json(
-      { error: error.message || 'Gagal top up saldo' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
@@ -152,7 +152,7 @@ export async function GET(
   } catch (error: any) {
     console.error('[Get Deposit History Error]', error)
     return NextResponse.json(
-      { error: error.message || 'Gagal mengambil history deposit' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }

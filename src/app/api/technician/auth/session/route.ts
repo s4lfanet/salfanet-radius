@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
+import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,9 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Verify JWT
-    const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
-    );
+    const secret = TECH_JWT_SECRET;
 
     const { payload } = await jwtVerify(token, secret);
 

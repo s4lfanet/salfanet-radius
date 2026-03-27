@@ -2,15 +2,14 @@ import { NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { cookies } from 'next/headers';
+import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 
 async function verifyTechnician() {
   const cookieStore = await cookies();
   const token = cookieStore.get('technician-token')?.value;
   if (!token) return null;
   try {
-    const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
-    );
+    const secret = TECH_JWT_SECRET;
     const { payload } = await jwtVerify(token, secret);
     if (payload.type === 'admin_user') {
       const adminUser = await prisma.adminUser.findUnique({

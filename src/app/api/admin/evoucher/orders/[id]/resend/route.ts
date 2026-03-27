@@ -71,7 +71,7 @@ export async function POST(
   } catch (error: any) {
     console.error('Resend voucher error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

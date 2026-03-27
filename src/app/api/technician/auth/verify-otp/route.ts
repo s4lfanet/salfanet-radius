@@ -1,9 +1,16 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { SignJWT } from 'jose';
+import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 export async function POST(req: NextRequest) {
   try {
+    const limited = await rateLimit(req, RateLimitPresets.strict);
+    if (limited) {
+      return NextResponse.json({ error: 'Too many attempts. Try again later.' }, { status: 429 });
+    }
+
     const { phoneNumber, otpCode, skipOtp } = await req.json();
 
     if (!phoneNumber) {
@@ -85,9 +92,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Create JWT token
-    const secret = new TextEncoder().encode(
-      process.env.JWT_SECRET || 'your-secret-key-change-this-in-production'
-    );
+    const secret = TECH_JWT_SECRET;
 
     const token = await new SignJWT({
       id: technician.id,
