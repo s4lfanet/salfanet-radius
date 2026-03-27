@@ -173,11 +173,11 @@ export async function GET(request: NextRequest) {
       console.error('[Dashboard] Error counting unused vouchers:', e);
     }
 
-    // ==================== 5. Isolated Customers ====================
+    // ==================== 5. Isolated / Blocked Customers ====================
     let isolatedCount = 0;
     try {
       isolatedCount = await prisma.pppoeUser.count({
-        where: { status: 'isolated' },
+        where: { status: { in: ['isolated', 'ISOLATED', 'blocked', 'BLOCKED'] } },
       });
     } catch (e) {
       console.error('[Dashboard] Error counting isolated users:', e);
@@ -187,10 +187,74 @@ export async function GET(request: NextRequest) {
     let suspendedCount = 0;
     try {
       suspendedCount = await prisma.pppoeUser.count({
-        where: { status: 'suspended' },
+        where: { status: { in: ['suspended', 'SUSPENDED'] } },
       });
     } catch (e) {
       console.error('[Dashboard] Error counting suspended users:', e);
+    }
+
+    // ==================== 6b. Active PPPoE Customers ====================
+    let activePppoeUsers = 0;
+    try {
+      activePppoeUsers = await prisma.pppoeUser.count({
+        where: { status: { in: ['active', 'ACTIVE'] } },
+      });
+    } catch (e) {
+      console.error('[Dashboard] Error counting active users:', e);
+    }
+
+    // ==================== 6c. New Online Registrations (pending review) ====================
+    let newRegistrations = 0;
+    try {
+      newRegistrations = await prisma.registrationRequest.count({
+        where: { status: { in: ['PENDING', 'REVIEWING'] } },
+      });
+    } catch (e) {
+      console.error('[Dashboard] Error counting new registrations:', e);
+    }
+
+    // ==================== 6d. Upcoming / Overdue Invoices (H-7 window) ====================
+    type UpcomingInvoice = {
+      invoiceNumber: string;
+      customerName: string;
+      customerUsername: string;
+      amount: number;
+      dueDate: string;
+      status: string;
+      daysUntilDue: number;
+    };
+    let upcomingInvoices: UpcomingInvoice[] = [];
+    try {
+      const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const raw = await prisma.invoice.findMany({
+        where: {
+          status: { in: ['PENDING', 'OVERDUE'] },
+          dueDate: { lte: sevenDaysFromNow },
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 20,
+        select: {
+          invoiceNumber: true,
+          customerName: true,
+          customerUsername: true,
+          amount: true,
+          dueDate: true,
+          status: true,
+        },
+      });
+      upcomingInvoices = raw.map(inv => ({
+        invoiceNumber: inv.invoiceNumber,
+        customerName: inv.customerName || '-',
+        customerUsername: inv.customerUsername || '-',
+        amount: inv.amount,
+        dueDate: inv.dueDate.toISOString(),
+        status: inv.status,
+        daysUntilDue: Math.ceil(
+          (new Date(inv.dueDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        ),
+      }));
+    } catch (e) {
+      console.error('[Dashboard] Error loading upcoming invoices:', e);
     }
 
     // ==================== 7. Voucher Revenue (this month) ====================
@@ -339,11 +403,14 @@ export async function GET(request: NextRequest) {
     return {
       stats: {
         totalPppoeUsers,
+        activePppoeUsers,
         activeSessionsPPPoE,
         activeSessionsHotspot,
         unusedVouchers,
         isolatedCount,
         suspendedCount,
+        newRegistrations,
+        upcomingInvoices,
         voucherRevenue,
         voucherRevenueFormatted: formatCurrency(voucherRevenue),
         invoiceRevenue,

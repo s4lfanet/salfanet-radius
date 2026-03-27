@@ -35,6 +35,9 @@ import {
   Network,
   Globe,
   FileText,
+  UserPlus,
+  CalendarClock,
+  AlertTriangle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/cyberpunk/CyberToast';
@@ -42,21 +45,33 @@ import { formatWIB, getTimezoneInfo, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   UserStatusPieChart,
-  IncomeExpenseChart,
   ChartCard,
 } from '@/components/charts';
 
 interface DashboardStats {
   totalPppoeUsers: number;
+  activePppoeUsers: number;
   activeSessionsPPPoE: number;
   activeSessionsHotspot: number;
   unusedVouchers: number;
   isolatedCount: number;
   suspendedCount: number;
+  newRegistrations: number;
+  upcomingInvoices: UpcomingInvoice[];
   voucherRevenue: number;
   voucherRevenueFormatted: string;
   invoiceRevenue: number;
   invoiceRevenueFormatted: string;
+}
+
+interface UpcomingInvoice {
+  invoiceNumber: string;
+  customerName: string;
+  customerUsername: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+  daysUntilDue: number;
 }
 
 interface RecentActivity {
@@ -344,11 +359,19 @@ export default function AdminDashboard() {
       bgGlow: 'bg-blue-500/20',
     },
     {
+      title: 'Pelanggan Aktif',
+      value: stats.activePppoeUsers.toLocaleString(),
+      subtitle: 'PPPoE status aktif',
+      icon: <CheckCircle2 className="w-5 h-5" />,
+      gradient: 'from-emerald-500 to-green-400',
+      bgGlow: 'bg-emerald-500/20',
+    },
+    {
       title: t('dashboard.activePppoeSessions'),
       value: stats.activeSessionsPPPoE.toLocaleString(),
       icon: <Activity className="w-5 h-5" />,
-      gradient: 'from-emerald-500 to-green-400',
-      bgGlow: 'bg-emerald-500/20',
+      gradient: 'from-cyan-500 to-teal-400',
+      bgGlow: 'bg-cyan-500/20',
     },
     {
       title: t('dashboard.activeHotspotSessions'),
@@ -356,6 +379,14 @@ export default function AdminDashboard() {
       icon: <Wifi className="w-5 h-5" />,
       gradient: 'from-violet-500 to-purple-400',
       bgGlow: 'bg-violet-500/20',
+    },
+    {
+      title: 'Registrasi Online Baru',
+      value: stats.newRegistrations.toLocaleString(),
+      subtitle: 'Menunggu proses',
+      icon: <UserPlus className="w-5 h-5" />,
+      gradient: 'from-pink-500 to-rose-400',
+      bgGlow: 'bg-pink-500/20',
     },
     {
       title: t('dashboard.unusedVouchers'),
@@ -367,6 +398,7 @@ export default function AdminDashboard() {
     {
       title: t('dashboard.isolatedCustomers'),
       value: stats.isolatedCount.toLocaleString(),
+      subtitle: 'Isolir & diblokir',
       icon: <ShieldBan className="w-5 h-5" />,
       gradient: 'from-red-500 to-rose-400',
       bgGlow: 'bg-red-500/20',
@@ -374,6 +406,7 @@ export default function AdminDashboard() {
     {
       title: t('dashboard.suspendedCustomers'),
       value: stats.suspendedCount.toLocaleString(),
+      subtitle: 'Stop langganan',
       icon: <UserX className="w-5 h-5" />,
       gradient: 'from-orange-500 to-amber-400',
       bgGlow: 'bg-orange-500/20',
@@ -383,16 +416,16 @@ export default function AdminDashboard() {
       value: stats.voucherRevenueFormatted,
       subtitle: periodLabel || t('dashboard.thisMonth'),
       icon: <DollarSign className="w-5 h-5" />,
-      gradient: 'from-pink-500 to-rose-400',
-      bgGlow: 'bg-pink-500/20',
+      gradient: 'from-fuchsia-500 to-pink-400',
+      bgGlow: 'bg-fuchsia-500/20',
     },
     {
       title: t('dashboard.invoiceRevenue'),
       value: stats.invoiceRevenueFormatted,
       subtitle: periodLabel || t('dashboard.thisMonth'),
       icon: <Receipt className="w-5 h-5" />,
-      gradient: 'from-cyan-500 to-teal-400',
-      bgGlow: 'bg-cyan-500/20',
+      gradient: 'from-teal-500 to-cyan-400',
+      bgGlow: 'bg-teal-500/20',
     },
   ] : [];
 
@@ -457,7 +490,7 @@ export default function AdminDashboard() {
             <Loader2 className="h-8 w-8 animate-spin text-[#00f7ff] drop-shadow-[0_0_20px_rgba(0,247,255,0.6)]" />
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
             {statCards.map((card) => (
               <div
                 key={card.title}
@@ -502,18 +535,71 @@ export default function AdminDashboard() {
             />
           </ChartCard>
 
-          {/* Income vs Expense */}
-          <ChartCard
-            title={t('dashboard.incomeVsExpense')}
-            subtitle={t('dashboard.last6Months')}
-            action={<BarChart3 className="w-4 h-4 text-muted-foreground" />}
-          >
-            <IncomeExpenseChart
-              data={analyticsData?.financial?.incomeExpense || []}
-              loading={analyticsLoading}
-              height={220}
-            />
-          </ChartCard>
+          {/* Upcoming / Overdue Invoices */}
+          <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-[#ff44cc]/10 border border-[#ff44cc]/20">
+                  <CalendarClock className="w-3.5 h-3.5 text-[#ff44cc]" />
+                </div>
+                <div>
+                  <h2 className="text-xs font-semibold text-foreground">Tagihan Jatuh Tempo</h2>
+                  <p className="text-[10px] text-muted-foreground">
+                    {stats?.upcomingInvoices?.length
+                      ? `${stats.upcomingInvoices.length} pelanggan (H-7 s/d jatuh tempo)`
+                      : 'Pelanggan dengan tagihan mendekati jatuh tempo'}
+                  </p>
+                </div>
+              </div>
+              <a
+                href="/admin/invoices"
+                className="text-[10px] text-[#ff44cc] hover:text-[#ff44cc]/80 transition-colors"
+              >
+                Lihat semua
+              </a>
+            </div>
+            <div className="flex-1 overflow-y-auto max-h-[236px] divide-y divide-white/5">
+              {!stats || stats.upcomingInvoices.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-10 gap-1">
+                  <CheckCircle2 className="h-5 w-5 text-green-400/40" />
+                  <p className="text-[10px] text-muted-foreground">Tidak ada tagihan mendekati jatuh tempo</p>
+                </div>
+              ) : (
+                stats.upcomingInvoices.map((inv) => {
+                  const isOverdue = inv.status === 'OVERDUE';
+                  const isUrgent = !isOverdue && inv.daysUntilDue <= 3;
+                  const dotColor = isOverdue
+                    ? 'bg-red-400 shadow-[0_0_6px_rgba(248,113,113,0.8)]'
+                    : isUrgent
+                    ? 'bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]'
+                    : 'bg-yellow-400/70';
+                  const labelColor = isOverdue ? 'text-red-400' : isUrgent ? 'text-amber-400' : 'text-yellow-400';
+                  const labelText = isOverdue
+                    ? `Terlambat ${Math.abs(inv.daysUntilDue)}h`
+                    : inv.daysUntilDue === 0
+                    ? 'Hari ini'
+                    : `${inv.daysUntilDue}h lagi`;
+                  return (
+                    <div key={inv.invoiceNumber} className="flex items-center gap-2 px-3 py-2 hover:bg-white/[0.03] transition-colors">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColor}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-medium text-foreground truncate">{inv.customerName}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {inv.invoiceNumber} &bull; {inv.customerUsername}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                        <span className="text-[11px] font-semibold text-foreground">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(inv.amount)}
+                        </span>
+                        <span className={`text-[9px] font-medium ${labelColor}`}>{labelText}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
 
           {/* Activity Log — compact panel beside charts */}
           <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 flex flex-col overflow-hidden">
