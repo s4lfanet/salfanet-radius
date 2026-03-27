@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.11.5 — Ghost Session Fix + RADIUS Auth Hardening + Deploy Tooling Cleanup
+> **Latest:** v2.11.6 — PPPoE UI Revamp + PPN Fix + Area & Billing Fixes
 
 ---
 

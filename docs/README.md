@@ -1,7 +1,7 @@
 ﻿# SALFANET RADIUS - Documentation Index
 
-**Version**: 2.10.21  
-**Last Updated**: March 5, 2026
+**Version**: 2.11.6  
+**Last Updated**: March 27, 2026
 
 ---
 

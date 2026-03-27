@@ -9,14 +9,22 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.11.5
+- **Version**: 2.11.6
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: March 20, 2026
+- **Last Updated**: March 27, 2026
 - **Latest Commit**: See GitHub
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
 
 ### Recent Patch Log (March 2026)
+
+- **Fix: NAS IP, billingDay/expiredAt, Area badge & form — PPPoE UI revamp** (`1a6d30e`, `a33d8d0`, `f3fd754`)
+  - **Network column** di tabel PPPoE: label "IP:" diganti "IP NAS:", nilai diubah dari `user.ipAddress` (IP statis user) menjadi `user.router?.ipAddress ?? user.router?.nasname` (IP rekap router NAS dari DB). IP statis user tetap di kolom PPPoE.
+  - **updatePppoeUser service**: saat edit user POSTPAID dengan billingDay berubah, `expiredAt` kini di-recalculate ke tanggal tagihan bulan depan (`billingDay`). Sebelumnya `expiredAt` di-overwrite langsung dari nilai form tanpa memperhitungkan logika billingDay POSTPAID. Untuk PREPAID: `expiredAt` tetap ikut nilai form.
+  - **Kolom Data Pelanggan**: badge Area (kuning, ikon MapPin) ditampilkan di bawah info pelanggan. Sebelumnya area tidak ditampilkan sama sekali di tabel.
+  - **Form Tambah Pelanggan** (`SimpleModal`): tambah select Area (opsional) setelah NAS select. State `formData.areaId` sudah ada tapi tidak ada elemen UI-nya.
+  - **Action buttons** (Phase 15): 5 ikon bersih — Eye, Pencil, RefreshCw, Shield, Trash. API `POST /api/pppoe/users/[userId]/sync-radius` dibuat untuk sync RADIUS per-user. Badge customerId & jumlah langganan bisa diklik sebagai filter.
+  - **PPN calculation** (Phase 16): formula `ppnAmount = round(base * ppn/100)` diterapkan konsisten di 9 file billing. Koordinat GPS bisa diklik ke Google Maps.
 
 - **Fix: Ghost sessions filtered from display and RADIUS authorize** (`4e89616`)
   - `sessions/route.ts`: tambah `.filter()` sebelum `.map()` — skip session yang tidak ada di `pppoeUser` maupun `hotspotVoucher`.

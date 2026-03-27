@@ -4,7 +4,7 @@
 **Last Updated**: March 5, 2026  
 **Project**: ISP/RTRW.NET Billing & RADIUS Management System
 
-> **Ringkasan Lengkap**: Dokumentasi ini merangkum semua fitur dan kemampuan dari SALFANET RADIUS. Konten dasar guide ini mencakup fitur hingga v2.7.5; untuk fitur baru v2.10.x (Dark Mode, Admin Dashboard v2, Swal Migration, PPPoE Session Sync, dll) lihat [`CHANGELOG.md`](getting-started/CHANGELOG.md) dan [`ROADMAP.md`](ROADMAP.md).
+> **Ringkasan Lengkap**: Dokumentasi ini merangkum semua fitur dan kemampuan dari SALFANET RADIUS. Konten dasar guide ini mencakup fitur hingga v2.7.5; untuk fitur baru v2.10.x–v2.11.x (Dark Mode, Admin Dashboard v2, PPPoE Session Sync, PPN Fix, Area badge, billingDay recalc, dll) lihat [`CHANGELOG.md`](getting-started/CHANGELOG.md) dan [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -148,9 +148,9 @@ Public IP: 103.67.244.131
 
 #### POSTPAID (Bayar Dibelakang)
 - Bayar setelah pakai
-- `expiredAt` = NULL (no expiry)
-- `billingDay` = 1-28 (tanggal tagihan)
-- Grace period 7 hari
+- `billingDay` = 1-28 (tanggal tagihan bulanan)
+- `expiredAt` = di-set otomatis ke tanggal `billingDay` bulan berikutnya saat create/edit
+- Grace period 7 hari setelah `expiredAt`
 - Auto-isolate H+7 jika belum bayar
 
 **Connection Types**:

@@ -1,6 +1,6 @@
 # Salfanet Radius — Documentation Index
 
-> Last updated: 2026-03-19 | Version 2.11.4
+> Last updated: 2026-03-27 | Version 2.11.6
 
 ---
 

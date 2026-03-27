@@ -4,6 +4,59 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.11.6] - 2026-03-27 (PPPoE UI Revamp + PPN Fix + Area & Billing Fixes)
+
+### ✅ Feat: PPPoE Action Buttons Revamped (Phase 15)
+
+- `src/app/admin/pppoe/users/page.tsx`: tombol aksi baris tabel diubah menjadi 5 ikon bersih — Eye (detail), Pencil (edit), RefreshCw (sync RADIUS), Shield (isolir/aktifkan), Trash (hapus).
+  - Tooltip on-hover untuk setiap ikon.
+  - Warna per aksi: cyan detail, yellow edit, green sync, orange shield, red delete.
+- Badge **CustomerId** dan jumlah **Langganan** per pelanggan kini bisa diklik sebagai link filter.
+- API baru `POST /api/pppoe/users/[userId]/sync-radius` — sync RADIUS per-user tanpa harus reload halaman.
+
+### ✅ Fix: PPN Calculation di Semua Titik Generate Invoice (Phase 16)
+
+- Fixed kalkulasi PPN yang tidak konsisten di 9 file:
+  - `src/server/services/billing.service.ts` (3 titik)
+  - `src/server/services/pppoe.service.ts` (2 titik)
+  - `src/app/api/billing/generate/route.ts`
+  - `src/app/api/billing/generate-all/route.ts`
+  - `src/app/api/billing/renewal/route.ts`
+  - `src/app/api/customer/topup-direct/route.ts`
+- Formula: `ppnAmount = Math.round(baseAmount * (ppnPercent / 100))`, `totalAmount = baseAmount + ppnAmount`.
+- Koordinat GPS pelanggan di tabel PPPoE sekarang bisa diklik untuk membuka Google Maps.
+
+### ✅ Fix: NAS IP di Kolom Network (Phase 17)
+
+- `src/app/admin/pppoe/users/page.tsx`: kolom **Network** sebelumnya menampilkan IP statis user (`user.ipAddress`). Sekarang menampilkan IP NAS router dari database (`user.router?.ipAddress ?? user.router?.nasname`).
+  - Label diubah dari "IP:" menjadi "IP NAS:".
+  - IP statis user tetap ditampilkan di kolom PPPoE (`IP: user.ipAddress`).
+
+### ✅ Fix: billingDay & expiredAt Tidak Tersimpan Saat Edit POSTPAID (Phase 17)
+
+- `src/server/services/pppoe.service.ts` — fungsi `updatePppoeUser`:
+  - Sebelumnya: `expiredAt` di-overwrite langsung dari nilai form, tidak memperhitungkan perubahan `billingDay`.
+  - Sekarang: jika `subscriptionType === 'POSTPAID'` dan `billingDay` dikirim, `expiredAt` di-**recalculate** otomatis ke tanggal tagihan berikutnya (bulan depan pada hari `billingDay`).
+  - Untuk `PREPAID`: `expiredAt` tetap menggunakan nilai yang dikirim dari form.
+
+### ✅ Feat: Area di Kolom Data Pelanggan & Form (Phase 17)
+
+- **Tabel PPPoE**: badge Area (kuning, ikon `MapPin`) ditampilkan di bawah info pelanggan di kolom "Data Pelanggan" — sebelumnya tidak ditampilkan sama sekali.
+- **Form Tambah Pelanggan**: tambah select `Area` (opsional) di antara pilihan NAS dan data personal — sebelumnya field `areaId` sudah ada di state tapi tidak ada UI-nya.
+- Form **Edit** (UserDetailModal) sudah punya area select sejak sebelumnya.
+
+### Files Changed
+- `src/app/admin/pppoe/users/page.tsx` — action buttons, network IP, area badge, area select in add form, PPN coords
+- `src/server/services/pppoe.service.ts` — updatePppoeUser billingDay/expiredAt recalc + PPN fix
+- `src/server/services/billing.service.ts` — PPN calculation fix (3 points)
+- `src/app/api/billing/generate/route.ts` — PPN fix
+- `src/app/api/billing/generate-all/route.ts` — PPN fix
+- `src/app/api/billing/renewal/route.ts` — PPN fix
+- `src/app/api/customer/topup-direct/route.ts` — PPN fix
+- `src/app/api/pppoe/users/[userId]/sync-radius/route.ts` — created (per-user sync)
+
+---
+
 ## [2.11.5] - 2026-03-20 (Ghost Session Fix + RADIUS Auth Hardening + Tooling Cleanup)
 
 ### ✅ Fix: Ghost Sessions Filtered from Session List
