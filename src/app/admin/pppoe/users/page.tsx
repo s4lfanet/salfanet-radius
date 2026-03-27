@@ -762,10 +762,8 @@ export default function PppoeUsersPage() {
             )}
           </div>
           <div className="flex gap-1.5 flex-wrap">
-            <button onClick={() => { setIsSyncDialogOpen(true); setSyncPreview(null); setSyncResult(null); setSyncRouterId(''); setSyncProfileId(''); }} className="inline-flex items-center px-2 py-1.5 text-xs border border-primary text-primary rounded hover:bg-primary/10"><RefreshCcw className="h-3 w-3 mr-1" />{t('pppoe.syncMikrotik')}</button>
             <button onClick={() => handleDownloadTemplate('xlsx')} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted"><Download className="h-3 w-3 mr-1" />{t('pppoe.templateExcel')}</button>
-            <button onClick={handleExportExcel} className="inline-flex items-center px-2 py-1.5 text-xs border border-success text-success rounded hover:bg-success/10"><Download className="h-3 w-3 mr-1" />Excel</button>
-            <button onClick={handleExportPDF} className="inline-flex items-center px-2 py-1.5 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10"><Download className="h-3 w-3 mr-1" />PDF</button>
+            <button onClick={handleExportExcel} className="inline-flex items-center px-2 py-1.5 text-xs border border-success text-success rounded hover:bg-success/10"><Download className="h-3 w-3 mr-1" />Export</button>
             <button onClick={() => setIsImportDialogOpen(true)} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted"><Upload className="h-3 w-3 mr-1" />{t('common.import')}</button>
             {canCreate && (<button onClick={() => router.push('/admin/pppoe/users/new')} className="inline-flex items-center px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-white rounded"><Plus className="h-3 w-3 mr-1" />{t('pppoe.addUser')}</button>)}
           </div>

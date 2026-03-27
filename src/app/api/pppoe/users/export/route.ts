@@ -43,6 +43,9 @@ export async function GET(req: NextRequest) {
         profile: true,
         router: {
           select: { id: true, name: true, nasname: true }
+        },
+        area: {
+          select: { name: true }
         }
       },
       orderBy: { createdAt: 'desc' }
@@ -89,10 +92,15 @@ export async function GET(req: NextRequest) {
       { key: 'phone', header: 'Telepon', width: 15 },
       { key: 'email', header: 'Email', width: 25 },
       { key: 'address', header: 'Alamat', width: 35 },
+      { key: 'area', header: 'Area', width: 18 },
       { key: 'profile', header: 'Profile', width: 15 },
+      { key: 'subscriptionType', header: 'Tipe Langganan', width: 15 },
       { key: 'status', header: 'Status', width: 12 },
       { key: 'ipAddress', header: 'IP Address', width: 15 },
+      { key: 'macAddress', header: 'MAC Address', width: 18 },
+      { key: 'billingDay', header: 'Hari Tagihan', width: 12 },
       { key: 'expiredAt', header: 'Expired', width: 15 },
+      { key: 'comment', header: 'Komentar', width: 25 },
       { key: 'router', header: 'Router', width: 15 },
       { key: 'createdAt', header: 'Created', width: 15 }
     ];
@@ -104,10 +112,15 @@ export async function GET(req: NextRequest) {
       phone: u.phone,
       email: u.email || '',
       address: u.address || '',
+      area: (u as any).area?.name || '',
       profile: u.profile.name,
+      subscriptionType: u.subscriptionType || 'POSTPAID',
       status: u.status === 'active' ? 'Aktif' : u.status === 'isolated' ? 'Isolir' : u.status === 'blocked' ? 'Block' : 'Stop',
       ipAddress: u.ipAddress || '',
+      macAddress: (u as any).macAddress || '',
+      billingDay: u.billingDay?.toString() || '',
       expiredAt: u.expiredAt ? formatDateExport(u.expiredAt) : '',
+      comment: (u as any).comment || '',
       router: u.router?.name || 'Global',
       createdAt: formatDateExport(u.createdAt)
     }));

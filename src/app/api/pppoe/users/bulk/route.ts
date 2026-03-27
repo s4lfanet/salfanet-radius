@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
           phone: '08123456789',
           email: 'budi@example.com',
           address: 'Jl. Merdeka No. 10',
+          area: 'Cluster A',
           ipAddress: '10.10.10.2',
           subscriptionType: 'POSTPAID',
           expiredAt: '',
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
           phone: '08987654321',
           email: 'siti@example.com',
           address: 'Jl. Sudirman No. 5',
+          area: '',
           ipAddress: '',
           subscriptionType: 'PREPAID',
           expiredAt: '2026-12-31',
@@ -59,6 +61,7 @@ export async function GET(request: NextRequest) {
           { key: 'phone', header: 'No. Telepon *', width: 18 },
           { key: 'email', header: 'Email', width: 26 },
           { key: 'address', header: 'Alamat', width: 32 },
+          { key: 'area', header: 'Area/Wilayah', width: 20 },
           { key: 'ipAddress', header: 'IP Address', width: 16 },
           { key: 'subscriptionType', header: 'Tipe Langganan (POSTPAID/PREPAID)', width: 32 },
           { key: 'expiredAt', header: 'Tanggal Expired (YYYY-MM-DD)', width: 26 },
@@ -76,9 +79,9 @@ export async function GET(request: NextRequest) {
       }
 
       // CSV fallback
-      const template = `Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude
-user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,10.10.10.2,POSTPAID,,1,-6.200000,106.816666
-user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,PREPAID,2026-12-31,,,`;
+      const template = `Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,Area/Wilayah,IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude
+user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,Cluster A,10.10.10.2,POSTPAID,,1,-6.200000,106.816666
+user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,, PREPAID,2026-12-31,,,`;
 
       return new NextResponse(template, {
         headers: {
@@ -293,6 +296,9 @@ export async function POST(request: NextRequest) {
       'tanggal expired': 'expiredat',
       'hari tagihan (1-31)': 'billingday',
       'hari tagihan': 'billingday',
+      'area/wilayah': 'area',
+      'area': 'area',
+      'wilayah': 'area',
     };
     headers = headers.map(h => headerNormalizeMap[h] ?? h);
 
@@ -387,6 +393,14 @@ export async function POST(request: NextRequest) {
             userData.latitude = lat;
             userData.longitude = lng;
           }
+        }
+
+        // Area lookup by name
+        if (rowData.area && rowData.area.trim() !== '') {
+          const areaRec = await (prisma as any).area.findFirst({
+            where: { name: { contains: rowData.area.trim() } }
+          });
+          if (areaRec) userData.areaId = areaRec.id;
         }
 
         // Generate unique referral code for new user

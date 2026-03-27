@@ -50,8 +50,13 @@ export default function PppoeCustomersPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [saving, setSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: any[] } | null>(null);
 
   const [formData, setFormData] = useState({
     name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: '',
@@ -160,6 +165,51 @@ export default function PppoeCustomersPage() {
     } catch { await showError('Gagal mengubah status'); }
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const res = await fetch('/api/pppoe/customers/bulk?type=template&format=xlsx');
+      if (!res.ok) throw new Error('Failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'template-customer.xlsx'; a.click();
+      URL.revokeObjectURL(url);
+    } catch { await showError('Gagal mengunduh template'); }
+  };
+
+  const handleExportCustomers = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetch('/api/pppoe/customers/export');
+      if (!res.ok) throw new Error('Failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `Data-Pelanggan-${new Date().toISOString().split('T')[0]}.xlsx`; a.click();
+      URL.revokeObjectURL(url);
+    } catch { await showError('Gagal mengexport data'); }
+    finally { setIsExporting(false); }
+  };
+
+  const handleImportCustomers = async () => {
+    if (!importFile) return;
+    setIsImporting(true);
+    setImportResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      const res = await fetch('/api/pppoe/customers/bulk', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setImportResult(data.results);
+        if (data.results.success > 0) loadCustomers();
+      } else {
+        await showError(data.error || 'Gagal mengimport data');
+      }
+    } catch { await showError('Gagal mengimport data'); }
+    finally { setIsImporting(false); }
+  };
+
   const canCreate = hasPermission('customers.edit');
   const canDelete = hasPermission('customers.edit');
 
@@ -224,6 +274,11 @@ export default function PppoeCustomersPage() {
           </p>
         </div>
         <div className="flex gap-1.5 flex-wrap">
+          <button onClick={handleDownloadTemplate} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted"><Download className="h-3 w-3 mr-1" />Template</button>
+          <button onClick={handleExportCustomers} disabled={isExporting} className="inline-flex items-center px-2 py-1.5 text-xs border border-success text-success rounded hover:bg-success/10">
+            {isExporting ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}Export
+          </button>
+          <button onClick={() => { setIsImportOpen(true); setImportFile(null); setImportResult(null); }} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted"><Upload className="h-3 w-3 mr-1" />Import</button>
           {canCreate && (
             <button onClick={openAdd} className="inline-flex items-center px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-white rounded">
               <Plus className="h-3 w-3 mr-1" /> Tambah Customer
@@ -506,6 +561,50 @@ export default function PppoeCustomersPage() {
             </ModalFooter>
           </>
         )}
+      </SimpleModal>
+
+      {/* Import Modal */}
+      <SimpleModal isOpen={isImportOpen} onClose={() => setIsImportOpen(false)} size="md">
+        <ModalHeader>
+          <ModalTitle>Import Data Pelanggan</ModalTitle>
+          <ModalDescription>Upload file CSV atau Excel (.xlsx) sesuai format template</ModalDescription>
+        </ModalHeader>
+        <ModalBody className="space-y-4">
+          <div className="flex gap-2">
+            <button onClick={handleDownloadTemplate} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted">
+              <Download className="h-3 w-3 mr-1" />Download Template
+            </button>
+          </div>
+          <div>
+            <ModalLabel>File Import (CSV / XLSX)</ModalLabel>
+            <input
+              type="file" accept=".csv,.xlsx"
+              onChange={(e) => { setImportFile(e.target.files?.[0] || null); setImportResult(null); }}
+              className="w-full text-xs border border-border rounded px-3 py-2 bg-muted"
+            />
+          </div>
+          {importResult && (
+            <div className="text-xs space-y-1.5 p-3 rounded border border-border bg-muted/40">
+              <p className="font-semibold">Hasil Import:</p>
+              <p className="text-success">✓ Berhasil: {importResult.success}</p>
+              {importResult.failed > 0 && <p className="text-destructive">✗ Gagal: {importResult.failed}</p>}
+              {importResult.errors.length > 0 && (
+                <div className="max-h-32 overflow-y-auto space-y-1 mt-1">
+                  {importResult.errors.slice(0, 10).map((e: any, i: number) => (
+                    <p key={i} className="text-destructive/80">Baris {e.line}: {e.error}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <ModalButton type="button" variant="secondary" onClick={() => setIsImportOpen(false)}>Tutup</ModalButton>
+          <ModalButton type="button" variant="primary" disabled={!importFile || isImporting} onClick={handleImportCustomers}>
+            {isImporting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+            Import
+          </ModalButton>
+        </ModalFooter>
       </SimpleModal>
     </div>
   );
