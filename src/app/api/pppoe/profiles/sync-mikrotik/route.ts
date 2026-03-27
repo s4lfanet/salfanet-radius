@@ -254,7 +254,7 @@ export async function POST(request: NextRequest) {
           const updateParams: string[] = [`=.id=${profileId}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
           if (resolvedIpPoolName) updateParams.push(`=remote-address=${resolvedIpPoolName}`);
           if (resolvedLocalAddress) updateParams.push(`=local-address=${resolvedLocalAddress}`);
-          debug.push(`📝 /ppp/profile/set: ${updateParams.join(' ')}`);
+          debug.push(`📝 /ppp/profile/set params: ${updateParams.filter(p => !p.startsWith('=.id=')).join(' ')}`);
           const updateResult = await apiCmd(api, '/ppp/profile/set', updateParams, 'profile/set');
           if (!updateResult.ok) throw new Error(`Gagal update PPP profile: ${updateResult.error}`);
           action = 'updated';
@@ -263,10 +263,28 @@ export async function POST(request: NextRequest) {
           const createParams: string[] = [`=name=${resolvedMikrotikProfileName}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
           if (resolvedIpPoolName) createParams.push(`=remote-address=${resolvedIpPoolName}`);
           if (resolvedLocalAddress) createParams.push(`=local-address=${resolvedLocalAddress}`);
-          debug.push(`📝 /ppp/profile/add: ${createParams.join(' ')}`);
+          debug.push(`📝 /ppp/profile/add params: ${createParams.filter(p => !p.startsWith('=name=')).join(' ')}`);
           const createResult = await apiCmd(api, '/ppp/profile/add', createParams, 'profile/add');
           if (!createResult.ok) throw new Error(`Gagal buat PPP profile: ${createResult.error}`);
           action = 'created';
+        }
+
+        // Verify: read back the profile to confirm local-address was stored
+        if (resolvedLocalAddress) {
+          const verifyResult = await apiCmd(api, '/ppp/profile/print', [`?name=${resolvedMikrotikProfileName}`], 'profile/verify');
+          if (verifyResult.ok && Array.isArray(verifyResult.data)) {
+            const storedProfile = verifyResult.data.find((p: any) => p['name'] === resolvedMikrotikProfileName);
+            const storedLocalAddr = storedProfile?.['local-address'] || '';
+            if (storedLocalAddr && storedLocalAddr !== '0.0.0.0') {
+              debug.push(`✅ local-address tersimpan di MikroTik: ${storedLocalAddr}`);
+            } else {
+              warnings.push(
+                `⚠️ local-address "${resolvedLocalAddress}" tidak tersimpan di PPP profile MikroTik. ` +
+                `Pastikan IP ini sudah dikonfigurasi sebagai alamat interface di MikroTik (misal: /ip address add address=${resolvedLocalAddress}/32 interface=lo).`
+              );
+              debug.push(`⚠️ local-address tidak tersimpan (tersimpan: "${storedLocalAddr || 'kosong'}")`);
+            }
+          }
         }
 
         await api.close();

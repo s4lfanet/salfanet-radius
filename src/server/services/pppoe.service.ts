@@ -233,7 +233,7 @@ export async function createPppoeUser(
       expiredAt: finalExpiredAt,
       status: 'active',
       subscriptionType: subscriptionType || 'POSTPAID',
-      billingDay: billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 31) : 1,
+      billingDay: billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 28) : 1,
       idCardNumber: idCardNumber || null,
       idCardPhoto: idCardPhoto || null,
       installationPhotos: installationPhotos ?? null,
