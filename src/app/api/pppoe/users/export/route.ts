@@ -102,6 +102,8 @@ export async function GET(req: NextRequest) {
       { key: 'expiredAt', header: 'Expired', width: 15 },
       { key: 'comment', header: 'Komentar', width: 25 },
       { key: 'router', header: 'Router', width: 15 },
+      { key: 'latitude', header: 'Latitude', width: 14 },
+      { key: 'longitude', header: 'Longitude', width: 14 },
       { key: 'createdAt', header: 'Created', width: 15 }
     ];
 
@@ -122,6 +124,8 @@ export async function GET(req: NextRequest) {
       expiredAt: u.expiredAt ? formatDateExport(u.expiredAt) : '',
       comment: (u as any).comment || '',
       router: u.router?.name || 'Global',
+      latitude: u.latitude?.toString() || '',
+      longitude: u.longitude?.toString() || '',
       createdAt: formatDateExport(u.createdAt)
     }));
 
