@@ -397,10 +397,26 @@ export async function updatePppoeUser(
       ...(data.ipAddress !== undefined && { ipAddress: data.ipAddress }),
       ...(data.macAddress !== undefined && { macAddress: data.macAddress }),
       ...(data.comment !== undefined && { comment: data.comment }),
-      ...(data.expiredAt && { expiredAt: new Date(data.expiredAt) }),
       ...(data.status && { status: data.status }),
       ...(data.subscriptionType && { subscriptionType: data.subscriptionType }),
       ...(data.billingDay !== undefined && { billingDay: Math.min(Math.max(parseInt(String(data.billingDay)), 1), 28) }),
+      ...(() => {
+        const effectiveSubType = data.subscriptionType || currentUser.subscriptionType;
+        if (effectiveSubType === 'POSTPAID' && data.billingDay !== undefined) {
+          const bd = Math.min(Math.max(parseInt(String(data.billingDay)), 1), 28);
+          const now = new Date();
+          const next = new Date(now);
+          next.setMonth(next.getMonth() + 1);
+          const lastDay = new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate();
+          next.setDate(Math.min(bd, lastDay));
+          next.setHours(23, 59, 59, 999);
+          return { expiredAt: next };
+        }
+        if (effectiveSubType === 'PREPAID' && data.expiredAt) {
+          return { expiredAt: new Date(data.expiredAt) };
+        }
+        return {};
+      })(),
       ...(data.autoRenewal !== undefined && { autoRenewal: data.autoRenewal }),
       ...(data.idCardNumber !== undefined && { idCardNumber: data.idCardNumber }),
       ...(data.idCardPhoto !== undefined && { idCardPhoto: data.idCardPhoto }),

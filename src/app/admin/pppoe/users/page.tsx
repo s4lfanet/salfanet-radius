@@ -969,6 +969,11 @@ export default function PppoeUsersPage() {
                                 {user.email && <p className="text-[10px] text-[#00f7ff] truncate max-w-[140px]">{user.email}</p>}
                               </>
                             )}
+                            {user.area && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 mt-0.5">
+                                <MapPin className="h-2 w-2 mr-0.5" />{user.area.name}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
@@ -986,7 +991,7 @@ export default function PppoeUsersPage() {
                       {/* Network */}
                       <td className="px-3 py-2 hidden lg:table-cell">
                         <p className="text-[10px]"><span className="text-muted-foreground">NAS:</span> {user.router?.name || '-'}</p>
-                        <p className="text-[10px]"><span className="text-muted-foreground">IP:</span> {user.ipAddress || '-'}</p>
+                        <p className="text-[10px]"><span className="text-muted-foreground">IP NAS:</span> {user.router?.ipAddress || user.router?.nasname || '-'}</p>
                       </td>
                       {/* Teknis */}
                       <td className="px-3 py-2 hidden xl:table-cell">
@@ -1093,6 +1098,7 @@ export default function PppoeUsersPage() {
               </div>
               <div><ModalLabel required>{t('pppoe.profile')}</ModalLabel><ModalSelect value={formData.profileId} onChange={(e) => setFormData({ ...formData, profileId: e.target.value })} required><option value="" className="bg-[#0a0520]">{t('common.select')}</option>{profiles.map((p) => <option key={p.id} value={p.id} className="bg-[#0a0520]">{p.name} - Rp {p.price.toLocaleString('id-ID')}</option>)}</ModalSelect></div>
               <div><ModalLabel>NAS ({t('common.optional')})</ModalLabel><ModalSelect value={formData.routerId} onChange={(e) => setFormData({ ...formData, routerId: e.target.value })}><option value="" className="bg-[#0a0520]">{t('pppoe.global')}</option>{routers.map((r) => <option key={r.id} value={r.id} className="bg-[#0a0520]">{r.name} ({r.ipAddress})</option>)}</ModalSelect></div>
+              <div><ModalLabel>Area <span className="text-muted-foreground text-[10px]">({t('common.optional')})</span></ModalLabel><ModalSelect value={formData.areaId} onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}><option value="" className="bg-[#0a0520]">-- Pilih Area --</option>{areas.map((a) => <option key={a.id} value={a.id} className="bg-[#0a0520]">{a.name}</option>)}</ModalSelect></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><ModalLabel required>{t('common.name')}</ModalLabel><ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
                 <div><ModalLabel required>{t('common.phone')}</ModalLabel><ModalInput type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required /></div>
