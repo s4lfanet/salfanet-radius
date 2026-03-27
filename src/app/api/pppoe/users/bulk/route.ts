@@ -273,19 +273,26 @@ export async function POST(request: NextRequest) {
       'address': 'address',
       'ipaddress': 'ipaddress',
       'ip address': 'ipaddress',
+      'macaddress': 'macaddress',
+      'mac address': 'macaddress',
       'subscriptiontype': 'subscriptiontype',
       'expiredat': 'expiredat',
       'billingday': 'billingday',
       'latitude': 'latitude',
       'longitude': 'longitude',
+      'comment': 'comment',
+      'komentar': 'comment',
       // Indonesian labels (from template)
       'username *': 'username',
       'password *': 'password',
       'nama lengkap *': 'name',
       'nama lengkap': 'name',
+      'nama': 'name',
       'no. telepon *': 'phone',
       'no. telepon': 'phone',
       'no telepon': 'phone',
+      'no. hp *': 'phone',
+      'no. hp': 'phone',
       'telepon': 'phone',
       'alamat': 'address',
       'tipe langganan (postpaid/prepaid)': 'subscriptiontype',
@@ -294,16 +301,23 @@ export async function POST(request: NextRequest) {
       'tipe berlangganan': 'subscriptiontype',
       'tanggal expired (yyyy-mm-dd)': 'expiredat',
       'tanggal expired': 'expiredat',
+      'expired': 'expiredat',
       'hari tagihan (1-31)': 'billingday',
       'hari tagihan': 'billingday',
       'area/wilayah': 'area',
       'area': 'area',
       'wilayah': 'area',
+      // Export-only columns (ignored in import)
+      'no': '_no',
+      'profile': '_profile',
+      'status': '_status',
+      'router': '_router',
+      'created': '_created',
     };
     headers = headers.map(h => headerNormalizeMap[h] ?? h);
 
-    // Required columns check
-    const requiredColumns = ['username', 'password', 'name', 'phone'];
+    // Required columns check — password is optional (auto-generated if missing)
+    const requiredColumns = ['username', 'name', 'phone'];
     const missingColumns = requiredColumns.filter(col => !headers.includes(col));
     if (missingColumns.length > 0) {
       return NextResponse.json(
@@ -324,15 +338,20 @@ export async function POST(request: NextRequest) {
 
       try {
         // Validate required fields
-        if (!rowData.username || !rowData.password || !rowData.name || !rowData.phone) {
+        if (!rowData.username || !rowData.name || !rowData.phone) {
           results.failed++;
           results.errors.push({
             line: i + 2,
             username: rowData.username || 'unknown',
-            error: 'Missing required fields (username, password, name, phone)',
+            error: 'Missing required fields (username, name, phone)',
           });
           continue;
         }
+
+        // Auto-generate password if not in file
+        const password = rowData.password && rowData.password.trim() !== ''
+          ? rowData.password
+          : rowData.username + Math.random().toString(36).substring(2, 6);
 
         // Check if username already exists
         const existingUser = await prisma.pppoeUser.findUnique({
@@ -357,7 +376,7 @@ export async function POST(request: NextRequest) {
         const userData: any = {
           id: randomUUID(),
           username: rowData.username,
-          password: rowData.password,
+          password: password,
           name: rowData.name,
           phone: rowData.phone,
           email: rowData.email || null,
