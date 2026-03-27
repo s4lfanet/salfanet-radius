@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Mobile customer login error:', error);
     return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan saat login', error: error.message },
+      { success: false, message: 'Terjadi kesalahan saat login' },
       { status: 500 }
     );
   }

@@ -7,6 +7,13 @@ import { TOTP } from 'otpauth';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET ||
+  (process.env.NODE_ENV !== 'production' ? 'salfanet-radius-secret-change-in-production' : undefined);
+
+if (!NEXTAUTH_SECRET) {
+  throw new Error('NEXTAUTH_SECRET is required in production.');
+}
+
 /**
  * Typed HTTP error — thrown by requireAuth/requireAdmin/requireStaff/requireRole.
  * Catch blocks can inspect `.status` to return the correct HTTP status code
@@ -184,7 +191,7 @@ export const authOptions: NextAuthOptions = {
     maxAge: 2 * 60 * 60, // 2 hours - session expires after 2 hours
     updateAge: 15 * 60, // Update session setiap 15 menit
   },
-  secret: process.env.NEXTAUTH_SECRET || 'salfanet-radius-secret-change-in-production',
+  secret: NEXTAUTH_SECRET,
 };
 
 /**
@@ -202,7 +209,7 @@ export async function verifyAuth(request: NextRequest | Request) {
     // Method 1: Check NextAuth JWT token from cookies
     const token = await getToken({ 
       req: nextRequest,
-      secret: process.env.NEXTAUTH_SECRET || 'salfanet-radius-secret-change-in-production'
+      secret: NEXTAUTH_SECRET
     });
     
     if (token && token.id && token.username && token.role) {

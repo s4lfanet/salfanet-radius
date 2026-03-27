@@ -1,16 +1,20 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // TODO: Add authentication check for admin users
+    const role = (session.user as any)?.role;
+    const allowedRoles = ['SUPER_ADMIN', 'FINANCE', 'CUSTOMER_SERVICE'];
+    if (!role || !allowedRoles.includes(role)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Get deposit category
     const depositCategory = await prisma.transactionCategory.findFirst({

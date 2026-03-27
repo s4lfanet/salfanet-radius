@@ -1,9 +1,10 @@
-﻿import { NextResponse } from 'next/server';
+﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { createMidtransPayment } from '@/server/services/payment/midtrans.service';
 import { createXenditInvoice } from '@/server/services/payment/xendit.service';
 import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,8 +23,16 @@ export async function GET() {
  * POST /api/payment/create
  * Body: { invoiceId, gateway }
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const limited = await rateLimit(request, RateLimitPresets.strict);
+    if (limited) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+
     // Parse body with error handling
     let body;
     try {

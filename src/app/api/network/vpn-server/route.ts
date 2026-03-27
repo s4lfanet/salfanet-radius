@@ -2,6 +2,18 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth/config'
 import { prisma } from '@/server/db/client'
+import crypto from 'crypto'
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-this-32'; // Must be 32 chars
+const ALGORITHM = 'aes-256-cbc';
+
+function encryptPassword(text: string): string {
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY.slice(0, 32)), iv);
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  return iv.toString('hex') + ':' + encrypted;
+}
 
 // GET - List all VPN servers
 export async function GET() {
@@ -64,7 +76,7 @@ export async function POST(request: Request) {
         name: data.name,
         host: data.host,
         username: data.username,
-        password: data.password, // TODO: Encrypt password
+        password: encryptPassword(data.password),
         apiPort: parseInt(data.apiPort) || 8728,
         subnet: data.subnet || '10.20.30.0/24',
         l2tpEnabled: !!data.l2tpEnabled,
@@ -112,7 +124,7 @@ export async function PUT(request: Request) {
 
     // Only update password if provided
     if (data.password && data.password.trim() !== '') {
-      updateData.password = data.password // TODO: Encrypt password
+      updateData.password = encryptPassword(data.password) // encrypted before storage
     }
 
     const vpnServer = await prisma.vpnServer.update({

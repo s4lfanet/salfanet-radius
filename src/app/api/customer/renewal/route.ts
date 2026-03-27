@@ -422,11 +422,10 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Failed to create renewal invoice', 
-        details: errorMessage,
-        stack: errorStack
+      {
+        success: false,
+        error: 'Failed to create renewal invoice',
+        ...(process.env.NODE_ENV !== 'production' && { details: errorMessage }),
       },
       { status: 500 }
     );

@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('Get agent notifications error:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -86,7 +86,7 @@ export async function PUT(request: NextRequest) {
   } catch (error: any) {
     console.error('Mark agent notifications as read error:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -116,7 +116,7 @@ export async function DELETE(request: NextRequest) {
   } catch (error: any) {
     console.error('Delete agent notification error:', error);
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

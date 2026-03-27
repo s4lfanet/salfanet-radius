@@ -36,9 +36,10 @@ export async function GET(req: NextRequest) {
       where.status = status;
     }
 
-    // Fetch PPPoE users with relations
+    // Fetch PPPoE users with relations (password field explicitly omitted)
     const users = await prisma.pppoeUser.findMany({
       where,
+      omit: { password: true },
       include: {
         profile: true,
         router: {

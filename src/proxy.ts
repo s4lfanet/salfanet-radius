@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getIsolationSettings, isIpInIsolationPool } from '@/server/services/isolation.service';
 
+const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET ||
+  (process.env.NODE_ENV !== 'production' ? 'salfanet-radius-secret-change-in-production' : undefined);
+
 /**
  * Proxy to handle:
  * 1. Admin authentication (only /admin routes)
@@ -126,9 +129,15 @@ export default async function proxy(req: NextRequest) {
   // 2. ADMIN AUTH CHECK - only for /admin routes (except /admin/login)
   // ============================================
   if (pathname.startsWith('/admin') && pathname !== '/admin/login' && pathname !== '/admin/auth/two-factor') {
+    if (!NEXTAUTH_SECRET) {
+      const loginUrl = new URL('/admin/login', req.url);
+      loginUrl.searchParams.set('error', 'server_misconfigured');
+      return NextResponse.redirect(loginUrl);
+    }
+
     const token = await getToken({
       req,
-      secret: process.env.NEXTAUTH_SECRET || 'salfanet-radius-secret-change-in-production',
+      secret: NEXTAUTH_SECRET,
     });
 
     if (!token) {

@@ -3,10 +3,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /**
  * Timezone to MySQL offset mapping
@@ -62,6 +62,18 @@ function getMySQLOffset(timezone: string): string {
   return TIMEZONE_TO_MYSQL_OFFSET[timezone] || '+00:00';
 }
 
+function isValidTimezone(timezone: string): boolean {
+  if (!timezone || typeof timezone !== 'string') return false;
+  if (!(timezone in TIMEZONE_TO_MYSQL_OFFSET)) return false;
+
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Check if this is an internal call (from company API) or external
@@ -78,6 +90,10 @@ export async function POST(req: NextRequest) {
 
     if (!timezone) {
       return NextResponse.json({ error: 'Timezone is required' }, { status: 400 });
+    }
+
+    if (!isValidTimezone(timezone)) {
+      return NextResponse.json({ error: 'Invalid timezone' }, { status: 400 });
     }
 
     const results = {
@@ -169,16 +185,23 @@ default-time-zone = '${mysqlOffset}'
 log_bin_trust_function_creators = 1
 `;
         
-        // Write config file using sudo
-        await execAsync(`sudo tee /etc/mysql/mysql.conf.d/timezone.cnf > /dev/null << 'EOFMYSQL'
-${mysqlConfigContent}EOFMYSQL`);
+        // Write config through temp file to avoid shell interpolation.
+        const tempConfigPath = `/tmp/salfanet-timezone-${Date.now()}.cnf`;
+        await fs.writeFile(tempConfigPath, mysqlConfigContent, 'utf-8');
+        await execFileAsync('sudo', ['cp', tempConfigPath, '/etc/mysql/mysql.conf.d/timezone.cnf']);
+        await fs.unlink(tempConfigPath).catch(() => undefined);
         
         // Get MySQL credentials from environment
         const dbUser = process.env.DATABASE_USER || 'salfanet_user';
         const dbPassword = process.env.DATABASE_PASSWORD || 'salfanetradius123';
         
         // Set timezone immediately without restart
-        await execAsync(`mysql -u ${dbUser} -p${dbPassword} -e "SET GLOBAL time_zone = '${mysqlOffset}';"`);
+        await execFileAsync('mysql', [
+          `-u${dbUser}`,
+          `-p${dbPassword}`,
+          '-e',
+          `SET GLOBAL time_zone = '${mysqlOffset}';`
+        ]);
         
         (results as any).mysqlTimezone = true;
         (results as any).mysqlOffset = mysqlOffset;
@@ -193,7 +216,7 @@ ${mysqlConfigContent}EOFMYSQL`);
     if (process.platform === 'linux') {
       try {
         // Set system timezone using timedatectl
-        await execAsync(`sudo timedatectl set-timezone ${timezone}`);
+        await execFileAsync('sudo', ['timedatectl', 'set-timezone', timezone]);
         (results as any).systemTimezone = true;
       } catch (error: any) {
         results.errors.push(`system timezone: ${error.message}`);
@@ -202,8 +225,6 @@ ${mysqlConfigContent}EOFMYSQL`);
 
     // Check if core updates were successful (MySQL and system timezone are optional on non-Linux)
     const coreSuccess = results.envFile && results.timezoneLib && results.ecosystemConfig;
-    const allSuccess = coreSuccess && 
-      (process.platform !== 'linux' || ((results as any).mysqlTimezone && (results as any).systemTimezone));
 
     if (coreSuccess) {
       const mysqlStatus = (results as any).mysqlTimezone ? 

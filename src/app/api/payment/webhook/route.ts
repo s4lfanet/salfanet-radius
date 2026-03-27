@@ -103,10 +103,12 @@ export async function POST(request: Request) {
         });
 
         if (signatureKey !== expectedSignature) {
-          console.error('[Midtrans] Invalid signature - skipping verification for now');
-          // Note: Temporarily allowing to debug, uncomment below to enforce
-          // return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
+          console.error('[Midtrans] Invalid signature');
+          return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
+      } else if (process.env.NODE_ENV === 'production') {
+        console.error('[Midtrans] Missing server key configuration in production');
+        return NextResponse.json({ error: 'Webhook misconfigured' }, { status: 500 });
       }
 
       console.log('[Midtrans] Webhook processed - OrderID:', orderId, 'Status:', status);
@@ -141,10 +143,13 @@ export async function POST(request: Request) {
       });
 
       if (gatewayConfig?.xenditWebhookToken && gatewayConfig.xenditWebhookToken.trim() !== '') {
-        if (signature && signature !== gatewayConfig.xenditWebhookToken) {
-          console.error('[Xendit] Invalid webhook token');
+        if (!signature || signature !== gatewayConfig.xenditWebhookToken) {
+          console.error('[Xendit] Invalid or missing webhook token');
           return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
+      } else if (process.env.NODE_ENV === 'production') {
+        console.error('[Xendit] Missing webhook token configuration in production');
+        return NextResponse.json({ error: 'Webhook misconfigured' }, { status: 500 });
       }
 
       console.log('[Xendit] Webhook processed');
@@ -167,10 +172,13 @@ export async function POST(request: Request) {
       });
 
       if (gatewayConfig?.xenditWebhookToken && gatewayConfig.xenditWebhookToken.trim() !== '') {
-        if (signature && signature !== gatewayConfig.xenditWebhookToken) {
-          console.error('[Xendit FVA] Invalid webhook token');
+        if (!signature || signature !== gatewayConfig.xenditWebhookToken) {
+          console.error('[Xendit FVA] Invalid or missing webhook token');
           return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
         }
+      } else if (process.env.NODE_ENV === 'production') {
+        console.error('[Xendit FVA] Missing webhook token configuration in production');
+        return NextResponse.json({ error: 'Webhook misconfigured' }, { status: 500 });
       }
 
       console.log('[Xendit FVA] Webhook processed');
@@ -281,6 +289,28 @@ export async function POST(request: Request) {
 
     console.log(`Processing: ${gateway.toUpperCase()} | Order: ${orderId} | Status: ${status}`);
 
+    // Idempotency guard for successful callbacks.
+    // Prevent duplicate webhook replays from re-running payment side-effects.
+    if (status === 'settlement' || status === 'capture') {
+      const duplicateWebhook = await prisma.webhookLog.findFirst({
+        where: transactionId
+          ? { gateway, transactionId, success: true }
+          : { gateway, orderId, status, success: true },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      if (duplicateWebhook) {
+        console.log(`[Webhook] Duplicate callback ignored for ${gateway}:${transactionId || orderId}`);
+        return NextResponse.json({
+          success: true,
+          gateway,
+          status,
+          orderId,
+          message: 'Duplicate webhook ignored'
+        });
+      }
+    }
+
     // Find existing log for this order or create new
     const existingLog = await prisma.webhookLog.findFirst({
       where: { orderId },
@@ -338,7 +368,7 @@ export async function POST(request: Request) {
     } else if (orderId.startsWith('INV-')) {
       // Handle PPPoE Invoice
       console.log(`[Webhook] Order type: Invoice`);
-      await handleInvoicePayment(orderId, status, gateway, paymentType, paidAt);
+      await handleInvoicePayment(orderId, status, gateway, paymentType, paidAt, transactionId, amount);
     } else {
       // Check if it's an agent deposit (UUID format)
       // UUID format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -357,7 +387,7 @@ export async function POST(request: Request) {
       } else {
         // Fallback to invoice payment (for legacy orders without INV- prefix)
         console.log(`[Webhook] Order type: Legacy Invoice (fallback)`);
-        await handleInvoicePayment(orderId, status, gateway, paymentType, paidAt);
+        await handleInvoicePayment(orderId, status, gateway, paymentType, paidAt, transactionId, amount);
       }
     }
 
@@ -398,12 +428,15 @@ export async function POST(request: Request) {
       }
     }
 
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    const amountMismatch = message.includes('AMOUNT_MISMATCH');
+
     return NextResponse.json(
       {
-        error: 'Webhook processing failed',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        error: amountMismatch ? 'Amount mismatch' : 'Webhook processing failed',
+        details: message
       },
-      { status: 500 }
+      { status: amountMismatch ? 400 : 500 }
     );
   }
 }
@@ -1109,7 +1142,8 @@ async function handleInvoicePayment(
   gateway: string,
   paymentType: string,
   paidAt: Date | null,
-  transactionId: string = ''
+  transactionId: string = '',
+  webhookAmount?: number
 ) {
   // Order ID format: INV-{invoiceNumber}-{timestamp}
   // Support multiple formats:
@@ -1140,6 +1174,13 @@ async function handleInvoicePayment(
   console.log(`✅ Invoice found: ${invoice.invoiceNumber}`);
 
   if (status === 'settlement' || status === 'capture') {
+    if (typeof webhookAmount === 'number' && Number.isFinite(webhookAmount) && webhookAmount !== invoice.amount) {
+      console.error(
+        `[Webhook] AMOUNT_MISMATCH for ${invoice.invoiceNumber}: expected ${invoice.amount}, got ${webhookAmount}`
+      );
+      throw new Error('AMOUNT_MISMATCH');
+    }
+
     if (invoice.status !== 'PAID') {
       // Update invoice to PAID
       await prisma.invoice.update({

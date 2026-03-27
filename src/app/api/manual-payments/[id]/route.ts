@@ -1,5 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
 import { prisma } from '@/server/db/client';
+import { authOptions } from '@/server/auth/config';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { EmailService } from '@/server/services/notifications/email.service';
 import { addMonths } from 'date-fns';
@@ -55,8 +57,19 @@ export async function PATCH(
 ) {
   try {
     const body = await request.json();
-    const { action, rejectionReason, approvedBy } = body;
-    
+    const { action, rejectionReason } = body;
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    const role = (session.user as any)?.role;
+    const allowedRoles = ['SUPER_ADMIN', 'FINANCE', 'CUSTOMER_SERVICE'];
+    if (!role || !allowedRoles.includes(role)) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+    const approvedBy = (session.user as any)?.name || session.user.email || 'Admin';
+
     if (!action || (action !== 'APPROVE' && action !== 'REJECT')) {
       return NextResponse.json(
         { success: false, error: 'Invalid action' },
@@ -101,33 +114,14 @@ export async function PATCH(
     if (action === 'APPROVE') {
       // Approve payment
       const company = await prisma.company.findFirst();
-      
-      // Update manual payment status
-      await prisma.manualPayment.update({
-        where: { id: params.id },
-        data: {
-          status: 'APPROVED',
-          approvedBy,
-          approvedAt: new Date(),
-        },
-      });
-      
-      // Update invoice status
-      await prisma.invoice.update({
-        where: { id: manualPayment.invoiceId },
-        data: {
-          status: 'PAID',
-          paidAt: new Date(),
-        },
-      });
-      
-      // Extend user expiry
+
+      // Compute expiry before transaction (reads)
       const currentExpiry = manualPayment.user.expiredAt || new Date();
       const validityValue = manualPayment.user.profile.validityValue;
       const validityUnit = manualPayment.user.profile.validityUnit;
-      
+
       let newExpiry = new Date(currentExpiry);
-      
+
       switch (validityUnit) {
         case 'MONTHS':
           newExpiry = addMonths(newExpiry, validityValue);
@@ -142,7 +136,7 @@ export async function PATCH(
           newExpiry.setMinutes(newExpiry.getMinutes() + validityValue);
           break;
       }
-      
+
       // ============================================
       // CHECK FOR PACKAGE CHANGE IN INVOICE METADATA
       // ============================================
@@ -174,28 +168,48 @@ export async function PATCH(
 
       // For package change: preserve existing expiredAt, do NOT extend
       const finalExpiry = isPackageChange ? currentExpiry : newExpiry;
+      const paymentId = await generateTransactionId();
+      const approvedAt = new Date();
 
-      // Update user expiry, status, and profile (if package change)
-      await prisma.pppoeUser.update({
-        where: { id: manualPayment.userId },
-        data: {
-          expiredAt: finalExpiry,
-          status: 'active',
-          lastPaymentDate: new Date(),
-          ...(newProfileId !== manualPayment.user.profileId && { profileId: newProfileId }),
-        },
-      });
-      
-      // Create payment record
-      await prisma.payment.create({
-        data: {
-          id: await generateTransactionId(),
-          invoiceId: manualPayment.invoiceId,
-          amount: manualPayment.invoice.amount,
-          method: 'manual_transfer',
-          status: 'success',
-          paidAt: new Date(),
-        },
+      // Atomic transaction: all related records written together
+      await prisma.$transaction(async (tx) => {
+        await tx.manualPayment.update({
+          where: { id: params.id },
+          data: {
+            status: 'APPROVED',
+            approvedBy,
+            approvedAt,
+          },
+        });
+
+        await tx.invoice.update({
+          where: { id: manualPayment.invoiceId },
+          data: {
+            status: 'PAID',
+            paidAt: approvedAt,
+          },
+        });
+
+        await tx.pppoeUser.update({
+          where: { id: manualPayment.userId },
+          data: {
+            expiredAt: finalExpiry,
+            status: 'active',
+            lastPaymentDate: approvedAt,
+            ...(newProfileId !== manualPayment.user.profileId && { profileId: newProfileId }),
+          },
+        });
+
+        await tx.payment.create({
+          data: {
+            id: paymentId,
+            invoiceId: manualPayment.invoiceId,
+            amount: manualPayment.invoice.amount,
+            method: 'manual_transfer',
+            status: 'success',
+            paidAt: approvedAt,
+          },
+        });
       });
 
       // ============================================
@@ -469,6 +483,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+    const deleteRole = (session.user as any)?.role;
+    if (!deleteRole || !['SUPER_ADMIN', 'FINANCE'].includes(deleteRole)) {
+      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
     await prisma.manualPayment.delete({
       where: { id: params.id },
     });

@@ -38,9 +38,9 @@ export async function POST(req: Request) {
         const normalizedPath = path.normalize(filename).replace(/^(\.\.(\/|\\|$))+/, '');
         const dirName = path.dirname(normalizedPath);
 
-        // Check if directory is allowed
+        // Check if directory is allowed (exact match or sub-path)
         const isAllowed = ALLOWED_DIRS.some(allowed =>
-            dirName === '.' ? true : (allowed === dirName || dirName.startsWith(allowed))
+            allowed === dirName || dirName.startsWith(allowed + '/')
         );
 
         if (!isAllowed) {
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
             }
 
             return NextResponse.json(
-                { success: false, error: `File not found or unreadable: ${err.message}` },
+                { success: false, error: 'File not found or unreadable' },
                 { status: 404 }
             );
         }
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
     } catch (error: any) {
         console.error('Error reading config file:', error);
         return NextResponse.json(
-            { success: false, error: error.message || 'Failed to read file' },
+            { success: false, error: 'Failed to read file' },
             { status: 500 }
         );
     }

@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { generateExcelBuffer } from '@/lib/utils/export';
 import { checkAuth } from '@/server/middleware/api-auth';
 import { formatWIB } from '@/lib/timezone';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 export async function GET(req: NextRequest) {
   const auth = await checkAuth();
@@ -10,8 +11,21 @@ export async function GET(req: NextRequest) {
     return auth.response;
   }
 
+  const limited = await rateLimit(req, RateLimitPresets.strict);
+  if (limited) {
+    return NextResponse.json({ error: 'Too many export requests' }, { status: 429 });
+  }
+
   try {
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1);
+    const requestedLimit = Math.max(parseInt(searchParams.get('limit') || '5000', 10), 1);
+    const limit = Math.min(requestedLimit, 5000);
+    const skip = (page - 1) * limit;
+
     const customers = await (prisma as any).pppoeCustomer.findMany({
+      skip,
+      take: limit,
       include: {
         _count: { select: { pppoeUsers: true } },
       },
@@ -32,7 +46,7 @@ export async function GET(req: NextRequest) {
     ];
 
     const data = customers.map((c: any, idx: number) => ({
-      no: idx + 1,
+      no: skip + idx + 1,
       customerId: c.customerId,
       name: c.name,
       phone: c.phone,
@@ -51,6 +65,9 @@ export async function GET(req: NextRequest) {
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="${filename}"`,
+        'X-Export-Page': String(page),
+        'X-Export-Limit': String(limit),
+        'X-Export-Count': String(customers.length),
       },
     });
   } catch (error) {
