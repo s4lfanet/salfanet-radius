@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       if (pppoeUser) {
         const now = new Date();
 
-        if (pppoeUser.status === 'blocked') {
+        if (pppoeUser.status === 'blocked' || pppoeUser.status === 'BLOCKED') {
           const message = 'Akun Diblokir - Hubungi Admin';
           console.log(`[AUTHORIZE] REJECT: PPPoE user ${username} is blocked`);
           await logRejection(username, message);
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
           }, { status: 200 });
         }
 
-        if (pppoeUser.status === 'stop') {
+        if (pppoeUser.status === 'stop' || pppoeUser.status === 'suspended' || pppoeUser.status === 'SUSPENDED') {
           const message = 'Langganan Dihentikan - Hubungi Admin';
           console.log(`[AUTHORIZE] REJECT: PPPoE user ${username} is stopped`);
           await logRejection(username, message);
@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
 
         // Izinkan user isolated untuk login dengan profile 'isolir' (redirect ke halaman bayar)
         // radusergroup sudah di-set ke 'isolir' oleh auto-isolation job
-        if (pppoeUser.status === 'isolated') {
+        if (pppoeUser.status === 'isolated' || pppoeUser.status === 'ISOLATED') {
           console.log(`[AUTHORIZE] ALLOW (isolated): PPPoE user ${username} in isolir profile`);
           return NextResponse.json({
             success: true,
@@ -90,6 +90,10 @@ export async function POST(request: NextRequest) {
             "reply:Reply-Message": message
           }, { status: 200 });
         }
+
+        // PPPoE user found and all status checks passed — allow to proceed to SQL/radcheck auth
+        console.log(`[AUTHORIZE] ALLOW: PPPoE user ${username} is valid (status: ${pppoeUser.status})`);
+        return NextResponse.json({});
       }
 
       // PPPoE user not found in database — REJECT.
