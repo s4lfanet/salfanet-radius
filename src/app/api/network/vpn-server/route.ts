@@ -4,13 +4,13 @@ import { authOptions } from '@/server/auth/config'
 import { prisma } from '@/server/db/client'
 import crypto from 'crypto'
 
-if (!process.env.ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
-  throw new Error('ENCRYPTION_KEY is required in production.');
-}
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-this-32'; // Must be 32 chars
 const ALGORITHM = 'aes-256-cbc';
 
 function encryptPassword(text: string): string {
+  if (!process.env.ENCRYPTION_KEY && process.env.NODE_ENV === 'production') {
+    throw new Error('ENCRYPTION_KEY is required in production.');
+  }
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY.slice(0, 32)), iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
