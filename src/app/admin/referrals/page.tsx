@@ -210,6 +210,7 @@ export default function AdminReferralsPage() {
             <p className="text-muted-foreground">{t('referrals.noData')}</p>
           </div>
         ) : (
+          <>
           {/* Mobile Card View */}
           <div className="block md:hidden divide-y divide-border">
             {rewards.map((reward) => (
@@ -343,9 +344,8 @@ export default function AdminReferralsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
-
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground">
