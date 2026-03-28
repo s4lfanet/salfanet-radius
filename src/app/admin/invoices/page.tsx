@@ -752,6 +752,12 @@ export default function InvoicesPage() {
                       <span className="text-muted-foreground">{t('invoices.customer')}:</span>
                       <span className="font-medium text-foreground truncate ml-2">{invoice.user?.name || invoice.customerName || t('invoices.deleted')}</span>
                     </div>
+                    {(invoice.user?.customerId) && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">ID Pelanggan:</span>
+                        <span className="font-mono text-[#00f7ff]">{invoice.user.customerId}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Phone:</span>
                       <span className="text-muted-foreground">{invoice.user?.phone || invoice.customerPhone || '-'}</span>

@@ -851,45 +851,92 @@ export default function PppoeUsersPage() {
             ) : (
               filteredUsers.map((user) => (
                 <div key={user.id} className="p-3 space-y-2 active:bg-muted/50 transition-colors">
+                  {/* Header: checkbox + username + status badges */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <input type="checkbox" checked={selectedUsers.has(user.id)} onChange={() => toggleSelectUser(user.id)} className="rounded border-gray-300 w-3.5 h-3.5 flex-shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-xs font-medium truncate">{user.username}</p>
-                        <p className="text-[10px] text-muted-foreground truncate">{user.name}</p>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-xs font-mono font-medium">{user.username}</span>
+                          {user.syncedToRadius && (
+                            <span className="inline-flex items-center px-1 py-0.5 rounded text-[8px] font-medium bg-accent/20 text-accent">
+                              <CheckCircle2 className="h-2 w-2 mr-0.5" />R
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground truncate">
+                          {user.pppoeCustomer ? user.pppoeCustomer.name : user.name}
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-0.5 flex-shrink-0">
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {invoiceCounts[user.id] > 0 && (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                          <DollarSign className="h-2 w-2 mr-0.5" />{invoiceCounts[user.id]}
+                        </span>
+                      )}
                       <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${user.status === 'active' ? 'bg-success/20 text-success' : user.status === 'isolated' ? 'bg-warning/20 text-warning' : 'bg-destructive/20 text-destructive'}`}>{user.status}</span>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
-                    <div className="flex justify-between">
+                  {/* Info grid */}
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px] pl-6">
+                    <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">ID:</span>
-                      <span className="font-mono font-medium">{user.customerId || '-'}</span>
+                      <span className="font-mono font-medium truncate">{user.customerId || '-'}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('common.phone')}:</span>
-                      <span>{user.phone}</span>
+                    <div className="flex justify-between gap-1">
+                      <span className="text-muted-foreground">HP:</span>
+                      <span className="truncate">{user.pppoeCustomer?.phone || user.phone}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">{t('pppoe.profile')}:</span>
-                      <span className="font-medium">{user.profile.name}</span>
+                      <span className="font-medium truncate">{user.profile.name}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">{t('common.area')}:</span>
-                      <span>{user.area?.name || '-'}</span>
+                      <span className="truncate">{user.area?.name || '-'}</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">{t('pppoe.expired')}:</span>
-                      <span className={user.expiredAt && isExpired(user.expiredAt) ? 'text-destructive font-medium' : ''}>{user.expiredAt ? formatWIB(user.expiredAt, 'dd/MM/yyyy') : '-'}</span>
+                      <span className={user.expiredAt && isExpired(user.expiredAt) ? 'text-destructive font-medium' : ''}>
+                        {user.expiredAt ? formatWIB(user.expiredAt, 'dd/MM/yyyy') : '-'}
+                      </span>
                     </div>
+                    <div className="flex justify-between gap-1">
+                      <span className="text-muted-foreground">Router:</span>
+                      <span className="truncate">{user.router?.name || '-'}</span>
+                    </div>
+                    <div className="flex justify-between gap-1 col-span-2">
+                      <span className="text-muted-foreground">Jenis:</span>
+                      <span>
+                        {user.subscriptionType === 'PREPAID'
+                          ? <span className="text-amber-500">Prepaid</span>
+                          : <span className="text-blue-500">Postpaid{user.billingDay ? ` (tgl ${user.billingDay})` : ''}</span>
+                        }
+                      </span>
+                    </div>
+                    {user.ipAddress && (
+                      <div className="flex justify-between gap-1 col-span-2">
+                        <span className="text-muted-foreground">IP:</span>
+                        <span className="font-mono">{user.ipAddress}</span>
+                      </div>
+                    )}
                   </div>
+                  {/* Actions */}
                   <div className="flex items-center gap-1 pt-1 border-t border-border/50 flex-wrap">
-                    <button onClick={() => handleEdit(user)} className="p-1.5 text-muted-foreground hover:bg-muted rounded"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setDeleteUserId(user.id)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleEdit(user)} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded" title="Lihat detail"><Eye className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleEdit(user)} className="p-1.5 text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleSyncToRadius(user)} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded" title="Sync RADIUS"><RefreshCw className="h-3.5 w-3.5" /></button>
+                    <button
+                      onClick={() => handleStatusChange(user.id, user.status === 'isolated' ? 'active' : 'isolated')}
+                      className={`p-1.5 rounded ${user.status === 'isolated' ? 'text-success hover:bg-success/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
+                      title={user.status === 'isolated' ? 'Aktifkan' : 'Isolir'}
+                    >
+                      <Shield className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setDeleteUserId(user.id)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                     {invoiceCounts[user.id] > 0 ? (
-                      <button onClick={() => handleMarkAllPaid(user.id, user.name)} disabled={markingPaid === user.id} className="px-1.5 py-0.5 text-[10px] font-medium bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 ml-auto">
+                      <button onClick={() => handleMarkAllPaid(user.id, user.name)} disabled={markingPaid === user.id} className="px-2 py-1 text-[10px] font-medium bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 ml-auto">
                         {markingPaid === user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : t('pppoe.markPaid')}
                       </button>
                     ) : (

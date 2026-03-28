@@ -340,7 +340,90 @@ export default function PppoeCustomersPage() {
             )}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="block md:hidden divide-y divide-border">
+            {customers.map((c) => (
+              <div key={c.id} className="p-3 space-y-2 hover:bg-muted/50 transition-colors">
+                {/* Header: avatar + name + status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold truncate">{c.name}</p>
+                      <button onClick={() => openDetail(c)} className="font-mono text-[10px] text-[#00f7ff] hover:underline">{c.customerId}</button>
+                    </div>
+                  </div>
+                  <span
+                    onClick={() => handleToggleStatus(c)}
+                    className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium cursor-pointer flex-shrink-0 ${c.isActive ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}
+                  >
+                    {c.isActive ? <><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Aktif</> : <><XCircle className="h-2.5 w-2.5 mr-0.5" />Nonaktif</>}
+                  </span>
+                </div>
+                {/* Contact + address info */}
+                <div className="space-y-1 text-[11px] pl-10">
+                  <div className="flex items-center gap-1.5">
+                    <Phone className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span>{c.phone}</span>
+                  </div>
+                  {c.email && (
+                    <div className="flex items-center gap-1.5">
+                      <Mail className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[#00f7ff] truncate">{c.email}</span>
+                    </div>
+                  )}
+                  {c.address && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      <span className="text-muted-foreground line-clamp-2">{c.address}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                    <span className="text-muted-foreground">Bergabung: {formatWIB(c.createdAt, 'd MMM yyyy')}</span>
+                  </div>
+                  {c.idCardNumber && (
+                    <div className="flex items-center gap-1.5">
+                      <CreditCard className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                      <span className="text-muted-foreground font-mono">{c.idCardNumber}</span>
+                    </div>
+                  )}
+                </div>
+                {/* Actions row */}
+                <div className="flex items-center gap-1 pl-10 pt-1 border-t border-border/50">
+                  <button
+                    onClick={() => router.push(`/admin/pppoe/users?pppoeCustomerId=${c.id}`)}
+                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/40"
+                  >
+                    {c._count?.pppoeUsers ?? 0} PPPoE
+                  </button>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <button onClick={() => openDetail(c)} className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded" title="Lihat detail">
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    {canCreate && (
+                      <button onClick={() => openEdit(c)} className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded" title="Edit customer">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button onClick={() => router.push(`/admin/pppoe/users?pppoeCustomerId=${c.id}`)} className="p-1.5 text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-900/30 rounded" title="Langganan PPPoE">
+                      <UserPlus className="h-3.5 w-3.5" />
+                    </button>
+                    {canDelete && (
+                      <button onClick={() => handleDelete(c)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded" title="Hapus customer">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="overflow-x-auto hidden md:block">
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
