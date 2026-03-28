@@ -89,6 +89,11 @@ create_env_file() {
     if [ -z "$NEXTAUTH_SECRET" ]; then
         export NEXTAUTH_SECRET=$(generate_secret)
     fi
+
+    # Generate Agent JWT secret if not set
+    if [ -z "$AGENT_JWT_SECRET" ]; then
+        export AGENT_JWT_SECRET=$(generate_secret)
+    fi
     
     # Get public IP if not set
     if [ -z "$VPS_IP" ]; then
@@ -119,6 +124,9 @@ NEXT_PUBLIC_APP_URL="${APP_BASE_URL}"
 NEXTAUTH_SECRET="${NEXTAUTH_SECRET}"
 NEXTAUTH_URL="${APP_BASE_URL}"
 
+# Agent Portal JWT
+AGENT_JWT_SECRET="${AGENT_JWT_SECRET}"
+
 # Node Environment
 NODE_ENV="production"
 
@@ -136,6 +144,7 @@ EOF
     
     # Save to install info
     save_install_info "NEXTAUTH_SECRET" "$NEXTAUTH_SECRET"
+    save_install_info "AGENT_JWT_SECRET" "$AGENT_JWT_SECRET"
     save_install_info "VPS_IP" "$VPS_IP"
 }
 
