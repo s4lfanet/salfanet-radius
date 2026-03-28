@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, DollarSign, Wallet, TrendingUp } from 'lucide-react';
+import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map } from 'lucide-react';
 import { formatWIB, formatLocalDate } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
@@ -97,14 +97,6 @@ export default function UserDetailModal({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Balance management state
-  const [balance, setBalance] = useState(0);
-  const [autoRenewal, setAutoRenewal] = useState(false);
-  const [depositAmount, setDepositAmount] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('CASH');
-  const [depositNote, setDepositNote] = useState('');
-  const [balanceHistory, setBalanceHistory] = useState<any[]>([]);
-  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [uploadingIdCard, setUploadingIdCard] = useState(false);
   const [uploadingInstallation, setUploadingInstallation] = useState(false);
 
@@ -155,8 +147,6 @@ export default function UserDetailModal({
         idCardPhoto: user.idCardPhoto || '',
         installationPhotos: user.installationPhotos || [],
       });
-      setBalance(user.balance || 0);
-      setAutoRenewal(user.autoRenewal || false);
     }
   }, [user]);
 
@@ -181,14 +171,7 @@ export default function UserDetailModal({
     if (!user) return;
     setLoading(true);
     try {
-      if (tab === 'balance') {
-        const res = await fetch(`/api/admin/pppoe/users/${user.id}/deposit`);
-        const data = await res.json();
-        if (res.ok) {
-          setBalance(data.user?.balance || 0);
-          setBalanceHistory(data.transactions || []);
-        }
-      } else {
+      {
         const res = await fetch(`/api/pppoe/users/${user.id}/activity?type=${tab === 'sessions' ? 'sessions' : tab === 'auth' ? 'auth' : 'invoices'}`);
         const data = await res.json();
 
@@ -278,7 +261,6 @@ export default function UserDetailModal({
           <div className="flex px-6">
             {[
               { id: 'info', label: t('userModal.userInfo') },
-              { id: 'balance', label: 'Balance & Deposit' },
               { id: 'sessions', label: t('userModal.sessions') },
               { id: 'auth', label: t('userModal.authLogs') },
               { id: 'invoices', label: t('userModal.invoices') },
@@ -686,211 +668,6 @@ export default function UserDetailModal({
                 </button>
               </div>
             </form>
-          )}
-
-          {activeTab === 'balance' && (
-            <div className="space-y-6">
-              {/* Current Balance & Auto-Renewal */}
-              <div className="bg-muted/50 dark:bg-gradient-to-br dark:from-[#00f7ff]/10 dark:to-[#bc13fe]/10 rounded-xl p-6 border border-border dark:border-[#00f7ff]/40 shadow-md dark:shadow-[0_0_20px_rgba(0,247,255,0.2)]">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <p className="text-sm text-primary dark:text-[#00f7ff] font-medium flex items-center gap-2">
-                      <Wallet className="w-4 h-4" />
-                      Saldo Deposit
-                    </p>
-                    <p className="text-3xl font-bold text-foreground dark:text-white mt-1 dark:drop-shadow-[0_0_10px_rgba(0,247,255,0.5)]">
-                      {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(balance)}
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={autoRenewal}
-                        onChange={async (e) => {
-                          const newValue = e.target.checked;
-                          try {
-                            const res = await fetch('/api/pppoe/users', {
-                              method: 'PUT',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ id: user.id, autoRenewal: newValue })
-                            });
-                            if (res.ok) {
-                              setAutoRenewal(newValue);
-                              await showSuccess(`Auto-renewal ${newValue ? 'diaktifkan' : 'dinonaktifkan'}`);
-                            } else {
-                              await showError('Gagal update auto-renewal');
-                            }
-                          } catch (error) {
-                            await showError('Gagal update auto-renewal');
-                          }
-                        }}
-                        className="w-4 h-4 accent-primary dark:accent-[#00f7ff] border-border dark:border-[#bc13fe]/50 rounded focus:ring-primary dark:focus:ring-[#00f7ff]"
-                      />
-                      <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">Auto-Renewal</span>
-                    </label>
-                    {autoRenewal && (
-                      <span className="text-xs text-green-600 dark:text-[#00ff88] bg-green-100 dark:bg-[#00ff88]/20 px-2 py-1 rounded border border-green-300 dark:border-[#00ff88]/30">
-                        ✓ Aktif
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/70">
-                  {autoRenewal
-                    ? '✅ Tagihan akan dibayar otomatis dari saldo 3 hari sebelum expired'
-                    : '⚠️ Aktifkan auto-renewal untuk perpanjangan otomatis dari saldo'}
-                </p>
-              </div>
-
-              {/* Top-Up Form */}
-              <div className="border border-green-300 dark:border-[#00ff88]/40 rounded-lg p-6 bg-muted/30 dark:bg-[#0a0520]/30">
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-green-600 dark:text-[#00ff88]">
-                  <DollarSign className="w-5 h-5" />
-                  Top-Up Saldo
-                </h3>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className={labelCls2}>Jumlah (Rp)</label>
-                      <input
-                        type="number"
-                        value={depositAmount}
-                        onChange={(e) => setDepositAmount(e.target.value)}
-                        placeholder="100000"
-                        min="0"
-                        step="1000"
-                        className={inputCls}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelCls2}>Metode Pembayaran</label>
-                      <select
-                        value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value)}
-                        className={selectCls}
-                      >
-                        <option value="CASH">Cash</option>
-                        <option value="TRANSFER">Transfer Bank</option>
-                        <option value="EWALLET">E-Wallet</option>
-                        <option value="QRIS">QRIS</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className={labelCls2}>Catatan (Opsional)</label>
-                    <textarea
-                      value={depositNote}
-                      onChange={(e) => setDepositNote(e.target.value)}
-                      placeholder="Catatan tambahan..."
-                      rows={2}
-                      className={textareaCls}
-                    />
-                  </div>
-                  {depositAmount && !isNaN(parseInt(depositAmount)) && parseInt(depositAmount) > 0 && (
-                    <div className="bg-green-50 dark:bg-[#00ff88]/10 border border-green-300 dark:border-[#00ff88]/30 rounded-lg p-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-green-600 dark:text-[#00ff88]">Saldo Baru:</span>
-                        <span className="font-bold text-foreground dark:text-white dark:drop-shadow-[0_0_5px_rgba(0,255,136,0.5)]">
-                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(balance + parseInt(depositAmount))}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    onClick={async () => {
-                      if (!depositAmount || isNaN(parseInt(depositAmount)) || parseInt(depositAmount) <= 0) {
-                        await showError('Masukkan jumlah yang valid');
-                        return;
-                      }
-                      setIsTopUpLoading(true);
-                      try {
-                        const res = await fetch(`/api/admin/pppoe/users/${user.id}/deposit`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({
-                            amount: parseInt(depositAmount),
-                            paymentMethod,
-                            note: depositNote || undefined
-                          })
-                        });
-                        const result = await res.json();
-                        if (res.ok) {
-                          setBalance(result.data.newBalance);
-                          setDepositAmount('');
-                          setDepositNote('');
-                          await showSuccess(`Top-up berhasil! Saldo baru: ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(result.data.newBalance)}`);
-                          // Reload history
-                          loadTabData('balance');
-                        } else {
-                          await showError(result.error || 'Gagal top-up saldo');
-                        }
-                      } catch (error) {
-                        await showError('Gagal top-up saldo');
-                      } finally {
-                        setIsTopUpLoading(false);
-                      }
-                    }}
-                    disabled={isTopUpLoading || !depositAmount || parseInt(depositAmount) <= 0}
-                    className="w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-md disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all dark:bg-gradient-to-r dark:from-[#00ff88] dark:to-[#00f7ff] dark:hover:from-[#00ff88]/80 dark:hover:to-[#00f7ff]/80 dark:text-[#0a0520] dark:shadow-[0_0_15px_rgba(0,255,136,0.4)]"
-                  >
-                    {isTopUpLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <TrendingUp className="w-4 h-4" />
-                        Top-Up Saldo
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Balance History */}
-              <div className="border border-border dark:border-[#bc13fe]/40 rounded-lg p-6 bg-muted/30 dark:bg-[#0a0520]/30">
-                <h3 className="text-lg font-semibold mb-4 text-foreground dark:text-[#e0d0ff]">Riwayat Deposit</h3>
-                {loading ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary dark:text-[#00f7ff]" />
-                  </div>
-                ) : balanceHistory.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground dark:text-[#e0d0ff]/50">
-                    <Wallet className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">Belum ada riwayat deposit</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {balanceHistory.map((tx) => (
-                      <div key={tx.id} className="flex items-center justify-between p-3 border border-border dark:border-[#bc13fe]/30 rounded-lg hover:bg-muted dark:hover:bg-[#bc13fe]/10 transition-all">
-                        <div>
-                          <p className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
-                            {tx.category?.name || 'Deposit'}
-                          </p>
-                          <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">
-                            {formatWIB(tx.createdAt, 'dd MMM yyyy HH:mm')}
-                          </p>
-                          {tx.description && (
-                            <p className="text-xs text-muted-foreground/80 dark:text-[#e0d0ff]/40 mt-1">{tx.description}</p>
-                          )}
-                          {tx.notes && (
-                            <p className="text-xs text-primary dark:text-[#00f7ff] mt-1">{tx.notes}</p>
-                          )}
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-green-600 dark:text-[#00ff88] dark:drop-shadow-[0_0_5px_rgba(0,255,136,0.5)]">
-                            +{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(tx.amount)}
-                          </p>
-                          <span className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">{tx.type}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
           )}
 
           {activeTab === 'sessions' && (

@@ -257,7 +257,61 @@ export default function AgentSessionsPage() {
           </h2>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Mobile Card View */}
+        <div className="block md:hidden divide-y divide-purple-100 dark:divide-[#bc13fe]/10">
+          {filteredSessions.length === 0 ? (
+            <div className="px-4 py-10 text-center">
+              <WifiOff className="h-10 w-10 text-[#e0d0ff]/30 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-[#e0d0ff]/60">
+                {searchQuery ? t('agent.portal.noSearchResults') : t('agent.portal.noActiveSessions')}
+              </p>
+            </div>
+          ) : (
+            filteredSessions.map((session) => (
+              <div key={session.id} className="p-3 space-y-2 hover:bg-purple-50/50 dark:hover:bg-[#bc13fe]/5 transition">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0 mt-1" />
+                    <div className="min-w-0">
+                      <p className="font-mono font-bold text-sm text-slate-900 dark:text-white truncate">{session.username}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-[#e0d0ff]/60">{session.profileName || '-'} · {session.routerName || '-'}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold text-white whitespace-nowrap">
+                    {session.expiresAt
+                      ? formatDuration(liveCountdown(session.expiresAt)) + ' left'
+                      : formatDuration(liveDuration(session.acctStartTime))}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 dark:text-[#e0d0ff]/40">IP:</span>
+                    <span className="font-mono text-white">{session.framedIpAddress || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 dark:text-[#e0d0ff]/40">MAC:</span>
+                    <span className="font-mono text-slate-500 dark:text-[#e0d0ff]/60 truncate ml-1">{session.callingStationId || '-'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 dark:text-[#e0d0ff]/40">↑ UL:</span>
+                    <span className="text-[#00ff88] font-medium">{formatBytes(session.acctInputOctets || 0)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 dark:text-[#e0d0ff]/40">↓ DL:</span>
+                    <span className="text-[#ff44cc] font-medium">{formatBytes(session.acctOutputOctets || 0)}</span>
+                  </div>
+                  <div className="col-span-2 flex justify-between">
+                    <span className="text-slate-400 dark:text-[#e0d0ff]/40">Start:</span>
+                    <span className="text-slate-500 dark:text-[#e0d0ff]/60">{session.acctStartTime ? formatLocal(session.acctStartTime, 'dd MMM HH:mm') : '-'}</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="overflow-x-auto hidden md:block">
           <table className="w-full">
             <thead className="bg-slate-50 dark:bg-[#0a0520]/50">
               <tr>

@@ -210,7 +210,63 @@ export default function AdminReferralsPage() {
             <p className="text-muted-foreground">{t('referrals.noData')}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          {/* Mobile Card View */}
+          <div className="block md:hidden divide-y divide-border">
+            {rewards.map((reward) => (
+              <div key={reward.id} className="p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{reward.referrer.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{reward.referrer.phone}</p>
+                    <code className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded">{reward.referrer.referralCode}</code>
+                  </div>
+                  <CyberBadge
+                    variant={
+                      reward.status === 'CREDITED' ? 'success' :
+                      reward.status === 'PENDING' ? 'warning' : 'destructive'
+                    }
+                  >
+                    {reward.status === 'CREDITED' ? t('referrals.statusCredited') :
+                     reward.status === 'PENDING' ? t('referrals.statusPending') : t('referrals.statusExpired')}
+                  </CyberBadge>
+                </div>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                  <div>
+                    <span className="text-muted-foreground">Referred:</span>
+                    <p className="font-medium text-foreground">{reward.referred.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{reward.referred.phone}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-muted-foreground">Reward:</span>
+                    <p className="font-semibold text-foreground">{formatCurrency(reward.amount)}</p>
+                    <p className="text-[10px] text-muted-foreground">{formatDate(reward.createdAt)}</p>
+                  </div>
+                </div>
+                {reward.status === 'PENDING' && (
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => processReward(reward.id, 'credit')}
+                      disabled={processing === reward.id}
+                      className="flex-1 py-1.5 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                    >
+                      {processing === reward.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                      Credit
+                    </button>
+                    <button
+                      onClick={() => processReward(reward.id, 'expire')}
+                      disabled={processing === reward.id}
+                      className="flex-1 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 text-xs font-medium disabled:opacity-50 flex items-center justify-center gap-1"
+                    >
+                      <XCircle className="w-3 h-3" /> Expire
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="overflow-x-auto hidden md:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">

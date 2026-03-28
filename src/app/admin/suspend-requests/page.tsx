@@ -171,6 +171,69 @@ export default function AdminSuspendRequestsPage() {
             <p>{t('suspendRequests.noRequests')}</p>
           </div>
         ) : (
+          <>
+          {/* Mobile Card View */}
+          <div className="block md:hidden divide-y divide-border">
+            {rows.map((row) => {
+              const sc = STATUS_CONFIG[row.status];
+              return (
+                <div key={row.id} className="p-3 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{row.user.name}</p>
+                      <p className="text-[10px] font-mono text-muted-foreground">{row.user.username}</p>
+                      <p className="text-[10px] text-muted-foreground">{row.user.phone}</p>
+                    </div>
+                    <Badge className={`${sc?.className || ''} text-xs flex-shrink-0`}>
+                      {STATUS_LABELS[row.status] || sc?.label || row.status}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+                    <div>
+                      <span className="text-muted-foreground">Periode:</span>
+                      <p className="font-medium">{fmt(row.startDate)} → {fmt(row.endDate)}</p>
+                      <p className="text-[10px] text-muted-foreground">({Math.ceil((new Date(row.endDate).getTime() - new Date(row.startDate).getTime()) / 86400000)} {t('suspendRequests.days')})</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Submitted:</span>
+                      <p>{fmt(row.requestedAt)}</p>
+                    </div>
+                    {row.reason && (
+                      <div className="col-span-2">
+                        <span className="text-muted-foreground">Alasan:</span>
+                        <p className="text-gray-600 truncate">{row.reason}</p>
+                      </div>
+                    )}
+                  </div>
+                  {row.status === 'PENDING' && (
+                    <div className="flex gap-2 pt-1">
+                      <Button
+                        size="sm"
+                        className="h-8 text-xs bg-green-600 hover:bg-green-700 flex-1"
+                        onClick={() => openAction(row, 'APPROVE')}
+                      >
+                        <CheckCircle2 className="w-3 h-3 mr-1" />{t('suspendRequests.approve')}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 text-xs flex-1"
+                        onClick={() => openAction(row, 'REJECT')}
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />{t('suspendRequests.reject')}
+                      </Button>
+                    </div>
+                  )}
+                  {row.status !== 'PENDING' && row.adminNotes && (
+                    <p className="text-xs text-muted-foreground italic truncate">{row.adminNotes}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="hidden md:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -240,6 +303,8 @@ export default function AdminSuspendRequestsPage() {
               })}
             </TableBody>
           </Table>
+          </div>
+          </>
         )}
         <div className="px-4 py-2 border-t text-sm text-gray-400">
           {t('suspendRequests.total', { count: String(total) })}

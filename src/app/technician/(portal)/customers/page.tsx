@@ -17,6 +17,7 @@ import {
   CalendarDays,
   X,
   MapPin,
+  Phone,
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
@@ -217,8 +218,66 @@ export default function TechnicianCustomersPage() {
         </div>
       ) : (
         <>
-          {/* Table wrapper — scrollable on mobile */}
-          <div className="bg-white dark:bg-[#1a0f35]/60 rounded-2xl border border-slate-200 dark:border-[#bc13fe]/15 overflow-hidden">
+          {/* Mobile Card View */}
+          <div className="block md:hidden divide-y divide-slate-100 dark:divide-[#bc13fe]/8">
+            {customers.map((c) => {
+              const cfg = STATUS_CONFIG[c.status] ?? STATUS_CONFIG.active;
+              const nearExpiry = isNearExpiry(c.expiredAt);
+              return (
+                <div key={c.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${cfg.dot}`} />
+                      <div className="min-w-0">
+                        <p className="font-semibold text-slate-900 dark:text-white text-[13px] truncate">{c.name}</p>
+                        <p className="text-[11px] font-mono text-[#00bcd4] dark:text-[#00f7ff] truncate">
+                          {c.username}
+                          {c.customerId && <span className="ml-1.5 text-[#bc13fe]/60">#{c.customerId}</span>}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full flex-shrink-0 ${cfg.badge}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                      {STATUS_LABEL[c.status] ?? c.status}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] ml-3.5">
+                    <div className="flex items-center gap-1 text-slate-500 dark:text-[#e0d0ff]/50">
+                      <Phone className="w-2.5 h-2.5 flex-shrink-0" />
+                      <span>{c.phone}</span>
+                    </div>
+                    {c.profile ? (
+                      <div className="text-right">
+                        <span className="font-medium text-slate-700 dark:text-[#e0d0ff]/80">{c.profile.name}</span>
+                        <span className="text-slate-400 dark:text-[#e0d0ff]/40 ml-1">{formatIDR(c.profile.price)}</span>
+                      </div>
+                    ) : <div />}
+                    {c.area && (
+                      <div className="flex items-center gap-1 text-slate-400 dark:text-[#e0d0ff]/40">
+                        <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
+                        <span className="truncate">{c.area.name}</span>
+                      </div>
+                    )}
+                    {c.router && (
+                      <div className="flex items-center gap-1 text-slate-400 dark:text-[#e0d0ff]/35">
+                        <Wifi className="w-2.5 h-2.5 flex-shrink-0" />
+                        <span className="truncate">{c.router.name}</span>
+                      </div>
+                    )}
+                    {c.expiredAt && (
+                      <div className={`col-span-2 flex items-center gap-1 ${nearExpiry ? 'text-red-500 dark:text-red-400 font-semibold' : 'text-slate-500 dark:text-[#e0d0ff]/50'}`}>
+                        <CalendarDays className="w-3 h-3 flex-shrink-0" />
+                        <span>Expired: {formatDate(c.expiredAt)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop Table */}
+          <div className="bg-white dark:bg-[#1a0f35]/60 rounded-2xl border border-slate-200 dark:border-[#bc13fe]/15 overflow-hidden hidden md:block">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

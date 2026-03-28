@@ -132,7 +132,90 @@ export default function AgentDepositsPage() {
       </div>
 
       <div className="bg-card rounded-xl border border-border overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Mobile Card View */}
+        <div className="block md:hidden divide-y divide-border">
+          {loading ? (
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">Memuat data...</div>
+          ) : deposits.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">Tidak ada deposit</div>
+          ) : (
+            deposits.map((deposit) => (
+              <div key={deposit.id} className="p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{deposit.agent.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{deposit.agent.phone}</p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded text-xs font-semibold flex-shrink-0 ${getStatusClass(deposit.status)}`}>
+                    {deposit.status}
+                  </span>
+                </div>
+                <div className="space-y-1 text-[11px]">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Jumlah:</span>
+                    <span className="font-semibold">Rp {deposit.amount.toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Bank Tujuan:</span>
+                    <span className="font-medium">{deposit.targetBankName || '-'}</span>
+                  </div>
+                  {deposit.targetBankAccountNumber && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">No. Rek:</span>
+                      <span className="font-mono">{deposit.targetBankAccountNumber}</span>
+                    </div>
+                  )}
+                  {deposit.senderAccountName && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Pengirim:</span>
+                      <span className="text-cyan-300">{deposit.senderAccountName}{deposit.senderAccountNumber ? ` (${deposit.senderAccountNumber})` : ''}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tanggal:</span>
+                    <span>{formatDate(deposit.createdAt)}</span>
+                  </div>
+                  {deposit.note && (
+                    <p className="text-muted-foreground truncate">Catatan: {deposit.note}</p>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  {deposit.receiptImage && (
+                    <a
+                      href={deposit.receiptImage}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex-1 text-center py-1.5 text-xs rounded border border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/10"
+                    >
+                      Lihat Bukti
+                    </a>
+                  )}
+                  {deposit.status === 'PENDING' && (
+                    <>
+                      <button
+                        onClick={() => handleAction(deposit, 'approve')}
+                        disabled={actionLoadingId === deposit.id}
+                        className="flex-1 py-1.5 text-xs rounded bg-green-600 hover:bg-green-500 text-white disabled:opacity-60"
+                      >
+                        Setujui
+                      </button>
+                      <button
+                        onClick={() => handleAction(deposit, 'reject')}
+                        disabled={actionLoadingId === deposit.id}
+                        className="flex-1 py-1.5 text-xs rounded bg-red-600 hover:bg-red-500 text-white disabled:opacity-60"
+                      >
+                        Tolak
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="overflow-x-auto hidden md:block">
           <table className="w-full min-w-[760px]">
             <thead className="bg-muted/70 border-b border-border">
               <tr>

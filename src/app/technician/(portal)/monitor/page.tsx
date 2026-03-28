@@ -213,7 +213,54 @@ export default function TechnicianMonitorPage() {
             </div>
           ) : (
             <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
-              <div className="overflow-x-auto">
+              {/* Mobile Card View */}
+            <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-700/30">
+              {sessions.map((s) => (
+                <div key={s.uniqueId} className="p-3 space-y-2 hover:bg-slate-50/50 dark:hover:bg-slate-700/20 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0 mt-1" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-900 dark:text-white truncate">{s.customerName ?? s.username}</p>
+                        <p className="text-[10px] font-mono text-[#00f7ff]">{s.username}</p>
+                        {s.customerPhone && (
+                          <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
+                            <Phone className="w-2.5 h-2.5" />{s.customerPhone}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">{s.uptime}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] ml-4">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">IP:</span>
+                      <span className="font-mono text-slate-900 dark:text-white">{s.framedIp}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Router:</span>
+                      <span className="text-slate-500 dark:text-slate-400 truncate ml-1">{s.routerName ?? s.nasIp}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">↓ DL:</span>
+                      <span className="font-semibold text-green-600 dark:text-green-400">{s.download}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">↑ UL:</span>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">{s.upload}</span>
+                    </div>
+                    {s.areaName && (
+                      <div className="col-span-2 flex items-center gap-1 text-slate-400">
+                        <MapPin className="w-2.5 h-2.5" /><span>{s.areaName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table */}
+            <div className="overflow-x-auto hidden md:block">
                 <table className="w-full">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-700/50">
