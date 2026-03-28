@@ -5,6 +5,8 @@ import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Smartphone, Loader2, KeyRound, ArrowLeft } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 function TwoFactorForm() {
   const router = useRouter();
   const searchParams = useSearchParams();

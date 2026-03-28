@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import AgentLayoutClient from './AgentLayoutClient';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Agent Portal - SALFANET RADIUS',
   description: 'Portal Agent untuk Generate Voucher',
