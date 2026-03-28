@@ -1,6 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { createMidtransPayment } from '@/server/services/payment/midtrans.service';
+import { parseBody } from '@/lib/parse-body';
+import { agentDepositCreateSchema } from '@/features/agents/schemas';
 
 /**
  * POST /api/agent/deposit/create
@@ -8,23 +10,9 @@ import { createMidtransPayment } from '@/server/services/payment/midtrans.servic
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { agentId, amount, gateway, paymentMethod: selectedPaymentMethod } = body;
-
-    // Validate input
-    if (!agentId || !amount || !gateway) {
-      return NextResponse.json(
-        { error: 'Agent ID, amount, and gateway are required' },
-        { status: 400 }
-      );
-    }
-
-    if (amount < 10000) {
-      return NextResponse.json(
-        { error: 'Minimum deposit amount is Rp 10.000' },
-        { status: 400 }
-      );
-    }
+    const parsed = await parseBody(request, agentDepositCreateSchema);
+    if (parsed.error) return parsed.error;
+    const { agentId, amount, gateway, paymentMethod: selectedPaymentMethod } = parsed.data;
 
     // Check agent exists
     const agent = await prisma.agent.findUnique({

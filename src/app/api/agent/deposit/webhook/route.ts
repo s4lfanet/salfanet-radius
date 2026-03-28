@@ -180,6 +180,29 @@ export async function POST(request: NextRequest) {
     
     console.log('[Agent Deposit Webhook] Processing:', { gateway, orderId, status });
 
+    // ── Idempotency: reject duplicate successful webhooks ─────────────────
+    if (transactionId) {
+      const duplicate = await prisma.webhookLog.findFirst({
+        where: { orderId, transactionId, success: true },
+      });
+      if (duplicate) {
+        return NextResponse.json({ success: true, message: 'Already processed' });
+      }
+    }
+
+    // Create webhook log (marked failed until processing completes)
+    const wLog = await prisma.webhookLog.create({
+      data: {
+        id: crypto.randomUUID(),
+        gateway: gateway!,
+        orderId,
+        status: status!,
+        transactionId,
+        payload: JSON.stringify(body),
+        success: false,
+      },
+    });
+
     // Find deposit by ID
     const deposit = await prisma.agentDeposit.findUnique({
       where: { id: orderId },
@@ -188,6 +211,7 @@ export async function POST(request: NextRequest) {
 
     if (!deposit) {
       console.error('Deposit not found:', orderId);
+      await prisma.webhookLog.update({ where: { id: wLog.id }, data: { errorMessage: 'Deposit not found' } });
       return NextResponse.json(
         { error: 'Deposit not found' },
         { status: 404 }
@@ -196,6 +220,7 @@ export async function POST(request: NextRequest) {
 
     // Only process if current status is PENDING
     if (deposit.status !== 'PENDING') {
+      await prisma.webhookLog.update({ where: { id: wLog.id }, data: { success: true } });
       return NextResponse.json({
         success: true,
         message: 'Deposit already processed',
@@ -270,6 +295,12 @@ export async function POST(request: NextRequest) {
         console.error('Activity log error:', logError);
       }
     }
+
+    // Mark webhook log as successfully processed
+    await prisma.webhookLog.update({
+      where: { id: wLog.id },
+      data: { success: true, response: JSON.stringify({ success: true, gateway, status, orderId }) },
+    });
 
     console.log('[Agent Deposit Webhook] Success - Gateway:', gateway, 'Status:', status, 'Balance updated:', status === 'PAID');
 

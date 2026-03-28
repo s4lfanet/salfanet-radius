@@ -12,11 +12,26 @@ export function getFCMMessaging(): admin.messaging.Messaging {
   if (messagingInstance) return messagingInstance;
 
   if (admin.apps.length === 0) {
-    const serviceAccountPath = path.join(process.cwd(), 'src', 'lib', 'firebase-service-account.json');
-    const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
+    let serviceAccount: object;
+
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      // Prefer env variable (base64-encoded or raw JSON string)
+      const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
+      try {
+        // Try raw JSON first, then base64-decoded JSON
+        serviceAccount = JSON.parse(
+          raw.trimStart().startsWith('{') ? raw : Buffer.from(raw, 'base64').toString('utf-8')
+        );
+      } catch {
+        throw new Error('FIREBASE_SERVICE_ACCOUNT env var is not valid JSON or base64 JSON');
+      }
+    } else {
+      const serviceAccountPath = path.join(process.cwd(), 'src', 'lib', 'firebase-service-account.json');
+      serviceAccount = JSON.parse(readFileSync(serviceAccountPath, 'utf-8'));
+    }
 
     admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
     });
   }
 

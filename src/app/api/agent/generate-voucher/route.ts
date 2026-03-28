@@ -3,6 +3,8 @@ import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
 import { logActivity } from '@/server/services/activity-log.service';
 import { nowWIB } from '@/lib/timezone';
+import { parseBody } from '@/lib/parse-body';
+import { generateVoucherSchema } from '@/features/agents/schemas';
 
 // Code type definitions (same as admin)
 const CODE_TYPES: Record<string, { chars: string }> = {
@@ -15,15 +17,9 @@ const CODE_TYPES: Record<string, { chars: string }> = {
 // POST - Generate voucher by agent
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { agentId, profileId, quantity = 1, codeLength = 6, codeType = 'alpha-upper', prefix = '' } = body;
-
-    if (!agentId || !profileId) {
-      return NextResponse.json(
-        { error: 'Agent ID and Profile ID are required' },
-        { status: 400 }
-      );
-    }
+    const parsed = await parseBody(request, generateVoucherSchema);
+    if (parsed.error) return parsed.error;
+    const { agentId, profileId, quantity, codeLength, codeType, prefix } = parsed.data;
 
     // Verify agent and get router info
     const agent = await prisma.agent.findUnique({
