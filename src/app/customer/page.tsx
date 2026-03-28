@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle } from 'lucide-react';
+import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 
 // Force dynamic rendering
@@ -111,6 +111,7 @@ interface Invoice {
   paidAt: string | null;
   paymentLink: string | null;
   paymentToken: string | null;
+  manualPaymentStatus: string | null;
 }
 
 export default function CustomerDashboard() {
@@ -130,6 +131,9 @@ export default function CustomerDashboard() {
   const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
   const [generatingPayment, setGeneratingPayment] = useState<string | null>(null);
   const [paymentGateways, setPaymentGateways] = useState<any[]>([]);
+  const [manualPayModal, setManualPayModal] = useState<{id: string; invoiceNumber: string; amount: number} | null>(null);
+  const [manualForm, setManualForm] = useState({ bankName: '', accountName: '', notes: '', file: null as File | null });
+  const [submittingManual, setSubmittingManual] = useState(false);
 
   useEffect(() => {
     loadCompanyName();
@@ -260,6 +264,38 @@ export default function CustomerDashboard() {
     } catch (error) { console.error('Load invoices error:', error); }
   };
 
+  const handleSubmitManual = async () => {
+    if (!manualPayModal) return;
+    const token = localStorage.getItem('customer_token');
+    if (!token) { router.push('/login'); return; }
+    setSubmittingManual(true);
+    try {
+      const body = new FormData();
+      body.append('bankName', manualForm.bankName.trim());
+      body.append('accountName', manualForm.accountName.trim());
+      if (manualForm.notes.trim()) body.append('notes', manualForm.notes.trim());
+      if (manualForm.file) body.append('file', manualForm.file);
+      const res = await fetch(`/api/customer/invoices/${manualPayModal.id}/manual-payment`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body,
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast('success', 'Bukti Transfer Terkirim', 'Admin akan mengkonfirmasi dalam 1×24 jam');
+        setManualPayModal(null);
+        setManualForm({ bankName: '', accountName: '', notes: '', file: null });
+        loadInvoices();
+      } else {
+        toast('error', 'Gagal', data.error || 'Gagal mengirim bukti transfer');
+      }
+    } catch {
+      toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
+    } finally {
+      setSubmittingManual(false);
+    }
+  };
+
   const loadOntDevice = async () => {
     const token = localStorage.getItem('customer_token');
     if (!token) return;
@@ -342,9 +378,8 @@ export default function CustomerDashboard() {
 
   return (
     <div className="p-3 lg:p-6">
-      {/* Top row: Profile + Balance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
-        {/* Profile Card */}
+      {/* Profile Card — full width */}
+      <div>
         <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 shadow-[0_0_30px_rgba(188,19,254,0.15)]">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 bg-primary/20 rounded-lg border border-primary/30 shadow-[0_0_10px_rgba(188,19,254,0.3)]">
@@ -540,32 +575,41 @@ export default function CustomerDashboard() {
                         </div>
                       </div>
                       {!isPaid && !isCancelled && (isPending || isOverdue) && (
-                        <>
-                          {invoice.paymentLink && invoice.paymentLink.trim() !== '' && !invoice.paymentLink.includes('localhost') ? (
-                            <button
-                              onClick={() => {
-                                console.log('[Dashboard] Bayar clicked for invoice:', invoice.invoiceNumber);
-                                console.log('[Dashboard] Opening payment URL:', invoice.paymentLink);
-                                window.open(invoice.paymentLink ?? undefined, '_blank', 'noopener,noreferrer');
-                              }}
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-accent hover:bg-accent/90 text-black text-[10px] font-bold rounded whitespace-nowrap transition shadow-[0_0_10px_rgba(0,247,255,0.3)]"
-                            >
-                              {t('customer.payNow')} <ExternalLink className="w-3 h-3" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleRegeneratePayment(invoice.id, invoice.invoiceNumber)}
-                              disabled={generatingPayment === invoice.id}
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-black text-[10px] font-bold rounded whitespace-nowrap transition disabled:opacity-50"
-                            >
-                              {generatingPayment === invoice.id ? (
-                                <><Loader2 className="w-3 h-3 animate-spin" /> {t('customer.processing')}</>
+                        <div className="flex flex-col gap-1">
+                          {invoice.manualPaymentStatus !== 'pending' && (
+                            <>
+                              {invoice.paymentLink && invoice.paymentLink.trim() !== '' && !invoice.paymentLink.includes('localhost') ? (
+                                <button
+                                  onClick={() => window.open(invoice.paymentLink ?? undefined, '_blank', 'noopener,noreferrer')}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-accent hover:bg-accent/90 text-black text-[10px] font-bold rounded whitespace-nowrap transition shadow-[0_0_10px_rgba(0,247,255,0.3)]"
+                                >
+                                  {t('customer.payNow')} <ExternalLink className="w-3 h-3" />
+                                </button>
                               ) : (
-                                <><Zap className="w-3 h-3" /> {t('customer.generateLink')}</>
+                                <button
+                                  onClick={() => handleRegeneratePayment(invoice.id, invoice.invoiceNumber)}
+                                  disabled={generatingPayment === invoice.id}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-yellow-500 hover:bg-yellow-600 text-black text-[10px] font-bold rounded whitespace-nowrap transition disabled:opacity-50"
+                                >
+                                  {generatingPayment === invoice.id ? (
+                                    <><Loader2 className="w-3 h-3 animate-spin" /> {t('customer.processing')}</>
+                                  ) : (
+                                    <><Zap className="w-3 h-3" /> {t('customer.generateLink')}</>
+                                  )}
+                                </button>
                               )}
-                            </button>
+                              <button
+                                onClick={() => setManualPayModal({ id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount })}
+                                className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-[10px] font-bold rounded whitespace-nowrap transition"
+                              >
+                                <Banknote className="w-3 h-3" /> Kirim Bukti
+                              </button>
+                            </>
                           )}
-                        </>
+                          {invoice.manualPaymentStatus === 'pending' && (
+                            <span className="text-[10px] text-yellow-400 font-medium text-right">Menunggu konfirmasi…</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -577,15 +621,15 @@ export default function CustomerDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-4">
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.1)]">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="p-2 bg-cyan-500/20 rounded-lg border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
-              <Zap className="w-4 h-4 text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" />
+      <div className="mt-3">
+        <CyberCard className="p-3 bg-card/80 backdrop-blur-xl border-2 border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.1)]">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="p-1.5 bg-cyan-500/20 rounded-lg border border-cyan-500/30 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
+              <Zap className="w-3.5 h-3.5 text-cyan-400 drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" />
             </div>
-            <h2 className="text-sm font-bold text-cyan-400 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">Menu Cepat</h2>
+            <h2 className="text-xs font-bold text-cyan-400 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">Menu Cepat</h2>
           </div>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-1.5">
             {([
               { name: 'Semua Tagihan',  href: '/customer/invoices',      icon: FileText,      bg: 'bg-success/10',   border: 'border-success/30',   text: 'text-success' },
               { name: 'Ganti Paket',   href: '/customer/upgrade',       icon: Package,       bg: 'bg-primary/10',   border: 'border-primary/30',   text: 'text-primary' },
@@ -600,9 +644,9 @@ export default function CustomerDashboard() {
                 <button
                   key={action.href}
                   onClick={() => router.push(action.href)}
-                  className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 hover:scale-105 active:scale-95 ${action.bg} ${action.border}`}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all duration-200 hover:scale-105 active:scale-95 ${action.bg} ${action.border}`}
                 >
-                  <Icon className={`w-5 h-5 ${action.text}`} />
+                  <Icon className={`w-4 h-4 ${action.text}`} />
                   <span className={`text-[9px] font-bold text-center leading-tight ${action.text}`}>{action.name}</span>
                 </button>
               );
@@ -610,6 +654,80 @@ export default function CustomerDashboard() {
           </div>
         </CyberCard>
       </div>
+
+      {/* Manual Payment Proof Modal */}
+      {manualPayModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-slate-900 border border-purple-500/30 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="p-5 border-b border-slate-700/50">
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-purple-400" />
+                Kirim Bukti Transfer
+              </h2>
+              <p className="text-xs text-slate-400 mt-1">
+                {manualPayModal.invoiceNumber} · Rp {manualPayModal.amount.toLocaleString('id-ID')}
+              </p>
+            </div>
+            <div className="p-5 space-y-3">
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1.5">Nama Bank <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  placeholder="cth: BCA, Mandiri, BRI…"
+                  value={manualForm.bankName}
+                  onChange={e => setManualForm(f => ({ ...f, bankName: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/60"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1.5">Nama Pengirim <span className="text-red-400">*</span></label>
+                <input
+                  type="text"
+                  placeholder="Nama sesuai rekening pengirim"
+                  value={manualForm.accountName}
+                  onChange={e => setManualForm(f => ({ ...f, accountName: e.target.value }))}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/60"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1.5">Bukti Transfer (Opsional)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={e => setManualForm(f => ({ ...f, file: e.target.files?.[0] ?? null }))}
+                  className="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-purple-500/20 file:text-purple-300 file:text-xs file:font-medium hover:file:bg-purple-500/30 cursor-pointer"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-slate-300 block mb-1.5">Catatan (Opsional)</label>
+                <textarea
+                  placeholder="Informasi tambahan…"
+                  value={manualForm.notes}
+                  onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))}
+                  rows={2}
+                  className="w-full bg-slate-800 border border-slate-600 rounded-xl px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/60 resize-none"
+                />
+              </div>
+            </div>
+            <div className="p-5 flex gap-3 border-t border-slate-700/50">
+              <button
+                onClick={() => { setManualPayModal(null); setManualForm({ bankName: '', accountName: '', notes: '', file: null }); }}
+                disabled={submittingManual}
+                className="flex-1 py-2.5 rounded-xl border border-slate-600 text-slate-300 text-sm font-medium hover:bg-slate-700/50 transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleSubmitManual}
+                disabled={submittingManual || !manualForm.bankName.trim() || !manualForm.accountName.trim()}
+                className="flex-1 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {submittingManual ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Banknote className="w-4 h-4" />Kirim</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
