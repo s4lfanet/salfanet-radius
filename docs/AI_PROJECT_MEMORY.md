@@ -11,12 +11,20 @@
 
 - **Version**: 2.11.6
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: March 27, 2026
+- **Last Updated**: March 28, 2026
 - **Latest Commit**: See GitHub
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
 
 ### Recent Patch Log (March 2026)
+
+- **Fix: billingDay reset to 1 on edit + MikroTik local-address verification** (`53688ee`, `28183d6`, March 28, 2026)
+  - **Root cause**: `UserDetailModal.tsx` (the ACTUAL edit modal) had `user.subscriptionType || 'PREPAID'` — wrong default. POSTPAID users showed PREPAID view, hiding billing day field entirely, always resetting it to 1.
+  - **Fix 1 (UserDetailModal.tsx)**: `subscriptionType: user.subscriptionType ?? 'POSTPAID'` and `billingDay: user.billingDay ?? new Date(user.expiredAt).getDate()` (infer from expiredAt when billingDay is null).
+  - **Fix 2 (users/page.tsx handleEdit)**: same `??` nullish coalescing fixes (fallback to SimpleModal add form, minor but fixed).
+  - **Fix 3 (pppoe.service.ts createPppoeUser)**: clamp billingDay to 1-28 (matches DB CHECK constraint; was 1-31).
+  - **Enhancement (sync-mikrotik/route.ts)**: after syncing local-address to RouterOS PPP profile, now reads back the profile to verify the value was stored. Shows actionable warning if RouterOS didn't persist it — RouterOS requires the IP to be configured as an interface address first.
+  - **Key architecture note**: `UserDetailModal.tsx` is the REAL edit dialog (`isOpen={isDialogOpen && !!editingUser}`). `SimpleModal` with `isOpen={isDialogOpen && !editingUser}` is the ADD form only — completely separate.
 
 - **Fix: NAS IP, billingDay/expiredAt, Area badge & form — PPPoE UI revamp** (`1a6d30e`, `a33d8d0`, `f3fd754`)
   - **Network column** di tabel PPPoE: label "IP:" diganti "IP NAS:", nilai diubah dari `user.ipAddress` (IP statis user) menjadi `user.router?.ipAddress ?? user.router?.nasname` (IP rekap router NAS dari DB). IP statis user tetap di kolom PPPoE.

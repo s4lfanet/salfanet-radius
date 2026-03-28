@@ -4,6 +4,31 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.11.6] - 2026-03-28 (PPPoE Edit Billing Day Fix + MikroTik Local-Address Verification)
+
+### ✅ Fix: billingDay Selalu Reset ke 1 Saat Edit User PPPoE
+
+- **Root cause ditemukan di `UserDetailModal.tsx`** (komponen edit yang sesungguhnya, `isOpen={isDialogOpen && !!editingUser}`):
+  - Default `subscriptionType` menggunakan `|| 'PREPAID'` (salah) — seharusnya `'POSTPAID'`. User POSTPAID dengan `subscriptionType` null ditampilkan sebagai PREPAID, sehingga field billing day tersembunyi dan selalu reset ke 1.
+  - `billingDay` menggunakan `|| 1` (falsy check) — nilai 0 atau null keduanya di-reset ke 1.
+- Fix: `user.subscriptionType ?? 'POSTPAID'` dan `billingDay: user.billingDay ?? new Date(user.expiredAt).getDate()` (infer dari expiredAt jika billingDay null).
+- Juga fix di `users/page.tsx` `handleEdit` — pola `??` yang sama.
+- `pppoe.service.ts` `createPppoeUser`: clamp billingDay ke 1-28 (sesuai DB CHECK constraint; sebelumnya 1-31).
+
+### ✅ Enhancement: MikroTik local-address Sync Verification
+
+- `sync-mikrotik/route.ts`: setelah set `local-address` di PPP profile via RouterOS API, sekarang **read back** profile untuk memverifikasi nilainya benar-benar tersimpan.
+- RouterOS secara diam-diam mengabaikan `local-address` jika IP tersebut belum dikonfigurasi sebagai alamat interface di router.
+- Jika tidak tersimpan: tampilkan warning yang actionable: "Pastikan IP dikonfigurasi sebagai alamat interface di MikroTik terlebih dahulu (`/ip address add address=X.X.X.X/32 interface=lo`), kemudian sync ulang."
+
+### Files Changed
+- `src/components/UserDetailModal.tsx` — fix subscriptionType default (`|| 'PREPAID'` → `?? 'POSTPAID'`) + billingDay nullish coalescing
+- `src/app/admin/pppoe/users/page.tsx` — fix handleEdit billingDay/subscriptionType defaults
+- `src/server/services/pppoe.service.ts` — clamp billingDay 31→28 in createPppoeUser
+- `src/app/api/pppoe/profiles/sync-mikrotik/route.ts` — add post-sync local-address read-back + actionable warning
+
+---
+
 ## [2.11.6] - 2026-03-27 (PPPoE UI Revamp + PPN Fix + Area & Billing Fixes)
 
 ### ✅ Feat: PPPoE Action Buttons Revamped (Phase 15)
