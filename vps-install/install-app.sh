@@ -94,6 +94,11 @@ create_env_file() {
     if [ -z "$AGENT_JWT_SECRET" ]; then
         export AGENT_JWT_SECRET=$(generate_secret)
     fi
+
+    # Generate Encryption key if not set
+    if [ -z "$ENCRYPTION_KEY" ]; then
+        export ENCRYPTION_KEY=$(openssl rand -hex 16)
+    fi
     
     # Get public IP if not set
     if [ -z "$VPS_IP" ]; then
@@ -127,6 +132,9 @@ NEXTAUTH_URL="${APP_BASE_URL}"
 # Agent Portal JWT
 AGENT_JWT_SECRET="${AGENT_JWT_SECRET}"
 
+# Encryption Key for sensitive data at rest (GenieACS password, VPN credentials)
+ENCRYPTION_KEY="${ENCRYPTION_KEY}"
+
 # Node Environment
 NODE_ENV="production"
 
@@ -145,6 +153,7 @@ EOF
     # Save to install info
     save_install_info "NEXTAUTH_SECRET" "$NEXTAUTH_SECRET"
     save_install_info "AGENT_JWT_SECRET" "$AGENT_JWT_SECRET"
+    save_install_info "ENCRYPTION_KEY" "$ENCRYPTION_KEY"
     save_install_info "VPS_IP" "$VPS_IP"
 }
 
