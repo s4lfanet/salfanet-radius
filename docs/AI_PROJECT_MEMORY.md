@@ -11,7 +11,7 @@
 
 - **Version**: 2.11.6
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: March 28, 2026
+- **Last Updated**: March 29, 2026
 - **Latest Commit**: See GitHub
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
@@ -94,9 +94,17 @@
   - Stabilize SSE live log stream with heartbeat + anti-buffering headers + auto reconnect.
   - Update script now uses zero-downtime `pm2 reload salfanet-radius` (cron tetap restart).
 
-- **Nginx manifest fix**
-  - Serve all manifest files statically via regex location (`manifest.json`, `manifest-admin.json`, dll.)
-  - Prevent intermittent 500 during app restart window.
+- **Fix: Nginx manifest 404 (final fix)** (`bca095f`, March 29, 2026)
+  - **Root cause 1**: nginx `alias` directive with regex location + `try_files` is fundamentally broken — nginx cannot resolve try_files paths correctly with alias in regex locations.
+  - **Root cause 2**: `cp -r public .next/standalone/public/` creates nested `public/public/` when target dir already exists (Next.js creates `.next/standalone/public/` during build).
+  - **Fix**: All nginx manifest/sw.js/pwa blocks now use `root /var/www/salfanet-radius/public;` (matching production VPS). No `alias`, no `try_files`, no `@nextjs` named locations.
+  - **Fix**: `cp -r public .next/standalone/public/` → `cp -r public/. .next/standalone/public/` (copy contents, not directory) in install-pm2.sh and fix-pwa-nginx.sh.
+  - Files changed: `vps-install/install-nginx.sh`, `vps-install/install-pm2.sh`, `vps-install/fix-pwa-nginx.sh`, `production/nginx-salfanet-radius.conf`
+  - Verified: `curl -I http://192.168.54.200/manifest-admin.json` → 200 OK
+
+- **Fix: Earlier nginx manifest attempt (superseded)** (`914d8c4`, `940f194`)
+  - First attempt used `alias` + `try_files` — broken in nginx with regex locations.
+  - `fix-pwa-nginx.sh` created but had same bugs. Fully rewritten in `bca095f`.
 
 - **UI spacing polish (admin cards)**
   - Push Notifications page: explicit `CardHeader`/`CardContent` paddings, refined icon-title gaps.

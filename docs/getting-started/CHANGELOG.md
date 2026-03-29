@@ -4,6 +4,57 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.11.7] - 2026-03-29 (Nginx Manifest 404 Final Fix)
+
+### ✅ Fix: PWA manifest-admin.json (dan semua manifest) 404 pada fresh install VPS
+
+- **Root cause 1**: nginx `alias` dengan regex location + `try_files` secara fundamental broken — nginx tidak bisa resolve `try_files` path dengan benar saat pakai `alias` di regex location.
+- **Root cause 2**: `cp -r public .next/standalone/public/` membuat nested `public/public/` jika target dir sudah ada (Next.js membuat `.next/standalone/public/` saat build).
+- **Ditemukan** dengan membandingkan konfigurasi VPS production (103.151.140.110) vs fresh install (192.168.54.200).
+- **Solusi**: Semua block nginx manifest/sw.js/pwa kini menggunakan `root /var/www/salfanet-radius/public;` (sesuai VPS production yang sudah berjalan). Tidak ada `alias`, `try_files`, atau `@nextjs` named location.
+- **Solusi cp**: `cp -r public .next/standalone/public/` → `cp -r public/. .next/standalone/public/` (copy contents, bukan directory).
+
+### Files Changed
+- `vps-install/install-nginx.sh` — kedua fungsi `_proxy_locations()` menggunakan `root /var/www/salfanet-radius/public`
+- `vps-install/install-pm2.sh` — fix cp nesting di `build_application()` dan generated `deploy.sh`
+- `vps-install/fix-pwa-nginx.sh` — rewrite lengkap dengan pendekatan `root /var/www/salfanet-radius/public`
+- `production/nginx-salfanet-radius.conf` — semua 3 server block (HTTP IP, HTTPS domain, HTTPS IP) diperbaiki
+
+### Tutorial: Perbaikan Manual untuk VPS yang Sudah Terinstall
+
+Jika VPS sudah terinstall dengan installer lama dan mengalami manifest 404:
+
+```bash
+# Opsi 1: Jalankan fix script otomatis
+cd /var/www/salfanet-radius
+sudo bash vps-install/fix-pwa-nginx.sh
+
+# Opsi 2: Fix manual nginx saja
+# Edit /etc/nginx/sites-available/salfanet-radius
+# Ganti semua block manifest yang pakai alias:
+#   location ~* ^/manifest(-admin|-agent|-customer|-technician)?\.json$ {
+#       alias /var/www/salfanet-radius/.next/standalone/public/;
+#       try_files $uri @nextjs;
+#       ...
+#   }
+# Dengan:
+#   location ~ ^/manifest(-[a-z]+)?\.json$ {
+#       root /var/www/salfanet-radius/public;
+#       expires 1d;
+#       add_header Cache-Control "public, max-age=86400";
+#       add_header Content-Type "application/manifest+json";
+#   }
+# Lakukan hal yang sama untuk sw.js dan tambahkan /pwa/ location.
+# Hapus semua location @nextjs yang tidak dipakai lagi.
+sudo nginx -t && sudo systemctl reload nginx
+
+# Verifikasi:
+curl -I http://$(hostname -I | awk '{print $1}')/manifest-admin.json
+# Harus HTTP 200 OK
+```
+
+---
+
 ## [2.11.6] - 2026-03-28 (PPPoE Edit Billing Day Fix + MikroTik Local-Address Verification)
 
 ### ✅ Fix: billingDay Selalu Reset ke 1 Saat Edit User PPPoE

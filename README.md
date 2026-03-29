@@ -328,6 +328,12 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 
 ## 📝 Changelog
 
+### v2.11.7 — March 29, 2026
+- **Fix: PWA manifest 404 pada fresh install** — nginx `alias` + regex + `try_files` diganti `root /var/www/salfanet-radius/public` (sesuai VPS production)
+- **Fix: `cp -r public` nesting bug** — `cp -r public .next/standalone/public/` → `cp -r public/. .next/standalone/public/` (hindari nested `public/public/`)
+- **Rewrite: `fix-pwa-nginx.sh`** — script perbaikan otomatis ditulis ulang dengan pendekatan yang benar
+- Files: `install-nginx.sh`, `install-pm2.sh`, `fix-pwa-nginx.sh`, `nginx-salfanet-radius.conf`
+
 ### v2.11.5 — March 20, 2026
 - Fix: ghost sessions filtered from session list (sessions not in `pppoeUser` or `hotspotVoucher` are hidden)
 - Fix: RADIUS authorize now returns explicit REJECT for unregistered users (was allowing access via empty `{}`)
