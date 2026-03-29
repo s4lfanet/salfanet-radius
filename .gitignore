@@ -56,8 +56,8 @@ pids/
 *.pid.lock
 
 # Backup / temporary files
-backup/
-backups/
+/backup/
+/backups/
 tmp/
 temp/
 *.tmp

@@ -53,16 +53,30 @@ export function SimpleModal({
     showClose = true,
     className
 }: SimpleModalProps) {
-    // Handle escape key
+    // Stable ref for onClose — prevents useEffect churn when consumers pass inline arrows.
+    // Without this, every parent re-render (e.g. notification polling every 30s,
+    // or setFormData on each keystroke) creates a new onClose reference, causing the
+    // Escape-key effect to teardown/setup on EVERY render. On mobile this rapid
+    // event-listener churn interferes with virtual-keyboard focus → keyboard dismisses.
+    const onCloseRef = React.useRef(onClose);
+    React.useLayoutEffect(() => { onCloseRef.current = onClose; });
+
+    // Track where pointer-down started so we only close on intentional backdrop clicks,
+    // not when the user drags from inside the modal to outside (common on mobile).
+    const pointerDownTarget = React.useRef<EventTarget | null>(null);
+    const contentRef = React.useRef<HTMLDivElement>(null);
+
+    // Handle escape key — depends only on isOpen (not onClose)
     React.useEffect(() => {
+        if (!isOpen) return;
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
-                onClose();
+            if (e.key === 'Escape') {
+                onCloseRef.current();
             }
         };
         document.addEventListener('keydown', handleEscape);
         return () => document.removeEventListener('keydown', handleEscape);
-    }, [isOpen, onClose]);
+    }, [isOpen]);
 
     // Prevent body scroll when modal is open
     React.useEffect(() => {
@@ -76,14 +90,33 @@ export function SimpleModal({
         };
     }, [isOpen]);
 
+    // Backdrop click handler: close only if both pointer-down and pointer-up
+    // happened outside the modal content. This prevents accidental closes from
+    // drag interactions and is reliable across desktop and mobile browsers.
+    const handlePointerDown = React.useCallback((e: React.PointerEvent) => {
+        pointerDownTarget.current = e.target;
+    }, []);
+
+    const handleClick = React.useCallback((e: React.MouseEvent) => {
+        // Only close if both the mousedown/touchstart AND the click landed
+        // outside the modal content panel
+        if (
+            contentRef.current &&
+            !contentRef.current.contains(e.target as Node) &&
+            !contentRef.current.contains(pointerDownTarget.current as Node)
+        ) {
+            onCloseRef.current();
+        }
+        pointerDownTarget.current = null;
+    }, []);
+
     if (!isOpen) return null;
 
     return createPortal(
         <div
             className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
-            onClick={(e) => {
-                if (e.target === e.currentTarget) onClose();
-            }}
+            onPointerDown={handlePointerDown}
+            onClick={handleClick}
         >
             {/* Backdrop with blur and subtle grid */}
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-in fade-in-0 duration-200">
@@ -93,6 +126,7 @@ export function SimpleModal({
 
             {/* Modal Container */}
             <div
+                ref={contentRef}
                 className={cn(
                     'relative w-full modal-content',
                     sizeClasses[size],
@@ -107,6 +141,7 @@ export function SimpleModal({
                     className
                 )}
                 onClick={(e) => e.stopPropagation()}
+                onTouchStart={(e) => e.stopPropagation()}
             >
                 {/* Top neon line accent */}
                 <div className="absolute top-0 left-8 right-8 h-[2px] bg-gradient-to-r from-transparent via-primary dark:via-[#00f7ff] to-transparent" />
@@ -114,7 +149,7 @@ export function SimpleModal({
                 {/* Close button */}
                 {showClose && (
                     <button
-                        onClick={onClose}
+                        onClick={(e) => { e.stopPropagation(); onCloseRef.current(); }}
                         className={cn(
                             'absolute right-3 top-3 z-10 rounded-lg p-2',
                             'text-muted-foreground hover:text-primary',
