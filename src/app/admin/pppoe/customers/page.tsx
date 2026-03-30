@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -38,6 +38,114 @@ function generateCustomerId(): string {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
+// Isolated modal component — formData lives here so typing only re-renders this
+// component, not the entire PppoeCustomersPage. Previously CustomerForm was defined
+// inline inside the parent render, causing React to unmount/remount the form on
+// every keystroke (new component identity each render) → cursor lost, keyboard closes.
+function CustomerFormModal({ isOpen, onClose, onSuccess, editCustomer }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  editCustomer?: Customer | null;
+}) {
+  const isEdit = !!editCustomer;
+  const [formData, setFormData] = useState({
+    name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: generateCustomerId(),
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Reset / populate form when modal opens
+  const prevIsOpen = useRef(isOpen);
+  useEffect(() => {
+    if (isOpen && !prevIsOpen.current) {
+      if (editCustomer) {
+        setFormData({ name: editCustomer.name, phone: editCustomer.phone, email: editCustomer.email || '', address: editCustomer.address || '', idCardNumber: editCustomer.idCardNumber || '', customerId: editCustomer.customerId });
+      } else {
+        setFormData({ name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: generateCustomerId() });
+      }
+      setSaving(false);
+    }
+    prevIsOpen.current = isOpen;
+  }, [isOpen, editCustomer]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      const method = isEdit ? 'PUT' : 'POST';
+      const body = isEdit ? { id: editCustomer!.id, ...formData } : formData;
+      const res = await fetch('/api/pppoe/customers', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        onClose();
+        onSuccess();
+        await showSuccess(isEdit ? 'Customer berhasil diperbarui' : 'Customer berhasil ditambahkan');
+      } else {
+        await showError(data.error || (isEdit ? 'Gagal memperbarui customer' : 'Gagal menambahkan customer'));
+      }
+    } catch { await showError(isEdit ? 'Gagal memperbarui customer' : 'Gagal menambahkan customer'); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <SimpleModal isOpen={isOpen} onClose={onClose} size="md">
+      <ModalHeader>
+        <ModalTitle>{isEdit ? 'Edit Customer' : 'Tambah Customer'}</ModalTitle>
+        <ModalDescription>{isEdit ? editCustomer?.name : 'Tambah data pelanggan baru'}</ModalDescription>
+      </ModalHeader>
+      <form onSubmit={handleSubmit}>
+        <ModalBody className="space-y-4 max-h-[60vh] overflow-y-auto">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="col-span-2">
+              <ModalLabel required>Nama Lengkap</ModalLabel>
+              <ModalInput type="text" value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} placeholder="Nama lengkap customer" required />
+            </div>
+            <div>
+              <ModalLabel required>No. HP / WhatsApp</ModalLabel>
+              <ModalInput type="tel" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} placeholder="08xxxxxxxxxx" required />
+            </div>
+            <div>
+              <ModalLabel>Email</ModalLabel>
+              <ModalInput type="email" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} placeholder="email@contoh.com" />
+            </div>
+          </div>
+          <div>
+            <ModalLabel>Alamat</ModalLabel>
+            <ModalTextarea value={formData.address} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="Alamat lengkap customer..." rows={3} />
+          </div>
+          <div>
+            <ModalLabel>No. KTP <span className="text-muted-foreground text-[10px]">(opsional)</span></ModalLabel>
+            <ModalInput type="text" value={formData.idCardNumber} onChange={(e) => setFormData(prev => ({ ...prev, idCardNumber: e.target.value }))} placeholder="16 digit NIK KTP" maxLength={16} />
+          </div>
+          <div>
+            <ModalLabel>ID Customer</ModalLabel>
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/60 border border-border rounded-lg">
+              <span className="font-mono text-sm font-semibold text-[#00f7ff] flex-1 tracking-widest">{formData.customerId}</span>
+              {!isEdit && (
+                <button type="button" onClick={() => setFormData(prev => ({ ...prev, customerId: generateCustomerId() }))} className="p-1 text-muted-foreground hover:text-foreground" title="Generate ulang ID">
+                  <RefreshCw className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-1">{isEdit ? 'ID customer tidak dapat diubah' : 'ID di-generate otomatis, klik ↻ untuk generate ulang'}</p>
+          </div>
+        </ModalBody>
+        <ModalFooter>
+          <ModalButton type="button" variant="secondary" onClick={onClose}>Batal</ModalButton>
+          <ModalButton type="submit" variant="primary" disabled={saving}>
+            {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+            {isEdit ? 'Simpan' : 'Tambah Customer'}
+          </ModalButton>
+        </ModalFooter>
+      </form>
+    </SimpleModal>
+  );
+}
+
 export default function PppoeCustomersPage() {
   const { hasPermission } = usePermissions();
   const { t } = useTranslation();
@@ -52,15 +160,10 @@ export default function PppoeCustomersPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [saving, setSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors: any[] } | null>(null);
-
-  const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: '',
-  });
 
   const loadCustomers = useCallback(async () => {
     setLoading(true);
@@ -77,14 +180,9 @@ export default function PppoeCustomersPage() {
 
   useEffect(() => { loadCustomers(); }, [loadCustomers]);
 
-  const resetForm = () => {
-    setFormData({ name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: generateCustomerId() });
-  };
-
-  const openAdd = () => { resetForm(); setIsAddOpen(true); };
+  const openAdd = () => { setIsAddOpen(true); };
   const openEdit = (c: Customer) => {
     setSelectedCustomer(c);
-    setFormData({ name: c.name, phone: c.phone, email: c.email || '', address: c.address || '', idCardNumber: c.idCardNumber || '', customerId: c.customerId });
     setIsEditOpen(true);
   };
   const openDetail = async (c: Customer) => {
@@ -94,49 +192,6 @@ export default function PppoeCustomersPage() {
       setSelectedCustomer(data.customer || c);
     } catch { setSelectedCustomer(c); }
     setIsDetailOpen(true);
-  };
-
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const res = await fetch('/api/pppoe/customers', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setIsAddOpen(false);
-        loadCustomers();
-        await showSuccess('Customer berhasil ditambahkan');
-      } else {
-        await showError(data.error || 'Gagal menambahkan customer');
-      }
-    } catch { await showError('Gagal menambahkan customer'); }
-    finally { setSaving(false); }
-  };
-
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedCustomer) return;
-    setSaving(true);
-    try {
-      const res = await fetch('/api/pppoe/customers', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: selectedCustomer.id, ...formData }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setIsEditOpen(false);
-        loadCustomers();
-        await showSuccess('Customer berhasil diperbarui');
-      } else {
-        await showError(data.error || 'Gagal memperbarui customer');
-      }
-    } catch { await showError('Gagal memperbarui customer'); }
-    finally { setSaving(false); }
   };
 
   const handleDelete = async (c: Customer) => {
@@ -212,54 +267,6 @@ export default function PppoeCustomersPage() {
 
   const canCreate = hasPermission('customers.edit');
   const canDelete = hasPermission('customers.edit');
-
-  const CustomerForm = ({ onSubmit, isEdit = false }: { onSubmit: (e: React.FormEvent) => void; isEdit?: boolean }) => (
-    <form onSubmit={onSubmit}>
-      <ModalBody className="space-y-4 max-h-[60vh] overflow-y-auto">
-        <div className="grid grid-cols-2 gap-3">
-          <div className="col-span-2">
-            <ModalLabel required>Nama Lengkap</ModalLabel>
-            <ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Nama lengkap customer" required />
-          </div>
-          <div>
-            <ModalLabel required>No. HP / WhatsApp</ModalLabel>
-            <ModalInput type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="08xxxxxxxxxx" required />
-          </div>
-          <div>
-            <ModalLabel>Email</ModalLabel>
-            <ModalInput type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="email@contoh.com" />
-          </div>
-        </div>
-        <div>
-          <ModalLabel>Alamat</ModalLabel>
-          <ModalTextarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} placeholder="Alamat lengkap customer..." rows={3} />
-        </div>
-        <div>
-          <ModalLabel>No. KTP <span className="text-muted-foreground text-[10px]">(opsional)</span></ModalLabel>
-          <ModalInput type="text" value={formData.idCardNumber} onChange={(e) => setFormData({ ...formData, idCardNumber: e.target.value })} placeholder="16 digit NIK KTP" maxLength={16} />
-        </div>
-        <div>
-          <ModalLabel>ID Customer</ModalLabel>
-          <div className="flex items-center gap-2 px-3 py-2 bg-muted/60 border border-border rounded-lg">
-            <span className="font-mono text-sm font-semibold text-[#00f7ff] flex-1 tracking-widest">{formData.customerId}</span>
-            {!isEdit && (
-              <button type="button" onClick={() => setFormData({ ...formData, customerId: generateCustomerId() })} className="p-1 text-muted-foreground hover:text-foreground" title="Generate ulang ID">
-                <RefreshCw className="h-3 w-3" />
-              </button>
-            )}
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-1">{isEdit ? 'ID customer tidak dapat diubah' : 'ID di-generate otomatis, klik ↻ untuk generate ulang'}</p>
-        </div>
-      </ModalBody>
-      <ModalFooter>
-        <ModalButton type="button" variant="secondary" onClick={() => { setIsAddOpen(false); setIsEditOpen(false); }}>Batal</ModalButton>
-        <ModalButton type="submit" variant="primary" disabled={saving}>
-          {saving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-          {isEdit ? 'Simpan' : 'Tambah Customer'}
-        </ModalButton>
-      </ModalFooter>
-    </form>
-  );
 
   return (
     <div className="p-4 space-y-4">
@@ -531,22 +538,19 @@ export default function PppoeCustomersPage() {
       </div>
 
       {/* Add Modal */}
-      <SimpleModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} size="md">
-        <ModalHeader>
-          <ModalTitle>Tambah Customer</ModalTitle>
-          <ModalDescription>Tambah data pelanggan baru</ModalDescription>
-        </ModalHeader>
-        <CustomerForm onSubmit={handleCreate} />
-      </SimpleModal>
+      <CustomerFormModal
+        isOpen={isAddOpen}
+        onClose={() => setIsAddOpen(false)}
+        onSuccess={() => loadCustomers()}
+      />
 
       {/* Edit Modal */}
-      <SimpleModal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} size="md">
-        <ModalHeader>
-          <ModalTitle>Edit Customer</ModalTitle>
-          <ModalDescription>{selectedCustomer?.name}</ModalDescription>
-        </ModalHeader>
-        <CustomerForm onSubmit={handleUpdate} isEdit />
-      </SimpleModal>
+      <CustomerFormModal
+        isOpen={isEditOpen}
+        onClose={() => setIsEditOpen(false)}
+        onSuccess={() => loadCustomers()}
+        editCustomer={selectedCustomer}
+      />
 
       {/* Detail Modal */}
       <SimpleModal isOpen={isDetailOpen} onClose={() => setIsDetailOpen(false)} size="md">
