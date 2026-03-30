@@ -432,7 +432,7 @@ export default function InvoicesPage() {
       const fmtCurr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
       const win = window.open('', '_blank', 'width=850,height=1100');
       if (!win) return;
-      win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${inv.invoice.number}</title>
+      win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Invoice ${inv.invoice.number}</title>
       <style>
         @media print {
           @page { size: A4; margin: 10mm; }
@@ -450,7 +450,7 @@ export default function InvoicesPage() {
           th, td { word-break: break-word; }
         }
         * { box-sizing: border-box; }
-        body { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 24px; background: #f8fafc; }
+        body { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 24px 24px 80px; background: #f8fafc; }
         .sheet { background: #fff; border: 1px solid #dbe7e4; border-radius: 18px; overflow: visible; box-shadow: 0 18px 50px rgba(15, 118, 110, 0.08); max-width: 980px; margin: 0 auto; }
         .topbar { height: 7px; background: linear-gradient(90deg, #0d9488, #14b8a6, #5eead4); }
         .content { padding: 24px; }
@@ -487,7 +487,24 @@ export default function InvoicesPage() {
         .paid-stamp-text { font-size: 24px; font-weight: bold; color: #10b981; letter-spacing: 6px; }
         .paid-stamp-sub { font-size: 11px; color: #555; margin-top: 2px; }
         .footer { margin-top: 28px; text-align: center; color: #aaa; font-size: 10px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
-        .print-btn { position: fixed; bottom: 20px; right: 20px; padding: 10px 22px; background: #0d9488; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .action-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 10px; padding: 12px 16px; background: #fff; border-top: 1px solid #e5e7eb; box-shadow: 0 -4px 12px rgba(0,0,0,0.08); z-index: 100; }
+        .btn-print { flex: 1; padding: 12px; background: #0d9488; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .btn-close { flex: 1; padding: 12px; background: #6b7280; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        @media (max-width: 640px) {
+          body { padding: 8px 8px 80px !important; }
+          .sheet { border-radius: 10px !important; max-width: 100% !important; }
+          .content { padding: 14px !important; }
+          .header { flex-direction: column; gap: 10px; }
+          .header-right { text-align: left; padding-top: 0; }
+          .inv-title { font-size: 20px; }
+          .inv-number { font-size: 12px; }
+          .bill-grid { grid-template-columns: 1fr; gap: 12px; }
+          .meta-card { padding: 10px 12px; }
+          .actions-grid { grid-template-columns: 1fr; }
+          table { font-size: 10px; }
+          th, td { padding: 5px 6px; }
+          .paid-stamp-text { font-size: 18px; }
+        }
       </style></head><body>
       <div class="sheet">
       <div class="topbar"></div>
@@ -591,8 +608,10 @@ export default function InvoicesPage() {
       <div class="footer">Terima kasih atas kepercayaan Anda &mdash; ${inv.company.name}</div>
       </div>
       </div>
-      <button class="print-btn no-print" onclick="window.print()">&#128438; Cetak</button>
-      <script>window.onload = function() { window.print(); }</script>
+      <div class="action-bar no-print">
+        <button class="btn-print" onclick="window.print()">&#128438; Cetak</button>
+        <button class="btn-close" onclick="window.close()">&#10005; Tutup</button>
+      </div>
       </body></html>`);
       win.document.close();
     } catch (error) { console.error('Print standard error:', error); await showError(t('invoices.failedPrintInvoice')); }
@@ -607,11 +626,11 @@ export default function InvoicesPage() {
       const fmtCurr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
       const win = window.open('', '_blank', 'width=400,height=650');
       if (!win) return;
-      win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Struk ${inv.invoice.number}</title>
+      win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Struk ${inv.invoice.number}</title>
       <style>
-        @media print { @page { margin: 0; width: 80mm; } .no-print { display: none !important; } }
+        @media print { @page { margin: 0; width: 80mm; } body { padding: 0 !important; } .no-print { display: none !important; } }
         * { box-sizing: border-box; }
-        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 80mm; padding: 0; margin: 0 auto; color: #000; background: #fff; }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 80mm; max-width: 100%; padding: 0 0 70px; margin: 0 auto; color: #000; background: #fff; }
         .receipt { border-top: 4px solid #0d9488; padding: 5mm 4mm; }
         .logo { display:block; max-width: 34mm; max-height: 14mm; margin: 0 auto 3px; object-fit: contain; }
         .center { text-align: center; }
@@ -627,7 +646,9 @@ export default function InvoicesPage() {
         .bank-box { border: 1px dashed #000; padding: 5px; margin: 4px 0; }
         .pay-box { border: 1px solid #0d9488; background: #f0fdfa; padding: 6px; margin: 6px 0; }
         .pay-link { display:block; color:#0f172a; text-decoration:none; word-break:break-all; margin-top:4px; }
-        .print-btn { display: block; margin: 10px auto; padding: 6px 18px; background: #0d9488; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
+        .action-bar { position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 8px; padding: 10px 12px; background: #fff; border-top: 1px solid #e5e7eb; box-shadow: 0 -4px 12px rgba(0,0,0,0.08); z-index: 100; }
+        .btn-print { flex: 1; padding: 10px; background: #0d9488; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        .btn-close { flex: 1; padding: 10px; background: #6b7280; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
       </style></head><body>
       <div class="receipt">
       ${inv.company.logo ? `<img class="logo" src="${inv.company.logo}" alt="Logo">` : ''}
@@ -666,8 +687,10 @@ export default function InvoicesPage() {
       <div class="dashed"></div>
       <div class="center sm" style="margin-top:4px">Terima kasih</div>
       </div>
-      <button class="print-btn no-print" onclick="window.print()">&#128438; Cetak</button>
-      <script>window.onload = function() { window.print(); }</script>
+      <div class="action-bar no-print">
+        <button class="btn-print" onclick="window.print()">&#128438; Cetak</button>
+        <button class="btn-close" onclick="window.close()">&#10005; Tutup</button>
+      </div>
       </body></html>`);
       win.document.close();
     } catch (error) { console.error('Print thermal error:', error); await showError(t('invoices.failedPrintInvoice')); }
