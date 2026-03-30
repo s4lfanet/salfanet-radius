@@ -463,12 +463,15 @@ export default function InvoicesPage() {
         .print-btn { position: fixed; bottom: 20px; right: 20px; padding: 10px 22px; background: #0d9488; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
       </style></head><body>
       <div class="header">
-        <div>
-          <div class="company-name">${inv.company.name}</div>
-          <div class="company-sub">
-            ${inv.company.address ? `${inv.company.address}<br>` : ''}
-            ${inv.company.phone ? `Telp: ${inv.company.phone}<br>` : ''}
-            ${inv.company.email ? `${inv.company.email}` : ''}
+        <div style="display:flex;align-items:center;gap:14px">
+          ${inv.company.logo ? `<img src="${inv.company.logo}" style="height:64px;width:auto;object-fit:contain" alt="Logo">` : ''}
+          <div>
+            <div class="company-name">${inv.company.name}</div>
+            <div class="company-sub">
+              ${inv.company.address ? `${inv.company.address}<br>` : ''}
+              ${inv.company.phone ? `Telp: ${inv.company.phone}<br>` : ''}
+              ${inv.company.email ? `${inv.company.email}` : ''}
+            </div>
           </div>
         </div>
         <div style="text-align:right">
@@ -488,10 +491,10 @@ export default function InvoicesPage() {
         <div>
           <div class="section-title">Kepada</div>
           <div class="info-row"><strong>${inv.customer.name}</strong></div>
-          ${invoice.user?.customerId ? `<div class="info-row"><span class="info-label">ID Pelanggan: </span>${invoice.user.customerId}</div>` : ''}
+          ${inv.customer.customerId ? `<div class="info-row"><span class="info-label">ID Pelanggan: </span>${inv.customer.customerId}</div>` : ''}
           ${inv.customer.phone ? `<div class="info-row"><span class="info-label">Telp: </span>${inv.customer.phone}</div>` : ''}
           ${inv.customer.username ? `<div class="info-row"><span class="info-label">Username: </span>${inv.customer.username}</div>` : ''}
-          ${invoice.user?.area?.name ? `<div class="info-row"><span class="info-label">Area: </span>${invoice.user.area.name}</div>` : ''}
+          ${inv.customer.area ? `<div class="info-row"><span class="info-label">Area: </span>${inv.customer.area}</div>` : ''}
         </div>
       </div>
       <div class="bill-grid">
@@ -503,9 +506,9 @@ export default function InvoicesPage() {
           ${inv.invoice.paidAt ? `<div class="info-row"><span class="info-label">Tgl Bayar: </span>${inv.invoice.paidAt}</div>` : ''}
         </div>
         <div>
-          <div class="section-title">Pembayaran</div>
-          <div class="info-row"><span class="info-label">Metode: </span>${inv.paymentLink ? 'Payment Gateway' : 'Manual'}</div>
-          <div class="info-row"><span class="info-label">Status: </span>${inv.invoice.status}</div>
+          <div class="section-title">Status Pembayaran</div>
+          <div class="info-row"><span class="info-label">Status: </span><strong>${inv.invoice.status === 'PAID' ? '&#10003; LUNAS' : inv.invoice.status === 'OVERDUE' ? '&#9888; TERLAMBAT' : '&#9203; BELUM BAYAR'}</strong></div>
+          ${inv.invoice.paidAt ? `<div class="info-row"><span class="info-label">Dibayar pada: </span>${inv.invoice.paidAt}</div><div class="info-row"><span class="info-label">Via: </span>${inv.paymentLink ? 'Payment Gateway' : 'Manual'}</div>` : ''}
         </div>
       </div>
       <div class="section-title">Rincian Layanan</div>
@@ -515,10 +518,32 @@ export default function InvoicesPage() {
           ${inv.items.map((item: { description: string; quantity: number; price: number; total: number }) => `
             <tr><td>${item.description}</td><td style="text-align:center">${item.quantity}</td><td class="td-right">${fmtCurr(item.price)}</td><td class="td-right">${fmtCurr(item.total)}</td></tr>
           `).join('')}
+          ${(inv.additionalFees || []).map((fee: { name: string; amount: number }) => `
+            <tr><td>${fee.name}</td><td style="text-align:center">1</td><td class="td-right">${fmtCurr(fee.amount)}</td><td class="td-right">${fmtCurr(fee.amount)}</td></tr>
+          `).join('')}
+          ${inv.tax && inv.tax.hasTax ? `
+            <tr style="background:#f9fafb"><td colspan="3" style="text-align:right;font-size:11px;color:#555;padding:5px 10px">Subtotal</td><td class="td-right" style="color:#555;font-size:11px;padding:5px 10px">${fmtCurr(inv.tax.baseAmount)}</td></tr>
+            <tr style="background:#fffbeb"><td colspan="3" style="text-align:right;font-size:11px;color:#d97706;padding:5px 10px">PPN ${inv.tax.taxRate}%</td><td class="td-right" style="color:#d97706;font-size:11px;padding:5px 10px">${fmtCurr(inv.tax.taxAmount)}</td></tr>
+          ` : ''}
           <tr class="total-row"><td colspan="3" class="td-right">TOTAL</td><td class="td-right">${inv.amountFormatted}</td></tr>
         </tbody>
       </table>
-      ${inv.invoice.paidAt ? `<div class="paid-stamp"><div class="paid-stamp-text">LUNAS</div><div class="paid-stamp-sub">Dibayar pada ${inv.invoice.paidAt}</div></div>` : ''}
+      ${inv.invoice.paidAt ? `<div class="paid-stamp"><div class="paid-stamp-text">LUNAS</div><div class="paid-stamp-sub">Dibayar pada ${inv.invoice.paidAt}</div></div>` :
+        (inv.company.bankAccounts && inv.company.bankAccounts.length > 0 ? `
+        <div style="margin:18px 0;padding:16px;border:1px solid #6ee7b7;border-radius:8px;background:#f0fdfa">
+          <div class="section-title" style="margin-bottom:10px">Pembayaran Manual</div>
+          <p style="margin:0 0 12px;font-size:11px;color:#555">Transfer ke salah satu rekening berikut sebelum jatuh tempo:</p>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px">
+            ${inv.company.bankAccounts.map((ba: { bankName: string; accountNumber: string; accountName: string }) => `
+              <div style="border:1px solid #0d948840;border-radius:8px;padding:10px 14px;background:#fff">
+                <div style="font-weight:bold;font-size:12px;color:#0d9488;margin-bottom:4px">${ba.bankName}</div>
+                <div style="font-size:14px;font-weight:bold;letter-spacing:1px">${ba.accountNumber}</div>
+                <div style="font-size:11px;color:#555;margin-top:2px">a/n ${ba.accountName}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      ` : '')}
       <div class="footer">Terima kasih atas kepercayaan Anda &mdash; ${inv.company.name}</div>
       <button class="print-btn no-print" onclick="window.print()">&#128438; Cetak</button>
       <script>window.onload = function() { window.print(); }</script>
@@ -541,6 +566,7 @@ export default function InvoicesPage() {
         @media print { @page { margin: 0; width: 80mm; } .no-print { display: none !important; } }
         * { box-sizing: border-box; }
         body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 80mm; padding: 5mm 4mm; margin: 0 auto; color: #000; background: #fff; }
+        .logo { display:block; max-width: 34mm; max-height: 14mm; margin: 0 auto 3px; object-fit: contain; }
         .center { text-align: center; }
         .bold { font-weight: bold; }
         .big { font-size: 14px; }
@@ -551,8 +577,10 @@ export default function InvoicesPage() {
         .total-row { font-weight: bold; font-size: 13px; }
         .lunas-stamp { display: block; text-align: center; font-size: 17px; font-weight: bold; border: 3px double #000; padding: 4px 14px; margin: 8px auto; width: fit-content; letter-spacing: 3px; }
         .sm { font-size: 10px; color: #555; }
+        .bank-box { border: 1px dashed #000; padding: 5px; margin: 4px 0; }
         .print-btn { display: block; margin: 10px auto; padding: 6px 18px; background: #0d9488; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
       </style></head><body>
+      ${inv.company.logo ? `<img class="logo" src="${inv.company.logo}" alt="Logo">` : ''}
       <div class="center bold big">${inv.company.name}</div>
       ${inv.company.address ? `<div class="center sm">${inv.company.address}</div>` : ''}
       ${inv.company.phone ? `<div class="center sm">Telp: ${inv.company.phone}</div>` : ''}
@@ -562,23 +590,29 @@ export default function InvoicesPage() {
       <div class="row"><span>Kasir</span><span>Administrator</span></div>
       <div class="dashed"></div>
       <div class="row"><span>Pelanggan</span><span>${inv.customer.name}</span></div>
-      ${invoice.user?.customerId ? `<div class="row"><span>ID</span><span>${invoice.user.customerId}</span></div>` : ''}
+      ${inv.customer.customerId ? `<div class="row"><span>ID</span><span>${inv.customer.customerId}</span></div>` : ''}
       ${inv.customer.phone ? `<div class="row"><span>Telp</span><span>${inv.customer.phone}</span></div>` : ''}
-      ${invoice.user?.area?.name ? `<div class="row"><span>Area</span><span>${invoice.user.area.name}</span></div>` : ''}
+      ${inv.customer.area ? `<div class="row"><span>Area</span><span>${inv.customer.area}</span></div>` : ''}
       <div class="dashed"></div>
       ${inv.items.map((item: { description: string; quantity: number; price: number }) => `
         <div style="margin-bottom:3px">${item.description}</div>
         <div class="row"><span>&nbsp;&nbsp;${item.quantity} x</span><span>${fmtCurr(item.price)}</span></div>
       `).join('')}
+      ${(inv.additionalFees || []).map((fee: { name: string; amount: number }) => `
+        <div style="margin-bottom:3px">${fee.name}</div>
+        <div class="row"><span>&nbsp;&nbsp;1 x</span><span>${fmtCurr(fee.amount)}</span></div>
+      `).join('')}
       <div class="dashed"></div>
+      ${inv.tax && inv.tax.hasTax ? `<div class="row"><span>Subtotal</span><span>${fmtCurr(inv.tax.baseAmount)}</span></div><div class="row"><span>PPN ${inv.tax.taxRate}%</span><span>${fmtCurr(inv.tax.taxAmount)}</span></div><div class="dashed"></div>` : ''}
       <div class="row total-row"><span>TOTAL</span><span>${inv.amountFormatted}</span></div>
       <div class="dashed"></div>
       <div class="row"><span>Jatuh Tempo</span><span>${inv.invoice.dueDate}</span></div>
       ${inv.invoice.paidAt ? `
         <div class="dashed"></div>
         <div class="row"><span>Tgl Bayar</span><span>${inv.invoice.paidAt}</span></div>
+        <div class="row"><span>Metode</span><span>${inv.paymentLink ? 'Gateway' : 'Manual'}</span></div>
         <div class="lunas-stamp">** LUNAS **</div>
-      ` : `<div class="center sm" style="margin:6px 0">Harap bayar sebelum jatuh tempo</div>`}
+      ` : `${inv.company.bankAccounts && inv.company.bankAccounts.length > 0 ? `<div style="margin:6px 0"><div class="center bold">Transfer Manual</div>${inv.company.bankAccounts.map((ba: { bankName: string; accountNumber: string; accountName: string }) => `<div class="bank-box"><div class="bold">${ba.bankName}</div><div>${ba.accountNumber}</div><div class="sm">a/n ${ba.accountName}</div></div>`).join('')}</div>` : `<div class="center sm" style="margin:6px 0">Harap bayar sebelum jatuh tempo</div>`}`}
       <div class="dashed"></div>
       <div class="center sm" style="margin-top:4px">Terima kasih</div>
       <button class="print-btn no-print" onclick="window.print()">&#128438; Cetak</button>
