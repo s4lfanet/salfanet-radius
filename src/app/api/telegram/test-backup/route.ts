@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { createBackup } from '@/server/services/backup.service';
-import { sendTelegramFile } from '@/server/services/notifications/telegram.service';
+import { sendBackupToTelegram } from '@/server/services/notifications/telegram.service';
 import { formatInTimeZone } from 'date-fns-tz';
 import { prisma } from '@/server/db/client';
+import * as fs from 'fs/promises';
 
 // POST - Test auto backup by creating a real backup and sending it to Telegram
 export async function POST(request: NextRequest) {
@@ -19,10 +20,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Load Telegram settings from database
-    const settings = await prisma.telegramBackupSettings.findFirst();
+    const settings = await prisma.telegramBackupSettings.findFirst({
+      where: { enabled: true },
+      orderBy: { createdAt: 'desc' },
+    });
     if (!settings || !settings.botToken || !settings.chatId) {
       return NextResponse.json(
-        { error: 'Telegram bot token and chat ID must be saved first' },
+        { error: 'Telegram backup settings must be enabled and bot token/chat ID must be saved first' },
         { status: 400 }
       );
     }
@@ -32,28 +36,32 @@ export async function POST(request: NextRequest) {
 
     // Step 1: Create actual backup
     const backupResult = await createBackup('manual');
+    if (!backupResult.success || !backupResult.filepath || !backupResult.backup) {
+      return NextResponse.json({ error: 'Backup failed: unable to create backup file' }, { status: 500 });
+    }
+
     const { filepath, backup } = backupResult;
 
-    if (!filepath) {
-      return NextResponse.json({ error: 'Backup failed: no file path returned' }, { status: 500 });
+    try {
+      await fs.access(filepath);
+    } catch {
+      return NextResponse.json({ error: 'Backup failed: file was not created on disk' }, { status: 500 });
     }
 
     // Step 2: Send backup file to Telegram
-    const caption = `💾 <b>SALFANET RADIUS - Test Backup</b>\n\n📁 File: <code>${backup.filename}</code>\n📦 Size: ${formatFileSize(Number(backup.filesize))}\n📅 ${now} WIB\n\n✅ Manual test backup — sent from Telegram Settings`;
-
-    const sendResult = await sendTelegramFile(
+    const sendResult = await sendBackupToTelegram(
       {
         botToken,
         chatId,
         topicId: backupTopicId || undefined,
       },
       filepath,
-      caption
+      Number(backup.filesize)
     );
 
     if (!sendResult.success) {
       return NextResponse.json(
-        { error: `Backup created but failed to send to Telegram: ${sendResult.error}` },
+        { error: `Backup created at ${now} WIB but failed to send to Telegram: ${sendResult.error}` },
         { status: 500 }
       );
     }

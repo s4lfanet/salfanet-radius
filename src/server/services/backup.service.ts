@@ -44,7 +44,7 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
     throw new Error('DATABASE_URL not configured');
   }
 
-  const { user, password, host, database } = parseDbUrl(dbUrl);
+  const { user, password, host, port, database } = parseDbUrl(dbUrl);
   
   // Generate filename with timestamp
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_').slice(0, -5);
@@ -56,7 +56,7 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
   try {
     // Run mysqldump command
     // Note: Using MYSQL_PWD env var to avoid password in command line
-    const command = `MYSQL_PWD="${password}" mysqldump -u ${user} -h ${host} --single-transaction --routines --triggers ${database} > "${filepath}"`;
+    const command = `MYSQL_PWD="${password}" mysqldump -u ${user} -h ${host} -P ${port} --single-transaction --routines --triggers ${database} > "${filepath}"`;
     
     console.log('[Backup] Creating backup:', filename);
     await execAsync(command);
@@ -119,7 +119,7 @@ export async function restoreBackup(filepath: string) {
     throw new Error('DATABASE_URL not configured');
   }
 
-  const { user, password, host, database } = parseDbUrl(dbUrl);
+  const { user, password, host, port, database } = parseDbUrl(dbUrl);
 
   try {
     // Verify file exists
@@ -128,7 +128,7 @@ export async function restoreBackup(filepath: string) {
     console.log('[Restore] Restoring from:', filepath);
     
     // Run mysql import command
-    const command = `MYSQL_PWD="${password}" mysql -u ${user} -h ${host} ${database} < "${filepath}"`;
+    const command = `MYSQL_PWD="${password}" mysql -u ${user} -h ${host} -P ${port} ${database} < "${filepath}"`;
     
     await execAsync(command);
     

@@ -1,4 +1,5 @@
 import * as fs from 'fs/promises';
+import * as path from 'path';
 import { formatWIB } from '@/lib/timezone';
 
 interface TelegramSendOptions {
@@ -73,7 +74,7 @@ export async function sendTelegramFile(
     
     // Read file
     const fileBuffer = await fs.readFile(filepath);
-    const filename = filepath.split('/').pop() || 'backup.sql';
+    const filename = path.basename(filepath) || 'backup.sql';
     
     // Create FormData using native FormData API
     const formData = new FormData();
@@ -172,7 +173,7 @@ export async function sendBackupToTelegram(
   filesize: number | bigint
 ): Promise<{ success: boolean; error?: string }> {
   const now = formatWIB(new Date());
-  const filename = filepath.split('/').pop() || 'backup.sql';
+  const filename = path.basename(filepath) || 'backup.sql';
   const sizeMB = (Number(filesize) / 1024 / 1024).toFixed(2);
   
   const caption = `
