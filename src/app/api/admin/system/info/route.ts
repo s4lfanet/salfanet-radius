@@ -44,6 +44,13 @@ export async function GET() {
   const pkgPath = path.join(appDir, 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
 
+  // Prefer VERSION file (written by release CI with the tag name, e.g. "v2.12.0")
+  // so the displayed version always matches the installed release ZIP.
+  const versionFilePath = path.join(appDir, 'VERSION');
+  const appVersion = existsSync(versionFilePath)
+    ? readFileSync(versionFilePath, 'utf-8').trim().replace(/^v/, '')
+    : pkg.version;
+
   const localCommit  = git('git rev-parse HEAD', appDir);
   const shortCommit  = localCommit !== 'unknown' ? localCommit.slice(0, 7) : 'unknown';
   const commitDate   = git('git log -1 --format="%ci"', appDir);
@@ -74,7 +81,7 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    version:       pkg.version,
+    version:       appVersion,
     commit:        shortCommit,
     commitFull:    localCommit,
     commitDate,

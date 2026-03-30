@@ -36,6 +36,13 @@ jobs:
         env:
           DATABASE_URL: "mysql://root:root@localhost:3306/salfanet_build"
 
+      # ─── 4b. Sync package.json version with release tag ─────────────────────
+      - name: Sync package.json version with release tag
+        run: |
+          VERSION_CLEAN="${GITHUB_REF_NAME#v}"
+          npm version "$VERSION_CLEAN" --no-git-tag-version
+          echo "[✓] package.json version bumped to $VERSION_CLEAN"
+
       # ─── 5. Build Next.js (standalone) ──────────────────────────────────────
       # All API routes use force-dynamic so no real DB connection at build time
       - name: Build Next.js
