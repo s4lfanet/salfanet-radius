@@ -452,11 +452,12 @@ export default function InvoicesPage() {
         .content { padding: 24px; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 20px; }
         .brand-wrap { display:flex; align-items:center; gap:14px; }
+        .header-right { text-align:right; padding-top: 2px; }
         .logo-box { width: 78px; height: 78px; border-radius: 16px; background: linear-gradient(180deg, #ecfeff, #f0fdfa); border: 1px solid #c7f9f1; display:flex; align-items:center; justify-content:center; padding: 10px; }
         .company-name { font-size: 20px; font-weight: bold; color: #0d9488; }
         .company-sub { color: #555; margin-top: 3px; font-size: 10px; line-height: 1.6; }
-        .inv-title { font-size: 26px; font-weight: bold; color: #111; letter-spacing: 2px; }
-        .inv-number { font-size: 13px; font-weight: bold; color: #0d9488; margin: 4px 0; }
+        .inv-title { font-size: 26px; font-weight: bold; color: #111; letter-spacing: 2px; line-height: 1.25; padding-top: 1px; }
+        .inv-number { font-size: 13px; font-weight: bold; color: #0d9488; margin: 4px 0; line-height: 1.35; }
         .status-badge { display: inline-block; padding: 3px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; }
         .paid-badge { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
         .pending-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
@@ -499,7 +500,7 @@ export default function InvoicesPage() {
             </div>
           </div>
         </div>
-        <div style="text-align:right">
+        <div class="header-right">
           <div class="inv-title">INVOICE</div>
           <div class="inv-number">${inv.invoice.number}</div>
           <div>${inv.invoice.status === 'PAID' ? '<span class="status-badge paid-badge">&#10003; SUDAH BAYAR</span>' : '<span class="status-badge pending-badge">BELUM BAYAR</span>'}</div>
