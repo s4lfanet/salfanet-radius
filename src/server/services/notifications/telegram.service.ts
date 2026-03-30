@@ -1,6 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { formatWIB } from '@/lib/timezone';
+import { formatInTimeZone } from 'date-fns-tz';
 
 interface TelegramSendOptions {
   botToken: string;
@@ -126,7 +126,7 @@ export async function sendTelegramFile(
 export async function testTelegramConnection(
   options: TelegramSendOptions
 ): Promise<{ success: boolean; error?: string }> {
-  const now = formatWIB(new Date());
+  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
   const testMessage = `🤖 <b>SALFANET RADIUS - Test Connection</b>\n\n✅ Bot connection successful!\n\n📅 ${now} WIB`;
   
   return await sendTelegramMessage(options, testMessage);
@@ -145,7 +145,7 @@ export async function sendHealthReport(
     uptime: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const now = formatWIB(new Date());
+  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
   
   const statusEmoji = health.status === 'healthy' ? '🟢' : health.status === 'warning' ? '🟡' : '🔴';
   
@@ -172,7 +172,7 @@ export async function sendBackupToTelegram(
   filepath: string,
   filesize: number | bigint
 ): Promise<{ success: boolean; error?: string }> {
-  const now = formatWIB(new Date());
+  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
   const filename = path.basename(filepath) || 'backup.sql';
   const sizeMB = (Number(filesize) / 1024 / 1024).toFixed(2);
   

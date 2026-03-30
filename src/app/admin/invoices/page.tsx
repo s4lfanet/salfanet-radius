@@ -434,10 +434,20 @@ export default function InvoicesPage() {
       if (!win) return;
       win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Invoice ${inv.invoice.number}</title>
       <style>
-        @media print { @page { margin: 15mm; } .no-print { display: none !important; } }
+        @media print {
+          @page { size: A4; margin: 10mm; }
+          html, body { width: 210mm; }
+          body { padding: 0 !important; background: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .no-print { display: none !important; }
+          .sheet { border: none !important; border-radius: 0 !important; box-shadow: none !important; overflow: visible !important; }
+          .content { padding: 8mm !important; }
+          .meta-card, .payment-card, .paid-stamp { break-inside: avoid; page-break-inside: avoid; }
+          table { table-layout: fixed; }
+          th, td { word-break: break-word; }
+        }
         * { box-sizing: border-box; }
         body { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 24px; background: #f8fafc; }
-        .sheet { background: #fff; border: 1px solid #dbe7e4; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 50px rgba(15, 118, 110, 0.08); }
+        .sheet { background: #fff; border: 1px solid #dbe7e4; border-radius: 18px; overflow: visible; box-shadow: 0 18px 50px rgba(15, 118, 110, 0.08); max-width: 980px; margin: 0 auto; }
         .topbar { height: 7px; background: linear-gradient(90deg, #0d9488, #14b8a6, #5eead4); }
         .content { padding: 24px; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 20px; }
