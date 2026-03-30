@@ -69,7 +69,7 @@ export default function PPPoEProfilesPage() {
   // Router picker state
   const [syncMikrotikTarget, setSyncMikrotikTarget] = useState<PPPoEProfile | null>(null);
   const [routers, setRouters] = useState<RouterOption[]>([]);
-  const [selectedRouterId, setSelectedRouterId] = useState<string>('');
+  const [selectedRouterIds, setSelectedRouterIds] = useState<string[]>([]);
   const [syncIpPoolName, setSyncIpPoolName] = useState('');
   const [syncLocalAddress, setSyncLocalAddress] = useState('');
   const [syncPoolRanges, setSyncPoolRanges] = useState('');
@@ -134,7 +134,7 @@ export default function PPPoEProfilesPage() {
 
   const closeSyncMikrotikModal = () => {
     setSyncMikrotikTarget(null);
-    setSelectedRouterId('');
+    setSelectedRouterIds([]);
     setSyncIpPoolName('');
     setSyncLocalAddress('');
     setSyncPoolRanges('');
@@ -248,32 +248,31 @@ export default function PPPoEProfilesPage() {
 
   const handleSyncMikrotik = (profile: PPPoEProfile) => {
     setSyncMikrotikTarget(profile);
-    setSelectedRouterId(profile.lastRouterId || (routers.length === 1 ? routers[0].id : ''));
+    // Pre-select all active routers by default
+    setSelectedRouterIds(routers.map(r => r.id));
     setSyncIpPoolName(profile.ipPoolName || '');
     setSyncLocalAddress(profile.localAddress || '');
     setSyncPoolRanges('');
-    setSyncLockedRouter(!!profile.lastRouterId);
+    setSyncLockedRouter(false);
   };
 
   const handleConfirmSyncMikrotik = async () => {
-    if (!syncMikrotikTarget || !selectedRouterId) return;
+    if (!syncMikrotikTarget || selectedRouterIds.length === 0) return;
     const target = syncMikrotikTarget;
     setSyncingMikrotikId(target.id);
     try {
       const res = await fetch('/api/pppoe/profiles/sync-mikrotik', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: target.id, routerId: selectedRouterId, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim(), poolRanges: syncPoolRanges.trim() }),
+        body: JSON.stringify({ id: target.id, routerIds: selectedRouterIds, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim(), poolRanges: syncPoolRanges.trim() }),
       });
       const result = await res.json();
-      if (res.ok) {
-        setSyncLockedRouter(true);
-        loadProfiles();
-        const debugInfo = result.debug?.length ? `\n\nDetail:\n${result.debug.join('\n')}` : '';
+      loadProfiles();
+      const debugInfo = result.debug?.length ? `\n\nDetail:\n${result.debug.join('\n')}` : '';
+      if (result.success) {
         await showSuccess((result.message || 'Berhasil sync ke MikroTik') + debugInfo);
-        // Modal stays open in locked state
       } else {
-        await showError(result.error || 'Gagal sync ke MikroTik');
+        await showError((result.message || result.error || 'Gagal sync ke MikroTik') + debugInfo);
       }
     } catch { await showError('Gagal sync ke MikroTik'); }
     finally { setSyncingMikrotikId(null); }
@@ -281,7 +280,8 @@ export default function PPPoEProfilesPage() {
 
   const [testingConnection, setTestingConnection] = useState(false);
   const handleTestConnection = async () => {
-    if (!selectedRouterId) return;
+    if (selectedRouterIds.length === 0) return;
+    const selectedRouterId = selectedRouterIds[0];
     setTestingConnection(true);
     try {
       const res = await fetch('/api/pppoe/profiles/sync-mikrotik', {
@@ -1039,72 +1039,64 @@ export default function PPPoEProfilesPage() {
           )}
         </SimpleModal>
 
-        {/* Router Picker / Sync Modal */}
         <SimpleModal isOpen={!!syncMikrotikTarget} onClose={closeSyncMikrotikModal} size="md">
           <ModalHeader>
-            <h2 className="text-base font-bold text-foreground">
-              {syncLockedRouter ? 'Pengaturan Sync MikroTik' : 'Pilih Router MikroTik'}
-            </h2>
+            <h2 className="text-base font-bold text-foreground">Sync ke MikroTik</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {syncLockedRouter
-                ? <><span className="font-semibold text-purple-400">{syncMikrotikTarget?.name}</span> · <span className="font-mono">{syncMikrotikTarget?.groupName}</span> · <span className="text-green-400">✓ Sudah disync</span></>
-                : <>Sync paket <span className="font-semibold text-purple-400">{syncMikrotikTarget?.name}</span> ke router. PPP profile otomatis pakai Group RADIUS: <span className="font-mono">{syncMikrotikTarget?.groupName}</span></>
-              }
+              Sync paket <span className="font-semibold text-purple-400">{syncMikrotikTarget?.name}</span> · Group RADIUS: <span className="font-mono">{syncMikrotikTarget?.groupName}</span> · Akan disync ke semua router yang dipilih
             </p>
           </ModalHeader>
           <ModalBody>
-            {/* Router section: locked display or picker */}
-            {syncLockedRouter
-              ? (() => {
-                  const r = routers.find(r => r.id === selectedRouterId);
-                  return (
-                    <div className="flex items-center gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/5 mb-4">
-                      <CheckCircle2 className="h-4 w-4 text-green-400 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground">{r?.name || r?.nasname || selectedRouterId}</p>
-                        <p className="text-xs text-muted-foreground">{r?.ipAddress || r?.nasname}</p>
+            {/* Router checkboxes */}
+            {routers.length === 0
+              ? (
+                <div className="text-center py-6 text-sm text-muted-foreground">
+                  Tidak ada router aktif yang tersedia.
+                </div>
+              )
+              : (
+                <div className="space-y-2 mb-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium text-foreground">Pilih Router / NAS</span>
+                    <button
+                      type="button"
+                      className="text-[10px] text-purple-400 hover:text-purple-300 underline"
+                      onClick={() => setSelectedRouterIds(
+                        selectedRouterIds.length === routers.length ? [] : routers.map(r => r.id)
+                      )}
+                    >
+                      {selectedRouterIds.length === routers.length ? 'Batal Pilih Semua' : 'Pilih Semua'}
+                    </button>
+                  </div>
+                  {routers.map(r => (
+                    <label
+                      key={r.id}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                        selectedRouterIds.includes(r.id)
+                          ? 'border-purple-500/60 bg-purple-500/10'
+                          : 'border-border hover:border-purple-500/30 hover:bg-purple-500/5'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedRouterIds.includes(r.id)}
+                        onChange={() => setSelectedRouterIds(prev =>
+                          prev.includes(r.id) ? prev.filter(id => id !== r.id) : [...prev, r.id]
+                        )}
+                        className="mt-0.5 accent-purple-500"
+                      />
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium text-foreground">{r.name || r.shortname}</div>
+                        <div className="text-xs text-muted-foreground">{r.ipAddress || r.nasname}</div>
+                        {r.description && <div className="text-xs text-muted-foreground/70 mt-0.5">{r.description}</div>}
                       </div>
-                      <span className="text-[10px] text-green-400 border border-green-500/30 rounded px-1.5 py-0.5 flex-shrink-0">Synced</span>
-                    </div>
-                  );
-                })()
-              : routers.length === 0
-                ? (
-                  <div className="text-center py-6 text-sm text-muted-foreground">
-                    Tidak ada router aktif yang tersedia.
-                  </div>
-                )
-                : (
-                  <div className="space-y-2">
-                    {routers.map(r => (
-                      <label
-                        key={r.id}
-                        className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
-                          selectedRouterId === r.id
-                            ? 'border-purple-500/60 bg-purple-500/10'
-                            : 'border-border hover:border-purple-500/30 hover:bg-purple-500/5'
-                        }`}
-                      >
-                        <input
-                          type="radio"
-                          name="routerPicker"
-                          value={r.id}
-                          checked={selectedRouterId === r.id}
-                          onChange={() => setSelectedRouterId(r.id)}
-                          className="mt-0.5 accent-purple-500"
-                        />
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-foreground">{r.name || r.shortname}</div>
-                          <div className="text-xs text-muted-foreground">{r.ipAddress || r.nasname}</div>
-                          {r.description && <div className="text-xs text-muted-foreground/70 mt-0.5">{r.description}</div>}
-                        </div>
-                      </label>
-                    ))}
-                  </div>
-                )
+                    </label>
+                  ))}
+                </div>
+              )
             }
 
-            <div className={`grid grid-cols-1 gap-3${syncLockedRouter ? '' : ' mt-4 border-t border-border pt-4'}`}>
+            <div className="grid grid-cols-1 gap-3 mt-4 border-t border-border pt-4">
               <div>
                 <ModalLabel>Nama Pool</ModalLabel>
                 <ModalInput
@@ -1146,23 +1138,21 @@ export default function PPPoEProfilesPage() {
           </ModalBody>
           <ModalFooter>
             <ModalButton variant="secondary" onClick={closeSyncMikrotikModal}>Tutup</ModalButton>
-            {!syncLockedRouter && (
-              <ModalButton
-                variant="secondary"
-                onClick={handleTestConnection}
-                disabled={!selectedRouterId || testingConnection}
-              >
-                <RefreshCw className={`h-3.5 w-3.5 mr-1.5${testingConnection ? ' animate-spin' : ''}`} />Test Koneksi
-              </ModalButton>
-            )}
+            <ModalButton
+              variant="secondary"
+              onClick={handleTestConnection}
+              disabled={selectedRouterIds.length === 0 || testingConnection}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 mr-1.5${testingConnection ? ' animate-spin' : ''}`} />Test Koneksi
+            </ModalButton>
             <ModalButton
               variant="primary"
               onClick={handleConfirmSyncMikrotik}
-              disabled={!selectedRouterId || syncingMikrotikId === syncMikrotikTarget?.id}
+              disabled={selectedRouterIds.length === 0 || syncingMikrotikId === syncMikrotikTarget?.id}
             >
               {syncingMikrotikId === syncMikrotikTarget?.id
                 ? <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Menyinkronkan...</>
-                : <><Wifi className="h-3.5 w-3.5 mr-1.5" />{syncLockedRouter ? 'Re-sync MikroTik' : 'Sync ke MikroTik'}</>
+                : <><Wifi className="h-3.5 w-3.5 mr-1.5" />Sync ke {selectedRouterIds.length} Router</>
               }
             </ModalButton>
           </ModalFooter>

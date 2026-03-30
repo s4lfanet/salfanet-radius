@@ -154,7 +154,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, routerId, ipPoolName, localAddress, poolRanges } = await request.json();
+    const { id, routerIds, routerId, ipPoolName, localAddress, poolRanges } = await request.json();
     if (!id) {
       return NextResponse.json({ error: 'Profile ID is required' }, { status: 400 });
     }
@@ -174,170 +174,190 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Nama PPP Profile MikroTik wajib diisi' }, { status: 400 });
     }
 
-    // Get router — use specified router or first active router
-    const router = routerId
-      ? await prisma.router.findUnique({ where: { id: routerId } })
-      : await prisma.router.findFirst({ where: { isActive: true } });
+    // Resolve target routers: routerIds array (new), single routerId (legacy), or ALL active routers
+    let targetIds: string[] | null = null;
+    if (Array.isArray(routerIds) && routerIds.length > 0) {
+      targetIds = routerIds;
+    } else if (typeof routerId === 'string' && routerId) {
+      targetIds = [routerId];
+    }
 
-    if (!router) {
+    const routerList = targetIds
+      ? await prisma.router.findMany({ where: { id: { in: targetIds }, isActive: true }, orderBy: { name: 'asc' } })
+      : await prisma.router.findMany({ where: { isActive: true }, orderBy: { name: 'asc' } });
+
+    if (routerList.length === 0) {
       return NextResponse.json({ error: 'Tidak ada router aktif ditemukan. Tambahkan router di menu NAS/Router terlebih dahulu.' }, { status: 404 });
     }
 
-    const host = router.ipAddress || router.nasname;
-    const primaryPort = router.port || 8728;
-    const fallbackPort = router.apiPort || 8729;
+    const connectAndSync = async (router: typeof routerList[0]): Promise<{ routerId: string; routerName: string; success: boolean; action?: string; message?: string; error?: string; debug: string[]; warnings: string[] }> => {
+      const host = router.ipAddress || router.nasname;
+      const primaryPort = router.port || 8728;
+      const fallbackPort = router.apiPort || 8729;
 
-    const connectAndSync = async (port: number): Promise<{ port: number; action: string; profileName: string; debug: string[]; warnings: string[] }> => {
-      const api = new RouterOSAPI({
-        host,
-        port,
-        user: router.username,
-        password: router.password,
-        timeout: 15,
-      });
+      const tryPort = async (port: number): Promise<{ port: number; action: string; profileName: string; debug: string[]; warnings: string[] }> => {
+        const api = new RouterOSAPI({ host, port, user: router.username, password: router.password, timeout: 15 });
+        const debug: string[] = [];
+        const warnings: string[] = [];
 
-      const debug: string[] = [];
-      const warnings: string[] = [];
+        await Promise.race([
+          api.connect(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Connection timed out (15s) to ${host}:${port}`)), 15000)),
+        ]);
+        debug.push(`✅ Connected to ${host}:${port} (user: ${router.username})`);
 
-      await Promise.race([
-        api.connect(),
-        new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Connection timed out (15s) to ${host}:${port}`)), 15000)),
-      ]);
-      debug.push(`✅ Connected to ${host}:${port} (user: ${router.username})`);
+        try {
+          // STEP 1: Ensure IP pool exists (create if needed) before touching PPP profile
+          if (resolvedIpPoolName) {
+            const poolPrintResult = await apiCmd(api, '/ip/pool/print', [], 'pool/print');
+            if (!poolPrintResult.ok) throw new Error(`Gagal baca daftar pool: ${poolPrintResult.error}`);
+
+            const allPools: any[] = poolPrintResult.data || [];
+            const existingPool = allPools.find((p: any) => p['name'] === resolvedIpPoolName);
+            debug.push(`🏊 Pools di MikroTik: ${allPools.length}, target: "${resolvedIpPoolName}", exists: ${!!existingPool}`);
+
+            if (!existingPool) {
+              if (!resolvedPoolRanges) {
+                throw new Error(
+                  `Pool "${resolvedIpPoolName}" tidak ditemukan di MikroTik. ` +
+                  `Isi kolom "IP Range Pool" di modal untuk membuat pool baru secara otomatis.`
+                );
+              }
+              debug.push(`➕ Membuat pool "${resolvedIpPoolName}" dengan ranges="${resolvedPoolRanges}"`);
+              const createPoolResult = await apiCmd(api, '/ip/pool/add', [`=name=${resolvedIpPoolName}`, `=ranges=${resolvedPoolRanges}`], 'pool/add');
+              if (!createPoolResult.ok) throw new Error(`Gagal buat pool "${resolvedIpPoolName}": ${createPoolResult.error}`);
+              debug.push(`✅ Pool "${resolvedIpPoolName}" berhasil dibuat`);
+              warnings.push(`Pool "${resolvedIpPoolName}" (${resolvedPoolRanges}) dibuat otomatis di MikroTik`);
+            } else {
+              debug.push(`✅ Pool "${resolvedIpPoolName}" sudah ada, skip buat pool`);
+            }
+          }
+
+          // STEP 2: Create/update PPP profile
+          const printResult = await apiCmd(api, '/ppp/profile/print', [], 'profile/print');
+          if (!printResult.ok) throw new Error(`Gagal baca profile list: ${printResult.error}`);
+
+          const allProfiles: any[] = printResult.data || [];
+          const existingProfile = allProfiles.find((p: any) => p['name'] === resolvedMikrotikProfileName);
+          debug.push(`📋 Profiles di MikroTik: ${allProfiles.length}, target: "${resolvedMikrotikProfileName}", exists: ${!!existingProfile}`);
+
+          const sharedUserLimit = profile.sharedUser ? 'no' : 'yes';
+          let action: string;
+
+          if (existingProfile) {
+            const profileId = existingProfile['.id'];
+            debug.push(`🔄 Update existing profile id=${profileId}`);
+            const updateParams: string[] = [`=.id=${profileId}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
+            if (resolvedIpPoolName) updateParams.push(`=remote-address=${resolvedIpPoolName}`);
+            if (resolvedLocalAddress) updateParams.push(`=local-address=${resolvedLocalAddress}`);
+            const updateResult = await apiCmd(api, '/ppp/profile/set', updateParams, 'profile/set');
+            if (!updateResult.ok) throw new Error(`Gagal update PPP profile: ${updateResult.error}`);
+            action = 'updated';
+          } else {
+            debug.push(`➕ Creating new PPP profile`);
+            const createParams: string[] = [`=name=${resolvedMikrotikProfileName}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
+            if (resolvedIpPoolName) createParams.push(`=remote-address=${resolvedIpPoolName}`);
+            if (resolvedLocalAddress) createParams.push(`=local-address=${resolvedLocalAddress}`);
+            const createResult = await apiCmd(api, '/ppp/profile/add', createParams, 'profile/add');
+            if (!createResult.ok) throw new Error(`Gagal buat PPP profile: ${createResult.error}`);
+            action = 'created';
+          }
+
+          // Verify local-address was stored
+          if (resolvedLocalAddress) {
+            const verifyResult = await apiCmd(api, '/ppp/profile/print', [`?name=${resolvedMikrotikProfileName}`], 'profile/verify');
+            if (verifyResult.ok && Array.isArray(verifyResult.data)) {
+              const storedProfile = verifyResult.data.find((p: any) => p['name'] === resolvedMikrotikProfileName);
+              const storedLocalAddr = storedProfile?.['local-address'] || '';
+              if (storedLocalAddr && storedLocalAddr !== '0.0.0.0') {
+                debug.push(`✅ local-address tersimpan di MikroTik: ${storedLocalAddr}`);
+              } else {
+                warnings.push(`⚠️ local-address "${resolvedLocalAddress}" tidak tersimpan di PPP profile MikroTik.`);
+                debug.push(`⚠️ local-address tidak tersimpan (tersimpan: "${storedLocalAddr || 'kosong'}")`);
+              }
+            }
+          }
+
+          await api.close();
+          return { port, action, profileName: resolvedMikrotikProfileName, debug, warnings };
+        } catch (e) {
+          try { await api.close(); } catch { /* ignore */ }
+          throw e;
+        }
+      };
 
       try {
-        // STEP 1: Ensure IP pool exists (create if needed) before touching PPP profile
-        if (resolvedIpPoolName) {
-          const poolPrintResult = await apiCmd(api, '/ip/pool/print', [], 'pool/print');
-          if (!poolPrintResult.ok) throw new Error(`Gagal baca daftar pool: ${poolPrintResult.error}`);
-
-          const allPools: any[] = poolPrintResult.data || [];
-          const existingPool = allPools.find((p: any) => p['name'] === resolvedIpPoolName);
-          debug.push(`🏊 Pools di MikroTik: ${allPools.length}, target: "${resolvedIpPoolName}", exists: ${!!existingPool}`);
-
-          if (!existingPool) {
-            if (!resolvedPoolRanges) {
-              throw new Error(
-                `Pool "${resolvedIpPoolName}" tidak ditemukan di MikroTik. ` +
-                `Isi kolom "IP Range Pool" di modal untuk membuat pool baru secara otomatis.`
-              );
-            }
-            debug.push(`➕ Membuat pool "${resolvedIpPoolName}" dengan ranges="${resolvedPoolRanges}"`);
-            const createPoolResult = await apiCmd(
-              api, '/ip/pool/add',
-              [`=name=${resolvedIpPoolName}`, `=ranges=${resolvedPoolRanges}`],
-              'pool/add'
-            );
-            if (!createPoolResult.ok) throw new Error(`Gagal buat pool "${resolvedIpPoolName}": ${createPoolResult.error}`);
-            debug.push(`✅ Pool "${resolvedIpPoolName}" berhasil dibuat`);
-            warnings.push(`Pool "${resolvedIpPoolName}" (${resolvedPoolRanges}) dibuat otomatis di MikroTik`);
-          } else {
-            debug.push(`✅ Pool "${resolvedIpPoolName}" sudah ada, skip buat pool`);
-          }
+        let syncResult: { port: number; action: string; profileName: string; debug: string[]; warnings: string[] };
+        try {
+          syncResult = await tryPort(primaryPort);
+        } catch (e1: any) {
+          if (fallbackPort === primaryPort) throw e1;
+          syncResult = await tryPort(fallbackPort);
         }
-
-        // STEP 2: Create/update PPP profile
-        const printResult = await apiCmd(api, '/ppp/profile/print', [], 'profile/print');
-        if (!printResult.ok) throw new Error(`Gagal baca profile list: ${printResult.error}`);
-
-        const allProfiles: any[] = printResult.data || [];
-        const existingProfile = allProfiles.find((p: any) => p['name'] === resolvedMikrotikProfileName);
-        debug.push(`📋 Profiles di MikroTik: ${allProfiles.length}, target: "${resolvedMikrotikProfileName}", exists: ${!!existingProfile}`);
-
-        const sharedUserLimit = profile.sharedUser ? 'no' : 'yes';
-
-        let action: string;
-
-        if (existingProfile) {
-          const profileId = existingProfile['.id'];
-          debug.push(`🔄 Update existing profile id=${profileId}`);
-          const updateParams: string[] = [`=.id=${profileId}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
-          if (resolvedIpPoolName) updateParams.push(`=remote-address=${resolvedIpPoolName}`);
-          if (resolvedLocalAddress) updateParams.push(`=local-address=${resolvedLocalAddress}`);
-          debug.push(`📝 /ppp/profile/set params: ${updateParams.filter(p => !p.startsWith('=.id=')).join(' ')}`);
-          const updateResult = await apiCmd(api, '/ppp/profile/set', updateParams, 'profile/set');
-          if (!updateResult.ok) throw new Error(`Gagal update PPP profile: ${updateResult.error}`);
-          action = 'updated';
-        } else {
-          debug.push(`➕ Creating new PPP profile`);
-          const createParams: string[] = [`=name=${resolvedMikrotikProfileName}`, `=rate-limit=${rateLimit}`, `=only-one=${sharedUserLimit}`];
-          if (resolvedIpPoolName) createParams.push(`=remote-address=${resolvedIpPoolName}`);
-          if (resolvedLocalAddress) createParams.push(`=local-address=${resolvedLocalAddress}`);
-          debug.push(`📝 /ppp/profile/add params: ${createParams.filter(p => !p.startsWith('=name=')).join(' ')}`);
-          const createResult = await apiCmd(api, '/ppp/profile/add', createParams, 'profile/add');
-          if (!createResult.ok) throw new Error(`Gagal buat PPP profile: ${createResult.error}`);
-          action = 'created';
-        }
-
-        // Verify: read back the profile to confirm local-address was stored
-        if (resolvedLocalAddress) {
-          const verifyResult = await apiCmd(api, '/ppp/profile/print', [`?name=${resolvedMikrotikProfileName}`], 'profile/verify');
-          if (verifyResult.ok && Array.isArray(verifyResult.data)) {
-            const storedProfile = verifyResult.data.find((p: any) => p['name'] === resolvedMikrotikProfileName);
-            const storedLocalAddr = storedProfile?.['local-address'] || '';
-            if (storedLocalAddr && storedLocalAddr !== '0.0.0.0') {
-              debug.push(`✅ local-address tersimpan di MikroTik: ${storedLocalAddr}`);
-            } else {
-              warnings.push(
-                `⚠️ local-address "${resolvedLocalAddress}" tidak tersimpan di PPP profile MikroTik. ` +
-                `Pastikan IP ini sudah dikonfigurasi sebagai alamat interface di MikroTik (misal: /ip address add address=${resolvedLocalAddress}/32 interface=lo).`
-              );
-              debug.push(`⚠️ local-address tidak tersimpan (tersimpan: "${storedLocalAddr || 'kosong'}")`);
-            }
-          }
-        }
-
-        await api.close();
-        return { port, action, profileName: resolvedMikrotikProfileName, debug, warnings };
-      } catch (e) {
-        try { await api.close(); } catch { /* ignore */ }
-        throw e;
+        const actionLabel = syncResult.action === 'created' ? 'dibuat' : 'diperbarui';
+        return {
+          routerId: router.id,
+          routerName: router.name || router.nasname,
+          success: true,
+          action: syncResult.action,
+          message: `✅ ${router.name} (${host}:${syncResult.port}): profile "${resolvedMikrotikProfileName}" ${actionLabel}`,
+          debug: syncResult.debug,
+          warnings: syncResult.warnings,
+        };
+      } catch (e: any) {
+        return {
+          routerId: router.id,
+          routerName: router.name || router.nasname,
+          success: false,
+          error: e?.message || String(e),
+          debug: [],
+          warnings: [],
+        };
       }
     };
 
-    let syncResult: { port: number; action: string; profileName: string; debug: string[]; warnings: string[] };
+    // Sync to all target routers
+    const results = await Promise.allSettled(routerList.map(r => connectAndSync(r)));
+    const routerResults = results.map(r => r.status === 'fulfilled' ? r.value : { routerId: '', routerName: '', success: false, error: String((r as any).reason), debug: [], warnings: [] });
+
+    const succeeded = routerResults.filter(r => r.success);
+    const failed = routerResults.filter(r => !r.success);
+
+    // Update DB with sync metadata (non-critical)
     try {
-      try {
-        syncResult = await connectAndSync(primaryPort);
-      } catch (e1: any) {
-        if (fallbackPort === primaryPort) throw e1;
-        console.warn(`[SyncMikroTik] Port ${primaryPort} gagal (${e1?.message}), coba port ${fallbackPort}...`);
-        syncResult = await connectAndSync(fallbackPort);
-      }
-
-      // Save sync config to DB (non-critical)
-      try {
-        await prisma.pppoeProfile.update({
-          where: { id },
-          data: {
-            mikrotikProfileName: resolvedMikrotikProfileName,
-            ipPoolName: resolvedIpPoolName || null,
-            localAddress: resolvedLocalAddress || null,
-            lastRouterId: router.id,
-          },
-        } as any);
-      } catch (dbErr: any) {
-        console.warn('[SyncMikroTik] DB update gagal (mungkin migrasi belum dijalankan):', dbErr?.message);
-      }
-
-      const actionLabel = syncResult.action === 'created' ? 'dibuat' : 'diperbarui';
-      const warningText = syncResult.warnings.length ? `\n\n⚠️ Peringatan:\n${syncResult.warnings.join('\n')}` : '';
-      return NextResponse.json({
-        success: true,
-        message: `✅ PPP Profile "${resolvedMikrotikProfileName}" berhasil ${actionLabel} di MikroTik ${host}:${syncResult.port}${resolvedIpPoolName ? ` | Pool: ${resolvedIpPoolName}` : ''}${resolvedLocalAddress ? ` | Local IP: ${resolvedLocalAddress}` : ''}${warningText}`,
-        debug: syncResult.debug,
-        warnings: syncResult.warnings,
-        router: { id: router.id, name: router.name || router.nasname, ip: host, port: syncResult.port },
+      await prisma.pppoeProfile.update({
+        where: { id },
+        data: {
+          mikrotikProfileName: resolvedMikrotikProfileName,
+          ipPoolName: resolvedIpPoolName || null,
+          localAddress: resolvedLocalAddress || null,
+          lastRouterId: succeeded.length > 0 ? succeeded[succeeded.length - 1].routerId : undefined,
+          lastSyncAt: succeeded.length > 0 ? new Date() : undefined,
+        } as any,
       });
-    } catch (mkError: any) {
-      const errMsg = mkError?.message || String(mkError);
-      console.error('[SyncMikroTik] MikroTik API error:', errMsg);
-      return NextResponse.json({
-        error: `Gagal sync ke MikroTik (${host}): ${errMsg}`,
-        host,
-        portsAttempted: [primaryPort, fallbackPort !== primaryPort ? fallbackPort : null].filter(Boolean),
-      }, { status: 502 });
+    } catch (dbErr: any) {
+      console.warn('[SyncMikroTik] DB update gagal:', dbErr?.message);
     }
+
+    const successLines = succeeded.map(r => r.message).join('\n');
+    const failLines = failed.map(r => `❌ ${r.routerName}: ${r.error}`).join('\n');
+    const summaryMessage = [
+      succeeded.length > 0 ? `✅ Berhasil sync ke ${succeeded.length} router:\n${successLines}` : '',
+      failed.length > 0 ? `\n❌ Gagal di ${failed.length} router:\n${failLines}` : '',
+    ].filter(Boolean).join('');
+
+    const allWarnings = routerResults.flatMap(r => r.warnings);
+    const allDebug = routerResults.flatMap(r => r.debug.length ? [`--- ${r.routerName} ---`, ...r.debug] : []);
+
+    return NextResponse.json({
+      success: succeeded.length > 0,
+      message: summaryMessage,
+      results: routerResults,
+      debug: allDebug,
+      warnings: allWarnings,
+      succeededCount: succeeded.length,
+      failedCount: failed.length,
+    }, { status: succeeded.length > 0 ? 200 : 502 });
   } catch (error) {
     console.error('Sync MikroTik error:', error);
     return NextResponse.json({ error: 'Gagal sinkronisasi ke MikroTik' }, { status: 500 });
