@@ -4,6 +4,41 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.11.8] - 2026-03-30 (Mobile Form Fix + Stop Subscription + Notification Dedup)
+
+### ✅ Fix: Mobile Keyboard Dismiss saat Input di Form PPPoE Users
+
+- **Root cause**: `formData` state di parent component (`PppoeUsersPage`, 1300+ baris) menyebabkan seluruh parent re-render di setiap keystroke → SimpleModal effects dieksekusi ulang → keyboard focus hilang.
+- **Fix**: Ekstrak `AddPppoeUserModal` sebagai standalone component di luar parent render body. Semua form state (`formData`, `showPassword`, upload states, `showMapPicker`) dipindah ke dalam modal komponen baru.
+- Semua `setFormData` diubah ke pola functional `setFormData(prev => ({...prev, field: val}))`.
+- Modal reset menggunakan `useRef` + `useEffect` (prevIsOpen pattern) saat modal ditutup.
+
+### ✅ Fix: Mobile Keyboard Dismiss saat Input di Form PPPoE Customers
+
+- **Root cause berbeda**: `CustomerForm` didefinisikan sebagai **inline function di dalam render body** parent → React membuat tipe komponen baru di setiap render → form unmount/remount setiap keystroke → cursor hilang.
+- **Fix**: Ekstrak `CustomerFormModal` sebagai standalone component sebelum `export default`. Handles both add dan edit (`editCustomer?: Customer | null` prop).
+
+### ✅ Fitur: Tombol Stop Langganan di Halaman Data Pelanggan
+
+- Tambah tombol "Stop Langganan" (ikon `Ban`, warna oranye) di kolom aksi tabel PPPoE Customers.
+- Tombol hanya muncul jika pelanggan memiliki minimal 1 PPPoE subscription (`_count?.pppoeUsers > 0`) dan user memiliki permission `canCreate`.
+- Flow: fetch detail pelanggan → filter user dengan status `active`/`isolated` → kirim `PUT /api/pppoe/users/bulk-status` dengan `status: 'stop'`.
+
+### ✅ Fix: Notifikasi Duplikat saat Perubahan Status PPPoE
+
+- **Root cause**: Dua code path berbeda keduanya memanggil `NotificationService` untuk setiap perubahan status:
+  1. `activity-log.service.ts` (BUG) — memanggil `notifyUserStatusChange()` dengan `username` = email admin (salah).
+  2. `status/route.ts` (BENAR) — memanggil notifikasi yang tepat (`notifyUserIsolated` / `notifyUserReactivated` / `notifyUserStatusChange`) dengan PPPoE username yang benar.
+- **Fix**: Hapus 15-baris blok `status_change` dari `activity-log.service.ts`. Block suspicious activity notification tetap dipertahankan.
+- **Hasil**: Setiap perubahan status sekarang hanya menghasilkan 1 notifikasi dengan username PPPoE yang benar.
+
+### Files Changed
+- `src/app/admin/pppoe/users/page.tsx` — ekstrak `AddPppoeUserModal` standalone component
+- `src/app/admin/pppoe/customers/page.tsx` — ekstrak `CustomerFormModal` + tambah stop subscription handler
+- `src/server/services/activity-log.service.ts` — hapus blok duplikat status_change notification
+
+---
+
 ## [2.11.7] - 2026-03-29 (Nginx Manifest 404 Final Fix)
 
 ### ✅ Fix: PWA manifest-admin.json (dan semua manifest) 404 pada fresh install VPS

@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.11.6 — PPPoE Billing Day Fix + MikroTik Local-Address Verification (Mar 28, 2026)
+> **Latest:** v2.11.8 — Mobile Form Keyboard Fix + Stop Subscription Action + Notification Dedup Fix (Mar 30, 2026)
 
 ---
 
