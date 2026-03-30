@@ -33,12 +33,11 @@ export async function POST(request: NextRequest) {
     ]
 
     // ========================================
-    // PREPAID: Users expiring H-7 to H+30 (invoice generation window)
+    // PREPAID: Users expiring today to H+30 (invoice generation window)
     // ========================================
-    // Generate invoice 7 days before expiry up to 30 days ahead
+    // Generate invoice as soon as user is within 30 days of expiry (includes 0-day window)
     const prepaidStartDate = new Date(now);
-    prepaidStartDate.setDate(prepaidStartDate.getDate() + 7); // Start from 7 days ahead
-    prepaidStartDate.setHours(0, 0, 0, 0);
+    prepaidStartDate.setHours(0, 0, 0, 0); // Start from today (catch all users expiring 0-30 days ahead)
 
     const prepaidEndDate = new Date(now);
     prepaidEndDate.setDate(prepaidEndDate.getDate() + 30); // up to 30 days ahead
@@ -49,7 +48,7 @@ export async function POST(request: NextRequest) {
         status: { in: eligibleStatuses },
         subscriptionType: 'PREPAID',
         expiredAt: {
-          gte: prepaidStartDate, // From 7 days ahead
+          gte: prepaidStartDate, // From today
           lte: prepaidEndDate,   // To 30 days ahead
         },
       },
@@ -61,19 +60,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(`[Invoice Generate] Found ${prepaidUsers.length} PREPAID users (range: H+7 to H+30)`);
+    console.log(`[Invoice Generate] Found ${prepaidUsers.length} PREPAID users (range: today to H+30)`);
 
     // ========================================
-    // POSTPAID: Users expiring H-7 to H+30 (SAMA seperti PREPAID)
+    // POSTPAID: Users expiring today to H+30 (SAMA seperti PREPAID)
     // ========================================
     // POSTPAID juga punya expiredAt (billingDay bulan berikutnya)
-    // Invoice generate H-7 sebelum expiredAt (sama logic dengan PREPAID)
+    // Invoice generate dari hari ini sampai H+30 sebelum expiredAt
     const postpaidUsers = await prisma.pppoeUser.findMany({
       where: {
         status: { in: eligibleStatuses },
         subscriptionType: 'POSTPAID',
         expiredAt: {
-          gte: prepaidStartDate, // From 7 days ahead
+          gte: prepaidStartDate, // From today
           lte: prepaidEndDate,   // To 30 days ahead
         },
       },
@@ -85,15 +84,15 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    console.log(`[Invoice Generate] Found ${postpaidUsers.length} POSTPAID users (range: H+7 to H+30)`);
+    console.log(`[Invoice Generate] Found ${postpaidUsers.length} POSTPAID users (range: today to H+30)`);
 
     // ========================================
-    // CATCH-UP: Isolated/blocked/suspended users whose expiredAt is ALREADY PAST
-    // These users missed the normal H+7~H+30 window and need an invoice to pay & reactivate
+    // CATCH-UP: Active/isolated/blocked/suspended users whose expiredAt is ALREADY PAST
+    // These users missed the normal window (expiredAt already before today) and need an invoice to pay & reactivate
     // ========================================
     const catchUpUsers = await prisma.pppoeUser.findMany({
       where: {
-        status: { in: ['isolated', 'ISOLATED', 'blocked', 'BLOCKED', 'suspended', 'SUSPENDED'] },
+        status: { in: ['active', 'ACTIVE', 'isolated', 'ISOLATED', 'blocked', 'BLOCKED', 'suspended', 'SUSPENDED'] },
         subscriptionType: { in: ['PREPAID', 'POSTPAID'] },
         expiredAt: {
           lt: prepaidStartDate, // Already past the normal window
