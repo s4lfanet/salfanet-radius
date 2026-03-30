@@ -436,8 +436,13 @@ export default function InvoicesPage() {
       <style>
         @media print { @page { margin: 15mm; } .no-print { display: none !important; } }
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; font-size: 11px; color: #222; margin: 0; padding: 24px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; }
+        body { font-family: "Segoe UI", Arial, sans-serif; font-size: 11px; color: #1f2937; margin: 0; padding: 24px; background: #f8fafc; }
+        .sheet { background: #fff; border: 1px solid #dbe7e4; border-radius: 18px; overflow: hidden; box-shadow: 0 18px 50px rgba(15, 118, 110, 0.08); }
+        .topbar { height: 7px; background: linear-gradient(90deg, #0d9488, #14b8a6, #5eead4); }
+        .content { padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 18px; gap: 20px; }
+        .brand-wrap { display:flex; align-items:center; gap:14px; }
+        .logo-box { width: 78px; height: 78px; border-radius: 16px; background: linear-gradient(180deg, #ecfeff, #f0fdfa); border: 1px solid #c7f9f1; display:flex; align-items:center; justify-content:center; padding: 10px; }
         .company-name { font-size: 20px; font-weight: bold; color: #0d9488; }
         .company-sub { color: #555; margin-top: 3px; font-size: 10px; line-height: 1.6; }
         .inv-title { font-size: 26px; font-weight: bold; color: #111; letter-spacing: 2px; }
@@ -449,6 +454,7 @@ export default function InvoicesPage() {
         .thin-divider { border: none; border-top: 1px solid #e5e7eb; margin: 12px 0; }
         .section-title { font-weight: bold; font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
         .bill-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 18px; }
+        .meta-card { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 14px; padding: 14px 16px; }
         .info-row { margin-bottom: 3px; }
         .info-label { color: #555; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
@@ -456,15 +462,24 @@ export default function InvoicesPage() {
         td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; font-size: 11px; }
         .td-right { text-align: right; }
         .total-row td { font-weight: bold; font-size: 13px; background: #f0fdfa; border-top: 2px solid #0d9488; }
+        .actions-grid { display:grid; grid-template-columns: 1.2fr 1fr; gap: 14px; margin: 18px 0 6px; }
+        .payment-card { padding: 16px; border-radius: 14px; border: 1px solid #99f6e4; background: linear-gradient(180deg, #f0fdfa, #ffffff); }
+        .payment-card-title { font-size: 13px; font-weight: 700; color: #0f766e; margin-bottom: 6px; }
+        .payment-link { display:block; margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #0f172a; color: #fff; text-decoration: none; font-size: 11px; line-height: 1.5; word-break: break-all; }
+        .payment-note { margin: 0; color: #475569; font-size: 11px; line-height: 1.6; }
+        .payment-cta { display:inline-block; margin-top: 10px; padding: 8px 14px; border-radius: 999px; background: #0d9488; color: #fff; text-decoration: none; font-size: 11px; font-weight: 700; }
         .paid-stamp { display: block; margin: 20px auto; padding: 12px 28px; border: 4px solid #10b981; border-radius: 10px; text-align: center; width: fit-content; }
         .paid-stamp-text { font-size: 24px; font-weight: bold; color: #10b981; letter-spacing: 6px; }
         .paid-stamp-sub { font-size: 11px; color: #555; margin-top: 2px; }
         .footer { margin-top: 28px; text-align: center; color: #aaa; font-size: 10px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
         .print-btn { position: fixed; bottom: 20px; right: 20px; padding: 10px 22px; background: #0d9488; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; }
       </style></head><body>
+      <div class="sheet">
+      <div class="topbar"></div>
+      <div class="content">
       <div class="header">
-        <div style="display:flex;align-items:center;gap:14px">
-          ${inv.company.logo ? `<img src="${inv.company.logo}" style="height:64px;width:auto;object-fit:contain" alt="Logo">` : ''}
+        <div class="brand-wrap">
+          ${inv.company.logo ? `<div class="logo-box"><img src="${inv.company.logo}" style="max-height:58px;max-width:58px;width:auto;object-fit:contain" alt="Logo"></div>` : ''}
           <div>
             <div class="company-name">${inv.company.name}</div>
             <div class="company-sub">
@@ -482,13 +497,13 @@ export default function InvoicesPage() {
       </div>
       <hr class="divider">
       <div class="bill-grid">
-        <div>
+        <div class="meta-card">
           <div class="section-title">Dari</div>
           <div class="info-row"><strong>${inv.company.name}</strong></div>
           ${inv.company.address ? `<div class="info-row">${inv.company.address}</div>` : ''}
           ${inv.company.phone ? `<div class="info-row">Telp: ${inv.company.phone}</div>` : ''}
         </div>
-        <div>
+        <div class="meta-card">
           <div class="section-title">Kepada</div>
           <div class="info-row"><strong>${inv.customer.name}</strong></div>
           ${inv.customer.customerId ? `<div class="info-row"><span class="info-label">ID Pelanggan: </span>${inv.customer.customerId}</div>` : ''}
@@ -498,14 +513,14 @@ export default function InvoicesPage() {
         </div>
       </div>
       <div class="bill-grid">
-        <div>
+        <div class="meta-card">
           <div class="section-title">Detail Invoice</div>
           <div class="info-row"><span class="info-label">No Invoice: </span><strong>${inv.invoice.number}</strong></div>
           <div class="info-row"><span class="info-label">Tanggal: </span>${inv.invoice.date}</div>
           <div class="info-row"><span class="info-label">Jatuh Tempo: </span>${inv.invoice.dueDate}</div>
           ${inv.invoice.paidAt ? `<div class="info-row"><span class="info-label">Tgl Bayar: </span>${inv.invoice.paidAt}</div>` : ''}
         </div>
-        <div>
+        <div class="meta-card">
           <div class="section-title">Status Pembayaran</div>
           <div class="info-row"><span class="info-label">Status: </span><strong>${inv.invoice.status === 'PAID' ? '&#10003; LUNAS' : inv.invoice.status === 'OVERDUE' ? '&#9888; TERLAMBAT' : '&#9203; BELUM BAYAR'}</strong></div>
           ${inv.invoice.paidAt ? `<div class="info-row"><span class="info-label">Dibayar pada: </span>${inv.invoice.paidAt}</div><div class="info-row"><span class="info-label">Via: </span>${inv.paymentLink ? 'Payment Gateway' : 'Manual'}</div>` : ''}
@@ -528,6 +543,20 @@ export default function InvoicesPage() {
           <tr class="total-row"><td colspan="3" class="td-right">TOTAL</td><td class="td-right">${inv.amountFormatted}</td></tr>
         </tbody>
       </table>
+      ${!inv.invoice.paidAt && inv.paymentLink ? `
+        <div class="actions-grid">
+          <div class="payment-card">
+            <div class="payment-card-title">Link Pembayaran Online</div>
+            <p class="payment-note">Pelanggan dapat membuka link berikut untuk melakukan pembayaran langsung. Link ini bisa dibuka dari ponsel atau browser.</p>
+            <a class="payment-cta" href="${inv.paymentLink}" target="_blank" rel="noopener noreferrer">Buka Halaman Bayar</a>
+            <a class="payment-link" href="${inv.paymentLink}" target="_blank" rel="noopener noreferrer">${inv.paymentLink}</a>
+          </div>
+          <div class="payment-card">
+            <div class="payment-card-title">Petunjuk Pembayaran</div>
+            <p class="payment-note">Jika pelanggan belum membayar, arahkan pelanggan untuk menggunakan link pembayaran online di samping atau transfer manual ke rekening perusahaan di bawah.</p>
+          </div>
+        </div>
+      ` : ''}
       ${inv.invoice.paidAt ? `<div class="paid-stamp"><div class="paid-stamp-text">LUNAS</div><div class="paid-stamp-sub">Dibayar pada ${inv.invoice.paidAt}</div></div>` :
         (inv.company.bankAccounts && inv.company.bankAccounts.length > 0 ? `
         <div style="margin:18px 0;padding:16px;border:1px solid #6ee7b7;border-radius:8px;background:#f0fdfa">
@@ -545,6 +574,8 @@ export default function InvoicesPage() {
         </div>
       ` : '')}
       <div class="footer">Terima kasih atas kepercayaan Anda &mdash; ${inv.company.name}</div>
+      </div>
+      </div>
       <button class="print-btn no-print" onclick="window.print()">&#128438; Cetak</button>
       <script>window.onload = function() { window.print(); }</script>
       </body></html>`);
@@ -565,7 +596,8 @@ export default function InvoicesPage() {
       <style>
         @media print { @page { margin: 0; width: 80mm; } .no-print { display: none !important; } }
         * { box-sizing: border-box; }
-        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 80mm; padding: 5mm 4mm; margin: 0 auto; color: #000; background: #fff; }
+        body { font-family: 'Courier New', Courier, monospace; font-size: 11px; width: 80mm; padding: 0; margin: 0 auto; color: #000; background: #fff; }
+        .receipt { border-top: 4px solid #0d9488; padding: 5mm 4mm; }
         .logo { display:block; max-width: 34mm; max-height: 14mm; margin: 0 auto 3px; object-fit: contain; }
         .center { text-align: center; }
         .bold { font-weight: bold; }
@@ -578,8 +610,11 @@ export default function InvoicesPage() {
         .lunas-stamp { display: block; text-align: center; font-size: 17px; font-weight: bold; border: 3px double #000; padding: 4px 14px; margin: 8px auto; width: fit-content; letter-spacing: 3px; }
         .sm { font-size: 10px; color: #555; }
         .bank-box { border: 1px dashed #000; padding: 5px; margin: 4px 0; }
+        .pay-box { border: 1px solid #0d9488; background: #f0fdfa; padding: 6px; margin: 6px 0; }
+        .pay-link { display:block; color:#0f172a; text-decoration:none; word-break:break-all; margin-top:4px; }
         .print-btn { display: block; margin: 10px auto; padding: 6px 18px; background: #0d9488; color: #fff; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; }
       </style></head><body>
+      <div class="receipt">
       ${inv.company.logo ? `<img class="logo" src="${inv.company.logo}" alt="Logo">` : ''}
       <div class="center bold big">${inv.company.name}</div>
       ${inv.company.address ? `<div class="center sm">${inv.company.address}</div>` : ''}
@@ -612,9 +647,10 @@ export default function InvoicesPage() {
         <div class="row"><span>Tgl Bayar</span><span>${inv.invoice.paidAt}</span></div>
         <div class="row"><span>Metode</span><span>${inv.paymentLink ? 'Gateway' : 'Manual'}</span></div>
         <div class="lunas-stamp">** LUNAS **</div>
-      ` : `${inv.company.bankAccounts && inv.company.bankAccounts.length > 0 ? `<div style="margin:6px 0"><div class="center bold">Transfer Manual</div>${inv.company.bankAccounts.map((ba: { bankName: string; accountNumber: string; accountName: string }) => `<div class="bank-box"><div class="bold">${ba.bankName}</div><div>${ba.accountNumber}</div><div class="sm">a/n ${ba.accountName}</div></div>`).join('')}</div>` : `<div class="center sm" style="margin:6px 0">Harap bayar sebelum jatuh tempo</div>`}`}
+      ` : `${inv.paymentLink ? `<div class="pay-box"><div class="center bold">Link Pembayaran</div><a class="pay-link" href="${inv.paymentLink}" target="_blank" rel="noopener noreferrer">${inv.paymentLink}</a></div>` : ''}${inv.company.bankAccounts && inv.company.bankAccounts.length > 0 ? `<div style="margin:6px 0"><div class="center bold">Transfer Manual</div>${inv.company.bankAccounts.map((ba: { bankName: string; accountNumber: string; accountName: string }) => `<div class="bank-box"><div class="bold">${ba.bankName}</div><div>${ba.accountNumber}</div><div class="sm">a/n ${ba.accountName}</div></div>`).join('')}</div>` : `<div class="center sm" style="margin:6px 0">Harap bayar sebelum jatuh tempo</div>`}`}
       <div class="dashed"></div>
       <div class="center sm" style="margin-top:4px">Terima kasih</div>
+      </div>
       <button class="print-btn no-print" onclick="window.print()">&#128438; Cetak</button>
       <script>window.onload = function() { window.print(); }</script>
       </body></html>`);
