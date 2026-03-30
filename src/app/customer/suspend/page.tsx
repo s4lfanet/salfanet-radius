@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatWIB } from '@/lib/timezone';
+import { formatInTimeZone } from 'date-fns-tz';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { PauseCircle, CheckCircle2, XCircle, Clock, AlertCircle, Loader2, Calendar } from 'lucide-react';
 
@@ -111,8 +112,8 @@ export default function CustomerSuspendPage() {
     finally { setCancelling(false); }
   };
 
-  // Min date = today
-  const todayStr = new Date().toISOString().split('T')[0];
+  // Min date = today (WIB)
+  const todayStr = formatInTimeZone(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd');
 
   if (loading) {
     return (

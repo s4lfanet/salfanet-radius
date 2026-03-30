@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
+import { formatInTimeZone } from 'date-fns-tz';
+import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '@/hooks/useTheme';
 import { PushNotificationToggle } from '@/components/push-notification-toggle';
 
@@ -300,7 +302,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3">
             <Clock className="w-4 h-4 text-cyan-400/50" />
             <span className="text-xs text-muted-foreground">
-              {formatWIB(new Date(), 'EEEE, d MMMM yyyy')}
+              {formatInTimeZone(new Date(), 'Asia/Jakarta', 'EEEE, d MMMM yyyy', { locale: localeId })}
             </span>
             {/* Bell */}
             <div className="relative">
