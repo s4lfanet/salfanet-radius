@@ -2,7 +2,7 @@
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Plus, Pencil, Trash2, Users, CheckCircle2, MapPin, Map, MoreVertical,
@@ -54,6 +54,231 @@ interface Profile { id: string; name: string; groupName: string; price: number; 
 interface Router { id: string; name: string; nasname: string; ipAddress: string; }
 interface Area { id: string; name: string; }
 
+// Isolated form component — formData state lives here so typing only re-renders
+// this component, not the entire PppoeUsersPage (which has 100+ state variables).
+// This prevents mobile virtual keyboard dismissal caused by parent re-renders.
+function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, areas }: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  profiles: Profile[];
+  routers: Router[];
+  areas: Area[];
+}) {
+  const { t } = useTranslation();
+  const [formData, setFormData] = useState({
+    username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '',
+    email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '',
+    subscriptionType: 'POSTPAID' as 'POSTPAID' | 'PREPAID',
+    billingDay: '1',
+    macAddress: '', comment: '', referralCode: '',
+    idCardNumber: '', idCardPhoto: '',
+    installationPhotos: [] as string[],
+    followRoad: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [uploadingIdCard, setUploadingIdCard] = useState(false);
+  const [uploadingInstallation, setUploadingInstallation] = useState(false);
+  const [showMapPicker, setShowMapPicker] = useState(false);
+
+  // Reset form whenever the modal closes
+  const prevIsOpen = useRef(isOpen);
+  useEffect(() => {
+    if (prevIsOpen.current && !isOpen) {
+      setFormData({ username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '', email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '', subscriptionType: 'POSTPAID', billingDay: '1', macAddress: '', comment: '', referralCode: '', idCardNumber: '', idCardPhoto: '', installationPhotos: [], followRoad: false });
+      setShowPassword(false);
+    }
+    prevIsOpen.current = isOpen;
+  }, [isOpen]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...formData,
+        ...(formData.expiredAt && { expiredAt: endOfDayWIBtoUTC(formData.expiredAt).toISOString() }),
+      };
+      const res = await fetch('/api/pppoe/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const result = await res.json();
+      if (res.ok) {
+        onClose();
+        onSuccess();
+        await showSuccess(t('management.userCreated'));
+      } else { await showError(result.error || t('common.failed')); }
+    } catch (error) { console.error('Submit error:', error); await showError(t('management.failedSaveUser')); }
+  };
+
+  const handleUploadIdCard = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingIdCard(true);
+    try {
+      const fd = new FormData(); fd.append('file', file); fd.append('type', 'idCard');
+      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+      const result = await res.json();
+      if (result.success) { setFormData(prev => ({ ...prev, idCardPhoto: result.url })); }
+      else { await showError(result.error || 'Upload KTP gagal'); }
+    } catch { await showError('Upload KTP gagal'); }
+    finally { setUploadingIdCard(false); }
+  };
+
+  const handleUploadInstallation = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingInstallation(true);
+    try {
+      const fd = new FormData(); fd.append('file', file); fd.append('type', 'installation');
+      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+      const result = await res.json();
+      if (result.success) { setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url] })); }
+      else { await showError(result.error || 'Upload foto instalasi gagal'); }
+    } catch { await showError('Upload foto instalasi gagal'); }
+    finally { setUploadingInstallation(false); }
+  };
+
+  const handleRemoveInstallationPhoto = (index: number) => {
+    setFormData(prev => ({ ...prev, installationPhotos: prev.installationPhotos.filter((_, i) => i !== index) }));
+  };
+
+  return (
+    <>
+      <SimpleModal isOpen={isOpen} onClose={onClose} size="lg">
+        <ModalHeader>
+          <ModalTitle>{t('pppoe.addUser')}</ModalTitle>
+          <ModalDescription>{t('pppoe.createPppoe')}</ModalDescription>
+        </ModalHeader>
+        <form onSubmit={handleSubmit}>
+          <ModalBody className="space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-3">
+              <div><ModalLabel required>{t('pppoe.username')}</ModalLabel><ModalInput type="text" value={formData.username} onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))} required /></div>
+              <div><ModalLabel required>{t('pppoe.password')}</ModalLabel>
+                <div className="relative"><ModalInput type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))} required className="pr-8" />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-[#00f7ff]">{showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}</button>
+                </div>
+              </div>
+            </div>
+            <div><ModalLabel required>{t('pppoe.profile')}</ModalLabel><ModalSelect value={formData.profileId} onChange={(e) => setFormData(prev => ({ ...prev, profileId: e.target.value }))} required><option value="" className="bg-[#0a0520]">{t('common.select')}</option>{profiles.map((p) => <option key={p.id} value={p.id} className="bg-[#0a0520]">{p.name} - Rp {p.price.toLocaleString('id-ID')}</option>)}</ModalSelect></div>
+            <div><ModalLabel>NAS ({t('common.optional')})</ModalLabel><ModalSelect value={formData.routerId} onChange={(e) => setFormData(prev => ({ ...prev, routerId: e.target.value }))}><option value="" className="bg-[#0a0520]">{t('pppoe.global')}</option>{routers.map((r) => <option key={r.id} value={r.id} className="bg-[#0a0520]">{r.name} ({r.ipAddress})</option>)}</ModalSelect></div>
+            <div><ModalLabel>Area <span className="text-muted-foreground text-[10px]">({t('common.optional')})</span></ModalLabel><ModalSelect value={formData.areaId} onChange={(e) => setFormData(prev => ({ ...prev, areaId: e.target.value }))}><option value="" className="bg-[#0a0520]">-- Pilih Area --</option>{areas.map((a) => <option key={a.id} value={a.id} className="bg-[#0a0520]">{a.name}</option>)}</ModalSelect></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><ModalLabel required>{t('common.name')}</ModalLabel><ModalInput type="text" value={formData.name} onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))} required /></div>
+              <div><ModalLabel required>{t('common.phone')}</ModalLabel><ModalInput type="tel" value={formData.phone} onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))} required /></div>
+            </div>
+            <div><ModalLabel required>{t('common.email')}</ModalLabel><ModalInput type="email" value={formData.email} onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))} required /></div>
+            <div><ModalLabel>{t('common.address')}</ModalLabel><ModalInput type="text" value={formData.address} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} /></div>
+            <div>
+              <div className="flex items-center justify-between mb-1"><ModalLabel>{t('pppoe.gpsLocation')}</ModalLabel>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => setShowMapPicker(true)} className="inline-flex items-center px-2 py-0.5 text-[10px] bg-primary/10 text-primary border border-primary/50 rounded hover:bg-primary/20 dark:bg-[#00f7ff]/20 dark:text-[#00f7ff] dark:border-[#00f7ff]/50 dark:hover:bg-[#00f7ff]/30"><Map className="h-2.5 w-2.5 mr-1" />{t('pppoe.openMap')}</button>
+                  <button type="button" onClick={async () => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((p) => { setFormData(prev => ({ ...prev, latitude: p.coords.latitude.toFixed(6), longitude: p.coords.longitude.toFixed(6) })); }, async () => { await showError(t('pppoe.gpsFailed')); }, { enableHighAccuracy: true, timeout: 10000 }); } }} className="inline-flex items-center px-2 py-0.5 text-[10px] bg-green-100 text-green-600 border border-green-300 rounded hover:bg-green-200 dark:bg-[#00ff88]/20 dark:text-[#00ff88] dark:border-[#00ff88]/50 dark:hover:bg-[#00ff88]/30"><MapPin className="h-2.5 w-2.5 mr-1" />{t('pppoe.autoGps')}</button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <ModalInput type="number" step="any" value={formData.latitude} onChange={(e) => setFormData(prev => ({ ...prev, latitude: e.target.value }))} placeholder={t('pppoe.latitude')} />
+                <ModalInput type="number" step="any" value={formData.longitude} onChange={(e) => setFormData(prev => ({ ...prev, longitude: e.target.value }))} placeholder={t('pppoe.longitude')} />
+              </div>
+            </div>
+            <div>
+              <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
+              <div className="grid grid-cols-2 gap-2">
+                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10 dark:border-[#00f7ff] dark:bg-[#00f7ff]/10 dark:shadow-[0_0_10px_rgba(0,247,255,0.3)]' : 'border-border hover:border-primary/50 dark:border-[#bc13fe]/30 dark:hover:border-[#00f7ff]/50'}`}>
+                  <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'POSTPAID' }))} className="w-3 h-3 accent-primary dark:text-[#00f7ff] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#00f7ff]" />
+                  <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground"><Calendar className="w-3 h-3 inline mr-0.5" />{t('pppoe.postpaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.fixedDueDate')}</div></div>
+                </label>
+                <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary bg-primary/10 dark:border-[#bc13fe] dark:bg-[#bc13fe]/10 dark:shadow-[0_0_10px_rgba(188,19,254,0.3)]' : 'border-border hover:border-primary/50 dark:border-[#bc13fe]/30 dark:hover:border-[#bc13fe]/50'}`}>
+                  <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={(e) => setFormData(prev => ({ ...prev, subscriptionType: e.target.value as 'PREPAID' }))} className="w-3 h-3 accent-primary dark:text-[#bc13fe] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#bc13fe]" />
+                  <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground">⏰ {t('pppoe.prepaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.followsPayment')}</div></div>
+                </label>
+              </div>
+            </div>
+            {formData.subscriptionType === 'POSTPAID' && (
+              <div><ModalLabel><Calendar className="w-3 h-3 inline mr-0.5" />{t('pppoe.billingDate')}</ModalLabel><ModalSelect value={formData.billingDay} onChange={(e) => setFormData(prev => ({ ...prev, billingDay: e.target.value }))}>{Array.from({ length: 31 }, (_, i) => i + 1).map(day => (<option key={day} value={day} className="bg-[#0a0520]">{t('pppoe.dayOf')} {day}</option>))}</ModalSelect><p className="text-[10px] text-muted-foreground mt-1">{t('pppoe.monthlyDueDateDesc')}</p></div>
+            )}
+            {formData.subscriptionType === 'PREPAID' && (
+              <div>
+                <ModalLabel>{t('pppoe.expiredAt')} (opsional)</ModalLabel>
+                <ModalInput type="date" value={formData.expiredAt} onChange={(e) => setFormData(prev => ({ ...prev, expiredAt: e.target.value }))} />
+                <p className="text-[10px] text-muted-foreground mt-1">{t('pppoe.leaveEmptyForAuto')}</p>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div><ModalLabel>{t('pppoe.staticIp')}</ModalLabel><ModalInput type="text" value={formData.ipAddress} onChange={(e) => setFormData(prev => ({ ...prev, ipAddress: e.target.value }))} placeholder="10.10.10.2" /></div>
+              <div><ModalLabel>MAC Address</ModalLabel><ModalInput type="text" value={formData.macAddress} onChange={(e) => setFormData(prev => ({ ...prev, macAddress: e.target.value }))} placeholder="AA:BB:CC:DD:EE:FF" /></div>
+            </div>
+            {formData.subscriptionType === 'POSTPAID' && (
+              <div><ModalLabel>{t('pppoe.expiryDate')}</ModalLabel><ModalInput type="date" value={formData.expiredAt} onChange={(e) => setFormData(prev => ({ ...prev, expiredAt: e.target.value }))} /></div>
+            )}
+            <div><ModalLabel>Komentar / Catatan</ModalLabel><ModalTextarea value={formData.comment} onChange={(e) => setFormData(prev => ({ ...prev, comment: e.target.value }))} placeholder="Catatan tambahan tentang pelanggan ini..." rows={2} /></div>
+            <div><ModalLabel>Kode Referral <span className="text-muted-foreground text-[10px]">(opsional)</span></ModalLabel><ModalInput type="text" value={formData.referralCode} onChange={(e) => setFormData(prev => ({ ...prev, referralCode: e.target.value }))} placeholder="Masukkan kode referral" /></div>
+
+            {/* Dokumen Pelanggan */}
+            <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg p-3 space-y-3">
+              <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span><CreditCard className="w-3.5 h-3.5" /></span> Dokumen Identitas (KTP)
+              </div>
+              <div>
+                <ModalLabel>No. NIK KTP</ModalLabel>
+                <ModalInput type="text" value={formData.idCardNumber} onChange={(e) => setFormData(prev => ({ ...prev, idCardNumber: e.target.value }))} placeholder="3201234567890123" maxLength={16} />
+              </div>
+              <div>
+                <ModalLabel>Foto KTP</ModalLabel>
+                <div className="flex gap-2 items-center">
+                  <input type="file" accept="image/*" onChange={handleUploadIdCard} disabled={uploadingIdCard} className="hidden" id="idCardUploadAdd" />
+                  <label htmlFor="idCardUploadAdd" className={`flex-1 px-3 py-1.5 text-xs text-center border border-border dark:border-[#bc13fe]/40 rounded cursor-pointer hover:bg-muted dark:hover:bg-[#bc13fe]/10 text-muted-foreground ${uploadingIdCard ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                    {uploadingIdCard ? '⏳ Mengupload...' : '📎 Upload Foto KTP'}
+                  </label>
+                </div>
+                {formData.idCardPhoto && (
+                  <div className="mt-2 relative">
+                    <img src={formData.idCardPhoto} alt="Preview KTP" className="w-full h-28 object-cover rounded border border-border dark:border-[#bc13fe]/30" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, idCardPhoto: '' }))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"><X className="w-3 h-3" /></button>
+                  </div>
+                )}
+                <p className="text-[9px] text-muted-foreground mt-1">Format: JPG/PNG/WebP, maks. 5MB</p>
+              </div>
+            </div>
+
+            {/* Foto Instalasi */}
+            <div className="border border-border dark:border-[#00f7ff]/20 rounded-lg p-3 space-y-3">
+              <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                <span><Camera className="w-3.5 h-3.5" /></span> Foto Instalasi
+              </div>
+              <div>
+                <input type="file" accept="image/*" onChange={handleUploadInstallation} disabled={uploadingInstallation} className="hidden" id="installationUploadAdd" />
+                <label htmlFor="installationUploadAdd" className={`w-full block px-3 py-1.5 text-xs text-center border border-border dark:border-[#00f7ff]/30 rounded cursor-pointer hover:bg-muted dark:hover:bg-[#00f7ff]/10 text-muted-foreground ${uploadingInstallation ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                  {uploadingInstallation ? '⏳ Mengupload...' : '📸 Upload Foto Instalasi'}
+                </label>
+                <p className="text-[9px] text-muted-foreground mt-1">Bisa upload beberapa foto. Maks. 5MB per foto.</p>
+              </div>
+              {formData.installationPhotos.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {formData.installationPhotos.map((photo, index) => (
+                    <div key={index} className="relative">
+                      <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded border border-border dark:border-[#00f7ff]/20" />
+                      <button type="button" onClick={() => handleRemoveInstallationPhoto(index)} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] hover:bg-red-600"><X className="w-2.5 h-2.5" /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <ModalButton type="button" variant="secondary" onClick={onClose}>{t('common.cancel')}</ModalButton>
+            <ModalButton type="submit" variant="primary">{t('common.create')}</ModalButton>
+          </ModalFooter>
+        </form>
+      </SimpleModal>
+      <MapPicker
+        isOpen={showMapPicker}
+        onClose={() => setShowMapPicker(false)}
+        onSelect={(lat, lng) => { setFormData(prev => ({ ...prev, latitude: lat.toFixed(6), longitude: lng.toFixed(6) })); }}
+        initialLat={formData.latitude ? parseFloat(formData.latitude) : undefined}
+        initialLng={formData.longitude ? parseFloat(formData.longitude) : undefined}
+      />
+    </>
+  );
+}
+
 export default function PppoeUsersPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
@@ -72,7 +297,8 @@ export default function PppoeUsersPage() {
   const [modalLatLng, setModalLatLng] = useState<{ lat: string; lng: string } | undefined>();
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+  const [mapPickerLat, setMapPickerLat] = useState('');
+  const [mapPickerLon, setMapPickerLon] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterProfile, setFilterProfile] = useState('');
   const [filterRouter, setFilterRouter] = useState('');
@@ -116,19 +342,6 @@ export default function PppoeUsersPage() {
   });
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
 
-  const [formData, setFormData] = useState({
-    username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '',
-    email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '',
-    subscriptionType: 'POSTPAID' as 'POSTPAID' | 'PREPAID',
-    billingDay: '1',
-    macAddress: '', comment: '', referralCode: '',
-    idCardNumber: '', idCardPhoto: '',
-    installationPhotos: [] as string[],
-    followRoad: false,
-  });
-  const [uploadingIdCard, setUploadingIdCard] = useState(false);
-  const [uploadingInstallation, setUploadingInstallation] = useState(false);
-
   useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
@@ -156,23 +369,6 @@ export default function PppoeUsersPage() {
     finally { setLoading(false); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const method = editingUser ? 'PUT' : 'POST';
-      const payload = {
-        ...formData, ...(editingUser && { id: editingUser.id }),
-        ...(formData.expiredAt && { expiredAt: endOfDayWIBtoUTC(formData.expiredAt).toISOString() }),
-      };
-      const res = await fetch('/api/pppoe/users', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const result = await res.json();
-      if (res.ok) {
-        setIsDialogOpen(false); setEditingUser(null); resetForm(); loadData();
-        await showSuccess(editingUser ? t('management.userUpdated') : t('management.userCreated'));
-      } else { await showError(result.error || t('common.failed')); }
-    } catch (error) { console.error('Submit error:', error); await showError(t('management.failedSaveUser')); }
-  };
-
   const handleSaveUser = async (data: any) => {
     try {
       const res = await fetch('/api/pppoe/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
@@ -184,22 +380,8 @@ export default function PppoeUsersPage() {
 
   const handleEdit = (user: PppoeUser) => {
     setEditingUser(user);
-    setFormData({
-      username: user.username, password: '', profileId: user.profile.id, routerId: user.routerId || '',
-      areaId: user.areaId || '',
-      name: user.name, phone: user.phone, email: user.email || '', address: user.address || '',
-      latitude: user.latitude?.toString() || '', longitude: user.longitude?.toString() || '',
-      ipAddress: user.ipAddress || '', expiredAt: user.expiredAt ? formatWIB(user.expiredAt, 'yyyy-MM-dd') : '',
-      subscriptionType: user.subscriptionType ?? 'POSTPAID',
-      billingDay: (user.billingDay ?? (user.expiredAt && (user.subscriptionType ?? 'POSTPAID') === 'POSTPAID' ? new Date(user.expiredAt).getDate() : 1)).toString(),
-      macAddress: (user as any).macAddress || '',
-      comment: (user as any).comment || '',
-      referralCode: (user as any).referralCode || '',
-      idCardNumber: (user as any).idCardNumber || '',
-      idCardPhoto: (user as any).idCardPhoto || '',
-      installationPhotos: (user as any).installationPhotos || [],
-      followRoad: (user as any).followRoad || false,
-    });
+    setMapPickerLat(user.latitude?.toString() || '');
+    setMapPickerLon(user.longitude?.toString() || '');
     setIsDialogOpen(true);
   };
 
@@ -323,39 +505,6 @@ export default function PppoeUsersPage() {
 
   const toggleSelectUser = (userId: string) => { const n = new Set(selectedUsers); n.has(userId) ? n.delete(userId) : n.add(userId); setSelectedUsers(n); };
   const toggleSelectAll = () => { selectedUsers.size === filteredUsers.length && filteredUsers.length > 0 ? setSelectedUsers(new Set()) : setSelectedUsers(new Set(filteredUsers.map(u => u.id))); };
-  const resetForm = () => { setFormData({ username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '', email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '', subscriptionType: 'POSTPAID', billingDay: '1', macAddress: '', comment: '', referralCode: '', idCardNumber: '', idCardPhoto: '', installationPhotos: [], followRoad: false }); };
-
-  const handleUploadIdCard = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingIdCard(true);
-    try {
-      const fd = new FormData(); fd.append('file', file); fd.append('type', 'idCard');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-      const result = await res.json();
-      if (result.success) { setFormData(prev => ({ ...prev, idCardPhoto: result.url })); }
-      else { await showError(result.error || 'Upload KTP gagal'); }
-    } catch { await showError('Upload KTP gagal'); }
-    finally { setUploadingIdCard(false); }
-  };
-
-  const handleUploadInstallation = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingInstallation(true);
-    try {
-      const fd = new FormData(); fd.append('file', file); fd.append('type', 'installation');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-      const result = await res.json();
-      if (result.success) { setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url] })); }
-      else { await showError(result.error || 'Upload foto instalasi gagal'); }
-    } catch { await showError('Upload foto instalasi gagal'); }
-    finally { setUploadingInstallation(false); }
-  };
-
-  const handleRemoveInstallationPhoto = (index: number) => {
-    setFormData(prev => ({ ...prev, installationPhotos: prev.installationPhotos.filter((_, i) => i !== index) }));
-  };
 
   const handleBulkDelete = async () => {
     if (selectedUsers.size === 0) return;
@@ -1121,135 +1270,17 @@ export default function PppoeUsersPage() {
         </div>
 
         {/* Add New User Dialog */}
-        <SimpleModal isOpen={isDialogOpen && !editingUser} onClose={() => { setIsDialogOpen(false); setEditingUser(null); resetForm(); }} size="lg">
-          <ModalHeader>
-            <ModalTitle>{t('pppoe.addUser')}</ModalTitle>
-            <ModalDescription>{t('pppoe.createPppoe')}</ModalDescription>
-          </ModalHeader>
-          <form onSubmit={handleSubmit}>
-            <ModalBody className="space-y-4 max-h-[60vh] overflow-y-auto">
-              <div className="grid grid-cols-2 gap-3">
-                <div><ModalLabel required>{t('pppoe.username')}</ModalLabel><ModalInput type="text" value={formData.username} onChange={(e) => setFormData({ ...formData, username: e.target.value })} required /></div>
-                <div><ModalLabel required>{t('pppoe.password')}</ModalLabel>
-                  <div className="relative"><ModalInput type={showPassword ? 'text' : 'password'} value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} required={!editingUser} className="pr-8" />
-                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-[#00f7ff]">{showPassword ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}</button>
-                  </div>
-                </div>
-              </div>
-              <div><ModalLabel required>{t('pppoe.profile')}</ModalLabel><ModalSelect value={formData.profileId} onChange={(e) => setFormData({ ...formData, profileId: e.target.value })} required><option value="" className="bg-[#0a0520]">{t('common.select')}</option>{profiles.map((p) => <option key={p.id} value={p.id} className="bg-[#0a0520]">{p.name} - Rp {p.price.toLocaleString('id-ID')}</option>)}</ModalSelect></div>
-              <div><ModalLabel>NAS ({t('common.optional')})</ModalLabel><ModalSelect value={formData.routerId} onChange={(e) => setFormData({ ...formData, routerId: e.target.value })}><option value="" className="bg-[#0a0520]">{t('pppoe.global')}</option>{routers.map((r) => <option key={r.id} value={r.id} className="bg-[#0a0520]">{r.name} ({r.ipAddress})</option>)}</ModalSelect></div>
-              <div><ModalLabel>Area <span className="text-muted-foreground text-[10px]">({t('common.optional')})</span></ModalLabel><ModalSelect value={formData.areaId} onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}><option value="" className="bg-[#0a0520]">-- Pilih Area --</option>{areas.map((a) => <option key={a.id} value={a.id} className="bg-[#0a0520]">{a.name}</option>)}</ModalSelect></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><ModalLabel required>{t('common.name')}</ModalLabel><ModalInput type="text" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required /></div>
-                <div><ModalLabel required>{t('common.phone')}</ModalLabel><ModalInput type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required /></div>
-              </div>
-              <div><ModalLabel required>{t('common.email')}</ModalLabel><ModalInput type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required /></div>
-              <div><ModalLabel>{t('common.address')}</ModalLabel><ModalInput type="text" value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} /></div>
-              <div>
-                <div className="flex items-center justify-between mb-1"><ModalLabel>{t('pppoe.gpsLocation')}</ModalLabel>
-                  <div className="flex gap-1">
-                    <button type="button" onClick={() => setShowMapPicker(true)} className="inline-flex items-center px-2 py-0.5 text-[10px] bg-primary/10 text-primary border border-primary/50 rounded hover:bg-primary/20 dark:bg-[#00f7ff]/20 dark:text-[#00f7ff] dark:border-[#00f7ff]/50 dark:hover:bg-[#00f7ff]/30"><Map className="h-2.5 w-2.5 mr-1" />{t('pppoe.openMap')}</button>
-                    <button type="button" onClick={async () => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((p) => { setFormData({ ...formData, latitude: p.coords.latitude.toFixed(6), longitude: p.coords.longitude.toFixed(6) }); }, async () => { await showError(t('pppoe.gpsFailed')); }, { enableHighAccuracy: true, timeout: 10000 }); } }} className="inline-flex items-center px-2 py-0.5 text-[10px] bg-green-100 text-green-600 border border-green-300 rounded hover:bg-green-200 dark:bg-[#00ff88]/20 dark:text-[#00ff88] dark:border-[#00ff88]/50 dark:hover:bg-[#00ff88]/30"><MapPin className="h-2.5 w-2.5 mr-1" />{t('pppoe.autoGps')}</button>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <ModalInput type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} placeholder={t('pppoe.latitude')} />
-                  <ModalInput type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} placeholder={t('pppoe.longitude')} />
-                </div>
-              </div>
-              <div>
-                <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
-                <div className="grid grid-cols-2 gap-2">
-                  <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'POSTPAID' ? 'border-primary bg-primary/10 dark:border-[#00f7ff] dark:bg-[#00f7ff]/10 dark:shadow-[0_0_10px_rgba(0,247,255,0.3)]' : 'border-border hover:border-primary/50 dark:border-[#bc13fe]/30 dark:hover:border-[#00f7ff]/50'}`}>
-                    <input type="radio" name="subscriptionType" value="POSTPAID" checked={formData.subscriptionType === 'POSTPAID'} onChange={(e) => setFormData({ ...formData, subscriptionType: e.target.value as 'POSTPAID' })} className="w-3 h-3 accent-primary dark:text-[#00f7ff] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#00f7ff]" />
-                    <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground"><Calendar className="w-3 h-3 inline mr-0.5" />{t('pppoe.postpaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.fixedDueDate')}</div></div>
-                  </label>
-                  <label className={`flex items-center p-2 border-2 rounded-lg cursor-pointer transition-all ${formData.subscriptionType === 'PREPAID' ? 'border-primary bg-primary/10 dark:border-[#bc13fe] dark:bg-[#bc13fe]/10 dark:shadow-[0_0_10px_rgba(188,19,254,0.3)]' : 'border-border hover:border-primary/50 dark:border-[#bc13fe]/30 dark:hover:border-[#bc13fe]/50'}`}>
-                    <input type="radio" name="subscriptionType" value="PREPAID" checked={formData.subscriptionType === 'PREPAID'} onChange={(e) => setFormData({ ...formData, subscriptionType: e.target.value as 'PREPAID' })} className="w-3 h-3 accent-primary dark:text-[#bc13fe] border-border dark:border-[#bc13fe]/50 focus:ring-primary dark:focus:ring-[#bc13fe]" />
-                    <div className="ml-2 flex-1"><div className="text-[10px] font-medium text-foreground">⏰ {t('pppoe.prepaid')}</div><div className="text-[9px] text-muted-foreground">{t('pppoe.followsPayment')}</div></div>
-                  </label>
-                </div>
-              </div>
-              {formData.subscriptionType === 'POSTPAID' && (
-                <div><ModalLabel><Calendar className="w-3 h-3 inline mr-0.5" />{t('pppoe.billingDate')}</ModalLabel><ModalSelect value={formData.billingDay} onChange={(e) => setFormData({ ...formData, billingDay: e.target.value })}>{Array.from({ length: 31 }, (_, i) => i + 1).map(day => (<option key={day} value={day} className="bg-[#0a0520]">{t('pppoe.dayOf')} {day}</option>))}</ModalSelect><p className="text-[10px] text-muted-foreground mt-1">{t('pppoe.monthlyDueDateDesc')}</p></div>
-              )}
-              {formData.subscriptionType === 'PREPAID' && (
-                <div>
-                  <ModalLabel>{t('pppoe.expiredAt')} (opsional)</ModalLabel>
-                  <ModalInput type="date" value={formData.expiredAt} onChange={(e) => setFormData({ ...formData, expiredAt: e.target.value })} />
-                  <p className="text-[10px] text-muted-foreground mt-1">{t('pppoe.leaveEmptyForAuto')}</p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                <div><ModalLabel>{t('pppoe.staticIp')}</ModalLabel><ModalInput type="text" value={formData.ipAddress} onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })} placeholder="10.10.10.2" /></div>
-                <div><ModalLabel>MAC Address</ModalLabel><ModalInput type="text" value={formData.macAddress} onChange={(e) => setFormData({ ...formData, macAddress: e.target.value })} placeholder="AA:BB:CC:DD:EE:FF" /></div>
-              </div>
-              {formData.subscriptionType === 'POSTPAID' && (
-                <div><ModalLabel>{t('pppoe.expiryDate')}</ModalLabel><ModalInput type="date" value={formData.expiredAt} onChange={(e) => setFormData({ ...formData, expiredAt: e.target.value })} /></div>
-              )}
-              <div><ModalLabel>Komentar / Catatan</ModalLabel><ModalTextarea value={formData.comment} onChange={(e) => setFormData({ ...formData, comment: e.target.value })} placeholder="Catatan tambahan tentang pelanggan ini..." rows={2} /></div>
-              <div><ModalLabel>Kode Referral <span className="text-muted-foreground text-[10px]">(opsional)</span></ModalLabel><ModalInput type="text" value={formData.referralCode} onChange={(e) => setFormData({ ...formData, referralCode: e.target.value })} placeholder="Masukkan kode referral" /></div>
+        <AddPppoeUserModal
+          isOpen={isDialogOpen && !editingUser}
+          onClose={() => { setIsDialogOpen(false); setEditingUser(null); }}
+          onSuccess={() => loadData()}
+          profiles={profiles}
+          routers={routers}
+          areas={areas}
+        />
 
-              {/* Dokumen Pelanggan */}
-              <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg p-3 space-y-3">
-                <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <span><CreditCard className="w-3.5 h-3.5" /></span> Dokumen Identitas (KTP)
-                </div>
-                <div>
-                  <ModalLabel>No. NIK KTP</ModalLabel>
-                  <ModalInput type="text" value={formData.idCardNumber} onChange={(e) => setFormData({ ...formData, idCardNumber: e.target.value })} placeholder="3201234567890123" maxLength={16} />
-                </div>
-                <div>
-                  <ModalLabel>Foto KTP</ModalLabel>
-                  <div className="flex gap-2 items-center">
-                    <input type="file" accept="image/*" onChange={handleUploadIdCard} disabled={uploadingIdCard} className="hidden" id="idCardUploadAdd" />
-                    <label htmlFor="idCardUploadAdd" className={`flex-1 px-3 py-1.5 text-xs text-center border border-border dark:border-[#bc13fe]/40 rounded cursor-pointer hover:bg-muted dark:hover:bg-[#bc13fe]/10 text-muted-foreground ${uploadingIdCard ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      {uploadingIdCard ? '⏳ Mengupload...' : '📎 Upload Foto KTP'}
-                    </label>
-                  </div>
-                  {formData.idCardPhoto && (
-                    <div className="mt-2 relative">
-                      <img src={formData.idCardPhoto} alt="Preview KTP" className="w-full h-28 object-cover rounded border border-border dark:border-[#bc13fe]/30" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                      <button type="button" onClick={() => setFormData({ ...formData, idCardPhoto: '' })} className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"><X className="w-3 h-3" /></button>
-                    </div>
-                  )}
-                  <p className="text-[9px] text-muted-foreground mt-1">Format: JPG/PNG/WebP, maks. 5MB</p>
-                </div>
-              </div>
-
-              {/* Foto Instalasi */}
-              <div className="border border-border dark:border-[#00f7ff]/20 rounded-lg p-3 space-y-3">
-                <div className="text-xs font-semibold text-foreground flex items-center gap-1.5">
-                  <span><Camera className="w-3.5 h-3.5" /></span> Foto Instalasi
-                </div>
-                <div>
-                  <input type="file" accept="image/*" onChange={handleUploadInstallation} disabled={uploadingInstallation} className="hidden" id="installationUploadAdd" />
-                  <label htmlFor="installationUploadAdd" className={`w-full block px-3 py-1.5 text-xs text-center border border-border dark:border-[#00f7ff]/30 rounded cursor-pointer hover:bg-muted dark:hover:bg-[#00f7ff]/10 text-muted-foreground ${uploadingInstallation ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    {uploadingInstallation ? '⏳ Mengupload...' : '📸 Upload Foto Instalasi'}
-                  </label>
-                  <p className="text-[9px] text-muted-foreground mt-1">Bisa upload beberapa foto. Maks. 5MB per foto.</p>
-                </div>
-                {formData.installationPhotos.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {formData.installationPhotos.map((photo, index) => (
-                      <div key={index} className="relative">
-                        <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded border border-border dark:border-[#00f7ff]/20" />
-                        <button type="button" onClick={() => handleRemoveInstallationPhoto(index)} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] hover:bg-red-600"><X className="w-2.5 h-2.5" /></button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <ModalButton type="button" variant="secondary" onClick={() => { setIsDialogOpen(false); setEditingUser(null); resetForm(); }}>{t('common.cancel')}</ModalButton>
-              <ModalButton type="submit" variant="primary">{t('common.create')}</ModalButton>
-            </ModalFooter>
-          </form>
-        </SimpleModal>
-
-        {/* Map Picker */}
-        <MapPicker isOpen={showMapPicker} onClose={() => setShowMapPicker(false)} onSelect={(lat, lng) => { setFormData({ ...formData, latitude: lat.toFixed(6), longitude: lng.toFixed(6) }); if (editingUser) setModalLatLng({ lat: lat.toFixed(6), lng: lng.toFixed(6) }); }} initialLat={formData.latitude ? parseFloat(formData.latitude) : undefined} initialLng={formData.longitude ? parseFloat(formData.longitude) : undefined} />
+        {/* Map Picker (edit flow only — add flow has its own MapPicker inside AddPppoeUserModal) */}
+        <MapPicker isOpen={showMapPicker} onClose={() => setShowMapPicker(false)} onSelect={(lat, lng) => { const latStr = lat.toFixed(6); const lonStr = lng.toFixed(6); setMapPickerLat(latStr); setMapPickerLon(lonStr); setModalLatLng({ lat: latStr, lng: lonStr }); }} initialLat={mapPickerLat ? parseFloat(mapPickerLat) : undefined} initialLng={mapPickerLon ? parseFloat(mapPickerLon) : undefined} />
 
         {/* Import Dialog */}
         <SimpleModal isOpen={isImportDialogOpen} onClose={() => { setIsImportDialogOpen(false); setImportFile(null); setImportProfileId(''); setImportRouterId(''); setImportResult(null); }} size="md">
@@ -1305,7 +1336,7 @@ export default function PppoeUsersPage() {
         </SimpleModal>
 
         {/* Edit User Modal */}
-        <UserDetailModal isOpen={isDialogOpen && !!editingUser} onClose={() => { setIsDialogOpen(false); setEditingUser(null); resetForm(); setModalLatLng(undefined); }} user={editingUser} onSave={handleSaveUser} profiles={profiles} routers={routers} areas={areas} currentLatLng={modalLatLng} onLatLngChange={(lat, lng) => { setFormData({ ...formData, latitude: lat, longitude: lng }); setShowMapPicker(true); }} />
+        <UserDetailModal isOpen={isDialogOpen && !!editingUser} onClose={() => { setIsDialogOpen(false); setEditingUser(null); setModalLatLng(undefined); }} user={editingUser} onSave={handleSaveUser} profiles={profiles} routers={routers} areas={areas} currentLatLng={modalLatLng} onLatLngChange={(lat, lng) => { setMapPickerLat(lat); setMapPickerLon(lng); setShowMapPicker(true); }} />
 
         {/* Delete Dialog */}
         <SimpleModal isOpen={!!deleteUserId} onClose={() => setDeleteUserId(null)} size="sm">
