@@ -25,7 +25,7 @@ export async function POST(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
     const body = await request.json();
-    const { installationFee = 0, subscriptionType = 'POSTPAID', billingDay = 1, areaId } = body;
+    const { installationFee = 0, subscriptionType = 'POSTPAID', billingDay = 1, areaId, routerId } = body;
 
     // Installation fee is optional, default to 0
     const fee = installationFee || 0;
@@ -139,6 +139,7 @@ export async function POST(
         address: registration.address,
         profileId: registration.profileId,
         areaId: areaId || (registration as any).areaId || null,
+        routerId: routerId || null,
         status: 'active', // Create as active first
         syncedToRadius: false,
         subscriptionType: subscriptionType as 'POSTPAID' | 'PREPAID',

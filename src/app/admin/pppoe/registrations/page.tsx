@@ -66,6 +66,7 @@ interface Registration {
 }
 
 interface Area { id: string; name: string; }
+interface Router { id: string; name: string; shortname: string; ipAddress: string; }
 
 interface Stats {
   total: number;
@@ -90,6 +91,8 @@ export default function RegistrationsPage() {
   const [billingDay, setBillingDay] = useState('1');
   const [approveAreaId, setApproveAreaId] = useState('');
   const [areas, setAreas] = useState<Area[]>([]);
+  const [approveRouterId, setApproveRouterId] = useState('');
+  const [routers, setRouters] = useState<Router[]>([]);
   const [approving, setApproving] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -117,6 +120,7 @@ export default function RegistrationsPage() {
   useEffect(() => {
     fetchRegistrations();
     fetch('/api/pppoe/areas').then(r => r.json()).then(d => setAreas(d.areas || [])).catch(() => {});
+    fetch('/api/pppoe/profiles/sync-mikrotik').then(r => r.json()).then(d => setRouters(d.routers || [])).catch(() => {});
   }, [statusFilter, searchFilter]);
 
   const handleApproveClick = (registration: Registration) => {
@@ -125,6 +129,7 @@ export default function RegistrationsPage() {
     setSubscriptionType('POSTPAID');
     setBillingDay('1');
     setApproveAreaId(registration.areaId || '');
+    setApproveRouterId('');
     setApproveModalOpen(true);
   };
 
@@ -140,6 +145,7 @@ export default function RegistrationsPage() {
           subscriptionType: subscriptionType,
           billingDay: subscriptionType === 'POSTPAID' ? parseInt(billingDay) : 1,
           areaId: approveAreaId || null,
+          routerId: approveRouterId || null,
         }),
       });
       const data = await res.json();
@@ -600,6 +606,14 @@ export default function RegistrationsPage() {
                   {selectedRegistration.area && (
                     <p className="text-[10px] text-[#00f7ff] mt-1">💡 Dipilih saat daftar: <strong>{selectedRegistration.area.name}</strong></p>
                   )}
+                </div>
+                <div>
+                  <ModalLabel>Router / MikroTik</ModalLabel>
+                  <ModalSelect value={approveRouterId} onChange={(e) => setApproveRouterId(e.target.value)}>
+                    <option value="" className="bg-[#0a0520]">-- Pilih Router (opsional) --</option>
+                    {routers.map((r) => <option key={r.id} value={r.id} className="bg-[#0a0520]">{r.name} ({r.ipAddress})</option>)}
+                  </ModalSelect>
+                  <p className="text-[10px] text-muted-foreground mt-1">Router MikroTik tempat pelanggan ini terhubung</p>
                 </div>
                 {subscriptionType === 'PREPAID' && (
                   <div className="bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg p-3 space-y-1">
