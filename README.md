@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.11.8 — Mobile Form Keyboard Fix + Stop Subscription Action + Notification Dedup Fix (Mar 30, 2026)
+> **Latest:** v2.12.0 — GitHub Releases installer + upload data safety on update (Mar 30, 2026)
 
 ---
 
@@ -86,50 +86,99 @@ salfanet-radius/
 
 ## ⚙️ Installation
 
-### Quick Start (Recommended)
+### Metode 1 — Download Installer dari GitHub Releases (Termudah)
+
+Tidak perlu clone repo. Langsung download `installer-linux-amd64` dari halaman Releases lalu jalankan.
 
 ```bash
-# SSH to your VPS
+# SSH ke VPS / server
 ssh root@YOUR_VPS_IP
 
-# Clone repository (replace with your repo URL)
+# Download installer versi terbaru
+curl -sSfL https://github.com/s4lfanet/salfanet-radius/releases/latest/download/installer-linux-amd64 -o installer.sh
+chmod +x installer.sh
+bash installer.sh
+```
+
+Installer akan berjalan **interaktif** — mendeteksi environment otomatis, memandu konfigurasi, lalu menjalankan semua step.
+
+---
+
+### Metode 2 — Via Git Clone (untuk Developer)
+
+```bash
+ssh root@YOUR_VPS_IP
+
 git clone https://github.com/s4lfanet/salfanet-radius.git /root/salfanet-radius
 cd /root/salfanet-radius
-
-# Run installer (interactive — detects environment automatically)
 bash vps-install/vps-installer.sh
 ```
 
-The installer handles everything:
-- Node.js 20, MySQL 8.0 (auto-tuned to your RAM), FreeRADIUS 3.0.26, Nginx (performance-tuned), PM2
-- Database creation, Prisma schema push, seed data
-- FreeRADIUS config from `freeradius-config/` backup
-- Nginx upstream keepalive + gzip + SSL (Let's Encrypt or self-signed)
-- PM2 cluster start with ecosystem.config.js
+---
 
-Supported environments: **Public VPS**, **Proxmox LXC**, **Proxmox VM**, **Bare Metal**
-
-### Manual Step-by-Step
+### Metode 3 — Upload Manual via SCP (Tanpa Akses Internet di Server)
 
 ```bash
-bash vps-install/install-system.sh      # System packages
-bash vps-install/install-nodejs.sh      # Node.js 20
-bash vps-install/install-mysql.sh       # MySQL 8.0 + performance tuning
-bash vps-install/install-nginx.sh       # Nginx + global tuning
-bash vps-install/install-pm2.sh         # PM2 + build + start
-bash vps-install/install-freeradius.sh  # FreeRADIUS 3.0
+# Jalankan di terminal LOKAL (bukan di server)
+scp -r ./salfanet-radius root@YOUR_VPS_IP:/root/salfanet-radius
+
+# SSH ke server, lalu jalankan installer
+ssh root@YOUR_VPS_IP
+cd /root/salfanet-radius
+bash vps-install/vps-installer.sh
 ```
+
+---
+
+### Environment yang Didukung
+
+| Environment | Flag | Akses |
+|------------|------|-------|
+| **Public VPS** (DigitalOcean, Vultr, Hetzner, AWS) | `--env vps` | Internet |
+| **Proxmox LXC** | `--env lxc` | LAN/VLAN |
+| **Proxmox VM / VirtualBox** | `--env vm` | LAN |
+| **Bare Metal / Server Fisik** | `--env bare` | LAN |
+
+```bash
+# Contoh: paksa environment + IP
+bash vps-install/vps-installer.sh --env lxc --ip 192.168.1.50
+```
+
+---
 
 ### Updating Existing Installation
 
-```bash
-# On your local machine:
-git pull origin master                  # Get latest changes
+Cara paling aman. **Semua data upload (logo, foto KTP pelanggan, bukti bayar) otomatis dipreservasi.**
 
-# Deploy to VPS (copy changed files then rebuild):
-scp -r src/ root@VPS_IP:/var/www/salfanet-radius/
-ssh root@VPS_IP "cd /var/www/salfanet-radius && npm run build && pm2 restart ecosystem.config.js --update-env"
+```bash
+# Download updater terbaru dari Releases
+curl -sSfL https://github.com/s4lfanet/salfanet-radius/releases/latest/download/updater-linux-amd64 -o /tmp/updater.sh
+chmod +x /tmp/updater.sh
+
+# Update ke versi terbaru (otomatis backup, preserve uploads, restart PM2)
+bash /tmp/updater.sh
+
+# Atau update ke versi spesifik
+bash /tmp/updater.sh --version v2.12.0
 ```
+
+> Atau jika sudah ada di server: `bash /var/www/salfanet-radius/vps-install/updater.sh`
+
+Lihat detail lengkap di [vps-install/README.md](vps-install/README.md).
+
+---
+
+### Data yang Aman Saat Update
+
+| Data | Status |
+|------|--------|
+| Logo perusahaan (`public/uploads/logos/`) | ✅ Dipreservasi |
+| Foto KTP & dokumen pelanggan | ✅ Dipreservasi |
+| Bukti pembayaran | ✅ Dipreservasi |
+| File `.env` (database, secrets) | ✅ Tidak disentuh |
+| **Database MySQL (semua data pelanggan)** | ✅ Tidak disentuh |
+
+---
 
 ### Default Credentials
 
@@ -139,7 +188,7 @@ ssh root@VPS_IP "cd /var/www/salfanet-radius && npm run build && pm2 restart eco
 | Username | `superadmin` |
 | Password | `admin123` |
 
-⚠️ **Change the password immediately after first login!**
+⚠️ **Ganti password segera setelah login pertama!**
 
 ---
 
