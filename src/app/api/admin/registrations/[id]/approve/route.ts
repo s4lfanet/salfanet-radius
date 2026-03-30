@@ -25,7 +25,7 @@ export async function POST(
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const { id } = await params;
     const body = await request.json();
-    const { installationFee = 0, subscriptionType = 'POSTPAID', billingDay = 1 } = body;
+    const { installationFee = 0, subscriptionType = 'POSTPAID', billingDay = 1, areaId } = body;
 
     // Installation fee is optional, default to 0
     const fee = installationFee || 0;
@@ -44,7 +44,7 @@ export async function POST(
     // Get registration
     const registration = await prisma.registrationRequest.findUnique({
       where: { id },
-      include: { profile: true },
+      include: { profile: true, area: true },
     });
 
     if (!registration) {
@@ -138,6 +138,7 @@ export async function POST(
         email: registration.email,
         address: registration.address,
         profileId: registration.profileId,
+        areaId: areaId || (registration as any).areaId || null,
         status: 'active', // Create as active first
         syncedToRadius: false,
         subscriptionType: subscriptionType as 'POSTPAID' | 'PREPAID',

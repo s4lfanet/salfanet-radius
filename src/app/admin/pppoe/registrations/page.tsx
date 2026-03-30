@@ -39,6 +39,8 @@ interface Registration {
   latitude: number | null;
   longitude: number | null;
   notes: string | null;
+  areaId: string | null;
+  area?: { id: string; name: string } | null;
   status: string;
   installationFee: number;
   rejectionReason: string | null;
@@ -63,6 +65,8 @@ interface Registration {
   } | null;
 }
 
+interface Area { id: string; name: string; }
+
 interface Stats {
   total: number;
   pending: number;
@@ -84,6 +88,8 @@ export default function RegistrationsPage() {
   const [installationFee, setInstallationFee] = useState('');
   const [subscriptionType, setSubscriptionType] = useState<'POSTPAID' | 'PREPAID'>('POSTPAID');
   const [billingDay, setBillingDay] = useState('1');
+  const [approveAreaId, setApproveAreaId] = useState('');
+  const [areas, setAreas] = useState<Area[]>([]);
   const [approving, setApproving] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -110,6 +116,7 @@ export default function RegistrationsPage() {
 
   useEffect(() => {
     fetchRegistrations();
+    fetch('/api/pppoe/areas').then(r => r.json()).then(d => setAreas(d.areas || [])).catch(() => {});
   }, [statusFilter, searchFilter]);
 
   const handleApproveClick = (registration: Registration) => {
@@ -117,6 +124,7 @@ export default function RegistrationsPage() {
     setInstallationFee('');
     setSubscriptionType('POSTPAID');
     setBillingDay('1');
+    setApproveAreaId(registration.areaId || '');
     setApproveModalOpen(true);
   };
 
@@ -131,6 +139,7 @@ export default function RegistrationsPage() {
           installationFee: installationFee ? parseFloat(installationFee) : 0,
           subscriptionType: subscriptionType,
           billingDay: subscriptionType === 'POSTPAID' ? parseInt(billingDay) : 1,
+          areaId: approveAreaId || null,
         }),
       });
       const data = await res.json();
@@ -581,6 +590,16 @@ export default function RegistrationsPage() {
                 <div>
                   <ModalLabel>{t('pppoe.installationFee')} (opsional)</ModalLabel>
                   <ModalInput type="number" placeholder="e.g. 350000 (kosongkan atau isi 0 jika gratis)" value={installationFee} onChange={(e) => setInstallationFee(e.target.value)} min={0} />
+                </div>
+                <div>
+                  <ModalLabel>Area</ModalLabel>
+                  <ModalSelect value={approveAreaId} onChange={(e) => setApproveAreaId(e.target.value)}>
+                    <option value="" className="bg-[#0a0520]">-- Pilih Area (opsional) --</option>
+                    {areas.map((a) => <option key={a.id} value={a.id} className="bg-[#0a0520]">{a.name}</option>)}
+                  </ModalSelect>
+                  {selectedRegistration.area && (
+                    <p className="text-[10px] text-[#00f7ff] mt-1">💡 Dipilih saat daftar: <strong>{selectedRegistration.area.name}</strong></p>
+                  )}
                 </div>
                 {subscriptionType === 'PREPAID' && (
                   <div className="bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg p-3 space-y-1">

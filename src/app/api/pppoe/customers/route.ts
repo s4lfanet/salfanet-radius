@@ -56,6 +56,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { pppoeUsers: true } },
+        area: { select: { id: true, name: true } },
       },
     });
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, phone, email, address, idCardNumber, customerId: providedId } = body;
+    const { name, phone, email, address, idCardNumber, customerId: providedId, areaId } = body;
 
     if (!name || !phone) {
       return NextResponse.json({ error: 'Nama dan No. HP wajib diisi' }, { status: 400 });
@@ -104,6 +105,7 @@ export async function POST(request: NextRequest) {
         email: email?.trim() || null,
         address: address?.trim() || null,
         idCardNumber: idCardNumber?.trim() || null,
+        areaId: areaId || null,
         isActive: true,
       },
     });
@@ -122,7 +124,7 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, name, phone, email, address, idCardNumber, isActive } = body;
+    const { id, name, phone, email, address, idCardNumber, isActive, areaId } = body;
     if (!id) return NextResponse.json({ error: 'Customer ID wajib diisi' }, { status: 400 });
 
     // Check phone duplicate (exclude self)
@@ -141,6 +143,7 @@ export async function PUT(request: NextRequest) {
         email: email?.trim() || null,
         address: address?.trim() || null,
         idCardNumber: idCardNumber?.trim() || null,
+        ...(areaId !== undefined && { areaId: areaId || null }),
         ...(isActive !== undefined && { isActive }),
       },
     });

@@ -402,6 +402,8 @@ model registrationRequest {
   referralCode    String?   @db.VarChar(10) // Referral code used during registration
   idCardNumber    String?   @db.VarChar(20)
   idCardPhoto     String?   @db.Text
+  areaId          String?
+  area            pppoeArea?   @relation(fields: [areaId], references: [id])
   status          String    @default("PENDING")
   rejectionReason String?   @db.Text
   invoiceId       String?   @unique
@@ -415,6 +417,7 @@ model registrationRequest {
   @@index([profileId])
   @@index([status])
   @@index([phone])
+  @@index([areaId])
   @@map("registration_requests")
 }
 
@@ -428,6 +431,8 @@ model pppoeCustomer {
   idCardNumber String?     @db.VarChar(50)
   idCardPhoto  String?     @db.VarChar(500)
   isActive     Boolean     @default(true)
+  areaId       String?
+  area         pppoeArea?  @relation(fields: [areaId], references: [id])
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
   pppoeUsers   pppoeUser[]
@@ -435,6 +440,7 @@ model pppoeCustomer {
   @@index([phone])
   @@index([customerId])
   @@index([isActive])
+  @@index([areaId])
   @@map("pppoe_customers")
 }
 
@@ -477,6 +483,8 @@ model pppoeArea {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   users       pppoeUser[]
+  customers   pppoeCustomer[]
+  registrations registrationRequest[]
 
   @@map("pppoe_areas")
 }

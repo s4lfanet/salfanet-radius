@@ -25,6 +25,8 @@ interface Customer {
   idCardNumber: string | null;
   idCardPhoto: string | null;
   isActive: boolean;
+  areaId?: string | null;
+  area?: { id: string; name: string } | null;
   createdAt: string;
   updatedAt: string;
   _count?: { pppoeUsers: number };
@@ -38,6 +40,8 @@ function generateCustomerId(): string {
   return Math.floor(10000000 + Math.random() * 90000000).toString();
 }
 
+interface Area { id: string; name: string; }
+
 // Isolated modal component — formData lives here so typing only re-renders this
 // component, not the entire PppoeCustomersPage. Previously CustomerForm was defined
 // inline inside the parent render, causing React to unmount/remount the form on
@@ -50,18 +54,27 @@ function CustomerFormModal({ isOpen, onClose, onSuccess, editCustomer }: {
 }) {
   const isEdit = !!editCustomer;
   const [formData, setFormData] = useState({
-    name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: generateCustomerId(),
+    name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: generateCustomerId(), areaId: '',
   });
+  const [areas, setAreas] = useState<Area[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Load areas once
+  useEffect(() => {
+    fetch('/api/pppoe/areas')
+      .then(r => r.json())
+      .then(d => setAreas(d.areas || []))
+      .catch(() => {});
+  }, []);
 
   // Reset / populate form when modal opens
   const prevIsOpen = useRef(isOpen);
   useEffect(() => {
     if (isOpen && !prevIsOpen.current) {
       if (editCustomer) {
-        setFormData({ name: editCustomer.name, phone: editCustomer.phone, email: editCustomer.email || '', address: editCustomer.address || '', idCardNumber: editCustomer.idCardNumber || '', customerId: editCustomer.customerId });
+        setFormData({ name: editCustomer.name, phone: editCustomer.phone, email: editCustomer.email || '', address: editCustomer.address || '', idCardNumber: editCustomer.idCardNumber || '', customerId: editCustomer.customerId, areaId: editCustomer.areaId || '' });
       } else {
-        setFormData({ name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: generateCustomerId() });
+        setFormData({ name: '', phone: '', email: '', address: '', idCardNumber: '', customerId: generateCustomerId(), areaId: '' });
       }
       setSaving(false);
     }
@@ -116,6 +129,13 @@ function CustomerFormModal({ isOpen, onClose, onSuccess, editCustomer }: {
           <div>
             <ModalLabel>Alamat</ModalLabel>
             <ModalTextarea value={formData.address} onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))} placeholder="Alamat lengkap customer..." rows={3} />
+          </div>
+          <div>
+            <ModalLabel>Area</ModalLabel>
+            <ModalSelect value={formData.areaId} onChange={(e) => setFormData(prev => ({ ...prev, areaId: e.target.value }))}>
+              <option value="" className="bg-[#0a0520]">-- Pilih Area --</option>
+              {areas.map((a) => <option key={a.id} value={a.id} className="bg-[#0a0520]">{a.name}</option>)}
+            </ModalSelect>
           </div>
           <div>
             <ModalLabel>No. KTP <span className="text-muted-foreground text-[10px]">(opsional)</span></ModalLabel>

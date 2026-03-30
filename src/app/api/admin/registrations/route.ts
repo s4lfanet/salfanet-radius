@@ -40,6 +40,9 @@ export async function GET(request: NextRequest) {
             uploadSpeed: true,
           },
         },
+        area: {
+          select: { id: true, name: true },
+        },
         invoice: {
           select: {
             id: true,

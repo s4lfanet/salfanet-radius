@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useToast, CyberToastProvider } from '@/components/cyberpunk/CyberToast';
-import { UserPlus, Loader2, Wifi, CheckCircle, MapPin, Phone, Mail, Home, Package, FileText, Gift, CreditCard, Camera, X } from 'lucide-react';
+import { UserPlus, Loader2, Wifi, CheckCircle, MapPin, Phone, Mail, Home, Package, FileText, Gift, CreditCard, Camera, X, Map } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 
 export const dynamic = 'force-dynamic';
@@ -16,8 +16,14 @@ interface Profile {
   description: string | null;
 }
 
+interface Area {
+  id: string;
+  name: string;
+}
+
 function DaftarPageInner() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -29,6 +35,7 @@ function DaftarPageInner() {
     phone: '',
     email: '',
     address: '',
+    areaId: '',
     profileId: '',
     notes: '',
     referralCode: '',
@@ -45,6 +52,7 @@ function DaftarPageInner() {
   useEffect(() => {
     loadCompanyName();
     loadProfiles();
+    loadAreas();
   }, []);
 
   useEffect(() => {
@@ -69,6 +77,14 @@ function DaftarPageInner() {
       setProfiles(data.profiles.filter((p: any) => p.isActive) || []);
     } catch (error) { console.error('Failed to load profiles:', error); }
     finally { setLoading(false); }
+  };
+
+  const loadAreas = async () => {
+    try {
+      const res = await fetch('/api/public/areas');
+      const data = await res.json();
+      setAreas(data.areas || []);
+    } catch (error) { console.error('Failed to load areas:', error); }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -150,7 +166,7 @@ function DaftarPageInner() {
           <button
             onClick={() => {
               setSuccess(false);
-              setFormData({ name: '', phone: '', email: '', address: '', profileId: '', notes: '', referralCode: '', idCardNumber: '', latitude: null, longitude: null });
+              setFormData({ name: '', phone: '', email: '', address: '', areaId: '', profileId: '', notes: '', referralCode: '', idCardNumber: '', latitude: null, longitude: null });
               setIdCardPhoto('');
             }}
             className="w-full px-4 py-3 bg-gradient-to-r from-[#bc13fe] to-[#00f7ff] hover:from-[#a010e0] hover:to-[#00d4dd] text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(188,19,254,0.4)] hover:shadow-[0_0_30px_rgba(188,19,254,0.6)]"
@@ -264,6 +280,27 @@ function DaftarPageInner() {
                   required
                 />
               </div>
+
+              {/* Area */}
+              {areas.length > 0 && (
+                <div>
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
+                    <Map className="w-3.5 h-3.5 text-[#00f7ff]" />
+                    Area / Zona Layanan
+                  </label>
+                  <select
+                    value={formData.areaId}
+                    onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
+                    className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-[#0a0520]">-- Pilih area layanan (opsional) --</option>
+                    {areas.map((area) => (
+                      <option key={area.id} value={area.id} className="bg-[#0a0520]">{area.name}</option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-[#e0d0ff]/60 mt-1">Pilih area jika tersedia untuk mempercepat proses</p>
+                </div>
+              )}
 
               {/* GPS Location */}
               <div>

@@ -4,7 +4,7 @@ import { prisma } from '@/server/db/client';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, phone, email, address, profileId, notes, referralCode, latitude, longitude, idCardNumber, idCardPhoto } = body;
+    const { name, phone, email, address, profileId, notes, referralCode, latitude, longitude, idCardNumber, idCardPhoto, areaId } = body;
 
     // Validate required fields
     if (!name || !phone || !address || !profileId) {
@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         longitude: longitude ? parseFloat(longitude) : null,
         idCardNumber: idCardNumber || null,
         idCardPhoto: idCardPhoto || null,
+        areaId: areaId || null,
         status: 'PENDING',
       },
       include: {
