@@ -324,20 +324,32 @@ export async function POST(request: NextRequest) {
     const failed = routerResults.filter(r => !r.success);
 
     // Update DB with sync metadata (non-critical)
+    // Split into two updates: core fields (guaranteed typed) + metadata (may need as any)
     try {
+      // Step 1: always save core sync data — these fields are in the schema
       await prisma.pppoeProfile.update({
         where: { id },
         data: {
           mikrotikProfileName: resolvedMikrotikProfileName,
           ipPoolName: resolvedIpPoolName || null,
           localAddress: resolvedLocalAddress || null,
-          lastRouterId: succeeded.length > 0 ? succeeded[succeeded.length - 1].routerId : undefined,
-          lastSyncAt: succeeded.length > 0 ? new Date() : undefined,
-        } as any,
+        },
       });
     } catch (dbErr: any) {
-      console.warn('[SyncMikroTik] DB update gagal:', dbErr?.message);
+      console.warn('[SyncMikroTik] DB core update gagal:', dbErr?.message);
     }
+    try {
+      // Step 2: update metadata timestamps (use as any in case Prisma types are stale)
+      if (succeeded.length > 0) {
+        await (prisma.pppoeProfile as any).update({
+          where: { id },
+          data: {
+            lastRouterId: succeeded[succeeded.length - 1].routerId,
+            lastSyncAt: new Date(),
+          },
+        });
+      }
+    } catch { /* non-critical */ }
 
     const successLines = succeeded.map(r => r.message).join('\n');
     const failLines = failed.map(r => `❌ ${r.routerName}: ${r.error}`).join('\n');
@@ -357,6 +369,12 @@ export async function POST(request: NextRequest) {
       warnings: allWarnings,
       succeededCount: succeeded.length,
       failedCount: failed.length,
+      // Return saved values so frontend can update local state immediately
+      savedProfile: {
+        ipPoolName: resolvedIpPoolName || null,
+        localAddress: resolvedLocalAddress || null,
+        mikrotikProfileName: resolvedMikrotikProfileName,
+      },
     }, { status: succeeded.length > 0 ? 200 : 502 });
   } catch (error) {
     console.error('Sync MikroTik error:', error);

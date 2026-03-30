@@ -324,6 +324,16 @@ export default function PPPoEProfilesPage() {
         body: JSON.stringify({ id: target.id, routerIds: selectedRouterIds, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim(), poolRanges: syncPoolRanges.trim() }),
       });
       const result = await res.json();
+      // Immediately update profiles state + modal fields so next open pre-fills correctly
+      if (result.savedProfile) {
+        setProfiles(prev => prev.map(p =>
+          p.id === target.id
+            ? { ...p, ipPoolName: result.savedProfile.ipPoolName, localAddress: result.savedProfile.localAddress }
+            : p
+        ));
+        setSyncIpPoolName(result.savedProfile.ipPoolName || '');
+        setSyncLocalAddress(result.savedProfile.localAddress || '');
+      }
       loadProfiles();
       const debugInfo = result.debug?.length ? `\n\nDetail:\n${result.debug.join('\n')}` : '';
       if (result.success) {
