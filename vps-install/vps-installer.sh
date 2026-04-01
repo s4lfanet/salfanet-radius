@@ -21,6 +21,41 @@ set -o pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ============================================================================
+# BOOTSTRAP: Unduh script-script yang diperlukan jika belum ada
+# (Terjadi ketika installer dijalankan sebagai file tunggal dari GitHub Releases)
+# ============================================================================
+GITHUB_RAW="https://raw.githubusercontent.com/s4lfanet/salfanet-radius/master/vps-install"
+VPS_INSTALL_SCRIPTS=(
+    "common.sh"
+    "install-system.sh"
+    "install-nodejs.sh"
+    "install-mysql.sh"
+    "install-app.sh"
+    "install-freeradius.sh"
+    "install-nginx.sh"
+    "install-pm2.sh"
+    "install-apk.sh"
+    "install-vpn-client.sh"
+)
+
+if [ ! -f "$SCRIPT_DIR/common.sh" ]; then
+    echo "[INFO] Script installer belum lengkap, mengunduh dari GitHub..."
+    for _script in "${VPS_INSTALL_SCRIPTS[@]}"; do
+        if [ ! -f "$SCRIPT_DIR/$_script" ]; then
+            echo "  Downloading $_script..."
+            if ! curl -sSfL "$GITHUB_RAW/$_script" -o "$SCRIPT_DIR/$_script"; then
+                echo "[ERROR] Gagal mengunduh $_script dari $GITHUB_RAW/$_script"
+                echo "        Periksa koneksi internet atau unduh manual:"
+                echo "        curl -sSfL $GITHUB_RAW/$_script -o $SCRIPT_DIR/$_script"
+                exit 1
+            fi
+            chmod +x "$SCRIPT_DIR/$_script"
+        fi
+    done
+    echo "[OK] Semua script berhasil diunduh ke $SCRIPT_DIR"
+fi
+
 # Parse CLI args
 while [[ "$#" -gt 0 ]]; do
     case $1 in
