@@ -4,6 +4,33 @@ All notable changes to SALFANET RADIUS will be documented in this file.
 
 ---
 
+## [2.12.4] - 2026-04-01 (Installer via Git Clone, Timezone Fixes, PPPoE Print, Dashboard Stats)
+
+### ✅ Chore: Hapus GitHub Releases Workflow — Installer via Git Clone
+
+- Hapus `.github/workflows/release.yml` dan `vps-install/build-standalone.py`.
+- Installer tidak lagi didistribusikan sebagai binary release di GitHub Releases.
+- Cara install sekarang: `git clone https://github.com/s4lfanet/salfanet-radius.git /root/salfanet-radius && bash vps-install/vps-installer.sh`
+- Hapus bootstrap download block dari `vps-installer.sh` (tidak diperlukan karena repo di-clone full).
+
+### ✅ Fix: Customer Portal — Timezone Inkonsisten pada Tampilan Real-Time
+
+- `CustomerClientLayout.tsx` baris 303: `formatWIB(new Date(), 'EEEE, d MMMM yyyy')` diganti dengan `formatInTimeZone(new Date(), 'Asia/Jakarta', ...)`. `formatWIB` membaca field UTC sebagai WIB — benar untuk tanggal DB, namun salah untuk `new Date()` yang field UTC-nya adalah waktu UTC real.
+- `customer/suspend/page.tsx` baris 115: `new Date().toISOString().split('T')[0]` diganti dengan `formatInTimeZone(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd')`. `.toISOString()` menghasilkan tanggal UTC, sehingga sebelum jam 07:00 WIB tanggal minimum form suspend menampilkan kemarin.
+
+### ✅ Fix: Dashboard "Pendapatan Invoice Hari Ini" Selalu 0
+
+- Query menggunakan `startOfDayWIBtoUTC(now)` yang menghasilkan objek Date dengan nilai UTC (bukan WIB), sehingga mysql2 mengirim string timestamp UTC ke MySQL yang menyimpan `paidAt` dalam WIB.
+- Fix: gunakan `new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0)` sehingga mysql2 mengirim string `"2026-04-01 00:00:00"` yang sesuai dengan cara `paidAt` disimpan.
+
+### ✅ Fitur: Tombol Print di Halaman PPPoE Users
+
+- Tambah tombol print (ungu, ikon `Printer`) di kolom aksi tabel dan card mobile di halaman PPPoE Users.
+- Flow: fetch invoice terbaru via `GET /api/invoices?userId={id}&limit=1` → tampilkan dialog pilih Standar (A4) atau Thermal (80mm) → buka print preview di tab baru.
+- Identik dengan flow print di halaman Invoices admin.
+
+---
+
 ## [2.11.8] - 2026-03-30 (Mobile Form Fix + Stop Subscription + Notification Dedup)
 
 ### ✅ Fix: Mobile Keyboard Dismiss saat Input di Form PPPoE Users

@@ -6,25 +6,7 @@ Satu installer untuk semua environment: **Public VPS**, **Proxmox LXC**, **Proxm
 
 ## ⚡ INSTALL BARU (FRESH INSTALL)
 
-### Metode 1 — Download Installer dari GitHub Releases (Paling Mudah)
-
-Tidak perlu clone repo. Cukup download `installer-linux-amd64` dari halaman Releases lalu jalankan.
-
-```bash
-# SSH ke VPS / server
-ssh root@IP_SERVER
-
-# Download installer dari GitHub Releases (ganti v2.12.0 dengan versi terbaru)
-curl -sSfL https://github.com/s4lfanet/salfanet-radius/releases/latest/download/installer-linux-amd64 -o installer.sh
-chmod +x installer.sh
-bash installer.sh
-```
-
-Installer akan berjalan interaktif, memandu semua konfigurasi secara otomatis.
-
----
-
-### Metode 2 — Via Git Clone (untuk Developer / Contributor)
+### Metode 1 — Via Git Clone (Recommended)
 
 ```bash
 # SSH ke VPS / server
@@ -79,33 +61,17 @@ bash vps-install/vps-installer.sh --env lxc --ip 192.168.1.50
 
 ## 🔄 UPDATE KE VERSI TERBARU
 
-### Metode 1 — updater.sh dari GitHub Releases (Recommended)
+### Metode 1 — updater.sh (Recommended)
 
 Cara paling aman dan cepat. **Semua data upload (logo, foto KTP, bukti bayar) otomatis dipreservasi.**
 
 ```bash
-# SSH ke server
-ssh root@IP_SERVER
-
-# Download updater terbaru langsung dari Releases
-curl -sSfL https://github.com/s4lfanet/salfanet-radius/releases/latest/download/updater-linux-amd64 -o /tmp/updater.sh
-chmod +x /tmp/updater.sh
-
-# Update ke versi terbaru
-bash /tmp/updater.sh
-
-# Atau update ke versi spesifik
-bash /tmp/updater.sh --version v2.12.0
+bash /var/www/salfanet-radius/vps-install/updater.sh
 ```
-
-> **Alternatif:** Jika sudah ada updater di server:
-> ```bash
-> bash /var/www/salfanet-radius/vps-install/updater.sh
-> ```
 
 ---
 
-### Metode 2 — Update via Git Branch (untuk Developer)
+### Metode 2 — Update via Git (Manual)
 
 ```bash
 bash /var/www/salfanet-radius/vps-install/updater.sh --branch master

@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.12.0 — GitHub Releases installer + upload data safety on update (Mar 30, 2026)
+> **Latest:** v2.12.4 — Installer via git clone, timezone fixes, PPPoE print, dashboard stats (Apr 1, 2026)
 
 ---
 
@@ -86,25 +86,7 @@ salfanet-radius/
 
 ## ⚙️ Installation
 
-### Metode 1 — Download Installer dari GitHub Releases (Termudah)
-
-Tidak perlu clone repo. Langsung download `installer-linux-amd64` dari halaman Releases lalu jalankan.
-
-```bash
-# SSH ke VPS / server
-ssh root@YOUR_VPS_IP
-
-# Download installer versi terbaru
-curl -sSfL https://github.com/s4lfanet/salfanet-radius/releases/latest/download/installer-linux-amd64 -o installer.sh
-chmod +x installer.sh
-bash installer.sh
-```
-
-Installer akan berjalan **interaktif** — mendeteksi environment otomatis, memandu konfigurasi, lalu menjalankan semua step.
-
----
-
-### Metode 2 — Via Git Clone (untuk Developer)
+### Metode 1 — Git Clone (Recommended)
 
 ```bash
 ssh root@YOUR_VPS_IP
@@ -114,9 +96,11 @@ cd /root/salfanet-radius
 bash vps-install/vps-installer.sh
 ```
 
+Installer akan berjalan **interaktif** — mendeteksi environment otomatis, memandu konfigurasi, lalu menjalankan semua step.
+
 ---
 
-### Metode 3 — Upload Manual via SCP (Tanpa Akses Internet di Server)
+### Metode 2 — Upload Manual via SCP (Tanpa Akses Internet di Server)
 
 ```bash
 # Jalankan di terminal LOKAL (bukan di server)
@@ -151,18 +135,19 @@ bash vps-install/vps-installer.sh --env lxc --ip 192.168.1.50
 Cara paling aman. **Semua data upload (logo, foto KTP pelanggan, bukti bayar) otomatis dipreservasi.**
 
 ```bash
-# Download updater terbaru dari Releases
-curl -sSfL https://github.com/s4lfanet/salfanet-radius/releases/latest/download/updater-linux-amd64 -o /tmp/updater.sh
-chmod +x /tmp/updater.sh
-
-# Update ke versi terbaru (otomatis backup, preserve uploads, restart PM2)
-bash /tmp/updater.sh
-
-# Atau update ke versi spesifik
-bash /tmp/updater.sh --version v2.12.0
+bash /var/www/salfanet-radius/vps-install/updater.sh
 ```
 
-> Atau jika sudah ada di server: `bash /var/www/salfanet-radius/vps-install/updater.sh`
+Atau update dari branch terbaru secara manual:
+
+```bash
+cd /var/www/salfanet-radius
+git pull origin master
+npm install --legacy-peer-deps
+npx prisma db push
+npm run build
+pm2 reload all
+```
 
 Lihat detail lengkap di [vps-install/README.md](vps-install/README.md).
 
