@@ -161,6 +161,15 @@ install_dependencies() {
     print_step "Installing Node.js dependencies (5-10 minutes)"
     
     cd ${APP_DIR} || return 1
+
+    # Remove leftover node_modules from any previous failed install to avoid
+    # permission errors on postinstall scripts (e.g. napi-postinstall Permission denied)
+    if [ -d "node_modules" ]; then
+        print_info "Cleaning previous node_modules..."
+        rm -rf node_modules
+    fi
+    # Clear npm cache to avoid stale/corrupt entries from previous attempts
+    npm cache clean --force 2>/dev/null || true
     
     print_info "Downloading packages from npm registry..."
     
