@@ -4,7 +4,6 @@
   "private": false,
   "scripts": {
     "dev": "next dev",
-    "tunnel": "node scripts/start-ngrok.js",
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=1536 --max-semi-space-size=64' NEXT_TELEMETRY_DISABLED=1 next build",
     "postbuild": "node -e \"const fs=require('fs'),path=require('path');const src='public',dst='.next/standalone/public';function copy(s,d){if(!fs.existsSync(d))fs.mkdirSync(d,{recursive:true});for(const f of fs.readdirSync(s)){const sp=path.join(s,f),dp=path.join(d,f);if(fs.statSync(sp).isDirectory()&&f!=='uploads'){copy(sp,dp)}else if(!fs.statSync(sp).isDirectory()){fs.copyFileSync(sp,dp)}}}copy(src,dst);console.log('[postbuild] public/ copied to .next/standalone/public/');if(fs.existsSync('.env')){fs.copyFileSync('.env','.next/standalone/.env');console.log('[postbuild] .env copied to .next/standalone/.env')}\"",
     "build:turbo": "next build --turbo",
@@ -115,7 +114,6 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.4",
-    "ngrok": "^5.0.0-beta.2",
     "tsx": "^4.20.6",
     "typescript": "^5",
     "vitest": "^3.2.3"

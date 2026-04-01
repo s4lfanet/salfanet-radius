@@ -626,7 +626,7 @@ cd ${APP_DIR}
 
 # Install dependencies
 echo ">> Installing dependencies..."
-NGROK_SKIP_INSTALL=true npm install --production=false
+npm install --production=false
 
 # Generate Prisma Client
 echo "[>] Generating Prisma Client..."

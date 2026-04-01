@@ -164,8 +164,7 @@ install_dependencies() {
     
     print_info "Downloading packages from npm registry..."
     
-    # NGROK_SKIP_INSTALL: skip binary download (ngrok is dev-only, not needed on VPS)
-    if ! NGROK_SKIP_INSTALL=true npm install --production=false 2>&1 | tee /tmp/npm-install.log; then
+    if ! npm install --production=false 2>&1 | tee /tmp/npm-install.log; then
         print_error "npm install failed!"
         echo ""
         echo "Last 20 lines of error:"

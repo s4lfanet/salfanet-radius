@@ -129,7 +129,7 @@ if [ -n "$USE_BRANCH" ]; then
     fi
 
     print_step "Installing dependencies"
-    NGROK_SKIP_INSTALL=true npm ci --omit=dev
+    npm ci --omit=dev
 
     print_step "Generating Prisma client"
     node_modules/.bin/prisma generate
