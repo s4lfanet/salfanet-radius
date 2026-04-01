@@ -17,9 +17,10 @@ export default function CustomerLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [expiresIn, setExpiresIn] = useState(5);
-  const [companyName, setCompanyName] = useState('SALFANET RADIUS');
+  const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [footerText, setFooterText] = useState('Powered by SALFANET RADIUS');
+  const [footerText, setFooterText] = useState('');
+  const [brandLoaded, setBrandLoaded] = useState(false);
   const [otpSendFailed, setOtpSendFailed] = useState(false);
   const [userDataForBypass, setUserDataForBypass] = useState<any>(null);
 
@@ -46,7 +47,8 @@ export default function CustomerLoginPage() {
           setFooterText(`Powered by ${data.company.poweredBy}`);
         }
       })
-      .catch(err => console.error('Load company name error:', err));
+      .catch(err => console.error('Load company name error:', err))
+      .finally(() => setBrandLoaded(true));
   }, [router]);
 
   const handleSendOTP = async (e: React.FormEvent) => {
@@ -137,6 +139,10 @@ export default function CustomerLoginPage() {
     setOtp('');
     setError('');
   };
+
+  if (!brandLoaded) {
+    return <div className={`min-h-screen ${isDark ? 'bg-[#1a0f35]' : 'bg-slate-100'}`} />;
+  }
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300 ${

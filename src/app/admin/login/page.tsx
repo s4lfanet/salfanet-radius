@@ -34,9 +34,9 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [idleLogout, setIdleLogout] = useState(false);
-  const [companyName, setCompanyName] = useState('SALFANET RADIUS');
+  const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [footerText, setFooterText] = useState('Powered by SALFANET RADIUS');
+  const [footerText, setFooterText] = useState('');
   const [brandLoaded, setBrandLoaded] = useState(false);
 
   // ── Form data ─────────────────────────────────────────────────────────
@@ -184,6 +184,10 @@ function LoginForm() {
     setTfaCode('');
     setError('');
   };
+
+  if (!brandLoaded) {
+    return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a0f35] to-slate-900" />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a0f35] to-slate-900 relative overflow-hidden flex items-center justify-center p-4">

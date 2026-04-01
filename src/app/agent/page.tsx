@@ -13,9 +13,9 @@ export default function AgentLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [companyPhone, setCompanyPhone] = useState('6281234567890');
-  const [poweredBy, setPoweredBy] = useState('Powered by SALFANET RADIUS');
+  const [poweredBy, setPoweredBy] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState('SALFANET RADIUS');
+  const [companyName, setCompanyName] = useState('');
   const [brandLoaded, setBrandLoaded] = useState(false);
 
   useEffect(() => {
@@ -66,6 +66,10 @@ export default function AgentLoginPage() {
       setLoading(false);
     }
   };
+
+  if (!brandLoaded) {
+    return <div className="min-h-screen bg-[#1a0f35]" />;
+  }
 
   return (
     <div className="min-h-screen bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">

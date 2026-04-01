@@ -12,8 +12,8 @@ export default function TechnicianLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [companyName, setCompanyName] = useState('SALFANET RADIUS');
-  const [footerText, setFooterText] = useState('Powered by SALFANET RADIUS');
+  const [companyName, setCompanyName] = useState('');
+  const [footerText, setFooterText] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [brandLoaded, setBrandLoaded] = useState(false);
 
@@ -62,6 +62,10 @@ export default function TechnicianLoginPage() {
       setLoading(false);
     }
   };
+
+  if (!brandLoaded) {
+    return <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#1a0f35] to-slate-900" />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-[#1a0f35] to-slate-900 relative overflow-hidden p-4">
