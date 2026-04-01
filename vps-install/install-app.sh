@@ -164,7 +164,8 @@ install_dependencies() {
     
     print_info "Downloading packages from npm registry..."
     
-    if ! npm install --production=false 2>&1 | tee /tmp/npm-install.log; then
+    # NGROK_SKIP_INSTALL: skip binary download (ngrok is dev-only, not needed on VPS)
+    if ! NGROK_SKIP_INSTALL=true npm install --production=false 2>&1 | tee /tmp/npm-install.log; then
         print_error "npm install failed!"
         echo ""
         echo "Last 20 lines of error:"
@@ -252,9 +253,16 @@ setup_prisma() {
     # Disable Prisma update notifications
     export PRISMA_HIDE_UPDATE_MESSAGE=true
     
+    # Use local prisma binary (avoids npx downloading latest version which may differ from project's prisma v6)
+    local PRISMA_BIN="${APP_DIR}/node_modules/.bin/prisma"
+    if [ ! -f "$PRISMA_BIN" ]; then
+        print_error "Local prisma binary not found at $PRISMA_BIN — npm install may have failed"
+        return 1
+    fi
+
     # Generate Prisma Client
     print_info "Generating Prisma Client..."
-    if ! npx prisma generate 2>&1 | tee /tmp/prisma-generate.log; then
+    if ! "$PRISMA_BIN" generate 2>&1 | tee /tmp/prisma-generate.log; then
         print_error "Prisma generate failed!"
         cat /tmp/prisma-generate.log
         return 1
@@ -266,7 +274,7 @@ setup_prisma() {
     print_info "Creating database tables with Prisma..."
     print_info "This will create 47+ tables for the application..."
     
-    if ! npx prisma db push --accept-data-loss --skip-generate 2>&1 | tee /tmp/prisma-push.log; then
+    if ! "$PRISMA_BIN" db push --accept-data-loss --skip-generate 2>&1 | tee /tmp/prisma-push.log; then
         print_error "Prisma db push failed!"
         cat /tmp/prisma-push.log
         return 1
@@ -298,7 +306,7 @@ seed_database() {
     # Try comprehensive seed first
     if [ -f "prisma/seeds/seed-all.ts" ]; then
         print_info "Running comprehensive seed..."
-        if npx tsx prisma/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log; then
+        if node_modules/.bin/tsx prisma/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log; then
             print_success "Comprehensive seed completed"
         else
             print_warning "Comprehensive seed had issues, trying individual seeds..."
@@ -306,7 +314,7 @@ seed_database() {
         fi
     elif [ -f "prisma/seed.ts" ]; then
         print_info "Running default seed..."
-        if npx tsx prisma/seed.ts 2>&1 | tee /tmp/seed.log; then
+        if node_modules/.bin/tsx prisma/seed.ts 2>&1 | tee /tmp/seed.log; then
             print_success "Default seed completed"
         else
             print_warning "Default seed had issues, trying individual seeds..."
@@ -328,25 +336,25 @@ run_individual_seeds() {
     # Seed permissions
     if [ -f "prisma/seeds/permissions.ts" ]; then
         print_info "Seeding permissions..."
-        npx tsx prisma/seeds/permissions.ts || print_warning "Permissions seed failed"
+        node_modules/.bin/tsx prisma/seeds/permissions.ts || print_warning "Permissions seed failed"
     fi
     
     # Seed financial categories
     if [ -f "prisma/seeds/keuangan-categories.ts" ]; then
         print_info "Seeding financial categories..."
-        npx tsx prisma/seeds/keuangan-categories.ts || print_warning "Categories seed failed"
+        node_modules/.bin/tsx prisma/seeds/keuangan-categories.ts || print_warning "Categories seed failed"
     fi
     
     # Seed admin user
     if [ -f "prisma/seeds/seed-admin.ts" ]; then
         print_info "Seeding admin user..."
-        npx tsx prisma/seeds/seed-admin.ts || print_warning "Admin seed failed"
+        node_modules/.bin/tsx prisma/seeds/seed-admin.ts || print_warning "Admin seed failed"
     fi
     
     # Seed isolation templates
     if [ -f "prisma/seeds/isolation-templates.ts" ]; then
         print_info "Seeding isolation templates..."
-        npx tsx prisma/seeds/isolation-templates.ts || print_warning "Isolation templates seed failed"
+        node_modules/.bin/tsx prisma/seeds/isolation-templates.ts || print_warning "Isolation templates seed failed"
     fi
 }
 

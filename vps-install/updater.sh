@@ -129,13 +129,13 @@ if [ -n "$USE_BRANCH" ]; then
     fi
 
     print_step "Installing dependencies"
-    npm ci --omit=dev
+    NGROK_SKIP_INSTALL=true npm ci --omit=dev
 
     print_step "Generating Prisma client"
-    npx prisma generate
+    node_modules/.bin/prisma generate
 
     print_step "Running database migrations"
-    npx prisma db push --accept-data-loss 2>/dev/null || npx prisma db push
+    node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || node_modules/.bin/prisma db push
 
     print_step "Building application"
     NODE_OPTIONS="--max-old-space-size=1536" NEXT_TELEMETRY_DISABLED=1 npm run build
@@ -273,9 +273,9 @@ if [ -f "$APP_DIR/.env" ]; then
     export $(grep -v '^#' "$APP_DIR/.env" | grep 'DATABASE_URL' | xargs) 2>/dev/null || true
 fi
 
-npx prisma generate 2>/dev/null || true
-npx prisma db push --accept-data-loss 2>/dev/null || \
-    npx prisma db push || \
+node_modules/.bin/prisma generate 2>/dev/null || true
+node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || \
+    node_modules/.bin/prisma db push || \
     print_info "DB push skipped (check manually)"
 
 # ─── Restart services ─────────────────────────────────────────────────────

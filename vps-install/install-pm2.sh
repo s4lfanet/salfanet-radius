@@ -626,15 +626,15 @@ cd ${APP_DIR}
 
 # Install dependencies
 echo ">> Installing dependencies..."
-npm install --production=false
+NGROK_SKIP_INSTALL=true npm install --production=false
 
 # Generate Prisma Client
 echo "[>] Generating Prisma Client..."
-npx prisma generate
+node_modules/.bin/prisma generate
 
 # Push database schema
 echo "[>] Updating database schema..."
-npx prisma db push --accept-data-loss
+node_modules/.bin/prisma db push --accept-data-loss
 
 # Build application
 echo "[>] Building application..."
