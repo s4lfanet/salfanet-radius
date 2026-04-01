@@ -295,56 +295,9 @@ run_installation() {
         print_error "PM2 installation or build failed!"
         exit 1
     }
-    
-    # Step 9: Customer Android APK Builder (Optional)
-    echo ""
-    print_info "Step 9 (Optional): Customer Android APK Builder"
-    print_info "  Membangun APK untuk customer self-service app"
-    print_info "  Waktu: ~20-40 menit | Disk: ~2GB"
-    echo ""
-    BUILD_APK_ANSWER="n"
-    read -t 20 -p "Build customer Android APK sekarang? [y/N]: " BUILD_APK_ANSWER </dev/tty || BUILD_APK_ANSWER="n"
-    echo ""
-    if [[ "$BUILD_APK_ANSWER" =~ ^[Yy]$ ]]; then
-        print_info "Running Step 9: Android APK Builder..."
-        source "$SCRIPT_DIR/install-apk.sh"
-        install_apk_builder || {
-            print_warning "APK build gagal (non-kritis, aplikasi web tetap berjalan)"
-            print_info "Untuk build APK nanti, jalankan:"
-            print_info "  bash ${APP_DIR}/vps-install/install-apk.sh"
-        }
-        export APK_BUILT="true"
-    else
-        print_info "APK build dilewati."
-        print_info "Untuk build APK kapan saja, jalankan:"
-        print_info "  bash ${APP_DIR}/vps-install/install-apk.sh"
-        export APK_BUILT="false"
-    fi
 
-    # Step 10: SSTP VPN Client Toolchain (Optional)
-    echo ""
-    print_info "Step 10 (Optional): SSTP VPN Client Toolchain"
-    print_info "  Diperlukan agar VPS dapat terhubung ke MikroTik CHR via SSTP"
-    print_info "  Waktu: ~2 menit | Disk: ~50MB (gcc, libssl-dev, sstpc)"
-    echo ""
-    INSTALL_VPN_ANSWER="n"
-    read -t 20 -p "Install SSTP VPN Client tools? [y/N]: " INSTALL_VPN_ANSWER </dev/tty || INSTALL_VPN_ANSWER="n"
-    echo ""
-    if [[ "$INSTALL_VPN_ANSWER" =~ ^[Yy]$ ]]; then
-        print_info "Running Step 10: SSTP VPN Client Installer..."
-        source "$SCRIPT_DIR/install-vpn-client.sh"
-        install_vpn_client || {
-            print_warning "VPN client install gagal (non-kritis, aplikasi tetap berjalan)"
-            print_info "Untuk install VPN client nanti, jalankan:"
-            print_info "  bash ${APP_DIR}/vps-install/install-vpn-client.sh"
-        }
-        export VPN_CLIENT_INSTALLED="true"
-    else
-        print_info "SSTP VPN Client dilewati."
-        print_info "Untuk install nanti, jalankan:"
-        print_info "  bash ${APP_DIR}/vps-install/install-vpn-client.sh"
-        export VPN_CLIENT_INSTALLED="false"
-    fi
+    export APK_BUILT="false"
+    export VPN_CLIENT_INSTALLED="false"
 
     print_success "All installation steps completed successfully!"
 }
