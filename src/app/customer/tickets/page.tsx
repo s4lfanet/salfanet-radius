@@ -41,7 +41,7 @@ export default function CustomerTicketsPage() {
     const userData = localStorage.getItem('customer_user');
     
     if (!token || !userData) {
-      router.push('/login');
+      router.push('/customer/login');
       return;
     }
     
@@ -49,7 +49,7 @@ export default function CustomerTicketsPage() {
       const user = JSON.parse(userData);
       setCustomerId(user.id);
     } catch (error) {
-      router.push('/login');
+      router.push('/customer/login');
     }
   }, [router]);
 

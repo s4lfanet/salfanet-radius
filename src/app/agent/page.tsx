@@ -13,9 +13,9 @@ export default function AgentLoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [companyPhone, setCompanyPhone] = useState('6281234567890');
-  const [poweredBy, setPoweredBy] = useState('');
+  const [poweredBy, setPoweredBy] = useState('Powered by SALFANET RADIUS');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState('');
+  const [companyName, setCompanyName] = useState('SALFANET RADIUS');
   const [brandLoaded, setBrandLoaded] = useState(false);
 
   useEffect(() => {
@@ -164,11 +164,7 @@ export default function AgentLoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-[#e0d0ff]/50 mt-6">
-          {poweredBy ? (
-            <>Powered by <span className="text-[#00f7ff]">{poweredBy}</span></>
-          ) : (
-            <span className="inline-block w-32 h-3 rounded bg-[#bc13fe]/20 animate-pulse" />
-          )}
+          <>Powered by <span className="text-[#00f7ff]">{poweredBy}</span></>
         </p>
       </div>
     </div>

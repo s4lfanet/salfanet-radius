@@ -234,7 +234,7 @@ export default function CustomerDashboard() {
 
   const loadUserData = async () => {
     const token = localStorage.getItem('customer_token');
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/customer/login'); return; }
 
     try {
       const res = await fetch('/api/customer/me', { headers: { 'Authorization': `Bearer ${token}` } });
@@ -246,12 +246,12 @@ export default function CustomerDashboard() {
       } else {
         localStorage.removeItem('customer_token');
         localStorage.removeItem('customer_user');
-        router.push('/login');
+        router.push('/customer/login');
       }
     } catch (error) {
       const userData = localStorage.getItem('customer_user');
-      if (userData) { try { setUser(JSON.parse(userData)); } catch (e) { router.push('/login'); } }
-      else router.push('/login');
+      if (userData) { try { setUser(JSON.parse(userData)); } catch (e) { router.push('/customer/login'); } }
+      else router.push('/customer/login');
     } finally { setLoading(false); }
   };
 
@@ -268,7 +268,7 @@ export default function CustomerDashboard() {
   const handleSubmitManual = async () => {
     if (!manualPayModal) return;
     const token = localStorage.getItem('customer_token');
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/customer/login'); return; }
     setSubmittingManual(true);
     try {
       const body = new FormData();
@@ -367,7 +367,7 @@ export default function CustomerDashboard() {
   const handleLogout = () => {
     localStorage.removeItem('customer_token');
     localStorage.removeItem('customer_user');
-    router.push('/login');
+    router.push('/customer/login');
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>;

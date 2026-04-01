@@ -76,7 +76,7 @@ export default function CustomerWiFiPage() {
   const loadDevice = useCallback(async () => {
     const token = localStorage.getItem('customer_token');
     if (!token) {
-      router.push('/login');
+      router.push('/customer/login');
       return;
     }
 
@@ -109,7 +109,7 @@ export default function CustomerWiFiPage() {
   useEffect(() => {
     const token = localStorage.getItem('customer_token');
     if (!token) {
-      router.push('/login');
+      router.push('/customer/login');
       return;
     }
     loadDevice();

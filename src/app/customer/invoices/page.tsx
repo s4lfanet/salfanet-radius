@@ -94,7 +94,7 @@ export default function CustomerInvoicesPage() {
 
   const fetchInvoices = useCallback(async (page: number, filter: StatusFilter, silent = false) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('customer_token') : null;
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/customer/login'); return; }
 
     if (!silent) setLoading(true);
     try {
@@ -140,7 +140,7 @@ export default function CustomerInvoicesPage() {
 
   useEffect(() => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('customer_token') : null;
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/customer/login'); return; }
     currentPage.current = 1;
     fetchInvoices(1, statusFilter);
   }, [statusFilter, fetchInvoices, router]);
@@ -188,7 +188,7 @@ export default function CustomerInvoicesPage() {
   const handleSubmitManual = async () => {
     if (!manualPayModal) return;
     const token = localStorage.getItem('customer_token');
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/customer/login'); return; }
     setSubmittingManual(true);
     try {
       const body = new FormData();

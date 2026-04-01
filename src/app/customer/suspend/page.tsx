@@ -40,7 +40,7 @@ export default function CustomerSuspendPage() {
 
   useEffect(() => {
     const t = localStorage.getItem('customer_token');
-    if (!t) { router.push('/login'); return; }
+    if (!t) { router.push('/customer/login'); return; }
     setToken(t);
     fetchCurrent(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

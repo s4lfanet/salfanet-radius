@@ -54,7 +54,7 @@ export default function TicketDetailPage() {
     // Check auth
     const token = localStorage.getItem('customer_token');
     if (!token) {
-      router.push('/login');
+      router.push('/customer/login');
       return;
     }
     

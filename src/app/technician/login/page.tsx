@@ -12,8 +12,8 @@ export default function TechnicianLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [footerText, setFooterText] = useState('');
+  const [companyName, setCompanyName] = useState('SALFANET RADIUS');
+  const [footerText, setFooterText] = useState('Powered by SALFANET RADIUS');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [brandLoaded, setBrandLoaded] = useState(false);
 
@@ -88,13 +88,9 @@ export default function TechnicianLoginPage() {
                 <Wrench className="h-6 w-6 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
               </div>
             )}
-            {companyName ? (
-              <h1 className="text-xl sm:text-2xl font-bold leading-tight text-left text-transparent bg-clip-text bg-gradient-to-r from-[#00f7ff] via-white to-[#ff44cc] drop-shadow-[0_0_20px_rgba(0,247,255,0.5)] max-w-[200px] animate-[fadeIn_0.3s_ease-in]">
+              <h1 className="text-xl sm:text-2xl font-bold leading-tight text-left text-transparent bg-clip-text bg-gradient-to-r from-[#00f7ff] via-white to-[#ff44cc] drop-shadow-[0_0_20px_rgba(0,247,255,0.5)] max-w-[200px]">
                 {companyName}
               </h1>
-            ) : (
-              <div className="w-32 h-7 rounded-lg bg-gradient-to-r from-[#bc13fe]/20 via-[#bc13fe]/40 to-[#bc13fe]/20 animate-pulse" />
-            )}
           </div>
           <p className="text-sm text-[#e0d0ff]/70">
             Masuk dengan username dan password Anda
@@ -174,7 +170,7 @@ export default function TechnicianLoginPage() {
 
         {/* Footer */}
         <p className="text-center text-xs text-[#e0d0ff]/30 mt-6">
-          {footerText || <span className="inline-block w-32 h-3 rounded bg-[#bc13fe]/20 animate-pulse" />}
+          {footerText}
         </p>
       </div>
     </div>

@@ -178,13 +178,18 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const handleLogout = () => {
     localStorage.removeItem('customer_token');
     localStorage.removeItem('customer_user');
-    router.push('/login');
+    router.push('/customer/login');
   };
 
   const isActive = (href: string) => {
     if (href === '/customer') return pathname === '/customer';
     return pathname.startsWith(href);
   };
+
+  // Skip portal UI on login page — render children directly
+  if (pathname === '/customer/login') {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">

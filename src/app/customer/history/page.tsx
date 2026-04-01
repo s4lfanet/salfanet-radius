@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,7 +34,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 
 export const dynamic = 'force-dynamic';
 
-// ── BANK OPTIONS (same as mobile APK) ─────────────────────────────────────────
+// -- BANK OPTIONS (same as mobile APK) -----------------------------------------
 const BANK_OPTIONS = [
   'BCA', 'BNI', 'BRI', 'Mandiri', 'BSI',
   'CIMB Niaga', 'Dana', 'OVO', 'GoPay', 'ShopeePay',
@@ -123,7 +123,7 @@ export default function PaymentHistoryPage() {
 
   useEffect(() => {
     const token = localStorage.getItem('customer_token');
-    if (!token) { router.push('/login'); return; }
+    if (!token) { router.push('/customer/login'); return; }
     loadPaymentHistory();
     loadPaymentGateways();
 
@@ -615,7 +615,7 @@ export default function PaymentHistoryPage() {
         )}
       </div>
 
-      {/* ── PAYMENT METHOD CHOICE MODAL ────────────────────────────────── */}
+      {/* -- PAYMENT METHOD CHOICE MODAL ---------------------------------- */}
       {paymentChoiceVisible && selectedPaymentInvoice && (
         <>
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setPaymentChoiceVisible(false)} />
@@ -664,7 +664,7 @@ export default function PaymentHistoryPage() {
         </>
       )}
 
-      {/* ── GATEWAY SELECTION DIALOG ──────────────────────────────────── */}
+      {/* -- GATEWAY SELECTION DIALOG ------------------------------------ */}
       {gatewayDialogVisible && selectedPaymentInvoice && (
         <>
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setGatewayDialogVisible(false)} />
@@ -712,7 +712,7 @@ export default function PaymentHistoryPage() {
         </>
       )}
 
-      {/* ── OFFLINE PAYMENT FORM ──────────────────────────────────────── */}
+      {/* -- OFFLINE PAYMENT FORM ---------------------------------------- */}
       {offlineDialogVisible && selectedPaymentInvoice && (
         <>
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => !submittingOffline && setOfflineDialogVisible(false)} />
@@ -723,7 +723,7 @@ export default function PaymentHistoryPage() {
                 <div className="p-5 border-b border-purple-500/20 flex items-center justify-between flex-shrink-0">
                   <div>
                     <h3 className="text-sm font-bold text-white">Pembayaran Offline</h3>
-                    <p className="text-[10px] text-muted-foreground">{selectedPaymentInvoice.invoiceNumber} — {formatCurrency(selectedPaymentInvoice.amount)}</p>
+                    <p className="text-[10px] text-muted-foreground">{selectedPaymentInvoice.invoiceNumber} � {formatCurrency(selectedPaymentInvoice.amount)}</p>
                   </div>
                   {!submittingOffline && <button onClick={() => setOfflineDialogVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50"><X className="w-4 h-4 text-muted-foreground" /></button>}
                 </div>
@@ -819,7 +819,7 @@ export default function PaymentHistoryPage() {
 
                   <div className="flex items-center gap-2 p-2.5 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                     <Info className="w-3.5 h-3.5 text-yellow-400 flex-shrink-0" />
-                    <p className="text-[10px] text-yellow-300/80">Pembayaran akan diverifikasi admin dalam 1×24 jam</p>
+                    <p className="text-[10px] text-yellow-300/80">Pembayaran akan diverifikasi admin dalam 1�24 jam</p>
                   </div>
                 </div>
 
@@ -843,7 +843,7 @@ export default function PaymentHistoryPage() {
         </>
       )}
 
-      {/* ── DETAIL MODAL ───────────────────────────────────────────────── */}
+      {/* -- DETAIL MODAL ------------------------------------------------- */}
       {selectedDetail && (
         <>
           <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm" onClick={() => setSelectedDetail(null)} />
