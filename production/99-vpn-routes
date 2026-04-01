@@ -1,0 +1,34 @@
+#!/bin/bash
+# PPP ip-up script: auto-configure VPN routing when PPP interface comes up
+# Deploy to: /etc/ppp/ip-up.d/99-vpn-routes
+# chmod +x /etc/ppp/ip-up.d/99-vpn-routes
+#
+# Called by /etc/ppp/ip-up with positional args:
+#   $1 = interface name (e.g. ppp0)
+#   $2 = tty device
+#   $3 = speed
+#   $4 = local IP address
+#   $5 = remote IP address (peer/gateway)
+#
+# This script ensures the VPN subnet (10.20.30.0/24) is routable from VPS
+# so that CoA/Disconnect packets and MikroTik API calls can reach the NAS router.
+
+IFACE=$1
+REMOTE_IP=$5
+VPN_SUBNET=10.20.30.0/24
+
+logger -t vpn-route "PPP ${IFACE} up: adding route ${VPN_SUBNET} via ${REMOTE_IP}"
+
+# Add/replace route (idempotent - replace is safe if route already exists)
+ip route replace ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || \
+  ip route add ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || true
+
+# Allow RADIUS ports from VPN subnet
+iptables -C INPUT -s ${VPN_SUBNET} -p udp --dport 1812 -j ACCEPT 2>/dev/null || \
+  iptables -I INPUT -s ${VPN_SUBNET} -p udp --dport 1812 -j ACCEPT 2>/dev/null || true
+iptables -C INPUT -s ${VPN_SUBNET} -p udp --dport 1813 -j ACCEPT 2>/dev/null || \
+  iptables -I INPUT -s ${VPN_SUBNET} -p udp --dport 1813 -j ACCEPT 2>/dev/null || true
+iptables -C INPUT -s ${VPN_SUBNET} -p udp --dport 3799 -j ACCEPT 2>/dev/null || \
+  iptables -I INPUT -s ${VPN_SUBNET} -p udp --dport 3799 -j ACCEPT 2>/dev/null || true
+
+logger -t vpn-route "Done: ${VPN_SUBNET} via ${REMOTE_IP} on ${IFACE}"

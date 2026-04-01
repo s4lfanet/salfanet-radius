@@ -1,6 +1,6 @@
 ﻿# FreeRADIUS Configuration Files
 
-**Updated:** March 7, 2026 — Re-verified in sync with production VPS (`103.151.140.110`)
+**Updated:** April 2, 2026 — Re-verified in sync with production VPS (`103.151.140.110`)
 
 ## Configuration Overview
 

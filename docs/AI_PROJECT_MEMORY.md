@@ -9,12 +9,49 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.11.6
+- **Version**: 2.12.0
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: March 29, 2026
+- **Last Updated**: April 2, 2026
 - **Latest Commit**: See GitHub
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
+
+### Recent Patch Log (April 2026)
+
+- **Fix: Isolasi manual PPPoE — radusergroup dioverwrite saat edit user** (`958fc3a`, April 2, 2026)
+  - **Root cause**: `updatePppoeUser` di `pppoe.service.ts` selalu menjalankan RADIUS re-sync saat ada edit data user (username/password/profile/ip/router), dan **selalu** menulis ulang `radusergroup = profile.groupName` tanpa memeriksa status user. Jika user diisolir lalu admin membuka form edit dan save (tanpa mengubah status), `radusergroup` dikembalikan ke profile aslinya (`paket 5mbps` dll), sehingga user lolos isolir.
+  - **Fix** (`pppoe.service.ts`): RADIUS re-sync sekarang memeriksa `effectiveStatus` (status baru jika diubah, atau status saat ini). Perilaku per status:
+    - `isolated` → tulis `Cleartext-Password` + `radusergroup = 'isolir'`, tanpa `Framed-IP-Address`
+    - `blocked` / `stop` → tabel RADIUS sudah dikosongkan sebelumnya — jangan re-insert apapun
+    - `active` → sync penuh (password + profile group + static IP)
+  - **Fix** (`coa-handler.service.ts`): tambahkan `-d /usr/share/freeradius` ke perintah `radclient disconnect` (sama seperti fix `coa.service.ts` sebelumnya) agar MikroTik vendor dictionary dimuat dan Disconnect-Request valid.
+
+- **Fix: CoA / Disconnect ke MikroTik selalu gagal — route VPN hilang** (April 2, 2026, VPS config)
+  - **Root cause**: `/etc/ppp/ip-up.d/99-vpn-routes` punya bug variabel: `VPN_SUBNET=$10.20.30.0/24` → bash membaca `$10` (positional arg ke-10, selalu kosong) + `.20.30.0/24`. Route `10.20.30.0/24` via ppp0 tidak pernah ditambahkan otomatis → VPS tidak bisa reach `10.20.30.12` (MikroTik) → semua CoA/disconnect gagal.
+  - **Fix**: Script ditulis ulang dengan `VPN_SUBNET=10.20.30.0/24` sebagai variabel terpisah, dan digunakan sebagai `${VPN_SUBNET}` di semua perintah. Script tersimpan di `production/99-vpn-routes` untuk referensi fresh install.
+  - **Note**: Route aktual di VPS ditambahkan manual via `ip route add 10.20.30.0/24 via 10.20.30.1 dev ppp0 metric 100`. Script ip-up menangani otomatisasi di reconnect.
+
+- **Fix: setup-isolir menggunakan hardcoded IP pool dan rate limit** (`cb91699`)
+  - `setup-isolir/route.ts` sebelumnya hardcode `pool-isolir` range `10.255.255.2-10.255.255.254`, rate `64k/64k`, gateway `10.255.255.1`.
+  - Fix: baca `isolationIpPool` + `isolationRateLimit` dari DB company, gunakan `getCidrRange()` untuk hitung range dan gateway.
+
+- **Fix: 9739 duplicate rows di radgroupreply** (`cb91699`)
+  - `freeradius-health.ts` menggunakan `INSERT IGNORE` untuk `Mikrotik-Group` dan `Framed-Pool` pada tabel `radgroupreply`. Karena tidak ada UNIQUE constraint, setiap health check menambah baris baru → 9739 duplikat terakumulasi.
+  - Fix: ganti ke pola `DELETE + INSERT` untuk semua 3 atribut isolir (`Mikrotik-Rate-Limit`, `Mikrotik-Group`, `Framed-Pool`).
+  - DB production dibersihkan, sekarang 4 baris bersih.
+
+- **Fix: CoA "Bad Requests=133, Acks=0" — MikroTik vendor dict tidak dimuat** (`b2fe4fa`)
+  - `radclient` di `coa.service.ts` tidak punya flag `-d /usr/share/freeradius` → `Mikrotik-Rate-Limit` dikirim tanpa vendor ID → MikroTik reject semua request sebagai "Bad Request".
+  - Fix: tambahkan `-d /usr/share/freeradius` ke `executeRadclient()` di `coa.service.ts`.
+  - Verified: CoA-ACK diterima dari MikroTik setelah fix.
+
+- **Fix: footerAgent tidak tersimpan ke database** (`2adef92`)
+  - `footerAgent` ada di CREATE query tapi tidak di UPDATE query di `/api/company/route.ts`.
+
+- **Fix: Footer login agent hardcode fallback** (`f70967f`)
+  - `agent/page.tsx` punya fallback `"Powered by ${poweredBy}"` yang dihardcode — dihapus.
+
+---
 
 ### Recent Patch Log (March 2026)
 
@@ -257,7 +294,22 @@ Redis failure pattern seen in production: `redis-server.service` crash-loop afte
 - runtime/log/data directories exist with `redis:redis`
 - restart failure prints `systemctl status`, `journalctl`, and Redis log tail
 
-### 13. Payment callback pages must support both `token` and `order_id`
+### 13. VPN route ke MikroTik WAJIB ada untuk CoA/disconnect berfungsi
+VPS terhubung ke MikroTik via L2TP/PPP VPN di interface `ppp0`. VPS IP: `10.20.30.10`, MikroTik: `10.20.30.12`.
+Route `10.20.30.0/24` HARUS ada di routing table VPS agar CoA packet bisa reach MikroTik.  
+Script `/etc/ppp/ip-up.d/99-vpn-routes` menambahkan route otomatis saat ppp0 connect.  
+Jika CoA selalu gagal (No Route / timeout), cek: `ip route show | grep 10.20.30`  
+Fix manual: `ip route add 10.20.30.0/24 via 10.20.30.1 dev ppp0 metric 100`
+
+### 14. `radusergroup` WAJIB ditulis `isolir` saat user diisolir, bukan profile group asli
+`updatePppoeUser` di `pppoe.service.ts` punya logika `effectiveStatus` yang menentukan isi radusergroup:
+- `isolated` → groupname = `'isolir'`, no Framed-IP-Address
+- `blocked`/`stop` → jangan insert apapun ke RADIUS tables
+- `active` → groupname = profile.groupName, restore Framed-IP-Address
+
+Jika ada bug isolir (user tetap dapat profil normal setelah isolasi), cek apakah edit user via form admin tidak sengaja meng-override radusergroup.
+
+### 15. Payment callback pages must support both `token` and `order_id`
 Real-world issue: top-up success page received `order_id=TOPUP-TEMP-...` and showed `payment.paymentNotFound`.
 Current fix:
 - top-up direct flow now creates invoice first, then uses stable `orderId = invoice.invoiceNumber`
