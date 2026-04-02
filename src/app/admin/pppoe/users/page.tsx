@@ -43,6 +43,7 @@ interface PppoeUser {
   idCardPhoto?: string | null;
   installationPhotos?: string[] | null;
   followRoad?: boolean;
+  isOnline?: boolean;
   profile: { id: string; name: string; groupName: string };
   router?: { id: string; name: string; nasname: string; ipAddress: string } | null;
   routerId?: string | null;
@@ -303,6 +304,7 @@ export default function PppoeUsersPage() {
   const [filterProfile, setFilterProfile] = useState('');
   const [filterRouter, setFilterRouter] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterSession, setFilterSession] = useState('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -1061,7 +1063,8 @@ export default function PppoeUsersPage() {
     const matchesRouter = filterRouter === '' || (filterRouter === 'global' ? !user.routerId : user.routerId === filterRouter);
     const matchesStatus = filterStatus === '' || user.status === filterStatus;
     const matchesCustomer = pppoeCustomerIdFilter === '' || (user as any).pppoeCustomerId === pppoeCustomerIdFilter;
-    return matchesSearch && matchesProfile && matchesRouter && matchesStatus && matchesCustomer;
+    const matchesSession = filterSession === '' || (filterSession === 'online' ? user.isOnline === true : user.isOnline !== true);
+    return matchesSearch && matchesProfile && matchesRouter && matchesStatus && matchesCustomer && matchesSession;
   }).sort((a, b) => {
     let aVal: any, bVal: any;
 
@@ -1257,7 +1260,15 @@ export default function PppoeUsersPage() {
                 {s === '' ? t('common.all') : s === 'active' ? t('pppoe.active') : s === 'isolated' ? t('pppoe.isolir') : t('pppoe.block')}
               </button>
             ))}
-            {(searchQuery || filterProfile || filterRouter || filterStatus) && <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); }} className="ml-auto text-[10px] text-primary hover:text-teal-700">{t('common.reset')}</button>}
+          </div>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <Filter className="h-3 w-3 text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Sesi:</span>
+            {[['', 'Semua'], ['online', 'Online'], ['offline', 'Offline']].map(([val, label]) => (
+              <button key={val} onClick={() => setFilterSession(val)} className={`px-2 py-0.5 text-[10px] rounded-full transition flex items-center gap-1 ${filterSession === val ? (val === 'online' ? 'bg-emerald-600 text-white' : val === 'offline' ? 'bg-gray-500 text-white' : 'bg-teal-600 text-white') : 'bg-muted text-muted-foreground'}`}>
+                {val === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-current" />}{label}
+              </button>
+            ))}
+            {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession) && <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); }} className="ml-auto text-[10px] text-primary hover:text-teal-700">{t('common.reset')}</button>}
           </div>
           <div className="mt-2 text-[10px] text-muted-foreground">{t('table.showing')} {filteredUsers.length} {t('table.of')} {users.length}</div>
         </div>
@@ -1312,6 +1323,10 @@ export default function PppoeUsersPage() {
                         </span>
                       )}
                       <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${user.status === 'active' ? 'bg-success/20 text-success' : user.status === 'isolated' ? 'bg-warning/20 text-warning' : 'bg-destructive/20 text-destructive'}`}>{user.status}</span>
+                      {user.isOnline
+                        ? <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />Online</span>
+                        : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">Offline</span>
+                      }
                     </div>
                   </div>
                   {/* Info grid */}
@@ -1411,13 +1426,14 @@ export default function PppoeUsersPage() {
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted" onClick={() => handleSort('status')}>
                     <div className="flex items-center gap-1">Status <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Sesi</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden md:table-cell">RADIUS</th>
                   <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                 {filteredUsers.length === 0 ? (
-                  <tr><td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-xs">{users.length === 0 ? t('pppoe.noUsers') : t('pppoe.noMatch')}</td></tr>
+                  <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-xs">{users.length === 0 ? t('pppoe.noUsers') : t('pppoe.noMatch')}</td></tr>
                 ) : (
                   filteredUsers.map((user) => (
                     <tr key={user.id} className="hover:bg-muted/50">
@@ -1495,6 +1511,13 @@ export default function PppoeUsersPage() {
                       {/* Status */}
                       <td className="px-3 py-2">
                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium ${user.status === 'active' ? 'bg-success/20 text-success dark:bg-green-900/30' : user.status === 'isolated' ? 'bg-warning/20 text-warning dark:bg-yellow-900/30' : 'bg-destructive/20 text-destructive dark:bg-red-900/30'}`}>{user.status}</span>
+                      </td>
+                      {/* Sesi */}
+                      <td className="px-3 py-2">
+                        {user.isOnline
+                          ? <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />Online</span>
+                          : <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">Offline</span>
+                        }
                       </td>
                       {/* RADIUS */}
                       <td className="px-3 py-2 hidden md:table-cell">
