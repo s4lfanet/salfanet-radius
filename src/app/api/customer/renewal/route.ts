@@ -57,13 +57,11 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ User found:', user.username, 'Profile:', user.profile?.name);
 
-    // Get company settings for renewal configuration
+    // Get company settings
     const company = await prisma.company.findFirst();
     console.log('🏢 Company settings loaded');
-    const renewalAnytime = company?.pppoeRenewalAnytime || false;
-    const renewalDaysBefore = company?.pppoeRenewalDaysBefore || 7;
 
-    // Check if user can renew based on company settings
+    // Renewal is always allowed regardless of expiry date
     const now = new Date();
     const expiredAt = user.expiredAt ? new Date(user.expiredAt) : null;
 
@@ -72,24 +70,6 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Expired date not set' },
         { status: 400 }
       );
-    }
-
-    // If not renewal anytime, check if within renewal period
-    if (!renewalAnytime) {
-      const renewalStartDate = new Date(expiredAt);
-      renewalStartDate.setDate(renewalStartDate.getDate() - renewalDaysBefore);
-      
-      if (now < renewalStartDate) {
-        const daysUntilRenewal = Math.ceil((renewalStartDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        return NextResponse.json(
-          { 
-            success: false, 
-            error: `Perpanjangan hanya dapat dilakukan ${renewalDaysBefore} hari sebelum expired. Silakan coba lagi dalam ${daysUntilRenewal} hari.`,
-            canRenewAt: renewalStartDate.toISOString(),
-          },
-          { status: 400 }
-        );
-      }
     }
 
     // Check if user already has unpaid invoice
@@ -473,11 +453,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get company settings
-    const company = await prisma.company.findFirst();
-    const renewalAnytime = company?.pppoeRenewalAnytime || false;
-    const renewalDaysBefore = company?.pppoeRenewalDaysBefore || 7;
-
     const now = new Date();
     const expiredAt = user.expiredAt ? new Date(user.expiredAt) : null;
 
@@ -514,34 +489,10 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // If renewal anytime is enabled, always allow
-    if (renewalAnytime) {
-      return NextResponse.json({
-        success: true,
-        canRenew: true,
-        renewalAnytime: true,
-      });
-    }
-
-    // Check if within renewal period
-    const renewalStartDate = new Date(expiredAt);
-    renewalStartDate.setDate(renewalStartDate.getDate() - renewalDaysBefore);
-    
-    if (now < renewalStartDate) {
-      const daysUntilRenewal = Math.ceil((renewalStartDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      return NextResponse.json({
-        success: true,
-        canRenew: false,
-        reason: `Renewal available in ${daysUntilRenewal} days`,
-        canRenewAt: renewalStartDate.toISOString(),
-        daysUntilRenewal,
-      });
-    }
-
+    // Renewal always allowed
     return NextResponse.json({
       success: true,
       canRenew: true,
-      renewalAnytime: false,
     });
   } catch (error) {
     console.error('Check renewal error:', error);
