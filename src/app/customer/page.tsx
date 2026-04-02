@@ -124,7 +124,7 @@ export default function CustomerDashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [ontDevice, setOntDevice] = useState<any>(null);
   const [loadingOnt, setLoadingOnt] = useState(true);
-  const [editingWifi, setEditingWifi] = useState(false);
+  const [editingWifi, setEditingWifi] = useState<number | null>(null); // WLAN index being edited
   const [wifiForm, setWifiForm] = useState({ ssid: '', password: '' });
   const [updatingWifi, setUpdatingWifi] = useState(false);
   const [companyName, setCompanyName] = useState('SALFANET RADIUS');
@@ -342,7 +342,7 @@ export default function CustomerDashboard() {
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deviceId: ontDevice._id,
-          wlanIndex: 1,
+          wlanIndex: editingWifi ?? 1,
           ssid: wifiForm.ssid,
           password: wifiForm.password,
         }),
@@ -350,7 +350,7 @@ export default function CustomerDashboard() {
       const data = await res.json();
       if (data.success) {
         toast('success', 'WiFi Berhasil Diperbarui', t('customer.wifiUpdateSuccess'));
-        setEditingWifi(false);
+        setEditingWifi(null);
         setWifiForm({ ssid: '', password: '' });
         setTimeout(() => loadOntDevice(), 3000);
       } else {
@@ -463,85 +463,91 @@ export default function CustomerDashboard() {
                 <div><span className="text-accent block text-[10px] font-bold uppercase tracking-wide">{t('customer.connectedDevices')}</span><span className="font-medium text-[10px] text-white">{Array.isArray(ontDevice.connectedHosts) ? ontDevice.connectedHosts.length : 0} device</span></div>
               </div>
               
-              <div className="pt-3 border-t border-accent/20">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-bold text-accent uppercase tracking-wide">{t('customer.wifiSettings')}</span>
-                  <span className="text-[10px] text-muted-foreground">{connectedDevices.length || 0} {t('customer.deviceConnected')}</span>
-                </div>
-                
-                {editingWifi ? (
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-[10px] text-muted-foreground mb-1 block">{t('customer.wifiName')}</label>
-                      <input 
-                        type="text" 
-                        value={wifiForm.ssid} 
-                        onChange={(e) => setWifiForm({ ...wifiForm, ssid: e.target.value })} 
-                        className="w-full px-2 py-1 text-xs border rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" 
-                        placeholder={t('customer.wifiNamePlaceholder')}
-                        autoComplete="off"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] text-muted-foreground mb-1 block">{t('customer.wifiPassword')}</label>
-                      <input 
-                        type="text" 
-                        value={wifiForm.password} 
-                        onChange={(e) => setWifiForm({ ...wifiForm, password: e.target.value })} 
-                        className="w-full px-2 py-1 text-xs border rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" 
-                        placeholder={t('customer.wifiPasswordPlaceholder')}
-                        autoComplete="off"
-                      />
-                      <p className="text-[9px] text-muted-foreground mt-0.5">{t('customer.securityModeNote')}</p>
-                    </div>
-                    <div className="flex gap-1">
-                      <button onClick={handleUpdateWifi} disabled={updatingWifi} className="flex-1 px-2 py-1 bg-teal-600 text-white text-[10px] rounded disabled:opacity-50 flex items-center justify-center gap-1">
-                        {updatingWifi ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}{t('common.save')}
-                      </button>
-                      <button onClick={() => { setEditingWifi(false); setWifiForm({ ssid: '', password: '' }); }} className="px-2 py-1 border text-[10px] rounded"><X className="w-3 h-3" /></button>
-                    </div>
-                  </div>
-                ) : (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="grid grid-cols-2 gap-2 text-xs flex-1">
-                        <div><span className="text-muted-foreground block text-[10px]">{t('customer.ssid')}</span><span className="font-medium">{ontDevice.wlanConfigs?.[0]?.ssid || 'N/A'}</span></div>
-                        <div><span className="text-muted-foreground block text-[10px]">{t('common.status')}</span><span className={ontDevice.status === 'Online' ? 'text-success' : 'text-destructive'}>{ontDevice.status || 'N/A'}</span></div>
-                      </div>
-                      <button onClick={() => { setEditingWifi(true); setWifiForm({ ssid: ontDevice.wlanConfigs?.[0]?.ssid || '', password: '' }); }} className="text-[10px] text-primary flex items-center gap-0.5 ml-2"><Edit2 className="w-2.5 h-2.5" />{t('common.edit')}</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Connected Devices Section */}
-              {connectedDevices.length > 0 && (
-                <div className="pt-2 border-t border-border">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] font-semibold text-foreground flex items-center gap-1">
-                      <Wifi className="w-3 h-3" />
-                      {t('customer.connectedDevicesTitle')} ({connectedDevices.length})
-                    </span>
-                  </div>
-                  <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                    {connectedDevices.slice(0, 5).map((device, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-muted/50 rounded px-2 py-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-1.5 h-1.5 rounded-full ${device.active ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                          <div>
-                            <p className="text-[10px] font-medium">{device.hostname && device.hostname !== '-' ? device.hostname : t('customer.unknownDevice')}</p>
-                            <p className="text-[9px] text-muted-foreground font-mono">{device.ipAddress && device.ipAddress !== '-' ? device.ipAddress : device.macAddress}</p>
+              {/* WiFi SSIDs — show all, one per row */}
+              {ontDevice.wlanConfigs && ontDevice.wlanConfigs.length > 0 && (
+                <div className="pt-3 border-t border-accent/20 space-y-3">
+                  <span className="text-[10px] font-bold text-accent uppercase tracking-wide block">{t('customer.wifiSettings')}</span>
+
+                  {ontDevice.wlanConfigs.map((wlan: any) => {
+                    const isEditing = editingWifi === wlan.index;
+                    const wlanDevices = connectedDevices.filter((d: any) => d.associatedDevice === String(wlan.index));
+                    return (
+                      <div key={wlan.index} className="rounded-lg border border-accent/20 bg-accent/5 p-2 space-y-1.5">
+                        {/* SSID header */}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Wifi className="w-3 h-3 text-accent" />
+                            <span className="text-[10px] font-bold text-white truncate max-w-[130px]">{wlan.ssid || '(belum ada SSID)'}</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${wlan.enabled ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'}`}>
+                              {wlan.band || (wlan.index >= 5 ? '5GHz' : '2.4GHz')}
+                            </span>
                           </div>
+                          {!isEditing && (
+                            <button
+                              onClick={() => { setEditingWifi(wlan.index); setWifiForm({ ssid: wlan.ssid || '', password: '' }); }}
+                              className="text-[10px] text-primary flex items-center gap-0.5 shrink-0"
+                            >
+                              <Edit2 className="w-2.5 h-2.5" />{t('common.edit')}
+                            </button>
+                          )}
                         </div>
-                        <span className={`text-[9px] px-1 py-0.5 rounded ${device.active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500'}`}>
-                          {device.active ? t('customer.online') : t('customer.offline')}
-                        </span>
+
+                        {/* Edit form */}
+                        {isEditing && (
+                          <div className="space-y-1.5 pt-1">
+                            <div>
+                              <label className="text-[10px] text-muted-foreground mb-0.5 block">{t('customer.wifiName')}</label>
+                              <input
+                                type="text"
+                                value={wifiForm.ssid}
+                                onChange={(e) => setWifiForm({ ...wifiForm, ssid: e.target.value })}
+                                className="w-full px-2 py-1 text-xs border rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                placeholder={t('customer.wifiNamePlaceholder')}
+                                autoComplete="off"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-muted-foreground mb-0.5 block">{t('customer.wifiPassword')}</label>
+                              <input
+                                type="text"
+                                value={wifiForm.password}
+                                onChange={(e) => setWifiForm({ ...wifiForm, password: e.target.value })}
+                                className="w-full px-2 py-1 text-xs border rounded focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                placeholder={t('customer.wifiPasswordPlaceholder')}
+                                autoComplete="off"
+                              />
+                              <p className="text-[9px] text-muted-foreground mt-0.5">{t('customer.securityModeNote')}</p>
+                            </div>
+                            <div className="flex gap-1">
+                              <button onClick={handleUpdateWifi} disabled={updatingWifi} className="flex-1 px-2 py-1 bg-teal-600 text-white text-[10px] rounded disabled:opacity-50 flex items-center justify-center gap-1">
+                                {updatingWifi ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}{t('common.save')}
+                              </button>
+                              <button onClick={() => { setEditingWifi(null); setWifiForm({ ssid: '', password: '' }); }} className="px-2 py-1 border text-[10px] rounded"><X className="w-3 h-3" /></button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Connected devices for this SSID */}
+                        {wlanDevices.length > 0 && (
+                          <div className="pt-1 border-t border-border/50 space-y-1">
+                            <p className="text-[9px] text-muted-foreground">{wlanDevices.length} perangkat terhubung</p>
+                            {wlanDevices.map((device: any, idx: number) => (
+                              <div key={idx} className="flex items-center gap-2 bg-muted/50 rounded px-2 py-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0"></div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] font-medium truncate">{device.hostname && device.hostname !== '-' ? device.hostname : device.macAddress}</p>
+                                  <p className="text-[9px] text-muted-foreground font-mono truncate">{device.ipAddress && device.ipAddress !== '-' ? device.ipAddress : device.macAddress}</p>
+                                </div>
+                                {device.signalStrength && device.signalStrength !== '-' && (
+                                  <span className="text-[9px] text-muted-foreground shrink-0">{device.signalStrength}</span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    ))}
-                    {connectedDevices.length > 5 && (
-                      <p className="text-[9px] text-muted-foreground text-center">+{connectedDevices.length - 5} perangkat lainnya</p>
-                    )}
-                  </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
