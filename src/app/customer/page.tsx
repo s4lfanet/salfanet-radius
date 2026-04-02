@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote } from 'lucide-react';
+import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 
 // Force dynamic rendering
