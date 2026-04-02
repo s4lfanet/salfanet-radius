@@ -110,6 +110,38 @@ export default function PaymentHistoryPage() {
 
   const handlePrintThermal = async (payment: PaymentHistory) => {
     await printInvoiceThermal(payment.id, toast);
+  };
+
+  const handleSubmitOfflinePayment = async () => {
+    const finalBank = customBank.trim() || bankName;
+    if (!selectedPaymentInvoice) return;
+    if (!finalBank) { toast('warning', 'Wajib Diisi', 'Pilih atau masukkan metode pembayaran/nama bank'); return; }
+    if (!accountName.trim()) { toast('warning', 'Wajib Diisi', 'Masukkan nama lengkap pengirim'); return; }
+    if (!proofFile) { toast('warning', 'Bukti Transfer', 'Upload bukti transfer diperlukan'); return; }
+
+    setSubmittingOffline(true);
+    const token = localStorage.getItem('customer_token');
+    try {
+      // Step 1: Create manual payment record
+      const payRes = await fetch('/api/customer/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          invoiceId: selectedPaymentInvoice.id,
+          amount: selectedPaymentInvoice.amount,
+          method: finalBank,
+          accountNumber: accountNumber.trim() || undefined,
+          accountName: accountName.trim(),
+          notes: paymentNotes.trim() || undefined,
+        })
+      });
+      const payData = await payRes.json();
+      if (!payData.success) {
+        toast('error', 'Gagal', payData.message || 'Gagal membuat pembayaran');
+        return;
+      }
+
+      // Step 2: Upload proof image
       const paymentId = payData.data?.id;
       if (paymentId && proofFile) {
         const fd = new FormData();

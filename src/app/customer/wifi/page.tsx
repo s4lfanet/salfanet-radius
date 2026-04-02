@@ -359,7 +359,7 @@ export default function CustomerWiFiPage() {
               </div>
               <div className="flex-1">
                 <p className="font-bold text-white text-sm">WiFi {bandLabel}</p>
-                <p className="text-xs text-slate-400 truncate">{wlan.ssid || '(belum ada SSID)'}</p>
+                <p className="text-xs text-slate-400 truncate">{wlan.ssid || '(SSID belum dikonfigurasi)'}</p>
               </div>
               <span className={`text-xs font-bold px-2 py-1 rounded-full border ${
                 wlan.enabled
@@ -400,6 +400,35 @@ export default function CustomerWiFiPage() {
                       Edit WiFi Ini
                     </CyberButton>
                   </div>
+                  {/* Connected devices for this WLAN */}
+                  {(() => {
+                    const wlanDevices = device.connectedHosts.filter(h => h.associatedDevice === String(wlan.index));
+                    if (wlanDevices.length === 0) return null;
+                    return (
+                      <div className="mt-3 pt-3 border-t border-slate-700/50">
+                        <p className="text-xs text-slate-500 mb-2">Perangkat terhubung ke SSID ini:</p>
+                        <div className="space-y-1.5">
+                          {wlanDevices.map((host, i) => (
+                            <div key={i} className="flex items-center gap-2 p-1.5 rounded-lg bg-slate-800/40 border border-slate-700/40">
+                              <div className="w-6 h-6 rounded-full bg-emerald-400/10 flex items-center justify-center shrink-0">
+                                <Monitor className="w-3 h-3 text-emerald-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-white truncate">
+                                  {host.hostname && host.hostname !== '-' ? host.hostname : host.macAddress}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {host.ipAddress !== '-' ? host.ipAddress : host.macAddress}
+                                  {host.signalStrength && host.signalStrength !== '-' ? ` · ${host.signalStrength}` : ''}
+                                </p>
+                              </div>
+                              <span className="text-xs text-emerald-400 shrink-0">●</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               ) : (
                 // ── Edit mode ─────────────────────────────────────────────
@@ -481,36 +510,6 @@ export default function CustomerWiFiPage() {
           </CyberCard>
         );
       })}
-
-      {/* Connected Devices */}
-      {device.connectedHosts.length > 0 && (
-        <CyberCard className="p-4 sm:p-5">
-          <h3 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-            <Monitor className="w-4 h-4 text-violet-400" />
-            Perangkat Terhubung
-            <span className="ml-auto text-xs font-normal text-slate-400">{device.connectedHosts.length} aktif</span>
-          </h3>
-          <div className="space-y-2">
-            {device.connectedHosts.map((host, i) => (
-              <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-slate-800/50 border border-slate-700/50">
-                <div className="w-7 h-7 rounded-full bg-emerald-400/10 flex items-center justify-center shrink-0">
-                  <Monitor className="w-3.5 h-3.5 text-emerald-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-white truncate">
-                    {host.hostname && host.hostname !== '-' ? host.hostname : host.macAddress}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {host.ipAddress !== '-' ? host.ipAddress : ''}{' '}
-                    {host.signalStrength && host.signalStrength !== '-' ? `· ${host.signalStrength}` : ''}
-                  </p>
-                </div>
-                <span className="text-xs text-emerald-400">●</span>
-              </div>
-            ))}
-          </div>
-        </CyberCard>
-      )}
 
       {/* Info Box */}
       <CyberCard className="p-4 sm:p-5 border-blue-500/20 bg-blue-500/5">

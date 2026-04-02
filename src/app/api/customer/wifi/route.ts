@@ -198,22 +198,38 @@ function extractDeviceInfo(device: any) {
       if (!isNaN(parseInt(key)) && wlan && typeof wlan === 'object') {
         const wlanObj = wlan as any;
         const ssid = safeString(wlanObj.SSID);
+        const index = parseInt(key);
+
+        // Count actual AssociatedDevice entries (more reliable than TotalAssociations field)
+        const assocDeviceObj = wlanObj.AssociatedDevice;
+        let assocCount = parseInt(safeString(wlanObj.TotalAssociations)) || 0;
+        if (assocDeviceObj && typeof assocDeviceObj === 'object') {
+          let actualCount = 0;
+          for (const adKey of Object.keys(assocDeviceObj)) {
+            if (!isNaN(parseInt(adKey)) && !adKey.startsWith('_')) actualCount++;
+          }
+          assocCount = Math.max(assocCount, actualCount);
+        }
         
-        if (ssid && ssid !== '-' && ssid !== '') {
-          const index = parseInt(key);
-          const enabled = isTruthyValue(wlanObj.Enable);
+        // Include WLAN if it has an SSID name OR has connected devices
+        const hasValidSsid = ssid && ssid !== '-' && ssid !== '';
+        if (hasValidSsid || assocCount > 0) {
+          const enabled = isTruthyValue(wlanObj.Enable) || assocCount > 0;
           
-          // Determine band
+          // Determine band: prefer Standard field, then SSID hint, then BSSID prefix
           let band = '2.4GHz';
           const standard = safeString(wlanObj.Standard).toLowerCase();
-          if (standard.includes('ac') || standard.includes('ax') || index >= 5) {
+          if (standard.includes('ac') || standard.includes('ax') || standard.includes('n5') || standard.includes('5ghz')) {
             band = '5GHz';
           }
-          if (ssid.toLowerCase().includes('5g')) band = '5GHz';
+          if (ssid.toLowerCase().includes('5g') || ssid.toLowerCase().includes('_5g')) band = '5GHz';
+          // BSSID can hint at 5GHz (many ONTs use different OUI for 5GHz radio)
+          const channel = parseInt(safeString(wlanObj.Channel)) || 0;
+          if (channel > 14) band = '5GHz'; // channels > 14 are definitely 5GHz
 
           wlanConfigs.push({
             index,
-            ssid,
+            ssid: hasValidSsid ? ssid : '',
             enabled,
             channel: safeString(wlanObj.Channel),
             standard: safeString(wlanObj.Standard),
@@ -221,7 +237,7 @@ function extractDeviceInfo(device: any) {
             password: safeString(getNestedValue(wlanObj, 'PreSharedKey.1.PreSharedKey')) || 
                      safeString(wlanObj.KeyPassphrase) || '-',
             band,
-            totalAssociations: parseInt(safeString(wlanObj.TotalAssociations)) || 0,
+            totalAssociations: assocCount,
             bssid: safeString(wlanObj.BSSID)
           });
         }
@@ -278,7 +294,7 @@ function extractDeviceInfo(device: any) {
                 macAddress,
                 ipAddress,
                 hostname: hostName,
-                associatedDevice: wlan.ssid,
+                associatedDevice: String(wlan.index), // WLAN index for per-SSID grouping
                 active: true, // AssociatedDevice entries are ALWAYS active/connected
                 signalStrength: rssi ? `${rssi} dBm` : '-'
               });
