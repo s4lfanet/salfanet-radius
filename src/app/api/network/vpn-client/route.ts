@@ -4,6 +4,25 @@ import { authOptions } from '@/server/auth/config'
 import { prisma } from '@/server/db/client'
 import { MikroTikConnection } from '@/server/services/mikrotik/client'
 import { generateKeyPairSync, randomUUID } from 'crypto'
+import crypto from 'crypto'
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-this-32'
+const ALGORITHM = 'aes-256-cbc'
+
+// Decrypt password that was encrypted with encryptPassword() in vpn-server/route.ts
+function decryptPassword(encrypted: string): string {
+  try {
+    const [ivHex, encryptedHex] = encrypted.split(':')
+    if (!ivHex || !encryptedHex) return encrypted // not encrypted, return as-is
+    const iv = Buffer.from(ivHex, 'hex')
+    const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY.slice(0, 32)), iv)
+    let decrypted = decipher.update(encryptedHex, 'hex', 'utf8')
+    decrypted += decipher.final('utf8')
+    return decrypted
+  } catch {
+    return encrypted // fallback: return as-is if decryption fails
+  }
+}
 
 // Helper: Generate random password
 function generatePassword(length = 12): string {
@@ -196,7 +215,7 @@ export async function POST(request: Request) {
     const mtik = new MikroTikConnection({
       host: vpnServer.host,
       username: vpnServer.username,
-      password: vpnServer.password,
+      password: decryptPassword(vpnServer.password),
       port: vpnServer.apiPort,
       timeout: 15000,
     })
@@ -547,7 +566,7 @@ export async function DELETE(request: Request) {
         const mtik = new MikroTikConnection({
           host: vpnServer.host,
           username: vpnServer.username,
-          password: vpnServer.password,
+          password: decryptPassword(vpnServer.password),
           port: vpnServer.apiPort,
           timeout: 15000,
         })
