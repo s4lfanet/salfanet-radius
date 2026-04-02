@@ -51,16 +51,51 @@ export async function GET(request: NextRequest) {
     if (status === 'active') where.isActive = true;
     if (status === 'inactive') where.isActive = false;
 
+    const sessionFilter = searchParams.get('session') || ''; // 'online' | 'offline' | ''
+
     const customers = await (prisma as any).pppoeCustomer.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       include: {
         _count: { select: { pppoeUsers: true } },
         area: { select: { id: true, name: true } },
+        pppoeUsers: { select: { username: true } }, // needed for session lookup
       },
     });
 
-    return NextResponse.json({ customers });
+    // Collect all PPPoE usernames from these customers
+    const allUsernames: string[] = customers.flatMap((c: any) =>
+      c.pppoeUsers.map((u: any) => u.username)
+    );
+
+    // Query radacct for active sessions (acctstoptime IS NULL)
+    const activeSet = new Set<string>();
+    if (allUsernames.length > 0) {
+      const activeSessions = await (prisma as any).radacct.findMany({
+        where: { username: { in: allUsernames }, acctstoptime: null },
+        select: { username: true },
+        distinct: ['username'],
+      });
+      activeSessions.forEach((s: any) => activeSet.add(s.username));
+    }
+
+    // Enrich each customer with session info
+    let enriched = customers.map((c: any) => {
+      const usernames: string[] = c.pppoeUsers.map((u: any) => u.username);
+      const onlineCount = usernames.filter((u: string) => activeSet.has(u)).length;
+      const total = usernames.length;
+      const sessionStatus: 'online' | 'offline' | 'partial' =
+        total === 0 || onlineCount === 0 ? 'offline'
+        : onlineCount === total ? 'online'
+        : 'partial';
+      return { ...c, sessionStatus, onlineCount };
+    });
+
+    // Apply session filter
+    if (sessionFilter === 'online') enriched = enriched.filter((c: any) => c.onlineCount > 0);
+    if (sessionFilter === 'offline') enriched = enriched.filter((c: any) => c.onlineCount === 0);
+
+    return NextResponse.json({ customers: enriched });
   } catch (error) {
     console.error('Get customers error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -8,7 +8,7 @@ import { formatWIB } from '@/lib/timezone';
 import {
   Plus, Pencil, Trash2, Search, X, Eye, Users, Phone, Mail, MapPin,
   User, CreditCard, CheckCircle2, XCircle, UserPlus, Loader2, Download, Upload,
-  Calendar, RefreshCw, Ban,
+  Calendar, RefreshCw, Ban, Wifi, WifiOff,
 } from 'lucide-react';
 import {
   SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody,
@@ -30,6 +30,8 @@ interface Customer {
   createdAt: string;
   updatedAt: string;
   _count?: { pppoeUsers: number };
+  sessionStatus?: 'online' | 'offline' | 'partial';
+  onlineCount?: number;
   pppoeUsers?: {
     id: string; username: string; status: string; customerId: string | null; expiredAt: string | null;
     profile: { name: string; downloadSpeed: number; uploadSpeed: number };
@@ -174,6 +176,7 @@ export default function PppoeCustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterSession, setFilterSession] = useState(''); // '' | 'online' | 'offline'
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -191,12 +194,13 @@ export default function PppoeCustomersPage() {
       const params = new URLSearchParams();
       if (searchQuery) params.set('search', searchQuery);
       if (filterStatus) params.set('status', filterStatus);
+      if (filterSession) params.set('session', filterSession);
       const res = await fetch(`/api/pppoe/customers?${params}`);
       const data = await res.json();
       setCustomers(data.customers || []);
     } catch (error) { console.error('Load customers error:', error); }
     finally { setLoading(false); }
-  }, [searchQuery, filterStatus]);
+  }, [searchQuery, filterStatus, filterSession]);
 
   useEffect(() => { loadCustomers(); }, [loadCustomers]);
 
@@ -359,15 +363,34 @@ export default function PppoeCustomersPage() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[10px] text-muted-foreground">Status:</span>
-          {['', 'active', 'inactive'].map((s) => (
+          {(['', 'active', 'inactive'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setFilterStatus(s)}
               className={`px-2 py-0.5 text-[10px] rounded-full transition ${filterStatus === s ? (s === '' ? 'bg-teal-600 text-white' : s === 'active' ? 'bg-success text-white' : 'bg-destructive text-white') : 'bg-muted text-muted-foreground'}`}
             >
               {s === '' ? 'Semua' : s === 'active' ? 'Aktif' : 'Tidak Aktif'}
+            </button>
+          ))}
+          <span className="mx-1 text-muted-foreground/40">|</span>
+          <span className="text-[10px] text-muted-foreground">Sesi PPPoE:</span>
+          {([['', 'Semua'], ['online', 'Online'], ['offline', 'Offline']] as const).map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setFilterSession(val)}
+              className={`inline-flex items-center gap-0.5 px-2 py-0.5 text-[10px] rounded-full transition ${
+                filterSession === val
+                  ? val === '' ? 'bg-teal-600 text-white'
+                    : val === 'online' ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-500 text-white'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {val === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-current mr-0.5" />}
+              {val === 'offline' && <span className="w-1.5 h-1.5 rounded-full bg-current mr-0.5 opacity-50" />}
+              {label}
             </button>
           ))}
           <span className="ml-auto text-[10px] text-muted-foreground">{customers.length} customer</span>
@@ -448,11 +471,28 @@ export default function PppoeCustomersPage() {
                 {/* Actions row */}
                 <div className="flex items-center gap-1 pl-10 pt-1 border-t border-border/50">
                   <button
-                    onClick={() => router.push(`/admin/pppoe/users?pppoeCustomerId=${c.id}`)}
-                    className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/40"
-                  >
-                    {c._count?.pppoeUsers ?? 0} PPPoE
-                  </button>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button onClick={() => router.push(`/admin/pppoe/users?pppoeCustomerId=${c.id}`)}
+                      className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/40"
+                    >
+                      {c._count?.pppoeUsers ?? 0} PPPoE
+                    </button>
+                    {(c._count?.pppoeUsers ?? 0) > 0 && (
+                      c.sessionStatus === 'online' ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-500">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Online
+                        </span>
+                      ) : c.sessionStatus === 'partial' ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-500">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />{c.onlineCount}/{c._count?.pppoeUsers}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />Offline
+                        </span>
+                      )
+                    )}
+                  </div>
                   <div className="flex items-center gap-1 ml-auto">
                     <button onClick={() => openDetail(c)} className="p-1.5 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded" title="Lihat detail">
                       <Eye className="h-3.5 w-3.5" />
@@ -485,6 +525,7 @@ export default function PppoeCustomersPage() {
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden md:table-cell">Kontak</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell">Alamat</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Langganan</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Sesi PPPoE</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Status</th>
                   <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aksi</th>
                 </tr>
@@ -528,7 +569,28 @@ export default function PppoeCustomersPage() {
                         {c._count?.pppoeUsers ?? 0} PPPoE
                       </button>
                     </td>
-                    {/* Status */}
+                    {/* Sesi PPPoE */}
+                    <td className="px-3 py-2">
+                      {(c._count?.pppoeUsers ?? 0) === 0 ? (
+                        <span className="text-[10px] text-muted-foreground">-</span>
+                      ) : c.sessionStatus === 'online' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-500">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Online
+                        </span>
+                      ) : c.sessionStatus === 'partial' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-500">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                          {c.onlineCount}/{c._count?.pppoeUsers} Online
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
+                          <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
+                          Offline
+                        </span>
+                      )}
+                    </td>
+                    {/* Status */
                     <td className="px-3 py-2">
                       <span
                         onClick={() => handleToggleStatus(c)}
