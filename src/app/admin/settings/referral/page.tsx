@@ -6,7 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import {
   Gift, Save, Loader2, ToggleLeft, ToggleRight,
-  Wallet, Users, AlertCircle
+  Wallet, AlertCircle
 } from 'lucide-react';
 
 interface ReferralConfig {
@@ -171,52 +171,6 @@ export default function ReferralSettingsPage() {
               {t('referrals.referrerBonusDesc')}
             </p>
           </div>
-
-          {/* Both Reward Toggle */}
-          <div className="flex items-center justify-between py-3 border-t border-border">
-            <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-purple-500" />
-              <div>
-                <h4 className="text-sm font-medium text-foreground">{t('referrals.bonusForReferred')}</h4>
-                <p className="text-xs text-muted-foreground">
-                  {t('referrals.bonusForReferredDesc')}
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setConfig({ ...config, rewardBoth: !config.rewardBoth })}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                config.rewardBoth ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
-              }`}
-            >
-              <span className={`absolute top-[3px] left-[3px] w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-transform ${
-                config.rewardBoth ? 'translate-x-[24px]' : 'translate-x-0'
-              }`} />
-            </button>
-          </div>
-
-          {/* Referred Reward Amount (visible when rewardBoth is true) */}
-          {config.rewardBoth && (
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1.5">
-                {t('referrals.referredAmountLabel')}
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">Rp</span>
-                <input
-                  type="number"
-                  value={config.referredAmount}
-                  onChange={(e) => setConfig({ ...config, referredAmount: parseInt(e.target.value) || 0 })}
-                  min={0}
-                  step={1000}
-                  className="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {t('referrals.referredAmountDesc')}
-              </p>
-            </div>
-          )}
         </div>
       </CyberCard>
 
@@ -231,9 +185,6 @@ export default function ReferralSettingsPage() {
                 {config.enabled ? t('referrals.statusActive') : t('referrals.statusInactive')}
               </span></li>
               <li>{t('referrals.referrerGets')} <span className="font-medium text-foreground">{formatCurrency(config.rewardAmount)}</span> {t('referrals.perReferral')}</li>
-              {config.rewardBoth && (
-                <li>{t('referrals.referredGets')} <span className="font-medium text-foreground">{formatCurrency(config.referredAmount)}</span> {t('referrals.bonus')}</li>
-              )}
               <li>{t('referrals.rewardGiven')}: <span className="font-medium text-foreground">
                 {config.rewardType === 'FIRST_PAYMENT' ? t('referrals.afterFirstPaymentShort') : t('referrals.atRegistrationShort')}
               </span></li>

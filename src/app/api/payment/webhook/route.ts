@@ -1493,8 +1493,6 @@ async function handleInvoicePayment(
                 referralEnabled: true,
                 referralRewardAmount: true,
                 referralRewardType: true,
-                referralRewardBoth: true,
-                referralReferredAmount: true,
               },
             });
 
@@ -1531,15 +1529,6 @@ async function handleInvoicePayment(
                     }),
                   ]);
                   console.log(`✅ Referral reward ${rewardAmount} credited to referrer ${fullUser.referredById}`);
-
-                  // Also credit the referred customer if rewardBoth is enabled
-                  if (companyRef.referralRewardBoth && (companyRef.referralReferredAmount ?? 0) > 0) {
-                    await prisma.pppoeUser.update({
-                      where: { id: user.id },
-                      data: { balance: { increment: companyRef.referralReferredAmount! } },
-                    });
-                    console.log(`✅ Referred bonus ${companyRef.referralReferredAmount} credited to ${user.id}`);
-                  }
                 }
               }
             }

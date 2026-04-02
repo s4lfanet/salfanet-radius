@@ -158,8 +158,6 @@ export async function POST(
             referralEnabled: true,
             referralRewardAmount: true,
             referralRewardType: true,
-            referralRewardBoth: true,
-            referralReferredAmount: true,
           },
         });
 
@@ -183,15 +181,6 @@ export async function POST(
             }),
           ]);
           console.log(`✅ Referral registration reward ${rewardAmount} credited to ${referredById}`);
-
-          // Also credit the referred customer if rewardBoth is enabled
-          if (companyRef.referralRewardBoth && (companyRef.referralReferredAmount ?? 0) > 0) {
-            await prisma.pppoeUser.update({
-              where: { id: pppoeUser.id },
-              data: { balance: { increment: companyRef.referralReferredAmount! } },
-            });
-            console.log(`✅ Referred registration bonus ${companyRef.referralReferredAmount} credited to ${pppoeUser.id}`);
-          }
         } else if (companyRef?.referralEnabled && companyRef.referralRewardType === 'FIRST_PAYMENT') {
           // Create PENDING reward to be credited on first payment
           await prisma.referralReward.create({

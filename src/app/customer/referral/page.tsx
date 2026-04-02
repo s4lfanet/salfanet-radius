@@ -34,8 +34,6 @@ interface ReferralConfig {
   enabled: boolean;
   rewardAmount: number;
   rewardType: string;
-  rewardBoth: boolean;
-  referredAmount: number;
 }
 
 interface RewardItem {
@@ -277,31 +275,71 @@ export default function CustomerReferralPage() {
         </div>
       </CyberCard>
 
-      {/* Reward Info */}
+      {/* Reward Info + How it Works */}
       <CyberCard>
-        <div className="flex items-start gap-3 p-1">
-          <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30">
-            <Gift className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Bonus Referral</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-              Ajak teman untuk berlangganan dan dapatkan bonus saldo{' '}
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                {formatCurrency(config.rewardAmount)}
-              </span>
-              {' '}per referral
-              {config.rewardType === 'FIRST_PAYMENT' ? ' (setelah pembayaran pertama)' : ' (saat registrasi)'}.
-            </p>
-            {config.rewardBoth && config.referredAmount > 0 && (
+        <div className="p-1 space-y-4">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex-shrink-0">
+              <Gift className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Bonus Referral</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                Teman yang mendaftar juga mendapat bonus{' '}
+                Ajak teman untuk berlangganan dan dapatkan bonus{' '}
                 <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(config.referredAmount)}
+                  {formatCurrency(config.rewardAmount)}
                 </span>
-                !
+                {' '}per referral
+                {config.rewardType === 'FIRST_PAYMENT' ? ' (setelah pembayaran pertama teman)' : ' (saat pendaftaran disetujui)'}.
               </p>
-            )}
+            </div>
+          </div>
+
+          {/* Flow steps */}
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-3 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cara Kerja</p>
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-xs font-bold text-cyan-600 dark:text-cyan-400">1</div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Bagikan kode referral</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Kirim kode atau link pendaftaran ke teman Anda</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-xs font-bold text-cyan-600 dark:text-cyan-400">2</div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">Teman mendaftar dengan kode Anda</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Teman membuka link atau memasukkan kode referral saat daftar</p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-xs font-bold text-cyan-600 dark:text-cyan-400">3</div>
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {config.rewardType === 'FIRST_PAYMENT' ? 'Teman melakukan pembayaran pertama' : 'Pendaftaran disetujui admin'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {config.rewardType === 'FIRST_PAYMENT'
+                    ? 'Bonus dicatat sebagai pending, lalu dikreditkan saat teman melunasi tagihan pertama'
+                    : 'Bonus langsung dikreditkan saat admin menyetujui pendaftaran teman'}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Bonus diterima!</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Anda mendapat reward{' '}
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                    {formatCurrency(config.rewardAmount)}
+                  </span>{' '}
+                  yang tercatat di tab Riwayat Reward
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </CyberCard>
