@@ -16,7 +16,7 @@
 VPN_DIR="/etc/vpn"
 VPN_CONNECT_BIN="/usr/local/bin/vpn-connect"
 SERVICE_FILE="/etc/systemd/system/sstp-vpn.service"
-PPP_HOOK="/etc/ppp/ip-up.d/99-vpn-routes.sh"
+PPP_HOOK="/etc/ppp/ip-up.d/99-vpn-routes"
 
 install_vpn_client() {
     print_step "Step 10: SSTP VPN Client Setup"
@@ -217,6 +217,7 @@ SCRIPTEOF
 #!/bin/bash
 # Auto-configure routes + iptables saat ppp0 aktif
 # $1=iface $2=tty $3=speed $4=local_ip $5=remote_ip $6=ipparam
+# PENTING: nama file HARUS tanpa ekstensi agar run-parts mengeksekusinya.
 IFACE="$1"
 LOCAL_IP="$4"
 PEER_IP="$5"
@@ -229,12 +230,21 @@ VPN_DIR="/etc/vpn"
 VPN_SUBNET=""
 [ -f "${VPN_DIR}/vpn.conf" ] && source "${VPN_DIR}/vpn.conf"
 
+# Fallback: turunkan /24 subnet dari peer IP jika VPN_SUBNET belum dikonfigurasi
+# Contoh: PEER_IP=10.20.30.1 -> VPN_SUBNET=10.20.30.0/24
+if [ -z "${VPN_SUBNET:-}" ] && [ -n "${PEER_IP}" ]; then
+    VPN_SUBNET="$(echo "${PEER_IP}" | cut -d. -f1-3).0/24"
+    logger -t vpn-route "VPN_SUBNET tidak dikonfigurasi, gunakan fallback: ${VPN_SUBNET}"
+fi
+
 if [ -n "${VPN_SUBNET:-}" ]; then
     ip route replace "${VPN_SUBNET}" via "${PEER_IP}" dev "${IFACE}" metric 100 2>/dev/null || true
     iptables -C INPUT -s "${VPN_SUBNET}" -p udp --dport 1812 -j ACCEPT 2>/dev/null || \
         iptables -I INPUT 1 -s "${VPN_SUBNET}" -p udp --dport 1812 -j ACCEPT
     iptables -C INPUT -s "${VPN_SUBNET}" -p udp --dport 1813 -j ACCEPT 2>/dev/null || \
         iptables -I INPUT 1 -s "${VPN_SUBNET}" -p udp --dport 1813 -j ACCEPT
+    iptables -C INPUT -s "${VPN_SUBNET}" -p udp --dport 3799 -j ACCEPT 2>/dev/null || \
+        iptables -I INPUT 1 -s "${VPN_SUBNET}" -p udp --dport 3799 -j ACCEPT
     iptables -C INPUT -s "${VPN_SUBNET}" -p icmp -j ACCEPT 2>/dev/null || \
         iptables -I INPUT 1 -s "${VPN_SUBNET}" -p icmp -j ACCEPT
     iptables -C FORWARD -s "${VPN_SUBNET}" -j ACCEPT 2>/dev/null || \
