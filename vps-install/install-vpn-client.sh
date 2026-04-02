@@ -135,13 +135,25 @@ start_vpn() {
     local SERVER="${1:-${VPN_SERVER:-}}"
     local USER="${2:-${VPN_USER:-}}"
     local PASS="${3:-${VPN_PASS:-}}"
+    local SUBNET="${4:-${VPN_SUBNET:-}}"  # Contoh: 10.20.30.0/24
 
     if [ -z "${SERVER}" ] || [ -z "${USER}" ] || [ -z "${PASS}" ]; then
         echo "ERROR: Kredensial VPN belum dikonfigurasi."
-        echo "  Cara 1: vpn-connect start <SERVER> <USER> <PASS>"
-        echo "  Cara 2: set VPN_SERVER/VPN_USER/VPN_PASS di ${CONF_FILE}"
+        echo "  Cara 1: vpn-connect start <SERVER> <USER> <PASS> [SUBNET]"
+        echo "    SUBNET = subnet MikroTik, misal 10.20.30.0/24 (opsional)"
+        echo "  Cara 2: set VPN_SERVER/VPN_USER/VPN_PASS/VPN_SUBNET di ${CONF_FILE}"
         return 1
     fi
+
+    # Simpan konfigurasi ke vpn.conf (dibaca oleh PPP hook saat ppp0 naik)
+    mkdir -p "${VPN_DIR}"
+    {
+        echo "VPN_SERVER=${SERVER}"
+        echo "VPN_USER=${USER}"
+        echo "VPN_PASS=${PASS}"
+        [ -n "${SUBNET}" ] && echo "VPN_SUBNET=${SUBNET}"
+    } > "${CONF_FILE}"
+    chmod 600 "${CONF_FILE}"
 
     # Update ppp chap-secrets
     mkdir -p /etc/ppp
@@ -199,11 +211,11 @@ status_vpn() {
 
 load_conf
 case "${1:-status}" in
-    start)   start_vpn  "${2:-}" "${3:-}" "${4:-}" ;;
+    start)   start_vpn  "${2:-}" "${3:-}" "${4:-}" "${5:-}" ;;
     stop)    stop_vpn   "${2:-}" ;;
-    restart) stop_vpn   "${2:-}"; sleep 2; start_vpn "${2:-}" "${3:-}" "${4:-}" ;;
+    restart) stop_vpn   "${2:-}"; sleep 2; start_vpn "${2:-}" "${3:-}" "${4:-}" "${5:-}" ;;
     status)  status_vpn "${2:-}" ;;
-    *) echo "Usage: vpn-connect {start|stop|restart|status} [SERVER] [USER] [PASS]" ;;
+    *) echo "Usage: vpn-connect {start|stop|restart|status} [SERVER] [USER] [PASS] [SUBNET]" ;;
 esac
 SCRIPTEOF
     chmod +x "${VPN_DIR}/vpn-connect.sh"

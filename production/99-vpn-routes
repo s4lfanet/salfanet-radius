@@ -1,6 +1,6 @@
 #!/bin/bash
 # PPP ip-up script: auto-configure VPN routing when PPP interface comes up
-# Deploy to: /etc/ppp/ip-up.d/99-vpn-routes
+# Deploy to: /etc/ppp/ip-up.d/99-vpn-routes  (TANPA ekstensi .sh!)
 # chmod +x /etc/ppp/ip-up.d/99-vpn-routes
 #
 # Called by /etc/ppp/ip-up with positional args:
@@ -8,22 +8,40 @@
 #   $2 = tty device
 #   $3 = speed
 #   $4 = local IP address
-#   $5 = remote IP address (peer/gateway)
+#   $5 = remote IP address (peer/gateway, yaitu IP VPN MikroTik)
 #
-# This script ensures the VPN subnet (10.20.30.0/24) is routable from VPS
-# so that CoA/Disconnect packets and MikroTik API calls can reach the NAS router.
+# VPN_SUBNET dibaca dari /etc/vpn/vpn.conf (diset saat vpn-connect start).
+# Jika tidak dikonfigurasi, fallback ke /24 dari IP peer otomatis.
+# Contoh: PEER=10.20.30.1 → VPN_SUBNET=10.20.30.0/24
+#         PEER=172.16.5.1  → VPN_SUBNET=172.16.5.0/24
 
-IFACE=$1
-REMOTE_IP=$5
-VPN_SUBNET=10.20.30.0/24
+IFACE="$1"
+REMOTE_IP="$5"
 
-logger -t vpn-route "PPP ${IFACE} up: adding route ${VPN_SUBNET} via ${REMOTE_IP}"
+[ -z "${IFACE}" ] && exit 0
+logger -t vpn-route "PPP ${IFACE} up: local=$4 peer=${REMOTE_IP}"
 
-# Add/replace route (idempotent - replace is safe if route already exists)
+# Baca VPN_SUBNET dari konfigurasi (diset oleh: vpn-connect start SERVER USER PASS SUBNET)
+VPN_DIR="/etc/vpn"
+VPN_SUBNET=""
+[ -f "${VPN_DIR}/vpn.conf" ] && source "${VPN_DIR}/vpn.conf"
+
+# Fallback: turunkan /24 subnet dari peer IP jika VPN_SUBNET belum dikonfigurasi
+# Berlaku untuk subnet apa pun: 10.x.x.0/24, 172.16.x.0/24, 192.168.x.0/24, dll
+if [ -z "${VPN_SUBNET:-}" ] && [ -n "${REMOTE_IP}" ]; then
+    VPN_SUBNET="$(echo "${REMOTE_IP}" | cut -d. -f1-3).0/24"
+    logger -t vpn-route "VPN_SUBNET tidak dikonfigurasi, gunakan fallback: ${VPN_SUBNET}"
+fi
+
+[ -z "${VPN_SUBNET:-}" ] && { logger -t vpn-route "ERROR: VPN_SUBNET kosong, skip"; exit 0; }
+
+logger -t vpn-route "Menambahkan route ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE}"
+
+# Add/replace route (idempotent)
 ip route replace ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || \
   ip route add ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || true
 
-# Allow RADIUS ports from VPN subnet
+# Buka iptables untuk RADIUS + CoA dari subnet VPN
 iptables -C INPUT -s ${VPN_SUBNET} -p udp --dport 1812 -j ACCEPT 2>/dev/null || \
   iptables -I INPUT -s ${VPN_SUBNET} -p udp --dport 1812 -j ACCEPT 2>/dev/null || true
 iptables -C INPUT -s ${VPN_SUBNET} -p udp --dport 1813 -j ACCEPT 2>/dev/null || \
