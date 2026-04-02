@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { PushNotificationToggle } from '@/components/push-notification-toggle';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -405,10 +404,19 @@ export default function CustomerDashboard() {
               </span>
             </div>
           </div>
-          <div className="mt-4 pt-3 border-t border-primary/20">
+          <div className="mt-4 pt-3 border-t border-primary/20 flex gap-2">
+            <CyberButton
+              onClick={() => router.push('/customer/renewal')}
+              className="flex-1"
+              size="sm"
+              variant="cyan"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Perpanjang
+            </CyberButton>
             <CyberButton
               onClick={() => router.push('/customer/upgrade')}
-              className="w-full"
+              className="flex-1"
               size="sm"
               variant="purple"
             >
@@ -621,11 +629,6 @@ export default function CustomerDashboard() {
         </CyberCard>
       </div>
 
-      {/* Web Push Notification banner */}
-      <div className="mt-3">
-        <PushNotificationToggle />
-      </div>
-
       {/* Quick Actions */}
       <div className="mt-3">
         <CyberCard className="p-3 bg-card/80 backdrop-blur-xl border-2 border-cyan-500/20 shadow-[0_0_20px_rgba(6,182,212,0.1)]">
@@ -638,6 +641,7 @@ export default function CustomerDashboard() {
           <div className="grid grid-cols-4 gap-1.5">
             {([
               { name: 'Semua Tagihan',  href: '/customer/invoices',      icon: FileText,      bg: 'bg-success/10',   border: 'border-success/30',   text: 'text-success' },
+              { name: 'Perpanjang',     href: '/customer/renewal',       icon: RefreshCw,     bg: 'bg-cyan-500/10',  border: 'border-cyan-500/30',  text: 'text-cyan-400' },
               { name: 'Ganti Paket',   href: '/customer/upgrade',       icon: Package,       bg: 'bg-primary/10',   border: 'border-primary/30',   text: 'text-primary' },
               { name: 'Riwayat Bayar', href: '/customer/history',       icon: Receipt,       bg: 'bg-accent/10',    border: 'border-accent/30',    text: 'text-accent' },
               { name: 'WiFi',          href: '/customer/wifi',          icon: Wifi,          bg: 'bg-blue-500/10',  border: 'border-blue-500/30',  text: 'text-blue-400' },

@@ -1578,6 +1578,15 @@ export default function PppoeUsersPage() {
                           >
                             <Printer className="h-3.5 w-3.5" />
                           </button>
+                          {/* Perpanjang Manual */}
+                          <button
+                            onClick={() => handleManualExtend(user)}
+                            disabled={extending === user.id}
+                            className="p-1.5 text-warning hover:bg-warning/10 rounded disabled:opacity-50"
+                            title={t('pppoe.extendManual')}
+                          >
+                            {extending === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
+                          </button>
                         </div>
                       </td>
                     </tr>

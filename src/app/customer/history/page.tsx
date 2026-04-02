@@ -12,7 +12,6 @@ import {
   CreditCard,
   Calendar,
   RefreshCw,
-  TrendingUp,
   Banknote,
   FileText,
   ExternalLink,
@@ -28,6 +27,7 @@ import {
   ShieldCheck,
   ImageIcon,
   Info,
+  Printer,
 } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
@@ -301,6 +301,45 @@ export default function PaymentHistoryPage() {
     }
   };
 
+  const handlePrintInvoice = (payment: PaymentHistory) => {
+    const invoiceLabel = payment.isPackageChange ? 'Ganti Paket' : (payment.invoiceType ? (INVOICE_TYPE_LABEL[payment.invoiceType] || payment.invoiceType) : 'Bulanan');
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    printWindow.document.write(`
+      <!DOCTYPE html><html><head>
+      <title>Invoice ${payment.invoiceNumber}</title>
+      <style>
+        body{font-family:Arial,sans-serif;max-width:400px;margin:30px auto;color:#111;font-size:13px}
+        h1{font-size:18px;margin:0 0 4px}
+        .sub{color:#666;font-size:11px;margin-bottom:16px}
+        hr{border:none;border-top:1px solid #ddd;margin:12px 0}
+        .row{display:flex;justify-content:space-between;margin:5px 0}
+        .label{color:#888}
+        .amt{font-size:18px;font-weight:bold;color:#333;margin:8px 0}
+        .paid-badge{background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:bold}
+        .footer{color:#aaa;font-size:10px;text-align:center;margin-top:20px}
+      </style>
+      </head><body>
+      <h1>Nota Pembayaran</h1>
+      <div class="sub">Invoice Lunas</div>
+      <hr>
+      <div class="row"><span class="label">No. Invoice</span><span><b>${payment.invoiceNumber}</b></span></div>
+      <div class="row"><span class="label">Jenis</span><span>${invoiceLabel}</span></div>
+      <div class="row"><span class="label">Jatuh Tempo</span><span>${formatDate(payment.dueDate)}</span></div>
+      ${payment.paidAt ? `<div class="row"><span class="label">Dibayar</span><span>${formatDateTime(payment.paidAt)}</span></div>` : ''}
+      ${payment.paymentSource ? `<div class="row"><span class="label">Via</span><span>${payment.paymentSource === 'gateway' ? 'Payment Gateway' : payment.paymentSource === 'manual' ? 'Transfer Bank' : 'Admin'}</span></div>` : ''}
+      ${payment.manualPaymentBank ? `<div class="row"><span class="label">Bank</span><span>${payment.manualPaymentBank}</span></div>` : ''}
+      <hr>
+      <div class="amt">Total: Rp ${payment.amount.toLocaleString('id-ID')}</div>
+      <span class="paid-badge">✓ LUNAS</span>
+      <div class="footer">Dokumen ini dicetak otomatis oleh sistem billing</div>
+      </body></html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => { printWindow.print(); }, 400);
+  };
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
@@ -346,41 +385,6 @@ export default function PaymentHistoryPage() {
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">Refresh</span>
         </button>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <CyberCard className="p-3 lg:p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 shadow-[0_0_20px_rgba(188,19,254,0.1)]">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-primary/20 rounded-lg border border-primary/30">
-              <FileText className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <span className="text-[10px] font-bold text-primary/70 uppercase tracking-wide">Total Invoice</span>
-          </div>
-          <p className="text-2xl font-bold text-white">{payments.length}</p>
-        </CyberCard>
-
-        <CyberCard className="p-3 lg:p-4 bg-card/80 backdrop-blur-xl border-2 border-warning/30 shadow-[0_0_20px_rgba(255,170,0,0.1)]">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-warning/20 rounded-lg border border-warning/30">
-              <Clock className="w-3.5 h-3.5 text-warning" />
-            </div>
-            <span className="text-[10px] font-bold text-warning/70 uppercase tracking-wide">Belum Bayar</span>
-          </div>
-          <p className="text-2xl font-bold text-warning">{pendingPayments.length}</p>
-          {totalPendingAmount > 0 && <p className="text-[10px] text-warning/60 mt-0.5">{formatCurrency(totalPendingAmount)}</p>}
-        </CyberCard>
-
-        <CyberCard className="p-3 lg:p-4 bg-card/80 backdrop-blur-xl border-2 border-success/30 shadow-[0_0_20px_rgba(0,255,136,0.1)]">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="p-1.5 bg-success/20 rounded-lg border border-success/30">
-              <TrendingUp className="w-3.5 h-3.5 text-success" />
-            </div>
-            <span className="text-[10px] font-bold text-success/70 uppercase tracking-wide">Total Lunas</span>
-          </div>
-          <p className="text-2xl font-bold text-success">{paidPayments.length}</p>
-          {totalPaidAmount > 0 && <p className="text-[10px] text-success/60 mt-0.5">{formatCurrency(totalPaidAmount)}</p>}
-        </CyberCard>
       </div>
 
       {payments.length === 0 && (
@@ -599,14 +603,23 @@ export default function PaymentHistoryPage() {
                       )}
                     </div>
 
-                    {/* Detail Button */}
-                    <button
-                      onClick={() => setSelectedDetail(payment)}
-                      className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-success/10 hover:bg-success/20 border border-success/30 rounded-lg text-[10px] font-bold text-success transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      Lihat Detail
-                    </button>
+                    {/* Detail + Print Buttons */}
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        onClick={() => setSelectedDetail(payment)}
+                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-success/10 hover:bg-success/20 border border-success/30 rounded-lg text-[10px] font-bold text-success transition-colors"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        Lihat Detail
+                      </button>
+                      <button
+                        onClick={() => handlePrintInvoice(payment)}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 bg-muted/20 hover:bg-muted/40 border border-border/50 rounded-lg text-[10px] font-bold text-muted-foreground hover:text-foreground transition-colors"
+                        title="Cetak Nota"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 </CyberCard>
               );
