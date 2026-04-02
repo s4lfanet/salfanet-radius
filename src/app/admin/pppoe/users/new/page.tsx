@@ -11,7 +11,6 @@ import {
 interface Profile { id: string; name: string; groupName: string; price: number; }
 interface Router { id: string; name: string; nasname: string; ipAddress: string; }
 interface Area { id: string; name: string; }
-interface Customer { id: string; customerId: string; name: string; phone: string; }
 
 export default function NewPppoeUserPage() {
   const router = useRouter();
@@ -19,7 +18,6 @@ export default function NewPppoeUserPage() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [routers, setRouters] = useState<Router[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [uploadingIdCard, setUploadingIdCard] = useState(false);
@@ -29,7 +27,6 @@ export default function NewPppoeUserPage() {
     username: '',
     password: '',
     profileId: '',
-    pppoeCustomerId: '',
     routerId: '',
     areaId: '',
     ipAddress: '',
@@ -55,29 +52,12 @@ export default function NewPppoeUserPage() {
       fetch('/api/pppoe/profiles').then(r => r.json()),
       fetch('/api/network/routers').then(r => r.json()),
       fetch('/api/pppoe/areas').then(r => r.json()),
-      fetch('/api/pppoe/customers').then(r => r.json()),
-    ]).then(([profilesData, routersData, areasData, customersData]) => {
+    ]).then(([profilesData, routersData, areasData]) => {
       setProfiles(profilesData.profiles || []);
       setRouters(routersData.routers || []);
       setAreas(areasData.areas || []);
-      setCustomers(customersData.customers || []);
     }).catch(console.error);
   }, []);
-
-  const handleCustomerSelect = (customerId: string) => {
-    setFormData(prev => ({ ...prev, pppoeCustomerId: customerId }));
-    if (customerId) {
-      const customer = customers.find(c => c.id === customerId);
-      if (customer) {
-        setFormData(prev => ({
-          ...prev,
-          pppoeCustomerId: customerId,
-          name: prev.name || customer.name,
-          phone: prev.phone || customer.phone,
-        }));
-      }
-    }
-  };
 
   const handleUploadIdCard = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -209,16 +189,6 @@ export default function NewPppoeUserPage() {
               <option value="">-- Pilih Paket --</option>
               {profiles.map(p => (
                 <option key={p.id} value={p.id}>{p.name} - Rp {p.price.toLocaleString('id-ID')}</option>
-              ))}
-            </ModalSelect>
-          </div>
-
-          <div>
-            <ModalLabel>Customer</ModalLabel>
-            <ModalSelect value={formData.pppoeCustomerId} onChange={(e) => handleCustomerSelect(e.target.value)}>
-              <option value="">— Tidak ada —</option>
-              {customers.map(c => (
-                <option key={c.id} value={c.id}>{c.customerId} - {c.name}</option>
               ))}
             </ModalSelect>
           </div>
