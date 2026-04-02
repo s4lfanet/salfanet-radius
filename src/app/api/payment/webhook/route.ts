@@ -1512,23 +1512,17 @@ async function handleInvoicePayment(
                   const rewardAmount = companyRef.referralRewardAmount ?? 10000;
 
                   // Create reward and credit referrer balance atomically
-                  await prisma.$transaction([
-                    prisma.referralReward.create({
-                      data: {
-                        referrerId: fullUser.referredById,
-                        referredId: user.id,
-                        amount: rewardAmount,
-                        status: 'CREDITED',
-                        type: 'FIRST_PAYMENT',
-                        creditedAt: new Date(),
-                      },
-                    }),
-                    prisma.pppoeUser.update({
-                      where: { id: fullUser.referredById },
-                      data: { balance: { increment: rewardAmount } },
-                    }),
-                  ]);
-                  console.log(`✅ Referral reward ${rewardAmount} credited to referrer ${fullUser.referredById}`);
+                  await prisma.referralReward.create({
+                    data: {
+                      referrerId: fullUser.referredById,
+                      referredId: user.id,
+                      amount: rewardAmount,
+                      status: 'CREDITED',
+                      type: 'FIRST_PAYMENT',
+                      creditedAt: new Date(),
+                    },
+                  });
+                  console.log(`✅ Referral reward ${rewardAmount} recorded for referrer ${fullUser.referredById}`);
                 }
               }
             }

@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
         referralRewardBoth: true,
         referralReferredAmount: true,
         baseUrl: true,
+        adminPhone: true,
       },
     });
 
@@ -106,6 +107,7 @@ export async function GET(request: NextRequest) {
         rewardType: company?.referralRewardType ?? 'FIRST_PAYMENT',
         rewardBoth: company?.referralRewardBoth ?? false,
         referredAmount: company?.referralReferredAmount ?? 0,
+        adminPhone: company?.adminPhone ?? null,
       },
     });
   } catch (error: any) {

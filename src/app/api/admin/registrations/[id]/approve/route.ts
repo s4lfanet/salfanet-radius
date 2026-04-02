@@ -164,23 +164,17 @@ export async function POST(
         if (companyRef?.referralEnabled && companyRef.referralRewardType === 'REGISTRATION') {
           const rewardAmount = companyRef.referralRewardAmount ?? 10000;
 
-          await prisma.$transaction([
-            prisma.referralReward.create({
-              data: {
-                referrerId: referredById,
-                referredId: pppoeUser.id,
-                amount: rewardAmount,
-                status: 'CREDITED',
-                type: 'REGISTRATION',
-                creditedAt: new Date(),
-              },
-            }),
-            prisma.pppoeUser.update({
-              where: { id: referredById },
-              data: { balance: { increment: rewardAmount } },
-            }),
-          ]);
-          console.log(`✅ Referral registration reward ${rewardAmount} credited to ${referredById}`);
+          await prisma.referralReward.create({
+            data: {
+              referrerId: referredById,
+              referredId: pppoeUser.id,
+              amount: rewardAmount,
+              status: 'CREDITED',
+              type: 'REGISTRATION',
+              creditedAt: new Date(),
+            },
+          });
+          console.log(`✅ Referral registration reward ${rewardAmount} recorded for ${referredById}`);
         } else if (companyRef?.referralEnabled && companyRef.referralRewardType === 'FIRST_PAYMENT') {
           // Create PENDING reward to be credited on first payment
           await prisma.referralReward.create({
