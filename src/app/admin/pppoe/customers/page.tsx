@@ -470,7 +470,6 @@ export default function PppoeCustomersPage() {
                 </div>
                 {/* Actions row */}
                 <div className="flex items-center gap-1 pl-10 pt-1 border-t border-border/50">
-                  <button
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button onClick={() => router.push(`/admin/pppoe/users?pppoeCustomerId=${c.id}`)}
                       className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-800/40"
