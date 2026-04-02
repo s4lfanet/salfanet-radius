@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -72,6 +73,25 @@ export async function POST(request: NextRequest) {
         profile: true,
       },
     });
+
+    // Notify admin via WhatsApp (fire-and-forget)
+    prisma.company.findFirst({
+      select: { adminPhone: true, name: true, baseUrl: true },
+    }).then(async (company) => {
+      if (!company?.adminPhone) return;
+      try {
+        const refInfo = validReferralCode ? `\n🎁 Kode Referral: *${validReferralCode}*` : '';
+        const adminUrl = `${company.baseUrl || ''}/admin/pppoe/registrations`;
+        const message =
+          `📋 *Pendaftaran Baru Masuk!*\n\n` +
+          `👤 Nama: *${name}*\n` +
+          `📞 HP: *${phone}*\n` +
+          `📦 Paket: *${registration.profile.name}*\n` +
+          `📍 Alamat: ${address}${refInfo}\n\n` +
+          `Silakan buka panel admin untuk menyetujui:\n${adminUrl}`;
+        await WhatsAppService.sendMessage({ phone: company.adminPhone, message });
+      } catch (_) { /* intentionally silent */ }
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,
