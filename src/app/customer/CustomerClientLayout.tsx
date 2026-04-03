@@ -19,15 +19,15 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { name: 'Beranda',      href: '/customer',           icon: Home },
-  { name: 'Riwayat',     href: '/customer/history',   icon: Receipt },
-  { name: 'Tagihan',     href: '/customer/invoices',  icon: FileText },
-  { name: 'Perpanjang',  href: '/customer/renewal',   icon: RefreshCcw },
-  { name: 'Ganti Paket', href: '/customer/upgrade',   icon: Package },
-  { name: 'WiFi',        href: '/customer/wifi',      icon: Wifi },
-  { name: 'Tiket',       href: '/customer/tickets',   icon: MessageSquare },
-  { name: 'Referral',    href: '/customer/referral',  icon: Gift },
-  { name: 'Suspend',     href: '/customer/suspend',   icon: PauseCircle },
+  { name: 'Beranda',             href: '/customer',           icon: Home },
+  { name: 'Riwayat Bayar',      href: '/customer/history',   icon: Receipt },
+  { name: 'Tagihan',            href: '/customer/invoices',  icon: FileText },
+  { name: 'Perpanjang Paket',   href: '/customer/renewal',   icon: RefreshCcw },
+  { name: 'Ganti Paket',        href: '/customer/upgrade',   icon: Package },
+  { name: 'WiFi',               href: '/customer/wifi',      icon: Wifi },
+  { name: 'Bantuan',            href: '/customer/tickets',   icon: MessageSquare },
+  { name: 'Referral',           href: '/customer/referral',  icon: Gift },
+  { name: 'Berhenti Langganan', href: '/customer/suspend',   icon: PauseCircle },
   { name: 'Akun',        href: '/customer/profile',   icon: User },
 ];
 
