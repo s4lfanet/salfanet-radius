@@ -117,8 +117,13 @@ export default function WhatsAppProvidersPage() {
       return;
     }
 
-    if ((formData.type === 'mpwa' || formData.type === 'gowa') && !formData.apiKey) {
+    if ((formData.type === 'mpwa' || formData.type === 'gowa' || formData.type === 'kirimi') && !formData.apiKey) {
       addToast({ type: 'error', title: 'Error!', description: t('whatsapp.apiKeyRequiredFor').replace('{type}', formData.type.toUpperCase()) });
+      return;
+    }
+
+    if (formData.type === 'kirimi' && !formData.senderNumber) {
+      addToast({ type: 'error', title: 'Error!', description: 'Device ID wajib diisi untuk Kirimi.id' });
       return;
     }
 
@@ -233,6 +238,8 @@ export default function WhatsAppProvidersPage() {
       case 'fonnte': return 'bg-success/20 text-success dark:bg-green-900/30 dark:text-success';
       case 'wablas': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
       case 'gowa': return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400';
+      case 'wablast': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'kirimi': return 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400';
       default: return 'bg-gray-100 text-foreground dark:bg-inputdark:text-muted-foreground';
     }
   };
@@ -524,6 +531,8 @@ export default function WhatsAppProvidersPage() {
                     <option value="gowa" className="bg-[#0a0520]">GOWA</option>
                     <option value="fonnte" className="bg-[#0a0520]">Fonnte</option>
                     <option value="wablas" className="bg-[#0a0520]">Wablas</option>
+                    <option value="wablast" className="bg-[#0a0520]">WABlast</option>
+                    <option value="kirimi" className="bg-[#0a0520]">Kirimi.id</option>
                   </ModalSelect>
                 </div>
               </div>
@@ -533,15 +542,22 @@ export default function WhatsAppProvidersPage() {
                   <ModalInput type="text" value={formData.apiUrl} onChange={(e) => setFormData({ ...formData, apiUrl: e.target.value })} placeholder="http://10.100.0.245:2451" required />
                 </div>
                 <div>
-                  <ModalLabel required={(formData.type === 'mpwa' || formData.type === 'gowa')}>{t('whatsapp.apiKey')}</ModalLabel>
-                  <ModalInput type="text" value={formData.apiKey} onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })} placeholder={formData.type === 'gowa' ? 'username:password' : 'API Key or Token'} required={(formData.type === 'mpwa' || formData.type === 'gowa')} />
+                  <ModalLabel required={(formData.type === 'mpwa' || formData.type === 'gowa' || formData.type === 'kirimi')}>{t('whatsapp.apiKey')}</ModalLabel>
+                  <ModalInput type="text" value={formData.apiKey} onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })} placeholder={formData.type === 'gowa' ? 'username:password' : formData.type === 'kirimi' ? 'user_code:secret' : 'API Key or Token'} required={(formData.type === 'mpwa' || formData.type === 'gowa' || formData.type === 'kirimi')} />
                   {formData.type === 'gowa' && <p className="text-[9px] text-muted-foreground mt-0.5">Format: username:password</p>}
+                  {formData.type === 'kirimi' && <p className="text-[9px] text-muted-foreground mt-0.5">Format: user_code:secret (dari dashboard kirimi.id)</p>}
                 </div>
               </div>
               {formData.type === 'mpwa' && (
                 <div>
                   <ModalLabel required>{t('whatsapp.senderNumber')}</ModalLabel>
                   <ModalInput type="text" value={formData.senderNumber} onChange={(e) => setFormData({ ...formData, senderNumber: e.target.value })} placeholder="0816104997" required />
+                </div>
+              )}
+              {formData.type === 'kirimi' && (
+                <div>
+                  <ModalLabel required>Device ID</ModalLabel>
+                  <ModalInput type="text" value={formData.senderNumber} onChange={(e) => setFormData({ ...formData, senderNumber: e.target.value })} placeholder="device_id dari dashboard kirimi.id" required />
                 </div>
               )}
               <div>

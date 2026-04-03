@@ -1483,6 +1483,44 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
           continue;
         }
 
+        // Check if user already has a PAID invoice covering the same billing period.
+        // This prevents generating a duplicate invoice right after a user renews/extends
+        // (their expiredAt gets pushed forward into the generation window, but they already paid).
+        if (user.expiredAt) {
+          const dueDateStart = new Date(user.expiredAt.getTime() - 2 * 24 * 60 * 60 * 1000); // -2 days tolerance
+          const dueDateEnd   = new Date(user.expiredAt.getTime() + 2 * 24 * 60 * 60 * 1000); // +2 days tolerance
+          const paidInvoiceForPeriod = await prisma.invoice.findFirst({
+            where: {
+              userId: user.id,
+              status: 'PAID',
+              dueDate: { gte: dueDateStart, lte: dueDateEnd },
+            },
+          });
+          if (paidInvoiceForPeriod) {
+            skipped++;
+            console.log(`⏭️  Skipped ${user.username} - Already has PAID invoice for this period (${paidInvoiceForPeriod.invoiceNumber}, dueDate=${paidInvoiceForPeriod.dueDate.toISOString().slice(0, 10)})`);
+            continue;
+          }
+        }
+
+        // For POSTPAID: also check if there's a PAID invoice in the current billing month
+        if (user.subscriptionType === 'POSTPAID') {
+          const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+          const monthEnd   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+          const paidThisMonth = await prisma.invoice.findFirst({
+            where: {
+              userId: user.id,
+              status: 'PAID',
+              createdAt: { gte: monthStart, lte: monthEnd },
+            },
+          });
+          if (paidThisMonth) {
+            skipped++;
+            console.log(`⏭️  Skipped ${user.username} - Already has PAID invoice this month (${paidThisMonth.invoiceNumber})`);
+            continue;
+          }
+        }
+
         // Get amount from profile
         if (!user.profile) {
           skipped++;

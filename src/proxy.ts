@@ -179,7 +179,7 @@ export default async function proxy(req: NextRequest) {
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
     "img-src 'self' data: https: blob:",
     "font-src 'self' data: https://fonts.gstatic.com",
-    "connect-src 'self' https://api.fonnte.com https://api.wablas.com https://cloudflareinsights.com",
+    "connect-src 'self' https://api.fonnte.com https://api.wablas.com https://api.kirimi.id https://cloudflareinsights.com",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

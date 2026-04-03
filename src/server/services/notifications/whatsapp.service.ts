@@ -3,7 +3,7 @@ import { prisma } from '@/server/db/client';
 interface WhatsAppProvider {
   id: string;
   name: string;
-  type: 'fonnte' | 'waha' | 'mpwa' | 'wablas' | 'gowa';
+  type: 'fonnte' | 'waha' | 'mpwa' | 'wablas' | 'gowa' | 'wablast' | 'kirimi';
   apiKey: string;
   apiUrl: string;
   isActive: boolean;
@@ -148,6 +148,10 @@ export class WhatsAppService {
         return await this.sendViaWablas(provider, phone, message);
       case 'gowa':
         return await this.sendViaGOWA(provider, phone, message);
+      case 'wablast':
+        return await this.sendViaWABlast(provider, phone, message);
+      case 'kirimi':
+        return await this.sendViaKirimi(provider, phone, message);
       default:
         throw new Error(`Unsupported provider type: ${provider.type}`);
     }
@@ -350,6 +354,86 @@ export class WhatsAppService {
     }
 
     return await response.json();
+  }
+
+  /**
+   * WABlast API (self-hosted WhatsApp gateway)
+   * Common for ISP in Indonesia — many run local WABlast Jakarta instances
+   */
+  private static async sendViaWABlast(
+    provider: WhatsAppProvider,
+    phone: string,
+    message: string
+  ) {
+    const response = await fetch(`${provider.apiUrl}/send-message`, {
+      method: 'POST',
+      headers: {
+        'Authorization': provider.apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        phone: phone,
+        message: message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`WABlast API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    if (result.status === false || result.status === 'error') {
+      throw new Error(`WABlast error: ${result.message || 'Failed to send'}`);
+    }
+    return result;
+  }
+
+  /**
+   * Kirimi.id API
+   * Docs: https://kirimi.id/docs
+   * Auth: apiKey = "user_code:secret", senderNumber = device_id
+   * Base URL: https://api.kirimi.id
+   */
+  private static async sendViaKirimi(
+    provider: WhatsAppProvider,
+    phone: string,
+    message: string
+  ) {
+    // apiKey stores "user_code:secret"
+    const [userCode, secret] = provider.apiKey.split(':');
+    if (!userCode || !secret) {
+      throw new Error('Kirimi.id API Key harus format "user_code:secret"');
+    }
+    const deviceId = provider.senderNumber || '';
+    if (!deviceId) {
+      throw new Error('Kirimi.id membutuhkan Device ID (isi di field Sender Number)');
+    }
+
+    const response = await fetch(`${provider.apiUrl}/send-message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_code: userCode,
+        secret: secret,
+        device_id: deviceId,
+        number: phone,
+        message: message,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Kirimi.id API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    if (result.success === false) {
+      throw new Error(`Kirimi.id error: ${result.message || 'Failed to send'}`);
+    }
+    return result;
   }
 
   /**
