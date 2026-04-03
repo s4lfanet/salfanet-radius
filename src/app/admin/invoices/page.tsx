@@ -22,7 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, RefreshCw, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 
 interface Invoice {
@@ -84,7 +84,6 @@ export default function InvoicesPage() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [sendingWA, setSendingWA] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -173,27 +172,7 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleGenerateInvoices = async () => {
-    const confirmed = await showConfirm(t('invoices.generateConfirm'), t('invoices.generateInvoice'));
-    if (!confirmed) return;
 
-    setGenerating(true);
-    try {
-      const res = await fetch('/api/invoices/generate', { method: 'POST' });
-      const data = await res.json();
-
-      if (data.success) {
-        await showSuccess(data.message, t('invoices.invoicesGenerated'));
-        loadInvoices();
-      } else {
-        await showError(data.message || t('invoices.failedToGenerate'));
-      }
-    } catch (error) {
-      await showError(t('invoices.failedToGenerate'));
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   const handleViewDetail = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
@@ -784,10 +763,7 @@ export default function InvoicesPage() {
                 <Upload className="h-3 w-3 mr-1" />Import CSV
               </button>
             </Link>
-            <Button onClick={handleGenerateInvoices} disabled={generating} size="sm" className="h-8 text-xs">
-              {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <RefreshCw className="h-3.5 w-3.5 mr-1.5" />}
-              {t('invoices.generateInvoice')}
-            </Button>
+
           </div>
         </div>
 
