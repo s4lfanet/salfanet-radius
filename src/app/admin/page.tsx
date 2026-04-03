@@ -361,6 +361,8 @@ export default function AdminDashboard() {
   };
 
   // Define stat cards with data
+  const fmtIDR = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
+  const totalMonthRevenue = stats ? (stats.invoiceRevenue + stats.voucherRevenue) : 0;
   const statCards: StatCard[] = stats ? [
     {
       title: t('dashboard.totalPppoeUsers'),
@@ -368,6 +370,7 @@ export default function AdminDashboard() {
       icon: <Users className="w-5 h-5" />,
       gradient: 'from-blue-500 to-cyan-400',
       bgGlow: 'bg-blue-500/20',
+      href: '/admin/pppoe/users',
     },
     {
       title: 'Pelanggan Aktif',
@@ -383,6 +386,7 @@ export default function AdminDashboard() {
       icon: <Activity className="w-5 h-5" />,
       gradient: 'from-cyan-500 to-teal-400',
       bgGlow: 'bg-cyan-500/20',
+      href: '/admin/sessions/pppoe',
     },
     {
       title: t('dashboard.activeHotspotSessions'),
@@ -390,6 +394,7 @@ export default function AdminDashboard() {
       icon: <Wifi className="w-5 h-5" />,
       gradient: 'from-violet-500 to-purple-400',
       bgGlow: 'bg-violet-500/20',
+      href: '/admin/hotspot/sessions',
     },
     {
       title: 'Registrasi Online Baru',
@@ -398,6 +403,7 @@ export default function AdminDashboard() {
       icon: <UserPlus className="w-5 h-5" />,
       gradient: 'from-pink-500 to-rose-400',
       bgGlow: 'bg-pink-500/20',
+      href: '/admin/pppoe/registrations',
     },
     {
       title: t('dashboard.unusedVouchers'),
@@ -451,8 +457,9 @@ export default function AdminDashboard() {
     },
     {
       title: 'Omzet Total',
-      value: stats.totalAllTimeRevenueFormatted,
-      subtitle: 'Semua tagihan terbayar',
+      value: fmtIDR(totalMonthRevenue),
+      subtitle: `Invoice + Voucher • ${periodLabel || t('dashboard.thisMonth')}`,
+      detail: `Invoice: ${stats.invoiceRevenueFormatted}`,
       icon: <TrendingUp className="w-5 h-5" />,
       gradient: 'from-lime-500 to-green-400',
       bgGlow: 'bg-lime-500/20',
