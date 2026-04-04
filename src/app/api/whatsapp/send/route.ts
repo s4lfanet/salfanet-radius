@@ -50,9 +50,10 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Send API error:', error);
+    // Extract provider failure details from the error message if available
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to send message' },
-      { status: 500 }
+      { status: 502 }
     );
   }
 }

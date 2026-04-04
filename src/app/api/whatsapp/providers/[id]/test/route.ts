@@ -164,6 +164,24 @@ If you receive this message, the provider is working correctly! ✅`;
           break;
         }
 
+        case 'wablast': {
+          // WABlast self-hosted gateway — POST JSON to /send-message
+          const wablastRes = await axios.post(
+            `${provider.apiUrl}/send-message`,
+            { phone, message: testMessage },
+            {
+              headers: {
+                'Authorization': provider.apiKey,
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          responseData = wablastRes.data;
+          success = wablastRes.data.status !== false && wablastRes.data.status !== 'error';
+          if (!success) errorMessage = wablastRes.data.message || 'WABlast: failed to send';
+          break;
+        }
+
         default:
           errorMessage = `Unknown provider type: ${provider.type}`;
           break;

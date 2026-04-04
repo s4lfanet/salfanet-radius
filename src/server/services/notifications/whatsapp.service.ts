@@ -389,21 +389,27 @@ export class WhatsAppService {
     phone: string,
     message: string
   ) {
+    // WABlast self-hosted gateway — POST JSON to /send-message
+    // apiKey can be empty string if the server runs without auth
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (provider.apiKey) {
+      headers['Authorization'] = provider.apiKey;
+    }
+
     const response = await fetch(`${provider.apiUrl}/send-message`, {
       method: 'POST',
-      headers: {
-        'Authorization': provider.apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        phone: phone,
-        message: message,
-      }),
+      headers,
+      body: JSON.stringify({ phone, message }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`WABlast API error: ${response.status} - ${errorText}`);
+      let detail = errorText;
+      try {
+        const errJson = JSON.parse(errorText);
+        detail = errJson.message || errJson.error || errorText;
+      } catch { /* use raw text */ }
+      throw new Error(`WABlast API error: ${response.status} - ${detail}`);
     }
 
     const result = await response.json();
