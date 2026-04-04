@@ -61,6 +61,7 @@ export default function VpnClientPage() {
   const [applyRoutingForm, setApplyRoutingForm] = useState({ host: '', port: '22', username: 'root', password: '' });
   const [applyRoutingOutput, setApplyRoutingOutput] = useState('');
   const [applyRoutingRunning, setApplyRoutingRunning] = useState(false);
+  const [applyRoutingIpLoading, setApplyRoutingIpLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -70,7 +71,15 @@ export default function VpnClientPage() {
 
   useEffect(() => {
     loadClients();
-  }, []);
+    // Restore saved routing SSH credentials from localStorage
+    try {
+      const saved = localStorage.getItem('routing_ssh_credentials');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setApplyRoutingForm(prev => ({ ...prev, ...parsed }));
+      }
+    } catch { /* ignore */ }
+  }, [];
 
   const toggleRoutingPanel = (clientId: string) => {
     setExpandedRoutingPanels(prev => {
@@ -81,16 +90,35 @@ export default function VpnClientPage() {
     });
   };
 
-  const handleApplyRouting = (client: VpnClient) => {
+  const handleApplyRouting = async (client: VpnClient) => {
     setApplyRoutingClient(client);
     setApplyRoutingOutput('');
     setShowApplyRoutingModal(true);
+    // If no host yet, try to auto-fill from API
+    setApplyRoutingForm(prev => {
+      if (prev.host) return prev;
+      setApplyRoutingIpLoading(true);
+      fetch('/api/network/vps-info')
+        .then(r => r.json())
+        .then(data => {
+          if (data.vpsIp) {
+            setApplyRoutingForm(p => ({ ...p, host: data.vpsIp }));
+          }
+        })
+        .catch(() => { /* ignore */ })
+        .finally(() => setApplyRoutingIpLoading(false));
+      return prev;
+    });
   };
 
   const executeApplyRouting = async () => {
     if (!applyRoutingClient) return;
     const { host, port, username, password } = applyRoutingForm;
     if (!host || !username || !password) { showError('SSH credentials wajib diisi'); return; }
+    // Persist credentials for next time
+    try {
+      localStorage.setItem('routing_ssh_credentials', JSON.stringify({ host, port, username }));
+    } catch { /* ignore */ }
     setApplyRoutingRunning(true);
     setApplyRoutingOutput('Menjalankan routing script...\n');
     try {
@@ -960,12 +988,17 @@ ${radiusSection}`.trim()
 
               <div className="p-4 rounded-xl border border-[#00f7ff]/30 bg-slate-900/60 mb-4">
                 <p className="text-xs font-bold text-[#00f7ff] mb-3">🔑 SSH Credentials VPS RADIUS</p>
-                <input
-                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-2"
-                  placeholder="VPS IP/Hostname"
-                  value={applyRoutingForm.host}
-                  onChange={(e) => setApplyRoutingForm(p => ({...p, host: e.target.value}))}
-                />
+                <div className="relative mb-2">
+                  <input
+                    className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm pr-8"
+                    placeholder={applyRoutingIpLoading ? 'Mendeteksi IP VPS...' : 'VPS IP/Hostname'}
+                    value={applyRoutingForm.host}
+                    onChange={(e) => setApplyRoutingForm(p => ({...p, host: e.target.value}))}
+                  />
+                  {applyRoutingIpLoading && (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#00f7ff] animate-spin text-xs">⟳</span>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 gap-2 mb-2">
                   <input
                     className="px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm"

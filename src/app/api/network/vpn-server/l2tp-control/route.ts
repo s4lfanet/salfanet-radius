@@ -91,11 +91,11 @@ cat > /etc/xl2tpd/xl2tpd.conf << 'XLEOF'
 port = 1701
 access control = no
 XLEOF
-printf '\n[lac vpn-server]\nlns = %s\nppp debug = yes\npppoptfile = /etc/ppp/options.l2tpd.client\nlength bit = yes\nautodial = no\nredial = no\n' "$VPN_SERVER" >> /etc/xl2tpd/xl2tpd.conf
+printf '\n[lac vpn-server]\nlns = %s\nppp debug = no\npppoptfile = /etc/ppp/options.l2tpd.client\nlength bit = yes\nautodial = yes\nredial = yes\nredial timeout = 10\n' "$VPN_SERVER" >> /etc/xl2tpd/xl2tpd.conf
 echo "xl2tpd.conf written"
 grep "lns" /etc/xl2tpd/xl2tpd.conf
 
-printf 'ipcp-accept-local\nipcp-accept-remote\nrefuse-eap\nrequire-mschap-v2\nnoccp\nnoauth\nnodefaultroute\nusepeerdns\ndebug\nconnect-delay 5000\nname %s\npassword %s\n' "$L2TP_USER" "$L2TP_PASS" > /etc/ppp/options.l2tpd.client
+printf 'ipcp-accept-local\nipcp-accept-remote\nrefuse-eap\nrequire-mschap-v2\nnoccp\nnoauth\nnodefaultroute\nusepeerdns\nconnect-delay 5000\nname %s\npassword %s\n' "$L2TP_USER" "$L2TP_PASS" > /etc/ppp/options.l2tpd.client
 chmod 600 /etc/ppp/options.l2tpd.client
 echo "ppp options written"
 grep "name " /etc/ppp/options.l2tpd.client
@@ -136,6 +136,52 @@ DOWNEOF
 sed -i "s|VPN_SUBNET_PLACEHOLDER|$VPN_SUBNET|g" /etc/ppp/ip-down.d/99-vpn-routes
 chmod +x /etc/ppp/ip-down.d/99-vpn-routes
 
+# --- Auto-reconnect hook: triggered immediately on PPP link drop ---------
+cat > /etc/ppp/ip-down.d/98-l2tp-reconnect << 'RECONNEOF'
+#!/bin/bash
+# Immediately trigger L2TP reconnect when the PPP link drops
+logger -t l2tp-reconnect "PPP $1 dropped — scheduling reconnect in 5s"
+(sleep 5 && mkdir -p /var/run/xl2tpd && \
+  { systemctl is-active xl2tpd &>/dev/null || systemctl start xl2tpd; } && \
+  echo "c vpn-server" > /var/run/xl2tpd/l2tp-control && \
+  logger -t l2tp-reconnect "Reconnect command sent") &
+RECONNEOF
+chmod +x /etc/ppp/ip-down.d/98-l2tp-reconnect
+
+# --- Watchdog: runs every 2 minutes via cron ----------------------------
+cat > /usr/local/bin/l2tp-watchdog << 'WDEOF'
+#!/bin/bash
+LOG_TAG="l2tp-watchdog"
+# Dynamically find the PPP peer IP from active interface
+PPP_IFACE=$(ip addr show 2>/dev/null | grep -o 'ppp[0-9]*' | head -1)
+if [ -n "$PPP_IFACE" ]; then
+    VPN_PEER=$(ip addr show "$PPP_IFACE" 2>/dev/null | grep 'inet ' | awk '{print $4}')
+    if [ -n "$VPN_PEER" ] && ping -c 2 -W 5 "$VPN_PEER" &>/dev/null; then
+        logger -t $LOG_TAG "VPN OK on $PPP_IFACE peer=$VPN_PEER"
+        exit 0
+    fi
+    logger -t $LOG_TAG "Peer $VPN_PEER unreachable on $PPP_IFACE — reconnecting"
+else
+    logger -t $LOG_TAG "No PPP interface found — reconnecting"
+fi
+# Kill stale pppd connections
+pkill -f 'pppd plugin pppol2tp' 2>/dev/null || true
+sleep 2
+# Ensure xl2tpd is running
+systemctl is-active xl2tpd &>/dev/null || systemctl start xl2tpd
+sleep 3
+# Trigger reconnect via control pipe
+mkdir -p /var/run/xl2tpd
+echo "d vpn-server" > /var/run/xl2tpd/l2tp-control 2>/dev/null || true
+sleep 1
+echo "c vpn-server" > /var/run/xl2tpd/l2tp-control 2>/dev/null || true
+logger -t $LOG_TAG "Reconnect triggered"
+WDEOF
+chmod +x /usr/local/bin/l2tp-watchdog
+# Install cron if not already present (runs every 2 minutes)
+( crontab -l 2>/dev/null | grep -v 'l2tp-watchdog' ; echo '*/2 * * * * /usr/local/bin/l2tp-watchdog >> /var/log/l2tp-watchdog.log 2>&1' ) | crontab -
+echo "Watchdog installed → /usr/local/bin/l2tp-watchdog (cron every 2 min)"
+
 echo "=== Step 7: Ensure runtime dirs ==="
 mkdir -p /var/run/xl2tpd
 
@@ -144,10 +190,9 @@ echo "d vpn-server" | tee /var/run/xl2tpd/l2tp-control 2>/dev/null || true
 systemctl stop xl2tpd 2>/dev/null || true
 sleep 2
 
-echo "=== Step 9: Start xl2tpd ==="
+echo "=== Step 9: Start xl2tpd (autodial=yes will connect automatically) ==="
 systemctl start xl2tpd
-sleep 2
-echo "c vpn-server" | tee /var/run/xl2tpd/l2tp-control
+systemctl enable xl2tpd 2>/dev/null || true
 sleep 6
 
 echo "=== Connection Status Check ==="
@@ -161,7 +206,7 @@ echo "--- Recent pppd logs ---"
 grep -E 'pppd|ppp0' /var/log/syslog 2>/dev/null | tail -10 || journalctl -n 10 --no-pager 2>/dev/null | grep -i ppp | tail -10 || echo 'No ppp syslog'
 echo "--- PPP routes ---"
 ip route show | grep ppp || echo "No PPP routes yet"
-echo "=== Done. If PPP interface appears above = connected! ==="
+echo "=== Done. autodial+redial active. Watchdog cron installed. ==="
 `;
           // Base64-encode the script — safe to pass through SSH single-quoted args
           const scriptB64 = Buffer.from(scriptContent).toString('base64');
