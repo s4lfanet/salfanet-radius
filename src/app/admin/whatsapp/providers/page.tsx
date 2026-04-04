@@ -557,7 +557,6 @@ export default function WhatsAppProvidersPage() {
                     <option value="gowa" className="bg-[#0a0520]">GOWA</option>
                     <option value="fonnte" className="bg-[#0a0520]">Fonnte</option>
                     <option value="wablas" className="bg-[#0a0520]">Wablas</option>
-                    <option value="wablast" className="bg-[#0a0520]">WABlast</option>
                     <option value="kirimi" className="bg-[#0a0520]">Kirimi.id</option>
                   </ModalSelect>
                 </div>
