@@ -336,28 +336,34 @@ export class WhatsAppService {
   }
 
   /**
-   * Wablas API
+   * Wablas API V2
    * Docs: https://wablas.com/documentation/api
-   * Auth: apiKey = "{token}" or "{token}.{secret_key}"
+   * Auth: apiKey = "{token}.{secret_key}" (token dot secret_key)
    * Base URL: https://{server}.wablas.com (e.g. wa, pati, deu, kudus, solo)
-   * V1 POST /api/send-message expects form-urlencoded body (as per official PHP examples)
+   * V2 POST /api/v2/send-message expects JSON body with "data" array
    */
   private static async sendViaWablas(
     provider: WhatsAppProvider,
     phone: string,
     message: string
   ) {
-    // Wablas V1 uses form-urlencoded (http_build_query in official docs)
-    const body = new URLSearchParams();
-    body.append('phone', phone);
-    body.append('message', message);
+    const payload = {
+      data: [
+        {
+          phone,
+          message,
+          flag: 'instant',
+        },
+      ],
+    };
 
-    const response = await fetch(`${provider.apiUrl}/api/send-message`, {
+    const response = await fetch(`${provider.apiUrl}/api/v2/send-message`, {
       method: 'POST',
       headers: {
         'Authorization': provider.apiKey,
+        'Content-Type': 'application/json',
       },
-      body: body,
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -372,7 +378,7 @@ export class WhatsAppService {
 
     const result = await response.json();
 
-    // Wablas returns { status: true/false, message: "...", data: {...} }
+    // Wablas V2 returns { status: true/false, message: "...", data: {...} }
     if (result.status === false) {
       throw new Error(`Wablas error: ${result.message || 'Failed to send message'}`);
     }

@@ -101,17 +101,19 @@ If you receive this message, the provider is working correctly! ✅`;
         }
 
         case 'wablas': {
-          // Wablas V1 uses form-urlencoded (per official docs)
-          const wablasParams = new URLSearchParams();
-          wablasParams.append('phone', phone);
-          wablasParams.append('message', testMessage);
+          // Wablas API V2 — POST JSON to /api/v2/send-message
+          // Authorization: {token}.{secret_key}
           const wablasRes = await axios.post(
-            `${provider.apiUrl}/api/send-message`,
-            wablasParams.toString(),
+            `${provider.apiUrl}/api/v2/send-message`,
+            {
+              data: [
+                { phone, message: testMessage, flag: 'instant' },
+              ],
+            },
             {
               headers: {
                 Authorization: provider.apiKey,
-                'Content-Type': 'application/x-www-form-urlencoded',
+                'Content-Type': 'application/json',
               },
             }
           );
