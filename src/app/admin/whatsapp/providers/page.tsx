@@ -48,6 +48,18 @@ export default function WhatsAppProvidersPage() {
   const [qrLoading, setQrLoading] = useState(false);
   const [providerStatuses, setProviderStatuses] = useState<Record<string, ProviderStatus>>({});
   const [restartingProvider, setRestartingProvider] = useState<string | null>(null);
+  const [copiedWebhook, setCopiedWebhook] = useState(false);
+
+  const copyWebhookUrl = async () => {
+    const webhookUrl = `${window.location.origin}/api/whatsapp/webhook`;
+    try {
+      await navigator.clipboard.writeText(webhookUrl);
+      setCopiedWebhook(true);
+      setTimeout(() => setCopiedWebhook(false), 2000);
+    } catch {
+      addToast({ type: 'error', title: 'Error!', description: 'Gagal menyalin URL' });
+    }
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -385,6 +397,36 @@ export default function WhatsAppProvidersPage() {
               </svg>
               {t('whatsapp.addProvider')}
             </button>
+          </div>
+
+          {/* Webhook URL Info */}
+          <div className="bg-card rounded-lg border border-border p-3">
+            <div className="flex items-start gap-2">
+              <svg className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground mb-1">Webhook URL (Incoming Messages)</p>
+                <p className="text-[10px] text-muted-foreground mb-2">
+                  Gunakan URL ini di dashboard provider WhatsApp Anda (Kirimi.id, Wablas, Fonnte, WAHA) untuk menerima pesan masuk.
+                </p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 font-mono text-[10px] bg-muted text-foreground px-2 py-1.5 rounded break-all">
+                    {typeof window !== 'undefined' ? `${window.location.origin}/api/whatsapp/webhook` : '/api/whatsapp/webhook'}
+                  </code>
+                  <button
+                    onClick={copyWebhookUrl}
+                    className="flex-shrink-0 h-7 px-2.5 bg-primary hover:bg-primary/90 text-white text-[10px] font-medium rounded flex items-center gap-1 transition-colors"
+                  >
+                    {copiedWebhook ? (
+                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg> Copied!</>
+                    ) : (
+                      <><svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg> Copy</>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Provider Cards */}
