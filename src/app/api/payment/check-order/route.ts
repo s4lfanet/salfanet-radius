@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 
 function parseInvoiceNumberFromOrder(orderId: string): string {
-  if (orderId.startsWith('INV-')) {
-    const parts = orderId.split('-');
-    return parts.length >= 3 ? parts.slice(1, -1).join('-') : orderId;
+  // Strip trailing timestamp (≥10 digit number after last hyphen)
+  const lastHyphenIdx = orderId.lastIndexOf('-');
+  const potentialTs = lastHyphenIdx >= 0 ? orderId.substring(lastHyphenIdx + 1) : '';
+  if (potentialTs && /^\d{10,}$/.test(potentialTs)) {
+    return orderId.substring(0, lastHyphenIdx);
   }
 
   if (orderId.startsWith('TOPUP-')) {

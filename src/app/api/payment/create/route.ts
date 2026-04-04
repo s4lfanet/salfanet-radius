@@ -134,8 +134,8 @@ export async function POST(request: NextRequest) {
     const customerPhone = invoice.user?.phone || invoice.customerPhone || '08123456789';
     const customerEmail = invoice.user?.email || `invoice-${invoice.invoiceNumber}@example.com`;
 
-    // Generate unique order ID
-    const orderId = `INV-${invoice.invoiceNumber}-${Date.now()}`;
+    // Generate unique order ID (invoiceNumber already contains INV- prefix)
+    const orderId = `${invoice.invoiceNumber}-${Date.now()}`;
 
     // Compute base URL for callbacks/return URLs
     // Priority: company.baseUrl → request Host header → env → localhost

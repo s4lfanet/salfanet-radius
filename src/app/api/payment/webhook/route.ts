@@ -1158,16 +1158,18 @@ async function handleInvoicePayment(
   transactionId: string = '',
   webhookAmount?: number
 ) {
-  // Order ID format: INV-{invoiceNumber}-{timestamp}
-  // Support multiple formats:
-  // - INV-{invoiceNumber}-{timestamp}
-  // - {invoiceNumber}
-  const parts = orderId.split('-');
-  const invoiceNumber = orderId.startsWith('INV-') && parts.length >= 3
-    ? parts.slice(1, -1).join('-')
+  // Order ID formats:
+  // 1. From /api/payment/create:        INV-${invoiceNumber}-${timestamp}  → orderId = INV-INV-202604-0001-ts
+  // 2. From /api/.../regenerate-payment: ${invoiceNumber}-${timestamp}     → orderId = INV-202604-0001-ts
+  // Strategy: strip only the trailing timestamp segment, keep everything before it.
+  const lastHyphenIdx = orderId.lastIndexOf('-');
+  const potentialTs = lastHyphenIdx >= 0 ? orderId.substring(lastHyphenIdx + 1) : '';
+  // Timestamp = long numeric string (≥10 digits)
+  const invoiceNumber = (potentialTs && /^\d{10,}$/.test(potentialTs))
+    ? orderId.substring(0, lastHyphenIdx)
     : orderId;
 
-  const invoice = await prisma.invoice.findFirst({
+  let invoice = await prisma.invoice.findFirst({
     where: { invoiceNumber },
     include: {
       user: {
@@ -1177,6 +1179,15 @@ async function handleInvoicePayment(
       }
     }
   });
+
+  // Fallback: legacy format INV-INV-{number}-{ts} → extracted as INV-{number}, try without leading INV-
+  if (!invoice && invoiceNumber.startsWith('INV-INV-')) {
+    const trimmed = invoiceNumber.substring(4); // Remove leading 'INV-'
+    invoice = await prisma.invoice.findFirst({
+      where: { invoiceNumber: trimmed },
+      include: { user: { include: { profile: true } } }
+    });
+  }
 
   if (!invoice) {
     console.error('Invoice not found for order:', orderId, 'invoiceNumber:', invoiceNumber);
