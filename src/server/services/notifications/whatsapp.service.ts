@@ -125,8 +125,14 @@ export class WhatsAppService {
       }
     }
     
-    // All providers failed
-    throw new Error(`All WhatsApp providers failed. Last error: ${lastError?.message}`);
+    // All providers failed — return structured failure instead of throwing
+    // so the route can include per-provider attempt details in the response.
+    return {
+      success: false as const,
+      provider: null,
+      error: `All WhatsApp providers failed. Last error: ${lastError?.message}`,
+      attempts,
+    };
   }
 
   /**
@@ -448,7 +454,8 @@ export class WhatsAppService {
       throw new Error('Kirimi.id membutuhkan Device ID (isi di field Sender Number)');
     }
 
-    const response = await fetch(`${provider.apiUrl}/send-message`, {
+    const baseUrl = provider.apiUrl.replace(/\/+$/, ''); // strip trailing slash
+    const response = await fetch(`${baseUrl}/send-message`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

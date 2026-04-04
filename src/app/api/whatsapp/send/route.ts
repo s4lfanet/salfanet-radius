@@ -39,21 +39,27 @@ export async function POST(request: NextRequest) {
         response: result.response,
       });
     } else {
+      // All providers failed — include per-provider attempt details so the user
+      // can see exactly which provider failed and why.
+      const attempts = result.attempts ?? [];
+      const providerDetails = attempts
+        .map((a: any) => `${a.provider} (${a.type}): ${a.error || 'unknown error'}`)
+        .join(' | ');
       return NextResponse.json(
         {
           success: false,
-          error: (result as any).error || 'All providers failed',
-          attempts: result.attempts,
+          error: providerDetails || (result as any).error || 'All providers failed',
+          detail: (result as any).error,
+          attempts,
         },
         { status: 500 }
       );
     }
   } catch (error: any) {
     console.error('Send API error:', error);
-    // Extract provider failure details from the error message if available
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to send message' },
-      { status: 502 }
+      { status: 500 }
     );
   }
 }
