@@ -76,7 +76,7 @@ If you receive this message, the provider is working correctly! ✅`;
             {
               headers: {
                 'Content-Type': 'application/json',
-                'X-API-Key': provider.apiKey,
+                'X-Api-Key': provider.apiKey,
               },
             }
           );
@@ -84,23 +84,21 @@ If you receive this message, the provider is working correctly! ✅`;
           success = wahaRes.status === 200 || wahaRes.status === 201;
           break;
 
-        case 'mpwa':
-          const mpwaRes = await axios.post(
-            `${provider.apiUrl}/api/send-message`,
-            {
-              number: phone,
-              message: testMessage,
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${provider.apiKey}`,
-              },
-            }
-          );
+        case 'mpwa': {
+          // MPWA uses GET with query params (consistent with main service)
+          const mpwaUrl = new URL(`${provider.apiUrl}/send-message`);
+          mpwaUrl.searchParams.append('api_key', provider.apiKey);
+          mpwaUrl.searchParams.append('sender', provider.senderNumber || '');
+          mpwaUrl.searchParams.append('number', phone);
+          mpwaUrl.searchParams.append('message', testMessage);
+          const mpwaRes = await axios.get(mpwaUrl.toString());
           responseData = mpwaRes.data;
-          success = mpwaRes.data.status === 'success';
+          success = mpwaRes.data.success === true || mpwaRes.data.status === 'success';
+          if (!success) {
+            errorMessage = mpwaRes.data.message || 'MPWA: failed to send';
+          }
           break;
+        }
 
         case 'wablas': {
           // Wablas V1 uses form-urlencoded (per official docs)
@@ -122,6 +120,47 @@ If you receive this message, the provider is working correctly! ✅`;
           if (!success) {
             errorMessage = wablasRes.data.message || 'Wablas: failed to send';
           }
+          break;
+        }
+
+        case 'gowa': {
+          const gowaHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (provider.apiKey && provider.apiKey.includes(':')) {
+            const base64Auth = Buffer.from(provider.apiKey).toString('base64');
+            gowaHeaders['Authorization'] = `Basic ${base64Auth}`;
+          }
+          const gowaPhone = phone.replace(/[^0-9]/g, '');
+          const gowaRes = await axios.post(
+            `${provider.apiUrl}/send/message`,
+            { phone: gowaPhone, message: testMessage },
+            { headers: gowaHeaders }
+          );
+          responseData = gowaRes.data;
+          success = gowaRes.data.code === 'SUCCESS';
+          if (!success) errorMessage = gowaRes.data.message || 'GOWA: failed to send';
+          break;
+        }
+
+        case 'kirimi': {
+          const [kiriminUserCode, kiriminSecret] = (provider.apiKey || '').split(':');
+          if (!kiriminUserCode || !kiriminSecret) {
+            errorMessage = 'Kirimi.id API Key harus format "user_code:secret"';
+            break;
+          }
+          const kirimRes = await axios.post(
+            `${provider.apiUrl}/send-message`,
+            {
+              user_code: kiriminUserCode,
+              secret: kiriminSecret,
+              device_id: provider.senderNumber || '',
+              number: phone,
+              message: testMessage,
+            },
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+          responseData = kirimRes.data;
+          success = kirimRes.data.success === true;
+          if (!success) errorMessage = kirimRes.data.message || 'Kirimi.id: failed to send';
           break;
         }
 

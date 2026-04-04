@@ -179,10 +179,16 @@ export class WhatsAppService {
     });
 
     if (!response.ok) {
-      throw new Error(`Fonnte API error: ${response.status}`);
+      const errText = await response.text();
+      throw new Error(`Fonnte API error: ${response.status} - ${errText}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    // Fonnte can return HTTP 200 with { status: false, reason: "..." }
+    if (result.status === false) {
+      throw new Error(`Fonnte error: ${result.reason || result.message || 'Failed to send'}`);
+    }
+    return result;
   }
 
   /**
