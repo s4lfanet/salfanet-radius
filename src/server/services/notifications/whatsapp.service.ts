@@ -347,6 +347,7 @@ export class WhatsAppService {
     phone: string,
     message: string
   ) {
+    const baseUrl = provider.apiUrl.replace(/\/+$/, ''); // strip trailing slash
     const payload = {
       data: [
         {
@@ -357,7 +358,7 @@ export class WhatsAppService {
       ],
     };
 
-    const response = await fetch(`${provider.apiUrl}/api/v2/send-message`, {
+    const response = await fetch(`${baseUrl}/api/v2/send-message`, {
       method: 'POST',
       headers: {
         'Authorization': provider.apiKey,
@@ -397,12 +398,13 @@ export class WhatsAppService {
   ) {
     // WABlast self-hosted gateway — POST JSON to /send-message
     // apiKey can be empty string if the server runs without auth
+    const baseUrl = provider.apiUrl.replace(/\/+$/, ''); // strip trailing slash
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (provider.apiKey) {
       headers['Authorization'] = provider.apiKey;
     }
 
-    const response = await fetch(`${provider.apiUrl}/send-message`, {
+    const response = await fetch(`${baseUrl}/send-message`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ phone, message }),
