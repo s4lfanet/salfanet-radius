@@ -241,7 +241,7 @@ export class WhatsAppService {
             label: `Broadcast-${Date.now()}`,
             numbers,
             message,
-            delay: 5,
+            delay: 30, // 30 seconds between messages (Kirimi.id recommendation to avoid WhatsApp block)
           }),
         });
 
