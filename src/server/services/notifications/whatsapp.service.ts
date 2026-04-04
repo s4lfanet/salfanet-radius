@@ -136,6 +136,138 @@ export class WhatsAppService {
   }
 
   /**
+   * Clean phone number to E.164 format (62xxx)
+   */
+  private static cleanPhone(phone: string): string {
+    let clean = phone.replace(/[^0-9]/g, '');
+    if (clean.startsWith('0')) clean = '62' + clean.substring(1);
+    if (!clean.startsWith('62')) clean = '62' + clean;
+    return clean;
+  }
+
+  /**
+   * Send broadcast to multiple recipients.
+   * Uses Kirimi.id's native /v1/broadcast-message when the active provider is Kirimi.id
+   * (groups by unique message content for efficiency), falls back to sequential send otherwise.
+   */
+  static async sendBroadcast(
+    messages: { phone: string; message: string }[]
+  ): Promise<{ sent: number; failed: number; results: { phone: string; success: boolean; error?: string }[] }> {
+    const providers = await this.getActiveProviders();
+
+    if (providers.length === 0) {
+      return {
+        sent: 0,
+        failed: messages.length,
+        results: messages.map(m => ({ phone: m.phone, success: false, error: 'No active WhatsApp providers' })),
+      };
+    }
+
+    const provider = providers[0];
+
+    if (provider.type === 'kirimi') {
+      return await this.sendBroadcastViaKirimi(provider, messages);
+    }
+
+    // Other providers: sequential (caller handles rate limiting)
+    let sent = 0;
+    let failed = 0;
+    const results: { phone: string; success: boolean; error?: string }[] = [];
+
+    for (const msg of messages) {
+      try {
+        await this.sendMessage({ phone: msg.phone, message: msg.message });
+        sent++;
+        results.push({ phone: msg.phone, success: true });
+      } catch (e: any) {
+        failed++;
+        results.push({ phone: msg.phone, success: false, error: e.message });
+      }
+    }
+
+    return { sent, failed, results };
+  }
+
+  /**
+   * Kirimi.id native broadcast API — groups messages by unique content so
+   * identical messages are sent in a single /v1/broadcast-message call.
+   */
+  private static async sendBroadcastViaKirimi(
+    provider: WhatsAppProvider,
+    messages: { phone: string; message: string }[]
+  ): Promise<{ sent: number; failed: number; results: { phone: string; success: boolean; error?: string }[] }> {
+    const [userCode, secret] = provider.apiKey.split(':');
+    if (!userCode || !secret) {
+      return {
+        sent: 0,
+        failed: messages.length,
+        results: messages.map(m => ({ phone: m.phone, success: false, error: 'Kirimi.id API Key harus format "user_code:secret"' })),
+      };
+    }
+    const deviceId = provider.senderNumber || '';
+    if (!deviceId) {
+      return {
+        sent: 0,
+        failed: messages.length,
+        results: messages.map(m => ({ phone: m.phone, success: false, error: 'Kirimi.id membutuhkan Device ID' })),
+      };
+    }
+
+    const baseUrl = provider.apiUrl.replace(/\/+$/, '');
+
+    // Group by unique message so one API call covers all recipients with the same text
+    const groupMap = new Map<string, { original: string; clean: string }[]>();
+    for (const msg of messages) {
+      const clean = this.cleanPhone(msg.phone);
+      const arr = groupMap.get(msg.message) ?? [];
+      arr.push({ original: msg.phone, clean });
+      groupMap.set(msg.message, arr);
+    }
+
+    let sent = 0;
+    let failed = 0;
+    const results: { phone: string; success: boolean; error?: string }[] = [];
+
+    for (const [message, group] of groupMap) {
+      const numbers = group.map(g => g.clean);
+      try {
+        const response = await fetch(`${baseUrl}/v1/broadcast-message`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_code: userCode,
+            secret,
+            device_id: deviceId,
+            label: `Broadcast-${Date.now()}`,
+            numbers,
+            message,
+            delay: 5,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          const errMsg = `Kirimi.id API error: ${response.status} - ${errorText}`;
+          for (const g of group) { failed++; results.push({ phone: g.original, success: false, error: errMsg }); }
+          continue;
+        }
+
+        const result = await response.json();
+        if (result.success === false) {
+          const errMsg = `Kirimi.id error: ${result.message || 'Broadcast failed'}`;
+          for (const g of group) { failed++; results.push({ phone: g.original, success: false, error: errMsg }); }
+        } else {
+          for (const g of group) { sent++; results.push({ phone: g.original, success: true }); }
+        }
+      } catch (e: any) {
+        for (const g of group) { failed++; results.push({ phone: g.original, success: false, error: e.message }); }
+      }
+    }
+
+    return { sent, failed, results };
+  }
+
+  /**
    * Send via specific provider based on type
    */
   private static async sendViaProvider(

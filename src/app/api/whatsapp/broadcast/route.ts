@@ -114,25 +114,7 @@ export async function POST(request: NextRequest) {
       if (messagesToSend.length > 0) {
         console.log(`[Broadcast] Sending WhatsApp to ${messagesToSend.length} users`);
 
-        const { sendWithRateLimit, estimateSendTime, formatEstimatedTime } = await import('@/lib/utils/rateLimiter');
-
-        const estimatedTime = estimateSendTime(messagesToSend.length);
-        console.log(`[Broadcast] Estimated time: ${formatEstimatedTime(estimatedTime)}`);
-
-        const waResult = await sendWithRateLimit(
-          messagesToSend,
-          async (msg) => {
-            const sendResult = await WhatsAppService.sendMessage({
-              phone: msg.phone,
-              message: msg.message,
-            });
-            return sendResult;
-          },
-          {},
-          (progress) => {
-            console.log(`[Broadcast] WA Progress: ${progress.current}/${progress.total}`);
-          }
-        );
+        const waResult = await WhatsAppService.sendBroadcast(messagesToSend);
 
         results.whatsapp.sent = waResult.sent;
         results.whatsapp.failed = waResult.failed;
