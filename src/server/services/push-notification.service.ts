@@ -619,3 +619,46 @@ export async function sendWebPushBroadcast(input: PushBroadcastInput) {
 export function getPublicVapidKey() {
   return getVapidPublicKey();
 }
+
+// ─── Per-role targeted send helpers ─────────────────────────────────────────
+
+/**
+ * Send web push to a specific technician by technicianId
+ */
+export async function sendWebPushToTechnician(
+  technicianId: string,
+  payload: PushNotificationPayload,
+): Promise<PushSendResult> {
+  const subscriptions = await prisma.technicianPushSubscription.findMany({
+    where: { technicianId, isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return sendToStoredSubscriptions(subscriptions, payload, 'technician');
+}
+
+/**
+ * Send web push to ALL active technicians
+ */
+export async function sendWebPushToAllTechnicians(
+  payload: PushNotificationPayload,
+): Promise<PushSendResult> {
+  const subscriptions = await prisma.technicianPushSubscription.findMany({
+    where: { isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return sendToStoredSubscriptions(subscriptions, payload, 'technician');
+}
+
+/**
+ * Send web push to a specific agent by agentId
+ */
+export async function sendWebPushToAgent(
+  agentId: string,
+  payload: PushNotificationPayload,
+): Promise<PushSendResult> {
+  const subscriptions = await prisma.agentPushSubscription.findMany({
+    where: { agentId, isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return sendToStoredSubscriptions(subscriptions, payload, 'agent');
+}

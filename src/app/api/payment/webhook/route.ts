@@ -1413,6 +1413,22 @@ async function handleInvoicePayment(
         }
 
         // ============================================
+        // SEND WEB PUSH / FCM TO CUSTOMER
+        // ============================================
+        try {
+          const { sendPushToUser } = await import('@/server/services/notifications/push-templates.service');
+          await sendPushToUser(user.id, 'payment-success', {
+            invoiceNumber: invoice.invoiceNumber,
+            amount: invoice.amount,
+            username: user.username,
+            expiredDate: finalExpiredAt ?? undefined,
+          });
+          console.log(`✅ Push notification (web/FCM) sent to customer ${user.username}`);
+        } catch (pushError) {
+          console.error('Push notification error:', pushError);
+        }
+
+        // ============================================
         // SEND EMAIL NOTIFICATION FOR PAYMENT SUCCESS
         // ============================================
         const customerEmail = invoice.customerEmail || user.email;

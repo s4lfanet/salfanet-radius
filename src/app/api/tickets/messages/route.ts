@@ -156,6 +156,57 @@ export async function POST(req: NextRequest) {
         ticket.subject,
         senderName
       );
+
+      // Also send web push to customer
+      if (ticket.customerId) {
+        try {
+          const { sendWebPushToUser } = await import('@/server/services/push-notification.service');
+          await sendWebPushToUser(ticket.customerId, {
+            title: '💬 Balasan Baru di Tiket Anda',
+            body: `${senderName}: ${message.substring(0, 100)}`,
+            url: '/customer/tickets',
+            tag: 'ticket-reply',
+          });
+        } catch { /* ignore */ }
+      }
+    }
+
+    // If customer sends a message, notify admin and assigned technician
+    if (!isInternal && senderType === 'CUSTOMER') {
+      try {
+        await prisma.notification.create({
+          data: {
+            type: 'ticket_reply',
+            title: 'Balasan Tiket dari Pelanggan',
+            message: `${senderName} membalas tiket #${ticket.ticketNumber}: "${message.substring(0, 80)}"`,
+            link: `/admin/tickets/${ticketId}`,
+          },
+        });
+      } catch { /* ignore */ }
+
+      // Push to assigned technician (if any)
+      if (ticket.assignedToId && ticket.assignedToType === 'TECHNICIAN') {
+        try {
+          const { sendWebPushToTechnician } = await import('@/server/services/push-notification.service');
+          await sendWebPushToTechnician(ticket.assignedToId, {
+            title: '💬 Balasan dari Pelanggan - Tiket #' + ticket.ticketNumber,
+            body: `${senderName}: ${message.substring(0, 100)}`,
+            url: '/technician/tickets',
+            tag: 'ticket-reply',
+          });
+        } catch { /* ignore */ }
+      } else {
+        // No assigned technician — push to all
+        try {
+          const { sendWebPushToAllTechnicians } = await import('@/server/services/push-notification.service');
+          await sendWebPushToAllTechnicians({
+            title: '💬 Balasan dari Pelanggan - Tiket #' + ticket.ticketNumber,
+            body: `${senderName}: ${message.substring(0, 100)}`,
+            url: '/technician/tickets',
+            tag: 'ticket-reply',
+          });
+        } catch { /* ignore */ }
+      }
     }
 
     return NextResponse.json(ticketMessage);

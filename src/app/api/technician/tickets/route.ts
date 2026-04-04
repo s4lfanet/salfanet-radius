@@ -118,6 +118,17 @@ export async function PATCH(req: NextRequest) {
         isInternal: false,
       },
     });
+    // Notify admin: technician claimed the ticket
+    try {
+      await prisma.notification.create({
+        data: {
+          type: 'ticket_claimed',
+          title: 'Tiket Diklaim Teknisi',
+          message: `${tech.name} mengambil tiket #${ticket.ticketNumber}: "${ticket.subject}"`,
+          link: `/admin/tickets/${ticketId}`,
+        },
+      });
+    } catch { /* ignore */ }
     return NextResponse.json({ ticket: updated });
   }
 
@@ -141,6 +152,18 @@ export async function PATCH(req: NextRequest) {
         isInternal: false,
       },
     });
+    // Notify customer if ticket is resolved/closed
+    if ((status === 'RESOLVED' || status === 'CLOSED') && ticket.customerId) {
+      try {
+        const { sendWebPushToUser } = await import('@/server/services/push-notification.service');
+        await sendWebPushToUser(ticket.customerId, {
+          title: status === 'RESOLVED' ? '✅ Tiket Diselesaikan' : '🔒 Tiket Ditutup',
+          body: `Tiket #${ticket.ticketNumber} "${ticket.subject}" telah ${status === 'RESOLVED' ? 'diselesaikan' : 'ditutup'} oleh teknisi.`,
+          url: '/customer/tickets',
+          tag: 'ticket-resolved',
+        });
+      } catch { /* ignore */ }
+    }
     return NextResponse.json({ ticket: updated });
   }
 
@@ -163,6 +186,18 @@ export async function PATCH(req: NextRequest) {
       where: { id: ticketId },
       data: { lastResponseAt: new Date() },
     });
+    // Send web push to customer
+    if (ticket.customerId) {
+      try {
+        const { sendWebPushToUser } = await import('@/server/services/push-notification.service');
+        await sendWebPushToUser(ticket.customerId, {
+          title: '💬 Balasan Baru di Tiket Anda',
+          body: `${tech.name}: ${message.trim().substring(0, 100)}`,
+          url: '/customer/tickets',
+          tag: 'ticket-reply',
+        });
+      } catch { /* ignore */ }
+    }
     return NextResponse.json({ message: msg });
   }
 

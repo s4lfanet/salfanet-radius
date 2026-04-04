@@ -266,6 +266,19 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Send web push to all technicians
+    try {
+      const { sendWebPushToAllTechnicians } = await import('@/server/services/push-notification.service');
+      await sendWebPushToAllTechnicians({
+        title: '🎫 Tiket Baru Masuk',
+        body: `${customerName}: "${subject}" (#${ticketNumber})`,
+        url: '/technician/tickets',
+        tag: 'new-ticket',
+      });
+    } catch (pushErr) {
+      console.error('[Ticket] Technician push error:', pushErr);
+    }
+
     return NextResponse.json(ticket);
   } catch (error) {
     console.error('Error creating ticket:', error);

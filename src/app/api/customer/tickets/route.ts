@@ -165,6 +165,33 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Admin DB notification (toast in admin panel)
+    try {
+      await prisma.notification.create({
+        data: {
+          type: 'new_ticket',
+          title: 'Tiket Baru dari Pelanggan',
+          message: `${user.name || 'Pelanggan'} membuat tiket: "${subject}" (#${ticketNumber})`,
+          link: `/admin/tickets/${ticket.id}`,
+        },
+      });
+    } catch (notifErr) {
+      console.error('[Ticket] Admin notification error:', notifErr);
+    }
+
+    // Web push to all technicians
+    try {
+      const { sendWebPushToAllTechnicians } = await import('@/server/services/push-notification.service');
+      await sendWebPushToAllTechnicians({
+        title: '🎫 Tiket Baru dari Pelanggan',
+        body: `${user.name || 'Pelanggan'}: "${subject}" (#${ticketNumber})`,
+        url: '/technician/tickets',
+        tag: 'new-ticket',
+      });
+    } catch (pushErr) {
+      console.error('[Ticket] Technician push error:', pushErr);
+    }
+
     return NextResponse.json(ticket, { status: 201 });
   } catch (error) {
     console.error('Error creating customer ticket:', error);

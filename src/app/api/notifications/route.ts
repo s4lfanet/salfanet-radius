@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return unauthorized();
   try {
     const { notificationIds, markAll } = await request.json();
 
@@ -82,6 +84,8 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return unauthorized();
   try {
     const { searchParams } = request.nextUrl;
     const id = searchParams.get('id');

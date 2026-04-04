@@ -103,6 +103,33 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    // Admin DB notification
+    try {
+      await prisma.notification.create({
+        data: {
+          type: 'new_ticket',
+          title: 'Tiket Baru dari Agent',
+          message: `${agent.name} membuat tiket: "${subject.trim()}" (#${ticketNumber})`,
+          link: `/admin/tickets/${ticket.id}`,
+        },
+      });
+    } catch (notifErr) {
+      console.error('[AgentTicket] Admin notification error:', notifErr);
+    }
+
+    // Web push to all technicians
+    try {
+      const { sendWebPushToAllTechnicians } = await import('@/server/services/push-notification.service');
+      await sendWebPushToAllTechnicians({
+        title: '🎫 Tiket Baru dari Agent',
+        body: `${agent.name}: "${subject.trim()}" (#${ticketNumber})`,
+        url: '/technician/tickets',
+        tag: 'new-ticket',
+      });
+    } catch (pushErr) {
+      console.error('[AgentTicket] Technician push error:', pushErr);
+    }
+
     return NextResponse.json({ success: true, ticket });
   } catch (error) {
     console.error('Agent POST tickets error:', error);
