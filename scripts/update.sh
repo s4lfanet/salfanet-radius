@@ -61,6 +61,20 @@ git diff --name-only "$PREV_COMMIT" "$NEW_COMMIT" 2>/dev/null | while read f; do
 done
 CHANGED=$(git diff --name-only "$PREV_COMMIT" "$NEW_COMMIT" 2>/dev/null || echo "")
 
+# ── Ensure system dependencies (sshpass, xl2tpd) ─────────
+echo ""
+log "Checking system dependencies..."
+MISSING_PKGS=""
+for pkg in sshpass xl2tpd; do
+  dpkg -s "$pkg" &>/dev/null || MISSING_PKGS="$MISSING_PKGS $pkg"
+done
+if [ -n "$MISSING_PKGS" ]; then
+  log "Installing missing packages:$MISSING_PKGS"
+  apt-get install -y $MISSING_PKGS 2>&1 | tail -5 || log "Warning: could not install$MISSING_PKGS"
+else
+  ok "sshpass and xl2tpd already installed"
+fi
+
 # ── Apply code ────────────────────────────────────────────
 echo ""
 log "Applying code update..."
