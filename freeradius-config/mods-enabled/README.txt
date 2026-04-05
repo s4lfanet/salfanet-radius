@@ -5,7 +5,7 @@
 # akan langsung berpengaruh — tapi karena ini standalone, harus di-copy ulang jika berubah.
 #
 # Deploy SQL module ke VPS:
-#   pscp -pw "Seven789@" freeradius-config/mods-enabled/sql root@103.151.140.110:/etc/freeradius/3.0/mods-enabled/sql
+#   pscp -pw "<ROOT_PASSWORD>" freeradius-config/mods-enabled/sql root@<VPS_IP>:/etc/freeradius/3.0/mods-enabled/sql
 #
 # mods-enabled/rest adalah SYMLINK ke mods-available/rest (dibuat installer):
 #   ln -sf /etc/freeradius/3.0/mods-available/rest /etc/freeradius/3.0/mods-enabled/rest
@@ -15,4 +15,4 @@
 #   ln -sf /etc/freeradius/3.0/mods-available/rest /etc/freeradius/3.0/mods-enabled/rest
 #
 # Setelah deploy, reload FreeRADIUS:
-#   plink -pw "Seven789@" root@103.151.140.110 "systemctl reload freeradius"
+#   plink -pw "<ROOT_PASSWORD>" root@<VPS_IP> "systemctl reload freeradius"

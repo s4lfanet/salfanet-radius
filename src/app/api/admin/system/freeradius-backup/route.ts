@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
 import { openSync, closeSync, existsSync, readFileSync } from 'fs';
 import path from 'path';
 
@@ -44,13 +44,13 @@ export async function POST() {
       stdio: ['ignore', logFd, logFd],
       cwd: appDir,
       env: {
-        PATH: process.env.PATH,
+        ...process.env,
         HOME: process.env.HOME || '/root',
         USER: process.env.USER || 'root',
         SHELL: '/bin/bash',
         SALFANET_APP_DIR: appDir,
       },
-    });
+    }) as ChildProcess;
 
     closeSync(logFd);
     child.unref();

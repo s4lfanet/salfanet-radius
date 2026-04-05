@@ -16,7 +16,7 @@
 # JANGAN hanya upload ke sites-available/ karena tidak akan berpengaruh.
 #
 # Deploy command:
-#   pscp -pw "Seven789@" freeradius-config/sites-enabled/default root@103.151.140.110:/etc/freeradius/3.0/sites-enabled/default
+#   pscp -pw "<ROOT_PASSWORD>" freeradius-config/sites-enabled/default root@<VPS_IP>:/etc/freeradius/3.0/sites-enabled/default
 #
 # Setelah upload, restart FreeRADIUS:
-#   plink -pw "Seven789@" root@103.151.140.110 "bash -c 'systemctl restart freeradius'"
+#   plink -pw "<ROOT_PASSWORD>" root@<VPS_IP> "bash -c 'systemctl restart freeradius'"

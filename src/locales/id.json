@@ -420,6 +420,7 @@
     "radTest": "RadTest",
     "radCheck": "RadCheck",
     "radiusLogs": "Log Langsung",
+    "radiusBackup": "Backup ke GitHub",
     "catReports": "Laporan",
     "laporan": "Laporan & Analitik",
     "laporanData": "Export Data",
