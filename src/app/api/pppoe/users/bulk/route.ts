@@ -231,6 +231,7 @@ export async function POST(request: NextRequest) {
       'no': '_no',
       'customerid': 'customerid',
       'id pelanggan': 'customerid',
+      'id pelanggan (kosongkan = auto)': 'customerid',
       'customer id': 'customerid',
       'profile': 'profilename',
       'status': '_status',
