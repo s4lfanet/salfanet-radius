@@ -947,21 +947,18 @@ async function handleCustomerTopUp(
 
   console.log(`[Customer Top-Up] Found invoice: ${invoice.invoiceNumber}, User: ${invoice.user?.username}`);
 
-  // Only process if current status is not PAID
-  if (invoice.status === 'PAID') {
-    console.log(`[Customer Top-Up] Invoice ${invoiceNumber} already PAID, skipping`);
-    return;
-  }
-
   if (status === 'settlement' || status === 'capture') {
-    // Update invoice to PAID
-    await prisma.invoice.update({
-      where: { id: invoice.id },
-      data: {
-        status: 'PAID',
-        paidAt: paidAt || new Date()
-      }
+    // ─── ATOMIC IDEMPOTENCY GUARD ─────────────────────────────────────────────
+    // Only ONE concurrent request will get count > 0; others skip silently.
+    const markPaid = await prisma.invoice.updateMany({
+      where: { id: invoice.id, status: { not: 'PAID' } },
+      data: { status: 'PAID', paidAt: paidAt || new Date() },
     });
+
+    if (markPaid.count === 0) {
+      console.log(`[Customer Top-Up] ⏭️  Invoice ${invoice.invoiceNumber} already PAID — skipping duplicate notification`);
+      return;
+    }
 
     console.log(`[Customer Top-Up] ✅ Invoice ${invoice.invoiceNumber} marked as PAID`);
 
@@ -1205,15 +1202,20 @@ async function handleInvoicePayment(
       throw new Error('AMOUNT_MISMATCH');
     }
 
-    if (invoice.status !== 'PAID') {
-      // Update invoice to PAID
-      await prisma.invoice.update({
-        where: { id: invoice.id },
-        data: {
-          status: 'PAID',
-          paidAt: paidAt || new Date()
-        }
-      });
+    // ─── ATOMIC IDEMPOTENCY GUARD ────────────────────────────────────────────
+    // Use updateMany with status condition so only ONE concurrent request wins.
+    // If count === 0 the invoice was already PAID by a previous webhook → skip.
+    const markPaid = await prisma.invoice.updateMany({
+      where: { id: invoice.id, status: { not: 'PAID' } },
+      data: { status: 'PAID', paidAt: paidAt || new Date() },
+    });
+
+    if (markPaid.count === 0) {
+      console.log(`[Webhook] ⏭️  Invoice ${invoice.invoiceNumber} already PAID — skipping duplicate notification`);
+      return;
+    }
+
+    console.log(`✅ Invoice ${invoice.invoiceNumber} marked as PAID`);
 
       // Check if payment already exists (idempotency)
       const existingPayment = await prisma.payment.findFirst({
@@ -1651,7 +1653,6 @@ async function handleInvoicePayment(
           }
         }
       }
-    }
   } else if (['expire', 'cancel', 'deny', 'failed'].includes(status)) {
     if (invoice.status !== 'PAID' && invoice.status !== 'CANCELLED') {
       await prisma.invoice.update({

@@ -260,23 +260,42 @@ export async function PUT(request: NextRequest) {
       updateData.paidAt = new Date(paidAt);
     }
 
-    // Update invoice
-    const invoice = await prisma.invoice.update({
-      where: { id },
-      data: updateData,
-      include: {
-        user: {
-          select: {
-            name: true,
-            phone: true,
-            email: true,
+    // Update invoice — for PAID use atomic updateMany so only ONE concurrent request
+    // proceeds with side-effects (WA, RADIUS, Keuangan sync).
+    let invoice;
+    let paidUpdateCount = 0;
+
+    if (status === 'PAID') {
+      paidUpdateCount = (
+        await prisma.invoice.updateMany({
+          where: { id, status: { not: 'PAID' } },
+          data: updateData,
+        })
+      ).count;
+      // Re-fetch so the response contains the current state
+      invoice = await prisma.invoice.findUnique({
+        where: { id },
+        include: { user: { select: { name: true, phone: true, email: true } } },
+      });
+      if (!invoice) return notFound('Invoice');
+    } else {
+      invoice = await prisma.invoice.update({
+        where: { id },
+        data: updateData,
+        include: {
+          user: {
+            select: {
+              name: true,
+              phone: true,
+              email: true,
+            },
           },
         },
-      },
-    });
+      });
+    }
 
-    // If marking as PAID, extend user's expiredAt based on profile validity
-    if (status === 'PAID' && existingInvoice.status !== 'PAID') {
+    // If marking as PAID and this request was the one that actually changed the status
+    if (status === 'PAID' && paidUpdateCount > 0) {
       const user = existingInvoice.user;
 
       if (!user) {
