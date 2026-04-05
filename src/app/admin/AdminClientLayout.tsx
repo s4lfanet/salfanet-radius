@@ -1109,11 +1109,11 @@ function AppVersionBadge() {
   return (
     <Link
       href="/admin/system"
-      className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg bg-card/50 hover:bg-primary/10 border border-border/50 hover:border-cyan-500/30 group transition-all duration-200"
+      className="flex items-center justify-between w-full px-2.5 py-1.5 rounded-lg bg-sidebar-accent/50 hover:bg-sidebar-accent border border-sidebar-border/50 hover:border-sidebar-border group transition-all duration-200"
     >
       <div className="flex items-center gap-1.5">
-        <GitBranch className="w-3 h-3 text-muted-foreground group-hover:text-cyan-400 transition-colors" />
-        <span className="text-[10px] font-mono text-muted-foreground group-hover:text-foreground transition-colors">
+        <GitBranch className="w-3 h-3 text-sidebar-foreground/60 group-hover:text-sidebar-primary transition-colors" />
+        <span className="text-[10px] font-mono text-sidebar-foreground/70 group-hover:text-sidebar-foreground transition-colors">
           v{info.version} · {info.commit}
         </span>
       </div>

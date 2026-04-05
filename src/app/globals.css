@@ -202,7 +202,7 @@
   --info: #2563eb;
   --info-foreground: #ffffff;
 
-  --border: #e2e8f0;
+  --border: #cbd5e1;              /* slate-300 — more visible card/layout lines */
   --input: #ffffff;               /* white inputs on slate-50 bg */
   --ring: #4f46e5;                /* indigo focus ring */
 
@@ -331,6 +331,7 @@ html.theme-transitioning *::after {
 :root:not(.dark) [class*="bg-card/"] {
   background-color: #ffffff !important;
   border-color: var(--border) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(203, 213, 225, 0.5);
 }
 
 /* Admin login 2FA input — always stays dark regardless of theme */

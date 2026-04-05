@@ -33,7 +33,7 @@ function formatUptime(seconds: number): string {
 function InfoCard({ icon, label, value, className }: { icon: React.ReactNode; label: string; value: string; className?: string }) {
   return (
     <div className={cn('flex items-center gap-3 p-3 rounded-xl bg-card/50 border border-border/50', className)}>
-      <div className="p-2 rounded-lg bg-primary/10 text-cyan-400 flex-shrink-0">{icon}</div>
+      <div className="p-2 rounded-lg bg-primary/10 text-primary dark:text-cyan-400 flex-shrink-0">{icon}</div>
       <div className="min-w-0">
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest">{label}</p>
         <p className="text-sm font-bold text-foreground truncate font-mono">{value}</p>
@@ -212,7 +212,7 @@ export default function SystemUpdatePage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-pink-400 tracking-wider">
+          <h1 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-700 to-violet-600 dark:from-cyan-400 dark:to-pink-400 tracking-wider">
             {t('system.title')}
           </h1>
           <p className="text-xs text-muted-foreground mt-1">{t('system.subtitle')}</p>
@@ -344,12 +344,12 @@ export default function SystemUpdatePage() {
 
       {/* Live Log */}
       {(showLog || updating) && (
-        <div className="rounded-xl border border-cyan-500/20 bg-black/80 overflow-hidden">
+        <div className="rounded-xl border border-border bg-black/80 overflow-hidden">
           <div
-            className="flex items-center justify-between px-4 py-2 bg-card/50 border-b border-cyan-500/20 cursor-pointer"
+            className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/10 cursor-pointer"
             onClick={() => setShowLog(v => !v)}
           >
-            <div className="flex items-center gap-2 text-xs font-bold text-cyan-400">
+            <div className="flex items-center gap-2 text-xs font-bold text-[#22d3ee]">
               <Terminal className="w-3.5 h-3.5" />
               {t('system.updateLog')}
               {updating && (
@@ -359,7 +359,7 @@ export default function SystemUpdatePage() {
                 </span>
               )}
             </div>
-            {showLog ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+            {showLog ? <ChevronUp className="w-4 h-4 text-white/50" /> : <ChevronDown className="w-4 h-4 text-white/50" />}
           </div>
           {showLog && (
             <pre
