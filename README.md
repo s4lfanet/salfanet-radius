@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.13.1 — Fix Wablas send endpoint (GET v1), fix Kirimi.id broadcast native API, webhook pesan masuk, per-provider error detail (Apr 2026)
+> **Latest:** v2.13.2 — Redesign UI Modern Clean Blue/Indigo, VPN Client IP manual input fix, update.sh static copy hardening (Apr 2026)
 
 ---
 

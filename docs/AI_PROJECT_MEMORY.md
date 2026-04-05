@@ -9,12 +9,30 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.13.1
+- **Version**: 2.13.2
 - **Status**: Production-ready, deployed di VPS
 - **Last Updated**: April 5, 2026
-- **Latest Commit**: `e8bdf6b`
+- **Latest Commit**: `7c85dd3`
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.yourdomain.com
+
+### Recent Patch Log (April 2026 — UI Redesign, VPN Fix, Deploy Hardening)
+
+- **Redesign UI: Modern Clean Blue/Indigo theme** (`6ec9783`, April 5, 2026)
+  - Seluruh halaman login (admin, technician, customer, agent/`agent/page.tsx`) didesain ulang dari cyberpunk/neon ke tampilan modern bersih.
+  - `globals.css`: CSS variables diperbarui — dark mode navy bg + blue primary; light mode blue-600 primary; dark mode neon remap dihapus.
+  - `CyberButton.tsx`: semua warna neon (cyan/pink/yellow/green) → blue/indigo/emerald palette.
+  - **Files**: `globals.css`, `admin/login/page.tsx`, `technician/login/page.tsx`, `customer/login/page.tsx`, `agent/page.tsx`, `CyberButton.tsx`
+
+- **Fix: VPN Client — VPS IP field hanya manual** (`910cddd`, `5049e02`, April 5, 2026)
+  - Auto-fill VPS IP sekarang skip domain name (Cloudflare-proxied): regex check `/^\d+\.\d+\.\d+\.\d+$/`.
+  - VPS IP di halaman VPN Client menjadi input manual penuh — tidak lagi menarik domain dari API `/api/network/vps-info`.
+  - **Files**: `src/app/api/network/vps-info/route.ts`, `src/app/admin/network/vpn-client/page.tsx`
+
+- **Fix: `scripts/update.sh` — hardening static copy** (`7c85dd3`, April 5, 2026)
+  - Sebelumnya `cp -r .next/static .next/standalone/.next/static 2>/dev/null || true` — kegagalan copy diabaikan.
+  - Sekarang: `mkdir -p .next/standalone/.next/static && cp -r .next/static/. .next/standalone/.next/static/ || err "..."` — abort jika gagal, tidak ada nesting bug.
+  - **Why it matters**: jika static copy gagal lalu pm2 reload jalan, app bisa serve halaman tanpa CSS/JS.
 
 ### Recent Patch Log (April 2026 — WhatsApp Wablas, Kirimi.id & Broadcast)
 
