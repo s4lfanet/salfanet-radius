@@ -302,34 +302,34 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-20 bg-gradient-to-r from-[#0b1120] via-[#0f172a] to-cyan-600 shadow-[0_6px_30px_rgba(6,182,212,0.45)] backdrop-blur-xl border-b border-cyan-500/20">
+        <header className="lg:hidden sticky top-0 z-20 bg-white/95 dark:bg-gradient-to-r dark:from-[#0b1120] dark:via-[#0f172a] dark:to-cyan-600 shadow-sm dark:shadow-[0_6px_30px_rgba(6,182,212,0.45)] backdrop-blur-xl border-b border-slate-200 dark:border-cyan-500/20">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-white/10 rounded-xl transition"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-white/10 rounded-xl transition"
               >
-                <Menu className="w-5 h-5 text-white" />
+                <Menu className="w-5 h-5 text-slate-700 dark:text-white" />
               </button>
               <div>
-                <h1 className="text-base font-bold text-white">{t('agent.portal.title')}</h1>
-                <p className="text-[10px] text-white/70">{agent?.name}</p>
+                <h1 className="text-base font-bold text-slate-900 dark:text-white">{t('agent.portal.title')}</h1>
+                <p className="text-[10px] text-slate-500 dark:text-white/70">{agent?.name}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition border border-white/20 flex items-center justify-center"
+                className="p-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-xl transition border border-slate-200 dark:border-white/20 flex items-center justify-center"
               >
-                {isDark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-white" />}
+                {isDark ? <Sun className="w-4 h-4 text-yellow-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
               </button>
               {agent && <AgentNotificationDropdown agentId={agent.id} enableToasts={false} />}
               <button
                 onClick={handleLogout}
-                className="p-2 bg-white/10 hover:bg-white/20 rounded-xl transition border border-white/20 flex items-center justify-center"
+                className="p-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 rounded-xl transition border border-slate-200 dark:border-white/20 flex items-center justify-center"
               >
-                <LogOut className="w-4 h-4 text-white" />
+                <LogOut className="w-4 h-4 text-slate-700 dark:text-white" />
               </button>
             </div>
           </div>
