@@ -26,8 +26,10 @@ export async function GET() {
     try {
       const url = new URL(process.env.NEXTAUTH_URL);
       const host = url.hostname;
-      // Only use if it looks like a public IP or hostname (not localhost/127.x)
-      if (host && host !== 'localhost' && !host.startsWith('127.')) {
+      // Only use if it is a bare IP address (not a domain) to avoid returning
+      // Cloudflare proxy addresses when the domain is proxied via CDN.
+      const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(host);
+      if (isIpAddress && host !== 'localhost' && !host.startsWith('127.')) {
         vpsIp = host;
       }
     } catch { /* ignore malformed URL */ }
