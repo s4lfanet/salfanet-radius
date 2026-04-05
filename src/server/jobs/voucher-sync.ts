@@ -1125,6 +1125,7 @@ export async function autoIsolateExpiredUsers(): Promise<{ success: boolean; iso
     // Find users to isolate:
     // 1. PREPAID: expired (expiredAt < today) AND no successful auto-renewal
     // 2. POSTPAID: expired (expiredAt < today) AND has OVERDUE invoice
+    // In both cases: only isolate if autoIsolationEnabled = true
 
     // A. Find PREPAID users that are expired
     // Exclude users with successful auto-renewal (check if they have recent paid invoice)
@@ -1132,6 +1133,7 @@ export async function autoIsolateExpiredUsers(): Promise<{ success: boolean; iso
       where: {
         status: 'active',
         subscriptionType: 'PREPAID',
+        autoIsolationEnabled: true,
         expiredAt: {
           lt: startOfTodayWIB, // expired before start of today (WIB)
         },
@@ -1167,6 +1169,7 @@ export async function autoIsolateExpiredUsers(): Promise<{ success: boolean; iso
       where: {
         status: 'active',
         subscriptionType: 'POSTPAID',
+        autoIsolationEnabled: true,
         expiredAt: {
           lt: startOfTodayWIB, // expired before start of today (WIB)
         },

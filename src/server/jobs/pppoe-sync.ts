@@ -248,6 +248,7 @@ export async function autoIsolatePPPoEUsers(): Promise<{
       FROM pppoe_users
       WHERE status = 'active'
         AND expiredAt < DATE_SUB(CURDATE(), INTERVAL ${gracePeriodDays} DAY)
+        AND autoIsolationEnabled = true
     `
 
     if (expiredUsers.length === 0) {

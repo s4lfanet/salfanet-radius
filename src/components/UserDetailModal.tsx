@@ -26,6 +26,7 @@ interface User {
   billingDay?: number | null;
   balance?: number;
   autoRenewal?: boolean;
+  autoIsolationEnabled?: boolean;
   macAddress?: string | null;
   comment?: string | null;
   idCardNumber?: string | null;
@@ -121,6 +122,7 @@ export default function UserDetailModal({
     idCardNumber: '',
     idCardPhoto: '',
     installationPhotos: [] as string[],
+    autoIsolationEnabled: true,
   });
 
   useEffect(() => {
@@ -146,6 +148,7 @@ export default function UserDetailModal({
         idCardNumber: user.idCardNumber || '',
         idCardPhoto: user.idCardPhoto || '',
         installationPhotos: user.installationPhotos || [],
+        autoIsolationEnabled: user.autoIsolationEnabled !== false,
       });
     }
   }, [user]);
@@ -605,6 +608,22 @@ export default function UserDetailModal({
                     placeholder="Catatan tambahan..."
                     className={inputCls}
                   />
+                </div>
+
+                {/* Aksi Jatuh Tempo */}
+                <div className="col-span-2">
+                  <label className={labelCls}>⚡ Aksi Jatuh Tempo</label>
+                  <select
+                    value={formData.autoIsolationEnabled ? 'isolate' : 'keep'}
+                    onChange={(e) => setFormData({ ...formData, autoIsolationEnabled: e.target.value === 'isolate' })}
+                    className={selectCls}
+                  >
+                    <option value="isolate">ISOLIR INTERNET (Suspend) — isolir otomatis saat expired</option>
+                    <option value="keep">TETAP TERHUBUNG (No Action) — tidak isolir meski expired</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
+                    Pilih tindakan otomatis saat tanggal tagihan / expired terlewati.
+                  </p>
                 </div>
               </div>
 

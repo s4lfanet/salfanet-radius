@@ -60,6 +60,7 @@ export interface UpdatePppoeUserInput {
   subscriptionType?: string;
   billingDay?: string | number;
   autoRenewal?: boolean;
+  autoIsolationEnabled?: boolean;
   idCardNumber?: string | null;
   idCardPhoto?: string | null;
   installationPhotos?: unknown;
@@ -413,6 +414,7 @@ export async function updatePppoeUser(
         return { expiredAt: new Date(expStr) };
       })()),
       ...(data.autoRenewal !== undefined && { autoRenewal: data.autoRenewal }),
+      ...(data.autoIsolationEnabled !== undefined && { autoIsolationEnabled: data.autoIsolationEnabled }),
       ...(data.idCardNumber !== undefined && { idCardNumber: data.idCardNumber }),
       ...(data.idCardPhoto !== undefined && { idCardPhoto: data.idCardPhoto }),
       ...(data.installationPhotos !== undefined && { installationPhotos: data.installationPhotos }),

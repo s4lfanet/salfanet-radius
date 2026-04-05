@@ -35,6 +35,7 @@ export async function GET(request: NextRequest) {
           billingDay: '1',
           latitude: '-6.200000',
           longitude: '106.816666',
+          autoIsolationEnabled: 'true',
         },
         {
           username: 'user002',
@@ -50,6 +51,7 @@ export async function GET(request: NextRequest) {
           billingDay: '',
           latitude: '',
           longitude: '',
+          autoIsolationEnabled: 'true',
         },
       ];
 
@@ -68,6 +70,7 @@ export async function GET(request: NextRequest) {
           { key: 'billingDay', header: 'Hari Tagihan (1-31)', width: 20 },
           { key: 'latitude', header: 'Latitude', width: 14 },
           { key: 'longitude', header: 'Longitude', width: 14 },
+          { key: 'autoIsolationEnabled', header: 'Auto Isolasi (true/false)', width: 22 },
         ];
         const buffer = await generateExcelBuffer(sampleData as any, columns, 'PPPoE Template');
         return new NextResponse(Buffer.from(buffer), {
@@ -282,6 +285,13 @@ export async function POST(request: NextRequest) {
       'longitude': 'longitude',
       'comment': 'comment',
       'komentar': 'comment',
+      'macaddress': 'macaddress',
+      'mac address': 'macaddress',
+      'mac': 'macaddress',
+      'auto isolasi (true/false)': 'autoisolation',
+      'auto isolasi': 'autoisolation',
+      'aksi jatuh tempo': 'autoisolation',
+      'autoisolationenabled': 'autoisolation',
       // Indonesian labels (from template)
       'username *': 'username',
       'password *': 'password',
@@ -313,6 +323,7 @@ export async function POST(request: NextRequest) {
       'status': '_status',
       'router': '_router',
       'created': '_created',
+      'createdat': '_createdat',
     };
     headers = headers.map(h => headerNormalizeMap[h] ?? h);
 
@@ -416,10 +427,32 @@ export async function POST(request: NextRequest) {
 
         // Area lookup by name
         if (rowData.area && rowData.area.trim() !== '') {
-          const areaRec = await (prisma as any).area.findFirst({
+          const areaRec = await prisma.pppoeArea.findFirst({
             where: { name: { contains: rowData.area.trim() } }
           });
           if (areaRec) userData.areaId = areaRec.id;
+        }
+
+        // Optional fields
+        if (rowData.comment && rowData.comment.trim() !== '') {
+          userData.comment = rowData.comment.trim();
+        }
+        if (rowData.macaddress && rowData.macaddress.trim() !== '') {
+          userData.macAddress = rowData.macaddress.trim();
+        }
+        if (rowData.autoisolation !== undefined && rowData.autoisolation !== '') {
+          userData.autoIsolationEnabled = rowData.autoisolation.toLowerCase() !== 'false' && rowData.autoisolation !== '0';
+        }
+
+        // Optional fields from template/export
+        if (rowData.comment && rowData.comment.trim() !== '') {
+          userData.comment = rowData.comment.trim();
+        }
+        if (rowData.macaddress && rowData.macaddress.trim() !== '') {
+          userData.macAddress = rowData.macaddress.trim();
+        }
+        if (rowData.autoisolation !== undefined && rowData.autoisolation !== '') {
+          userData.autoIsolationEnabled = rowData.autoisolation.toLowerCase() !== 'false' && rowData.autoisolation !== '0';
         }
 
         // Generate unique referral code for new user

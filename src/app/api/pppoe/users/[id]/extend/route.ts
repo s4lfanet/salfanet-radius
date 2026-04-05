@@ -99,10 +99,17 @@ export async function POST(
         `;
       }
 
-      // Send CoA disconnect so user immediately reconnects with the restored profile
-      const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
-      const coaResult = await disconnectPPPoEUser(user.username);
-      console.log(`[Extend] RADIUS restored + CoA disconnect for ${user.username}:`, coaResult);
+      // Only send CoA disconnect if the user was previously isolated — they need to
+      // re-authenticate to get the normal (non-isolir) profile.
+      // If the user is already ACTIVE, do NOT disconnect (avoid interrupting live sessions).
+      const wasIsolated = user.status === 'isolated';
+      if (wasIsolated) {
+        const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
+        const coaResult = await disconnectPPPoEUser(user.username);
+        console.log(`[Extend] RADIUS restored + CoA disconnect for ${user.username} (was isolated):`, coaResult);
+      } else {
+        console.log(`[Extend] RADIUS group/IP updated for ${user.username} (was active — session kept, no disconnect)`);
+      }
     } catch (radiusError: any) {
       console.error('[Extend] RADIUS restore error (non-fatal):', radiusError?.message);
     }
