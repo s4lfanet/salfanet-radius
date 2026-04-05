@@ -49,7 +49,9 @@ export async function GET(
             area: { select: { name: true } },
             profile: { select: { name: true, price: true } }
           }
-        }
+        },
+        payments: { select: { method: true }, take: 1 },
+        manualPayments: { select: { id: true, status: true }, where: { status: 'APPROVED' }, take: 1 },
       }
     });
 
@@ -86,6 +88,14 @@ export async function GET(
         const raw = invoice.additionalFees as any;
         return (Array.isArray(raw) ? raw : JSON.parse(raw)) as Array<{ name: string; amount: number }>;
       } catch { return []; }
+    })();
+
+    // Determine how the invoice was paid
+    const paidVia: 'gateway' | 'transfer' | 'admin' | null = (() => {
+      if (!invoice.paidAt) return null;
+      if ((invoice as any).payments?.length > 0) return 'gateway';
+      if ((invoice as any).manualPayments?.length > 0) return 'transfer';
+      return 'admin';
     })();
 
     // Prepare invoice data for PDF
@@ -133,7 +143,8 @@ export async function GET(
       subtotal: baseAmt,
       total: invoice.amount,
       amountFormatted: formatCurrencyExport(invoice.amount),
-      paymentLink: invoice.paymentLink
+      paymentLink: invoice.paymentLink,
+      paidVia,
     };
 
     return NextResponse.json({ success: true, data: invoiceData });

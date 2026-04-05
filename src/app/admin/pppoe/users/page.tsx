@@ -510,7 +510,7 @@ export default function PppoeUsersPage() {
         <div class="meta-card">
           <div class="section-title">Status Pembayaran</div>
           <div class="info-row"><span class="info-label">Status: </span><strong>${inv.invoice.status === 'PAID' ? '&#10003; LUNAS' : inv.invoice.status === 'OVERDUE' ? '&#9888; TERLAMBAT' : '&#9203; BELUM BAYAR'}</strong></div>
-          ${inv.invoice.paidAt ? `<div class="info-row"><span class="info-label">Dibayar pada: </span>${inv.invoice.paidAt}</div><div class="info-row"><span class="info-label">Via: </span>${inv.paymentLink ? 'Payment Gateway' : 'Manual'}</div>` : ''}
+          ${inv.invoice.paidAt ? `<div class="info-row"><span class="info-label">Dibayar pada: </span>${inv.invoice.paidAt}</div><div class="info-row"><span class="info-label">Via: </span>${inv.paidVia === 'gateway' ? 'Payment Gateway' : inv.paidVia === 'transfer' ? 'Transfer Manual' : 'Dikonfirmasi Admin'}</div>` : ''}
         </div>
       </div>
       <div class="section-title">Rincian Layanan</div>
@@ -559,7 +559,7 @@ export default function PppoeUsersPage() {
           </div>
         </div>
       ` : '')}
-      <div class="footer">Terima kasih atas kepercayaan Anda &mdash; ${inv.company.name}</div>
+      <div class="footer">Terima kasih atas kepercayaan Anda &mdash; ${inv.company.name}${inv.company.poweredBy ? `<br><span style="font-size:9px">Support by ${inv.company.poweredBy}</span>` : ''}</div>
       </div>
       </div>
       <div class="action-bar no-print">
@@ -635,11 +635,12 @@ export default function PppoeUsersPage() {
       ${inv.invoice.paidAt ? `
         <div class="dashed"></div>
         <div class="row"><span>Tgl Bayar</span><span>${inv.invoice.paidAt}</span></div>
-        <div class="row"><span>Metode</span><span>${inv.paymentLink ? 'Gateway' : 'Manual'}</span></div>
+        <div class="row"><span>Metode</span><span>${inv.paidVia === 'gateway' ? 'Gateway' : inv.paidVia === 'transfer' ? 'Transfer' : 'Admin'}</span></div>
         <div class="lunas-stamp">** LUNAS **</div>
       ` : `${inv.paymentLink ? `<div class="pay-box"><div class="center bold">Link Pembayaran</div><a class="pay-link" href="${inv.paymentLink}" target="_blank" rel="noopener noreferrer">${inv.paymentLink}</a></div>` : ''}${inv.company.bankAccounts && inv.company.bankAccounts.length > 0 ? `<div style="margin:6px 0"><div class="center bold">Transfer Manual</div>${inv.company.bankAccounts.map((ba: { bankName: string; accountNumber: string; accountName: string }) => `<div class="bank-box"><div class="bold">${ba.bankName}</div><div>${ba.accountNumber}</div><div class="sm">a/n ${ba.accountName}</div></div>`).join('')}</div>` : `<div class="center sm" style="margin:6px 0">Harap bayar sebelum jatuh tempo</div>`}`}
       <div class="dashed"></div>
       <div class="center sm" style="margin-top:4px">Terima kasih</div>
+      ${inv.company.poweredBy ? `<div class="center sm" style="margin-top:2px">Support by ${inv.company.poweredBy}</div>` : ''}
       </div>
       <div class="action-bar no-print">
         <button class="btn-print" onclick="window.print()">&#128438; Cetak</button>
