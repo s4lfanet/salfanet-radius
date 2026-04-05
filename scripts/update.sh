@@ -107,7 +107,8 @@ ok "Build completed"
 
 # ── Copy static assets to standalone ─────────────────────
 if [ -d ".next/static" ] && [ -d ".next/standalone" ]; then
-  cp -r .next/static .next/standalone/.next/static 2>/dev/null || true
+  mkdir -p .next/standalone/.next/static
+  cp -r .next/static/. .next/standalone/.next/static/ || err "Failed to copy static assets to standalone"
   ok "Static assets copied to standalone"
 fi
 
