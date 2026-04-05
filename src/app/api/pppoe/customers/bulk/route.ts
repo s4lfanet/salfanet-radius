@@ -13,6 +13,23 @@ function generateId(): string {
   return Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 }
 
+/**
+ * Resolve a customerId for a new pppoeCustomer:
+ * - If a non-empty value is provided and it's not already taken, use it.
+ * - Otherwise auto-generate a unique 8-digit ID.
+ */
+async function resolveCustomerId(provided: string): Promise<string> {
+  if (provided) {
+    const conflict = await (prisma as any).pppoeCustomer.findUnique({ where: { customerId: provided } });
+    if (!conflict) return provided;
+  }
+  let id = generateCustomerId();
+  while (await (prisma as any).pppoeCustomer.findUnique({ where: { customerId: id } })) {
+    id = generateCustomerId();
+  }
+  return id;
+}
+
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -27,6 +44,7 @@ export async function GET(request: NextRequest) {
 
     const sampleData = [
       {
+        customerId: '',
         name: 'Budi Santoso',
         phone: '08123456789',
         email: 'budi@example.com',
@@ -34,6 +52,7 @@ export async function GET(request: NextRequest) {
         idCardNumber: '3171234567890001',
       },
       {
+        customerId: '',
         name: 'Siti Rahayu',
         phone: '08987654321',
         email: '',
@@ -44,6 +63,7 @@ export async function GET(request: NextRequest) {
 
     if (format === 'xlsx') {
       const columns = [
+        { key: 'customerId', header: 'ID Customer (kosongkan = auto)', width: 28 },
         { key: 'name', header: 'Nama Lengkap *', width: 28 },
         { key: 'phone', header: 'No. HP *', width: 18 },
         { key: 'email', header: 'Email', width: 28 },
@@ -60,9 +80,9 @@ export async function GET(request: NextRequest) {
     }
 
     // CSV fallback
-    const csv = `Nama Lengkap *,No. HP *,Email,Alamat,No. KTP (16 digit)
-Budi Santoso,08123456789,budi@example.com,"Jl. Merdeka No. 10, Jakarta",3171234567890001
-Siti Rahayu,08987654321,,,`;
+    const csv = `ID Customer (kosongkan = auto),Nama Lengkap *,No. HP *,Email,Alamat,No. KTP (16 digit)
+,Budi Santoso,08123456789,budi@example.com,"Jl. Merdeka No. 10, Jakarta",3171234567890001
+,Siti Rahayu,08987654321,,,`;
 
     return new NextResponse(csv, {
       headers: {
@@ -157,6 +177,15 @@ export async function POST(request: NextRequest) {
       'no ktp': 'idcardnumber',
       'ktp': 'idcardnumber',
       'idcardnumber': 'idcardnumber',
+      'id customer': 'customerid',
+      'id pelanggan': 'customerid',
+      'customerid': 'customerid',
+      'customer id': 'customerid',
+      // Export columns to ignore (not importable)
+      'no': '_no',
+      'jumlah pppoe': '_pppoecount',
+      'status': '_status',
+      'terdaftar': '_createdat',
     };
     headers = headers.map((h) => headerMap[h] ?? h);
     rows = rows.map((row) => {
@@ -211,7 +240,7 @@ export async function POST(request: NextRequest) {
         await (prisma as any).pppoeCustomer.create({
           data: {
             id: generateId(),
-            customerId: generateCustomerId(),
+            customerId: await resolveCustomerId(row.customerid || ''),
             name: row.name,
             phone: row.phone,
             email: row.email || null,

@@ -88,6 +88,7 @@ export async function GET(req: NextRequest) {
     // Excel export
     const columns = [
       { key: 'no', header: 'No', width: 6 },
+      { key: 'customerId', header: 'ID Pelanggan', width: 14 },
       { key: 'username', header: 'Username', width: 20 },
       { key: 'name', header: 'Nama', width: 25 },
       { key: 'phone', header: 'Telepon', width: 15 },
@@ -110,6 +111,7 @@ export async function GET(req: NextRequest) {
 
     const data = users.map((u, idx) => ({
       no: idx + 1,
+      customerId: (u as any).customerId || '',
       username: u.username,
       name: u.name,
       phone: u.phone,

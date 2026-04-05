@@ -7,6 +7,10 @@ import { generateExcelBuffer } from '@/lib/utils/export';
 import ExcelJS from 'exceljs';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 
+function generateCustomerId(): string {
+  return Math.floor(10000000 + Math.random() * 90000000).toString();
+}
+
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -105,12 +109,13 @@ user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,, P
       });
 
       // Build CSV content with password
-      let csv = 'username,password,name,phone,email,address,ipAddress,status,profile,router,expiredAt,latitude,longitude,createdAt\n';
+      let csv = 'username,password,customerId,name,phone,email,address,ipAddress,status,profile,router,expiredAt,latitude,longitude,createdAt\n';
       
       users.forEach(user => {
         const row = [
           user.username,
           user.password, // Include plaintext password for backup/recovery
+          (user as any).customerId || '',
           user.name,
           user.phone,
           user.email || '',
@@ -221,6 +226,9 @@ export async function POST(request: NextRequest) {
       'wilayah': 'area',
       // Export columns: profile and router used for auto-resolution
       'no': '_no',
+      'customerid': 'customerid',
+      'id pelanggan': 'customerid',
+      'customer id': 'customerid',
       'profile': 'profilename',
       'status': '_status',
       'router': 'routername',
@@ -458,6 +466,20 @@ export async function POST(request: NextRequest) {
 
         // Generate unique referral code for new user
         userData.referralCode = await generateUniqueReferralCode();
+
+        // Resolve customerId: use from file if provided, otherwise auto-generate unique 8-digit ID
+        const fileCustomerId = rowData.customerid?.trim() || '';
+        if (fileCustomerId) {
+          // Verify uniqueness of the provided customerId
+          const custIdConflict = await prisma.pppoeUser.findUnique({ where: { customerId: fileCustomerId } });
+          userData.customerId = custIdConflict ? generateCustomerId() : fileCustomerId;
+        } else {
+          userData.customerId = generateCustomerId();
+        }
+        // Ensure uniqueness (re-generate on collision)
+        while (await prisma.pppoeUser.findUnique({ where: { customerId: userData.customerId } })) {
+          userData.customerId = generateCustomerId();
+        }
 
         const newUser = await prisma.pppoeUser.create({
           data: userData,
