@@ -285,8 +285,6 @@ export async function POST(request: NextRequest) {
       'longitude': 'longitude',
       'comment': 'comment',
       'komentar': 'comment',
-      'macaddress': 'macaddress',
-      'mac address': 'macaddress',
       'mac': 'macaddress',
       'auto isolasi (true/false)': 'autoisolation',
       'auto isolasi': 'autoisolation',
