@@ -23,12 +23,15 @@ import {
   User,
   Bell,
   Cpu,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
+import { formatInTimeZone } from 'date-fns-tz';
+import { id as localeId } from 'date-fns/locale';
 
 interface TechnicianData {
   id: string;
@@ -302,6 +305,14 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
   const [tech, setTech] = useState<TechnicianData | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
+
+  // Live clock
+  useEffect(() => {
+    setNow(new Date());
+    const tick = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   useEffect(() => {
     registerGlobalToast(addToast);
@@ -396,6 +407,15 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-slate-500 dark:text-slate-400">{tech?.name || ''}</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Live datetime */}
+              {now && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-cyan-500/10 border border-slate-200 dark:border-cyan-500/20 text-slate-600 dark:text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-cyan-400/70 flex-shrink-0" />
+                  <span className="text-xs tabular-nums">
+                    {formatInTimeZone(now, 'Asia/Jakarta', 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })}
+                  </span>
+                </div>
+              )}
               <button
                 onClick={toggleTheme}
                 className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-100 dark:bg-cyan-500/10 hover:bg-slate-200 dark:hover:bg-cyan-500/20 border border-slate-200 dark:border-cyan-500/30 transition-all"

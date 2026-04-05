@@ -14,6 +14,7 @@ import {
   Sun,
   Moon,
   LifeBuoy,
+  Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AgentNotificationDropdown from '@/components/agent/NotificationDropdown';
@@ -21,6 +22,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
+import { formatInTimeZone } from 'date-fns-tz';
+import { id as localeId } from 'date-fns/locale';
 
 interface MenuItem {
   titleKey: string;
@@ -187,8 +190,16 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [agent, setAgent] = useState<AgentData | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
+
+  // Live clock
+  useEffect(() => {
+    setNow(new Date());
+    const tick = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   // Check if on login page
   const isLoginPage = pathname === '/agent';
@@ -288,6 +299,15 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
               <p className="text-xs text-slate-500 dark:text-slate-400">{agent?.name || 'Agent'}</p>
             </div>
             <div className="flex items-center gap-3">
+              {/* Live datetime */}
+              {now && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-cyan-500/10 border border-slate-200 dark:border-cyan-500/20 text-slate-600 dark:text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-cyan-400/70 flex-shrink-0" />
+                  <span className="text-xs tabular-nums">
+                    {formatInTimeZone(now, 'Asia/Jakarta', 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })}
+                  </span>
+                </div>
+              )}
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}

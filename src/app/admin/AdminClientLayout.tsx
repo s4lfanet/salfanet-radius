@@ -50,6 +50,8 @@ import { useIdleTimeout } from '@/hooks/useIdleTimeout';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
+import { formatInTimeZone } from 'date-fns-tz';
+import { id as localeId } from 'date-fns/locale';
 
 interface MenuItem {
   titleKey: string;
@@ -544,6 +546,14 @@ function AdminLayoutContent({
   const addToastRef = useRef(addToast);
   useEffect(() => { addToastRef.current = addToast; }, [addToast]);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
+
+  // Live clock
+  useEffect(() => {
+    setNow(new Date());
+    const tick = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   // Bridge global showSuccess/showError/showConfirm helpers to CyberToast
   useEffect(() => {
@@ -1013,6 +1023,15 @@ function AdminLayoutContent({
 
             {/* Actions - compact on mobile */}
             <div className="flex items-center gap-1 sm:gap-2">
+              {/* Live datetime - hidden on mobile */}
+              {now && (
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card/50 border border-primary/20 text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5 text-accent/70 flex-shrink-0" />
+                  <span className="text-xs tabular-nums">
+                    {formatInTimeZone(now, 'Asia/Jakarta', 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })}
+                  </span>
+                </div>
+              )}
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg hover:bg-primary/20 text-muted-foreground hover:text-primary transition-colors border border-transparent hover:border-primary/30"
