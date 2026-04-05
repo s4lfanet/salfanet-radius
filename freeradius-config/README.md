@@ -1,11 +1,11 @@
 ﻿# FreeRADIUS Configuration Files
 
-**Updated:** April 2, 2026 — Re-verified in sync with production VPS (`103.151.140.110`)
+**Updated:** April 15, 2026 — Re-synced from running VPS (`103.151.140.110`) via pscp
 
 ## Configuration Overview
 
 These files are the **authoritative source** for the FreeRADIUS configuration used by Salfanet RADIUS.
-They are kept **in sync with the running production VPS** — all files verified March 7, 2026.
+They are kept **in sync with the running production VPS** — all files verified April 15, 2026.
 
 ---
 

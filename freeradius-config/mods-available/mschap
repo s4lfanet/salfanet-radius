@@ -55,7 +55,7 @@ mschap {
 	#
 	#  You can also try setting the user name as:
 	#
-	#       ... --username=%{mschap:User-Name} ...
+	#	... --username=%{mschap:User-Name} ...
 	#
 	#  In that case, the mschap module will look at the User-Name
 	#  attribute, and do prefix/suffix checks in order to obtain
@@ -64,18 +64,18 @@ mschap {
 	#  For Samba 4, you should also set the "ntlm auth" parameter
 	#  in the Samba configuration:
 	#
-	#       ntlm auth = yes
+	#	ntlm auth = yes
 	#
 	#  or
 	#
-	#       ntlm auth = mschapv2-and-ntlmv2-only
+	#	ntlm auth = mschapv2-and-ntlmv2-only
 	#
 	#  This will let Samba 4 accept the MS-CHAP authentication
 	#  method that is needed by FreeRADIUS.
 	#
 	#  Depending on the Samba version, you may also need to add:
 	#
-	#       --allow-mschapv2
+	#	--allow-mschapv2
 	#
 	#  to the command-line parameters.
 	#
@@ -230,7 +230,7 @@ mschap {
 		#  used.
 		#
 #		local_cpw = "%{exec:/path/to/script %{mschap:User-Name} %{MS-CHAP-New-Cleartext-Password}}"
-#
+		#
 #		local_cpw = "%{sql:UPDATE radcheck set value='%{MS-CHAP-New-NT-Password}' where username='%{SQL-User-Name}' and attribute='NT-Password'}"
 	}
 
