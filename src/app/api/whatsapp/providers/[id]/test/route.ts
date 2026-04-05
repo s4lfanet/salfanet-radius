@@ -101,22 +101,15 @@ If you receive this message, the provider is working correctly! ✅`;
         }
 
         case 'wablas': {
-          // Wablas API V2 — POST JSON to /api/v2/send-message
-          // Authorization: {token}.{secret_key}
-          const wablasRes = await axios.post(
-            `${provider.apiUrl}/api/v2/send-message`,
-            {
-              data: [
-                { phone, message: testMessage, flag: 'instant' },
-              ],
-            },
-            {
-              headers: {
-                Authorization: provider.apiKey,
-                'Content-Type': 'application/json',
-              },
-            }
-          );
+          // Wablas simple GET endpoint — compatible with all server versions.
+          // token param accepts: "token" only, or "token.secret_key" combined.
+          const wablasBaseUrl = (provider.apiUrl || '').replace(/\/+$/, '');
+          const wablasUrl = new URL(`${wablasBaseUrl}/api/send-message`);
+          wablasUrl.searchParams.set('token', provider.apiKey || '');
+          wablasUrl.searchParams.set('phone', phone);
+          wablasUrl.searchParams.set('message', testMessage);
+          wablasUrl.searchParams.set('flag', 'instant');
+          const wablasRes = await axios.get(wablasUrl.toString());
           responseData = wablasRes.data;
           success = wablasRes.data.status === true;
           if (!success) {

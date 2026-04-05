@@ -665,7 +665,7 @@ export default function WhatsAppProvidersPage() {
                   <ModalInput type="text" value={formData.apiKey} onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })} placeholder={formData.type === 'gowa' ? 'username:password' : formData.type === 'kirimi' ? 'user_code:secret' : 'API Key or Token'} required={(formData.type === 'mpwa' || formData.type === 'gowa' || formData.type === 'kirimi')} />
                   {formData.type === 'gowa' && <p className="text-[9px] text-muted-foreground mt-0.5">Format: username:password</p>}
                   {formData.type === 'kirimi' && <p className="text-[9px] text-muted-foreground mt-0.5">Format: user_code:secret (dari dashboard kirimi.id)</p>}
-                  {formData.type === 'wablas' && <p className="text-[9px] text-muted-foreground mt-0.5">Token dari menu Device → Settings. Opsional: token.secret_key</p>}
+                  {formData.type === 'wablas' && <p className="text-[9px] text-muted-foreground mt-0.5">Format: <b>token.secret_key</b> (dari Device → Settings di dashboard Wablas)</p>}
                 </div>
               </div>
               {formData.type === 'mpwa' && (

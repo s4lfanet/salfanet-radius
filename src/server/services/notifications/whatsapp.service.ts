@@ -496,25 +496,17 @@ export class WhatsAppService {
     phone: string,
     message: string
   ) {
-    const baseUrl = provider.apiUrl.replace(/\/+$/, ''); // strip trailing slash
-    const payload = {
-      data: [
-        {
-          phone,
-          message,
-          flag: 'instant',
-        },
-      ],
-    };
+    // Use Wablas simple GET endpoint (/api/send-message) — most universally
+    // compatible across all Wablas server versions (wa, deu, jakarta, etc.).
+    // token param accepts both "token" and "token.secret_key" formats.
+    const baseUrl = provider.apiUrl.replace(/\/+$/, '');
+    const url = new URL(`${baseUrl}/api/send-message`);
+    url.searchParams.set('token', provider.apiKey);
+    url.searchParams.set('phone', phone);
+    url.searchParams.set('message', message);
+    url.searchParams.set('flag', 'instant');
 
-    const response = await fetch(`${baseUrl}/api/v2/send-message`, {
-      method: 'POST',
-      headers: {
-        'Authorization': provider.apiKey,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(url.toString());
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -528,7 +520,7 @@ export class WhatsAppService {
 
     const result = await response.json();
 
-    // Wablas V2 returns { status: true/false, message: "...", data: {...} }
+    // Wablas returns { status: true/false, message: "...", data: {...} }
     if (result.status === false) {
       throw new Error(`Wablas error: ${result.message || 'Failed to send message'}`);
     }
