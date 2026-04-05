@@ -353,6 +353,18 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Check if profile is referenced by any registration requests
+    const regCount = await prisma.registrationRequest.count({
+      where: { profileId: id },
+    });
+
+    if (regCount > 0) {
+      return NextResponse.json(
+        { error: `Cannot delete profile. ${regCount} registration request(s) are linked to this profile. Please process or delete those registrations first.` },
+        { status: 400 }
+      );
+    }
+
     // Delete RADIUS entries
     try {
       await prisma.radgroupreply.deleteMany({
