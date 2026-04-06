@@ -60,9 +60,18 @@ export async function POST(request: NextRequest) {
     execSync(`tar -xzf "${archivePath}" -C "${tmpDir}"`, { encoding: 'utf-8' });
     log.push('✔ Archive extracted');
 
-    // Find the extracted subdirectory
-    const extracted = execSync(`ls "${tmpDir}"`, { encoding: 'utf-8' }).trim().split('\n')[0];
-    const srcDir = path.join(tmpDir, extracted);
+    // Detect archive structure: files may be directly in tmpDir, or inside a subdirectory
+    // Try root first (check if clients.conf exists directly), else look in first subdir
+    let srcDir = tmpDir;
+    if (!existsSync(path.join(tmpDir, 'clients.conf'))) {
+      const entries = execSync(`ls "${tmpDir}"`, { encoding: 'utf-8' }).trim().split('\n');
+      const firstEntry = entries[0];
+      if (firstEntry) {
+        const candidate = path.join(tmpDir, firstEntry.trim());
+        srcDir = candidate;
+      }
+    }
+    log.push(`✔ Config source: ${srcDir.replace(tmpDir, '.')}`);
 
     // Restore each file
     let restored = 0;

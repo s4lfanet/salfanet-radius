@@ -9,7 +9,8 @@ export const dynamic = 'force-dynamic';
 
 const LOG_FILE = '/tmp/salfanet-fr-backup.log';
 export const BACKUP_SUBDIR = 'backups/freeradius';
-export const SAFE_BACKUP_FILENAME = /^freeradius-\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.tar\.gz$/;
+// Allow any safe .tar.gz filename (alphanumeric, dash, underscore, dot — no path traversal)
+export const SAFE_BACKUP_FILENAME = /^[a-zA-Z0-9][a-zA-Z0-9_\-\.]*\.tar\.gz$/;
 
 export function getAppDir(): string {
   const candidates = [
