@@ -1,8 +1,9 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { prisma } from '@/server/db/client';
 
-// Telegram settings API (placeholder for future implementation)
+// GET - Get Telegram backup settings from database
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -10,17 +11,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Return default settings for now
+    const settings = await prisma.telegramBackupSettings.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!settings) {
+      return NextResponse.json({
+        success: true,
+        settings: {
+          enabled: false,
+          botToken: '',
+          chatId: '',
+          backupTopicId: '',
+          healthTopicId: '',
+          schedule: 'daily',
+          scheduleTime: '02:00',
+          keepLastN: 7,
+        },
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      settings: {
-        enabled: false,
-        botToken: '',
-        chatId: '',
-        schedule: 'daily',
-        scheduleTime: '02:00',
-        keepLastN: 7,
-      },
+      settings,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -34,10 +47,43 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Placeholder - will implement later
+    const body = await request.json();
+    const {
+      enabled,
+      botToken,
+      chatId,
+      backupTopicId,
+      healthTopicId,
+      schedule,
+      scheduleTime,
+      keepLastN,
+    } = body;
+
+    if (enabled && (!botToken || !chatId)) {
+      return NextResponse.json(
+        { error: 'Bot token and chat ID are required when enabled' },
+        { status: 400 }
+      );
+    }
+
+    await prisma.telegramBackupSettings.deleteMany({});
+
+    const settings = await prisma.telegramBackupSettings.create({
+      data: {
+        enabled: enabled || false,
+        botToken: botToken || '',
+        chatId: chatId || '',
+        backupTopicId: backupTopicId || null,
+        healthTopicId: healthTopicId || null,
+        schedule: schedule || 'daily',
+        scheduleTime: scheduleTime || '02:00',
+        keepLastN: keepLastN || 7,
+      },
+    });
+
     return NextResponse.json({
       success: true,
-      message: 'Telegram settings saved (feature coming soon)',
+      settings,
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

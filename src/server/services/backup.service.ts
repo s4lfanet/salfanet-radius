@@ -55,11 +55,13 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
 
   try {
     // Run mysqldump command
-    // Note: Using MYSQL_PWD env var to avoid password in command line
-    const command = `MYSQL_PWD="${password}" mysqldump -u ${user} -h ${host} -P ${port} --single-transaction --routines --triggers ${database} > "${filepath}"`;
+    // Use env option to pass MYSQL_PWD safely (avoids shell escaping issues with special chars)
+    const command = `mysqldump -u ${user} -h ${host} -P ${port} --single-transaction --routines --triggers ${database} > "${filepath}"`;
     
     console.log('[Backup] Creating backup:', filename);
-    await execAsync(command);
+    await execAsync(command, {
+      env: { ...process.env, MYSQL_PWD: password },
+    });
     
     // Get file size
     const stats = await fs.stat(filepath);
@@ -127,10 +129,12 @@ export async function restoreBackup(filepath: string) {
     
     console.log('[Restore] Restoring from:', filepath);
     
-    // Run mysql import command
-    const command = `MYSQL_PWD="${password}" mysql -u ${user} -h ${host} -P ${port} ${database} < "${filepath}"`;
+    // Run mysql import command - use env option for safe password passing
+    const command = `mysql -u ${user} -h ${host} -P ${port} ${database} < "${filepath}"`;
     
-    await execAsync(command);
+    await execAsync(command, {
+      env: { ...process.env, MYSQL_PWD: password },
+    });
     
     console.log('[Restore] Database restored successfully');
     

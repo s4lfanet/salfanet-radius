@@ -20,6 +20,8 @@ export async function GET(request: NextRequest) {
 
     if (session.user.role !== 'SUPER_ADMIN') return forbidden();
 
+    const status = getTelegramCronStatus();
+
     return NextResponse.json({
       success: true,
       status,

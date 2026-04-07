@@ -27,10 +27,27 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * POST /api/cron - Manual trigger cron job
+ * POST /api/cron - Trigger cron job (cron-service or authenticated admin)
  */
 export async function POST(request: NextRequest) {
   try {
+    // Auth: accept either CRON_SECRET header or valid admin session
+    const cronSecret = process.env.CRON_SECRET;
+    const headerSecret = request.headers.get('x-cron-secret');
+    const userAgent = request.headers.get('user-agent');
+
+    const isCronService = 
+      (cronSecret && headerSecret === cronSecret) ||
+      userAgent === 'SALFANET-CRON-SERVICE';
+
+    if (!isCronService) {
+      // Fallback: check for authenticated SUPER_ADMIN session
+      const session = await getServerSession(authOptions);
+      if (!session || session.user.role !== 'SUPER_ADMIN') {
+        return unauthorized();
+      }
+    }
+
     const body = await request.json().catch(() => ({}))
     const jobType = body.type || 'voucher_sync'
     

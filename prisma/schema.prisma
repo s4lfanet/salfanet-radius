@@ -1366,7 +1366,7 @@ model telegramBackupSettings {
   enabled         Boolean  @default(false)
   botToken        String
   chatId          String
-  backupTopicId   String
+  backupTopicId   String?
   healthTopicId   String?
   schedule        String   @default("daily") // 'daily', '12h', '6h', 'weekly'
   scheduleTime    String   @default("02:00") // HH:mm

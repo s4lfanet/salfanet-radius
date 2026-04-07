@@ -362,6 +362,17 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 
 ## 📝 Changelog
 
+### v2.15.0 — January 2026
+- **Fix: Cron Job & Backup System Audit** — audit dan perbaikan menyeluruh sistem cron job + backup + Telegram:
+  - `backupTopicId` non-nullable → nullable (penyebab utama settings gagal tersimpan)
+  - `MYSQL_PWD` shell syntax → env option (aman untuk password dengan karakter khusus)
+  - `/api/cron/telegram` GET undefined status → panggil `getTelegramCronStatus()`
+  - `/api/cron` POST tanpa auth → tambah CRON_SECRET + User-Agent + session check
+  - Double cron execution dihapus (initCronJobs hanya untuk Telegram cron)
+  - Placeholder `/api/backup/telegram/settings` → implementasi penuh dari DB
+  - Health report Telegram lebih lengkap (sessions, users, invoices)
+  - Validasi 50MB Telegram file size limit
+
 ### v2.14.0 — January 2026
 - **Feat: ID Pelanggan di semua notifikasi** — `{{customerId}}` ditambahkan ke semua template WA & email (registration approval, invoice reminder, payment success, auto-renewal, manual payment approval/rejection, account info, admin create user)
 - **Feat: Area pelanggan di notifikasi** — `{{area}}` ditambahkan ke admin-create-user, payment-success, auto-renewal-success templates

@@ -1,5 +1,4 @@
-﻿import cron from 'node-cron'
-import { prisma } from '@/server/db/client'
+﻿import { prisma } from '@/server/db/client'
 import { disconnectExpiredSessions, disconnectPPPoEUser, sendCoADisconnect } from '@/server/services/radius/coa-handler.service'
 import { nanoid } from 'nanoid'
 import { randomBytes } from 'crypto'
@@ -704,82 +703,19 @@ export async function getCronHistory(limit: number = 50) {
 }
 
 /**
- * Initialize cron jobs
+ * Initialize cron jobs that are NOT handled by cron-service.js (PM2)
+ * 
+ * Most cron jobs are scheduled by the standalone cron-service.js which calls
+ * POST /api/cron. Only Telegram backup/health crons need to run from within
+ * the Next.js process because they use dynamic schedules from DB settings.
  */
 export function initCronJobs() {
-  // Import the new hotspot voucher cron
-  import('./hotspot-voucher-cron').then(({ runHotspotVoucherCron }) => {
-    // Run hotspot voucher lifecycle cron every minute
-    // This handles: WAITING→USED (first login), USED→EXPIRED, cleanup stale sessions
-    cron.schedule('* * * * *', async () => {
-      console.log('[CRON] Running hotspot voucher lifecycle...')
-      const result = await runHotspotVoucherCron()
-      console.log('[CRON] Hotspot voucher lifecycle completed:', result)
-    })
-    console.log('[CRON] Hotspot voucher lifecycle cron initialized (every minute)')
-  }).catch(err => {
-    console.error('[CRON] Failed to import hotspot-voucher-cron, falling back to legacy:', err)
-    // Fallback to legacy voucher sync
-    cron.schedule('* * * * *', async () => {
-      console.log('[CRON] Running voucher sync (legacy)...')
-      const result = await syncVoucherFromRadius()
-      console.log('[CRON] Voucher sync completed:', result)
-    })
-  })
-
-  // Run agent sales recording every 5 minutes
-  cron.schedule('*/5 * * * *', async () => {
-    console.log('[CRON] Running agent sales recording...')
-    const result = await recordAgentSales()
-    console.log('[CRON] Agent sales recording completed:', result)
-  })
-
-  // Run invoice generation daily at 7 AM
-  cron.schedule('0 7 * * *', async () => {
-    console.log('[CRON] Running invoice generation...')
-    const result = await generateInvoices()
-    console.log('[CRON] Invoice generation completed:', result)
-  })
-
-  // Run invoice reminder every hour
-  cron.schedule('0 * * * *', async () => {
-    console.log('[CRON] Running invoice reminder check...')
-    const result = await sendInvoiceReminders()
-    console.log('[CRON] Invoice reminder completed:', result)
-  })
-
-  // Run invoice status update every hour (update PENDING → OVERDUE)
-  cron.schedule('0 * * * *', async () => {
-    console.log('[CRON] Running invoice status update...')
-    const { updateInvoiceStatus } = await import('./invoice-status-updater')
-    const result = await updateInvoiceStatus()
-    console.log('[CRON] Invoice status update completed:', result)
-  })
-
-  // Run auto-isolir expired users every hour
-  cron.schedule('0 * * * *', async () => {
-    console.log('[CRON] Running auto-isolir for expired users...')
-    const result = await autoIsolateExpiredUsers()
-    console.log('[CRON] Auto-isolir completed:', result)
-  })
-
-  // Initialize Telegram backup & health check crons
+  // Initialize Telegram backup & health check crons (dynamic schedule from DB)
+  // These are NOT in cron-service.js because their schedules come from telegramBackupSettings
   startBackupCron().catch(err => console.error('[CRON] Failed to start Telegram backup:', err))
   startHealthCron().catch(err => console.error('[CRON] Failed to start Telegram health:', err))
 
-  // Run FreeRADIUS health check every 5 minutes
-  cron.schedule('*/5 * * * *', async () => {
-    console.log('[CRON] Running FreeRADIUS health check...')
-    try {
-      const { freeradiusHealthCheck } = await import('./freeradius-health')
-      const result = await freeradiusHealthCheck(true) // auto-restart enabled
-      console.log('[CRON] FreeRADIUS health check completed:', result)
-    } catch (error) {
-      console.error('[CRON] FreeRADIUS health check failed:', error)
-    }
-  })
-
-  console.log('[CRON] Jobs initialized: Voucher sync (every minute), Agent sales (every 5 minutes), Invoice generation (daily at 7 AM), Invoice reminders (hourly), Invoice status update (hourly), Auto-isolir (hourly), FreeRADIUS health check (every 5 minutes), Telegram backup & health check')
+  console.log('[CRON] Telegram backup & health check crons initialized (other jobs handled by cron-service.js)')
 }
 
 /**

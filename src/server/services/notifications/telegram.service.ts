@@ -143,25 +143,42 @@ export async function sendHealthReport(
     tables: number;
     connections: string;
     uptime: string;
+    activeSessions?: number;
+    totalUsers?: number;
+    activeUsers?: number;
+    pendingInvoices?: number;
+    issues?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
   const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
   
   const statusEmoji = health.status === 'healthy' ? '🟢' : health.status === 'warning' ? '🟡' : '🔴';
   
-  const message = `
+  let message = `
 ${statusEmoji} <b>Database Health Report</b>
 
 📊 <b>Status:</b> ${health.status.toUpperCase()}
 💾 <b>Size:</b> ${health.size}
 📋 <b>Tables:</b> ${health.tables}
 🔌 <b>Connections:</b> ${health.connections}
-⏱ <b>Uptime:</b> ${health.uptime}
+⏱ <b>Uptime:</b> ${health.uptime}`;
 
-📅 ${now} WIB
-  `.trim();
+  if (health.activeSessions !== undefined) {
+    message += `\n📡 <b>Active Sessions:</b> ${health.activeSessions}`;
+  }
+  if (health.totalUsers !== undefined) {
+    message += `\n👥 <b>Total Users:</b> ${health.totalUsers} (Active: ${health.activeUsers ?? 0})`;
+  }
+  if (health.pendingInvoices !== undefined && health.pendingInvoices > 0) {
+    message += `\n⚠️ <b>Overdue Invoices:</b> ${health.pendingInvoices}`;
+  }
+  if (health.issues) {
+    message += `\n\n🚨 <b>Issues:</b> ${health.issues}`;
+  }
+
+  message += `\n\n📅 ${now} WIB`;
   
-  return await sendTelegramMessage(options, message);
+  return await sendTelegramMessage(options, message.trim());
 }
 
 /**
@@ -172,9 +189,20 @@ export async function sendBackupToTelegram(
   filepath: string,
   filesize: number | bigint
 ): Promise<{ success: boolean; error?: string }> {
+  const fileSizeNum = Number(filesize);
+  const MAX_TELEGRAM_FILE_SIZE = 50 * 1024 * 1024; // 50MB Telegram limit
+  
+  if (fileSizeNum > MAX_TELEGRAM_FILE_SIZE) {
+    const sizeMB = (fileSizeNum / 1024 / 1024).toFixed(2);
+    return {
+      success: false,
+      error: `Backup file too large (${sizeMB} MB). Telegram limit is 50 MB. Consider reducing backup size or using a different storage method.`,
+    };
+  }
+
   const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
   const filename = path.basename(filepath) || 'backup.sql';
-  const sizeMB = (Number(filesize) / 1024 / 1024).toFixed(2);
+  const sizeMB = (fileSizeNum / 1024 / 1024).toFixed(2);
   
   const caption = `
 💾 <b>Database Backup</b>
