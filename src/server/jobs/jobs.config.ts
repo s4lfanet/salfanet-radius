@@ -305,48 +305,52 @@ export const CRON_JOBS: CronJobConfig[] = [
   },
 ];
 
-// Helper to get next run time from cron pattern
-export function getNextRunTime(cronPattern: string, from: Date = new Date()): Date {
-  // Simple implementation for common patterns
-  // For production, use 'cron-parser' library
-  const now = new Date(from);
-  
+// Helper to get next run time from cron pattern.
+// IMPORTANT: 'from' must be a WIB-as-UTC Date (UTC value = WIB time).
+// Use UTC methods so the WIB values stored in the UTC field are read correctly.
+// Default: nowWIB() — current WIB time encoded as UTC.
+export function getNextRunTime(cronPattern: string, from?: Date): Date {
+  // Import lazily to avoid circular dependency issues at module init time
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { nowWIB } = require('@/lib/timezone') as { nowWIB: () => Date };
+  const now = new Date(from ?? nowWIB());
+
   if (cronPattern === '* * * * *') {
     // Every minute
     return new Date(now.getTime() + 60000);
   } else if (cronPattern === '*/5 * * * *') {
-    // Every 5 minutes
-    const nextMinute = Math.ceil(now.getMinutes() / 5) * 5;
+    // Every 5 minutes — use UTC minutes (WIB-as-UTC)
+    const nextMinute = Math.ceil(now.getUTCMinutes() / 5) * 5;
     const next = new Date(now);
-    next.setMinutes(nextMinute, 0, 0);
-    if (next <= now) next.setMinutes(nextMinute + 5);
+    next.setUTCMinutes(nextMinute, 0, 0);
+    if (next <= now) next.setUTCMinutes(nextMinute + 5, 0, 0);
     return next;
   } else if (cronPattern === '0 * * * *') {
-    // Every hour
+    // Every hour — advance to top of next UTC hour (= WIB hour)
     const next = new Date(now);
-    next.setHours(now.getHours() + 1, 0, 0, 0);
+    next.setUTCHours(now.getUTCHours() + 1, 0, 0, 0);
     return next;
   } else if (cronPattern === '0 2 * * *') {
-    // Daily at 2 AM
+    // Daily at 2 AM WIB
     const next = new Date(now);
-    next.setHours(2, 0, 0, 0);
-    if (next <= now) next.setDate(next.getDate() + 1);
+    next.setUTCHours(2, 0, 0, 0);
+    if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
     return next;
   } else if (cronPattern === '0 7 * * *') {
-    // Daily at 7 AM
+    // Daily at 7 AM WIB
     const next = new Date(now);
-    next.setHours(7, 0, 0, 0);
-    if (next <= now) next.setDate(next.getDate() + 1);
+    next.setUTCHours(7, 0, 0, 0);
+    if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
     return next;
   } else if (cronPattern === '0 */6 * * *') {
-    // Every 6 hours (at 0, 6, 12, 18)
+    // Every 6 hours WIB (at 0, 6, 12, 18)
     const next = new Date(now);
-    const currentHour = now.getHours();
+    const currentHour = now.getUTCHours();
     const nextHour = Math.ceil((currentHour + 1) / 6) * 6;
-    next.setHours(nextHour, 0, 0, 0);
-    if (next <= now) next.setHours(nextHour + 6, 0, 0, 0);
+    next.setUTCHours(nextHour, 0, 0, 0);
+    if (next <= now) next.setUTCHours(nextHour + 6, 0, 0, 0);
     return next;
   }
-  
+
   return new Date(now.getTime() + 60000); // Default: 1 minute
 }
