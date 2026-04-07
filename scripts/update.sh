@@ -103,13 +103,12 @@ fi
 # ── Prisma seed (always run to keep templates current) ────
 echo ""
 log "Running db:seed to ensure templates are up to date..."
-# Use --force-templates so message/htmlBody changes in seed files are applied.
 # Use stdbuf for line-buffered output so progress appears live in web log.
 if command -v stdbuf &>/dev/null; then
-  stdbuf -oL npm run db:seed:reset-templates
+  stdbuf -oL npm run db:seed
   SEED_EXIT=$?
 else
-  npm run db:seed:reset-templates
+  npm run db:seed
   SEED_EXIT=$?
 fi
 if [ "$SEED_EXIT" -ne 0 ]; then

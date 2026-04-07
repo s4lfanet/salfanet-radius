@@ -697,15 +697,13 @@ _{{companyName}}_`,
 ];
 
 export async function seedWhatsAppTemplates(force = false) {
-  console.log(`🌱 Seeding WhatsApp templates${force ? ' (force reset)' : ' (preserve customizations)'}...`);
+  console.log(`🌱 Seeding WhatsApp templates (always updates message content)...`);
   
   for (const template of whatsappTemplates) {
     await prisma.whatsapp_templates.upsert({
       where: { type: template.type },
       create: template,
-      update: force
-        ? { name: template.name, message: template.message, isActive: template.isActive }
-        : { name: template.name, isActive: template.isActive },
+      update: { name: template.name, message: template.message, isActive: template.isActive },
     });
     console.log(`   ✅ Template: ${template.name}`);
   }

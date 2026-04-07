@@ -1185,7 +1185,7 @@ export const emailTemplates = [
 ];
 
 export async function seedEmailTemplates(force = false) {
-  console.log(`🌱 Seeding email templates${force ? ' (force reset)' : ' (preserve customizations)'}...`);
+  console.log(`🌱 Seeding email templates (always updates subject and htmlBody)...`);
   
   for (const template of emailTemplates) {
     await prisma.emailTemplate.upsert({
@@ -1194,9 +1194,7 @@ export async function seedEmailTemplates(force = false) {
         id: `template-${template.type}`,
         ...template,
       },
-      update: force
-        ? { name: template.name, subject: template.subject, htmlBody: template.htmlBody, isActive: template.isActive }
-        : { name: template.name, isActive: template.isActive },
+      update: { name: template.name, subject: template.subject, htmlBody: template.htmlBody, isActive: template.isActive },
     });
     console.log(`   ✅ Template: ${template.name}`);
   }
