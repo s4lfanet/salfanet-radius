@@ -37,9 +37,6 @@
     "cron": "node cron-service.js",
     "push:vapid": "node scripts/generate-vapid.js"
   },
-  "prisma": {
-    "seed": "tsx prisma/seeds/seed-all.ts"
-  },
   "overrides": {
     "minimatch": "^10.2.1"
   },
