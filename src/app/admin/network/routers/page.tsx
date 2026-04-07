@@ -702,7 +702,8 @@ export default function RouterPage() {
                   />
                 </div>
 
-                {/* Ports */}
+                {/* Ports — only show for MikroTik routers, not gateway/VPS */}
+                {formData.type !== 'gateway' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-[#00f7ff] mb-2">{t('network.apiPort')}</label>
@@ -725,6 +726,7 @@ export default function RouterPage() {
                     />
                   </div>
                 </div>
+                )}
 
                 {/* Credentials */}
                 {formData.type !== 'gateway' && (

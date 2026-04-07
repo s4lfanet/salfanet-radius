@@ -1,0 +1,19 @@
+#!/bin/bash
+# PPP ip-down script: remove VPN route when PPP interface goes down
+# Deploy to: /etc/ppp/ip-down.d/99-vpn-routes
+# chmod +x /etc/ppp/ip-down.d/99-vpn-routes
+#
+# Called by pppd with positional args:
+#   $1 = interface name (e.g. ppp0)
+#   $2 = tty device
+#   $3 = speed
+#   $4 = local IP address
+#   $5 = remote IP address
+
+IFACE="$1"
+VPN_SUBNET="10.20.30.0/24"
+
+[ -z "$IFACE" ] && exit 0
+
+ip route del "$VPN_SUBNET" dev "$IFACE" 2>/dev/null || true
+logger -t vpn-route "PPP $IFACE down - route $VPN_SUBNET removed"

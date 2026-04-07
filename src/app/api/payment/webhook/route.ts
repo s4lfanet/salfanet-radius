@@ -1355,8 +1355,8 @@ async function handleInvoicePayment(
           }
         }
 
-        // Determine if user should be activated (include blocked status)
-        const wasDisabled = ['isolated', 'suspended', 'blocked'].includes(normalizedStatus);
+        // Determine if user should be activated (include blocked/stop status)
+        const wasDisabled = ['isolated', 'suspended', 'blocked', 'stop'].includes(normalizedStatus);
         const newStatus = wasDisabled ? 'active' : normalizedStatus || 'active';
 
         // Check if this is a package upgrade invoice
