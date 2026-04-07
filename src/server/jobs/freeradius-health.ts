@@ -78,7 +78,9 @@ async function checkFreeRADIUSHealth(): Promise<HealthCheckResult> {
                     const activeTime = activeTimeOutput.trim();
                     
                     if (activeTime && activeTime !== 'n/a') {
-                        const startMs = new Date(activeTime).getTime();
+                        // Remove non-standard timezone abbreviation (e.g. "WIB") before parsing
+                        const cleanedTime = activeTime.replace(/\s+[A-Z]{2,5}$/, '');
+                        const startMs = new Date(cleanedTime).getTime();
                         const nowMs = Date.now();
                         const uptimeSeconds = Math.floor((nowMs - startMs) / 1000);
                         

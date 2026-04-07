@@ -65,11 +65,14 @@ export async function GET() {
                         const activeTime = activeTimeOutput.trim();
                         
                         if (activeTime && activeTime !== 'n/a') {
+                            // Remove non-standard timezone abbreviation (e.g. "WIB") before parsing
+                            const cleanedTime = activeTime.replace(/\s+[A-Z]{2,5}$/, '');
+                            
                             // Parse the timestamp
-                            startTime = new Date(activeTime).toISOString();
+                            startTime = new Date(cleanedTime).toISOString();
                             
                             // Calculate uptime
-                            const startMs = new Date(activeTime).getTime();
+                            const startMs = new Date(cleanedTime).getTime();
                             const nowMs = Date.now();
                             const uptimeSeconds = Math.floor((nowMs - startMs) / 1000);
                             

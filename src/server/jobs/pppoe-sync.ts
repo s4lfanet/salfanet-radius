@@ -3,7 +3,8 @@ import { nanoid } from 'nanoid'
 import { RouterOSAPI } from 'node-routeros'
 import { getIsolationSettings } from '@/server/services/isolation.service'
 
-let isPPPoESyncRunning = false
+let isPPPoESyncRunning = 0  // timestamp lock: 0 = free, >0 = lock start time
+const LOCK_TTL_MS = 5 * 60 * 1000  // auto-expire lock after 5 minutes
 
 /**
  * Disconnect PPPoE user via MikroTik API as fallback when CoA fails
@@ -134,12 +135,16 @@ export async function autoIsolatePPPoEUsers(): Promise<{
   isolated: number
   error?: string 
 }> {
-  if (isPPPoESyncRunning) {
+  const now = Date.now()
+  if (isPPPoESyncRunning && (now - isPPPoESyncRunning) < LOCK_TTL_MS) {
     console.log('[PPPoE Auto-Isolir] Already running, skipping...')
     return { success: false, isolated: 0, error: 'Already running' }
   }
+  if (isPPPoESyncRunning) {
+    console.log(`[PPPoE Auto-Isolir] Stale lock detected (${Math.round((now - isPPPoESyncRunning) / 1000)}s old), resetting`)
+  }
 
-  isPPPoESyncRunning = true
+  isPPPoESyncRunning = now
   const startedAt = new Date()
 
   // Read isolation settings — respect admin toggle and grace period
@@ -148,7 +153,7 @@ export async function autoIsolatePPPoEUsers(): Promise<{
 
   // If isolation is disabled in admin settings, skip
   if (!isolationSettings.isolationEnabled) {
-    isPPPoESyncRunning = false
+    isPPPoESyncRunning = 0
     console.log('[PPPoE Auto-Isolir] Isolation disabled in settings, skipping.')
     return { success: true, isolated: 0 }
   }
@@ -407,6 +412,6 @@ export async function autoIsolatePPPoEUsers(): Promise<{
     
     return { success: false, isolated: 0, error: error.message }
   } finally {
-    isPPPoESyncRunning = false
+    isPPPoESyncRunning = 0
   }
 }

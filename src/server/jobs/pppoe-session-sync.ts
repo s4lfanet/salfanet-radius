@@ -27,16 +27,21 @@ interface SyncResult {
 
 // ── Lock ────────────────────────────────────────────────────────────────────
 
-let isSyncRunning = false;
+let isSyncRunning = 0;  // timestamp lock: 0 = free, >0 = lock start time
+const SYNC_LOCK_TTL_MS = 2 * 60 * 1000;  // auto-expire after 2 minutes
 
 // ── Main sync ───────────────────────────────────────────────────────────────
 
 export async function syncPPPoESessions(): Promise<SyncResult> {
-  if (isSyncRunning) {
+  const now = Date.now();
+  if (isSyncRunning && (now - isSyncRunning) < SYNC_LOCK_TTL_MS) {
     return { success: false, inserted: 0, closed: 0, routers: 0, routerErrors: 0, error: 'Already running' };
   }
+  if (isSyncRunning) {
+    console.log(`[PPPoE-Sync] Stale lock detected (${Math.round((now - isSyncRunning) / 1000)}s old), resetting`);
+  }
 
-  isSyncRunning = true;
+  isSyncRunning = now;
   const startedAt = Date.now();
   let closed = 0;
 
@@ -147,6 +152,6 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
 
     return { success: false, inserted: 0, closed, routers: 0, routerErrors: 0, error: error.message };
   } finally {
-    isSyncRunning = false;
+    isSyncRunning = 0;
   }
 }
