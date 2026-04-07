@@ -61,6 +61,8 @@ Selamat! Pendaftaran Anda telah *DISETUJUI*!
 🔗 *Link Pembayaran:*
 {{paymentLink}}
 
+{{bankAccounts}}
+
 Segera lakukan pembayaran untuk aktivasi layanan Anda.
 
 Terima kasih! 🙏
@@ -91,6 +93,8 @@ Halo {{customerName}},
 
 🔗 *Bayar Sekarang:*
 {{paymentLink}}
+
+{{bankAccounts}}
 
 Terima kasih! 🙏
 
@@ -136,12 +140,17 @@ Ini adalah pengingat untuk invoice Anda yang akan segera jatuh tempo.
 *📋 Detail Invoice*
 ━━━━━━━━━━━━━━━━━━━━━━
 🧾 No. Invoice: {{invoiceNumber}}
+� Username: {{username}}
+📦 Paket: {{profileName}}
+📍 Area: {{area}}
 💰 Jumlah: {{amount}}
 📅 Jatuh Tempo: {{dueDate}}
 ⏱️ Sisa Waktu: {{daysRemaining}} hari
 
 🔗 *Bayar Sekarang:*
 {{paymentLink}}
+
+{{bankAccounts}}
 
 Jangan sampai layanan Anda terganggu! Segera lakukan pembayaran.
 
@@ -239,9 +248,9 @@ Mohon maaf, pembayaran manual Anda *DITOLAK* oleh admin kami.
 💬 *Alasan:*
 {{rejectionReason}}
 
-Silakan hubungi admin kami untuk informasi lebih lanjut atau upload ulang bukti transfer yang valid.
-
 🔗 Upload ulang: {{paymentLink}}
+
+{{bankAccounts}}
 
 📞 Contact: {{companyPhone}}
 
@@ -481,9 +490,11 @@ Halo {{customerName}},
 ━━━━━━━━━━━━━━━━━━━━━━
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
-📅 Masa Aktif: {{expiredDate}}
+� Area: {{area}}
+📅 Masa Aktif: {{expiredAt}}
 
-Hubungi: {{companyPhone}}
+📞 {{companyPhone}}
+📧 {{companyEmail}}
 
 _{{companyName}}_`,
     isActive: true,
@@ -499,6 +510,8 @@ Halo {{customerName}},
 Ini adalah pengingat untuk segera melakukan pembayaran tagihan Anda.
 
 Jangan sampai layanan Anda terganggu. Lakukan pembayaran sebelum jatuh tempo.
+
+{{bankAccounts}}
 
 📞 {{companyPhone}}
 
@@ -516,6 +529,8 @@ Halo {{customerName}},
 Pembayaran Anda sudah melewati jatuh tempo.
 
 Segera lakukan pembayaran untuk menghindari pemutusan layanan.
+
+{{bankAccounts}}
 
 📞 {{companyPhone}}
 

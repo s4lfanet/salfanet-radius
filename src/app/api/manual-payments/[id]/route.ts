@@ -10,6 +10,32 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 import { nowWIB } from '@/lib/timezone';
 
+function formatBankAccountsWA(bankAccounts: any): string {
+  if (!bankAccounts) return '';
+  let accounts: Array<{ bankName?: string; bank?: string; accountNumber?: string; accountName?: string }> = [];
+  try {
+    accounts = Array.isArray(bankAccounts) ? bankAccounts : JSON.parse(String(bankAccounts));
+  } catch { return ''; }
+  if (!accounts.length) return '';
+  const lines = accounts.map(a =>
+    `🏦 ${a.bankName || a.bank || '-'}\n   📋 No. Rek: ${a.accountNumber || '-'}\n   👤 A/N: ${a.accountName || '-'}`
+  );
+  return `━━━━━━━━━━━━━━━━━━━━━━\n🏦 *Transfer Manual ke Rekening:*\n${lines.join('\n\n')}`;
+}
+
+function formatBankAccountsHtml(bankAccounts: any): string {
+  if (!bankAccounts) return '';
+  let accounts: Array<{ bankName?: string; bank?: string; accountNumber?: string; accountName?: string }> = [];
+  try {
+    accounts = Array.isArray(bankAccounts) ? bankAccounts : JSON.parse(String(bankAccounts));
+  } catch { return ''; }
+  if (!accounts.length) return '';
+  const rows = accounts.map(a =>
+    `<tr><td style="padding:8px;border:1px solid #bae6fd;">${a.bankName || a.bank || '-'}</td><td style="padding:8px;border:1px solid #bae6fd;">${a.accountNumber || '-'}</td><td style="padding:8px;border:1px solid #bae6fd;">${a.accountName || '-'}</td></tr>`
+  ).join('');
+  return `<div style="margin:20px 0;"><p style="font-weight:bold;">💳 Informasi Rekening Pembayaran:</p><table style="width:100%;border-collapse:collapse;background:#f0f9ff;"><thead><tr><th style="padding:8px;border:1px solid #bae6fd;background:#e0f2fe;">Bank</th><th style="padding:8px;border:1px solid #bae6fd;background:#e0f2fe;">No. Rekening</th><th style="padding:8px;border:1px solid #bae6fd;background:#e0f2fe;">Atas Nama</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+
 // GET - Get single manual payment
 export async function GET(
   request: NextRequest,
@@ -289,7 +315,8 @@ export async function PATCH(
           .replace(/{{profileName}}/g, (manualPayment.user as any)?.profile?.name || '-')
           .replace(/{{area}}/g, (manualPayment.user as any)?.area?.name || '-')
           .replace(/{{companyName}}/g, company?.name || '')
-          .replace(/{{companyPhone}}/g, company?.phone || '');
+          .replace(/{{companyPhone}}/g, company?.phone || '')
+          .replace(/{{bankAccounts}}/g, formatBankAccountsWA(company?.bankAccounts));
         
         try {
           await WhatsAppService.sendMessage({ phone: manualPayment.user.phone, message });
@@ -317,6 +344,7 @@ export async function PATCH(
             companyPhone: company?.phone || '',
             companyEmail: company?.email || '',
             baseUrl: company?.baseUrl || '',
+            bankAccounts: formatBankAccountsHtml(company?.bankAccounts),
           };
           
           try {
@@ -396,7 +424,8 @@ export async function PATCH(
           .replace(/{{profileName}}/g, (manualPayment.user as any)?.profile?.name || '-')
           .replace(/{{area}}/g, (manualPayment.user as any)?.area?.name || '-')
           .replace(/{{companyName}}/g, company?.name || '')
-          .replace(/{{companyPhone}}/g, company?.phone || '');
+          .replace(/{{companyPhone}}/g, company?.phone || '')
+          .replace(/{{bankAccounts}}/g, formatBankAccountsWA(company?.bankAccounts));
         
         try {
           await WhatsAppService.sendMessage({ phone: manualPayment.user.phone, message });
@@ -425,6 +454,7 @@ export async function PATCH(
             companyPhone: company?.phone || '',
             companyEmail: company?.email || '',
             baseUrl: company?.baseUrl || '',
+            bankAccounts: formatBankAccountsHtml(company?.bankAccounts),
           };
           
           try {

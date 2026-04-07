@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+﻿import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
@@ -17,16 +17,19 @@ export async function seedInvoiceOverdueTemplates() {
 Invoice Anda sudah melewati tanggal jatuh tempo:
 
 📋 No. Invoice: *{{invoiceNumber}}*
+� Username: *{{username}}*
+📦 Paket: *{{profileName}}*
+📍 Area: *{{area}}*
 💰 Total Tagihan: *{{amount}}*
 📅 Jatuh Tempo: *{{dueDate}}*
 ⏰ Terlambat: *{{daysOverdue}} hari*
-
-Username: {{username}}
 
 ⚠️ *Layanan Anda mungkin akan diisolir jika tidak segera melakukan pembayaran.*
 
 Silakan lakukan pembayaran melalui:
 {{paymentLink}}
+
+{{bankAccounts}}
 
 Jika sudah melakukan pembayaran, mohon abaikan pesan ini.
 
@@ -48,16 +51,19 @@ Terima kasih,
 Invoice Anda sudah melewati tanggal jatuh tempo:
 
 📋 No. Invoice: *{{invoiceNumber}}*
+👤 Username: *{{username}}*
+📦 Paket: *{{profileName}}*
+📍 Area: *{{area}}*
 💰 Total Tagihan: *{{amount}}*
 📅 Jatuh Tempo: *{{dueDate}}*
 ⏰ Terlambat: *{{daysOverdue}} hari*
-
-Username: {{username}}
 
 ⚠️ *Layanan Anda mungkin akan diisolir jika tidak segera melakukan pembayaran.*
 
 Silakan lakukan pembayaran melalui:
 {{paymentLink}}
+
+{{bankAccounts}}
 
 Jika sudah melakukan pembayaran, mohon abaikan pesan ini.
 
@@ -134,6 +140,14 @@ Terima kasih,
             <td>{{username}}</td>
           </tr>
           <tr>
+            <td>📦 Paket</td>
+            <td>{{profileName}}</td>
+          </tr>
+          <tr>
+            <td>📍 Area</td>
+            <td>{{area}}</td>
+          </tr>
+          <tr>
             <td>💰 Total Tagihan</td>
             <td style="color: #dc2626; font-size: 18px;">{{amount}}</td>
           </tr>
@@ -152,6 +166,8 @@ Terima kasih,
       <div style="text-align: center;">
         <a href="{{paymentLink}}" class="button">Bayar Sekarang</a>
       </div>
+
+      {{bankAccounts}}
 
       <p style="margin-top: 20px; font-size: 13px; color: #6b7280;">
         Jika Anda sudah melakukan pembayaran, mohon abaikan pesan ini. Pembayaran Anda akan segera diverifikasi oleh sistem kami.
@@ -234,6 +250,14 @@ Terima kasih,
             <td>{{username}}</td>
           </tr>
           <tr>
+            <td>📦 Paket</td>
+            <td>{{profileName}}</td>
+          </tr>
+          <tr>
+            <td>📍 Area</td>
+            <td>{{area}}</td>
+          </tr>
+          <tr>
             <td>💰 Total Tagihan</td>
             <td style="color: #dc2626; font-size: 18px;">{{amount}}</td>
           </tr>
@@ -252,6 +276,8 @@ Terima kasih,
       <div style="text-align: center;">
         <a href="{{paymentLink}}" class="button">Bayar Sekarang</a>
       </div>
+
+      {{bankAccounts}}
 
       <p style="margin-top: 20px; font-size: 13px; color: #6b7280;">
         Jika Anda sudah melakukan pembayaran, mohon abaikan pesan ini. Pembayaran Anda akan segera diverifikasi oleh sistem kami.

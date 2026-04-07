@@ -17,6 +17,24 @@ function renderTemplate(template: string, variables: Record<string, any>): strin
 }
 
 /**
+ * Format bank accounts (from company.bankAccounts JSON) as WhatsApp text
+ */
+function formatBankAccountsForWA(bankAccounts: any): string {
+  if (!bankAccounts) return '';
+  let accounts: Array<{ bankName?: string; bank?: string; accountNumber?: string; accountName?: string }> = [];
+  try {
+    accounts = Array.isArray(bankAccounts) ? bankAccounts : JSON.parse(String(bankAccounts));
+  } catch {
+    return '';
+  }
+  if (!accounts.length) return '';
+  const lines = accounts.map(a =>
+    `🏦 ${a.bankName || a.bank || '-'}\n   📋 No. Rek: ${a.accountNumber || '-'}\n   👤 A/N: ${a.accountName || '-'}`
+  );
+  return `━━━━━━━━━━━━━━━━━━━━━━\n🏦 *Transfer Manual ke Rekening:*\n${lines.join('\n\n')}`;
+}
+
+/**
  * Get template from database by type
  */
 async function getTemplate(type: string): Promise<string | null> {
@@ -100,6 +118,7 @@ export async function sendRegistrationApproval(data: {
     const company = await prisma.company.findFirst();
     const companyName = company?.name || 'SALFANET RADIUS';
     const companyPhone = company?.phone || '';
+    const bankAccountsText = formatBankAccountsForWA(company?.bankAccounts);
 
     // Get template from database
     const templateContent = await getTemplate('registration-approval');
@@ -125,6 +144,7 @@ export async function sendRegistrationApproval(data: {
       dueDate: dueDateStr,
       paymentLink: data.paymentLink || '',
       amount: data.totalAmount ? `Rp ${data.totalAmount.toLocaleString('id-ID')}` : `Rp ${data.installationFee.toLocaleString('id-ID')}`,
+      bankAccounts: bankAccountsText,
       companyName,
       companyPhone,
     };
@@ -161,6 +181,7 @@ export async function sendInstallationInvoice(data: {
     const company = await prisma.company.findFirst();
     const companyName = company?.name || 'SALFANET RADIUS';
     const companyPhone = company?.phone || '';
+    const bankAccountsText = formatBankAccountsForWA(company?.bankAccounts);
 
     const dueDateStr = data.dueDate.toLocaleDateString('id-ID', {
       day: 'numeric',
@@ -185,6 +206,7 @@ export async function sendInstallationInvoice(data: {
       dueDate: dueDateStr,
       paymentLink: data.paymentLink,
       profileName: data.profileName || '-',
+      bankAccounts: bankAccountsText,
       companyName,
       companyPhone,
     };
@@ -318,6 +340,10 @@ export async function sendInvoiceReminder(data: {
       return;
     }
 
+    // Fetch bank accounts for payment templates
+    const company = await prisma.company.findFirst({ select: { bankAccounts: true } });
+    const bankAccountsText = formatBankAccountsForWA(company?.bankAccounts);
+
     // Prepare variables (supports both templates)
     const variables = {
       customerName: data.customerName,
@@ -330,6 +356,7 @@ export async function sendInvoiceReminder(data: {
       daysRemaining: daysRemaining.toString(),
       daysOverdue: daysOverdue.toString(),
       paymentLink: data.paymentLink,
+      bankAccounts: bankAccountsText,
       companyName: data.companyName,
       companyPhone: data.companyPhone,
     };

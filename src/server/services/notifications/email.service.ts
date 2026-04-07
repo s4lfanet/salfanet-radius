@@ -172,6 +172,41 @@ export const EmailService = {
   },
 
   /**
+   * Format bank accounts (from company.bankAccounts JSON) as HTML for email templates
+   */
+  formatBankAccountsForEmail(bankAccounts: any): string {
+    if (!bankAccounts) return '';
+    let accounts: Array<{ bankName?: string; bank?: string; accountNumber?: string; accountName?: string }> = [];
+    try {
+      accounts = Array.isArray(bankAccounts) ? bankAccounts : JSON.parse(String(bankAccounts));
+    } catch {
+      return '';
+    }
+    if (!accounts.length) return '';
+    const rows = accounts.map(a =>
+      `<tr>
+          <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-weight:600;color:#0369a1;">${a.bankName || a.bank || '-'}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;font-family:monospace;font-size:14px;">${a.accountNumber || '-'}</td>
+          <td style="padding:10px 14px;border-bottom:1px solid #e2e8f0;">${a.accountName || '-'}</td>
+        </tr>`
+    ).join('');
+    return `<div style="margin:20px 0;padding:18px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;">
+  <h4 style="margin:0 0 12px 0;color:#0369a1;font-size:14px;">🏦 Rekening Pembayaran Manual</h4>
+  <table width="100%" cellpadding="0" cellspacing="0" style="font-size:13px;border-collapse:collapse;border:1px solid #bae6fd;border-radius:6px;overflow:hidden;">
+    <thead>
+      <tr style="background:#e0f2fe;">
+        <th style="padding:10px 14px;text-align:left;color:#075985;font-size:12px;">Bank</th>
+        <th style="padding:10px 14px;text-align:left;color:#075985;font-size:12px;">No. Rekening</th>
+        <th style="padding:10px 14px;text-align:left;color:#075985;font-size:12px;">Atas Nama</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+  <p style="margin:8px 0 0 0;font-size:11px;color:#0369a1;">* Harap konfirmasi transfer ke admin setelah melakukan pembayaran</p>
+</div>`;
+  },
+
+  /**
    * Generate test email HTML
    */
   generateTestEmail(): string {
@@ -711,6 +746,9 @@ export const EmailService = {
         timeZone: 'Asia/Jakarta',
       });
 
+      // Fetch bank accounts for payment email
+      const companySettings = await prisma.company.findFirst({ select: { bankAccounts: true } });
+
       // Prepare variables
       const variables: Record<string, string> = {
         customerId: '',
@@ -724,6 +762,7 @@ export const EmailService = {
         daysRemaining: daysRemaining.toString(),
         daysOverdue: daysOverdue.toString(),
         paymentLink: data.paymentLink,
+        bankAccounts: this.formatBankAccountsForEmail(companySettings?.bankAccounts),
         companyName: data.companyName,
         companyPhone: data.companyPhone,
       };
@@ -1090,7 +1129,7 @@ export const EmailService = {
           paymentLink: data.paymentLink || '',
           paymentToken: data.paymentToken || '',
           baseUrl: company?.baseUrl || '',
-          bankAccounts: '',
+          bankAccounts: this.formatBankAccountsForEmail(company?.bankAccounts),
           companyName: company?.name || '',
           companyPhone: company?.phone || '',
           companyEmail: company?.email || '',
