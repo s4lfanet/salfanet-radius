@@ -87,6 +87,13 @@ setTimeout(async () => {
   await runCronJob('freeradius_health', 'FreeRADIUS Health Check (startup)');
 }, 10000); // 10s delay so Next.js app is fully up before we call the API
 
+// Startup: run PPPoE Auto Isolir immediately after restart to catch any
+// expired users that were missed during the restart window.
+setTimeout(async () => {
+  console.log('[CRON SERVICE] Startup: running pppoe_auto_isolir to catch missed expirations...');
+  await runCronJob('pppoe_auto_isolir', 'PPPoE Auto Isolir (startup)', { lockTtl: 300 });
+}, 20000); // 20s delay — after freeradius_health completes
+
 // 1. Hotspot Voucher Sync - Every minute
 cron.schedule('* * * * *', async () => {
   await runCronJob('hotspot_sync', 'Hotspot Voucher Sync');

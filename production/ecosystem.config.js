@@ -29,8 +29,8 @@ module.exports = {
       autorestart: true,
       max_restarts: 10,
       min_uptime: '10s',
-      // Restart every 8 hours (was 6 — with more heap, less frequent restarts needed)
-      cron_restart: '0 */8 * * *'
+      // Restart every 8 hours — offset to :03 to avoid clashing with hourly cron jobs at :00
+      cron_restart: '3 */8 * * *'
     },
     // Standalone Cron Service
     {
@@ -60,8 +60,8 @@ module.exports = {
       autorestart: true,
       max_restarts: 5,
       min_uptime: '10s',
-      // Restart every 4 hours to prevent memory buildup
-      cron_restart: '0 */4 * * *'
+      // Restart every 4 hours — offset to :33 to avoid clashing with hourly cron jobs at :00
+      cron_restart: '33 */4 * * *'
     }
   ]
 };
