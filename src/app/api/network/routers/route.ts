@@ -220,7 +220,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     // Support both 'nasname' (from frontend) and 'nasIpAddress' for backward compatibility
-    const { id, name, ipAddress, nasIpAddress, nasname: nasnameFromBody, username, password, port, secret, isActive, latitude, longitude, vpnClientId } = body;
+    const { id, name, type, ipAddress, nasIpAddress, nasname: nasnameFromBody, username, password, port, secret, isActive, latitude, longitude, vpnClientId } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Router ID is required' }, { status: 400 });
@@ -233,13 +233,16 @@ export async function PUT(request: NextRequest) {
     // Support: nasIpAddress (legacy) atau nasname (dari frontend)
     const nasname = nasIpAddress || nasnameFromBody || ipAddress || undefined;
 
-    // Test connection if credentials changed
-    if (ipAddress || username || password || port) {
-      const currentRouter = await prisma.router.findUnique({ where: { id } });
-      if (!currentRouter) {
-        return NextResponse.json({ error: 'Router not found' }, { status: 404 });
-      }
+    // Determine router type — skip connection test for gateway/VPS (no API credentials)
+    const currentRouter = await prisma.router.findUnique({ where: { id } });
+    if (!currentRouter) {
+      return NextResponse.json({ error: 'Router not found' }, { status: 404 });
+    }
+    const effectiveType = type || currentRouter.type;
+    const isGateway = effectiveType === 'gateway';
 
+    // Test connection only for MikroTik routers with changed credentials
+    if (!isGateway && (ipAddress || username || password || port)) {
       try {
         const conn = new RouterOSAPI({
           host: ipAddress || currentRouter.ipAddress,
@@ -271,6 +274,7 @@ export async function PUT(request: NextRequest) {
       data: {
         ...(name && { name }),
         ...(shortname && { shortname }),
+        ...(type && { type }),
         ...(nasname && { nasname }),
         ...(ipAddress && { ipAddress }),
         ...(username && { username }),
