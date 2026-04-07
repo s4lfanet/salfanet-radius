@@ -26,7 +26,7 @@ async function main() {
         isolationNotifyWhatsapp: true,
         isolationNotifyEmail: false,
         gracePeriodDays: 0,
-        baseUrl: 'http://localhost:3000'
+        baseUrl: process.env.NEXT_PUBLIC_APP_URL || ''
       }
     });
     
@@ -43,7 +43,7 @@ async function main() {
         phone: '+62 82214535152',
         email: 'admin@localhost',
         timezone: 'Asia/Jakarta',
-        baseUrl: 'http://localhost:3000',
+        baseUrl: process.env.NEXT_PUBLIC_APP_URL || '',
         poweredBy: 'SALFANET RADIUS',
         invoiceGenerateDays: 7,
         gracePeriodDays: 0,

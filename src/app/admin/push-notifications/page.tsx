@@ -183,6 +183,7 @@ export default function PushNotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [companyName, setCompanyName] = useState('ISP');
 
   // Form state
   const [recipientRole, setRecipientRole] = useState<RecipientRole>('customer');
@@ -196,6 +197,9 @@ export default function PushNotificationsPage() {
   useEffect(() => {
     loadStats();
     loadHistory();
+    fetch('/api/public/company').then(r => r.json()).then(d => {
+      if (d.success && d.company?.name) setCompanyName(d.company.name);
+    }).catch(() => {});
   }, []);
 
   const loadStats = async () => {
@@ -231,8 +235,8 @@ export default function PushNotificationsPage() {
   const applyTemplate = (key: string) => {
     const tpl = TEMPLATE_CONTENT[key];
     if (tpl) {
-      setTitle(tpl.title);
-      setMessage(tpl.body);
+      setTitle(tpl.title.replace(/Salfanet/gi, companyName));
+      setMessage(tpl.body.replace(/Salfanet/gi, companyName));
     }
   };
 
@@ -731,7 +735,7 @@ export default function PushNotificationsPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-0.5">
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">SALFANET</span>
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{companyName.toUpperCase().slice(0, 12)}</span>
                                 <span className="text-[9px] text-gray-500">{t('pushNotif.now')}</span>
                               </div>
                               <p className="text-[13px] font-bold text-white leading-snug line-clamp-2 mb-0.5">

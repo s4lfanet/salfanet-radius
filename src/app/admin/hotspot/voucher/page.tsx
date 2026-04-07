@@ -76,6 +76,7 @@ export default function HotspotVoucherPage() {
   const [pageSize, setPageSize] = useState(100)
   const [stats, setStats] = useState({ total: 0, waiting: 0, active: 0, expired: 0, totalValue: 0 })
   const [isSSEConnected, setIsSSEConnected] = useState(false)
+  const [companyName, setCompanyName] = useState('ISP')
   const [deleteOverlay, setDeleteOverlay] = useState<{
     open: boolean; phase: '' | 'deleting' | 'done' | 'error';
     count: number; label: string; errorMsg: string;
@@ -154,7 +155,9 @@ export default function HotspotVoucherPage() {
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadProfiles(); loadRouters(); loadAgents(); loadVouchers(); loadTemplates(); }, [])
+  useEffect(() => { loadProfiles(); loadRouters(); loadAgents(); loadVouchers(); loadTemplates();
+    fetch('/api/public/company').then(r => r.json()).then(d => { if (d.success && d.company?.name) setCompanyName(d.company.name); }).catch(() => {});
+  }, [])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { setCurrentPage(1); loadVouchers(); }, [filterProfile, filterBatch, filterStatus, filterRouter, filterAgent])
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -335,7 +338,7 @@ export default function HotspotVoucherPage() {
       },
       router: v.router ? { name: v.router.name, shortname: v.router.shortname } : undefined
     }));
-    const firstRouter = vouchersToPrint.find(v => v.router)?.router?.name || 'SALFANET';
+    const firstRouter = vouchersToPrint.find(v => v.router)?.router?.name || companyName;
     const rendered = renderVoucherTemplate(template.htmlTemplate, voucherData, { currencyCode: 'Rp', companyName: firstRouter });
     const printHtml = getPrintableHtml(rendered);
     const printWindow = window.open('', '_blank');

@@ -35,6 +35,7 @@ export default function CustomerProfilePage() {
   const { addToast } = useToast();
   const [customer, setCustomer] = useState<CustomerData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState('Radius');
 
   // Edit state
   const [editing, setEditing]   = useState(false);
@@ -56,6 +57,7 @@ export default function CustomerProfilePage() {
     }
 
     fetchCustomerProfile(token);
+    fetch('/api/public/company').then(r => r.json()).then(d => { if (d.success && d.company?.name) setCompanyName(d.company.name); }).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
@@ -368,7 +370,7 @@ export default function CustomerProfilePage() {
       {/* Version Info */}
       <div className="text-center py-4">
         <p className="text-xs text-muted-foreground/60 font-mono">
-          SalfaNet Radius v1.0.0
+          {companyName} v1.0.0
         </p>
       </div>
     </div>

@@ -60,7 +60,7 @@ async function sendPaymentLinkNotification(order: any, notificationMethod: strin
             message = message.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value);
           });
 
-          await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/whatsapp/send`, {
+          await fetch(`${company?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/whatsapp/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

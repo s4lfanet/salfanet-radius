@@ -90,6 +90,17 @@ export async function POST(request: NextRequest) {
     const orderId = `${invoice.invoiceNumber}-${Date.now()}`;
     const customerEmail = pppoeUser.email || `${pppoeUser.username}@customer.com`;
 
+    // Compute base URL with localhost check + request header fallback
+    const companyForBase = await prisma.company.findFirst({ select: { baseUrl: true } });
+    const _proto = request.headers.get('x-forwarded-proto') || 'http';
+    const _host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+    const _inferred = _host ? `${_proto}://${_host}` : '';
+    const appBaseUrl = (companyForBase?.baseUrl && !companyForBase.baseUrl.includes('localhost'))
+      ? companyForBase.baseUrl
+      : (_inferred && !_inferred.includes('localhost'))
+        ? _inferred
+        : companyForBase?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
     console.log('[Regenerate Payment] Creating payment for invoice:', invoice.invoiceNumber);
     console.log('[Regenerate Payment] Gateway:', gateway);
 
@@ -102,6 +113,7 @@ export async function POST(request: NextRequest) {
           customerEmail: customerEmail,
           customerPhone: pppoeUser.phone,
           invoiceToken: invoice.paymentToken || '',
+          baseUrl: appBaseUrl,
           items: [{
             id: invoice.invoiceType || 'topup',
             name: invoice.invoiceType === 'TOPUP' ? 'Top-Up Saldo' : 'Pembayaran Invoice',
@@ -118,15 +130,16 @@ export async function POST(request: NextRequest) {
           description: invoice.invoiceType === 'TOPUP' ? 'Top-Up Saldo' : 'Pembayaran Invoice',
           customerName: pppoeUser.name,
           customerPhone: pppoeUser.phone,
-          invoiceToken: invoice.paymentToken || ''
+          invoiceToken: invoice.paymentToken || '',
+          baseUrl: appBaseUrl,
         });
         paymentUrl = result.invoiceUrl;
       } else if (gateway === 'duitku') {
         const duitku = createDuitkuClient(
           gatewayConfig.duitkuMerchantCode || '',
           gatewayConfig.duitkuApiKey || '',
-          `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/webhook`,
-          `${process.env.NEXT_PUBLIC_APP_URL}/customer`,
+          `${appBaseUrl}/api/payment/webhook`,
+          `${appBaseUrl}/customer`,
           gatewayConfig.duitkuEnvironment === 'sandbox'
         );
 
@@ -162,7 +175,7 @@ export async function POST(request: NextRequest) {
             price: invoice.amount,
             quantity: 1,
           }],
-          returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/customer`,
+          returnUrl: `${appBaseUrl}/customer`,
           expiredTime: 86400,
         });
 

@@ -129,6 +129,17 @@ export async function POST(request: NextRequest) {
     // Use INV- prefix so webhook can detect it properly
     const orderId = `INV-${invoice.invoiceNumber}-${Date.now()}`;
 
+    // Compute base URL with localhost check + request header fallback
+    const companyForBase = await prisma.company.findFirst({ select: { baseUrl: true } });
+    const _proto = request.headers.get('x-forwarded-proto') || 'http';
+    const _host = request.headers.get('x-forwarded-host') || request.headers.get('host') || '';
+    const _inferred = _host ? `${_proto}://${_host}` : '';
+    const appBaseUrl = (companyForBase?.baseUrl && !companyForBase.baseUrl.includes('localhost'))
+      ? companyForBase.baseUrl
+      : (_inferred && !_inferred.includes('localhost'))
+        ? _inferred
+        : companyForBase?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
     try {
       const customerEmail = pppoeUser.email || `${pppoeUser.username}@customer.com`;
       const token = invoice.paymentToken || '';
@@ -141,6 +152,7 @@ export async function POST(request: NextRequest) {
           customerEmail: customerEmail,
           customerPhone: pppoeUser.phone,
           invoiceToken: token,
+          baseUrl: appBaseUrl,
           items: [{
             id: newProfile.id,
             name: `Upgrade ke ${newProfile.name}`,
@@ -157,15 +169,16 @@ export async function POST(request: NextRequest) {
           description: `Upgrade ke ${newProfile.name}`,
           customerName: pppoeUser.name,
           customerPhone: pppoeUser.phone,
-          invoiceToken: token
+          invoiceToken: token,
+          baseUrl: appBaseUrl,
         });
         paymentUrl = xenditResult.invoiceUrl;
       } else if (gateway === 'duitku') {
         const duitku = createDuitkuClient(
           gatewayConfig.duitkuMerchantCode || '',
           gatewayConfig.duitkuApiKey || '',
-          `${process.env.NEXT_PUBLIC_APP_URL}/api/payment/webhook`,
-          `${process.env.NEXT_PUBLIC_APP_URL}/customer`,
+          `${appBaseUrl}/api/payment/webhook`,
+          `${appBaseUrl}/customer`,
           gatewayConfig.duitkuEnvironment === 'sandbox'
         );
 
@@ -202,7 +215,7 @@ export async function POST(request: NextRequest) {
               quantity: 1,
             },
           ],
-          returnUrl: `${process.env.NEXT_PUBLIC_APP_URL}/customer`,
+          returnUrl: `${appBaseUrl}/customer`,
           expiredTime: 86400,
         });
 

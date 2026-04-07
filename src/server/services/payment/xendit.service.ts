@@ -9,11 +9,16 @@ export async function createXenditInvoice(params: {
   customerName: string
   customerPhone: string
   invoiceToken: string
+  baseUrl?: string
 }) {
-  // Get company base URL
-  const company = await prisma.company.findFirst()
-  const baseUrl = company?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  console.log("[Xendit] Using baseUrl:", baseUrl)
+  // Get company base URL — prefer explicitly passed baseUrl, then DB (with localhost check)
+  let baseUrl = params.baseUrl
+  if (!baseUrl) {
+    const company = await prisma.company.findFirst()
+    baseUrl = (company?.baseUrl && !company.baseUrl.includes('localhost'))
+      ? company.baseUrl
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  }
 
   // Get Xendit config
   const config = await prisma.paymentGateway.findUnique({

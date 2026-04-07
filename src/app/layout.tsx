@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/components/client-providers";
+import { prisma } from "@/server/db/client";
 
 export const dynamic = 'force-dynamic';
 
@@ -16,17 +17,21 @@ const geistMono = Geist_Mono({
   preload: false, // Less critical than sans-serif, don't block initial load
 });
 
-export const metadata: Metadata = {
-  title: "SALFANET RADIUS",
-  description: "Billing & RADIUS management system for ISP/RTRW.NET",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "Salfanet",
-  },
-  formatDetection: { telephone: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await prisma.company.findFirst({ select: { name: true } });
+  const name = company?.name || 'SALFANET RADIUS';
+  return {
+    title: name,
+    description: "Billing & RADIUS management system for ISP/RTRW.NET",
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: name,
+    },
+    formatDetection: { telephone: false },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#06b6d4",

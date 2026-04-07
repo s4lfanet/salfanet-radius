@@ -8,6 +8,7 @@ export async function createMidtransPayment(params: {
   customerEmail?: string
   customerPhone: string
   invoiceToken: string
+  baseUrl?: string
   items: Array<{
     id: string
     name: string
@@ -15,9 +16,14 @@ export async function createMidtransPayment(params: {
     quantity: number
   }>
 }) {
-  // Get company base URL
-  const company = await prisma.company.findFirst()
-  const baseUrl = company?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  // Get company base URL — prefer explicitly passed baseUrl, then DB (with localhost check)
+  let baseUrl = params.baseUrl
+  if (!baseUrl) {
+    const company = await prisma.company.findFirst()
+    baseUrl = (company?.baseUrl && !company.baseUrl.includes('localhost'))
+      ? company.baseUrl
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  }
 
   // Get Midtrans config
   const config = await prisma.paymentGateway.findUnique({

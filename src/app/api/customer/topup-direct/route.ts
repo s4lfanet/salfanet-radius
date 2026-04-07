@@ -136,6 +136,7 @@ export async function POST(request: NextRequest) {
           customerEmail: customerEmail,
           customerPhone: pppoeUser.phone,
           invoiceToken: paymentToken,
+          baseUrl: appBaseUrl,
           items: [{
             id: 'topup',
             name: `Top-Up Saldo`,
@@ -155,7 +156,8 @@ export async function POST(request: NextRequest) {
           description: `Top-Up Saldo`,
           customerName: pppoeUser.name,
           customerPhone: pppoeUser.phone,
-          invoiceToken: paymentToken
+          invoiceToken: paymentToken,
+          baseUrl: appBaseUrl,
         });
         paymentUrl = xenditResult.invoiceUrl;
         console.log('[Top-Up Direct] Xendit payment URL:', paymentUrl);

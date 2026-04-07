@@ -411,7 +411,7 @@ export default function PaymentPage() {
         {/* Footer */}
         <div className="text-center space-y-1">
           <p className="text-[10px] text-[#e0d0ff]/50">Pembayaran aman didukung oleh</p>
-          <p className="text-xs font-bold bg-gradient-to-r from-[#00f7ff] to-[#bc13fe] bg-clip-text text-transparent">SALFANETRADIUS</p>
+          <p className="text-xs font-bold bg-gradient-to-r from-[#00f7ff] to-[#bc13fe] bg-clip-text text-transparent">{company?.companyName || 'SALFANETRADIUS'}</p>
         </div>
       </div>
     </div>

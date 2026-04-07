@@ -167,6 +167,7 @@ export async function POST(request: NextRequest) {
           customerEmail,
           customerPhone,
           invoiceToken: invoice.paymentToken,
+          baseUrl: appBaseUrl,
           items: [
             {
               id: invoice.id,
@@ -195,7 +196,8 @@ export async function POST(request: NextRequest) {
           description: `Payment for Invoice ${invoice.invoiceNumber}`,
           customerName,
           customerPhone,
-          invoiceToken: invoice.paymentToken
+          invoiceToken: invoice.paymentToken,
+          baseUrl: appBaseUrl,
         });
 
         console.log('[Xendit] Response:', JSON.stringify(result, null, 2));
