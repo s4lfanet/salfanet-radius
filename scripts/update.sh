@@ -100,6 +100,14 @@ if echo "$CHANGED" | grep -q '^prisma/schema\.prisma$'; then
   ok "Prisma updated"
 fi
 
+# ── Prisma seed (if seed files changed) ───────────────────
+if echo "$CHANGED" | grep -qE '^prisma/seeds/'; then
+  echo ""
+  log "Seed files changed — running db:seed (upsert-safe, won't overwrite admin customizations)..."
+  npm run db:seed 2>&1 | tail -10
+  ok "Prisma seed done"
+fi
+
 # ── Clean stale build artifacts ──────────────────────────
 rm -rf .next 2>/dev/null || true
 
