@@ -265,8 +265,10 @@ async function payInvoiceFromBalance(user: any, invoice: any) {
         await sendAutoRenewalSuccess({
           customerName: user.name || user.username,
           customerPhone: user.phone,
+          customerId: (user as any).customerId || undefined,
           username: user.username,
           profileName: user.profile.name,
+          area: (user as any).area?.name,
           amount: packagePrice,
           newBalance: result.user.balance,
           expiredDate: result.newExpiredAt,

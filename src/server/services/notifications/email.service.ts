@@ -679,6 +679,7 @@ export const EmailService = {
   async sendInvoiceReminder(data: {
     email: string;
     customerName: string;
+    customerId?: string;
     customerUsername?: string;
     profileName?: string;
     area?: string;
@@ -751,7 +752,7 @@ export const EmailService = {
 
       // Prepare variables
       const variables: Record<string, string> = {
-        customerId: '',
+        customerId: data.customerId || '-',
         customerName: data.customerName,
         username: data.customerUsername || '-',
         profileName: data.profileName || '-',

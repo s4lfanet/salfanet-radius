@@ -431,6 +431,7 @@ export async function PUT(request: NextRequest) {
             await sendPaymentSuccess({
               customerName: user.name,
               customerPhone: user.phone,
+              customerId: (user as any).customerId || undefined,
               username: user.username,
               password: user.password,
               profileName: targetProfile ? targetProfile.name : profile.name,

@@ -319,6 +319,7 @@ export async function POST(
     await sendRegistrationApproval({
       customerName: registration.name,
       customerPhone: registration.phone,
+      customerId: (pppoeUser as any).customerId || undefined,
       username: pppoeUser.username,
       password: pppoeUser.password,
       profileName: registration.profile.name,

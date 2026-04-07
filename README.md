@@ -362,6 +362,13 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 
 ## 📝 Changelog
 
+### v2.14.0 — January 2026
+- **Feat: ID Pelanggan di semua notifikasi** — `{{customerId}}` ditambahkan ke semua template WA & email (registration approval, invoice reminder, payment success, auto-renewal, manual payment approval/rejection, account info, admin create user)
+- **Feat: Area pelanggan di notifikasi** — `{{area}}` ditambahkan ke admin-create-user, payment-success, auto-renewal-success templates
+- **Fix: Seed template selalu update message** — bug di `whatsapp-templates.ts` & `email-templates.ts` di mana `message`/`htmlBody` tidak diupdate tanpa flag `--force-templates` sudah diperbaiki; sekarang selalu update
+- **Fix: update.sh selalu jalankan seed** — seed tidak lagi bersyarat pada file diff, selalu berjalan dengan `stdbuf` untuk output real-time
+- **Infra: stdbuf untuk live log** — gunakan `stdbuf -oL npm run db:seed` agar log seed muncul secara real-time di admin panel
+
 ### v2.13.1 — April 5, 2026
 - **Fix: Wablas send gagal** — ganti dari `POST /api/v2/send-message` ke `GET /api/send-message?token=...` (v1 simple endpoint, kompatibel semua server Wablas). API key format: `token.secret_key`
 - **Clarify: Hint form Wablas** diperjelas format API key `token.secret_key`

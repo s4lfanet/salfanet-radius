@@ -309,6 +309,7 @@ export async function PATCH(
         let message = whatsappTemplate.message
           .replace(/{{customerName}}/g, customerName)
           .replace(/{{customerUsername}}/g, manualPayment.user.username)
+          .replace(/{{customerId}}/g, (manualPayment.user as any)?.customerId || '-')
           .replace(/{{invoiceNumber}}/g, invoiceNumber)
           .replace(/{{amount}}/g, amount)
           .replace(/{{expiredDate}}/g, newExpiry.toLocaleDateString('id-ID'))
@@ -334,6 +335,7 @@ export async function PATCH(
         if (emailTemplate && emailTemplate.isActive) {
           const variables = {
             customerName,
+            customerId: (manualPayment.user as any)?.customerId || '-',
             customerUsername: manualPayment.user.username,
             invoiceNumber,
             amount,
@@ -417,6 +419,7 @@ export async function PATCH(
         let message = whatsappTemplate.message
           .replace(/{{customerName}}/g, customerName)
           .replace(/{{customerUsername}}/g, manualPayment.user.username)
+          .replace(/{{customerId}}/g, (manualPayment.user as any)?.customerId || '-')
           .replace(/{{invoiceNumber}}/g, invoiceNumber)
           .replace(/{{amount}}/g, amount)
           .replace(/{{rejectionReason}}/g, rejectionReason)
@@ -443,6 +446,7 @@ export async function PATCH(
         if (emailTemplate && emailTemplate.isActive) {
           const variables = {
             customerName,
+            customerId: (manualPayment.user as any)?.customerId || '-',
             customerUsername: manualPayment.user.username,
             invoiceNumber,
             amount,

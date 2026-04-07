@@ -46,6 +46,7 @@ Selamat! Pendaftaran Anda telah *DISETUJUI*!
 ━━━━━━━━━━━━━━━━━━━━━━
 *📱 INFORMASI AKUN ANDA*
 ━━━━━━━━━━━━━━━━━━━━━━
+🆔 ID Pelanggan: {{customerId}}
 👤 Username: {{username}}
 🔐 Password: {{password}}
 📦 Paket: {{profileName}}
@@ -113,9 +114,11 @@ Akun internet Anda telah dibuat oleh admin!
 ━━━━━━━━━━━━━━━━━━━━━━
 *🔐 INFO LOGIN*
 ━━━━━━━━━━━━━━━━━━━━━━
+🆔 ID Pelanggan: {{customerId}}
 👤 Username: {{username}}
 🔑 Password: {{password}}
 📦 Paket: {{profileName}}
+📍 Area: {{area}}
 📅 Aktif hingga: {{expiredDate}}
 
 Silakan gunakan kredensial di atas untuk login ke jaringan kami.
@@ -171,9 +174,11 @@ Terima kasih! Pembayaran Anda telah berhasil dikonfirmasi.
 ━━━━━━━━━━━━━━━━━━━━━━
 📋 *Detail Pembayaran*
 ━━━━━━━━━━━━━━━━━━━━━━
+🆔 ID Pelanggan: {{customerId}}
 📌 Invoice: {{invoiceNumber}}
 💰 Jumlah: {{amount}}
 👤 Username: {{username}}
+📦 Paket: {{profileName}}
 📅 Aktif hingga: {{expiredDate}}
 
 🎉 Akun Anda sekarang aktif. Terima kasih!
@@ -219,9 +224,12 @@ Halo *{{customerName}}*,
 Pembayaran manual Anda telah *DISETUJUI* oleh admin kami.
 
 📋 *Detail:*
+• ID Pelanggan: {{customerId}}
 • Invoice: {{invoiceNumber}}
 • Jumlah: {{amount}}
 • Username: {{customerUsername}}
+• Paket: {{profileName}}
+• Area: {{area}}
 • Masa aktif hingga: {{expiredDate}}
 
 ✅ Akun Anda sekarang sudah aktif dan dapat digunakan.
@@ -242,6 +250,8 @@ Halo *{{customerName}}*,
 Mohon maaf, pembayaran manual Anda *DITOLAK* oleh admin kami.
 
 📋 *Detail:*
+• ID Pelanggan: {{customerId}}
+• Username: {{customerUsername}}
 • Invoice: {{invoiceNumber}}
 • Jumlah: {{amount}}
 
@@ -391,8 +401,10 @@ Layanan Anda telah diperpanjang otomatis!
 ━━━━━━━━━━━━━━━━━━━━━━
 *📋 DETAIL RENEWAL*
 ━━━━━━━━━━━━━━━━━━━━━━
+🆔 ID Pelanggan: {{customerId}}
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
+📍 Area: {{area}}
 💰 Biaya: {{amount}}
 💳 Saldo Sekarang: {{newBalance}}
 📅 Aktif hingga: {{expiredDate}}
@@ -488,6 +500,7 @@ Halo {{customerName}},
 ━━━━━━━━━━━━━━━━━━━━━━
 *📱 DETAIL AKUN ANDA*
 ━━━━━━━━━━━━━━━━━━━━━━
+🆔 ID Pelanggan: {{customerId}}
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
 � Area: {{area}}

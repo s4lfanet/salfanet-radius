@@ -6,6 +6,34 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.14.0] — 2026-01-15
+
+### Added
+- **ID Pelanggan (`customerId`) di semua template notifikasi WA** — template yang diperbarui:
+  - `registration-approval` — menampilkan ID pelanggan sebelum username
+  - `admin-create-user` — menampilkan ID pelanggan + area
+  - `invoice-reminder` — menampilkan ID pelanggan di detail invoice
+  - `payment-success` — menampilkan ID pelanggan, paket, dan area
+  - `auto-renewal-success` — menampilkan ID pelanggan + area
+  - `manual-payment-approval` — menampilkan ID pelanggan, paket, dan area
+  - `manual-payment-rejection` — menampilkan ID pelanggan dan username
+  - `account-info` — menampilkan ID pelanggan
+- **ID Pelanggan di template email** — ditambahkan ke:
+  - `registration-approval` — baris ID Pelanggan sebelum Username
+  - `manual-payment-approval` — baris ID Pelanggan di tabel detail
+  - `manual-payment-rejection` — baris ID Pelanggan + Username di tabel detail
+- **Field `customerId` di service interfaces** — `sendRegistrationApproval`, `sendPaymentSuccess`, `sendAutoRenewalSuccess`, `sendInvoiceReminder` (WA + Email) sekarang menerima `customerId?: string`
+- **Field `area` di notifikasi payment-success dan auto-renewal-success** — service interfaces + variabel template diperbarui
+
+### Fixed
+- **Seed template tidak update `message`/`htmlBody`** — bug di `whatsapp-templates.ts` dan `email-templates.ts`: branch `update` tanpa flag `--force-templates` hanya meng-update `name` dan `isActive`, BUKAN konten pesan. Sekarang `message`/`htmlBody` selalu diupdate pada setiap seed.
+- **`update.sh` tidak menjalankan seed** — seed hanya berjalan jika file di `prisma/seeds/` berubah. Sekarang seed selalu berjalan di setiap update.
+
+### Changed
+- **`update.sh` menggunakan `stdbuf`** — `npm run db:seed` dibungkus dengan `stdbuf -oL` agar output log muncul secara real-time di SSH / admin live log panel
+
+---
+
 ## [2.13.2] — 2026-04-05
 
 ### Changed

@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
     // Prepare common data
     const reminderData = {
       customerName: invoice.customerName || invoice.customerUsername || 'Customer',
+      customerId: (invoice.user as any)?.customerId || undefined,
       customerUsername: invoice.customerUsername || invoice.user?.username,
       invoiceNumber: invoice.invoiceNumber,
       amount: invoice.amount,

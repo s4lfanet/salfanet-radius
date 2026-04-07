@@ -104,6 +104,7 @@ export async function sendRegistrationConfirmation(data: {
 export async function sendRegistrationApproval(data: {
   customerName: string;
   customerPhone: string;
+  customerId?: string;
   username: string;
   password: string;
   profileName: string;
@@ -135,6 +136,7 @@ export async function sendRegistrationApproval(data: {
     // Prepare variables
     const variables = {
       customerName: data.customerName,
+      customerId: data.customerId || '-',
       username: data.username,
       password: data.password,
       profileName: data.profileName,
@@ -291,6 +293,7 @@ export async function sendAdminCreateUser(data: {
 export async function sendInvoiceReminder(data: {
   phone: string;
   customerName: string;
+  customerId?: string;
   customerUsername?: string;
   profileName?: string;
   area?: string;
@@ -347,6 +350,7 @@ export async function sendInvoiceReminder(data: {
     // Prepare variables (supports both templates)
     const variables = {
       customerName: data.customerName,
+      customerId: data.customerId || '-',
       username: data.customerUsername || '-',
       profileName: data.profileName || '-',
       area: data.area || '-',
@@ -384,9 +388,11 @@ export async function sendInvoiceReminder(data: {
 export async function sendPaymentSuccess(data: {
   customerName: string;
   customerPhone: string;
+  customerId?: string;
   username: string;
   password: string;
   profileName: string;
+  area?: string;
   invoiceNumber: string;
   amount: number;
   newExpiredAt?: Date | string | null;
@@ -416,9 +422,11 @@ export async function sendPaymentSuccess(data: {
     // Prepare variables
     const variables = {
       customerName: data.customerName,
+      customerId: data.customerId || '-',
       username: data.username,
       password: data.password,
       profileName: data.profileName,
+      area: data.area || '-',
       invoiceNumber: data.invoiceNumber,
       amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
       expiredDate,
@@ -506,8 +514,10 @@ export async function sendVoucherPurchaseSuccess(data: {
 export async function sendAutoRenewalSuccess(data: {
   customerName: string;
   customerPhone: string;
+  customerId?: string;
   username: string;
   profileName: string;
+  area?: string;
   amount: number;
   newBalance: number;
   expiredDate: Date;
@@ -535,8 +545,10 @@ export async function sendAutoRenewalSuccess(data: {
     // Prepare variables
     const variables = {
       customerName: data.customerName,
+      customerId: data.customerId || '-',
       username: data.username,
       profileName: data.profileName,
+      area: data.area || '-',
       amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
       newBalance: `Rp ${data.newBalance.toLocaleString('id-ID')}`,
       expiredDate: expiredDateStr,

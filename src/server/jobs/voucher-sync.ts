@@ -971,6 +971,7 @@ export async function sendInvoiceReminders(force: boolean = false): Promise<{ su
             await sendInvoiceReminder({
               phone: invoice.customerPhone!,
               customerName: customerName,
+              customerId: (invoice.user as any)?.customerId || undefined,
               customerUsername: invoice.customerUsername || invoice.user?.username,
               profileName: (invoice.user as any)?.profile?.name,
               area: (invoice.user as any)?.area?.name,
@@ -990,6 +991,7 @@ export async function sendInvoiceReminders(force: boolean = false): Promise<{ su
                 const { EmailService } = await import('@/server/services/notifications/email.service')
                 await EmailService.sendInvoiceReminder({
                   email: customerEmail,
+                  customerId: (invoice.user as any)?.customerId || undefined,
                   profileName: (invoice.user as any)?.profile?.name,
                   area: (invoice.user as any)?.area?.name,
                   customerName: customerName,

@@ -1050,6 +1050,7 @@ async function handleCustomerTopUp(
         await sendPaymentSuccess({
           customerName: invoice.user.name,
           customerPhone: invoice.user.phone,
+          customerId: (invoice.user as any).customerId || undefined,
           username: invoice.user.username,
           password: invoice.user.password,
           profileName: 'Top-Up Saldo',
@@ -1402,6 +1403,7 @@ async function handleInvoicePayment(
           await sendPaymentSuccess({
             customerName: user.name,
             customerPhone: user.phone,
+            customerId: (user as any).customerId || undefined,
             username: user.username,
             password: user.password,
             profileName: profile.name,

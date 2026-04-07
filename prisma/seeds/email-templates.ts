@@ -141,6 +141,14 @@ export const emailTemplates = [
                 </tr>
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    <strong>ID Pelanggan:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px; font-family: monospace;">
+                    {{customerId}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
                     <strong>Username:</strong>
                   </td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px; font-family: monospace;">
@@ -299,6 +307,14 @@ export const emailTemplates = [
               <table width="100%" cellpadding="12" cellspacing="0" style="background-color: #f0fdf4; border-radius: 8px; margin: 20px 0; border: 2px solid #10b981;">
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    <strong>ID Pelanggan:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px; font-family: monospace;">
+                    {{customerId}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
                     <strong>No. Invoice:</strong>
                   </td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px; font-family: monospace;">
@@ -394,6 +410,22 @@ export const emailTemplates = [
               </p>
               
               <table width="100%" cellpadding="12" cellspacing="0" style="background-color: #fef2f2; border-radius: 8px; margin: 20px 0; border: 2px solid #ef4444;">
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #fecaca; padding: 12px;">
+                    <strong>ID Pelanggan:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #fecaca; padding: 12px; font-family: monospace;">
+                    {{customerId}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #fecaca; padding: 12px;">
+                    <strong>Username:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #fecaca; padding: 12px; font-family: monospace;">
+                    {{customerUsername}}
+                  </td>
+                </tr>
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #fecaca; padding: 12px;">
                     <strong>No. Invoice:</strong>
