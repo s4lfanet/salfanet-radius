@@ -4,6 +4,9 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth/config'
 import { unauthorized } from '@/lib/api-response'
 
+// Allow up to 5 minutes for long-running cron jobs (backup + telegram upload)
+export const maxDuration = 300;
+
 /**
  * GET /api/cron - Get cron history
  */

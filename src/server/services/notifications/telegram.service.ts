@@ -1,5 +1,8 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { createReadStream, createWriteStream } from 'fs';
+import { createGzip } from 'zlib';
+import { pipeline } from 'stream/promises';
 import { formatInTimeZone } from 'date-fns-tz';
 
 interface TelegramSendOptions {
@@ -76,12 +79,15 @@ export async function sendTelegramFile(
     const fileBuffer = await fs.readFile(filepath);
     const filename = path.basename(filepath) || 'backup.sql';
     
+    // Determine MIME type based on extension
+    const mimeType = filename.endsWith('.gz') ? 'application/gzip' : 'application/sql';
+    
     // Create FormData using native FormData API
     const formData = new FormData();
     formData.append('chat_id', chatId);
     
     // Create blob from buffer
-    const blob = new Blob([fileBuffer], { type: 'application/sql' });
+    const blob = new Blob([fileBuffer], { type: mimeType });
     formData.append('document', blob, filename);
     
     if (caption) {
@@ -190,29 +196,73 @@ export async function sendBackupToTelegram(
   filesize: number | bigint
 ): Promise<{ success: boolean; error?: string }> {
   const fileSizeNum = Number(filesize);
-  const MAX_TELEGRAM_FILE_SIZE = 50 * 1024 * 1024; // 50MB Telegram limit
+  const originalSizeMB = (fileSizeNum / 1024 / 1024).toFixed(2);
+  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
+  const originalFilename = path.basename(filepath) || 'backup.sql';
+  
+  const MAX_TELEGRAM_FILE_SIZE = 50 * 1024 * 1024; // 50MB Telegram Bot API limit
+  
+  // Auto-compress with gzip if file is large (SQL compresses ~5-10x)
+  let sendFilepath = filepath;
+  let sendFilename = originalFilename;
+  let compressed = false;
   
   if (fileSizeNum > MAX_TELEGRAM_FILE_SIZE) {
-    const sizeMB = (fileSizeNum / 1024 / 1024).toFixed(2);
-    return {
-      success: false,
-      error: `Backup file too large (${sizeMB} MB). Telegram limit is 50 MB. Consider reducing backup size or using a different storage method.`,
-    };
+    console.log(`[Telegram] Backup ${originalSizeMB} MB exceeds 50MB limit, compressing with gzip...`);
+    const gzPath = filepath + '.gz';
+    try {
+      await pipeline(
+        createReadStream(filepath),
+        createGzip({ level: 9 }),
+        createWriteStream(gzPath)
+      );
+      const gzStats = await fs.stat(gzPath);
+      const gzSizeMB = (gzStats.size / 1024 / 1024).toFixed(2);
+      console.log(`[Telegram] Compressed: ${originalSizeMB} MB → ${gzSizeMB} MB`);
+      
+      if (gzStats.size > MAX_TELEGRAM_FILE_SIZE) {
+        // Even compressed is too large — clean up and report
+        await fs.unlink(gzPath).catch(() => {});
+        return {
+          success: false,
+          error: `Backup too large even after gzip compression (${originalSizeMB} MB → ${gzSizeMB} MB). Telegram limit is 50 MB.`,
+        };
+      }
+      
+      sendFilepath = gzPath;
+      sendFilename = originalFilename + '.gz';
+      compressed = true;
+    } catch (compressError: any) {
+      console.error('[Telegram] Gzip compression failed:', compressError);
+      await fs.unlink(gzPath).catch(() => {});
+      return {
+        success: false,
+        error: `Failed to compress backup for Telegram: ${compressError.message}`,
+      };
+    }
   }
-
-  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
-  const filename = path.basename(filepath) || 'backup.sql';
-  const sizeMB = (fileSizeNum / 1024 / 1024).toFixed(2);
+  
+  const sendStats = compressed ? await fs.stat(sendFilepath) : null;
+  const sendSizeMB = compressed
+    ? (sendStats!.size / 1024 / 1024).toFixed(2)
+    : originalSizeMB;
   
   const caption = `
 💾 <b>Database Backup</b>
 
-📁 ${filename}
-📦 Size: ${sizeMB} MB
+📁 ${sendFilename}
+📦 Size: ${sendSizeMB} MB${compressed ? ` (original: ${originalSizeMB} MB)` : ''}
 📅 ${now} WIB
 
 ✅ Backup completed successfully!
   `.trim();
   
-  return await sendTelegramFile(options, filepath, caption);
+  const result = await sendTelegramFile(options, sendFilepath, caption);
+  
+  // Clean up compressed file after sending
+  if (compressed) {
+    await fs.unlink(sendFilepath).catch(() => {});
+  }
+  
+  return result;
 }

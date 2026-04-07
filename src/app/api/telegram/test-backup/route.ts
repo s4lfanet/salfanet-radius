@@ -7,6 +7,9 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { prisma } from '@/server/db/client';
 import * as fs from 'fs/promises';
 
+// Allow up to 5 minutes for backup creation + compression + Telegram upload
+export const maxDuration = 300;
+
 // POST - Test auto backup by creating a real backup and sending it to Telegram
 export async function POST(request: NextRequest) {
   try {

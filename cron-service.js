@@ -39,7 +39,9 @@ async function runCronJob(jobType, description, options = {}) {
       console.log(`[CRON] Running ${description} (attempt ${attempt}/${maxRetries})...`);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      // 5 minute timeout for long-running jobs like backup + telegram upload
+      const timeoutMs = ['telegram_backup', 'telegram_health'].includes(jobType) ? 300000 : 30000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       const response = await fetch(`${API_URL}/api/cron`, {
         method: 'POST',

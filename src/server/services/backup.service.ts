@@ -61,6 +61,7 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
     console.log('[Backup] Creating backup:', filename);
     await execAsync(command, {
       env: { ...process.env, MYSQL_PWD: password },
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer for stderr output
     });
     
     // Get file size
