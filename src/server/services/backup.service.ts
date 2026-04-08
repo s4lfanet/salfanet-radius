@@ -84,6 +84,7 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
         type,
         status: 'success',
         method: 'local',
+        createdAt: nowWIB(),
       },
     });
     
@@ -107,6 +108,7 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
           status: 'failed',
           method: 'local',
           error: error.message,
+          createdAt: nowWIB(),
         },
       });
     } catch (dbError) {
