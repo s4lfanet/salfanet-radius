@@ -92,24 +92,19 @@ add action=drop chain=forward comment="Block internet for isolated users" \\
 # ============================================
 # 4. NAT Rules for HTTP Redirect
 # ============================================
-${settings.isolationRedirectUrl ? `# Redirect HTTP traffic to custom isolation URL
+# DNAT: redirect HTTP traffic from isolated users to billing/isolation page
+# PENTING: to-addresses harus diisi IP VPN VPS (bukan IP publik) agar traffic
+# lewat tunnel VPN dan VPS middleware bisa membaca IP asli client (${settings.isolationIpPool}).
+# Isi field "IP Server Isolir" di Settings → Isolasi dengan IP VPN VPS (misal: 10.20.30.10).
 /ip firewall nat
-add action=redirect chain=dstnat comment="Redirect isolated HTTP to custom page" \\
+add action=dst-nat chain=dstnat comment="Isolir: redirect HTTP ke billing VPS" \\
     dst-port=80 protocol=tcp src-address=${settings.isolationIpPool} \\
-    to-ports=80 to-addresses=${new URL(settings.isolationRedirectUrl).hostname}
+    to-addresses=${isolationPageIp} to-ports=80
 
-` : `# Redirect HTTP traffic to isolation page  
-/ip firewall nat
-add action=redirect chain=dstnat comment="Redirect isolated HTTP to isolation page" \\
-    dst-port=80 protocol=tcp src-address=${settings.isolationIpPool} \\
-    to-ports=80 to-addresses=${isolationPageIp}
+# JANGAN tambahkan src-nat/masquerade untuk traffic 192.168.x.x ini.
+# VPS harus melihat IP asli client agar middleware bisa redirect ke /isolated.
 
-`}${settings.isolationAllowPayment ? `# Allow HTTPS passthrough to billing system
-add action=accept chain=dstnat comment="Allow HTTPS to billing for isolated users" \\
-    dst-address=${billingServerIp} dst-port=443 protocol=tcp \\
-    src-address=${settings.isolationIpPool}
-
-` : ''}# ============================================
+# ============================================
 # 5. RADIUS Configuration  
 # ============================================
 # Note: Update YOUR_RADIUS_SERVER_IP and YOUR_RADIUS_SECRET
