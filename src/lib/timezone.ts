@@ -271,6 +271,21 @@ export function nowWIB(): Date {
 }
 
 /**
+ * Get today's date string in WIB (yyyy-MM-dd).
+ * Safe on both server and client regardless of system timezone.
+ */
+export function todayWIBStr(): string {
+  return formatWIB(nowWIB(), 'yyyy-MM-dd');
+}
+
+/**
+ * Get first of current month string in WIB (yyyy-MM-01).
+ */
+export function firstOfMonthWIBStr(): string {
+  return formatWIB(nowWIB(), 'yyyy-MM') + '-01';
+}
+
+/**
  * Add days to UTC date (returns UTC)
  */
 export function addDaysToUTC(utc: Date | string, days: number): Date {

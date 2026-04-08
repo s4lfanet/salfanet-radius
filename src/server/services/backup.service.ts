@@ -6,6 +6,7 @@ import * as path from 'path';
 import { createReadStream, createWriteStream } from 'fs';
 import { createGunzip } from 'zlib';
 import { pipeline } from 'stream/promises';
+import { formatWIB, nowWIB } from '@/lib/timezone';
 
 const execAsync = promisify(exec);
 
@@ -50,7 +51,7 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
   const { user, password, host, port, database } = parseDbUrl(dbUrl);
   
   // Generate filename with timestamp
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T').join('_').slice(0, -5);
+  const timestamp = formatWIB(nowWIB(), 'yyyy-MM-dd_HH-mm-ss');
   const filename = `salfanet_backup_${timestamp}.sql`;
   
   const backupDir = await ensureBackupDir();

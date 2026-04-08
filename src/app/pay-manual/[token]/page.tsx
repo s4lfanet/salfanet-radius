@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { FileText, CreditCard, Upload, Calendar, Building2, User, ArrowLeft, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, todayWIBStr } from '@/lib/timezone';
 
 interface BankAccount {
   bankName: string;
@@ -329,7 +329,7 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
                 value={formData.transferDate}
                 onChange={(e) => setFormData({ ...formData, transferDate: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-teal-500"
-                max={new Date().toISOString().split('T')[0]}
+                max={todayWIBStr()}
                 required
               />
             </div>

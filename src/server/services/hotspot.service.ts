@@ -154,8 +154,8 @@ export async function listVouchers(params: ListVouchersParams) {
     },
     createdAt: formatInTimeZone(v.createdAt, WIB_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS"),
     updatedAt: formatInTimeZone(v.updatedAt, WIB_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS"),
-    firstLoginAt: v.firstLoginAt ? v.firstLoginAt.toISOString().replace('Z', '') : null,
-    expiresAt: v.expiresAt ? v.expiresAt.toISOString().replace('Z', '') : null,
+    firstLoginAt: v.firstLoginAt ? formatInTimeZone(v.firstLoginAt, WIB_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS") : null,
+    expiresAt: v.expiresAt ? formatInTimeZone(v.expiresAt, WIB_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS") : null,
   }));
 
   return {

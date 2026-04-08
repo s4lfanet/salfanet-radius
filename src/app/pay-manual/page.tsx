@@ -18,7 +18,7 @@ import { CheckCircle, Upload, AlertTriangle, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
-import { formatWIB, nowWIB } from '@/lib/timezone';
+import { formatWIB, nowWIB, todayWIBStr } from '@/lib/timezone';
 
 interface BankAccount {
   name: string;

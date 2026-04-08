@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar, Activity } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, todayWIBStr, firstOfMonthWIBStr } from '@/lib/timezone';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ReportType = 'invoice' | 'payment' | 'customer';
@@ -28,12 +28,11 @@ function formatRupiah(n: number): string {
 }
 
 function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayWIBStr();
 }
 
 function firstOfMonthStr(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  return firstOfMonthWIBStr();
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────

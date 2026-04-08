@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { Activity, Filter, Power, RefreshCw, Wifi, WifiOff, Search, Download } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
-import { formatWIB, nowWIB } from '@/lib/timezone';
+import { formatWIB, nowWIB, todayWIBStr } from '@/lib/timezone';
 
 interface Session {
   id: string;
@@ -75,8 +75,8 @@ export default function SessionsPage() {
   const [pageSize, setPageSize] = useState<number>(25);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
-  const [exportStartDate, setExportStartDate] = useState(new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-  const [exportEndDate, setExportEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [exportStartDate, setExportStartDate] = useState(formatWIB(new Date(nowWIB().getTime() - 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
+  const [exportEndDate, setExportEndDate] = useState(todayWIBStr());
   const [now, setNow] = useState(() => nowWIB().getTime());
 
   // 1-second ticker for live duration counter

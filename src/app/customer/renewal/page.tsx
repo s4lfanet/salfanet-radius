@@ -385,9 +385,9 @@ export default function RenewalPage() {
                   <div className="flex justify-between pt-1 border-t border-border/30">
                     <span className="text-muted-foreground">Berlaku hingga (estimasi)</span>
                     <span className="font-bold text-success">
-                      {formatWIB(new Date(new Date(user.expiredAt) > new Date()
+                      {formatWIB(new Date(user.expiredAt) > new Date()
                         ? new Date(new Date(user.expiredAt).getTime() + 30 * 86400000)
-                        : new Date(Date.now() + 30 * 86400000)).toISOString(), 'd MMM yyyy')}
+                        : new Date(Date.now() + 30 * 86400000), 'd MMM yyyy')}
                     </span>
                   </div>
                 )}
