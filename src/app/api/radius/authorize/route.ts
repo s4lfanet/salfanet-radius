@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
           status: true,
           expiredAt: true,
           name: true,
+          autoIsolationEnabled: true,
         },
       });
 
@@ -81,14 +82,20 @@ export async function POST(request: NextRequest) {
         }
 
         // Cek apakah masa aktif sudah habis (expiredAt lewat)
+        // Skip rejection if autoIsolationEnabled=false (TETAP TERHUBUNG / No Action)
         if (pppoeUser.expiredAt && now > new Date(pppoeUser.expiredAt)) {
-          const message = 'Masa Aktif Habis - Segera Bayar Tagihan';
-          console.log(`[AUTHORIZE] REJECT: PPPoE user ${username} expired at ${pppoeUser.expiredAt}`);
-          await logRejection(username, message);
-          return NextResponse.json({
-            "control:Auth-Type": "Reject",
-            "reply:Reply-Message": message
-          }, { status: 200 });
+          if (pppoeUser.autoIsolationEnabled !== false) {
+            const message = 'Masa Aktif Habis - Segera Bayar Tagihan';
+            console.log(`[AUTHORIZE] REJECT: PPPoE user ${username} expired at ${pppoeUser.expiredAt}`);
+            await logRejection(username, message);
+            return NextResponse.json({
+              "control:Auth-Type": "Reject",
+              "reply:Reply-Message": message
+            }, { status: 200 });
+          }
+          // autoIsolationEnabled=false: allow expired user to stay connected
+          console.log(`[AUTHORIZE] ALLOW (no-action): PPPoE user ${username} expired but autoIsolationEnabled=false`);
+          return NextResponse.json({});
         }
 
         // PPPoE user found and all status checks passed — allow to proceed to SQL/radcheck auth
