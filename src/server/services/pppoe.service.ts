@@ -425,8 +425,8 @@ export async function updatePppoeUser(
     } as never,
   });
 
-  // RADIUS re-sync if critical fields changed
-  if (data.username || data.password || data.profileId || data.ipAddress !== undefined || data.routerId !== undefined) {
+  // RADIUS re-sync if critical fields changed (including status change)
+  if (data.username || data.password || data.profileId || data.ipAddress !== undefined || data.routerId !== undefined || (data.status && data.status !== currentUser.status)) {
     try {
       const oldUsername = currentUser.username;
       const newUsername = data.username || currentUser.username;
