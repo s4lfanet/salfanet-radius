@@ -37,7 +37,7 @@ fi
 
 logger -t vpn-route "Menambahkan route ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE}"
 
-# Add/replace route (idempotent)
+# Add/replace route untuk VPN subnet (idempotent)
 ip route replace ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || \
   ip route add ${VPN_SUBNET} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || true
 
@@ -48,5 +48,24 @@ iptables -C INPUT -s ${VPN_SUBNET} -p udp --dport 1813 -j ACCEPT 2>/dev/null || 
   iptables -I INPUT -s ${VPN_SUBNET} -p udp --dport 1813 -j ACCEPT 2>/dev/null || true
 iptables -C INPUT -s ${VPN_SUBNET} -p udp --dport 3799 -j ACCEPT 2>/dev/null || \
   iptables -I INPUT -s ${VPN_SUBNET} -p udp --dport 3799 -j ACCEPT 2>/dev/null || true
+
+# ─── ISOLATION POOL ROUTING ──────────────────────────────────────────────────
+# Route traffic destined for isolated PPPoE clients (192.168.200.0/24) back
+# through the VPN tunnel so nginx can reply to DNAT'd requests with real source IPs.
+# Dibaca dari vpn.conf; fallback ke nilai default jika tidak dikonfigurasi.
+ISOLATION_POOL="${ISOLATION_POOL:-192.168.200.0/24}"
+
+if [ -n "${ISOLATION_POOL:-}" ]; then
+    logger -t vpn-route "Menambahkan route isolation pool ${ISOLATION_POOL} via ${REMOTE_IP} dev ${IFACE}"
+    ip route replace ${ISOLATION_POOL} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || \
+      ip route add ${ISOLATION_POOL} via ${REMOTE_IP} dev ${IFACE} metric 100 2>/dev/null || true
+
+    # Izinkan HTTP port 80 dari isolation pool agar isolated client bisa dijawab
+    iptables -C INPUT -s ${ISOLATION_POOL} -p tcp --dport 80 -j ACCEPT 2>/dev/null || \
+      iptables -I INPUT -s ${ISOLATION_POOL} -p tcp --dport 80 -j ACCEPT 2>/dev/null || true
+
+    logger -t vpn-route "Isolation pool route done: ${ISOLATION_POOL} via ${REMOTE_IP}"
+fi
+# ─────────────────────────────────────────────────────────────────────────────
 
 logger -t vpn-route "Done: ${VPN_SUBNET} via ${REMOTE_IP} on ${IFACE}"
