@@ -200,18 +200,20 @@ export async function sendIsolationNotification(user: {
     if (!company) return;
 
     const baseUrl = company.baseUrl || 'http://localhost:3000';
-    const paymentLink = `${baseUrl}/isolated?username=${encodeURIComponent(user.username)}`;
+    const isolatedUrl = `${baseUrl}/isolated?username=${encodeURIComponent(user.username)}`;
     const expiredDate = user.expiredAt
       ? new Date(user.expiredAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })
       : '-';
+    const rateLimit = (company as any).isolationRateLimit || '64k/64k';
 
     const templateVars: Record<string, string> = {
       customerName: user.name || user.username,
       username: user.username,
       expiredDate,
-      rateLimit: '64k/64k',
-      paymentLink,
-      qrCode: paymentLink,
+      rateLimit,
+      paymentLink: isolatedUrl,
+      isolatedUrl,
+      qrCode: isolatedUrl,
       companyName: company.name || '',
       companyPhone: company.phone || '',
       companyEmail: company.email || '',
@@ -237,7 +239,7 @@ export async function sendIsolationNotification(user: {
             `Halo ${templateVars.customerName},\n\n` +
             `Akun internet Anda (*${user.username}*) telah diisolir karena masa berlangganan habis.\n\n` +
             `📅 Expired: ${expiredDate}\n\n` +
-            `Untuk mengaktifkan kembali, lakukan pembayaran:\n🔗 ${paymentLink}\n\n` +
+            `Untuk mengaktifkan kembali, buka halaman berikut dan lakukan pembayaran:\n🔗 ${isolatedUrl}\n\n` +
             `Butuh bantuan?\n📞 ${company.phone || '-'}\n\n` +
             `Terima kasih,\n*${company.name}*`;
         }
@@ -273,7 +275,7 @@ export async function sendIsolationNotification(user: {
             <p>Akun internet Anda (<strong>${user.username}</strong>) telah diisolir karena masa berlangganan habis.</p>
             <p><strong>Tanggal Expired:</strong> ${expiredDate}</p>
             <p>Untuk mengaktifkan kembali layanan, silakan lakukan pembayaran:</p>
-            <p><a href="${paymentLink}" style="background:#e11d48;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">Bayar Sekarang</a></p>
+            <p><a href="${isolatedUrl}" style="background:#e11d48;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">Buka Halaman Isolir & Bayar</a></p>
             <p>Atau hubungi kami di ${company.phone || '-'}</p>
             <p>Terima kasih,<br>${company.name}</p>
           `;
