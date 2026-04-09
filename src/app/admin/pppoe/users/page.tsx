@@ -1530,7 +1530,7 @@ export default function PppoeUsersPage() {
                           {/* Detail */}
                           <button
                             onClick={() => handleEdit(user)}
-                            className="p-1.5 text-green-500 hover:bg-green-500/10 rounded"
+                            className="p-1.5 text-green-500 hover:bg-green-500/10 rounded cursor-pointer"
                             title="Lihat detail"
                           >
                             <Eye className="h-3.5 w-3.5" />
@@ -1538,7 +1538,7 @@ export default function PppoeUsersPage() {
                           {/* Edit */}
                           <button
                             onClick={() => handleEdit(user)}
-                            className="p-1.5 text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded"
+                            className="p-1.5 text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded cursor-pointer"
                             title="Edit"
                           >
                             <Pencil className="h-3.5 w-3.5" />
@@ -1546,7 +1546,7 @@ export default function PppoeUsersPage() {
                           {/* Sync ke RADIUS */}
                           <button
                             onClick={() => handleSyncToRadius(user)}
-                            className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded"
+                            className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded cursor-pointer"
                             title="Sync ke RADIUS"
                           >
                             <RefreshCw className="h-3.5 w-3.5" />
@@ -1554,7 +1554,7 @@ export default function PppoeUsersPage() {
                           {/* Isolir */}
                           <button
                             onClick={() => handleStatusChange(user.id, user.status === 'isolated' ? 'active' : 'isolated')}
-                            className={`p-1.5 rounded ${user.status === 'isolated' ? 'text-success hover:bg-success/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
+                            className={`p-1.5 rounded cursor-pointer ${user.status === 'isolated' ? 'text-success hover:bg-success/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
                             title={user.status === 'isolated' ? 'Aktifkan' : 'Isolir'}
                           >
                             <Shield className="h-3.5 w-3.5" />
@@ -1562,7 +1562,7 @@ export default function PppoeUsersPage() {
                           {/* Stop Langganan */}
                           <button
                             onClick={() => handleStopSubscription(user)}
-                            className="p-1.5 text-destructive/70 hover:bg-destructive/10 rounded"
+                            className="p-1.5 text-destructive/70 hover:bg-destructive/10 rounded cursor-pointer"
                             title="Stop Langganan"
                           >
                             <Ban className="h-3.5 w-3.5" />
@@ -1570,7 +1570,7 @@ export default function PppoeUsersPage() {
                           {/* Hapus */}
                           <button
                             onClick={() => setDeleteUserId(user.id)}
-                            className="p-1.5 text-destructive hover:bg-destructive/10 rounded"
+                            className="p-1.5 text-destructive hover:bg-destructive/10 rounded cursor-pointer"
                             title="Hapus"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -1578,7 +1578,7 @@ export default function PppoeUsersPage() {
                           {/* Cetak Invoice */}
                           <button
                             onClick={() => setPrintDialogUser(user)}
-                            className="p-1.5 text-purple-500 hover:bg-purple-500/10 rounded"
+                            className="p-1.5 text-purple-500 hover:bg-purple-500/10 rounded cursor-pointer"
                             title="Cetak Invoice"
                           >
                             <Printer className="h-3.5 w-3.5" />
@@ -1587,7 +1587,7 @@ export default function PppoeUsersPage() {
                           <button
                             onClick={() => handleManualExtend(user)}
                             disabled={extending === user.id}
-                            className="p-1.5 text-warning hover:bg-warning/10 rounded disabled:opacity-50"
+                            className="p-1.5 text-warning hover:bg-warning/10 rounded cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                             title={t('pppoe.extendManual')}
                           >
                             {extending === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}

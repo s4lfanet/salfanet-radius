@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart3, Download, RefreshCw, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BarChart3, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 
 interface RekapVoucher {
@@ -28,6 +28,13 @@ interface RekapVoucher {
   totalRevenue: number;
 }
 
+interface VoucherItem {
+  id: string;
+  code: string;
+  status: 'WAITING' | 'ACTIVE' | 'EXPIRED';
+  usedAt?: string | null;
+}
+
 export default function RekapVoucherPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -38,6 +45,14 @@ export default function RekapVoucherPage() {
   const [profiles, setProfiles] = useState<{ id: string; name: string }[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [voucherMonth, setVoucherMonth] = useState<string>(''); // '' = all-time
+  const [voucherModal, setVoucherModal] = useState<{
+    open: boolean;
+    batchCode: string;
+    filter: '' | 'WAITING' | 'ACTIVE' | 'EXPIRED';
+    loading: boolean;
+    vouchers: VoucherItem[];
+    copiedCode: string | null;
+  }>({ open: false, batchCode: '', filter: '', loading: false, vouchers: [], copiedCode: null });
 
   const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const getMonthLabel = (ym: string) => {
@@ -96,6 +111,25 @@ export default function RekapVoucherPage() {
     } catch (error) {
       console.error('Export failed:', error);
     }
+  };
+
+  const openVoucherModal = async (batchCode: string, statusFilter: '' | 'WAITING' | 'ACTIVE' | 'EXPIRED') => {
+    setVoucherModal({ open: true, batchCode, filter: statusFilter, loading: true, vouchers: [], copiedCode: null });
+    try {
+      const params = new URLSearchParams({ batchCode, limit: '500' });
+      if (statusFilter) params.set('status', statusFilter);
+      const res = await fetch(`/api/hotspot/voucher?${params}`);
+      const data = await res.json();
+      setVoucherModal(prev => ({ ...prev, loading: false, vouchers: (data.vouchers || []) as VoucherItem[] }));
+    } catch {
+      setVoucherModal(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const copyCode = async (code: string) => {
+    await navigator.clipboard.writeText(code);
+    setVoucherModal(prev => ({ ...prev, copiedCode: code }));
+    setTimeout(() => setVoucherModal(prev => ({ ...prev, copiedCode: null })), 1500);
   };
 
   const formatDate = (dateString: string) => {
@@ -306,15 +340,15 @@ export default function RekapVoucherPage() {
               <div className="grid grid-cols-4 gap-2 text-xs border-t border-border pt-2">
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.qty')}</div>
-                  <div className="font-medium text-primary">{item.totalQty}</div>
+                  <button onClick={() => openVoucherModal(item.batchCode, '')} className="font-medium text-primary hover:underline cursor-pointer">{item.totalQty}</button>
                 </div>
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.stock')}</div>
-                  <div className="font-medium text-success">{item.stock}</div>
+                  <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="font-medium text-success hover:underline cursor-pointer">{item.stock}</button>
                 </div>
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.sold')}</div>
-                  <div className="font-medium text-orange-600">{item.sold}</div>
+                  <button onClick={() => openVoucherModal(item.batchCode, 'ACTIVE')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
                 </div>
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">Nominal</div>
@@ -406,14 +440,14 @@ export default function RekapVoucherPage() {
                     <td className="px-3 py-2 text-[10px] text-muted-foreground">
                       {item.router?.name || <span className="italic">-</span>}
                     </td>
-                    <td className="px-3 py-2 text-[10px] text-right font-medium text-primary">
-                      {item.totalQty}
+                    <td className="px-3 py-2 text-[10px] text-right">
+                      <button onClick={() => openVoucherModal(item.batchCode, '')} className="font-medium text-primary hover:underline cursor-pointer">{item.totalQty}</button>
                     </td>
-                    <td className="px-3 py-2 text-[10px] text-right font-medium text-success">
-                      {item.stock}
+                    <td className="px-3 py-2 text-[10px] text-right">
+                      <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="font-medium text-success hover:underline cursor-pointer">{item.stock}</button>
                     </td>
-                    <td className="px-3 py-2 text-[10px] text-right font-medium text-orange-600">
-                      {item.sold}
+                    <td className="px-3 py-2 text-[10px] text-right">
+                      <button onClick={() => openVoucherModal(item.batchCode, 'ACTIVE')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
                     </td>
                     <td className="px-3 py-2 text-[10px] text-right font-medium text-muted-foreground">
                       {item.sellingPrice > 0 ? formatRupiah(item.sellingPrice) : '-'}
@@ -460,12 +494,90 @@ export default function RekapVoucherPage() {
             <ul className="list-disc list-inside space-y-0.5">
               <li><strong>{t('hotspot.qty')}:</strong> {t('hotspot.qtyDesc')}</li>
               <li><strong>{t('hotspot.stock')}:</strong> {t('hotspot.stockDesc')}</li>
-              <li><strong>{t('hotspot.sold')}:</strong> {t('hotspot.soldDesc')}</li>
+              <li><strong>{t('hotspot.sold')}:</strong> {t('hotspot.soldDesc')} — <span className="text-foreground">klik angka untuk lihat kode voucher</span></li>
             </ul>
           </div>
         </div>
       </div>
       </div>
+
+      {/* Voucher Codes Modal */}
+      {voucherModal.open && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setVoucherModal(prev => ({ ...prev, open: false }))}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="relative w-full sm:max-w-lg bg-card border border-[#bc13fe]/30 rounded-t-2xl sm:rounded-xl shadow-[0_0_40px_rgba(188,19,254,0.3)] flex flex-col max-h-[85vh]"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div>
+                <div className="font-semibold text-sm text-foreground">Kode Voucher</div>
+                <div className="text-[10px] text-muted-foreground font-mono">{voucherModal.batchCode}</div>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Filter tabs */}
+                {(['', 'WAITING', 'ACTIVE', 'EXPIRED'] as const).map(f => (
+                  <button
+                    key={f}
+                    onClick={() => openVoucherModal(voucherModal.batchCode, f)}
+                    className={`px-2 py-0.5 text-[10px] rounded-full transition-colors ${
+                      voucherModal.filter === f
+                        ? f === '' ? 'bg-primary text-white' : f === 'WAITING' ? 'bg-success text-white' : f === 'ACTIVE' ? 'bg-orange-500 text-white' : 'bg-muted-foreground text-white'
+                        : 'bg-muted text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {f === '' ? 'Semua' : f === 'WAITING' ? 'Stok' : f === 'ACTIVE' ? 'Terjual' : 'Expired'}
+                  </button>
+                ))}
+                <button onClick={() => setVoucherModal(prev => ({ ...prev, open: false }))} className="p-1 hover:bg-muted rounded cursor-pointer">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            {/* Modal Body */}
+            <div className="overflow-y-auto flex-1 p-3">
+              {voucherModal.loading ? (
+                <div className="py-8 text-center text-muted-foreground text-xs">Memuat...</div>
+              ) : voucherModal.vouchers.length === 0 ? (
+                <div className="py-8 text-center text-muted-foreground text-xs">Tidak ada voucher</div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                  {voucherModal.vouchers.map(v => (
+                    <button
+                      key={v.id}
+                      onClick={() => copyCode(v.code)}
+                      className={`flex items-center justify-between gap-1 px-2 py-1.5 rounded border text-[11px] font-mono cursor-pointer transition-colors ${
+                        v.status === 'WAITING'
+                          ? 'border-success/30 bg-success/5 text-success hover:bg-success/10'
+                          : v.status === 'ACTIVE'
+                          ? 'border-orange-500/30 bg-orange-500/5 text-orange-600 hover:bg-orange-500/10'
+                          : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                      }`}
+                      title={`Klik untuk copy • ${v.status}${v.usedAt ? ` • ${new Date(v.usedAt).toLocaleDateString('id-ID')}` : ''}`}
+                    >
+                      <span className="truncate">{v.code}</span>
+                      {voucherModal.copiedCode === v.code
+                        ? <CheckCheck className="w-3 h-3 flex-shrink-0" />
+                        : <Copy className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-100" />
+                      }
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {/* Modal Footer */}
+            {!voucherModal.loading && voucherModal.vouchers.length > 0 && (
+              <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground flex justify-between">
+                <span>
+                  {voucherModal.filter === '' ? 'Semua' : voucherModal.filter === 'WAITING' ? 'Stok' : voucherModal.filter === 'ACTIVE' ? 'Terjual' : 'Expired'}: <strong>{voucherModal.vouchers.length}</strong> voucher
+                </span>
+                <span>Klik kode untuk copy</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
