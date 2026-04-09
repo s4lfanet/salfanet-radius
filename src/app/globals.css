@@ -1374,10 +1374,10 @@ div[style*="z-index: 9999"].fixed.inset-0 {
 
 /* Touch optimization */
 @media (hover: none) and (pointer: coarse) {
-  /* Increase tap targets on touch devices */
-  button, 
-  a, 
-  [role="button"] {
+  /* Increase tap targets on touch devices - NOT for compact table action buttons */
+  button:not(.compact-action), 
+  a:not(.compact-action), 
+  [role="button"]:not(.compact-action) {
     min-height: 44px;
     min-width: 44px;
   }
