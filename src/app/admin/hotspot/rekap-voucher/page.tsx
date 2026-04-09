@@ -22,8 +22,10 @@ interface RekapVoucher {
     name: string;
   } | null;
   totalQty: number;
-  stock: number; // WAITING
-  sold: number;  // ACTIVE + EXPIRED
+  stock: number;    // WAITING
+  active: number;   // ACTIVE
+  expired: number;  // EXPIRED
+  sold: number;     // ACTIVE + EXPIRED
   sellingPrice: number;
   totalRevenue: number;
 }
@@ -32,7 +34,13 @@ interface VoucherItem {
   id: string;
   code: string;
   status: 'WAITING' | 'ACTIVE' | 'EXPIRED';
-  usedAt?: string | null;
+  firstLoginAt?: string | null;
+  expiresAt?: string | null;
+  profile?: {
+    name: string;
+    validityValue?: number | null;
+    validityUnit?: string | null;
+  };
 }
 
 export default function RekapVoucherPage() {
@@ -48,7 +56,7 @@ export default function RekapVoucherPage() {
   const [voucherModal, setVoucherModal] = useState<{
     open: boolean;
     batchCode: string;
-    filter: '' | 'WAITING' | 'ACTIVE' | 'EXPIRED';
+    filter: '' | 'WAITING' | 'SOLD' | 'ACTIVE' | 'EXPIRED';
     loading: boolean;
     vouchers: VoucherItem[];
     copiedCode: string | null;
@@ -113,14 +121,17 @@ export default function RekapVoucherPage() {
     }
   };
 
-  const openVoucherModal = async (batchCode: string, statusFilter: '' | 'WAITING' | 'ACTIVE' | 'EXPIRED') => {
+  const openVoucherModal = async (batchCode: string, statusFilter: '' | 'WAITING' | 'SOLD' | 'ACTIVE' | 'EXPIRED') => {
     setVoucherModal({ open: true, batchCode, filter: statusFilter, loading: true, vouchers: [], copiedCode: null });
     try {
       const params = new URLSearchParams({ batchCode, limit: '500' });
-      if (statusFilter) params.set('status', statusFilter);
+      // For SOLD (Terjual), fetch all then filter client-side to ACTIVE+EXPIRED
+      if (statusFilter && statusFilter !== 'SOLD') params.set('status', statusFilter);
       const res = await fetch(`/api/hotspot/voucher?${params}`);
       const data = await res.json();
-      setVoucherModal(prev => ({ ...prev, loading: false, vouchers: (data.vouchers || []) as VoucherItem[] }));
+      let vouchers = (data.vouchers || []) as VoucherItem[];
+      if (statusFilter === 'SOLD') vouchers = vouchers.filter(v => v.status !== 'WAITING');
+      setVoucherModal(prev => ({ ...prev, loading: false, vouchers }));
     } catch {
       setVoucherModal(prev => ({ ...prev, loading: false }));
     }
@@ -154,6 +165,8 @@ export default function RekapVoucherPage() {
 
   const totalQty = filteredRekap.reduce((sum, item) => sum + item.totalQty, 0);
   const totalStock = filteredRekap.reduce((sum, item) => sum + item.stock, 0);
+  const totalActive = filteredRekap.reduce((sum, item) => sum + item.active, 0);
+  const totalExpired = filteredRekap.reduce((sum, item) => sum + item.expired, 0);
   const totalSold = filteredRekap.reduce((sum, item) => sum + item.sold, 0);
   const totalRevenue = filteredRekap.reduce((sum, item) => sum + item.totalRevenue, 0);
 
@@ -348,7 +361,8 @@ export default function RekapVoucherPage() {
                 </div>
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.sold')}</div>
-                  <button onClick={() => openVoucherModal(item.batchCode, 'ACTIVE')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
+                  <button onClick={() => openVoucherModal(item.batchCode, 'SOLD')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
+                  <div className="text-[9px] text-muted-foreground mt-0.5">{item.active}↑ {item.expired}↓</div>
                 </div>
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">Nominal</div>
@@ -397,6 +411,8 @@ export default function RekapVoucherPage() {
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.qty')}</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.stock')}</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.sold')}</th>
+                <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aktif</th>
+                <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Expired</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Harga/pcs</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Pendapatan</th>
               </tr>
@@ -404,13 +420,13 @@ export default function RekapVoucherPage() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground text-xs">
                     {t('common.loading')}
                   </td>
                 </tr>
               ) : filteredRekap.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground text-xs">
                     {t('hotspot.noRekapData')}
                   </td>
                 </tr>
@@ -447,7 +463,13 @@ export default function RekapVoucherPage() {
                       <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="font-medium text-success hover:underline cursor-pointer">{item.stock}</button>
                     </td>
                     <td className="px-3 py-2 text-[10px] text-right">
-                      <button onClick={() => openVoucherModal(item.batchCode, 'ACTIVE')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
+                      <button onClick={() => openVoucherModal(item.batchCode, 'SOLD')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
+                    </td>
+                    <td className="px-3 py-2 text-[10px] text-right">
+                      <button onClick={() => openVoucherModal(item.batchCode, 'ACTIVE')} className="font-medium text-green-500 hover:underline cursor-pointer">{item.active}</button>
+                    </td>
+                    <td className="px-3 py-2 text-[10px] text-right">
+                      <button onClick={() => openVoucherModal(item.batchCode, 'EXPIRED')} className="font-medium text-muted-foreground hover:underline cursor-pointer">{item.expired}</button>
                     </td>
                     <td className="px-3 py-2 text-[10px] text-right font-medium text-muted-foreground">
                       {item.sellingPrice > 0 ? formatRupiah(item.sellingPrice) : '-'}
@@ -473,6 +495,12 @@ export default function RekapVoucherPage() {
                   </td>
                   <td className="px-3 py-2 text-xs text-right text-orange-600">
                     {totalSold.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-right text-green-500">
+                    {totalActive.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-right text-muted-foreground">
+                    {totalExpired.toLocaleString()}
                   </td>
                   <td className="px-3 py-2 text-xs text-right text-muted-foreground">-</td>
                   <td className="px-3 py-2 text-xs text-right text-[#00f7ff]">
@@ -517,17 +545,17 @@ export default function RekapVoucherPage() {
               </div>
               <div className="flex items-center gap-2">
                 {/* Filter tabs */}
-                {(['', 'WAITING', 'ACTIVE', 'EXPIRED'] as const).map(f => (
+                {(['', 'WAITING', 'SOLD', 'ACTIVE', 'EXPIRED'] as const).map(f => (
                   <button
                     key={f}
                     onClick={() => openVoucherModal(voucherModal.batchCode, f)}
                     className={`px-2 py-0.5 text-[10px] rounded-full transition-colors ${
                       voucherModal.filter === f
-                        ? f === '' ? 'bg-primary text-white' : f === 'WAITING' ? 'bg-success text-white' : f === 'ACTIVE' ? 'bg-orange-500 text-white' : 'bg-muted-foreground text-white'
+                        ? f === '' ? 'bg-primary text-white' : f === 'WAITING' ? 'bg-success text-white' : f === 'SOLD' ? 'bg-orange-500 text-white' : f === 'ACTIVE' ? 'bg-green-500 text-white' : 'bg-muted-foreground text-white'
                         : 'bg-muted text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    {f === '' ? 'Semua' : f === 'WAITING' ? 'Stok' : f === 'ACTIVE' ? 'Terjual' : 'Expired'}
+                    {f === '' ? 'Semua' : f === 'WAITING' ? 'Stok' : f === 'SOLD' ? 'Terjual' : f === 'ACTIVE' ? 'Aktif' : 'Expired'}
                   </button>
                 ))}
                 <button onClick={() => setVoucherModal(prev => ({ ...prev, open: false }))} className="p-1 hover:bg-muted rounded cursor-pointer">
@@ -542,26 +570,40 @@ export default function RekapVoucherPage() {
               ) : voucherModal.vouchers.length === 0 ? (
                 <div className="py-8 text-center text-muted-foreground text-xs">Tidak ada voucher</div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                  {voucherModal.vouchers.map(v => (
-                    <button
-                      key={v.id}
-                      onClick={() => copyCode(v.code)}
-                      className={`flex items-center justify-between gap-1 px-2 py-1.5 rounded border text-[11px] font-mono cursor-pointer transition-colors ${
-                        v.status === 'WAITING'
-                          ? 'border-success/30 bg-success/5 text-success hover:bg-success/10'
-                          : v.status === 'ACTIVE'
-                          ? 'border-orange-500/30 bg-orange-500/5 text-orange-600 hover:bg-orange-500/10'
-                          : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/50'
-                      }`}
-                      title={`Klik untuk copy • ${v.status}${v.usedAt ? ` • ${new Date(v.usedAt).toLocaleDateString('id-ID')}` : ''}`}
-                    >
-                      <span className="truncate">{v.code}</span>
-                      {voucherModal.copiedCode === v.code
-                        ? <CheckCheck className="w-3 h-3 flex-shrink-0" />
-                        : <Copy className="w-3 h-3 flex-shrink-0 opacity-0 group-hover:opacity-100" />
-                      }
-                    </button>
+                <div className="divide-y divide-border">
+                  {voucherModal.vouchers.map((v, idx) => (
+                    <div key={v.id} className={`flex items-start gap-2 py-2 px-1 hover:bg-muted/30 rounded transition-colors ${idx % 2 === 1 ? 'bg-muted/10' : ''}`}>
+                      <div className="flex-1 min-w-0">
+                        <button
+                          onClick={() => copyCode(v.code)}
+                          className="font-mono text-[11px] font-medium hover:underline cursor-pointer flex items-center gap-1 text-left w-full"
+                        >
+                          <span className={v.status === 'WAITING' ? 'text-success' : v.status === 'ACTIVE' ? 'text-green-400' : 'text-muted-foreground'}>
+                            {v.code}
+                          </span>
+                          {voucherModal.copiedCode === v.code
+                            ? <CheckCheck className="w-3 h-3 flex-shrink-0 text-success" />
+                            : <Copy className="w-3 h-3 flex-shrink-0 text-muted-foreground/40" />
+                          }
+                        </button>
+                        {v.profile && (
+                          <div className="text-[10px] text-muted-foreground mt-0.5">
+                            {v.profile.name}{v.profile.validityValue ? ` · ${v.profile.validityValue} ${v.profile.validityUnit}` : ''}
+                          </div>
+                        )}
+                        {(v.firstLoginAt || v.expiresAt) && (
+                          <div className="flex flex-wrap gap-x-3 mt-0.5">
+                            {v.firstLoginAt && <span className="text-[10px] text-muted-foreground">Login: {formatDate(v.firstLoginAt)}</span>}
+                            {v.expiresAt && <span className="text-[10px] text-muted-foreground">Exp: {formatDate(v.expiresAt)}</span>}
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full shrink-0 font-medium ${
+                        v.status === 'WAITING' ? 'bg-success/10 text-success' : v.status === 'ACTIVE' ? 'bg-green-500/10 text-green-400' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {v.status === 'WAITING' ? 'STOK' : v.status === 'ACTIVE' ? 'AKTIF' : 'EXP'}
+                      </span>
+                    </div>
                   ))}
                 </div>
               )}
@@ -570,7 +612,7 @@ export default function RekapVoucherPage() {
             {!voucherModal.loading && voucherModal.vouchers.length > 0 && (
               <div className="px-4 py-2 border-t border-border text-[10px] text-muted-foreground flex justify-between">
                 <span>
-                  {voucherModal.filter === '' ? 'Semua' : voucherModal.filter === 'WAITING' ? 'Stok' : voucherModal.filter === 'ACTIVE' ? 'Terjual' : 'Expired'}: <strong>{voucherModal.vouchers.length}</strong> voucher
+                  {voucherModal.filter === '' ? 'Semua' : voucherModal.filter === 'WAITING' ? 'Stok' : voucherModal.filter === 'SOLD' ? 'Terjual' : voucherModal.filter === 'ACTIVE' ? 'Aktif' : 'Expired'}: <strong>{voucherModal.vouchers.length}</strong> voucher
                 </span>
                 <span>Klik kode untuk copy</span>
               </div>
