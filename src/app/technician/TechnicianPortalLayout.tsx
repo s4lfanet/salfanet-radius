@@ -94,7 +94,7 @@ const MENU_ITEMS: MenuItem[] = [
 
 /* --- Sidebar Push Notification Toggle --- */
 function SidebarPushToggle({ techId }: { techId: string }) {
-  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [permission, setPermission] = useState<string>('loading');
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -156,13 +156,12 @@ function SidebarPushToggle({ techId }: { techId: string }) {
   };
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !techId) return;
+    if (!techId) return;
     if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in navigator)) {
       setPermission('unsupported');
       return;
     }
-    const perm = Notification.permission;
-    setPermission(perm);
+    setPermission(Notification.permission);
     navigator.serviceWorker.ready
       .then(reg => reg.pushManager.getSubscription())
       .then(sub => setSubscribed(!!sub))
@@ -170,39 +169,50 @@ function SidebarPushToggle({ techId }: { techId: string }) {
   }, [techId]);
 
   const handleToggle = async () => {
-    if (permission === 'unsupported' || permission === 'denied') return;
+    if (permission === 'unsupported' || permission === 'denied' || permission === 'loading') return;
     if (subscribed) {
       await doUnsubscribe();
     } else {
       if (Notification.permission === 'default') {
         const perm = await Notification.requestPermission();
-        setPermission(perm as NotificationPermission);
+        setPermission(perm);
         if (perm !== 'granted') return;
       }
       await doSubscribe();
     }
   };
 
-  if (permission === 'unsupported') return null;
-
-  const isDenied = permission === 'denied';
   const isOn = subscribed && permission === 'granted';
+  const isDenied = permission === 'denied';
+  const isUnsupported = permission === 'unsupported';
 
   return (
     <button
       onClick={handleToggle}
-      disabled={loading || isDenied}
-      title={isDenied ? 'Notifikasi diblokir di browser' : isOn ? 'Nonaktifkan notifikasi push' : 'Aktifkan notifikasi push'}
+      disabled={loading || isDenied || isUnsupported}
+      title={
+        isUnsupported ? 'Browser tidak mendukung push notification'
+        : isDenied ? 'Notifikasi diblokir — ubah di pengaturan browser'
+        : isOn ? 'Klik untuk nonaktifkan notifikasi push'
+        : 'Klik untuk aktifkan notifikasi push'
+      }
       className={cn(
-        'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl transition-all duration-300 border',
-        isDenied
-          ? 'text-slate-400 dark:text-slate-600 bg-transparent border-transparent cursor-not-allowed opacity-50'
-          : isOn
-          ? 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30 hover:bg-cyan-100 dark:hover:bg-cyan-500/20'
-          : 'text-slate-500 dark:text-slate-400 bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-cyan-500/10 hover:border-slate-200 dark:hover:border-cyan-500/20',
+        'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 border',
+        isOn
+          ? 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-300 dark:border-cyan-500/30 shadow-sm dark:shadow-[0_0_15px_rgba(6,182,212,0.15)]'
+          : isDenied || isUnsupported
+          ? 'text-slate-400 dark:text-slate-500 border-transparent opacity-60 cursor-not-allowed'
+          : 'text-slate-600 dark:text-slate-300 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-cyan-500/10 hover:border-slate-200 dark:hover:border-cyan-500/20',
       )}
     >
-      <span className={cn('p-1.5 rounded-lg flex-shrink-0 flex items-center justify-center transition-all', isOn ? 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10' : 'text-slate-400 dark:text-slate-400')}>
+      <span
+        className={cn(
+          'p-1.5 rounded-lg flex-shrink-0 flex items-center justify-center transition-all duration-300',
+          isOn
+            ? 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10'
+            : 'text-slate-400 dark:text-slate-400',
+        )}
+      >
         {loading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : isOn ? (
@@ -211,20 +221,29 @@ function SidebarPushToggle({ techId }: { techId: string }) {
           <BellOff className="w-4 h-4" />
         )}
       </span>
-      <span className="flex-1 text-left tracking-wide">Notif Push</span>
-      <span className={cn(
-        'relative inline-flex h-4 w-7 flex-shrink-0 rounded-full border-2 transition-colors duration-200',
-        isDenied
-          ? 'border-slate-300 dark:border-slate-600 bg-slate-200 dark:bg-slate-700'
-          : isOn
-          ? 'border-cyan-500 bg-cyan-500'
-          : 'border-slate-300 dark:border-slate-600 bg-slate-200 dark:bg-slate-700',
-      )}>
-        <span className={cn(
-          'pointer-events-none inline-block h-3 w-3 rounded-full bg-white shadow transform transition-transform duration-200',
-          isOn ? 'translate-x-3' : 'translate-x-0',
-        )} />
+      <span className="flex-1 text-left tracking-wide">
+        {isOn ? 'Notif Push: ON' : isDenied ? 'Notif Push: Diblokir' : isUnsupported ? 'Push Tdk Didukung' : 'Notif Push: OFF'}
       </span>
+      {/* Toggle pill */}
+      {!isUnsupported && (
+        <span
+          className={cn(
+            'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 transition-all duration-300',
+            isOn
+              ? 'border-cyan-500 bg-cyan-500'
+              : isDenied
+              ? 'border-slate-400 dark:border-slate-600 bg-slate-300 dark:bg-slate-700'
+              : 'border-slate-400 dark:border-slate-500 bg-slate-200 dark:bg-slate-600',
+          )}
+        >
+          <span
+            className={cn(
+              'pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-md transform transition-transform duration-300',
+              isOn ? 'translate-x-4' : 'translate-x-0',
+            )}
+          />
+        </span>
+      )}
     </button>
   );
 }
