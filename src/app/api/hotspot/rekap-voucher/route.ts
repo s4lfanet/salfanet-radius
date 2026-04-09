@@ -66,17 +66,19 @@ export async function GET(req: NextRequest) {
       batchGroups.map(async (batch: any) => {
         const batchCode = batch.batchCode as string;
 
-        // Get metadata from a sample voucher (profile, agent, router)
+        // Get metadata from a sample voucher — prefer vouchers with agentId set (orderBy agentId desc puts non-null first)
         const sample = await prisma.hotspotVoucher.findFirst({
           where: { batchCode },
-          include: {
-            profile: { select: { id: true, name: true, sellingPrice: true } },
+          orderBy: { agentId: 'desc' }, // non-null agentId sorts before null in DESC
+          select: {
+            agentId: true,
+            profile: { select: { id: true, name: true, sellingPrice: true, costPrice: true, resellerFee: true } },
             agent: { select: { id: true, name: true, phone: true } },
             router: { select: { id: true, name: true } },
           },
         });
 
-        // Count by status for the entire batch (not filtered by month/agent/profile)
+        // Count by status for the entire batch
         const [waiting, active, expired] = await Promise.all([
           prisma.hotspotVoucher.count({ where: { batchCode, status: 'WAITING' } }),
           prisma.hotspotVoucher.count({ where: { batchCode, status: 'ACTIVE' } }),
@@ -84,14 +86,20 @@ export async function GET(req: NextRequest) {
         ]);
 
         const sellingPrice = sample?.profile?.sellingPrice ?? 0;
+        const costPrice = sample?.profile?.costPrice ?? 0;
+        const resellerFee = sample?.profile?.resellerFee ?? 0;
         const sold = active + expired;
         const totalQty = waiting + active + expired;
+
+        // If agentId is set on voucher but agent was deleted, still treat it as agent batch
+        const rawAgentId = sample?.agentId ?? null;
+        const agentData = sample?.agent ?? (rawAgentId ? { id: rawAgentId, name: 'Agent (dihapus)', phone: '-' } : null);
 
         return {
           batchCode,
           createdAt: batch._min.createdAt?.toISOString() ?? new Date().toISOString(),
-          agent: sample?.agent ?? null,
-          profile: sample?.profile ?? { id: '', name: 'Unknown', sellingPrice: 0 },
+          agent: agentData,
+          profile: sample?.profile ?? { id: '', name: 'Unknown', sellingPrice: 0, costPrice: 0, resellerFee: 0 },
           router: sample?.router ?? null,
           totalQty,
           stock: waiting,
@@ -99,7 +107,13 @@ export async function GET(req: NextRequest) {
           expired,
           sold,
           sellingPrice,
+          costPrice,
+          resellerFee,
           totalRevenue: sold * sellingPrice,
+          // Agent batches: admin earned costPrice*sold (already collected when agent generated)
+          // Admin batches: admin earned sellingPrice*sold
+          agentProfit: agentData ? sold * resellerFee : 0,
+          adminEarnings: agentData ? sold * costPrice : sold * sellingPrice,
         };
       })
     );

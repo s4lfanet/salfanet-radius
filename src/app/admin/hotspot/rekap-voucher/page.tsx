@@ -16,6 +16,8 @@ interface RekapVoucher {
     id: string;
     name: string;
     sellingPrice?: number;
+    costPrice?: number;
+    resellerFee?: number;
   };
   router: {
     id: string;
@@ -27,7 +29,11 @@ interface RekapVoucher {
   expired: number;  // EXPIRED
   sold: number;     // ACTIVE + EXPIRED
   sellingPrice: number;
+  costPrice: number;
+  resellerFee: number;
   totalRevenue: number;
+  agentProfit: number;    // agent's earnings (resellerFee * sold)
+  adminEarnings: number;  // admin's actual earnings from this batch
 }
 
 interface VoucherItem {
@@ -227,6 +233,10 @@ export default function RekapVoucherPage() {
   const totalExpired = filteredRekap.reduce((sum, item) => sum + item.expired, 0);
   const totalSold = filteredRekap.reduce((sum, item) => sum + item.sold, 0);
   const totalRevenue = filteredRekap.reduce((sum, item) => sum + item.totalRevenue, 0);
+  // adminEarnings: for admin batches = sellingPrice*sold; for agent batches = costPrice*sold (agent already paid)
+  const totalAdminEarnings = filteredRekap.reduce((sum, item) => sum + item.adminEarnings, 0);
+  // agentProfit: agent's margin (resellerFee * sold) for agent batches
+  const totalAgentProfit = filteredRekap.reduce((sum, item) => sum + item.agentProfit, 0);
   const adminRevenue = filteredRekap.filter(i => i.agent === null).reduce((sum, i) => sum + i.totalRevenue, 0);
   const agentRevenue = filteredRekap.filter(i => i.agent !== null).reduce((sum, i) => sum + i.totalRevenue, 0);
   const adminSold = filteredRekap.filter(i => i.agent === null).reduce((sum, i) => sum + i.sold, 0);
@@ -395,6 +405,7 @@ export default function RekapVoucherPage() {
             <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">{adminSold} terjual</span>
           </div>
           <div className="text-xl font-bold text-blue-400">{formatRupiah(adminRevenue)}</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">Pendapatan bersih admin: <span className="text-blue-300">{formatRupiah(totalAdminEarnings)}</span></div>
           {totalRevenue > 0 && (
             <div className="mt-2">
               <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
@@ -412,44 +423,7 @@ export default function RekapVoucherPage() {
             <span className="text-[10px] bg-[#bc13fe]/10 text-[#bc13fe] px-1.5 py-0.5 rounded">{agentSold} terjual</span>
           </div>
           <div className="text-xl font-bold text-[#bc13fe]">{formatRupiah(agentRevenue)}</div>
-          {totalRevenue > 0 && (
-            <div className="mt-2">
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                <span>{Math.round(agentRevenue / totalRevenue * 100)}% dari total</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-1.5">
-                <div className="bg-[#bc13fe] rounded-full h-1.5 transition-all" style={{ width: `${Math.round(agentRevenue / totalRevenue * 100)}%` }} />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Revenue Breakdown: Admin vs Agent */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-card p-4 rounded-lg border border-border">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-foreground">Pendapatan Admin (Tanpa Agent)</div>
-            <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">{adminSold} terjual</span>
-          </div>
-          <div className="text-xl font-bold text-blue-400">{formatRupiah(adminRevenue)}</div>
-          {totalRevenue > 0 && (
-            <div className="mt-2">
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                <span>{Math.round(adminRevenue / totalRevenue * 100)}% dari total</span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-1.5">
-                <div className="bg-blue-400 rounded-full h-1.5 transition-all" style={{ width: `${Math.round(adminRevenue / totalRevenue * 100)}%` }} />
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="bg-card p-4 rounded-lg border border-border">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-foreground">Pendapatan Agent</div>
-            <span className="text-[10px] bg-[#bc13fe]/10 text-[#bc13fe] px-1.5 py-0.5 rounded">{agentSold} terjual</span>
-          </div>
-          <div className="text-xl font-bold text-[#bc13fe]">{formatRupiah(agentRevenue)}</div>
+          <div className="text-[10px] text-muted-foreground mt-0.5">Profit agent (reseller fee): <span className="text-[#bc13fe]">{formatRupiah(totalAgentProfit)}</span></div>
           {totalRevenue > 0 && (
             <div className="mt-2">
               <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
