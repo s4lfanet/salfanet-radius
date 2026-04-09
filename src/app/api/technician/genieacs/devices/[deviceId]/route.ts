@@ -75,7 +75,12 @@ function extractIPFromURL(url: string): string {
 }
 
 const pp = {
-  pppUsername: ['VirtualParameters.pppUsername', 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username', 'Device.PPP.Interface.1.Username'],
+  pppUsername: [
+    'VirtualParameters.pppUsername',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username',
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.Username',
+    'Device.PPP.Interface.1.Username',
+  ],
   rxPower: ['VirtualParameters.redaman', 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower', 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower', 'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower'],
   txPower: ['VirtualParameters.txPower', 'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower', 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower'],
   serialNumber: ['InternetGatewayDevice.DeviceInfo.SerialNumber', 'Device.DeviceInfo.SerialNumber'],

@@ -90,6 +90,86 @@ const MENU_ITEMS: MenuItem[] = [
 ];
 
 /* â”€â”€â”€ Notification Bell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+/* --- Push Notification Banner --- */
+function PushNotificationBanner({ techId }: { techId: string }) {
+  const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default');
+  const [status, setStatus] = useState<'idle' | 'loading' | 'subscribed' | 'error'>('idle');
+  const [dismissed, setDismissed] = useState(false);
+
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+  };
+
+  const doSubscribe = async (id: string) => {
+    setStatus('loading');
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+      const vapidRes = await fetch('/api/push/vapid-public-key');
+      const { publicKey } = await vapidRes.json();
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+      await fetch('/api/push/technician-subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ technicianId: id, subscription: sub.toJSON() }),
+      });
+      setPermission('granted');
+      setStatus('subscribed');
+    } catch (e) {
+      console.error('[PushBanner] Subscribe error:', e);
+      setStatus('error');
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !techId) return;
+    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in navigator)) {
+      setPermission('unsupported');
+      return;
+    }
+    const perm = Notification.permission;
+    setPermission(perm);
+    if (perm === 'granted') doSubscribe(techId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [techId]);
+
+  const handleActivate = async () => {
+    if (Notification.permission === 'default') {
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+      if (perm === 'granted') await doSubscribe(techId);
+    } else if (Notification.permission === 'granted') {
+      await doSubscribe(techId);
+    }
+  };
+
+  if (permission === 'unsupported' || permission === 'denied' || dismissed) return null;
+  if (status === 'subscribed' || permission === 'granted') return null;
+
+  return (
+    <div className="mx-4 mt-3 flex items-center gap-3 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-700 dark:text-cyan-300">
+      <Bell className="w-3.5 h-3.5 flex-shrink-0" />
+      <span className="flex-1">Aktifkan notifikasi push untuk menerima tiket baru secara real-time.</span>
+      <button
+        onClick={handleActivate}
+        disabled={status === 'loading'}
+        className="px-2.5 py-1 text-[10px] font-bold bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition disabled:opacity-50 flex-shrink-0"
+      >
+        {status === 'loading' ? 'Memproses...' : 'Aktifkan'}
+      </button>
+      <button onClick={() => setDismissed(true)} className="p-0.5 hover:opacity-70 transition flex-shrink-0">
+        <X className="w-3.5 h-3.5" />
+      </button>
+    </div>
+  );
+}
 function NotificationBell() {
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -460,6 +540,9 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
+
+        {/* Push Notification Banner */}
+        {tech && <PushNotificationBanner techId={tech.id} />}
 
         {/* Page Content */}
         <main className="flex-1 relative z-10">

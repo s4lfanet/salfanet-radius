@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { 
@@ -12,9 +12,14 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Users
+  Users,
+  Send,
+  X,
+  ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { showSuccess, showError } from '@/lib/sweetalert';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -57,17 +62,104 @@ interface Stats {
   avgResponseTimeHours: number;
 }
 
+interface DispatchFormData {
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  customerAddress: string;
+  subject: string;
+  description: string;
+  categoryId: string;
+  priority: string;
+  routerId: string;
+  oltId: string;
+  odcId: string;
+  odpId: string;
+}
+
+interface DispatchDataResult {
+  technicians: { id: string; name: string; phoneNumber: string }[];
+  categories: { id: string; name: string; color: string | null }[];
+  routers: { id: string; name: string; nasname: string | null }[];
+  olts: { id: string; name: string; ipAddress: string }[];
+  odcs: { id: string; name: string; oltId: string }[];
+  odps: { id: string; name: string; odcId: string | null; portCount: number }[];
+  customers: { id: string; username: string; name: string | null; phone: string | null; address: string | null; odpAssignment: { odpId: string; odp: { id: string; name: string } } | null }[];
+}
+
 export default function AdminTicketsPage() {
   const { t } = useTranslation();
   const router = useRouter();
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    status: '',
-    priority: '',
-    search: '',
+  const [filters, setFilters] = useState({ status: '', priority: '', search: '' });
+
+  // Dispatch modal state
+  const [showDispatch, setShowDispatch] = useState(false);
+  const [dispatchLoading, setDispatchLoading] = useState(false);
+  const [dispatchData, setDispatchData] = useState<DispatchDataResult | null>(null);
+  const [dispatchDataLoading, setDispatchDataLoading] = useState(false);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [form, setForm] = useState<DispatchFormData>({
+    customerId: '', customerName: '', customerPhone: '', customerAddress: '',
+    subject: '', description: '', categoryId: '', priority: 'MEDIUM',
+    routerId: '', oltId: '', odcId: '', odpId: '',
   });
+
+  const loadDispatchData = useCallback(async (search = '') => {
+    setDispatchDataLoading(true);
+    try {
+      const res = await fetch(`/api/tickets/dispatch-data${search ? `?customerSearch=${encodeURIComponent(search)}` : ''}`);
+      if (res.ok) setDispatchData(await res.json());
+    } catch { /* ignore */ } finally {
+      setDispatchDataLoading(false);
+    }
+  }, []);
+
+  const openDispatch = () => {
+    setShowDispatch(true);
+    if (!dispatchData) loadDispatchData();
+  };
+
+  const selectCustomer = (c: DispatchDataResult['customers'][0]) => {
+    setForm(f => ({
+      ...f,
+      customerId: c.id,
+      customerName: c.name || c.username,
+      customerPhone: c.phone || '',
+      customerAddress: c.address || '',
+      odpId: c.odpAssignment?.odpId || f.odpId,
+    }));
+    setCustomerSearch(c.name || c.username);
+  };
+
+  const handleDispatch = async () => {
+    if (!form.customerName || !form.customerPhone || !form.subject || !form.description) {
+      showError('Lengkapi data', 'Nama pelanggan, telepon, subjek, dan deskripsi wajib diisi');
+      return;
+    }
+    setDispatchLoading(true);
+    try {
+      const res = await fetch('/api/tickets/dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal');
+      showSuccess('Tiket Terkirim', `#${data.ticket.ticketNumber} dikirim ke ${data.notified} teknisi`);
+      setShowDispatch(false);
+      setForm({ customerId: '', customerName: '', customerPhone: '', customerAddress: '', subject: '', description: '', categoryId: '', priority: 'MEDIUM', routerId: '', oltId: '', odcId: '', odpId: '' });
+      setCustomerSearch('');
+      fetchTickets();
+      fetchStats();
+    } catch (e: any) {
+      showError('Gagal kirim tiket', e.message);
+    } finally {
+      setDispatchLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchStats();
@@ -149,6 +241,13 @@ export default function AdminTicketsPage() {
             {t('ticket.manageAllTickets')}
           </p>
         </div>
+        <button
+          onClick={openDispatch}
+          className="flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-gradient-to-r from-[#bc13fe] to-[#9b10d6] text-white rounded-xl shadow-[0_0_20px_rgba(188,19,254,0.4)] hover:shadow-[0_0_30px_rgba(188,19,254,0.6)] transition-all"
+        >
+          <Send className="w-4 h-4" />
+          Kirim ke Teknisi
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -426,6 +525,194 @@ export default function AdminTicketsPage() {
         )}
       </div>
       </div>
+
+      {/* Dispatch Modal */}
+      {showDispatch && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4" onClick={() => !dispatchLoading && setShowDispatch(false)}>
+          <div className="bg-card border border-[#bc13fe]/30 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+              <div>
+                <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Send className="w-4 h-4 text-[#bc13fe]" />
+                  Kirim Tiket ke Semua Teknisi
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Tiket akan dikirim ke {dispatchData?.technicians.length ?? 0} teknisi aktif via WA & notifikasi
+                </p>
+              </div>
+              <button onClick={() => !dispatchLoading && setShowDispatch(false)} className="p-1.5 hover:bg-muted rounded-lg transition">
+                <X className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
+
+            {dispatchDataLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-[#bc13fe]" />
+              </div>
+            ) : (
+              <div className="p-5 space-y-4">
+
+                {/* Customer Section */}
+                <div className="bg-muted/40 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Data Pelanggan</p>
+
+                  {/* Customer search */}
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Cari Pelanggan</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                      <input
+                        value={customerSearch}
+                        onChange={e => { setCustomerSearch(e.target.value); loadDispatchData(e.target.value); }}
+                        placeholder="Nama, username, atau telepon..."
+                        className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none"
+                      />
+                    </div>
+                    {dispatchData?.customers && dispatchData.customers.length > 0 && customerSearch && !form.customerId && (
+                      <div className="mt-1 bg-background border border-border rounded-lg max-h-36 overflow-y-auto">
+                        {dispatchData.customers.map(c => (
+                          <button key={c.id} onClick={() => selectCustomer(c)} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition flex items-center justify-between gap-2">
+                            <span className="font-medium text-foreground">{c.name || c.username}</span>
+                            <span className="text-muted-foreground">{c.phone}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {form.customerId && (
+                      <button onClick={() => setForm(f => ({ ...f, customerId: '' }))} className="mt-1 text-[10px] text-[#bc13fe] hover:underline">
+                        Ganti pelanggan
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Nama <span className="text-red-400">*</span></label>
+                      <input value={form.customerName} onChange={e => setForm(f => ({ ...f, customerName: e.target.value }))} placeholder="Nama pelanggan" className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Telepon <span className="text-red-400">*</span></label>
+                      <input value={form.customerPhone} onChange={e => setForm(f => ({ ...f, customerPhone: e.target.value }))} placeholder="08xx..." className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Alamat</label>
+                    <input value={form.customerAddress} onChange={e => setForm(f => ({ ...f, customerAddress: e.target.value }))} placeholder="Alamat pelanggan" className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none" />
+                  </div>
+                </div>
+
+                {/* Infrastructure Section */}
+                <div className="bg-muted/40 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Infrastruktur Jaringan</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Router/NAS</label>
+                      <div className="relative">
+                        <select value={form.routerId} onChange={e => setForm(f => ({ ...f, routerId: e.target.value }))} className="w-full appearance-none px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none pr-8">
+                          <option value="">— Pilih Router —</option>
+                          {dispatchData?.routers.map(r => <option key={r.id} value={r.id}>{r.name}{r.nasname ? ` (${r.nasname})` : ''}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">OLT</label>
+                      <div className="relative">
+                        <select value={form.oltId} onChange={e => setForm(f => ({ ...f, oltId: e.target.value, odcId: '', odpId: '' }))} className="w-full appearance-none px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none pr-8">
+                          <option value="">— Pilih OLT —</option>
+                          {dispatchData?.olts.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">ODC</label>
+                      <div className="relative">
+                        <select value={form.odcId} onChange={e => setForm(f => ({ ...f, odcId: e.target.value, odpId: '' }))} className="w-full appearance-none px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none pr-8">
+                          <option value="">— Pilih ODC —</option>
+                          {(dispatchData?.odcs ?? []).filter(o => !form.oltId || o.oltId === form.oltId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">ODP</label>
+                      <div className="relative">
+                        <select value={form.odpId} onChange={e => setForm(f => ({ ...f, odpId: e.target.value }))} className="w-full appearance-none px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none pr-8">
+                          <option value="">— Pilih ODP —</option>
+                          {(dispatchData?.odps ?? []).filter(o => !form.odcId || o.odcId === form.odcId).map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ticket Info Section */}
+                <div className="bg-muted/40 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Detail Tiket</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Kategori</label>
+                      <div className="relative">
+                        <select value={form.categoryId} onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))} className="w-full appearance-none px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none pr-8">
+                          <option value="">— Pilih Kategori —</option>
+                          {dispatchData?.categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Prioritas</label>
+                      <div className="relative">
+                        <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))} className="w-full appearance-none px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none pr-8">
+                          <option value="LOW">🟢 Rendah</option>
+                          <option value="MEDIUM">🟡 Sedang</option>
+                          <option value="HIGH">🟠 Tinggi</option>
+                          <option value="URGENT">🔴 Urgent</option>
+                        </select>
+                        <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground pointer-events-none" />
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Subjek <span className="text-red-400">*</span></label>
+                    <input value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} placeholder="Ringkasan masalah" className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Deskripsi <span className="text-red-400">*</span></label>
+                    <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Detail masalah yang perlu ditangani teknisi..." rows={4} className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none resize-none" />
+                  </div>
+                </div>
+
+                {/* Technician List */}
+                {dispatchData && dispatchData.technicians.length > 0 && (
+                  <div className="bg-muted/30 rounded-xl p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Akan dikirim ke {dispatchData.technicians.length} teknisi aktif:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {dispatchData.technicians.map(t => (
+                        <span key={t.id} className="px-2 py-0.5 text-[10px] bg-[#bc13fe]/10 text-[#bc13fe] border border-[#bc13fe]/20 rounded-full">{t.name}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer buttons */}
+                <div className="flex gap-3 pt-1">
+                  <button onClick={() => !dispatchLoading && setShowDispatch(false)} disabled={dispatchLoading} className="flex-1 py-2.5 text-sm font-semibold bg-muted text-foreground border border-border rounded-xl hover:bg-muted/80 transition disabled:opacity-50">
+                    Batal
+                  </button>
+                  <button onClick={handleDispatch} disabled={dispatchLoading} className="flex-[2] py-2.5 text-sm font-semibold bg-gradient-to-r from-[#bc13fe] to-[#9b10d6] text-white rounded-xl shadow-[0_0_15px_rgba(188,19,254,0.4)] hover:shadow-[0_0_25px_rgba(188,19,254,0.6)] transition disabled:opacity-50 flex items-center justify-center gap-2">
+                    {dispatchLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {dispatchLoading ? 'Mengirim...' : `Kirim ke ${dispatchData?.technicians.length ?? 0} Teknisi`}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
