@@ -401,36 +401,44 @@ export default function RekapVoucherPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-card p-4 rounded-lg border border-border">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-foreground">Pendapatan Admin (Tanpa Agent)</div>
-            <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">{adminSold} terjual</span>
+            <div className="text-xs font-semibold text-foreground">Pendapatan Admin</div>
+            <span className="text-[10px] bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded">{adminSold} terjual (langsung)</span>
           </div>
-          <div className="text-xl font-bold text-blue-400">{formatRupiah(adminRevenue)}</div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Pendapatan bersih admin: <span className="text-blue-300">{formatRupiah(totalAdminEarnings)}</span></div>
-          {totalRevenue > 0 && (
+          {/* totalAdminEarnings = sellingPrice*sold (direct) + costPrice*sold (via agent) */}
+          <div className="text-xl font-bold text-blue-400">{formatRupiah(totalAdminEarnings)}</div>
+          <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5">
+            <div>Batch langsung admin: <span className="text-blue-300">{formatRupiah(adminRevenue)}</span></div>
+            <div>Setoran agent (cost price): <span className="text-blue-300">{formatRupiah(totalAdminEarnings - adminRevenue)}</span></div>
+          </div>
+          {totalAdminEarnings + totalAgentProfit > 0 && (
             <div className="mt-2">
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                <span>{Math.round(adminRevenue / totalRevenue * 100)}% dari total</span>
+              <div className="text-[10px] text-muted-foreground mb-1">
+                {Math.round(totalAdminEarnings / (totalAdminEarnings + totalAgentProfit) * 100)}% dari total keuntungan
               </div>
               <div className="w-full bg-muted rounded-full h-1.5">
-                <div className="bg-blue-400 rounded-full h-1.5 transition-all" style={{ width: `${Math.round(adminRevenue / totalRevenue * 100)}%` }} />
+                <div className="bg-blue-400 rounded-full h-1.5 transition-all" style={{ width: `${Math.round(totalAdminEarnings / (totalAdminEarnings + totalAgentProfit) * 100)}%` }} />
               </div>
             </div>
           )}
         </div>
         <div className="bg-card p-4 rounded-lg border border-border">
           <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-foreground">Pendapatan Agent</div>
+            <div className="text-xs font-semibold text-foreground">Profit Agent (Reseller Fee)</div>
             <span className="text-[10px] bg-[#bc13fe]/10 text-[#bc13fe] px-1.5 py-0.5 rounded">{agentSold} terjual</span>
           </div>
-          <div className="text-xl font-bold text-[#bc13fe]">{formatRupiah(agentRevenue)}</div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">Profit agent (reseller fee): <span className="text-[#bc13fe]">{formatRupiah(totalAgentProfit)}</span></div>
-          {totalRevenue > 0 && (
+          {/* Agent profit = resellerFee × sold */}
+          <div className="text-xl font-bold text-[#bc13fe]">{formatRupiah(totalAgentProfit)}</div>
+          <div className="text-[10px] text-muted-foreground mt-1 space-y-0.5">
+            <div>Total nilai voucher agent: <span className="text-[#bc13fe]/80">{formatRupiah(agentRevenue)}</span></div>
+            <div>Sudah disetor ke admin: <span className="text-[#bc13fe]/80">{formatRupiah(agentRevenue - totalAgentProfit)}</span></div>
+          </div>
+          {totalAdminEarnings + totalAgentProfit > 0 && (
             <div className="mt-2">
-              <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
-                <span>{Math.round(agentRevenue / totalRevenue * 100)}% dari total</span>
+              <div className="text-[10px] text-muted-foreground mb-1">
+                {Math.round(totalAgentProfit / (totalAdminEarnings + totalAgentProfit) * 100)}% dari total keuntungan
               </div>
               <div className="w-full bg-muted rounded-full h-1.5">
-                <div className="bg-[#bc13fe] rounded-full h-1.5 transition-all" style={{ width: `${Math.round(agentRevenue / totalRevenue * 100)}%` }} />
+                <div className="bg-[#bc13fe] rounded-full h-1.5 transition-all" style={{ width: `${Math.round(totalAgentProfit / (totalAdminEarnings + totalAgentProfit) * 100)}%` }} />
               </div>
             </div>
           )}
