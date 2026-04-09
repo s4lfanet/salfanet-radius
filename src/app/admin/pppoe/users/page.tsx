@@ -1383,19 +1383,19 @@ export default function PppoeUsersPage() {
                   </div>
                   {/* Actions */}
                   <div className="flex items-center gap-1 pt-1 border-t border-border/50 flex-wrap">
-                    <button onClick={() => handleEdit(user)} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded" title="Lihat detail"><Eye className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleEdit(user)} className="p-1.5 text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => handleSyncToRadius(user)} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded" title="Sync RADIUS"><RefreshCw className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleEdit(user)} className="p-1.5 text-green-500 hover:bg-green-500/10 rounded cursor-pointer flex items-center justify-center" title="Lihat detail"><Eye className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleEdit(user)} className="p-1.5 text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded cursor-pointer flex items-center justify-center" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleSyncToRadius(user)} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded cursor-pointer flex items-center justify-center" title="Sync RADIUS"><RefreshCw className="h-3.5 w-3.5" /></button>
                     <button
                       onClick={() => handleStatusChange(user.id, user.status === 'isolated' ? 'active' : 'isolated')}
-                      className={`p-1.5 rounded ${user.status === 'isolated' ? 'text-success hover:bg-success/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
+                      className={`p-1.5 rounded cursor-pointer flex items-center justify-center ${user.status === 'isolated' ? 'text-success hover:bg-success/10' : 'text-orange-500 hover:bg-orange-500/10'}`}
                       title={user.status === 'isolated' ? 'Aktifkan' : 'Isolir'}
                     >
                       <Shield className="h-3.5 w-3.5" />
                     </button>
-                    <button onClick={() => handleStopSubscription(user)} className="p-1.5 text-destructive/70 hover:bg-destructive/10 rounded" title="Stop Langganan"><Ban className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setDeleteUserId(user.id)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
-                    <button onClick={() => setPrintDialogUser(user)} className="p-1.5 text-purple-500 hover:bg-purple-500/10 rounded" title="Cetak Invoice"><Printer className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => handleStopSubscription(user)} className="p-1.5 text-destructive/70 hover:bg-destructive/10 rounded cursor-pointer flex items-center justify-center" title="Stop Langganan"><Ban className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setDeleteUserId(user.id)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded cursor-pointer flex items-center justify-center" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
+                    <button onClick={() => setPrintDialogUser(user)} className="p-1.5 text-purple-500 hover:bg-purple-500/10 rounded cursor-pointer flex items-center justify-center" title="Cetak Invoice"><Printer className="h-3.5 w-3.5" /></button>
                     {invoiceCounts[user.id] > 0 ? (
                       <button onClick={() => handleMarkAllPaid(user.id, user.name)} disabled={markingPaid === user.id} className="px-2 py-1 text-[10px] font-medium bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 ml-auto">
                         {markingPaid === user.id ? <Loader2 className="h-3 w-3 animate-spin" /> : t('pppoe.markPaid')}

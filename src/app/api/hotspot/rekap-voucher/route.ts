@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
         // Get profile info
         const profile = await prisma.hotspotProfile.findUnique({
           where: { id: batch.profileId },
-          select: { id: true, name: true },
+          select: { id: true, name: true, sellingPrice: true },
         });
 
         // Get agent info if exists
@@ -78,14 +78,26 @@ export async function GET(req: NextRequest) {
           });
         }
 
+        // Get router info from first voucher in batch
+        const sampleVoucher = await prisma.hotspotVoucher.findFirst({
+          where: { batchCode: batch.batchCode },
+          select: { router: { select: { id: true, name: true } } },
+        });
+
+        const sellingPrice = profile?.sellingPrice ?? 0;
+        const totalRevenue = (active + expired) * sellingPrice;
+
         return {
           batchCode: batch.batchCode,
           createdAt: batch.createdAt.toISOString(),
           agent,
-          profile: profile || { id: batch.profileId, name: 'Unknown' },
+          profile: profile || { id: batch.profileId, name: 'Unknown', sellingPrice: 0 },
+          router: sampleVoucher?.router || null,
           totalQty: batch._count.id,
           stock: waiting,
           sold: active + expired,
+          sellingPrice,
+          totalRevenue,
         };
       })
     );

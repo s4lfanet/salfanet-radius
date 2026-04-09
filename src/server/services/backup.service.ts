@@ -50,9 +50,21 @@ export async function createBackup(type: 'auto' | 'manual' = 'manual') {
 
   const { user, password, host, port, database } = parseDbUrl(dbUrl);
   
-  // Generate filename with timestamp
+  // Generate filename with timestamp and company name
   const timestamp = formatWIB(nowWIB(), 'yyyy-MM-dd_HH-mm-ss');
-  const filename = `salfanet_backup_${timestamp}.sql`;
+  let companySlug = 'backup';
+  try {
+    const company = await prisma.company.findFirst({ select: { name: true } });
+    if (company?.name) {
+      // Sanitize: lowercase, replace spaces/special chars with underscore, max 30 chars
+      companySlug = company.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .substring(0, 30) || 'backup';
+    }
+  } catch { /* use default slug */ }
+  const filename = `${companySlug}_${timestamp}.sql`;
   
   const backupDir = await ensureBackupDir();
   const filepath = path.join(backupDir, filename);

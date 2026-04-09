@@ -15,10 +15,17 @@ interface RekapVoucher {
   profile: {
     id: string;
     name: string;
+    sellingPrice?: number;
   };
+  router: {
+    id: string;
+    name: string;
+  } | null;
   totalQty: number;
   stock: number; // WAITING
   sold: number;  // ACTIVE + EXPIRED
+  sellingPrice: number;
+  totalRevenue: number;
 }
 
 export default function RekapVoucherPage() {
@@ -114,6 +121,9 @@ export default function RekapVoucherPage() {
   const totalQty = filteredRekap.reduce((sum, item) => sum + item.totalQty, 0);
   const totalStock = filteredRekap.reduce((sum, item) => sum + item.stock, 0);
   const totalSold = filteredRekap.reduce((sum, item) => sum + item.sold, 0);
+  const totalRevenue = filteredRekap.reduce((sum, item) => sum + item.totalRevenue, 0);
+
+  const formatRupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
   return (
     <div className="bg-background relative overflow-hidden">
@@ -232,7 +242,7 @@ export default function RekapVoucherPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card p-4 rounded-lg border-2 border-primary/30 shadow-[0_0_15px_rgba(188,19,254,0.1)]">
           <div className="text-xs text-primary font-bold uppercase mb-1">{t('hotspot.totalQty')}</div>
           <div className="text-lg sm:text-2xl font-bold text-primary drop-shadow-[0_0_5px_rgba(188,19,254,0.5)]">{totalQty.toLocaleString()}</div>
@@ -244,6 +254,10 @@ export default function RekapVoucherPage() {
         <div className="bg-card p-4 rounded-lg border-2 border-warning/30 shadow-[0_0_15px_rgba(255,170,0,0.1)]">
           <div className="text-xs text-warning font-bold uppercase mb-1">{t('hotspot.sold')}</div>
           <div className="text-lg sm:text-2xl font-bold text-warning drop-shadow-[0_0_5px_rgba(255,170,0,0.5)]">{totalSold.toLocaleString()}</div>
+        </div>
+        <div className="bg-card p-4 rounded-lg border-2 border-[#00f7ff]/30 shadow-[0_0_15px_rgba(0,247,255,0.1)] col-span-2 md:col-span-1">
+          <div className="text-xs text-[#00f7ff] font-bold uppercase mb-1">Total Pendapatan</div>
+          <div className="text-base sm:text-xl font-bold text-[#00f7ff] drop-shadow-[0_0_5px_rgba(0,247,255,0.5)]">{formatRupiah(totalRevenue)}</div>
         </div>
       </div>
 
@@ -278,9 +292,18 @@ export default function RekapVoucherPage() {
                 <div>
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.profile')}</div>
                   <div>{item.profile.name}</div>
+                  {item.sellingPrice > 0 && (
+                    <div className="text-[10px] text-muted-foreground">{formatRupiah(item.sellingPrice)}/voucher</div>
+                  )}
                 </div>
+                {item.router && (
+                  <div className="col-span-2">
+                    <div className="text-[10px] text-muted-foreground">Router</div>
+                    <div className="font-medium text-foreground">{item.router.name}</div>
+                  </div>
+                )}
               </div>
-              <div className="grid grid-cols-3 gap-2 text-xs border-t border-border pt-2">
+              <div className="grid grid-cols-4 gap-2 text-xs border-t border-border pt-2">
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.qty')}</div>
                   <div className="font-medium text-primary">{item.totalQty}</div>
@@ -293,13 +316,17 @@ export default function RekapVoucherPage() {
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.sold')}</div>
                   <div className="font-medium text-orange-600">{item.sold}</div>
                 </div>
+                <div className="text-center">
+                  <div className="text-[10px] text-muted-foreground">Nominal</div>
+                  <div className="font-medium text-[#00f7ff] text-[10px]">{formatRupiah(item.totalRevenue)}</div>
+                </div>
               </div>
             </div>
           ))
         )}
         {filteredRekap.length > 0 && (
           <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/40 p-3">
-            <div className="grid grid-cols-3 gap-2 text-xs">
+            <div className="grid grid-cols-2 gap-2 text-xs mb-2">
               <div className="text-center">
                 <div className="text-[10px] text-muted-foreground font-bold">{t('common.total')} {t('hotspot.qty')}</div>
                 <div className="font-bold text-primary">{totalQty.toLocaleString()}</div>
@@ -311,6 +338,10 @@ export default function RekapVoucherPage() {
               <div className="text-center">
                 <div className="text-[10px] text-muted-foreground font-bold">{t('common.total')} {t('hotspot.sold')}</div>
                 <div className="font-bold text-orange-600">{totalSold.toLocaleString()}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] text-muted-foreground font-bold">Total Pendapatan</div>
+                <div className="font-bold text-[#00f7ff] text-[11px]">{formatRupiah(totalRevenue)}</div>
               </div>
             </div>
           </div>
@@ -328,21 +359,24 @@ export default function RekapVoucherPage() {
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.creationDate')}</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.partnerAgent')}</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.profile')}</th>
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Router</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.qty')}</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.stock')}</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.sold')}</th>
+                <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Harga/pcs</th>
+                <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Pendapatan</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-xs">
                     {t('common.loading')}
                   </td>
                 </tr>
               ) : filteredRekap.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-xs">
                     {t('hotspot.noRekapData')}
                   </td>
                 </tr>
@@ -369,6 +403,9 @@ export default function RekapVoucherPage() {
                     <td className="px-3 py-2 text-[10px] text-muted-foreground">
                       {item.profile.name}
                     </td>
+                    <td className="px-3 py-2 text-[10px] text-muted-foreground">
+                      {item.router?.name || <span className="italic">-</span>}
+                    </td>
                     <td className="px-3 py-2 text-[10px] text-right font-medium text-primary">
                       {item.totalQty}
                     </td>
@@ -378,6 +415,12 @@ export default function RekapVoucherPage() {
                     <td className="px-3 py-2 text-[10px] text-right font-medium text-orange-600">
                       {item.sold}
                     </td>
+                    <td className="px-3 py-2 text-[10px] text-right font-medium text-muted-foreground">
+                      {item.sellingPrice > 0 ? formatRupiah(item.sellingPrice) : '-'}
+                    </td>
+                    <td className="px-3 py-2 text-[10px] text-right font-medium text-[#00f7ff]">
+                      {item.totalRevenue > 0 ? formatRupiah(item.totalRevenue) : '-'}
+                    </td>
                   </tr>
                 ))
               )}
@@ -385,7 +428,7 @@ export default function RekapVoucherPage() {
             {filteredRekap.length > 0 && (
               <tfoot className="bg-muted border-t border-border">
                 <tr className="font-bold">
-                  <td colSpan={5} className="px-3 py-2 text-xs text-foreground text-right">
+                  <td colSpan={6} className="px-3 py-2 text-xs text-foreground text-right">
                     {t('common.total')}:
                   </td>
                   <td className="px-3 py-2 text-xs text-right text-primary">
@@ -396,6 +439,10 @@ export default function RekapVoucherPage() {
                   </td>
                   <td className="px-3 py-2 text-xs text-right text-orange-600">
                     {totalSold.toLocaleString()}
+                  </td>
+                  <td className="px-3 py-2 text-xs text-right text-muted-foreground">-</td>
+                  <td className="px-3 py-2 text-xs text-right text-[#00f7ff]">
+                    {formatRupiah(totalRevenue)}
                   </td>
                 </tr>
               </tfoot>
