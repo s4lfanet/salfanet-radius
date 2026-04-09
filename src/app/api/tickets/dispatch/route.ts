@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 
 function generateTicketNumber(): string {
   const date = new Date();
@@ -11,38 +12,7 @@ function generateTicketNumber(): string {
   return `TKT${year}${month}${random}`;
 }
 
-function normalizePhone(phone: string): string {
-  let p = phone.replace(/\D/g, '');
-  if (p.startsWith('0')) p = '62' + p.slice(1);
-  else if (!p.startsWith('62')) p = '62' + p;
-  return p;
-}
 
-async function sendWA(phone: string, message: string, provider: any) {
-  try {
-    const normalizedPhone = normalizePhone(phone);
-    const res = await fetch(provider.apiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${provider.apiKey}` },
-      body: JSON.stringify({ phone: normalizedPhone, message }),
-    });
-    const result = await res.json();
-    await prisma.whatsapp_history.create({
-      data: {
-        id: `msg_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
-        phone: normalizedPhone,
-        message,
-        status: res.ok ? 'sent' : 'failed',
-        response: JSON.stringify(result),
-        providerName: provider.name,
-        providerType: provider.type,
-      },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -148,12 +118,7 @@ export async function POST(req: NextRequest) {
       select: { id: true, name: true, phoneNumber: true },
     });
 
-    // Send WA to all technicians
-    const waProvider = await prisma.whatsapp_providers.findFirst({
-      where: { isActive: true },
-      orderBy: { priority: 'desc' },
-    });
-
+    // Send WA to all technicians via WhatsAppService (handles all provider types + failover)
     const priorityLabel: Record<string, string> = {
       LOW: '🟢 Rendah', MEDIUM: '🟡 Sedang', HIGH: '🟠 Tinggi', URGENT: '🔴 Urgent',
     };
@@ -176,9 +141,13 @@ export async function POST(req: NextRequest) {
       `✅ Silakan klaim tiket ini di portal teknisi.`,
     ].filter(Boolean).join('\n');
 
-    if (waProvider) {
-      await Promise.allSettled(technicians.map(tech => sendWA(tech.phoneNumber, waMessage, waProvider)));
-    }
+    await Promise.allSettled(
+      technicians.map(tech =>
+        WhatsAppService.sendMessage({ phone: tech.phoneNumber, message: waMessage }).catch(e =>
+          console.error(`[Dispatch WA] Failed to send to ${tech.name}:`, e.message)
+        )
+      )
+    );
 
     // Send web push to all technicians
     try {

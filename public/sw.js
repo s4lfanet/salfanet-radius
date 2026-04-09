@@ -131,10 +131,26 @@ self.addEventListener('push', (event) => {
     image: payload.image,
     tag: payload.tag || 'salfanet-notification',
     requireInteraction: Boolean(payload.requireInteraction),
-    data: payload.data || { url: '/customer' },
+    data: payload.data || { url: payload.url || '/customer' },
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(title, options),
+      // Notify all open clients so they can update the bell badge + show toast
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'PUSH_RECEIVED',
+            title,
+            body: options.body,
+            url: payload.url || (options.data && options.data.url) || '/',
+            tag: options.tag,
+          });
+        });
+      }),
+    ])
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {

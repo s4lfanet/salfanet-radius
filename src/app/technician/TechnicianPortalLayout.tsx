@@ -171,43 +171,83 @@ function PushNotificationBanner({ techId }: { techId: string }) {
   );
 }
 function NotificationBell() {
+  const { addToast } = useToast();
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; title: string; message: string; isRead: boolean; createdAt: string }[]>([]);
-  const instanceId = useRef(Math.random().toString(36).slice(2));
 
+  const loadTickets = async () => {
+    try {
+      const res = await fetch('/api/technician/tickets?status=OPEN');
+      if (!res.ok) return;
+      const data = await res.json();
+      const items = (data.tickets || []).map((t: { id: string; ticketNumber: string; subject: string; customerName: string; description: string; createdAt: string; status: string }) => ({
+        id: t.id,
+        title: `#${t.ticketNumber} — ${t.subject}`,
+        message: t.customerName || '',
+        isRead: !['OPEN'].includes(t.status),
+        createdAt: t.createdAt,
+      }));
+      setNotifications(prev => {
+        // Merge: keep push-injected items (id starts with 'push-') + fresh ticket data
+        const pushItems = prev.filter(n => n.id.startsWith('push-'));
+        return [...items, ...pushItems].slice(0, 20);
+      });
+      const unread = items.filter((n: { isRead: boolean }) => !n.isRead).length;
+      setCount(prev => Math.max(prev, unread));
+    } catch { /* silent */ }
+  };
+
+  // Listen for push notifications from service worker
   useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await fetch('/api/technician/tickets?limit=5&status=open');
-        if (res.ok) {
-          const data = await res.json();
-          const tickets = (data.tickets || []).map((t: { id: string; title: string; description: string; createdAt: string; status: string }) => ({
-            id: t.id,
-            title: t.title || 'Tiket Baru',
-            message: t.description?.substring(0, 60) || '',
-            isRead: t.status !== 'open',
-            createdAt: t.createdAt,
-          }));
-          setNotifications(tickets);
-          setCount(tickets.filter((n: { isRead: boolean }) => !n.isRead).length);
-        }
-      } catch { /* silent */ }
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type !== 'PUSH_RECEIVED') return;
+      const { title, body, tag } = event.data;
+      // Add to bell list
+      setNotifications(prev => [{
+        id: `push-${tag || Date.now()}`,
+        title: title || 'Notifikasi Baru',
+        message: body || '',
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      }, ...prev].slice(0, 20));
+      setCount(prev => prev + 1);
+      // Show toast
+      addToast({
+        type: 'info',
+        title: title || 'Notifikasi Baru',
+        description: body,
+        duration: 7000,
+      });
     };
-    load();
-    const iv = setInterval(load, 30000);
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener('message', handler);
+      return () => navigator.serviceWorker.removeEventListener('message', handler);
+    }
+  }, [addToast]);
+
+  // Poll for new tickets
+  useEffect(() => {
+    loadTickets();
+    const iv = setInterval(loadTickets, 30000);
     return () => clearInterval(iv);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleOpen = () => {
+    setOpen(v => !v);
+    if (!open) setCount(0); // clear badge when opening
+  };
 
   return (
     <div className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={handleOpen}
         className="relative p-2 rounded-xl bg-slate-100 dark:bg-cyan-500/10 hover:bg-slate-200 dark:hover:bg-cyan-500/20 border border-slate-200 dark:border-cyan-500/30 transition-all"
       >
         <Bell className="w-4 h-4 text-slate-600 dark:text-slate-200" />
         {count > 0 && (
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)]">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)] animate-bounce">
             {count > 9 ? '9+' : count}
           </span>
         )}
@@ -215,21 +255,36 @@ function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-12 w-72 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-cyan-500/30 rounded-xl shadow-xl z-50 overflow-hidden">
-            <div className="px-3 py-2 border-b border-slate-200 dark:border-cyan-500/20">
+          <div className="absolute right-0 top-12 w-80 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-cyan-500/30 rounded-xl shadow-xl z-50 overflow-hidden">
+            <div className="px-3 py-2 border-b border-slate-200 dark:border-cyan-500/20 flex items-center justify-between">
               <p className="text-xs font-bold text-slate-900 dark:text-white">Notifikasi</p>
+              {notifications.length > 0 && (
+                <button onClick={() => { setNotifications([]); setCount(0); }} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
+                  Bersihkan
+                </button>
+              )}
             </div>
-            <div className="max-h-60 overflow-y-auto divide-y divide-slate-100 dark:divide-cyan-500/10">
+            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-cyan-500/10">
               {notifications.length === 0 ? (
                 <p className="text-xs text-slate-400 dark:text-slate-400 text-center py-6">Tidak ada notifikasi</p>
               ) : (
                 notifications.map((n) => (
-                  <Link key={n.id} href="/technician/tickets" onClick={() => setOpen(false)} className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-cyan-500/10 transition">
-                    <p className={cn('text-xs font-semibold truncate', n.isRead ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white')}>{n.title}</p>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{n.message}</p>
+                  <Link key={n.id} href="/technician/tickets" onClick={() => setOpen(false)} className="block px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-cyan-500/10 transition">
+                    <div className="flex items-start gap-2">
+                      {!n.isRead && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-cyan-400 flex-shrink-0" />}
+                      <div className="min-w-0 flex-1">
+                        <p className={cn('text-xs font-semibold truncate', n.isRead ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white')}>{n.title}</p>
+                        {n.message && <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{n.message}</p>}
+                      </div>
+                    </div>
                   </Link>
                 ))
               )}
+            </div>
+            <div className="px-3 py-2 border-t border-slate-100 dark:border-cyan-500/10">
+              <Link href="/technician/tickets" onClick={() => setOpen(false)} className="text-[10px] text-cyan-500 hover:underline font-medium">
+                Lihat semua tiket →
+              </Link>
             </div>
           </div>
         </>
@@ -237,8 +292,6 @@ function NotificationBell() {
     </div>
   );
 }
-
-/* â”€â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function TechSidebar({
   tech,
   sidebarOpen,
