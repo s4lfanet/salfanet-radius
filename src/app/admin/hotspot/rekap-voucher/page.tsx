@@ -231,10 +231,6 @@ export default function RekapVoucherPage() {
   const agentRevenue = filteredRekap.filter(i => i.agent !== null).reduce((sum, i) => sum + i.totalRevenue, 0);
   const adminSold = filteredRekap.filter(i => i.agent === null).reduce((sum, i) => sum + i.sold, 0);
   const agentSold = filteredRekap.filter(i => i.agent !== null).reduce((sum, i) => sum + i.sold, 0);
-  const adminRevenue = filteredRekap.filter(i => i.agent === null).reduce((sum, i) => sum + i.totalRevenue, 0);
-  const agentRevenue = filteredRekap.filter(i => i.agent !== null).reduce((sum, i) => sum + i.totalRevenue, 0);
-  const adminSold = filteredRekap.filter(i => i.agent === null).reduce((sum, i) => sum + i.sold, 0);
-  const agentSold = filteredRekap.filter(i => i.agent !== null).reduce((sum, i) => sum + i.sold, 0);
 
   const formatRupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
