@@ -94,9 +94,16 @@ const MENU_ITEMS: MenuItem[] = [
 
 /* --- Sidebar Push Notification Toggle --- */
 function SidebarPushToggle({ techId }: { techId: string }) {
-  const [permission, setPermission] = useState<string>('loading');
+  const [isSupported, setIsSupported] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission>('default');
   const [loading, setLoading] = useState(false);
+
+  const checkSupport = () =>
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window;
 
   const urlBase64ToUint8Array = (base64String: string) => {
     const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -105,93 +112,85 @@ function SidebarPushToggle({ techId }: { techId: string }) {
     return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
   };
 
-  const doSubscribe = async () => {
-    if (!techId) return;
-    setLoading(true);
+  const refresh = async () => {
+    const supported = checkSupport();
+    setIsSupported(supported);
+    if (!supported) return;
+    setPermission(Notification.permission);
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js');
+      const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       await navigator.serviceWorker.ready;
-      const vapidRes = await fetch('/api/push/vapid-public-key');
-      const { publicKey } = await vapidRes.json();
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      });
-      await fetch('/api/push/technician-subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
-      });
-      setSubscribed(true);
-    } catch (e) {
-      console.error('[SidebarPush] Subscribe error:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const doUnsubscribe = async () => {
-    if (!techId) return;
-    setLoading(true);
-    try {
-      if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.ready;
-        const sub = await reg.pushManager.getSubscription();
-        if (sub) {
-          const endpoint = sub.endpoint;
-          await sub.unsubscribe();
-          await fetch('/api/push/technician-unsubscribe', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ technicianId: techId, endpoint }),
-          });
-        }
-      }
-      setSubscribed(false);
-    } catch (e) {
-      console.error('[SidebarPush] Unsubscribe error:', e);
-    } finally {
-      setLoading(false);
-    }
+      const sub = await reg.pushManager.getSubscription();
+      setSubscribed(!!sub);
+    } catch { /* ignore */ }
   };
 
   useEffect(() => {
     if (!techId) return;
-    if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in navigator)) {
-      setPermission('unsupported');
-      return;
-    }
-    setPermission(Notification.permission);
-    navigator.serviceWorker.ready
-      .then(reg => reg.pushManager.getSubscription())
-      .then(sub => setSubscribed(!!sub))
-      .catch(() => {});
+    void refresh();
+    window.addEventListener('focus', refresh);
+    return () => window.removeEventListener('focus', refresh);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [techId]);
 
   const handleToggle = async () => {
-    if (permission === 'unsupported' || permission === 'denied' || permission === 'loading') return;
-    if (subscribed) {
-      await doUnsubscribe();
-    } else {
-      if (Notification.permission === 'default') {
-        const perm = await Notification.requestPermission();
-        setPermission(perm);
+    if (!isSupported || !techId) return;
+    setLoading(true);
+    try {
+      if (subscribed) {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        const endpoint = sub?.endpoint;
+        if (sub) await sub.unsubscribe();
+        await fetch('/api/push/technician-unsubscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ technicianId: techId, endpoint }),
+        });
+        setSubscribed(false);
+        setPermission(Notification.permission);
+      } else {
+        let perm = Notification.permission;
+        if (perm === 'default') {
+          perm = await Notification.requestPermission();
+          setPermission(perm);
+        }
         if (perm !== 'granted') return;
+        const vapidRes = await fetch('/api/push/vapid-public-key');
+        const { publicKey } = await vapidRes.json();
+        const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+        await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey),
+          });
+        }
+        await fetch('/api/push/technician-subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
+        });
+        setSubscribed(true);
+        setPermission('granted');
       }
-      await doSubscribe();
+    } catch (e) {
+      console.error('[SidebarPush]', e);
+    } finally {
+      setLoading(false);
     }
   };
 
   const isOn = subscribed && permission === 'granted';
   const isDenied = permission === 'denied';
-  const isUnsupported = permission === 'unsupported';
 
   return (
     <button
       onClick={handleToggle}
-      disabled={loading || isDenied || isUnsupported}
+      disabled={loading || isDenied || !isSupported}
       title={
-        isUnsupported ? 'Browser tidak mendukung push notification'
+        !isSupported ? 'Browser tidak mendukung push notification'
         : isDenied ? 'Notifikasi diblokir — ubah di pengaturan browser'
         : isOn ? 'Klik untuk nonaktifkan notifikasi push'
         : 'Klik untuk aktifkan notifikasi push'
@@ -200,7 +199,7 @@ function SidebarPushToggle({ techId }: { techId: string }) {
         'w-full flex items-center gap-3 px-3 py-2.5 text-xs font-bold rounded-xl transition-all duration-300 border',
         isOn
           ? 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-300 dark:border-cyan-500/30 shadow-sm dark:shadow-[0_0_15px_rgba(6,182,212,0.15)]'
-          : isDenied || isUnsupported
+          : isDenied || !isSupported
           ? 'text-slate-400 dark:text-slate-500 border-transparent opacity-60 cursor-not-allowed'
           : 'text-slate-600 dark:text-slate-300 border-transparent hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-cyan-500/10 hover:border-slate-200 dark:hover:border-cyan-500/20',
       )}
@@ -208,9 +207,7 @@ function SidebarPushToggle({ techId }: { techId: string }) {
       <span
         className={cn(
           'p-1.5 rounded-lg flex-shrink-0 flex items-center justify-center transition-all duration-300',
-          isOn
-            ? 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10'
-            : 'text-slate-400 dark:text-slate-400',
+          isOn ? 'text-cyan-500 bg-cyan-50 dark:bg-cyan-500/10' : 'text-slate-400 dark:text-slate-400',
         )}
       >
         {loading ? (
@@ -222,10 +219,9 @@ function SidebarPushToggle({ techId }: { techId: string }) {
         )}
       </span>
       <span className="flex-1 text-left tracking-wide">
-        {isOn ? 'Notif Push: ON' : isDenied ? 'Notif Push: Diblokir' : isUnsupported ? 'Push Tdk Didukung' : 'Notif Push: OFF'}
+        {isOn ? 'Notif Push: ON' : isDenied ? 'Notif Push: Diblokir' : !isSupported ? 'Notif Push: OFF' : 'Notif Push: OFF'}
       </span>
-      {/* Toggle pill */}
-      {!isUnsupported && (
+      {isSupported && (
         <span
           className={cn(
             'relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border-2 transition-all duration-300',
