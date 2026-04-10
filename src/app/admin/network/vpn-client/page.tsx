@@ -192,14 +192,18 @@ export default function VpnClientPage() {
 
 /interface/wireguard/add name=wg-salfanet private-key="${data.clientPrivateKey || '<PRIVATE_KEY>'}"
 /interface/wireguard/peers/add interface=wg-salfanet public-key="${data.serverPublicKey}" endpoint-address="${data.serverEndpoint?.split(':')[0]}" endpoint-port=${data.wgPort} allowed-address="${data.allowedIps}" persistent-keepalive=25
+
+# 3. Assign IP address ke interface WireGuard
+/ip/address/remove [find where interface=wg-salfanet]
 /ip/address/add address=${data.vpnIp}/32 interface=wg-salfanet
 
 # Route ke subnet VPN melalui WireGuard
-/ip/route/add dst-address=${data.allowedIps || '10.200.0.0/24'} gateway=wg-salfanet
+/ip/route/remove [find where comment="SALFANET-VPN"]
+/ip/route/add dst-address=${data.allowedIps || '10.200.0.0/24'} gateway=wg-salfanet comment="SALFANET-VPN"
 
 # RADIUS via WireGuard
 /radius/remove [find where comment~"SALFANET"]
-/radius/add address=${data.allowedIps?.split('/')[0] || data.serverEndpoint?.split(':')[0]} secret=<RADIUS_SECRET> service=ppp,hotspot authentication-port=1812 accounting-port=1813 timeout=3000 comment="SALFANET RADIUS via WireGuard"
+/radius/add address=${data.allowedIps?.split('/')[0] || data.serverEndpoint?.split(':')[0]} secret=<RADIUS_SECRET> service=ppp,hotspot authentication-port=1812 accounting-port=1813 timeout=3s comment="SALFANET RADIUS via WireGuard"
 /ppp/aaa/set use-radius=yes accounting=yes interim-update=5m
 /radius/incoming/set accept=yes port=3799`;
       setWgGeneratedScript(script);
@@ -636,10 +640,12 @@ ${radiusSection}`.trim()
 /interface/wireguard/peers/add interface=wg-salfanet public-key="${serverPk}" endpoint-address="${serverHost}" endpoint-port=${wgPort} allowed-address="10.200.0.0/24" persistent-keepalive=25
 
 # 3. Assign IP address ke interface WireGuard
+/ip/address/remove [find where interface=wg-salfanet]
 /ip/address/add address=${credentials.vpnIp}/32 interface=wg-salfanet
 
 # 4. Route ke subnet VPN melalui WireGuard
-/ip/route/add dst-address=10.200.0.0/24 gateway=wg-salfanet
+/ip/route/remove [find where comment="SALFANET-VPN"]
+/ip/route/add dst-address=10.200.0.0/24 gateway=wg-salfanet comment="SALFANET-VPN"
 ${radiusSection}`.trim()
     } else {
       return scriptBase(
