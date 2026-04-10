@@ -227,6 +227,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
                   }}
                   theme="light"
                 />
+              </div>
             </div>
 
             {/* Foto Instalasi */}
