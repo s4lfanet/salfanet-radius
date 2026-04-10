@@ -656,11 +656,10 @@ export default function PPPoEProfilesPage() {
                       <td className="px-3 py-2.5 text-right">
                         <div className="flex justify-end items-center gap-0.5">
                           <button
-                            title="Sync ke FreeRADIUS"
+                            title="Sync ke RADIUS"
                             onClick={() => handleSyncRadius(profile)}
                             disabled={syncingRadiusId === profile.id}
                             className="p-1.5 text-muted-foreground hover:text-blue-400 hover:bg-blue-400/10 rounded transition-colors disabled:opacity-40"
-                            title="Sync ke RADIUS"
                           >{syncingRadiusId === profile.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}</button>
                           <button
                             title="Lihat Detail"
