@@ -89,6 +89,9 @@ export default function VpnClientPage() {
   // VPS WireGuard server info (fetched from vps-wg-peer GET)
   const [wgServerInfo, setWgServerInfo] = useState<{ installed: boolean; publicIp?: string; publicKey?: string; listenPort?: number; subnet?: string } | null>(null);
   const [wgServerInfoLoading, setWgServerInfoLoading] = useState(false);
+  // VPS L2TP/IPsec server info
+  const [l2tpServerInfo, setL2tpServerInfo] = useState<{ installed: boolean; publicIp?: string; ipsecPsk?: string; subnet?: string; localIp?: string } | null>(null);
+  const [l2tpServerInfoLoading, setL2tpServerInfoLoading] = useState(false);
   // Tutorial toggle
   const [showTutorial, setShowTutorial] = useState(true);
 
@@ -339,6 +342,26 @@ export default function VpnClientPage() {
     }
   }
 
+  const loadL2tpServerInfo = async () => {
+    if (l2tpServerInfo !== null) return // already loaded
+    setL2tpServerInfoLoading(true)
+    try {
+      const res = await fetch('/api/network/vps-l2tp-info')
+      const data = await res.json()
+      setL2tpServerInfo(data.installed ? {
+        installed: true,
+        publicIp: data.publicIp,
+        ipsecPsk: data.ipsecPsk,
+        subnet: data.subnet,
+        localIp: data.localIp,
+      } : { installed: false })
+    } catch {
+      setL2tpServerInfo({ installed: false })
+    } finally {
+      setL2tpServerInfoLoading(false)
+    }
+  }
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -364,6 +387,44 @@ export default function VpnClientPage() {
           setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp' })
         } else {
           showError(data.error || 'Gagal menambahkan WireGuard peer ke VPS')
+        }
+      } catch {
+        showError('Gagal menghubungi VPS')
+      } finally {
+        setCreating(false)
+      }
+      return
+    }
+
+    // VPS L2TP mode: intercept and use vps-l2tp-peer flow
+    if (formData.vpnType === 'l2tp' && formData.vpnServerId === '__vps_l2tp__') {
+      if (!formData.name.trim()) return
+      setCreating(true)
+      try {
+        const res = await fetch('/api/network/vps-l2tp-peer', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add', label: formData.name.trim() }),
+        })
+        const data = await res.json()
+        if (data.success) {
+          setShowModal(false)
+          setCredentials({
+            server: l2tpServerInfo?.publicIp || 'VPS',
+            username: data.username,
+            password: data.password,
+            vpnIp: data.vpnIp,
+            vpnType: 'l2tp',
+          })
+          setSelectedVpnType('l2tp')
+          setShowCredentials(true)
+          // Store generated script in wgGeneratedScript state for display
+          setWgGeneratedScript(data.routerosScript || null)
+          setShowWgSection(true)
+          showSuccess('L2TP user berhasil ditambahkan ke VPS', 'Berhasil')
+          setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp' })
+        } else {
+          showError(data.error || 'Gagal menambahkan L2TP user ke VPS')
         }
       } catch {
         showError('Gagal menghubungi VPS')
@@ -1076,7 +1137,7 @@ ${radiusSection}`.trim()
                     required
                   >
                     <option value="" className="bg-slate-800">{t('network.selectVpnClient')}</option>
-                    {/* VPS WireGuard option — shown when WG selected and VPS has WG installed */}
+                    {/* VPS WireGuard option */}
                     {formData.vpnType === 'wireguard' && wgServerInfoLoading && (
                       <option disabled className="bg-slate-800">⏳ Memeriksa VPS WireGuard...</option>
                     )}
@@ -1085,7 +1146,16 @@ ${radiusSection}`.trim()
                         🖥️ VPS WireGuard Server ({wgServerInfo.publicIp || 'VPS'} :{wgServerInfo.listenPort || 51820})
                       </option>
                     )}
-                    {/* CHR servers with WG enabled */}
+                    {/* VPS L2TP option */}
+                    {formData.vpnType === 'l2tp' && l2tpServerInfoLoading && (
+                      <option disabled className="bg-slate-800">⏳ Memeriksa VPS L2TP...</option>
+                    )}
+                    {formData.vpnType === 'l2tp' && l2tpServerInfo?.installed && (
+                      <option value="__vps_l2tp__" className="bg-slate-800">
+                        🖥️ VPS L2TP/IPsec Server ({l2tpServerInfo.publicIp || 'VPS'})
+                      </option>
+                    )}
+                    {/* CHR servers */}
                     {vpnServers
                       .filter(server => {
                         if (formData.vpnType === 'wireguard') return server.wgEnabled === true
@@ -1106,14 +1176,19 @@ ${radiusSection}`.trim()
                       <a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">Setup di menu VPN Server</a>.
                     </p>
                   )}
-                  {formData.vpnType && formData.vpnType !== 'wireguard' && vpnServers.filter(server => {
-                    if (formData.vpnType === 'l2tp') return server.l2tpEnabled === true
+                  {formData.vpnType === 'l2tp' && !l2tpServerInfoLoading && l2tpServerInfo && !l2tpServerInfo.installed && vpnServers.filter(s => s.l2tpEnabled).length === 0 && (
+                    <p className="text-xs text-amber-400 mt-1.5">
+                      ⚠️ L2TP belum terinstall di VPS dan tidak ada CHR dengan L2TP aktif.
+                      <a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">Setup di menu VPN Server</a>.
+                    </p>
+                  )}
+                  {formData.vpnType && (formData.vpnType === 'sstp' || formData.vpnType === 'pptp') && vpnServers.filter(server => {
                     if (formData.vpnType === 'sstp') return server.sstpEnabled === true
                     if (formData.vpnType === 'pptp') return server.pptpEnabled === true
                     return true
                   }).length === 0 && (
                     <p className="text-xs text-amber-400 mt-1.5 flex items-center gap-1">
-                      ⚠️ Tidak ada VPN Server yang mengaktifkan protokol <strong>{formData.vpnType === 'l2tp' ? 'L2TP' : formData.vpnType.toUpperCase()}</strong>.
+                      ⚠️ Tidak ada CHR yang mengaktifkan protokol <strong>{formData.vpnType.toUpperCase()}</strong>.
                       <span> Setup di</span><a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">menu VPN Server</a>.
                     </p>
                   )}
@@ -1128,7 +1203,7 @@ ${radiusSection}`.trim()
                       <button
                         key={type}
                         type="button"
-                        onClick={() => { setFormData({ ...formData, vpnType: type, vpnServerId: '' }); if (type === 'wireguard') loadWgServerInfo(); }}
+                        onClick={() => { setFormData({ ...formData, vpnType: type, vpnServerId: '' }); if (type === 'wireguard') loadWgServerInfo(); if (type === 'l2tp') loadL2tpServerInfo(); }}
                         className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${formData.vpnType === type
                           ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black shadow-[0_0_15px_rgba(0,247,255,0.4)]'
                           : 'bg-muted/60 dark:bg-slate-800/60 border border-[#bc13fe]/30 text-foreground hover:bg-[#bc13fe]/20'
