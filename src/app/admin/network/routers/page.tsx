@@ -47,6 +47,8 @@ interface VpnClient {
   apiUsername?: string | null
   apiPassword?: string | null
   nasSecret?: string | null
+  resolvedUsername?: string | null
+  resolvedPassword?: string | null
 }
 
 export default function RouterPage() {
@@ -138,8 +140,8 @@ export default function RouterPage() {
           ipAddress: vpnClient.vpnIp,
           nasname: vpnClient.vpnIp,
           // Auto-fill API credentials from VPN client
-          username: vpnClient.apiUsername || prev.username,
-          password: vpnClient.apiPassword || prev.password,
+          username: vpnClient.resolvedUsername || prev.username,
+          password: vpnClient.resolvedPassword || prev.password,
           // Auto-fill RADIUS secret from NAS entry linked to this VPN client
           secret: vpnClient.nasSecret || prev.secret,
         }))

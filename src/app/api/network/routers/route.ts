@@ -60,19 +60,26 @@ export async function GET() {
       orderBy: { name: 'asc' },
     });
 
-    // Attach nasSecret from linked router entry
+    // Attach nasSecret + credentials from linked router (NAS) entry
     const clientIds = vpnClients.map((c: { id: string }) => c.id)
     const nasEntries = clientIds.length > 0
       ? await prisma.router.findMany({
           where: { vpnClientId: { in: clientIds } },
-          select: { vpnClientId: true, secret: true },
+          select: { vpnClientId: true, secret: true, username: true, password: true },
         })
       : []
-    const nasSecretMap = new Map(nasEntries.map((n: { vpnClientId: string | null; secret: string }) => [n.vpnClientId, n.secret]))
-    const vpnClientsWithSecret = vpnClients.map((c: { id: string; name: string; vpnIp: string; isRadiusServer: boolean; apiUsername: string | null; apiPassword: string | null }) => ({
-      ...c,
-      nasSecret: nasSecretMap.get(c.id) ?? null,
-    }))
+    type NasEntry = { vpnClientId: string | null; secret: string; username: string; password: string }
+    const nasMap = new Map(nasEntries.map((n: NasEntry) => [n.vpnClientId, n]))
+    const vpnClientsWithSecret = vpnClients.map((c: { id: string; name: string; vpnIp: string; isRadiusServer: boolean; apiUsername: string | null; apiPassword: string | null }) => {
+      const nas = nasMap.get(c.id)
+      return {
+        ...c,
+        nasSecret: nas?.secret ?? null,
+        // Use vpnClient API creds first; fall back to NAS entry creds (e.g. WireGuard)
+        resolvedUsername: c.apiUsername ?? nas?.username ?? null,
+        resolvedPassword: c.apiPassword ?? nas?.password ?? null,
+      }
+    })
     
     // Add radiusServerIp as computed field for frontend display
     // Note: 'server' field in NAS table is for FreeRADIUS virtual_server name, NOT RADIUS IP
