@@ -272,6 +272,7 @@ export default function HotspotProfilePage() {
             <button
               onClick={loadProfiles}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted"
+              title="Perbarui Data"
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>

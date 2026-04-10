@@ -165,7 +165,7 @@ export default function TechnicianDashboardPage() {
           <input type="checkbox" checked={showMyTasks} onChange={(e) => setShowMyTasks(e.target.checked)} className="w-3.5 h-3.5 rounded border-slate-300 dark:border-[#bc13fe]/50 bg-white dark:bg-[#0a0520] text-[#00f7ff] focus:ring-[#00f7ff]/50" />
           <span className="text-xs text-slate-600 dark:text-[#e0d0ff]/70">{t('technician.myTasksOnly')}</span>
         </label>
-        <button onClick={loadTickets} className="ml-auto p-2 bg-slate-100 dark:bg-[#00f7ff]/10 border border-slate-200 dark:border-[#00f7ff]/30 text-slate-600 dark:text-[#00f7ff] rounded-xl hover:bg-slate-200 dark:hover:bg-[#00f7ff]/20 transition">
+        <button onClick={loadTickets} className="ml-auto p-2 bg-slate-100 dark:bg-[#00f7ff]/10 border border-slate-200 dark:border-[#00f7ff]/30 text-slate-600 dark:text-[#00f7ff] rounded-xl hover:bg-slate-200 dark:hover:bg-[#00f7ff]/20 transition" title="Perbarui Data">
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>

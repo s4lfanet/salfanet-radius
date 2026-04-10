@@ -430,12 +430,14 @@ export default function CustomerAssignmentPage() {
                   <button
                     onClick={() => handleEdit(assignment)}
                     className="p-2 text-muted-foreground hover:bg-muted rounded"
+                    title="Edit Penugasan"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(assignment)}
                     className="p-2 text-destructive hover:bg-destructive/10 rounded"
+                    title="Hapus Penugasan"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -523,12 +525,14 @@ export default function CustomerAssignmentPage() {
                           <button
                             onClick={() => handleEdit(assignment)}
                             className="p-1 text-muted-foreground hover:bg-muted rounded"
+                            title="Edit Penugasan"
                           >
                             <Pencil className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => handleDelete(assignment)}
                             className="p-1 text-destructive hover:bg-destructive/10 rounded"
+                            title="Hapus Penugasan"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>

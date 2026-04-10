@@ -938,8 +938,8 @@ export default function HotspotVoucherPage() {
                     {v.status === 'WAITING' && <Badge className="text-[10px] px-1.5 py-0.5 bg-warning/10 text-warning">{t('hotspot.waiting')}</Badge>}
                     {v.status === 'ACTIVE' && <Badge className="text-[10px] px-1.5 py-0.5 bg-success/10 text-success">{t('hotspot.active')}</Badge>}
                     {v.status === 'EXPIRED' && <Badge className="text-[10px] px-1.5 py-0.5 bg-destructive/10 text-destructive">{t('hotspot.expired')}</Badge>}
-                    <button onClick={() => openEditSingle(v)} className="p-2 text-primary hover:bg-primary/10 rounded"><Pencil className="h-4 w-4" /></button>
-                    <button onClick={() => handleDeleteVoucher(v.id, v.code)} className="p-2 text-destructive hover:bg-destructive/10 rounded">
+                    <button onClick={() => openEditSingle(v)} className="p-2 text-primary hover:bg-primary/10 rounded" title="Edit Voucher"><Pencil className="h-4 w-4" /></button>
+                    <button onClick={() => handleDeleteVoucher(v.id, v.code)} className="p-2 text-destructive hover:bg-destructive/10 rounded" title="Hapus Voucher">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

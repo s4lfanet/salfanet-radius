@@ -619,18 +619,21 @@ export default function GenieACSDevicesPage() {
                       <button
                         onClick={() => handleRefreshParameters(device._id, device.serialNumber)}
                         className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        title="Refresh Parameter"
                       >
                         <RotateCcw className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleReboot(device._id)}
                         className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
+                        title="Reboot Device"
                       >
                         <Power className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDelete(device._id)}
                         className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                        title="Hapus Device"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

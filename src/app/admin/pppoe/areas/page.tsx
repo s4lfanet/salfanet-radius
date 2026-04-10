@@ -265,8 +265,8 @@ export default function AreasPage() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
-                  <button onClick={() => handleEdit(area)} className="p-2 text-muted-foreground hover:bg-muted rounded"><Pencil className="h-3.5 w-3.5" /></button>
-                  <button onClick={() => setDeleteAreaId(area.id)} className="p-2 text-destructive hover:bg-destructive/10 rounded"><Trash2 className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => handleEdit(area)} className="p-2 text-muted-foreground hover:bg-muted rounded" title="Edit Area"><Pencil className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => setDeleteAreaId(area.id)} className="p-2 text-destructive hover:bg-destructive/10 rounded" title="Hapus Area"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
             ))
@@ -339,12 +339,14 @@ export default function AreasPage() {
                           <button
                             onClick={() => handleEdit(area)}
                             className="p-1 text-muted-foreground hover:bg-muted rounded"
+                            title="Edit Area"
                           >
                             <Pencil className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => setDeleteAreaId(area.id)}
                             className="p-1 text-destructive hover:bg-destructive/10 rounded"
+                            title="Hapus Area"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>

@@ -436,12 +436,14 @@ export default function ODPsPage() {
                   <button
                     onClick={() => handleEdit(odp)}
                     className="p-2 text-muted-foreground hover:bg-muted rounded"
+                    title="Edit ODP"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(odp)}
                     className="p-2 text-destructive hover:bg-destructive/10 rounded"
+                    title="Hapus ODP"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -548,12 +550,14 @@ export default function ODPsPage() {
                           <button
                             onClick={() => handleEdit(odp)}
                             className="p-1 text-muted-foreground hover:bg-muted rounded"
+                            title="Edit ODP"
                           >
                             <Pencil className="h-3 w-3" />
                           </button>
                           <button
                             onClick={() => handleDelete(odp)}
                             className="p-1 text-destructive hover:bg-destructive/10 rounded"
+                            title="Hapus ODP"
                           >
                             <Trash2 className="h-3 w-3" />
                           </button>

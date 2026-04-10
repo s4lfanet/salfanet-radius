@@ -451,12 +451,14 @@ export default function CoordinatorsManagementPage() {
                         <button
                           onClick={() => handleEdit(coordinator)}
                           className="p-0.5 text-primary hover:text-blue-800 dark:text-primary dark:hover:text-blue-300"
+                          title="Edit Koordinator"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(coordinator)}
                           className="p-0.5 text-destructive hover:text-red-800 dark:text-destructive dark:hover:text-red-300"
+                          title="Hapus Koordinator"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>

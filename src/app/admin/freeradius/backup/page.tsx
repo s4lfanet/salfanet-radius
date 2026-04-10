@@ -251,7 +251,7 @@ export default function FreeRADIUSBackupPage() {
                         <Archive className="w-4 h-4 text-primary" />
                         Daftar Backup ({backups.length})
                     </h2>
-                    <button onClick={fetchData} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors">
+                    <button onClick={fetchData} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors" title="Perbarui Data">
                         <RefreshCw className="w-3.5 h-3.5" />
                     </button>
                 </div>
@@ -378,7 +378,7 @@ export default function FreeRADIUSBackupPage() {
                                 ? <span className="flex items-center gap-1 text-xs text-green-500 font-medium"><CheckCircle className="w-3.5 h-3.5" /> Selesai</span>
                                 : log ? <span className="flex items-center gap-1 text-xs text-red-500 font-medium"><XCircle className="w-3.5 h-3.5" /> Gagal</span> : null
                         )}
-                        <button onClick={fetchData} disabled={polling} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors disabled:opacity-50">
+                        <button onClick={fetchData} disabled={polling} className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors disabled:opacity-50" title="Perbarui Data">
                             <RefreshCw className="w-3.5 h-3.5" />
                         </button>
                     </div>

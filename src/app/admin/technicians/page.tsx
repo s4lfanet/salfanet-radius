@@ -461,12 +461,14 @@ export default function TechniciansManagementPage() {
                         <button
                           onClick={() => handleEdit(technician)}
                           className="p-1 text-primary hover:text-blue-800 dark:text-primary dark:hover:text-blue-300"
+                          title="Edit Teknisi"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(technician)}
                           className="p-1 text-destructive hover:text-red-800 dark:text-destructive dark:hover:text-red-300"
+                          title="Hapus Teknisi"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

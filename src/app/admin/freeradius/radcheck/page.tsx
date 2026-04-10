@@ -166,6 +166,7 @@ export default function RadCheckPage() {
                                     <button
                                         onClick={() => handleDelete(item.id)}
                                         className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                                        title="Hapus"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -232,6 +233,7 @@ export default function RadCheckPage() {
                                             <button
                                                 onClick={() => handleDelete(item.id)}
                                                 className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+                                                title="Hapus"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
