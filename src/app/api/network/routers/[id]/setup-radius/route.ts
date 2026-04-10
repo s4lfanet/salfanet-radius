@@ -12,7 +12,11 @@ export async function POST(
     const router = await prisma.router.findUnique({
       where: { id: routerId },
       include: {
-        vpnClient: true,
+        vpnClient: {
+          include: {
+            vpnServer: true,
+          },
+        },
       },
     });
 
@@ -30,12 +34,21 @@ export async function POST(
     
     if (router.vpnClientId && router.vpnClient) {
       // Router terhubung via VPN Client
-      const radiusServerVpn = await prisma.vpnClient.findFirst({
-        where: { isRadiusServer: true },
-      });
-      
-      if (radiusServerVpn) {
-        radiusServerIp = radiusServerVpn.vpnIp;
+      const vpnType = (router.vpnClient.vpnType || '').toUpperCase()
+
+      if (vpnType === 'WIREGUARD') {
+        // WireGuard VPS mode: RADIUS server = VPS gateway IP (x.x.x.1)
+        // Derived from the VPN server's subnet (e.g. 10.200.0.0/24 → 10.200.0.1)
+        const subnet = (router.vpnClient as any).vpnServer?.subnet || '10.200.0.0/24'
+        radiusServerIp = subnet.replace(/\.\d+\/\d+$/, '.1')
+      } else {
+        // PPP VPN: RADIUS server = VPN IP of the client marked as isRadiusServer
+        const radiusServerVpn = await prisma.vpnClient.findFirst({
+          where: { isRadiusServer: true },
+        })
+        if (radiusServerVpn) {
+          radiusServerIp = radiusServerVpn.vpnIp
+        }
       }
 
       // src-address = VPN IP of this NAS router so FreeRADIUS can match nasname
@@ -73,7 +86,7 @@ export async function POST(
 
     const gatewayFirewallRule = isVpnSetup ? `
 # Allow CoA dari gateway (VPN masquerade) — sumber alternatif CoA disconnect
-/ip firewall filter add chain=input protocol=udp src-address=${gatewayIp} dst-port=${radiusCOAPort} action=accept comment="SALFANET-RADIUS CoA via gateway ${gatewayIp}" place-before=0
+/ip firewall filter add chain=input protocol=udp src-address=${gatewayIp} dst-port=${radiusCOAPort} action=accept comment="SALFANET-RADIUS CoA via gateway ${gatewayIp}"
 ` : '';
 
     // Generate MikroTik script for copy-paste (compatible with ROS 6 & 7)
@@ -168,11 +181,11 @@ ${gatewayRadiusEntry}
 /ip firewall nat remove [find where comment~"SALFANET-ISOLIR"]
 
 # Allow DNS untuk user isolated (wajib agar redirect bisa resolve hostname)
-/ip firewall filter add chain=forward protocol=udp dst-port=53 src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow DNS UDP" place-before=0
-/ip firewall filter add chain=forward protocol=tcp dst-port=53 src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow DNS TCP" place-before=0
+/ip firewall filter add chain=forward protocol=udp dst-port=53 src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow DNS UDP"
+/ip firewall filter add chain=forward protocol=tcp dst-port=53 src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow DNS TCP"
 
 # Allow akses ke billing/isolated page (HTTP + HTTPS)
-/ip firewall filter add chain=forward dst-address=${radiusServerIp} dst-port=80,443 protocol=tcp src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow billing HTTP/S" place-before=0
+/ip firewall filter add chain=forward dst-address=${radiusServerIp} dst-port=80,443 protocol=tcp src-address=192.168.200.0/24 action=accept comment="SALFANET-ISOLIR Allow billing HTTP/S"
 
 # Blokir semua internet lain untuk user isolated
 /ip firewall filter add chain=forward src-address=192.168.200.0/24 action=drop comment="SALFANET-ISOLIR Block internet"
@@ -188,10 +201,10 @@ ${gatewayRadiusEntry}
 /ip firewall filter remove [find where comment~"SALFANET-RADIUS"]
 
 # Allow RADIUS CoA/Disconnect dari server (UDP 3799)
-/ip firewall filter add chain=input protocol=udp src-address=${radiusServerIp} dst-port=${radiusCOAPort} action=accept comment="SALFANET-RADIUS CoA from ${radiusServerIp}" place-before=0
+/ip firewall filter add chain=input protocol=udp src-address=${radiusServerIp} dst-port=${radiusCOAPort} action=accept comment="SALFANET-RADIUS CoA from ${radiusServerIp}"
 ${gatewayFirewallRule}
 # Allow RADIUS auth/acct response dari server (UDP 1812-1813)
-/ip firewall filter add chain=input protocol=udp src-address=${radiusServerIp} dst-port=${radiusAuthPort},${radiusAcctPort} action=accept comment="SALFANET-RADIUS Auth/Acct from ${radiusServerIp}" place-before=0
+/ip firewall filter add chain=input protocol=udp src-address=${radiusServerIp} dst-port=${radiusAuthPort},${radiusAcctPort} action=accept comment="SALFANET-RADIUS Auth/Acct from ${radiusServerIp}"
 
 # ============================================
 # SELESAI! Verifikasi dengan:
