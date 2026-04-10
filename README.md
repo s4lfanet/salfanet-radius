@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.16.0 — PWA Web Push penuh (VAPID) via browser, technician push subscription fix (credentials:same-origin), admin push subscription model, tiket dispatch ke semua teknisi via WA+push, GitHub Actions auto-deploy (Apr 2026)
+> **Latest:** v2.17.0 — Kamera HP langsung + GPS otomatis di semua form foto pelanggan (Apr 10, 2026)
 
 ---
 
@@ -17,7 +17,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | Category | Key Capabilities |
 |----------|-----------------|
 | **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect |
-| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync |
+| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates |
 | **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal |
 | **Payment** | Manual upload (bukti transfer), Midtrans/Xendit/Duitku gateway, approval workflow, 0–5 bank accounts |
@@ -361,6 +361,19 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 ---
 
 ## 📝 Changelog
+
+### v2.17.0 — April 10, 2026
+- **Feat: Kamera HP langsung + GPS otomatis di semua form foto pelanggan** — Komponen baru `CameraPhotoInput` dengan tombol [🖼 Galeri] / [📷 Kamera HP] side-by-side. Tombol *Kamera HP* pakai `capture="environment"` sehingga langsung membuka kamera belakang tanpa file picker. Setelah foto diupload, GPS otomatis ditangkap via `navigator.geolocation` dan ditampilkan sebagai badge 📍 lat,lng clickable ke Google Maps.
+- **Files diperbarui:** `src/components/CameraPhotoInput.tsx` (baru), `src/app/daftar/page.tsx`, `src/app/admin/pppoe/users/page.tsx` (AddPppoeUserModal), `src/app/technician/(portal)/register/page.tsx`, `src/components/UserDetailModal.tsx`
+
+### v2.16.0 — April 10, 2026
+- **Feat: PWA Web Push penuh (VAPID)** — notifikasi push browser bekerja di semua portal (customer, teknisi, admin). Subscribe/unsubscribe toggle di sidebar teknisi berhasil menyimpan subscription ke DB.
+- **Fix: Push subscription tidak tersimpan (credentials:same-origin)** — root cause: fetch ke `/api/push/technician-subscribe` tidak menyertakan cookie `technician-token`. Fix: tambah `credentials: 'same-origin'` ke semua 3 fetch call (silent sync, subscribe, unsubscribe).
+- **Fix: `admin_user` push subscription diabaikan** — route mengembalikan `{skipped:true}` untuk admin tanpa simpan. Fix: tambah model `adminPushSubscription` + tabel `admin_push_subscriptions`, route kini menyimpan subscription admin.
+- **Feat: Dispatch tiket ke semua teknisi via WA + push** — saat tiket dibuat/di-assign, broadcast WA + push notification ke semua teknisi aktif.
+- **Feat: GitHub Actions auto-deploy** — workflow `.github/workflows/deploy.yml` → SSH ke VPS + `update.sh` saat push ke `master`.
+- **Fix: update.sh auto-rebuild standalone** — jika `.next/standalone/server.js` hilang, build otomatis dipaksa.
+- **Fix: Dashboard teknisi pakai model `ticket`** — sebelumnya masih referensi model `work_orders` yang sudah dihapus.
 
 ### v2.15.0 — January 2026
 - **Fix: Cron Job & Backup System Audit** — audit dan perbaikan menyeluruh sistem cron job + backup + Telegram:
