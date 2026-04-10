@@ -104,7 +104,7 @@ export default function TechnicianRegisterPage() {
     setSubmitting(true);
     setError('');
     try {
-      const body: Record<string, string | number> = {
+      const body: Record<string, string | number | string[]> = {
         username: form.username.trim(),
         password: form.password,
         profileId: form.profileId,
