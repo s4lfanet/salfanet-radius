@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useId, useState } from 'react';
 import { Camera, ImageIcon, X, MapPin, Loader2 } from 'lucide-react';
 
 interface CameraPhotoInputProps {
@@ -28,8 +28,12 @@ export function CameraPhotoInput({
   previewClassName = 'h-28',
   theme = 'light',
 }: CameraPhotoInputProps) {
-  const galleryRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
+  // useId generates a stable unique ID per component instance; prevents
+  // htmlFor collisions when multiple CameraPhotoInput are on the same page.
+  const uid = useId();
+  const galleryId = `gallery-${uid}`;
+  const cameraId = `camera-${uid}`;
+
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
 
@@ -68,6 +72,34 @@ export function CameraPhotoInput({
     ? 'text-[#00ff88] bg-[#00ff88]/10 border border-[#00ff88]/30'
     : 'text-green-600 dark:text-[#00ff88] bg-green-50 dark:bg-[#00ff88]/10 border border-green-100 dark:border-[#00ff88]/30';
 
+  // Shared hidden inputs — placed outside conditional branches so the IDs
+  // always exist in the DOM. Using sr-only (not display:none) ensures iOS
+  // Safari honours the capture="environment" attribute when triggered via
+  // their associated <label> elements.
+  const hiddenInputs = (
+    <>
+      {/* Gallery input – no capture attribute → opens photo library */}
+      <input
+        id={galleryId}
+        type="file"
+        accept="image/*"
+        className="sr-only"
+        onChange={handleFile}
+        disabled={uploading}
+      />
+      {/* Camera input – capture="environment" → opens rear camera directly */}
+      <input
+        id={cameraId}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="sr-only"
+        onChange={handleFile}
+        disabled={uploading}
+      />
+    </>
+  );
+
   if (photoUrl) {
     return (
       <div className="space-y-1.5">
@@ -89,22 +121,19 @@ export function CameraPhotoInput({
             <X className="w-3 h-3" />
           </button>
           <div className="absolute bottom-1.5 left-1.5 flex gap-1">
-            <button
-              type="button"
-              onClick={() => galleryRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-1 px-2 py-0.5 text-[9px] bg-black/60 text-white rounded-full hover:bg-black/80 backdrop-blur-sm disabled:opacity-50"
+            {/* Using <label> so iOS Safari honours the file input directly */}
+            <label
+              htmlFor={uploading ? undefined : galleryId}
+              className={`flex items-center gap-1 px-2 py-0.5 text-[9px] bg-black/60 text-white rounded-full hover:bg-black/80 backdrop-blur-sm ${uploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
             >
               <ImageIcon className="w-2.5 h-2.5" /> Ganti
-            </button>
-            <button
-              type="button"
-              onClick={() => cameraRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center gap-1 px-2 py-0.5 text-[9px] bg-black/60 text-white rounded-full hover:bg-black/80 backdrop-blur-sm disabled:opacity-50"
+            </label>
+            <label
+              htmlFor={uploading ? undefined : cameraId}
+              className={`flex items-center gap-1 px-2 py-0.5 text-[9px] bg-black/60 text-white rounded-full hover:bg-black/80 backdrop-blur-sm ${uploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : 'cursor-pointer'}`}
             >
               <Camera className="w-2.5 h-2.5" /> Kamera
-            </button>
+            </label>
           </div>
         </div>
 
@@ -125,8 +154,7 @@ export function CameraPhotoInput({
           </a>
         )}
 
-        <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
-        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} disabled={uploading} />
+        {hiddenInputs}
       </div>
     );
   }
@@ -141,10 +169,10 @@ export function CameraPhotoInput({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            onClick={() => galleryRef.current?.click()}
-            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition-all text-[11px] ${
+          {/* Gallery button */}
+          <label
+            htmlFor={galleryId}
+            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition-all text-[11px] cursor-pointer ${
               isDark
                 ? 'border-[#bc13fe]/40 text-[#e0d0ff]/60 bg-[#0a0520] hover:border-[#bc13fe]/70 hover:text-[#e0d0ff]/90'
                 : 'border-border dark:border-[#bc13fe]/40 text-muted-foreground dark:text-[#e0d0ff]/60 hover:bg-muted dark:hover:bg-[#bc13fe]/10'
@@ -152,11 +180,11 @@ export function CameraPhotoInput({
           >
             <ImageIcon className="w-5 h-5" />
             Galeri
-          </button>
-          <button
-            type="button"
-            onClick={() => cameraRef.current?.click()}
-            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition-all text-[11px] ${
+          </label>
+          {/* Camera button — label directly triggers input with capture="environment" */}
+          <label
+            htmlFor={cameraId}
+            className={`flex flex-col items-center justify-center gap-1 w-full py-3 rounded-xl border-2 border-dashed transition-all text-[11px] cursor-pointer ${
               isDark
                 ? 'border-[#00f7ff]/40 text-[#00f7ff]/70 bg-[#0a0520] hover:border-[#00f7ff]/70 hover:text-[#00f7ff]'
                 : 'border-primary/40 dark:border-[#00f7ff]/40 text-primary/70 dark:text-[#00f7ff]/70 hover:bg-primary/5 dark:hover:bg-[#00f7ff]/10'
@@ -164,14 +192,13 @@ export function CameraPhotoInput({
           >
             <Camera className="w-5 h-5" />
             Kamera HP
-          </button>
+          </label>
         </div>
       )}
       {hint && (
         <p className={`text-[9px] ${isDark ? 'text-[#e0d0ff]/40' : 'text-muted-foreground'}`}>{hint}</p>
       )}
-      <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading} />
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} disabled={uploading} />
+      {hiddenInputs}
     </div>
   );
 }

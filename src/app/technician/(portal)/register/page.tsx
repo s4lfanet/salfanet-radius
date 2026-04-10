@@ -52,6 +52,7 @@ export default function TechnicianRegisterPage() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState<'basic' | 'network'>('basic');
   const [uploadingKtp, setUploadingKtp] = useState(false);
+  const [uploadingInstallation, setUploadingInstallation] = useState(false);
 
   const [form, setForm] = useState({
     username: '',
@@ -71,6 +72,7 @@ export default function TechnicianRegisterPage() {
     comment: '',
     idCardNumber: '',
     idCardPhoto: '',
+    installationPhotos: [] as string[],
   });
 
   useEffect(() => {
@@ -121,6 +123,7 @@ export default function TechnicianRegisterPage() {
       if (form.comment.trim()) body.comment = form.comment.trim();
       if (form.idCardNumber.trim()) body.idCardNumber = form.idCardNumber.trim();
       if (form.idCardPhoto.trim()) body.idCardPhoto = form.idCardPhoto.trim();
+      if (form.installationPhotos.length > 0) body.installationPhotos = form.installationPhotos;
 
       const res = await fetch('/api/technician/customers/create', {
         method: 'POST',
@@ -477,6 +480,56 @@ export default function TechnicianRegisterPage() {
                       theme="light"
                       hint="Format: JPG/PNG/WebP, maks. 5MB"
                     />
+                  </div>
+
+                  {/* Foto Instalasi */}
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Foto Instalasi</label>
+                    <div className="space-y-2">
+                      {/* Grid foto yang sudah diupload */}
+                      {form.installationPhotos.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2">
+                          {form.installationPhotos.map((photo, index) => (
+                            <div key={index} className="relative">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-600" />
+                              <button
+                                type="button"
+                                onClick={() => setForm((f) => ({ ...f, installationPhotos: f.installationPhotos.filter((_, i) => i !== index) }))}
+                                className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {/* Tombol tambah foto */}
+                      <CameraPhotoInput
+                        photoUrl=""
+                        onRemove={() => {}}
+                        uploading={uploadingInstallation}
+                        onUploadFile={async (file) => {
+                          setUploadingInstallation(true);
+                          try {
+                            const fd = new FormData();
+                            fd.append('file', file);
+                            fd.append('type', 'installation');
+                            const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+                            const result = await res.json();
+                            if (result.success) {
+                              setForm((f) => ({ ...f, installationPhotos: [...f.installationPhotos, result.url] }));
+                              return result.url;
+                            }
+                            addToast({ type: 'error', title: result.error || 'Upload foto instalasi gagal' }); return null;
+                          } catch { addToast({ type: 'error', title: 'Upload foto instalasi gagal' }); return null; }
+                          finally { setUploadingInstallation(false); }
+                        }}
+                        onGpsCapture={(lat, lng) => setForm((f) => ({ ...f }))}
+                        theme="light"
+                        hint="Bisa tambah beberapa foto. Maks. 5MB per foto. Kamera HP otomatis mengambil GPS."
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
