@@ -646,7 +646,7 @@ export default function VpnClientPage() {
 # ============================================================
 
 # 1. Create API User Group
-/user group add name=api-users policy=read,api,test comment="Limited API Access Group"
+/user group add name=api-users policy=read,write,policy,test,sensitive,api comment="Limited API Access Group"
 
 # 2. Create API User
 /user add name=${safeApiUsername} group=api-users password=${safeApiPassword} comment="API User for Remote Access"
@@ -754,7 +754,7 @@ ${radiusSection}`.trim()
 /ip/route/add dst-address=${wgSubnet} gateway=wg-salfanet comment="SALFANET-VPN"
 
 # 5. Buat API User (untuk remote management MikroTik)
-/user/group/add name=api-users policy=read,api,test comment="Limited API Access Group"
+/user/group/add name=api-users policy=read,write,policy,test,sensitive,api comment="Limited API Access Group"
 /user/add name=${safeApiUsername} group=api-users password=${safeApiPassword} comment="API User for Remote Access"
 # API Username : ${safeApiUsername}
 # API Password : ${safeApiPassword}

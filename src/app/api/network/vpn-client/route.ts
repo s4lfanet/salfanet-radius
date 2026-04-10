@@ -443,7 +443,7 @@ ${radiusSection}
 # ============================================
 
 # --- STEP 1: Create API User Group ---
-/user group add name=api-users policy=read,api,test comment="Limited API Access Group"
+/user group add name=api-users policy=read,write,policy,test,sensitive,api comment="Limited API Access Group"
 
 # --- STEP 2: Create API User ---
 /user add name=${apiUsername} group=api-users password=${apiPassword} comment="API User for Remote Access"
