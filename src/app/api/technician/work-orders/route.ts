@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
 
     const { payload } = await jwtVerify(token, secret);
     let technicianId: string;
+    let isAdminUser = false;
     if (payload.type === 'admin_user') {
       const adminUser = await prisma.adminUser.findUnique({
         where: { id: payload.id as string },
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
       technicianId = adminUser.id;
+      isAdminUser = true;
     } else {
       technicianId = payload.id as string;
     }
@@ -40,16 +42,18 @@ export async function GET(req: NextRequest) {
 
     // Build where clause
     const where: any = {};
-    
-    // Filter by technician if specified, otherwise show unassigned or assigned to this technician
+
+    // admin_user (TECHNICIAN role) lihat semua work order agar tiket selesai tetap muncul
+    // legacy technician hanya lihat yang belum diassign atau miliknya
     if (searchParams.get('mine') === 'true') {
       where.technicianId = technicianId;
-    } else {
+    } else if (!isAdminUser) {
       where.OR = [
         { technicianId: null },
         { technicianId: technicianId },
       ];
     }
+    // isAdminUser tanpa filter 'mine' → tanpa filter technicianId → tampil semua
 
     if (status) {
       where.status = status;
