@@ -150,6 +150,7 @@ export default function TechnicianRegisterPage() {
       username: '', password: '', name: '', phone: '', email: '', address: '',
       referralCode: '', profileId: '', routerId: '', areaId: '', subscriptionType: 'POSTPAID',
       billingDay: '1', ipAddress: '', macAddress: '', comment: '', idCardNumber: '', idCardPhoto: '',
+      installationPhotos: [],
     });
     setSuccess(null);
     setError('');
