@@ -31,6 +31,9 @@ interface VpnServer {
   host: string
   name: string
   subnet: string
+  l2tpEnabled?: boolean
+  sstpEnabled?: boolean
+  pptpEnabled?: boolean
   wgPublicKey?: string | null
   wgPort?: number | null
   wgEnabled?: boolean
@@ -1014,12 +1017,33 @@ ${radiusSection}`.trim()
                     required
                   >
                     <option value="" className="bg-slate-800">{t('network.selectVpnClient')}</option>
-                    {vpnServers.map((server) => (
-                      <option key={server.id} value={server.id} className="bg-slate-800">
-                        {server.name} ({server.host})
-                      </option>
-                    ))}
+                    {vpnServers
+                      .filter(server => {
+                        if (formData.vpnType === 'wireguard') return server.wgEnabled === true
+                        if (formData.vpnType === 'l2tp') return server.l2tpEnabled === true
+                        if (formData.vpnType === 'sstp') return server.sstpEnabled === true
+                        if (formData.vpnType === 'pptp') return server.pptpEnabled === true
+                        return true
+                      })
+                      .map((server) => (
+                        <option key={server.id} value={server.id} className="bg-slate-800">
+                          {server.name} ({server.host})
+                        </option>
+                      ))}
                   </select>
+                  {formData.vpnType && vpnServers.filter(server => {
+                    if (formData.vpnType === 'wireguard') return server.wgEnabled === true
+                    if (formData.vpnType === 'l2tp') return server.l2tpEnabled === true
+                    if (formData.vpnType === 'sstp') return server.sstpEnabled === true
+                    if (formData.vpnType === 'pptp') return server.pptpEnabled === true
+                    return true
+                  }).length === 0 && (
+                    <p className="text-xs text-amber-400 mt-1.5 flex items-center gap-1">
+                      ⚠️ Tidak ada VPN Server yang mengaktifkan protokol <strong>{formData.vpnType === 'l2tp' ? 'L2TP' : formData.vpnType === 'wireguard' ? 'WireGuard' : formData.vpnType.toUpperCase()}</strong>.
+                      {formData.vpnType === 'wireguard' && <><span> Aktifkan WireGuard di</span><a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">menu VPN Server</a>.</>}
+                      {formData.vpnType === 'l2tp' && <><span> Setup L2TP di</span><a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">menu VPN Server</a>.</>}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -1031,7 +1055,7 @@ ${radiusSection}`.trim()
                       <button
                         key={type}
                         type="button"
-                        onClick={() => setFormData({ ...formData, vpnType: type })}
+                        onClick={() => setFormData({ ...formData, vpnType: type, vpnServerId: '' })}
                         className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${formData.vpnType === type
                           ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black shadow-[0_0_15px_rgba(0,247,255,0.4)]'
                           : 'bg-muted/60 dark:bg-slate-800/60 border border-[#bc13fe]/30 text-foreground hover:bg-[#bc13fe]/20'
