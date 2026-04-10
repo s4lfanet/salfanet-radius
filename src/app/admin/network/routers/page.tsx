@@ -44,6 +44,9 @@ interface VpnClient {
   name: string
   vpnIp: string
   isRadiusServer: boolean
+  apiUsername?: string | null
+  apiPassword?: string | null
+  nasSecret?: string | null
 }
 
 export default function RouterPage() {
@@ -134,6 +137,11 @@ export default function RouterPage() {
           vpnClientId,
           ipAddress: vpnClient.vpnIp,
           nasname: vpnClient.vpnIp,
+          // Auto-fill API credentials from VPN client
+          username: vpnClient.apiUsername || prev.username,
+          password: vpnClient.apiPassword || prev.password,
+          // Auto-fill RADIUS secret from NAS entry linked to this VPN client
+          secret: vpnClient.nasSecret || prev.secret,
         }))
       }
     } else {

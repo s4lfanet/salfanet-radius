@@ -54,9 +54,25 @@ export async function GET() {
         name: true,
         vpnIp: true,
         isRadiusServer: true,
+        apiUsername: true,
+        apiPassword: true,
       },
       orderBy: { name: 'asc' },
     });
+
+    // Attach nasSecret from linked router entry
+    const clientIds = vpnClients.map((c: { id: string }) => c.id)
+    const nasEntries = clientIds.length > 0
+      ? await prisma.router.findMany({
+          where: { vpnClientId: { in: clientIds } },
+          select: { vpnClientId: true, secret: true },
+        })
+      : []
+    const nasSecretMap = new Map(nasEntries.map((n: { vpnClientId: string | null; secret: string }) => [n.vpnClientId, n.secret]))
+    const vpnClientsWithSecret = vpnClients.map((c: { id: string; name: string; vpnIp: string; isRadiusServer: boolean; apiUsername: string | null; apiPassword: string | null }) => ({
+      ...c,
+      nasSecret: nasSecretMap.get(c.id) ?? null,
+    }))
     
     // Add radiusServerIp as computed field for frontend display
     // Note: 'server' field in NAS table is for FreeRADIUS virtual_server name, NOT RADIUS IP
@@ -66,7 +82,7 @@ export async function GET() {
       ports: router.ports || 1812,
     }));
 
-    return NextResponse.json({ routers: routersWithServer, vpnClients, radiusServerIp });
+    return NextResponse.json({ routers: routersWithServer, vpnClients: vpnClientsWithSecret, radiusServerIp });
   } catch (error) {
     console.error('Load routers error:', error);
     return NextResponse.json({ error: 'Failed to load routers' }, { status: 500 });
