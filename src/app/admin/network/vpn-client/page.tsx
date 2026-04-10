@@ -55,6 +55,8 @@ interface Credentials {
   serverPublicKey?: string | null   // WireGuard server public key
   wgPort?: number | null            // WireGuard listen port
   serverHost?: string               // VPN server host (for WG endpoint)
+  wgSubnet?: string                 // WireGuard VPN subnet e.g. 10.200.0.0/24
+  wgGatewayIp?: string              // VPS tunnel gateway IP e.g. 10.200.0.1
 }
 
 export default function VpnClientPage() {
@@ -189,21 +191,40 @@ export default function VpnClientPage() {
 # Generated: ${new Date().toISOString().split('T')[0]}
 # Paste script ini ke terminal MikroTik (RouterOS 7+)
 # ──────────────────────────────────────────────────
+# NAS VPN IP  : ${data.vpnIp}
+# VPN Subnet  : ${data.vpnSubnet || '10.200.0.0/24'}
+# VPS Endpoint: ${data.serverEndpoint}
+# ──────────────────────────────────────────────────
 
+# 1. Buat WireGuard interface dengan private key NAS
 /interface/wireguard/add name=wg-salfanet private-key="${data.clientPrivateKey || '<PRIVATE_KEY>'}"
-/interface/wireguard/peers/add interface=wg-salfanet public-key="${data.serverPublicKey}" endpoint-address="${data.serverEndpoint?.split(':')[0]}" endpoint-port=${data.wgPort} allowed-address="${data.allowedIps}" persistent-keepalive=25
 
-# 3. Assign IP address ke interface WireGuard
+# 2. Tambah peer — allowed-address = seluruh subnet VPN (bukan hanya gateway)
+/interface/wireguard/peers/add interface=wg-salfanet \\
+  public-key="${data.serverPublicKey}" \\
+  endpoint-address="${data.serverEndpoint?.split(':')[0]}" \\
+  endpoint-port=${data.wgPort} \\
+  allowed-address="${data.vpnSubnet || '10.200.0.0/24'}" \\
+  persistent-keepalive=25
+
+# 3. Assign IP address NAS ke interface WireGuard
 /ip/address/remove [find where interface=wg-salfanet]
 /ip/address/add address=${data.vpnIp}/32 interface=wg-salfanet
 
-# Route ke subnet VPN melalui WireGuard
+# 4. Route seluruh subnet VPN melalui WireGuard
 /ip/route/remove [find where comment="SALFANET-VPN"]
-/ip/route/add dst-address=${data.allowedIps || '10.200.0.0/24'} gateway=wg-salfanet comment="SALFANET-VPN"
+/ip/route/add dst-address=${data.vpnSubnet || '10.200.0.0/24'} gateway=wg-salfanet comment="SALFANET-VPN"
 
-# RADIUS via WireGuard
+# 5. RADIUS via WireGuard (server = VPS gateway IP di subnet VPN)
 /radius/remove [find where comment~"SALFANET"]
-/radius/add address=${data.allowedIps?.split('/')[0] || data.serverEndpoint?.split(':')[0]} secret=<RADIUS_SECRET> service=ppp,hotspot authentication-port=1812 accounting-port=1813 timeout=3s comment="SALFANET RADIUS via WireGuard"
+/radius/add address=${data.gatewayIp || data.allowedIps?.split('/')[0]} \\
+  secret=<RADIUS_SECRET> \\
+  service=ppp,hotspot \\
+  src-address=${data.vpnIp} \\
+  authentication-port=1812 \\
+  accounting-port=1813 \\
+  timeout=3s \\
+  comment="SALFANET RADIUS via WireGuard"
 /ppp/aaa/set use-radius=yes accounting=yes interim-update=5m
 /radius/incoming/set accept=yes port=3799`;
       setWgGeneratedScript(script);
@@ -538,6 +559,11 @@ export default function VpnClientPage() {
       clientPrivateKey: client.clientPrivateKey || null,
       serverPublicKey: server.wgPublicKey || null,
       wgPort: server.wgPort || null,
+      // WG subnet: derive from VPN IP if wgServerInfo available, fallback to server subnet
+      wgSubnet: wgServerInfo?.subnet || server.subnet || '10.200.0.0/24',
+      wgGatewayIp: wgServerInfo?.subnet
+        ? wgServerInfo.subnet.replace(/\.\d+\/\d+$/, '.1')
+        : server.subnet?.replace(/\.\d+\/\d+$/, '.1') || '10.200.0.1',
     })
     setSelectedVpnType(clientVpnType)
     setShowCredentials(true)
@@ -627,25 +653,34 @@ ${radiusSection}`.trim()
       const clientPk = credentials.clientPrivateKey || '<CLIENT_PRIVATE_KEY>'
       const wgPort = credentials.wgPort || 51820
       const serverHost = credentials.serverHost || credentials.server
+      const wgSubnet = credentials.wgSubnet || '10.200.0.0/24'
+      const wgGatewayIp = credentials.wgGatewayIp || wgSubnet.replace(/\.\d+\/\d+$/, '.1')
       return `# ============================================================
 # MikroTik WireGuard Client Setup Script (RouterOS 7+)
-# NAS IP: ${credentials.vpnIp}
-# VPN Server: ${serverHost}
+# NAS IP     : ${credentials.vpnIp}
+# VPN Subnet : ${wgSubnet}
+# VPS Gateway: ${wgGatewayIp}
 # ============================================================
 
 # 1. Buat WireGuard interface dengan private key NAS
 /interface/wireguard/add name=wg-salfanet private-key="${clientPk}"
 
 # 2. Tambah peer (VPS WireGuard server)
-/interface/wireguard/peers/add interface=wg-salfanet public-key="${serverPk}" endpoint-address="${serverHost}" endpoint-port=${wgPort} allowed-address="10.200.0.0/24" persistent-keepalive=25
+#    allowed-address = subnet VPN agar semua host VPN dapat diakses
+/interface/wireguard/peers/add interface=wg-salfanet \\
+  public-key="${serverPk}" \\
+  endpoint-address="${serverHost}" \\
+  endpoint-port=${wgPort} \\
+  allowed-address="${wgSubnet}" \\
+  persistent-keepalive=25
 
-# 3. Assign IP address ke interface WireGuard
+# 3. Assign IP address NAS ke interface WireGuard
 /ip/address/remove [find where interface=wg-salfanet]
 /ip/address/add address=${credentials.vpnIp}/32 interface=wg-salfanet
 
-# 4. Route ke subnet VPN melalui WireGuard
+# 4. Route seluruh subnet VPN melalui WireGuard
 /ip/route/remove [find where comment="SALFANET-VPN"]
-/ip/route/add dst-address=10.200.0.0/24 gateway=wg-salfanet comment="SALFANET-VPN"
+/ip/route/add dst-address=${wgSubnet} gateway=wg-salfanet comment="SALFANET-VPN"
 ${radiusSection}`.trim()
     } else {
       return scriptBase(

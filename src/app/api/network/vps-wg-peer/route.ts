@@ -188,7 +188,9 @@ export async function POST(req: NextRequest) {
       clientPrivateKey, // undefined if caller supplied the key
       serverPublicKey: info.publicKey,
       serverEndpoint: `${info.publicIp}:${info.listenPort}`,
-      allowedIps: `${info.gatewayIp}/32`,
+      vpnSubnet: info.subnet,           // full subnet e.g. 10.200.0.0/24
+      gatewayIp: info.gatewayIp,        // VPS tunnel IP e.g. 10.200.0.1
+      allowedIps: `${info.gatewayIp}/32`, // kept for backward compat
       wgPort: info.listenPort,
     })
   }
