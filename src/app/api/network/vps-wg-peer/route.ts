@@ -300,7 +300,8 @@ export async function POST(req: NextRequest) {
         },
       })
       const username = `wg-${nasName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).substring(2, 6)}`
-      await prisma.vpnClient.create({
+      const nasSecret = generatePassword(16)
+      const dbClient = await prisma.vpnClient.create({
         data: {
           name: nasName,
           vpnServerId: VPS_WG_SERVER_ID,
@@ -313,6 +314,25 @@ export async function POST(req: NextRequest) {
           isActive: true,
         },
       })
+      // Also create NAS router entry so nasSecret is available for RADIUS script
+      await prisma.router.create({
+        data: {
+          id: require('crypto').randomUUID(),
+          name: nasName,
+          nasname: vpnIp,
+          shortname: nasName.substring(0, 32).replace(/[^a-z0-9]/gi, ''),
+          type: 'mikrotik',
+          ipAddress: vpnIp,
+          username: 'admin',
+          password: 'admin',
+          secret: nasSecret,
+          ports: 1812,
+          vpnClientId: dbClient.id,
+          description: `Auto-created NAS for WG VPS client '${nasName}'`,
+        },
+      })
+      // Expose nasSecret so frontend can build complete RADIUS script
+      ;(dbClient as any).nasSecret = nasSecret
     } catch (dbErr) {
       console.error('[vps-wg-peer] Gagal simpan ke DB (lanjutkan):', dbErr)
     }

@@ -306,42 +306,40 @@ export async function POST(request: Request) {
     // Auto-create or retrieve NAS (router) entry for RADIUS authentication
     // This registers the NAS device in FreeRADIUS so auth requests are accepted
     let nasSecret = generatePassword(16)
-    if (vpnType !== 'wireguard') {
-      try {
-        // Check if NAS entry already exists for this VPN IP
-        const existingNas = await prisma.router.findFirst({
-          where: { nasname: vpnIp },
-          select: { id: true, secret: true },
+    try {
+      // Check if NAS entry already exists for this VPN IP
+      const existingNas = await prisma.router.findFirst({
+        where: { nasname: vpnIp },
+        select: { id: true, secret: true },
+      })
+      if (existingNas) {
+        // Reuse existing secret & link to this vpnClient
+        nasSecret = existingNas.secret
+        await prisma.router.update({
+          where: { id: existingNas.id },
+          data: { vpnClientId: client.id },
         })
-        if (existingNas) {
-          // Reuse existing secret & link to this vpnClient
-          nasSecret = existingNas.secret
-          await prisma.router.update({
-            where: { id: existingNas.id },
-            data: { vpnClientId: client.id },
-          })
-        } else {
-          // Create new NAS entry
-          await prisma.router.create({
-            data: {
-              id: randomUUID(),
-              name: name,
-              nasname: vpnIp,
-              shortname: name.substring(0, 32),
-              type: 'mikrotik',
-              ipAddress: vpnIp,
-              username: apiUsername || 'admin',
-              password: apiPassword || 'admin',
-              secret: nasSecret,
-              ports: 1812,
-              vpnClientId: client.id,
-              description: `Auto-created NAS for VPN client '${name}'`,
-            },
-          })
-        }
-      } catch (nasErr) {
-        console.error('NAS auto-create error (non-fatal):', nasErr)
+      } else {
+        // Create new NAS entry
+        await prisma.router.create({
+          data: {
+            id: randomUUID(),
+            name: name,
+            nasname: vpnIp,
+            shortname: name.substring(0, 32),
+            type: vpnType === 'wireguard' ? 'mikrotik' : 'mikrotik',
+            ipAddress: vpnIp,
+            username: apiUsername || 'admin',
+            password: apiPassword || 'admin',
+            secret: nasSecret,
+            ports: 1812,
+            vpnClientId: client.id,
+            description: `Auto-created NAS for VPN client '${name}' (${vpnType.toUpperCase()})`,
+          },
+        })
       }
+    } catch (nasErr) {
+      console.error('NAS auto-create error (non-fatal):', nasErr)
     }
 
     const radiusSection = radiusServerVpnIp ? `
@@ -474,8 +472,8 @@ ${radiusSection}
         serverPublicKey: vpnType === 'wireguard' ? serverWgPublicKey : undefined,
         wgPort: vpnType === 'wireguard' ? wgPort : undefined,
         vpnType,
-        // RADIUS NAS credentials
-        nasSecret: vpnType !== 'wireguard' ? nasSecret : undefined,
+        // RADIUS NAS credentials (for all VPN types including WireGuard)
+        nasSecret: nasSecret,
         radiusServerIp: radiusServerVpnIp || undefined,
       },
       nasSetupScript,

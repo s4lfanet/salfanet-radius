@@ -655,11 +655,51 @@ ${radiusSection}`.trim()
       const serverHost = credentials.serverHost || credentials.server
       const wgSubnet = credentials.wgSubnet || '10.200.0.0/24'
       const wgGatewayIp = credentials.wgGatewayIp || wgSubnet.replace(/\.\d+\/\d+$/, '.1')
+      // RADIUS server: prefer explicitly marked isRadiusServer client IP,
+      // fallback to VPS gateway IP (10.200.0.1) when using VPS WireGuard mode
+      const wgRadiusIp = credentials.radiusServerIp || wgGatewayIp
+      const wgRadiusSection = (wgRadiusIp && credentials.nasSecret) ? `
+# ============================================================
+# 5. RADIUS Configuration (NAS Client)
+# ============================================================
+
+# Remove old RADIUS entries
+/radius remove [find where comment~"SALFANET"]
+
+# Add RADIUS server — src-address MUST match VPN IP in FreeRADIUS NAS table
+#   address     = RADIUS server VPN IP (VPS gateway or isRadiusServer client)
+#   src-address = VPN IP of THIS NAS (used by FreeRADIUS to match NAS identity)
+/radius add \\
+  address=${wgRadiusIp} \\
+  secret=${credentials.nasSecret} \\
+  service=ppp,hotspot \\
+  src-address=${credentials.vpnIp} \\
+  authentication-port=1812 \\
+  accounting-port=1813 \\
+  timeout=3s \\
+  require-message-auth=no \\
+  comment="SALFANET RADIUS via WireGuard"
+
+# Enable RADIUS for PPPoE
+/ppp aaa set use-radius=yes accounting=yes interim-update=5m
+# Enable RADIUS for Hotspot
+/ip hotspot profile set [find] use-radius=yes
+# Enable CoA
+/radius incoming set accept=yes port=3799
+# Firewall: Allow CoA + Auth from RADIUS server
+/ip firewall filter remove [find where comment~"SALFANET-RADIUS"]
+/ip firewall filter add chain=input protocol=udp src-address=${wgRadiusIp} dst-port=3799 action=accept comment="SALFANET-RADIUS CoA" place-before=0
+/ip firewall filter add chain=input protocol=udp src-address=${wgRadiusIp} dst-port=1812,1813 action=accept comment="SALFANET-RADIUS Auth" place-before=0
+# RADIUS Secret: ${credentials.nasSecret}` : `
+# --- RADIUS not configured ---
+# nasSecret belum tersedia. Buka ulang kredensial setelah refresh halaman.
+# Atau tandai satu VPN Client sebagai "RADIUS Server" di panel admin.`
       return `# ============================================================
 # MikroTik WireGuard Client Setup Script (RouterOS 7+)
 # NAS IP     : ${credentials.vpnIp}
 # VPN Subnet : ${wgSubnet}
 # VPS Gateway: ${wgGatewayIp}
+# RADIUS IP  : ${wgRadiusIp}
 # ============================================================
 
 # 1. Buat WireGuard interface dengan private key NAS
@@ -681,7 +721,7 @@ ${radiusSection}`.trim()
 # 4. Route seluruh subnet VPN melalui WireGuard
 /ip/route/remove [find where comment="SALFANET-VPN"]
 /ip/route/add dst-address=${wgSubnet} gateway=wg-salfanet comment="SALFANET-VPN"
-${radiusSection}`.trim()
+${wgRadiusSection}`.trim()
     } else {
       return scriptBase(
         `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=pptp-client-salfanet add-default-route=no comment="SALFANET VPN"`,
