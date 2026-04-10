@@ -1231,11 +1231,31 @@ model adminUser {
   twoFactorEnabled   Boolean          @default(false)
   twoFactorSecret    String?          @db.VarChar(255) // TOTP secret (base32)
   userPermissions    userPermission[]
+  pushSubscriptions  adminPushSubscription[]
   
   @@index([username])
   @@index([email])
   @@index([role])
   @@map("admin_users")
+}
+
+model adminPushSubscription {
+  id             String    @id @default(cuid())
+  adminId        String
+  admin          adminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  endpoint       String    @unique @db.VarChar(500)
+  p256dh         String    @db.Text
+  auth           String    @db.Text
+  expirationTime DateTime?
+  userAgent      String?   @db.Text
+  isActive       Boolean   @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([adminId, isActive])
+  @@index([createdAt])
+  @@map("admin_push_subscriptions")
 }
 
 model adminTwoFactorPending {

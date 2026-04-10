@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
-import { upsertTechnicianPushSubscription } from '@/server/services/push-notification.service';
+import { upsertTechnicianPushSubscription, upsertAdminPushSubscription } from '@/server/services/push-notification.service';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,9 +19,13 @@ export async function POST(request: NextRequest) {
       try {
         const { payload } = await jwtVerify(token, TECH_JWT_SECRET);
         if (payload.type === 'admin_user') {
-          // admin_user has no entry in technician table — skip push subscription storage
-          // They receive push via admin dashboard notifications instead
-          return NextResponse.json({ success: true, skipped: true });
+          // admin_user has no entry in technician table — save to adminPushSubscription instead
+          const saved = await upsertAdminPushSubscription(
+            String(payload.id),
+            subscription,
+            request.headers.get('user-agent'),
+          );
+          return NextResponse.json({ success: true, subscriptionId: saved.id });
         }
       } catch { /* invalid token — fall through to normal check */ }
     }

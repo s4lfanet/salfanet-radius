@@ -48,6 +48,20 @@ export function usePushNotification() {
       const registration = await registerServiceWorker();
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(Boolean(subscription));
+      // Sync: if browser has subscription, re-register silently to ensure DB is up to date
+      if (subscription) {
+        const token = localStorage.getItem('customer_token');
+        if (token) {
+          fetch('/api/push/subscribe', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ subscription: subscription.toJSON() }),
+          }).catch(() => { /* silent sync */ });
+        }
+      }
     } catch (serviceWorkerError) {
       console.error('[Push Hook] Failed to refresh subscription:', serviceWorkerError);
       setError('Unable to initialize push notification service worker.');

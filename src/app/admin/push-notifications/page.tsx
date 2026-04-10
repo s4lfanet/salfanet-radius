@@ -65,6 +65,8 @@ interface Stats {
   totalBroadcasts: number;
   agentSubscribers?: number;
   technicianSubscribers?: number;
+  adminSubscribers?: number;
+  fcmUserCount?: number;
 }
 
 interface Broadcast {
@@ -655,6 +657,12 @@ export default function PushNotificationsPage() {
                           <span className="text-muted-foreground">{t('pushNotif.registeredPushLabel')}</span>
                           <span className="font-bold text-emerald-600">{stats?.usersWithTokens ?? 0} {t('pushNotif.users')}</span>
                         </div>
+                        {(stats?.fcmUserCount ?? 0) > 0 && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Push Mobile (FCM)</span>
+                            <span className="font-bold text-blue-600">{stats?.fcmUserCount ?? 0} {t('pushNotif.users')}</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">{t('pushNotif.totalCustomersLabel')}</span>
                           <span className="font-semibold">{stats?.totalUsers ?? 0} {t('pushNotif.users')}</span>
@@ -675,10 +683,16 @@ export default function PushNotificationsPage() {
                       </>
                     )}
                     {recipientRole === 'technician' && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Teknisi dengan Push aktif</span>
-                        <span className="font-bold text-amber-600">{stats?.technicianSubscribers ?? 0} teknisi</span>
-                      </div>
+                      <>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Teknisi dengan Push aktif</span>
+                          <span className="font-bold text-amber-600">{stats?.technicianSubscribers ?? 0} teknisi</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Admin dengan Push aktif</span>
+                          <span className="font-bold text-orange-600">{stats?.adminSubscribers ?? 0} admin</span>
+                        </div>
+                      </>
                     )}
                     {recipientRole === 'agent' && (
                       <div className="flex items-center justify-between text-xs">
@@ -697,12 +711,16 @@ export default function PushNotificationsPage() {
                           <span className="font-bold text-amber-600">{stats?.technicianSubscribers ?? 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">Admin</span>
+                          <span className="font-bold text-orange-600">{stats?.adminSubscribers ?? 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Agen</span>
                           <span className="font-bold text-emerald-600">{stats?.agentSubscribers ?? 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs border-t pt-2 mt-1">
                           <span className="text-muted-foreground font-semibold">Total penerima</span>
-                          <span className="font-bold text-purple-600">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0)}</span>
+                          <span className="font-bold text-purple-600">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
                         </div>
                       </>
                     )}

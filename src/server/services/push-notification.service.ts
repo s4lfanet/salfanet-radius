@@ -214,10 +214,20 @@ async function markTechnicianSubscriptionsUsed(ids: string[]) {
   await prisma.technicianPushSubscription.updateMany({ where: { id: { in: ids } }, data: { lastUsedAt: new Date() } });
 }
 
+async function deactivateAdminSubscriptions(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.adminPushSubscription.updateMany({ where: { id: { in: ids } }, data: { isActive: false } });
+}
+
+async function markAdminSubscriptionsUsed(ids: string[]) {
+  if (ids.length === 0) return;
+  await prisma.adminPushSubscription.updateMany({ where: { id: { in: ids } }, data: { lastUsedAt: new Date() } });
+}
+
 async function sendToStoredSubscriptions(
   subscriptions: StoredSubscription[],
   payload: PushNotificationPayload,
-  role: 'customer' | 'agent' | 'technician' = 'customer',
+  role: 'customer' | 'agent' | 'technician' | 'admin' = 'customer',
 ) {
   ensureVapidConfiguration();
 
@@ -255,12 +265,16 @@ async function sendToStoredSubscriptions(
       ? deactivateAgentSubscriptions(expiredIds)
       : role === 'technician'
         ? deactivateTechnicianSubscriptions(expiredIds)
-        : deactivateSubscriptions(expiredIds),
+        : role === 'admin'
+          ? deactivateAdminSubscriptions(expiredIds)
+          : deactivateSubscriptions(expiredIds),
     role === 'agent'
       ? markAgentSubscriptionsUsed(usedIds)
       : role === 'technician'
         ? markTechnicianSubscriptionsUsed(usedIds)
-        : markSubscriptionsUsed(usedIds),
+        : role === 'admin'
+          ? markAdminSubscriptionsUsed(usedIds)
+          : markSubscriptionsUsed(usedIds),
   ]);
 
   return { sent, failed, total: subscriptions.length };
@@ -307,6 +321,46 @@ export async function removeWebPushSubscription(userId: string, endpoint?: strin
   }
 
   const result = await prisma.pushSubscription.deleteMany({ where });
+  return result.count;
+}
+
+export async function upsertAdminPushSubscription(adminId: string, subscription: WebPushSubscriptionInput, userAgent?: string | null) {
+  const endpoint = subscription.endpoint?.trim();
+  const p256dh = subscription.keys?.p256dh?.trim();
+  const auth = subscription.keys?.auth?.trim();
+
+  if (!endpoint || !p256dh || !auth) {
+    throw new Error('Invalid push subscription payload');
+  }
+
+  return prisma.adminPushSubscription.upsert({
+    where: { endpoint },
+    update: {
+      adminId,
+      p256dh,
+      auth,
+      userAgent: userAgent || null,
+      expirationTime: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+      isActive: true,
+      lastUsedAt: new Date(),
+    },
+    create: {
+      adminId,
+      endpoint,
+      p256dh,
+      auth,
+      userAgent: userAgent || null,
+      expirationTime: subscription.expirationTime ? new Date(subscription.expirationTime) : null,
+      isActive: true,
+      lastUsedAt: new Date(),
+    },
+  });
+}
+
+export async function removeAdminPushSubscription(adminId: string, endpoint?: string | null) {
+  const where: { adminId: string; endpoint?: string } = { adminId };
+  if (endpoint?.trim()) where.endpoint = endpoint.trim();
+  const result = await prisma.adminPushSubscription.deleteMany({ where });
   return result.count;
 }
 
@@ -431,7 +485,7 @@ export async function sendWebPushToUsers(userIds: string[], payload: PushNotific
 }
 
 export async function getPushDashboardStats() {
-  const [totalUsers, areas, totalBroadcasts, totalSubscriptions, subscribedUsers, agentSubscribers, technicianSubscribers] = await Promise.all([
+  const [totalUsers, areas, totalBroadcasts, totalSubscriptions, subscribedUsers, agentSubscribers, technicianSubscribers, adminSubscribers, fcmUsers] = await Promise.all([
     prisma.pppoeUser.count({
       where: { status: 'active' },
     }),
@@ -458,6 +512,17 @@ export async function getPushDashboardStats() {
       distinct: ['technicianId'],
       select: { technicianId: true },
     }),
+    prisma.adminPushSubscription.findMany({
+      where: { isActive: true },
+      distinct: ['adminId'],
+      select: { adminId: true },
+    }),
+    prisma.pppoeUser.count({
+      where: {
+        fcmTokens: { not: null },
+        NOT: { fcmTokens: '' },
+      },
+    }),
   ]);
 
   return {
@@ -468,6 +533,8 @@ export async function getPushDashboardStats() {
     totalBroadcasts,
     agentSubscribers: agentSubscribers.length,
     technicianSubscribers: technicianSubscribers.length,
+    adminSubscribers: adminSubscribers.length,
+    fcmUserCount: fcmUsers,
   };
 }
 
@@ -545,6 +612,14 @@ async function getTechnicianSubscriptions() {
   return technicians;
 }
 
+async function getAdminSubscriptions() {
+  const admins = await prisma.adminPushSubscription.findMany({
+    where: { isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return admins;
+}
+
 export async function sendWebPushBroadcast(input: PushBroadcastInput) {
   const targetIds = input.targetIds || [];
   const recipientRole = input.recipientRole || 'customer';
@@ -578,6 +653,14 @@ export async function sendWebPushBroadcast(input: PushBroadcastInput) {
     const techSubs = await getTechnicianSubscriptions();
     if (techSubs.length > 0) {
       const r = await sendToStoredSubscriptions(techSubs, notificationPayload, 'technician');
+      totalSent += r.sent;
+      totalFailed += r.failed;
+      totalCount += r.total;
+    }
+    // Also send to admin_users who subscribed via technician portal
+    const adminSubs = await getAdminSubscriptions();
+    if (adminSubs.length > 0) {
+      const r = await sendToStoredSubscriptions(adminSubs, notificationPayload, 'admin');
       totalSent += r.sent;
       totalFailed += r.failed;
       totalCount += r.total;

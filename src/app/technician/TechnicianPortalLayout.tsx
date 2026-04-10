@@ -122,6 +122,14 @@ function SidebarPushToggle({ techId }: { techId: string }) {
       await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       setSubscribed(!!sub);
+      // Sync: if browser has subscription but DB might not (e.g. after DB restore), re-register
+      if (sub && techId) {
+        fetch('/api/push/technician-subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
+        }).catch(() => { /* silent sync */ });
+      }
     } catch { /* ignore */ }
   };
 
