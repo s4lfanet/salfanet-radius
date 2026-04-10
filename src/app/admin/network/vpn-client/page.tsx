@@ -402,7 +402,7 @@ export default function VpnClientPage() {
         const res = await fetch('/api/network/vps-wg-peer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add', label: formData.name.trim() }),
+          body: JSON.stringify({ action: 'add', nasName: formData.name.trim() }),
         })
         const data = await res.json()
         if (data.success) {
