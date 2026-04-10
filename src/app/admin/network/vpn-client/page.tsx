@@ -410,6 +410,27 @@ export default function VpnClientPage() {
           await loadWgPeers()
           showSuccess('WireGuard peer berhasil ditambahkan ke VPS', 'Peer Ditambahkan')
           setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp' })
+
+          // Auto-show credentials with generated script so user can copy it immediately
+          const wgSubnet = data.vpnSubnet || wgServerInfo?.subnet || '10.200.0.0/24'
+          const wgGatewayIp = data.gatewayIp || wgSubnet.replace(/\.\d+\/\d+$/, '.1')
+          setCredentials({
+            server: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
+            serverHost: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
+            username: formData.name.trim(),
+            password: '',
+            vpnIp: data.vpnIp,
+            vpnType: 'wireguard',
+            clientPrivateKey: data.clientPrivateKey || null,
+            serverPublicKey: data.serverPublicKey || wgServerInfo?.publicKey || null,
+            wgPort: data.wgPort || wgServerInfo?.listenPort || 51820,
+            wgSubnet,
+            wgGatewayIp,
+            nasSecret: data.nasSecret || undefined,
+            radiusServerIp: undefined, // VPS gateway is used as fallback in generateMikroTikScript
+          })
+          setSelectedVpnType('wireguard')
+          setShowCredentials(true)
         } else {
           showError(data.error || 'Gagal menambahkan WireGuard peer ke VPS')
         }

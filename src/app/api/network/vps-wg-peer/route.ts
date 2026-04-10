@@ -277,6 +277,7 @@ export async function POST(req: NextRequest) {
     await addPeerToConf(clientPublicKey, vpnIp, nasName)
 
     // Persist client to DB so it appears in Router dropdown
+    let nasSecretForResponse: string | undefined
     try {
       // Ensure VPS WG virtual server row exists
       await prisma.vpnServer.upsert({
@@ -299,10 +300,16 @@ export async function POST(req: NextRequest) {
           wgPort: info.listenPort,
         },
       })
+      // Use upsert so that if syncPeersToDB already created a stub record (without
+      // private key), we update it with the real private key now.
       const username = `wg-${nasName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).substring(2, 6)}`
       const nasSecret = generatePassword(16)
-      const dbClient = await prisma.vpnClient.create({
-        data: {
+      const dbClient = await prisma.vpnClient.upsert({
+        where: {
+          // unique index: vpnServerId + vpnIp
+          vpnServerId_vpnIp: { vpnServerId: VPS_WG_SERVER_ID, vpnIp },
+        },
+        create: {
           name: nasName,
           vpnServerId: VPS_WG_SERVER_ID,
           vpnIp,
@@ -313,26 +320,42 @@ export async function POST(req: NextRequest) {
           clientPrivateKey: clientPrivateKey || null,
           isActive: true,
         },
-      })
-      // Also create NAS router entry so nasSecret is available for RADIUS script
-      await prisma.router.create({
-        data: {
-          id: require('crypto').randomUUID(),
+        update: {
           name: nasName,
-          nasname: vpnIp,
-          shortname: nasName.substring(0, 32).replace(/[^a-z0-9]/gi, ''),
-          type: 'mikrotik',
-          ipAddress: vpnIp,
-          username: 'admin',
-          password: 'admin',
-          secret: nasSecret,
-          ports: 1812,
-          vpnClientId: dbClient.id,
-          description: `Auto-created NAS for WG VPS client '${nasName}'`,
+          clientPublicKey,
+          clientPrivateKey: clientPrivateKey || null,
+          isActive: true,
         },
       })
-      // Expose nasSecret so frontend can build complete RADIUS script
-      ;(dbClient as any).nasSecret = nasSecret
+      // Upsert NAS router entry so nasSecret is available for RADIUS script
+      const existingNas = await prisma.router.findFirst({ where: { nasname: vpnIp } })
+      let finalNasSecret = nasSecret
+      if (existingNas) {
+        finalNasSecret = existingNas.secret
+        await prisma.router.update({
+          where: { id: existingNas.id },
+          data: { vpnClientId: dbClient.id },
+        })
+      } else {
+        await prisma.router.create({
+          data: {
+            id: require('crypto').randomUUID(),
+            name: nasName,
+            nasname: vpnIp,
+            shortname: nasName.substring(0, 32).replace(/[^a-z0-9]/gi, ''),
+            type: 'mikrotik',
+            ipAddress: vpnIp,
+            username: 'admin',
+            password: 'admin',
+            secret: finalNasSecret,
+            ports: 1812,
+            vpnClientId: dbClient.id,
+            description: `Auto-created NAS for WG VPS client '${nasName}'`,
+          },
+        })
+      }
+      // Return nasSecret so frontend can build complete RADIUS script immediately
+      nasSecretForResponse = finalNasSecret
     } catch (dbErr) {
       console.error('[vps-wg-peer] Gagal simpan ke DB (lanjutkan):', dbErr)
     }
@@ -348,6 +371,7 @@ export async function POST(req: NextRequest) {
       gatewayIp: info.gatewayIp,        // VPS tunnel IP e.g. 10.200.0.1
       allowedIps: `${info.gatewayIp}/32`, // kept for backward compat
       wgPort: info.listenPort,
+      nasSecret: nasSecretForResponse,  // RADIUS shared secret for this NAS
     })
   }
 
