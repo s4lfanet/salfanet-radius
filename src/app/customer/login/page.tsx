@@ -345,33 +345,57 @@ export default function CustomerLoginPage() {
       </div>
 
       {/* ── Right Panel: Brand Info ── */}
-      <div className="hidden lg:flex flex-1 bg-gray-50 dark:bg-slate-900 items-center justify-center p-12">
-        <div className="max-w-xl w-full">
-          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-3 leading-tight">
-            {companyName || 'Salfanet Radius'}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-sky-50 via-white to-blue-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 items-center justify-center p-14 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-sky-100/60 dark:bg-sky-900/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-blue-100/50 dark:bg-blue-900/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-lg w-full relative z-10">
+          <div className="mb-2">
+            <span className="text-xs font-semibold uppercase tracking-widest text-sky-500 dark:text-sky-400">Portal Pelanggan</span>
+          </div>
+          <h1 className="text-5xl font-extrabold leading-tight mb-1">
+            <span className="text-slate-800 dark:text-white">{(companyName || 'Salfanet Radius').split(' ').slice(0, -1).join(' ')} </span>
+            <span className="bg-gradient-to-r from-sky-500 to-blue-600 bg-clip-text text-transparent">{(companyName || 'Salfanet Radius').split(' ').slice(-1)[0]}</span>
           </h1>
-          <hr className="border-gray-300 dark:border-slate-700 mb-6" />
-          <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed mb-8">
-            Portal layanan mandiri pelanggan ISP. Cek tagihan, bayar online, dan pantau status langganan internet Anda kapan saja dan di mana saja.
+          <p className="text-base text-gray-500 dark:text-slate-400 mb-8 leading-relaxed">
+            Portal layanan mandiri pelanggan ISP. Cek tagihan, bayar online, dan pantau status langganan internet Anda kapan saja.
           </p>
-          <div className="grid grid-cols-3 gap-6 mb-8 text-center">
-            <div>
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Tagihan Online</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400">Lihat dan unduh invoice kapan saja</p>
+
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-sky-100 dark:bg-sky-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Tagihan Online</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Lihat &amp; unduh invoice kapan saja</p>
             </div>
-            <div>
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Bayar Mudah</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400">QRIS, transfer bank, dan retail</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Bayar Mudah</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">QRIS, bank &amp; retail</p>
             </div>
-            <div>
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Notifikasi WA</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400">Pengingat tagihan otomatis via WhatsApp</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Notifikasi WA</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Pengingat otomatis WhatsApp</p>
             </div>
           </div>
-          <div className="space-y-3 text-sm text-gray-700 dark:text-slate-300">
-            <p><span className="font-bold">Invoice Digital:</span> Unduh &amp; cetak tagihan bulanan dengan mudah.</p>
-            <p><span className="font-bold">Riwayat Pembayaran:</span> Pantau semua histori transaksi kapan saja.</p>
-            <p><span className="font-bold">Portal Self-Service:</span> Tidak perlu telepon, kelola akun sendiri.</p>
+
+          <div className="space-y-3">
+            {[
+              { color: 'bg-sky-500', text: 'Invoice Digital — Unduh &amp; cetak tagihan bulanan dengan mudah' },
+              { color: 'bg-blue-500', text: 'Riwayat Pembayaran — Pantau semua histori transaksi kapan saja' },
+              { color: 'bg-green-500', text: 'Portal Self-Service — Kelola akun sendiri tanpa perlu telepon' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-700/50">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />
+                <p className="text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: item.text }} />
+              </div>
+            ))}
           </div>
         </div>
       </div>

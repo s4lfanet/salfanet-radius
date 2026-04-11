@@ -149,33 +149,57 @@ export default function TechnicianLoginPage() {
       </div>
 
       {/* ── Right Panel: Brand Info ── */}
-      <div className="hidden lg:flex flex-1 bg-gray-50 dark:bg-slate-900 items-center justify-center p-12">
-        <div className="max-w-xl w-full">
-          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-3 leading-tight">
-            {companyName || 'Salfanet Radius'}
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 items-center justify-center p-14 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-72 h-72 bg-blue-100/60 dark:bg-blue-900/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-cyan-100/50 dark:bg-cyan-900/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-lg w-full relative z-10">
+          <div className="mb-2">
+            <span className="text-xs font-semibold uppercase tracking-widest text-blue-500 dark:text-blue-400">Portal Teknisi</span>
+          </div>
+          <h1 className="text-5xl font-extrabold leading-tight mb-1">
+            <span className="text-slate-800 dark:text-white">{(companyName || 'Salfanet Radius').split(' ').slice(0, -1).join(' ')} </span>
+            <span className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{(companyName || 'Salfanet Radius').split(' ').slice(-1)[0]}</span>
           </h1>
-          <hr className="border-gray-300 dark:border-slate-700 mb-6" />
-          <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed mb-8">
-            Portal khusus teknisi lapangan untuk menerima tiket kerja, mendokumentasikan instalasi, dan mendaftarkan pelanggan baru langsung dari lokasi.
+          <p className="text-base text-gray-500 dark:text-slate-400 mb-8 leading-relaxed">
+            Portal khusus teknisi lapangan untuk menerima tiket kerja, dokumentasi instalasi, dan pendaftaran pelanggan dari lokasi.
           </p>
-          <div className="grid grid-cols-3 gap-6 mb-8 text-center">
-            <div>
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Tiket Kerja</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400">Terima dan selesaikan tiket gangguan dengan mudah</p>
+
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Tiket Kerja</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Terima &amp; selesaikan tiket gangguan</p>
             </div>
-            <div>
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Foto Lapangan</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400">Catat foto instalasi dan KTP pelanggan langsung dari kamera</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-cyan-600 dark:text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Foto Lapangan</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Dokumentasi instalasi dari kamera</p>
             </div>
-            <div>
-              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Real-time</p>
-              <p className="text-xs text-gray-500 dark:text-slate-400">Update status pekerjaan langsung ke sistem</p>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Real-time</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Update status ke sistem langsung</p>
             </div>
           </div>
-          <div className="space-y-3 text-sm text-gray-700 dark:text-slate-300">
-            <p><span className="font-bold">Manajemen Tiket:</span> Terima, proses, dan tutup tiket gangguan pelanggan.</p>
-            <p><span className="font-bold">Foto Dokumentasi:</span> Upload foto instalasi dan KTP langsung dari kamera HP.</p>
-            <p><span className="font-bold">Registrasi Pelanggan:</span> Daftarkan pelanggan baru langsung dari lapangan.</p>
+
+          <div className="space-y-3">
+            {[
+              { color: 'bg-blue-500', text: 'Manajemen Tiket — Terima, proses, dan tutup tiket gangguan' },
+              { color: 'bg-cyan-500', text: 'Foto Dokumentasi — Upload foto instalasi &amp; KTP dari kamera HP' },
+              { color: 'bg-green-500', text: 'Registrasi Pelanggan — Daftarkan pelanggan baru dari lapangan' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-700/50">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />
+                <p className="text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: item.text }} />
+              </div>
+            ))}
           </div>
         </div>
       </div>
