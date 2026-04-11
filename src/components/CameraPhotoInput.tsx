@@ -30,10 +30,12 @@ export function CameraPhotoInput({
 }: CameraPhotoInputProps) {
   const uid = useId();
   const galleryId = `gallery-${uid}`;
+  const captureId = `capture-${uid}`;
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const captureRef = useRef<HTMLInputElement>(null);
 
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
@@ -70,7 +72,15 @@ export function CameraPhotoInput({
     onRemove();
   };
 
-  // --- Camera API (getUserMedia) ---
+  const handleCaptureFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    const url = await onUploadFile(file);
+    if (url) captureGps();
+  };
+
+  // --- Camera API (getUserMedia with fallback to capture="environment" for HTTP) ---
   const stopCamera = useCallback(() => {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
@@ -81,6 +91,11 @@ export function CameraPhotoInput({
   }, []);
 
   const startCamera = useCallback(async (facing: 'environment' | 'user' = facingMode) => {
+    // On HTTP (no HTTPS), getUserMedia is unavailable — fall back to native camera via capture
+    if (!navigator.mediaDevices?.getUserMedia) {
+      captureRef.current?.click();
+      return;
+    }
     setCameraError('');
     try {
       if (streamRef.current) {
@@ -161,6 +176,20 @@ export function CameraPhotoInput({
     />
   );
 
+  // Fallback capture input for HTTP contexts where getUserMedia is unavailable
+  const captureInput = (
+    <input
+      ref={captureRef}
+      id={captureId}
+      type="file"
+      accept="image/*"
+      capture="environment"
+      className="sr-only"
+      onChange={handleCaptureFile}
+      disabled={uploading}
+    />
+  );
+
   const hiddenCanvas = <canvas ref={canvasRef} className="hidden" />;
 
   // --- Camera viewfinder ---
@@ -226,6 +255,7 @@ export function CameraPhotoInput({
           </div>
         </div>
         {galleryInput}
+        {captureInput}
         {hiddenCanvas}
       </div>
     );
@@ -288,6 +318,7 @@ export function CameraPhotoInput({
         )}
 
         {galleryInput}
+        {captureInput}
         {hiddenCanvas}
       </div>
     );
@@ -335,6 +366,7 @@ export function CameraPhotoInput({
         <p className={`text-[9px] ${isDark ? 'text-[#e0d0ff]/40' : 'text-muted-foreground'}`}>{hint}</p>
       )}
       {galleryInput}
+      {captureInput}
       {hiddenCanvas}
     </div>
   );
