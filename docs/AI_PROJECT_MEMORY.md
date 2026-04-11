@@ -9,14 +9,53 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.17.0
+- **Version**: 2.19.0
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: April 10, 2026
-- **Latest Commit**: camera+GPS photo upload
+- **Last Updated**: April 11, 2026
+- **Latest Commit**: `817887a` — tab Foto (KTP + instalasi) + lightbox di UserDetailModal
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.hotspotapp.net
 
-### Recent Patch Log (April 10, 2026 — Kamera HP + GPS otomatis)
+### Recent Patch Log (April 11, 2026 — Kamera & Foto Pelanggan)
+
+- **Fix: `getUserMedia` error langsung fallback ke native camera** (`382dbb3`, Apr 11, 2026)
+  - **Root cause**: saat `getUserMedia` melempar error apapun (`NotAllowedError`, Permissions Policy, dll), kode lama menampilkan pesan error merah alih-alih membuka native camera.
+  - **Fix**: `catch` block pada `startCamera()` (`CameraPhotoInput`) dan `startStream()` (`CameraViewfinder`) sekarang langsung fallback ke `captureRef.current?.click()` / `setUseNativeCapture(true)`. State `cameraError` + render block error merah dihapus sepenuhnya.
+  - **Files**: `src/components/CameraPhotoInput.tsx`, `src/components/CameraViewfinder.tsx`
+
+- **Feat: Kompresi foto otomatis + perbaikan tampilan kamera** (`8ff86c1`, Apr 11, 2026)
+  - **Util baru**: `compressImage(file, maxDimension=1280, quality=0.78)` di `src/lib/utils.ts` — resize + JPEG 78%. Estimasi: foto 5MB HP → 200–400KB di DB.
+  - **Berlaku di**: `handleFile`, `handleCaptureFile`, `takePhoto` di `CameraPhotoInput` + `takePhoto`, `handleNativeFile` di `CameraViewfinder`.
+  - **Tampilan viewfinder**: `h-48` (fixed) → `aspect-[4/3]` (proporsional). Corner guide overlay (4 sudut biru cyan).
+  - **Tampilan preview**: border hijau, badge "✓ Foto tersimpan", action bar Galeri|Kamera di bagian bawah.
+  - **Canvas resize**: `takePhoto` di kedua komponen sekarang scale down ke max 1280px sebelum `toBlob(..., 0.78)`.
+  - **Files**: `src/lib/utils.ts`, `src/components/CameraPhotoInput.tsx`, `src/components/CameraViewfinder.tsx`
+
+- **Feat: Tab "📷 Foto" di UserDetailModal** (`817887a`, Apr 11, 2026)
+  - Tab baru "📷 Foto" di sebelah kanan Invoice — tampilkan KTP + foto instalasi read-only.
+  - **KTP**: foto full-width, NIK di pojok kanan, placeholder jika kosong.
+  - **Foto Instalasi**: grid 2 kolom, label "Foto 1/2/…", placeholder jika kosong.
+  - **Lightbox**: klik foto → full screen overlay; klik luar / tombol × untuk tutup. State `lightboxUrl: string | null`.
+  - **Note**: tambah/hapus foto tetap di tab "Info Pengguna".
+  - **Files**: `src/components/UserDetailModal.tsx`
+
+### Recent Patch Log (April 11, 2026 — Camera Hardening v1 / getUserMedia Rewrite)
+
+- **CRITICAL FIX: `camera=()` Permissions-Policy memblokir semua akses kamera** (`84434ec`, Apr 11, 2026)
+  - **Root cause**: `next.config.ts` menyetel `Permissions-Policy: camera=()` — melarang semua akses kamera di semua origin.
+  - **Fix**: Ubah ke `camera=(self)` agar `getUserMedia` dapat berjalan di origin sendiri.
+  - **File**: `next.config.ts`
+
+- **Feat: HTTP fallback `capture="environment"` saat `getUserMedia` tidak tersedia** (`3643438`, Apr 11, 2026)
+  - `CameraPhotoInput`: tambah check `!navigator.mediaDevices?.getUserMedia` → `captureRef.current?.click()`.
+  - `CameraViewfinder`: tambah check serupa → `setUseNativeCapture(true)`.
+
+- **Feat: Rewrite kamera menggunakan `getUserMedia`** (`39f3dcb`, Apr 11, 2026)
+  - `CameraPhotoInput.tsx` — full rewrite: live video viewfinder via `getUserMedia`, tombol ambil foto + flip kamera.
+  - `CameraViewfinder.tsx` — komponen baru untuk foto instalasi inline di admin & UserDetailModal.
+  - `admin/pppoe/users/page.tsx` + `UserDetailModal.tsx` — ganti inline camera dengan `CameraViewfinder`.
+
+### Recent Patch Log (April 11, 2026 — Camera Hardening v2 / Permissions-Policy)
 
 - **Feat: `CameraPhotoInput` reusable component** (Apr 10, 2026)
   - **File baru**: `src/components/CameraPhotoInput.tsx`
