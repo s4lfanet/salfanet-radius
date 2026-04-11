@@ -157,7 +157,7 @@ export default function AgentLoginPage() {
       </div>
 
       {/* ── Right Panel: Brand Info ── */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 items-center justify-center p-14 relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-indigo-50 via-white to-violet-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 items-center justify-center px-12 py-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-100/60 dark:bg-indigo-900/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-violet-100/50 dark:bg-violet-900/20 rounded-full blur-3xl pointer-events-none" />
 

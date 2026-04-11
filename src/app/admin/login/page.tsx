@@ -351,60 +351,60 @@ function LoginForm() {
       </div>
 
       {/* ── Right Panel: Brand Info ── */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 items-center justify-center px-10 py-8 relative overflow-hidden">
+      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 items-center justify-center px-12 py-8 relative overflow-hidden">
         {/* Decorative blobs */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-blue-100/60 dark:bg-blue-900/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-lg w-full relative z-10">
           {/* Portal label */}
-          <div className="mb-1">
+          <div className="mb-2">
             <span className="text-xs font-semibold uppercase tracking-widest text-blue-500 dark:text-blue-400">Panel Admin</span>
           </div>
           {/* Company name */}
-          <h1 className="text-4xl font-extrabold leading-tight mb-1">
+          <h1 className="text-5xl font-extrabold leading-tight mb-2">
             <span className="text-slate-800 dark:text-white">{(companyName || 'Salfanet Radius').split(' ').slice(0, -1).join(' ')} </span>
             <span className="bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">{(companyName || 'Salfanet Radius').split(' ').slice(-1)[0]}</span>
           </h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mb-5 leading-relaxed">
+          <p className="text-base text-gray-500 dark:text-slate-400 mb-6 leading-relaxed">
             Solusi manajemen Billing ISP terlengkap. Kelola ribuan pelanggan MikroTik secara otomatis, aman, dan efisien dalam satu dashboard.
           </p>
 
           {/* Feature cards */}
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
-              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          <div className="grid grid-cols-3 gap-4 mb-6">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">User Friendly</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Mudah digunakan semua tim</p>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">User Friendly</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Mudah digunakan oleh semua tim</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
-              <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <svg className="w-4 h-4 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
               </div>
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">Data Terpusat</p>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Data Terpusat</p>
               <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Satu dashboard semua router</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-3 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
-              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/40 rounded-lg flex items-center justify-center mx-auto mb-2">
-                <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               </div>
-              <p className="text-xs font-bold text-slate-700 dark:text-slate-200 mb-0.5">Secure</p>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Secure</p>
               <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Data aman &amp; terenkripsi</p>
             </div>
           </div>
 
           {/* Feature list */}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {[
               { color: 'bg-blue-500', text: 'Automated Billing — Isolir otomatis &amp; notifikasi WhatsApp' },
               { color: 'bg-indigo-500', text: 'Multi-Router — Kelola banyak MikroTik dalam satu server' },
               { color: 'bg-violet-500', text: 'Payment Gateway — QRIS, Virtual Account, dan Retail' },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-lg px-3 py-2.5 border border-gray-100 dark:border-slate-700/50">
+              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-700/50">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />
-                <p className="text-xs text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: item.text }} />
+                <p className="text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: item.text }} />
               </div>
             ))}
           </div>
