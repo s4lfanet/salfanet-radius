@@ -140,78 +140,74 @@ export default function CustomerLoginPage() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />;
+    return <div className="min-h-screen bg-gray-50 dark:bg-slate-950" />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4 relative overflow-hidden transition-colors duration-300">
-      {/* Decorative blobs */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-100/50 dark:bg-blue-950/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-100/50 dark:bg-indigo-950/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+      {/* ── Left Panel: Login Form ── */}
+      <div className="flex items-start justify-center w-full lg:w-[420px] min-h-screen bg-white dark:bg-slate-800 shadow-xl dark:shadow-slate-900/50 px-8 pt-14 pb-10 flex-shrink-0 relative">
 
-      {/* Theme toggle */}
-      <button
-        onClick={toggleTheme}
-        className="absolute top-4 right-4 z-20 p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all shadow-sm"
-        title={isDark ? 'Mode Terang' : 'Mode Gelap'}
-      >
-        {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-500" />}
-      </button>
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="absolute top-4 right-4 p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 transition-all shadow-sm"
+          title={isDark ? 'Mode Terang' : 'Mode Gelap'}
+        >
+          {isDark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-500" />}
+        </button>
 
-      <div className="w-full max-w-sm relative z-10">
-        {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
+        <div className="w-full max-w-[320px]">
+
+          {/* Logo */}
+          <div className="flex justify-center mb-5">
             {companyLogo ? (
-              <div className="inline-flex items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-sm flex-shrink-0">
-                <Image unoptimized src={companyLogo} alt={companyName} width={100} height={40} className="max-h-10 max-w-[100px] w-auto h-auto object-contain" />
+              <div className="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-700 shadow-sm">
+                <Image unoptimized src={companyLogo} alt={companyName} width={120} height={48} className="max-h-12 max-w-[120px] w-auto h-auto object-contain" />
               </div>
             ) : (
-              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/25 flex-shrink-0">
-                <Shield className="w-6 h-6 text-white" />
+              <div className="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl shadow-lg shadow-blue-500/25">
+                <Shield className="w-7 h-7 text-white" />
               </div>
             )}
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 leading-tight text-left max-w-[200px]">
-              {companyName}
-            </h1>
           </div>
-          <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">Portal Pelanggan</p>
-        </div>
 
-        {/* Card */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 p-8">
+          {/* Subtitle */}
+          <p className="text-center text-sm text-blue-600 dark:text-blue-400 font-semibold mb-6">
+            {step === 'otp' ? 'Verifikasi Kode OTP' : 'Portal Pelanggan'}
+          </p>
 
+          {/* Error */}
           {error && (
-            <div className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl">
+              <p className="text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>
             </div>
           )}
 
           {step === 'phone' ? (
-            <form onSubmit={handleSendOTP} className="space-y-5">
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  <Smartphone className="w-4 h-4" />
-                  Nomor HP / ID Pelanggan
-                </label>
+            <form onSubmit={handleSendOTP} className="space-y-4">
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                  <Smartphone className="w-5 h-5 text-white" />
+                </div>
                 <input
                   type="text"
                   required
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm"
+                  className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
                   placeholder="08123456789 atau ID Pelanggan"
                   disabled={loading}
                 />
-                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1.5">
-                  Nomor WhatsApp terdaftar atau ID Pelanggan 8 digit
-                </p>
               </div>
+              <p className="text-xs text-gray-400 dark:text-slate-500 -mt-1">
+                Nomor WhatsApp terdaftar atau ID Pelanggan 8 digit
+              </p>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-blue-500/20 hover:shadow-md flex items-center justify-center gap-2 mt-2"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <><Loader2 className="w-4 h-4 animate-spin" />Memproses...</>
@@ -246,49 +242,48 @@ export default function CustomerLoginPage() {
                     }
                   }}
                   disabled={loading}
-                  className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
                 >
                   Emergency Bypass (Tanpa OTP)
                 </button>
               )}
             </form>
           ) : (
-            <form onSubmit={handleVerifyOTP} className="space-y-5">
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  <Lock className="w-4 h-4" />
-                  Kode Keamanan
-                </label>
+            <form onSubmit={handleVerifyOTP} className="space-y-4">
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-5 h-5 text-white" />
+                </div>
                 <input
                   type="text"
                   required
                   value={otp}
                   onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').substring(0, 6))}
-                  className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                  className="flex-1 px-4 py-4 text-center text-xl font-mono tracking-widest bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
                   placeholder="000000"
                   maxLength={6}
                   disabled={loading}
                   autoFocus
                 />
-                <p className="text-xs text-center text-slate-400 dark:text-slate-500 mt-2">
-                  Kode dikirim ke <strong className="text-blue-600 dark:text-blue-400">{identifier}</strong>
-                  <br />Berlaku {expiresIn} menit
-                </p>
               </div>
+              <p className="text-xs text-center text-gray-400 dark:text-slate-500">
+                Kode dikirim ke <strong className="text-blue-600 dark:text-blue-400">{identifier}</strong>
+                <br />Berlaku {expiresIn} menit
+              </p>
 
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={handleBack}
                   disabled={loading}
-                  className="flex-1 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 disabled:opacity-50 text-slate-700 dark:text-slate-300 text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 disabled:opacity-50 text-gray-700 dark:text-slate-300 text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
                 >
                   <ChevronLeft className="w-4 h-4" />Kembali
                 </button>
                 <button
                   type="submit"
                   disabled={loading || otp.length !== 6}
-                  className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+                  className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Memverifikasi...</> : 'Verifikasi'}
                 </button>
@@ -298,7 +293,7 @@ export default function CustomerLoginPage() {
                 type="button"
                 onClick={() => { setStep('phone'); setOtp(''); setError(''); }}
                 disabled={loading}
-                className="w-full text-xs text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="w-full text-xs text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               >
                 Kirim Ulang Kode
               </button>
@@ -307,51 +302,78 @@ export default function CustomerLoginPage() {
 
           {/* Register Buttons */}
           {step === 'phone' && (
-            <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-700">
-              <p className="text-xs text-center text-slate-400 dark:text-slate-500 mb-3 uppercase tracking-wider font-medium">Pendaftaran Baru</p>
+            <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700">
+              <p className="text-xs text-center text-gray-400 dark:text-slate-500 mb-3 uppercase tracking-wider font-medium">Pendaftaran Baru</p>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => router.push('/daftar')}
-                  className="py-2.5 px-3 bg-slate-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-xl transition-all"
+                  className="py-2.5 px-3 bg-gray-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 text-xs font-medium rounded-lg transition-all"
                 >
                   Daftar Pelanggan
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push('/agent')}
-                  className="py-2.5 px-3 bg-slate-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 text-xs font-medium rounded-xl transition-all"
+                  className="py-2.5 px-3 bg-gray-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-200 text-xs font-medium rounded-lg transition-all"
                 >
                   Daftar Agen
                 </button>
               </div>
-            </div>
-          )}
-
-          {step === 'phone' && (
-            <div className="mt-3">
               <button
                 type="button"
                 onClick={() => router.push('/evoucher')}
-                className="w-full py-2.5 bg-slate-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs font-medium rounded-xl transition-all flex items-center justify-center gap-2"
+                className="w-full mt-3 py-2.5 bg-gray-50 dark:bg-slate-700 hover:bg-blue-50 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-2"
               >
                 <Wifi className="w-4 h-4" />
                 Beli Voucher WiFi
               </button>
             </div>
           )}
-        </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-8">{footerText}</p>
-        <p className="text-center mt-3">
-          <a
-            href="/admin/login"
-            className="text-xs text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          >
-            Admin? Masuk di sini →
-          </a>
-        </p>
+          {/* Footer */}
+          <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-6">{footerText}</p>
+          <p className="text-center mt-2">
+            <a
+              href="/admin/login"
+              className="text-xs text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+            >
+              Admin? Masuk di sini →
+            </a>
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right Panel: Brand Info ── */}
+      <div className="hidden lg:flex flex-1 bg-gray-50 dark:bg-slate-900 items-center justify-center p-12">
+        <div className="max-w-xl w-full">
+          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-3 leading-tight">
+            {companyName || 'Salfanet Radius'}
+          </h1>
+          <hr className="border-gray-300 dark:border-slate-700 mb-6" />
+          <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed mb-8">
+            Portal layanan mandiri pelanggan ISP. Cek tagihan, bayar online, dan pantau status langganan internet Anda kapan saja dan di mana saja.
+          </p>
+          <div className="grid grid-cols-3 gap-6 mb-8 text-center">
+            <div>
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Tagihan Online</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Lihat dan unduh invoice kapan saja</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Bayar Mudah</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">QRIS, transfer bank, dan retail</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Notifikasi WA</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Pengingat tagihan otomatis via WhatsApp</p>
+            </div>
+          </div>
+          <div className="space-y-3 text-sm text-gray-700 dark:text-slate-300">
+            <p><span className="font-bold">Invoice Digital:</span> Unduh &amp; cetak tagihan bulanan dengan mudah.</p>
+            <p><span className="font-bold">Riwayat Pembayaran:</span> Pantau semua histori transaksi kapan saja.</p>
+            <p><span className="font-bold">Portal Self-Service:</span> Tidak perlu telepon, kelola akun sendiri.</p>
+          </div>
+        </div>
       </div>
     </div>
   );

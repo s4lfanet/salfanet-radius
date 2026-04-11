@@ -185,55 +185,41 @@ function LoginForm() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />;
+    return <div className="min-h-screen bg-gray-50 dark:bg-slate-950" />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/40 to-indigo-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative blobs */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-blue-100/50 dark:bg-blue-950/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-100/50 dark:bg-indigo-950/20 rounded-full blur-3xl pointer-events-none" />
+    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950">
+      {/* ── Left Panel: Login Form ── */}
+      <div className="flex items-start justify-center w-full lg:w-[420px] min-h-screen bg-white dark:bg-slate-800 shadow-xl dark:shadow-slate-900/50 px-8 pt-14 pb-10 flex-shrink-0">
+        <div className="w-full max-w-[320px]">
 
-      <div className="w-full max-w-sm relative z-10">
-        {/* Logo & Title */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
+          {/* Logo */}
+          <div className="flex justify-center mb-5">
             {companyLogo ? (
-              <div className="inline-flex items-center justify-center rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-2 shadow-sm flex-shrink-0">
-                <Image unoptimized src={companyLogo} alt={companyName} width={100} height={40} className="max-h-10 max-w-[100px] w-auto h-auto object-contain" />
+              <div className="p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-700 shadow-sm">
+                <Image unoptimized src={companyLogo} alt={companyName} width={120} height={48} className="max-h-12 max-w-[120px] w-auto h-auto object-contain" />
               </div>
             ) : (
-              <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl flex-shrink-0 transition-all duration-300 ${
-                step === 'twoFactor'
-                  ? 'bg-indigo-600 shadow-lg shadow-indigo-500/25'
-                  : 'bg-blue-600 shadow-lg shadow-blue-500/25'
-              }`}>
-                {step === 'twoFactor'
-                  ? <Smartphone className="w-6 h-6 text-white" />
-                  : <Shield className="w-6 h-6 text-white" />
-                }
+              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg transition-all duration-300 ${step === 'twoFactor' ? 'bg-indigo-600 shadow-indigo-500/25' : 'bg-blue-600 shadow-blue-500/25'}`}>
+                {step === 'twoFactor' ? <Smartphone className="w-7 h-7 text-white" /> : <Shield className="w-7 h-7 text-white" />}
               </div>
             )}
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 leading-tight text-left max-w-[200px]">
-              {companyName}
-            </h1>
           </div>
-          <p className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
+
+          {/* Subtitle */}
+          <p className="text-center text-sm text-blue-600 dark:text-blue-400 font-semibold mb-6">
             {step === 'twoFactor' ? 'Autentikasi 2 Faktor' : t('auth.adminControlPanel')}
           </p>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 p-8">
 
           {/* Idle Logout Notice */}
           {idleLogout && step === 'credentials' && (
-            <div className="mb-5 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl">
-              <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+            <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">{t('auth.sessionExpired')}</p>
-                  <p className="text-xs text-amber-600/80 dark:text-amber-500/80 mt-0.5">{t('auth.sessionExpiredDesc')}</p>
+                  <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">{t('auth.sessionExpired')}</p>
+                  <p className="text-xs text-amber-600/80 dark:text-amber-500/80">{t('auth.sessionExpiredDesc')}</p>
                 </div>
               </div>
             </div>
@@ -241,54 +227,47 @@ function LoginForm() {
 
           {/* Error */}
           {error && (
-            <div className="mb-5 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl">
-              <p className="text-sm text-red-600 dark:text-red-400 font-medium">{error}</p>
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/50 rounded-xl">
+              <p className="text-xs text-red-600 dark:text-red-400 font-medium">{error}</p>
             </div>
           )}
 
-          {/* ── STEP 1: Username + Password ── */}
+          {/* ── STEP 1: Credentials ── */}
           {step === 'credentials' && (
-            <form onSubmit={handleCredentialsSubmit} className="space-y-5">
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  <User className="w-4 h-4" />
-                  {t('auth.username')}
-                </label>
+            <form onSubmit={handleCredentialsSubmit} className="space-y-4">
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                  <User className="w-5 h-5 text-white" />
+                </div>
                 <input
                   type="text"
                   required
                   autoComplete="username"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all text-sm"
                   placeholder={t('auth.enterUsername')}
                   disabled={loading}
+                  className="flex-1 px-4 py-3 text-sm bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
                 />
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  <Lock className="w-4 h-4" />
-                  {t('auth.password')}
-                </label>
-                <div className="relative">
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-blue-500 dark:focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-200 dark:focus-within:ring-blue-800/50 transition-all">
+                <div className="bg-blue-600 px-4 flex items-center justify-center flex-shrink-0">
+                  <Lock className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1 flex items-center bg-blue-50 dark:bg-slate-900 focus-within:bg-white dark:focus-within:bg-slate-800 transition-colors">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     autoComplete="current-password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-400 transition-all pr-12 text-sm"
                     placeholder={t('auth.enterPassword')}
                     disabled={loading}
+                    className="flex-1 px-4 py-3 text-sm bg-transparent text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                    disabled={loading}
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors" disabled={loading}>
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -296,38 +275,34 @@ function LoginForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-blue-500/20 hover:shadow-md flex items-center justify-center gap-2 mt-2"
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" />{t('auth.signingIn')}</>
+                  <><Loader2 className="w-4 h-4 animate-spin" />{t('auth.signingIn')}</>
                 ) : (
-                  <><LogIn className="w-5 h-5" />{t('auth.signIn')}</>
+                  <><LogIn className="w-4 h-4" />{t('auth.signIn')}</>
                 )}
               </button>
             </form>
           )}
 
-          {/* ── STEP 2: 2FA Code ── */}
+          {/* ── STEP 2: 2FA ── */}
           {step === 'twoFactor' && (
-            <form onSubmit={handleTwoFactorSubmit} className="space-y-5">
-              {/* Info banner */}
-              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700/50 rounded-xl">
-                <div className="flex items-start gap-3">
-                  <Smartphone className="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+            <form onSubmit={handleTwoFactorSubmit} className="space-y-4">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700/50 rounded-xl">
+                <div className="flex items-start gap-2">
+                  <Smartphone className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-300">Kode Autentikator Diperlukan</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                      Buka aplikasi autentikator Anda (Google Authenticator, Authy, dll.) dan masukkan kode 6 digit.
-                    </p>
+                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Kode Autentikator Diperlukan</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Buka aplikasi autentikator dan masukkan kode 6 digit.</p>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  <KeyRound className="w-4 h-4" />
-                  Kode Autentikator
-                </label>
+              <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800/50 transition-all">
+                <div className="bg-indigo-600 px-4 flex items-center justify-center flex-shrink-0">
+                  <KeyRound className="w-5 h-5 text-white" />
+                </div>
                 <input
                   ref={tfaInputRef}
                   type="text"
@@ -336,43 +311,72 @@ function LoginForm() {
                   required
                   value={tfaCode}
                   onChange={(e) => handleTfaCodeChange(e.target.value)}
-                  className="login-input-2fa w-full px-4 py-4 bg-slate-900 border-2 border-indigo-500/40 rounded-xl text-white text-center text-2xl font-mono tracking-[0.5em] placeholder:text-slate-600 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 transition-all"
+                  className="flex-1 px-4 py-4 text-center text-xl font-mono tracking-widest bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-600 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
                   placeholder="000 000"
                   disabled={loading}
                   maxLength={7}
                 />
-                <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-2">Sesi ini berakhir dalam 10 menit</p>
               </div>
+              <p className="text-xs text-center text-gray-400 dark:text-slate-500">Sesi ini berakhir dalam 10 menit</p>
 
               <button
                 type="submit"
                 disabled={loading || tfaCode.replace(/\s/g, '').length < 6}
-                className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 disabled:opacity-50 text-white text-sm font-semibold rounded-xl transition-all shadow-sm hover:shadow-indigo-500/20 hover:shadow-md flex items-center justify-center gap-2"
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
               >
                 {loading ? (
-                  <><Loader2 className="w-5 h-5 animate-spin" />Memverifikasi...</>
+                  <><Loader2 className="w-4 h-4 animate-spin" />Memverifikasi...</>
                 ) : (
-                  <><KeyRound className="w-5 h-5" />Verifikasi Kode</>
+                  <><KeyRound className="w-4 h-4" />Verifikasi Kode</>
                 )}
               </button>
-
               <button
                 type="button"
                 onClick={handleBackToCredentials}
                 disabled={loading}
-                className="w-full text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-2 pt-1"
+                className="w-full text-xs text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5"
               >
-                <ArrowLeft className="w-4 h-4" />
+                <ArrowLeft className="w-3.5 h-3.5" />
                 Kembali ke Login
               </button>
             </form>
           )}
-        </div>
 
-        {/* Footer */}
-        <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-8">
-          {footerText}
-        </p>
+          {/* Footer */}
+          <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-8">{footerText}</p>
+        </div>
+      </div>
+
+      {/* ── Right Panel: Brand Info ── */}
+      <div className="hidden lg:flex flex-1 bg-gray-50 dark:bg-slate-900 items-center justify-center p-12">
+        <div className="max-w-xl w-full">
+          <h1 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-3 leading-tight">
+            {companyName || 'Salfanet Radius'}
+          </h1>
+          <hr className="border-gray-300 dark:border-slate-700 mb-6" />
+          <p className="text-gray-600 dark:text-slate-400 text-sm leading-relaxed mb-8">
+            Solusi manajemen Billing ISP terlengkap untuk skalabilitas bisnis Anda. Kelola ribuan pelanggan MikroTik secara otomatis, aman, dan efisien dalam satu dashboard terintegrasi.
+          </p>
+          <div className="grid grid-cols-3 gap-6 mb-8 text-center">
+            <div>
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">User Friendly</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Aplikasi dirancang agar mudah digunakan</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Data Terpusat</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Kelola banyak MikroTik dengan satu dashboard</p>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-blue-600 dark:text-blue-400 mb-1">Secure</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400">Data tersimpan dengan aman dan backup otomatis</p>
+            </div>
+          </div>
+          <div className="space-y-3 text-sm text-gray-700 dark:text-slate-300">
+            <p><span className="font-bold">Automated Billing:</span> Sistem isolir otomatis &amp; kirim notifikasi via WhatsApp</p>
+            <p><span className="font-bold">Multi-Router:</span> Kelola banyak Mikrotik dalam satu server Radius.</p>
+            <p><span className="font-bold">Payment Gateway:</span> Dukungan otomatisasi pembayaran (QRIS, VA, Retail).</p>
+          </div>
+        </div>
       </div>
     </div>
   );
