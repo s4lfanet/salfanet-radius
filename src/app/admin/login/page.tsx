@@ -43,8 +43,6 @@ function LoginForm() {
   const [tfaToken, setTfaToken] = useState('');
   const [tfaCode, setTfaCode] = useState('');
   const tfaInputRef = useRef<HTMLInputElement>(null);
-  // Guard: prevents useEffect redirect from firing when handleSubmit already pushed
-  const isRedirectingRef = useRef(false);
 
   // Check idle logout
   useEffect(() => {
@@ -76,10 +74,10 @@ function LoginForm() {
 
   // Redirect if already authenticated (e.g. user navigates to /admin/login while already logged in)
   useEffect(() => {
-    if (status === 'authenticated' && !isRedirectingRef.current) {
-      router.push('/admin');
+    if (status === 'authenticated') {
+      window.location.href = '/admin';
     }
-  }, [status, router]);
+  }, [status]);
 
   // Focus 2FA input when switching to that step
   useEffect(() => {
@@ -127,9 +125,12 @@ function LoginForm() {
       if (result?.error) {
         setError(t('auth.loginFailed'));
       } else if (result?.ok) {
+        // Use hard reload so the new page gets the session from server-side,
+        // preventing AdminClientLayout from briefly seeing 'unauthenticated'
+        // and triggering the redirect-loop back to /admin/login.
         const callbackUrl = searchParams.get('callbackUrl') || '/admin';
-        isRedirectingRef.current = true;
-        router.push(callbackUrl);
+        window.location.href = callbackUrl;
+        return; // prevent finally from calling setLoading(false) before navigation
       }
     } catch (err: any) {
       setError(err.message || t('auth.loginFailed'));
@@ -162,8 +163,8 @@ function LoginForm() {
         tfaInputRef.current?.focus();
       } else if (result?.ok) {
         const callbackUrl = searchParams.get('callbackUrl') || '/admin';
-        isRedirectingRef.current = true;
-        router.push(callbackUrl);
+        window.location.href = callbackUrl;
+        return;
       }
     } catch (err: any) {
       setError(err.message || 'Verification failed');
@@ -377,6 +378,34 @@ function LoginForm() {
               <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">User Friendly</p>
               <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Mudah digunakan oleh semua tim</p>
             </div>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Data Terpusat</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Satu dashboard semua router</p>
+            </div>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+              </div>
+              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Secure</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Data aman &amp; terenkripsi</p>
+            </div>
+          </div>
+
+          {/* Feature list */}
+          <div className="space-y-3">
+            {[
+              { color: 'bg-blue-500', text: 'Automated Billing — Isolir otomatis &amp; notifikasi WhatsApp' },
+              { color: 'bg-indigo-500', text: 'Multi-Router — Kelola banyak MikroTik dalam satu server' },
+              { color: 'bg-violet-500', text: 'Payment Gateway — QRIS, Virtual Account, dan Retail' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-700/50">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />
+                <p className="text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: item.text }} />
+              </div>
+            ))}
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
               <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
