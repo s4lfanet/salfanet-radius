@@ -54,13 +54,9 @@ export function CameraViewfinder({ onCapture, onClose }: CameraViewfinderProps) 
           videoRef.current.play().catch(() => {});
         }
       });
-    } catch (err: any) {
-      const msg = err?.name === 'NotAllowedError'
-        ? 'Izin kamera ditolak. Buka pengaturan browser → izinkan akses kamera.'
-        : err?.name === 'NotFoundError'
-          ? 'Kamera tidak ditemukan di perangkat ini.'
-          : `Gagal membuka kamera: ${err?.message || err}`;
-      setError(msg);
+    } catch {
+      // getUserMedia failed — silently fallback to native capture
+      setUseNativeCapture(true);
     }
   }, [stopStream]);
 

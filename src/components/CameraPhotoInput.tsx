@@ -40,7 +40,6 @@ export function CameraPhotoInput({
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [cameraOpen, setCameraOpen] = useState(false);
-  const [cameraError, setCameraError] = useState('');
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
   const captureGps = useCallback(() => {
@@ -87,7 +86,6 @@ export function CameraPhotoInput({
       streamRef.current = null;
     }
     setCameraOpen(false);
-    setCameraError('');
   }, []);
 
   const startCamera = useCallback(async (facing: 'environment' | 'user' = facingMode) => {
@@ -96,7 +94,6 @@ export function CameraPhotoInput({
       captureRef.current?.click();
       return;
     }
-    setCameraError('');
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((t) => t.stop());
@@ -113,13 +110,10 @@ export function CameraPhotoInput({
           videoRef.current.play().catch(() => {});
         }
       });
-    } catch (err: any) {
-      const msg = err?.name === 'NotAllowedError'
-        ? 'Izin kamera ditolak. Buka pengaturan browser → izinkan akses kamera.'
-        : err?.name === 'NotFoundError'
-          ? 'Kamera tidak ditemukan di perangkat ini.'
-          : `Gagal membuka kamera: ${err?.message || err}`;
-      setCameraError(msg);
+    } catch {
+      // getUserMedia failed (permission denied, policy blocked, no camera, etc.)
+      // Silently fallback to native camera via capture="environment"
+      captureRef.current?.click();
     }
   }, [facingMode]);
 
@@ -232,30 +226,6 @@ export function CameraPhotoInput({
             </button>
           </div>
         </div>
-        {hiddenCanvas}
-      </div>
-    );
-  }
-
-  // --- Camera error ---
-  if (cameraError) {
-    return (
-      <div className="space-y-1.5">
-        <div className={`rounded-xl border-2 border-dashed p-3 text-center text-xs ${
-          isDark ? 'border-red-500/40 bg-red-500/10 text-red-400' : 'border-red-300 bg-red-50 text-red-600 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-400'
-        }`}>
-          <p>{cameraError}</p>
-          <div className="flex justify-center gap-2 mt-2">
-            <button type="button" onClick={() => { setCameraError(''); startCamera(); }} className="px-3 py-1 rounded bg-red-500/20 hover:bg-red-500/30 transition-colors">
-              Coba Lagi
-            </button>
-            <button type="button" onClick={() => setCameraError('')} className="px-3 py-1 rounded bg-white/10 hover:bg-white/20 transition-colors">
-              Batal
-            </button>
-          </div>
-        </div>
-        {galleryInput}
-        {captureInput}
         {hiddenCanvas}
       </div>
     );
