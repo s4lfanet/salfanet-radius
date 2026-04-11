@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Camera, ImageIcon } from 'lucide-react';
+import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Camera, ImageIcon, ZoomIn } from 'lucide-react';
 import { formatWIB, formatLocalDate } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
@@ -99,6 +99,7 @@ export default function UserDetailModal({
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
 
   const [uploadingIdCard, setUploadingIdCard] = useState(false);
   const [uploadingInstallation, setUploadingInstallation] = useState(false);
@@ -275,6 +276,7 @@ export default function UserDetailModal({
               { id: 'sessions', label: t('userModal.sessions') },
               { id: 'auth', label: t('userModal.authLogs') },
               { id: 'invoices', label: t('userModal.invoices') },
+              { id: 'photos', label: '📷 Foto' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -887,6 +889,116 @@ export default function UserDetailModal({
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'photos' && (
+            <div className="space-y-6">
+              {/* KTP Section */}
+              <div className="border border-border dark:border-[#bc13fe]/30 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🪪</span>
+                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto KTP</p>
+                  {formData.idCardNumber && (
+                    <span className="ml-auto text-xs text-muted-foreground dark:text-[#e0d0ff]/50 font-mono bg-muted dark:bg-[#0a0520]/60 px-2 py-0.5 rounded">
+                      NIK: {formData.idCardNumber}
+                    </span>
+                  )}
+                </div>
+                {formData.idCardPhoto ? (
+                  <div className="relative group cursor-pointer" onClick={() => setLightboxUrl(formData.idCardPhoto)}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={formData.idCardPhoto}
+                      alt="Foto KTP"
+                      className="w-full max-h-64 object-contain rounded-lg border border-border dark:border-[#bc13fe]/30 bg-black/5 dark:bg-black/30"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-lg">
+                      <div className="flex items-center gap-1.5 text-white text-xs bg-black/60 px-3 py-1.5 rounded-full">
+                        <ZoomIn className="w-3.5 h-3.5" /> Perbesar
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-border dark:border-[#bc13fe]/30 text-muted-foreground dark:text-[#e0d0ff]/40">
+                    <ImageIcon className="w-8 h-8 opacity-30" />
+                    <p className="text-xs">Belum ada foto KTP</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Installation Photos Section */}
+              <div className="border border-border dark:border-[#00f7ff]/20 rounded-xl p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📷</span>
+                  <p className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Foto Instalasi</p>
+                  {formData.installationPhotos.length > 0 && (
+                    <span className="ml-auto text-xs bg-primary/10 dark:bg-[#00f7ff]/10 text-primary dark:text-[#00f7ff] px-2 py-0.5 rounded-full">
+                      {formData.installationPhotos.length} foto
+                    </span>
+                  )}
+                </div>
+                {formData.installationPhotos.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {formData.installationPhotos.map((photo, index) => (
+                      <div
+                        key={index}
+                        className="relative group cursor-pointer"
+                        onClick={() => setLightboxUrl(photo)}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={photo}
+                          alt={`Instalasi ${index + 1}`}
+                          className="w-full aspect-[4/3] object-cover rounded-lg border border-border dark:border-[#00f7ff]/20"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-lg">
+                          <div className="flex items-center gap-1.5 text-white text-xs bg-black/60 px-3 py-1.5 rounded-full">
+                            <ZoomIn className="w-3.5 h-3.5" /> Perbesar
+                          </div>
+                        </div>
+                        <div className="absolute bottom-1 left-1 text-[9px] bg-black/60 text-white px-1.5 py-0.5 rounded">
+                          Foto {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center gap-2 h-32 rounded-lg border-2 border-dashed border-border dark:border-[#00f7ff]/20 text-muted-foreground dark:text-[#e0d0ff]/40">
+                    <Camera className="w-8 h-8 opacity-30" />
+                    <p className="text-xs">Belum ada foto instalasi</p>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-[10px] text-muted-foreground dark:text-[#e0d0ff]/30 text-center">
+                Untuk menambah / menghapus foto, buka tab Info Pengguna
+              </p>
+            </div>
+          )}
+
+          {/* Lightbox */}
+          {lightboxUrl && (
+            <div
+              className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+              onClick={() => setLightboxUrl(null)}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={lightboxUrl}
+                alt="Preview"
+                className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+              <button
+                type="button"
+                onClick={() => setLightboxUrl(null)}
+                className="absolute top-4 right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           )}
         </div>
