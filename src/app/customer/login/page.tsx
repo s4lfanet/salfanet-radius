@@ -144,9 +144,28 @@ export default function CustomerLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+      {/* ── Mobile Brand Header (mobile only) ── */}
+      <div className="lg:hidden bg-gradient-to-br from-sky-500 to-blue-600 px-6 pt-10 pb-8 relative overflow-hidden flex-shrink-0">
+        <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
+        <div className="absolute bottom-[-30px] left-[-30px] w-28 h-28 bg-white/5 rounded-full pointer-events-none" />
+        <div className="relative z-10">
+          <span className="text-xs font-semibold uppercase tracking-widest text-sky-100">Portal Pelanggan</span>
+          <h1 className="text-3xl font-extrabold text-white mt-1 leading-tight">
+            {companyName || 'Salfanet Radius'}
+          </h1>
+          <p className="text-sm text-blue-100/80 mt-2 leading-relaxed">
+            Cek tagihan, bayar online, dan pantau status langganan internet Anda kapan saja.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-4">
+            {['Tagihan Online', 'Bayar Mudah', 'Notifikasi WA'].map(f => (
+              <span key={f} className="text-xs font-medium bg-white/20 text-white px-3 py-1 rounded-full">{f}</span>
+            ))}
+          </div>
+        </div>
+      </div>
       {/* ── Left Panel: Login Form ── */}
-      <div className="flex items-start justify-center w-full lg:w-[420px] min-h-screen bg-white dark:bg-slate-800 shadow-xl dark:shadow-slate-900/50 px-8 pt-14 pb-10 flex-shrink-0 relative">
+      <div className="flex items-start justify-center w-full lg:w-[420px] lg:min-h-screen bg-white dark:bg-slate-800 shadow-xl dark:shadow-slate-900/50 px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0 relative">
 
         {/* Theme Toggle */}
         <button
