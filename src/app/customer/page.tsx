@@ -689,8 +689,8 @@ export default function CustomerDashboard() {
 
       {/* Manual Payment Proof Modal */}
       {manualPayModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-card border border-primary/30 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_0_40px_rgba(188,19,254,0.2)]">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 pb-20 sm:pb-0 px-4 pt-4">
+          <div className="bg-card border border-primary/30 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-[0_0_40px_rgba(188,19,254,0.2)]">
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>

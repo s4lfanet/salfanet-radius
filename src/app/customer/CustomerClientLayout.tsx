@@ -527,7 +527,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 relative z-10 pb-20 lg:pb-6">
+        <main className="flex-1 pb-20 lg:pb-6">
           {children}
         </main>
 
