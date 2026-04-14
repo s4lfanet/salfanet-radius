@@ -1321,17 +1321,33 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
     console.log(`[Invoice Generate] Found ${prepaidUsers.length} PREPAID users (range: H+${invoiceGenerateDays} to H+30)`);  
 
     // ========================================
-    // POSTPAID: tagihan tetap — generate on billingDay each month.
-    // Each POSTPAID user has a billingDay (default 1): invoice is generated on that
-    // day of the month so the due date falls on the next billingDay.
-    // Force mode bypasses the billingDay check (for manual testing).
+    // POSTPAID: tagihan tetap — generate invoiceGenerateDays before billingDay.
+    // Each POSTPAID user has a billingDay (default 1). Invoice is generated
+    // invoiceGenerateDays before that day so customer has time to pay.
+    // Due date = next billingDay occurrence.
+    // Force mode bypasses the date window check (for manual testing).
     // ========================================
-    const todayDay = now.getUTCDate();
-    const postpaidUsers = await prisma.pppoeUser.findMany({
+
+    // Helper: calculate the next billingDay occurrence from today
+    const getNextBillingDay = (bd: number): Date => {
+      const thisMonthLastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).getUTCDate();
+      const day = Math.min(bd, thisMonthLastDay);
+      const thisMonthBD = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), day, 23, 59, 59, 999));
+      if (thisMonthBD.getTime() >= now.getTime()) {
+        return thisMonthBD;
+      }
+      // Next month
+      const nextMonth = now.getUTCMonth() + 1;
+      const nextYear = nextMonth > 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
+      const nm = nextMonth % 12;
+      const nextMonthLastDay = new Date(Date.UTC(nextYear, nm + 1, 0)).getUTCDate();
+      return new Date(Date.UTC(nextYear, nm, Math.min(bd, nextMonthLastDay), 23, 59, 59, 999));
+    };
+
+    const allPostpaidUsers = await prisma.pppoeUser.findMany({
       where: {
         status: { in: eligibleStatuses },
         subscriptionType: 'POSTPAID',
-        ...(force ? {} : { billingDay: todayDay }),
       },
       include: {
         profile: true,
@@ -1340,10 +1356,19 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
       },
     });
 
+    // Filter: only users whose next billingDay is within invoiceGenerateDays
+    const postpaidUsers = force ? allPostpaidUsers : allPostpaidUsers.filter(user => {
+      const bd = user.billingDay ?? 1;
+      const nextBD = getNextBillingDay(bd);
+      const diffMs = nextBD.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffMs / (24 * 60 * 60 * 1000));
+      return diffDays >= 0 && diffDays <= invoiceGenerateDays;
+    });
+
     if (force) {
-      console.log(`[Invoice Generate] Found ${postpaidUsers.length} POSTPAID users (FORCE mode — billingDay check bypassed)`);
+      console.log(`[Invoice Generate] Found ${postpaidUsers.length} POSTPAID users (FORCE mode — date window bypassed)`);
     } else {
-      console.log(`[Invoice Generate] Found ${postpaidUsers.length} POSTPAID users with billingDay=${todayDay}`);
+      console.log(`[Invoice Generate] Found ${postpaidUsers.length}/${allPostpaidUsers.length} POSTPAID users within ${invoiceGenerateDays}-day window`);
     }
 
     // ========================================
@@ -1444,20 +1469,22 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
           }
         }
 
-        // For POSTPAID: also check if there's a PAID invoice in the current billing month
+        // For POSTPAID: check if there's a PAID invoice for the upcoming billingDay period (±5 days tolerance)
         if (user.subscriptionType === 'POSTPAID') {
-          const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-          const monthEnd   = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999));
-          const paidThisMonth = await prisma.invoice.findFirst({
+          const bd = user.billingDay ?? 1;
+          const nextBD = getNextBillingDay(bd);
+          const bdStart = new Date(nextBD.getTime() - 5 * 24 * 60 * 60 * 1000);
+          const bdEnd   = new Date(nextBD.getTime() + 5 * 24 * 60 * 60 * 1000);
+          const paidForBillingDay = await prisma.invoice.findFirst({
             where: {
               userId: user.id,
               status: 'PAID',
-              createdAt: { gte: monthStart, lte: monthEnd },
+              dueDate: { gte: bdStart, lte: bdEnd },
             },
           });
-          if (paidThisMonth) {
+          if (paidForBillingDay) {
             skipped++;
-            console.log(`⏭️  Skipped ${user.username} - Already has PAID invoice this month (${paidThisMonth.invoiceNumber})`);
+            console.log(`⏭️  Skipped ${user.username} - Already has PAID invoice for billingDay ${nextBD.toISOString().slice(0, 10)} (${paidForBillingDay.invoiceNumber})`);
             continue;
           }
         }
@@ -1523,20 +1550,10 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
           dueDate = user.expiredAt;
           invoiceType = 'RENEWAL';
         } else {
-          // POSTPAID: Due date = billingDay bulan berikutnya
+          // POSTPAID: Due date = next billingDay (always from billingDay, never from expiredAt)
           invoiceType = 'MONTHLY';
-          if (user.expiredAt) {
-            dueDate = user.expiredAt;
-          } else {
-            // expiredAt not set — calculate next billing date from billingDay
-            const bd = user.billingDay ?? 1;
-            const nm = now.getUTCMonth() + 1; // 0-indexed next month
-            const ny = nm > 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
-            const normalizedMonth = nm % 12;
-            const lastDay = new Date(Date.UTC(ny, normalizedMonth + 1, 0)).getUTCDate();
-            dueDate = new Date(Date.UTC(ny, normalizedMonth, Math.min(bd, lastDay), 23, 59, 59, 999));
-            console.log(`[Invoice Generate] POSTPAID ${user.username}: no expiredAt, calculated dueDate=${dueDate.toISOString().slice(0, 10)}`);
-          }
+          const bd = user.billingDay ?? 1;
+          dueDate = getNextBillingDay(bd);
         }
 
         // Generate invoice number
