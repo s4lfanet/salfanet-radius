@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote, RefreshCw } from 'lucide-react';
+import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote, RefreshCw, Upload } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 
 // Force dynamic rendering
@@ -675,3 +675,52 @@ export default function CustomerDashboard() {
           )}
         </CyberCard>
       </div>
+
+      {/* Manual Payment Proof Modal */}
+      {manualPayModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-card border border-primary/30 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-[0_0_40px_rgba(188,19,254,0.2)]">
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-white">Kirim Bukti Transfer</h3>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">{manualPayModal.invoiceNumber} — {formatCurrency(manualPayModal.amount)}</p>
+                </div>
+                <button onClick={() => setManualPayModal(null)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50">
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-white mb-1.5 block">Nama Bank / Metode Transfer *</label>
+                  <input type="text" placeholder="Contoh: BCA, BNI, Mandiri, GoPay..." value={manualForm.bankName} onChange={e => setManualForm(f => ({ ...f, bankName: e.target.value }))} className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-primary/60" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-white mb-1.5 block">Nama Pengirim *</label>
+                  <input type="text" placeholder="Nama sesuai rekening" value={manualForm.accountName} onChange={e => setManualForm(f => ({ ...f, accountName: e.target.value }))} className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-primary/60" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-white mb-1.5 block">Catatan <span className="text-muted-foreground font-normal">(opsional)</span></label>
+                  <textarea placeholder="Catatan tambahan..." value={manualForm.notes} onChange={e => setManualForm(f => ({ ...f, notes: e.target.value }))} rows={2} className="w-full px-3 py-2 bg-muted/20 border border-border/50 rounded-lg text-xs text-white placeholder-muted-foreground focus:outline-none focus:border-primary/60 resize-none" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-white mb-1.5 block">Bukti Transfer *</label>
+                  <input type="file" accept="image/*" onChange={e => setManualForm(f => ({ ...f, file: e.target.files?.[0] ?? null }))} className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 cursor-pointer" />
+                  {manualForm.file && <p className="text-[10px] text-success mt-1">✓ {manualForm.file.name}</p>}
+                </div>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <button onClick={() => { setManualPayModal(null); setManualForm({ bankName: '', accountName: '', notes: '', file: null }); }} className="flex-1 py-2.5 bg-muted/20 hover:bg-muted/30 border border-border/50 rounded-lg text-xs font-bold text-muted-foreground transition-colors">
+                  Batal
+                </button>
+                <button onClick={handleSubmitManual} disabled={submittingManual || !manualForm.bankName.trim() || !manualForm.accountName.trim() || !manualForm.file} className="flex-1 py-2.5 bg-primary/20 hover:bg-primary/30 border border-primary/40 rounded-lg text-xs font-bold text-primary transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5">
+                  {submittingManual ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Mengirim...</> : <><Upload className="w-3.5 h-3.5" />Kirim Bukti</>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
