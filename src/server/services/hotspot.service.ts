@@ -374,13 +374,11 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
       }
     }
 
-    // RADIUS cleanup
+    // RADIUS cleanup - fire and forget so DB delete is not blocked
     for (const v of vouchersToDelete) {
-      try {
-        await removeVoucherFromRadius(v.code);
-      } catch (err) {
+      removeVoucherFromRadius(v.code).catch(err => {
         console.error(`Failed to remove ${v.code} from RADIUS:`, err);
-      }
+      });
     }
 
     return { count: result.count };
@@ -413,12 +411,10 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
       }
     }
 
-    // RADIUS cleanup
-    try {
-      await removeVoucherFromRadius(voucher.code);
-    } catch (err) {
+    // RADIUS cleanup - fire and forget so DB delete is not blocked
+    removeVoucherFromRadius(voucher.code).catch(err => {
       console.error('Failed to remove from RADIUS:', err);
-    }
+    });
 
     return { count: 1 };
   }

@@ -46,12 +46,10 @@ export async function DELETE(
       }
     }
 
-    // Remove from RADIUS
-    try {
-      await removeVoucherFromRadius(voucher.code)
-    } catch (error) {
+    // Remove from RADIUS - fire and forget so DB delete is not blocked
+    removeVoucherFromRadius(voucher.code).catch(error => {
       console.error('Failed to remove from RADIUS:', error)
-    }
+    })
 
     return NextResponse.json({ message: 'Voucher deleted successfully' })
   } catch (error) {

@@ -253,8 +253,6 @@ export default function HotspotVoucherPage() {
 
   const handleDeleteBatch = async () => {
     if (!deleteBatchCode) return;
-    const confirmed = await showConfirm(t('hotspot.deleteUnusedFromBatch').replace('{batch}', deleteBatchCode));
-    if (!confirmed) { setDeleteBatchCode(null); return; }
     const label = `Batch: ${deleteBatchCode}`;
     setDeleteOverlay({ open: true, phase: 'deleting', count: 0, label, errorMsg: '' });
     try {
