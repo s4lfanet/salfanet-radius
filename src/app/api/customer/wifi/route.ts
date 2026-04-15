@@ -63,11 +63,12 @@ export async function GET(request: NextRequest) {
     const authHeader = Buffer.from(`${username}:${password}`).toString('base64');
 
     // Fetch ALL devices and find by PPPoE username (same approach as admin API)
+    // NOTE: timeout covers both connection AND body reading (clearTimeout is after response.json())
     const ctrl1 = new AbortController();
-    const t1 = setTimeout(() => ctrl1.abort(), 5000);
-    let response: Response;
+    const t1 = setTimeout(() => ctrl1.abort(), 10000);
+    let allDevices: any[];
     try {
-      response = await fetch(`${host}/devices`, {
+      const response = await fetch(`${host}/devices`, {
         method: 'GET',
         headers: {
           'Authorization': `Basic ${authHeader}`,
@@ -75,18 +76,19 @@ export async function GET(request: NextRequest) {
         },
         signal: ctrl1.signal,
       });
+
+      if (!response.ok) {
+        clearTimeout(t1);
+        return NextResponse.json(
+          { success: false, error: 'GenieACS API error' },
+          { status: response.status }
+        );
+      }
+
+      allDevices = await response.json();
     } finally {
       clearTimeout(t1);
     }
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { success: false, error: 'GenieACS API error' },
-        { status: response.status }
-      );
-    }
-
-    const allDevices = await response.json();
 
     // Find device by PPPoE username using multiple paths (same as admin API)
     const pppUsernamePaths = [

@@ -315,6 +315,7 @@ export default function CustomerDashboard() {
     try {
       // Load WiFi data for device info and connected devices
       const wifiRes = await fetch('/api/customer/wifi', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!wifiRes.ok) return; // server error (e.g. 502 during restart) — skip silently
       const wifiData = await wifiRes.json();
       if (wifiData.success && wifiData.device) {
         setOntDevice(wifiData.device);
@@ -323,7 +324,7 @@ export default function CustomerDashboard() {
         // GenieACS not set up — silently skip, no device info available
       }
     } catch (error) { 
-      console.error('[Customer Dashboard] Load device error:', error); 
+      // Silently ignore — WiFi info is non-critical for dashboard
     }
     finally { setLoadingOnt(false); }
   };

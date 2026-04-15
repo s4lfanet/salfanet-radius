@@ -84,6 +84,11 @@ export default function CustomerWiFiPage() {
       const res = await fetch('/api/customer/wifi', {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) {
+        setNoDevice(true);
+        setDevice(null);
+        return;
+      }
       const data = await res.json();
 
       if (!data.success) {
@@ -194,6 +199,7 @@ export default function CustomerWiFiPage() {
         }),
       });
 
+      if (!res.ok) throw new Error(`Server error ${res.status}`);
       const data = await res.json();
 
       if (data.success) {
