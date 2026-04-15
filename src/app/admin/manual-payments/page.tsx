@@ -688,7 +688,7 @@ export default function ManualPaymentsPage() {
                   <div className="mt-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={`/api/uploads/payment-proofs/${selectedPayment.receiptImage}`}
+                      src={selectedPayment.receiptImage}
                       alt={t('manualPayment.transferReceipt')}
                       className="max-w-full h-auto rounded-lg border-2 border-accent/30 shadow-[0_0_20px_rgba(0,247,255,0.2)]"
                     />
