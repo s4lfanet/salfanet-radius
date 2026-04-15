@@ -262,6 +262,8 @@ unset npm_lifecycle_event npm_lifecycle_script npm_package_name npm_package_vers
 unset npm_config_cache npm_config_prefix NODE_APP_INSTANCE
 # Do NOT inherit NODE_OPTIONS from parent process (server may have different flags)
 unset NODE_OPTIONS
+# Allocate 2GB for Next.js build to prevent OOM crash on low-memory VPS
+export NODE_OPTIONS="--max-old-space-size=2048"
 
 npm run build > /tmp/salfanet-next-build.log 2>&1
 BUILD_EXIT=$?
