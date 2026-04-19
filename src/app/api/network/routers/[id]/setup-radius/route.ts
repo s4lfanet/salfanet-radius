@@ -151,10 +151,6 @@ ${gatewayFirewallRule}
     up-script="/log info message=\\"SALFANET: RADIUS server ${radiusServerIp} kembali online\\"" \
     comment="SALFANET RADIUS Monitor"
 
-# PPP keepalive — deteksi sesi putus dalam ~30 detik (10s interval x 3 failure)
-# Ini mencegah sesi zombie di RADIUS saat PPPoE client disconnect tiba-tiba
-/ppp profile set salfanetradius lcp-echo-interval=10 lcp-echo-failure=3
-
 # L2TP keepalive (untuk VPN tunnel ke VPS — uncomment jika pakai L2TP)
 # /interface l2tp-client set [find] keepalive-timeout=30
 # /interface l2tp-client set [find] dial-on-demand=no
