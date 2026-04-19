@@ -263,13 +263,27 @@ export default function PPPoEProfilesPage() {
     finally { setSyncingRadiusId(null); }
   };
 
-  const handleSyncMikrotik = (profile: PPPoEProfile) => {
+  const [loadingRouters, setLoadingRouters] = useState(false);
+
+  const handleSyncMikrotik = async (profile: PPPoEProfile) => {
     setSyncMikrotikTarget(profile);
-    setSelectedRouterIds(routers.map(r => r.id));
     setSyncIpPoolName(profile.ipPoolName || '');
     setSyncLocalAddress(profile.localAddress || '');
     setSyncPoolRanges('');
     setSyncLockedRouter(false);
+    // Always reload router list fresh when opening the modal
+    setLoadingRouters(true);
+    try {
+      const res = await fetch('/api/pppoe/profiles/sync-mikrotik');
+      const data = await res.json();
+      const freshRouters: RouterOption[] = data.routers || [];
+      setRouters(freshRouters);
+      setSelectedRouterIds(freshRouters.map(r => r.id));
+    } catch {
+      setSelectedRouterIds(routers.map(r => r.id));
+    } finally {
+      setLoadingRouters(false);
+    }
   };
 
   const handleConfirmSyncMikrotik = async () => {
@@ -1091,7 +1105,13 @@ export default function PPPoEProfilesPage() {
           </ModalHeader>
           <ModalBody>
             {/* Router checkboxes */}
-            {routers.length === 0
+            {loadingRouters
+              ? (
+                <div className="text-center py-6 text-sm text-muted-foreground flex items-center justify-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />Memuat router...
+                </div>
+              )
+              : routers.length === 0
               ? (
                 <div className="text-center py-6 text-sm text-muted-foreground">
                   Tidak ada router aktif yang tersedia.
