@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw } from "lucide-react"
+import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight } from "lucide-react"
 import { useTranslation } from '@/hooks/useTranslation'
 import { showSuccess, showError } from '@/lib/sweetalert'
 import {
@@ -44,12 +44,23 @@ export default function HotspotProfilePage() {
   const [editingProfile, setEditingProfile] = useState<HotspotProfile | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleteProfileId, setDeleteProfileId] = useState<string | null>(null)
+  const [showBurst, setShowBurst] = useState(false)
 
   const [formData, setFormData] = useState({
     name: "",
     costPrice: "",
     resellerFee: "0",
-    speed: "",
+    speedDownload: "5",
+    speedUpload: "5",
+    speedUnit: "Mbps" as "Mbps" | "Kbps",
+    burstDownload: "",
+    burstUpload: "",
+    burstThresholdDownload: "",
+    burstThresholdUpload: "",
+    burstTime: "8",
+    priority: "8",
+    limitAtDownload: "",
+    limitAtUpload: "",
     groupProfile: "salfanetradius",
     sharedUsers: "1",
     validityValue: "",
@@ -78,12 +89,43 @@ export default function HotspotProfilePage() {
     }
   }
 
+  const buildHotspotSpeed = () => {
+    const dl = formData.speedDownload || '0';
+    const ul = formData.speedUpload || '0';
+    const unit = formData.speedUnit === 'Mbps' ? 'M' : 'k';
+    if (showBurst && (formData.burstDownload || formData.burstUpload)) {
+      const bDl = formData.burstDownload || dl;
+      const bUl = formData.burstUpload || ul;
+      const tDl = formData.burstThresholdDownload || dl;
+      const tUl = formData.burstThresholdUpload || ul;
+      const bt = formData.burstTime || '8';
+      if (formData.limitAtDownload || formData.limitAtUpload) {
+        const prio = formData.priority || '8';
+        const laDl = formData.limitAtDownload || '0';
+        const laUl = formData.limitAtUpload || '0';
+        return `${dl}${unit}/${ul}${unit} ${bDl}${unit}/${bUl}${unit} ${tDl}${unit}/${tUl}${unit} ${bt} ${prio} ${laDl}${unit}/${laUl}${unit}`;
+      }
+      return `${dl}${unit}/${ul}${unit} ${bDl}${unit}/${bUl}${unit} ${tDl}${unit}/${tUl}${unit} ${bt}`;
+    }
+    return `${dl}${unit}/${ul}${unit}`;
+  }
+
   const resetForm = () => {
     setFormData({
       name: "",
       costPrice: "",
       resellerFee: "0",
-      speed: "",
+      speedDownload: "5",
+      speedUpload: "5",
+      speedUnit: "Mbps",
+      burstDownload: "",
+      burstUpload: "",
+      burstThresholdDownload: "",
+      burstThresholdUpload: "",
+      burstTime: "8",
+      priority: "8",
+      limitAtDownload: "",
+      limitAtUpload: "",
       groupProfile: "salfanetradius",
       sharedUsers: "1",
       validityValue: "",
@@ -95,6 +137,7 @@ export default function HotspotProfilePage() {
       agentAccess: true,
       eVoucherAccess: true,
     })
+    setShowBurst(false)
     setEditingProfile(null)
   }
 
@@ -115,11 +158,52 @@ export default function HotspotProfilePage() {
       }
     }
 
+    // Parse speed string back into builder fields
+    let speedDownload = '5', speedUpload = '5', speedUnit: 'Mbps' | 'Kbps' = 'Mbps';
+    let burstDl = '', burstUl = '', thDl = '', thUl = '', burstT = '8', prio = '8', laDl = '', laUl = '';
+    let hasBurst = false;
+    if (profile.speed) {
+      const parts = profile.speed.trim().split(/\s+/);
+      const mainPart = parts[0]?.split('/') || [];
+      const rawDl = mainPart[0] || '5M';
+      const rawUl = mainPart[1] || rawDl;
+      speedUnit = rawDl.toLowerCase().endsWith('k') ? 'Kbps' : 'Mbps';
+      speedDownload = rawDl.replace(/[^0-9.]/g, '') || '5';
+      speedUpload = rawUl.replace(/[^0-9.]/g, '') || '5';
+      if (parts.length >= 3) {
+        hasBurst = true;
+        const bPart = parts[1]?.split('/') || [];
+        const tPart = parts[2]?.split('/') || [];
+        burstDl = bPart[0]?.replace(/[^0-9.]/g, '') || '';
+        burstUl = bPart[1]?.replace(/[^0-9.]/g, '') || '';
+        thDl = tPart[0]?.replace(/[^0-9.]/g, '') || '';
+        thUl = tPart[1]?.replace(/[^0-9.]/g, '') || '';
+        burstT = parts[3]?.replace(/[^0-9]/g, '') || '8';
+        if (parts.length >= 5) prio = parts[4]?.replace(/[^0-9]/g, '') || '8';
+        if (parts.length >= 6) {
+          const laPart = parts[5]?.split('/') || [];
+          laDl = laPart[0]?.replace(/[^0-9.]/g, '') || '';
+          laUl = laPart[1]?.replace(/[^0-9.]/g, '') || '';
+        }
+      }
+    }
+    setShowBurst(hasBurst);
+
     setFormData({
       name: profile.name,
       costPrice: profile.costPrice.toString(),
       resellerFee: profile.resellerFee.toString(),
-      speed: profile.speed,
+      speedDownload,
+      speedUpload,
+      speedUnit,
+      burstDownload: burstDl,
+      burstUpload: burstUl,
+      burstThresholdDownload: thDl,
+      burstThresholdUpload: thUl,
+      burstTime: burstT,
+      priority: prio,
+      limitAtDownload: laDl,
+      limitAtUpload: laUl,
       groupProfile: profile.groupProfile || "",
       sharedUsers: profile.sharedUsers.toString(),
       validityValue: profile.validityValue.toString(),
@@ -158,7 +242,17 @@ export default function HotspotProfilePage() {
       const method = editingProfile ? 'PUT' : 'POST'
       const body = {
         ...(editingProfile ? { id: editingProfile.id } : {}),
-        ...formData,
+        name: formData.name,
+        costPrice: formData.costPrice,
+        resellerFee: formData.resellerFee,
+        speed: buildHotspotSpeed(),
+        groupProfile: formData.groupProfile,
+        sharedUsers: formData.sharedUsers,
+        validityValue: formData.validityValue,
+        validityUnit: formData.validityUnit,
+        usageDurationUnit: formData.usageDurationUnit,
+        agentAccess: formData.agentAccess,
+        eVoucherAccess: formData.eVoucherAccess,
         usageQuota: usageQuotaBytes,
         usageDuration: usageDurationMinutes,
       }
@@ -504,11 +598,98 @@ export default function HotspotProfilePage() {
                 </div>
                 {/* Kolom Kanan */}
                 <div className="space-y-3">
-                  <div>
-                    <ModalLabel required>{t('hotspot.rateLimitMikrotik')}</ModalLabel>
-                    <ModalInput value={formData.speed} onChange={(e) => setFormData({ ...formData, speed: e.target.value })} placeholder="1M/1500k 0/0 0/0 8 0/0" required className="font-mono" />
-                    <p className="text-[9px] text-muted-foreground mt-1">Format: rx-rate[/tx-rate] [rx-burst-rate[/tx-burst-rate]]</p>
-                    <p className="text-[9px] text-[#00f7ff] mt-0.5">Contoh: 1M/1500k 0/0 0/0 8 0/0 atau 5M/5M (simple)</p>
+                  {/* Kecepatan Builder */}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <ModalLabel className="mb-0" required>Kecepatan</ModalLabel>
+                        <div className="flex rounded overflow-hidden border border-border text-[10px]">
+                          {(['Mbps', 'Kbps'] as const).map(u => (
+                            <button key={u} type="button" onClick={() => setFormData({ ...formData, speedUnit: u })}
+                              className={`px-3 py-1 transition-colors ${formData.speedUnit === u ? 'bg-primary text-white' : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
+                              {u}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <ModalLabel required>Download ({formData.speedUnit})</ModalLabel>
+                          <ModalInput type="number" min="1" value={formData.speedDownload} onChange={(e) => setFormData({ ...formData, speedDownload: e.target.value })} required />
+                        </div>
+                        <div>
+                          <ModalLabel required>Upload ({formData.speedUnit})</ModalLabel>
+                          <ModalInput type="number" min="1" value={formData.speedUpload} onChange={(e) => setFormData({ ...formData, speedUpload: e.target.value })} required />
+                        </div>
+                      </div>
+                      <div className="mt-1.5 px-2 py-1.5 bg-muted/30 rounded text-[10px] font-mono text-[#00f7ff]">
+                        Rate Limit: {buildHotspotSpeed()}
+                      </div>
+                    </div>
+                    {/* Burst Section */}
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <button type="button" onClick={() => setShowBurst(!showBurst)}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-xs font-medium hover:bg-muted/50 transition-colors text-left">
+                        {showBurst ? <ChevronDown className="h-3.5 w-3.5 text-[#00f7ff]" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                        <span>Burst + Priority + Limit-at</span>
+                        <span className="text-[10px] font-normal text-muted-foreground ml-1">opsional</span>
+                      </button>
+                      {showBurst && (
+                        <div className="px-4 pb-4 space-y-3 border-t border-border bg-muted/20">
+                          <p className="text-[10px] text-muted-foreground pt-3">
+                            Burst memberi kecepatan lebih tinggi sementara. Aktif saat trafik rata-rata di bawah <strong>threshold</strong> selama <strong>burst time</strong> detik.
+                          </p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <ModalLabel>Burst Download ({formData.speedUnit})</ModalLabel>
+                              <ModalInput type="number" min="0" value={formData.burstDownload} onChange={(e) => setFormData({ ...formData, burstDownload: e.target.value })} placeholder={formData.speedDownload ? String(parseInt(formData.speedDownload) * 2) : '10'} />
+                            </div>
+                            <div>
+                              <ModalLabel>Burst Upload ({formData.speedUnit})</ModalLabel>
+                              <ModalInput type="number" min="0" value={formData.burstUpload} onChange={(e) => setFormData({ ...formData, burstUpload: e.target.value })} placeholder={formData.speedUpload ? String(parseInt(formData.speedUpload) * 2) : '10'} />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <ModalLabel>Threshold Download ({formData.speedUnit})</ModalLabel>
+                              <ModalInput type="number" min="0" value={formData.burstThresholdDownload} onChange={(e) => setFormData({ ...formData, burstThresholdDownload: e.target.value })} placeholder={formData.speedDownload ? String(Math.round(parseInt(formData.speedDownload) * 0.8)) : '4'} />
+                              <p className="text-[9px] text-muted-foreground mt-0.5">Kosong = pakai kecepatan normal</p>
+                            </div>
+                            <div>
+                              <ModalLabel>Threshold Upload ({formData.speedUnit})</ModalLabel>
+                              <ModalInput type="number" min="0" value={formData.burstThresholdUpload} onChange={(e) => setFormData({ ...formData, burstThresholdUpload: e.target.value })} placeholder={formData.speedUpload ? String(Math.round(parseInt(formData.speedUpload) * 0.8)) : '4'} />
+                              <p className="text-[9px] text-muted-foreground mt-0.5">Kosong = pakai kecepatan normal</p>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <ModalLabel>Burst Time (detik)</ModalLabel>
+                              <ModalInput type="number" min="1" value={formData.burstTime} onChange={(e) => setFormData({ ...formData, burstTime: e.target.value })} />
+                              <p className="text-[9px] text-muted-foreground mt-0.5">Durasi pengukuran rata-rata (umumnya 8s)</p>
+                            </div>
+                            <div>
+                              <ModalLabel>Priority (1-8)</ModalLabel>
+                              <ModalInput type="number" min="1" max="8" value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: e.target.value })} />
+                              <p className="text-[9px] text-muted-foreground mt-0.5">1=tertinggi, 8=terendah (default 8)</p>
+                            </div>
+                          </div>
+                          <div>
+                            <ModalLabel>Limit-at / Minimum Guarantee ({formData.speedUnit})</ModalLabel>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <ModalInput type="number" min="0" value={formData.limitAtDownload} onChange={(e) => setFormData({ ...formData, limitAtDownload: e.target.value })} placeholder="0" />
+                                <p className="text-[9px] text-muted-foreground mt-0.5">↓ Download minimum</p>
+                              </div>
+                              <div>
+                                <ModalInput type="number" min="0" value={formData.limitAtUpload} onChange={(e) => setFormData({ ...formData, limitAtUpload: e.target.value })} placeholder="0" />
+                                <p className="text-[9px] text-muted-foreground mt-0.5">↑ Upload minimum</p>
+                              </div>
+                            </div>
+                            <p className="text-[9px] text-muted-foreground mt-1">Kecepatan minimum yang selalu dijamin meski jaringan penuh (kosong = tidak dijamin)</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="border border-[#00f7ff]/30 rounded-lg p-3 bg-[#00f7ff]/5">
                     <div className="text-[10px] font-medium text-[#00f7ff] mb-2">⏱️ Pembatasan Penggunaan</div>

@@ -44,6 +44,7 @@ const defaultForm = {
   downloadSpeed: '10', uploadSpeed: '10', speedUnit: 'Mbps' as UnitType,
   burstDownload: '', burstUpload: '',
   burstThresholdDownload: '', burstThresholdUpload: '', burstTime: '8',
+  priority: '8', limitAtDownload: '', limitAtUpload: '',
   groupName: '', validityValue: '1', validityUnit: 'MONTHS' as 'DAYS' | 'MONTHS',
   sharedUser: true, isActive: true,
 };
@@ -118,6 +119,12 @@ export default function PPPoEProfilesPage() {
       const tDl = data.burstThresholdDownload || dl;
       const tUl = data.burstThresholdUpload || ul;
       const bt = data.burstTime || '8';
+      if (data.limitAtDownload || data.limitAtUpload) {
+        const prio = data.priority || '8';
+        const laDl = data.limitAtDownload || '0';
+        const laUl = data.limitAtUpload || '0';
+        return `${dl}${unit}/${ul}${unit} ${bDl}${unit}/${bUl}${unit} ${tDl}${unit}/${tUl}${unit} ${bt} ${prio} ${laDl}${unit}/${laUl}${unit}`;
+      }
       return `${dl}${unit}/${ul}${unit} ${bDl}${unit}/${bUl}${unit} ${tDl}${unit}/${tUl}${unit} ${bt}`;
     }
     return `${dl}${unit}/${ul}${unit}`;
@@ -189,7 +196,7 @@ export default function PPPoEProfilesPage() {
 
   const handleEdit = (profile: PPPoEProfile) => {
     setEditingProfile(profile);
-    let burstDl = '', burstUl = '', thDl = '', thUl = '', burstT = '8';
+    let burstDl = '', burstUl = '', thDl = '', thUl = '', burstT = '8', prio = '8', laDl = '', laUl = '';
     let hasBurst = false;
     if (profile.rateLimit) {
       const parts = profile.rateLimit.trim().split(/\s+/);
@@ -202,6 +209,12 @@ export default function PPPoEProfilesPage() {
         thDl = tPart[0]?.replace(/[^0-9.]/g, '') || '';
         thUl = tPart[1]?.replace(/[^0-9.]/g, '') || '';
         burstT = parts[3]?.replace(/[^0-9]/g, '') || '8';
+        if (parts.length >= 5) prio = parts[4]?.replace(/[^0-9]/g, '') || '8';
+        if (parts.length >= 6) {
+          const laPart = parts[5]?.split('/') || [];
+          laDl = laPart[0]?.replace(/[^0-9.]/g, '') || '';
+          laUl = laPart[1]?.replace(/[^0-9.]/g, '') || '';
+        }
       }
     }
     setShowBurst(hasBurst);
@@ -211,6 +224,7 @@ export default function PPPoEProfilesPage() {
       downloadSpeed: profile.downloadSpeed.toString(), uploadSpeed: profile.uploadSpeed.toString(), speedUnit: 'Mbps',
       burstDownload: burstDl, burstUpload: burstUl,
       burstThresholdDownload: thDl, burstThresholdUpload: thUl, burstTime: burstT,
+      priority: prio, limitAtDownload: laDl, limitAtUpload: laUl,
       groupName: profile.groupName, validityValue: profile.validityValue.toString(), validityUnit: profile.validityUnit,
       sharedUser: profile.sharedUser, isActive: profile.isActive,
       ppnRate: profile.ppnRate?.toString() || '11',
@@ -802,10 +816,31 @@ export default function PPPoEProfilesPage() {
                         <p className="text-[9px] text-muted-foreground mt-0.5">Kosong = pakai kecepatan normal</p>
                       </div>
                     </div>
-                    <div className="w-1/2 pr-1.5">
-                      <ModalLabel>Burst Time (detik)</ModalLabel>
-                      <ModalInput type="number" min="1" value={formData.burstTime} onChange={(e) => setFormData({ ...formData, burstTime: e.target.value })} />
-                      <p className="text-[9px] text-muted-foreground mt-0.5">Durasi pengukuran rata-rata (umumnya 8 detik)</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <ModalLabel>Burst Time (detik)</ModalLabel>
+                        <ModalInput type="number" min="1" value={formData.burstTime} onChange={(e) => setFormData({ ...formData, burstTime: e.target.value })} />
+                        <p className="text-[9px] text-muted-foreground mt-0.5">Durasi pengukuran rata-rata (umumnya 8 detik)</p>
+                      </div>
+                      <div>
+                        <ModalLabel>Priority (1-8)</ModalLabel>
+                        <ModalInput type="number" min="1" max="8" value={formData.priority} onChange={(e) => setFormData({ ...formData, priority: e.target.value })} />
+                        <p className="text-[9px] text-muted-foreground mt-0.5">1=tertinggi, 8=terendah (default 8)</p>
+                      </div>
+                    </div>
+                    <div>
+                      <ModalLabel>Limit-at / Minimum Guarantee ({formData.speedUnit})</ModalLabel>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <ModalInput type="number" min="0" value={formData.limitAtDownload} onChange={(e) => setFormData({ ...formData, limitAtDownload: e.target.value })} placeholder="0" />
+                          <p className="text-[9px] text-muted-foreground mt-0.5">↓ Download minimum</p>
+                        </div>
+                        <div>
+                          <ModalInput type="number" min="0" value={formData.limitAtUpload} onChange={(e) => setFormData({ ...formData, limitAtUpload: e.target.value })} placeholder="0" />
+                          <p className="text-[9px] text-muted-foreground mt-0.5">↑ Upload minimum</p>
+                        </div>
+                      </div>
+                      <p className="text-[9px] text-muted-foreground mt-1">Kecepatan minimum yang selalu dijamin meski jaringan penuh (kosong = tidak dijamin)</p>
                     </div>
                   </div>
                 )}
