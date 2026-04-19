@@ -53,6 +53,11 @@ export async function POST(
 
       // src-address = VPN IP of this NAS router so FreeRADIUS can match nasname
       nasSrcAddress = router.vpnClient.vpnIp || '';
+    } else {
+      // Non-VPN (direct/public IP): src-address = nasname (IP registered in FreeRADIUS)
+      // PENTING: Tanpa src-address, MikroTik memilih source IP otomatis dari routing table
+      // yang mungkin berbeda dari nasname → FreeRADIUS menolak ("unknown client")
+      nasSrcAddress = router.nasname;
     }
 
     // Get RADIUS config from router record
@@ -63,11 +68,11 @@ export async function POST(
 
     const comment = 'SALFANET RADIUS - Auto Setup';
 
-    // src-address line for /radius add (only when using VPN)
+    // src-address selalu di-set (VPN maupun non-VPN) agar FreeRADIUS bisa match nasname
     const srcAddressParam = nasSrcAddress ? ` src-address=${nasSrcAddress}` : '';
-    const srcAddressNote = nasSrcAddress
+    const srcAddressNote = router.vpnClientId
       ? `# NOTE: src-address=${nasSrcAddress} (VPN IP) wajib diisi agar FreeRADIUS mengenali NAS ini`
-      : `# NOTE: Pastikan IP router ${router.nasname} sudah didaftarkan di FreeRADIUS NAS table`;
+      : `# NOTE: src-address=${nasSrcAddress} wajib diisi agar RADIUS request dikirim dari IP yang terdaftar di FreeRADIUS`;
 
     // Derive VPN gateway IP from RADIUS server IP (e.g. 10.20.30.10 → 10.20.30.1)
     // Needed because CoA packets from VPS may be masqueraded through VPN gateway
