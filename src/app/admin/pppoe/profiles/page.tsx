@@ -498,7 +498,7 @@ export default function PPPoEProfilesPage() {
                   <div><span className="text-muted-foreground">{t('pppoe.groupLabel')}:</span><p className="font-mono font-medium">{profile.groupName}</p></div>
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
-                  <button onClick={() => handleSyncMikrotik(profile)} disabled={routers.length === 0} className="p-2 text-purple-400 hover:bg-purple-400/10 rounded disabled:opacity-40" title="Sync ke MikroTik"><Wifi className="h-3.5 w-3.5" /></button>
+                  <button onClick={() => handleSyncMikrotik(profile)} disabled={syncingMikrotikId === profile.id} className="p-2 text-purple-400 hover:bg-purple-400/10 rounded disabled:opacity-40" title="Sync ke MikroTik"><Wifi className="h-3.5 w-3.5" /></button>
                   <button onClick={() => handleEdit(profile)} className="p-2 text-muted-foreground hover:bg-muted rounded" title="Edit"><Pencil className="h-3.5 w-3.5" /></button>
                   <button onClick={() => setDeleteProfileId(profile.id)} className="p-2 text-destructive hover:bg-destructive/10 rounded" title="Hapus"><Trash2 className="h-3.5 w-3.5" /></button>
                 </div>
@@ -618,7 +618,7 @@ export default function PPPoEProfilesPage() {
                           <button
                             title="Sync ke MikroTik"
                             onClick={() => handleSyncMikrotik(profile)}
-                            disabled={syncingMikrotikId === profile.id || routers.length === 0}
+                            disabled={syncingMikrotikId === profile.id}
                             className="p-1.5 text-muted-foreground hover:text-purple-400 hover:bg-purple-400/10 rounded transition-colors disabled:opacity-40"
                           >{syncingMikrotikId === profile.id ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Wifi className="h-3.5 w-3.5" />}</button>
                           <button
