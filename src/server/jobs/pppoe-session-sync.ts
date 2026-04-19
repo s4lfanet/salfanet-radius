@@ -46,9 +46,9 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
   let closed = 0;
 
   try {
-    // 1. Close stale sessions — no Accounting-Update in over 1 hour
-    //    This means the NAS stopped sending updates (session likely ended,
-    //    but Accounting-Stop packet was lost due to restart/network issue)
+    // 1. Close stale sessions — no Accounting-Update in over 30 minutes
+    //    Acct-Interim-Interval = 300s (5 min), so 30 min = 6 missed intervals.
+    //    This gives enough window for VPN to reconnect without closing active sessions.
     const staleResult = await prisma.$executeRaw`
       UPDATE radacct
       SET acctstoptime = NOW(),
@@ -56,11 +56,11 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
           acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, NOW())
       WHERE acctstoptime IS NULL
         AND acctupdatetime IS NOT NULL
-        AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 1 HOUR)
+        AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
     `;
     closed += Number(staleResult);
     if (staleResult > 0) {
-      console.log(`[PPPoE-Sync] 🔴 Closed ${staleResult} stale session(s) (no update >1h)`);
+      console.log(`[PPPoE-Sync] 🔴 Closed ${staleResult} stale session(s) (no update >30m)`);
     }
 
     // 2. Close sessions for users that are blocked/stop/deleted in pppoe_users
