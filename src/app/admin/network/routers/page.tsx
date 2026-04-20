@@ -311,8 +311,7 @@ export default function RouterPage() {
       const response = await fetch(`/api/network/routers/${routerId}/setup-radius`, { method: 'POST' })
       const result = await response.json()
 
-      if (response.ok) {scriptRos6: result.scriptRos6, scriptRos7: result.scriptRos7, config: result.config })
-        setScriptRosTab(7
+      if (response.ok) {
         setScriptModalData({ script: result.script, scriptRos6: result.scriptRos6, scriptRos7: result.scriptRos7, config: result.config })
         setScriptRosTab(7)
         setShowScriptModal(true)
