@@ -379,30 +379,8 @@ export default function RouterPage() {
               <h2 className="font-bold text-[#00f7ff]">{t('network.radiusScriptGenerated')}</h2>
               <button onClick={() => setShowScriptModal(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
-            <d{/* ROS version tabs */}
-              {scriptModalData.scriptRos6 && scriptModalData.scriptRos7 && (
-                <div className="flex gap-1 mb-3 bg-[#0f0a1e] rounded-lg p-1 border border-[#334155]">
-                  <button
-                    onClick={() => setScriptRosTab(6)}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                      scriptRosTab === 6 ? 'bg-amber-500 text-black' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >RouterOS 6.x</button>
-                  <button
-                    onClick={() => setScriptRosTab(7)}
-                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${
-                      scriptRosTab === 7 ? 'bg-[#00f7ff] text-black' : 'text-muted-foreground hover:text-foreground'
-                    }`}
-                  >RouterOS 7.x</button>
-                </div>
-              )}
-              <pre className="bg-[#0f0a1e] border border-[#334155] rounded-lg p-4 text-green-400 text-xs font-mono overflow-auto max-h-64 whitespace-pre-wrap break-words">{
-                scriptRosTab === 6 && scriptModalData.scriptRos6
-                  ? scriptModalData.scriptRos6
-                  : (scriptModalData.scriptRos7 || scriptModalData.script)
-              
+            <div className="p-4 overflow-y-auto flex-1">
               <p className="text-sm text-muted-foreground mb-3">{t('network.copyScriptBelow')}</p>
-              {/* ROS version tabs */}
               {scriptModalData.scriptRos6 && scriptModalData.scriptRos7 && (
                 <div className="flex gap-1 mb-3 bg-[#0f0a1e] rounded-lg p-1 border border-[#334155]">
                   <button
@@ -413,13 +391,7 @@ export default function RouterPage() {
                   >RouterOS 6.x</button>
                   <button
                     onClick={() => setScriptRosTab(7)}
-                    className={`flex-1
-                const toCopy = scriptRosTab === 6 && scriptModalData.scriptRos6
-                  ? scriptModalData.scriptRos6
-                  : (scriptModalData.scriptRos7 || scriptModalData.script);
-                navigator.clipboard.writeText(toCopy);
-                addToast({ type: 'success', title: `Script ROS ${scriptRosTab}.x disalin!` });
-              }} className="flex-1 px-4 py-2 text-sm font-bold bg-[#00f7ff] text-[#1a0f35] rounded-lg">{t('network.copyScript')} (ROS {scriptRosTab})
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${
                       scriptRosTab === 7 ? 'bg-[#00f7ff] text-black' : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >RouterOS 7.x</button>
