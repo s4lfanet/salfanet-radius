@@ -468,6 +468,58 @@ fix_permissions() {
     print_success "File permissions fixed (owner: ${APP_USER})"
 }
 
+generate_vapid_keys() {
+    print_info "Generating VAPID keys for PWA push notifications..."
+
+    cd ${APP_DIR} || return 1
+
+    # web-push must be installed (node_modules present) before this runs
+    local WEBPUSH_BIN="${APP_DIR}/node_modules/.bin/web-push"
+    if [ ! -f "$WEBPUSH_BIN" ]; then
+        print_warning "web-push binary not found — skipping VAPID generation (non-critical)"
+        return 0
+    fi
+
+    # Idempotent: skip if keys already present
+    if grep -q "^VAPID_PUBLIC_KEY=" "${APP_DIR}/.env" 2>/dev/null; then
+        print_info "VAPID keys already in .env — skipped"
+        return 0
+    fi
+
+    local VAPID_OUTPUT
+    VAPID_OUTPUT=$("$WEBPUSH_BIN" generate-vapid-keys --json 2>/dev/null) || {
+        print_warning "web-push generate-vapid-keys failed — skipping (non-critical)"
+        return 0
+    }
+
+    local PUB_KEY PRIV_KEY
+    PUB_KEY=$(echo "$VAPID_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['publicKey'])" 2>/dev/null) || true
+    PRIV_KEY=$(echo "$VAPID_OUTPUT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['privateKey'])" 2>/dev/null) || true
+
+    if [ -z "$PUB_KEY" ] || [ -z "$PRIV_KEY" ]; then
+        print_warning "Could not parse VAPID keys — skipping (non-critical)"
+        return 0
+    fi
+
+    local CONTACT_EMAIL="admin@${VPS_DOMAIN:-${VPS_IP:-localhost}}"
+    # IP address is not valid as mailto domain — use generic fallback
+    if [[ "$CONTACT_EMAIL" =~ ^admin@[0-9]+\. ]]; then
+        CONTACT_EMAIL="admin@salfanet.local"
+    fi
+
+    cat >> "${APP_DIR}/.env" <<EOF
+
+# VAPID Keys for PWA Push Notifications (auto-generated on install)
+VAPID_PUBLIC_KEY="${PUB_KEY}"
+VAPID_PRIVATE_KEY="${PRIV_KEY}"
+VAPID_CONTACT_EMAIL="${CONTACT_EMAIL}"
+EOF
+
+    chmod 600 "${APP_DIR}/.env"
+    save_install_info "VAPID_PUBLIC_KEY" "$PUB_KEY"
+    print_success "VAPID keys generated and added to .env"
+}
+
 install_app() {
     print_step "Step 4: Setting up application and database schema"
     
@@ -476,6 +528,7 @@ install_app() {
     create_app_user
     create_env_file
     install_dependencies
+    generate_vapid_keys
     setup_prisma
     seed_database
     fix_permissions

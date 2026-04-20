@@ -237,6 +237,23 @@ if [ -f "$APP_DIR/.env" ] && ! grep -q '^UPLOAD_DIR=' "$APP_DIR/.env"; then
   ok "UPLOAD_DIR added to .env"
 fi
 
+# Backfill VAPID keys for existing installs (PWA push notifications)
+if [ -f "$APP_DIR/.env" ] && ! grep -q '^VAPID_PUBLIC_KEY=' "$APP_DIR/.env"; then
+  WEBPUSH_BIN="$APP_DIR/node_modules/.bin/web-push"
+  if [ -f "$WEBPUSH_BIN" ]; then
+    VAPID_JSON=$("$WEBPUSH_BIN" generate-vapid-keys --json 2>/dev/null) || VAPID_JSON=""
+    if [ -n "$VAPID_JSON" ]; then
+      VAPID_PUB=$(echo "$VAPID_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['publicKey'])" 2>/dev/null) || VAPID_PUB=""
+      VAPID_PRIV=$(echo "$VAPID_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['privateKey'])" 2>/dev/null) || VAPID_PRIV=""
+      if [ -n "$VAPID_PUB" ] && [ -n "$VAPID_PRIV" ]; then
+        printf '\n# VAPID Keys for PWA Push Notifications\nVAPID_PUBLIC_KEY="%s"\nVAPID_PRIVATE_KEY="%s"\nVAPID_CONTACT_EMAIL="admin@salfanet.local"\n' \
+          "$VAPID_PUB" "$VAPID_PRIV" >> "$APP_DIR/.env"
+        ok "VAPID keys generated and added to .env (PWA push notifications)"
+      fi
+    fi
+  fi
+fi
+
 # One-time migration: move files from public/uploads/ to persistent dir
 if [ -d "$APP_DIR/public/uploads" ] && [ "$(ls -A "$APP_DIR/public/uploads" 2>/dev/null)" ]; then
   MIGRATED=0
