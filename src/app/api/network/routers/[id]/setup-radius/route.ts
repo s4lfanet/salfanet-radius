@@ -85,13 +85,17 @@ export async function POST(
     const gatewayIp = radiusServerIp.replace(/\.\d+$/, '.1');
     const isVpnSetup = !!router.vpnClientId;
     // Only add gateway entry when using VPN tunnel (gateway masquerade scenario)
-    const gatewayRadiusEntry = isVpnSetup ? `
+    // ROS 6: no require-message-auth param | ROS 7: require-message-auth=no
+    const gatewayRadiusEntryRos6 = isVpnSetup ? `
 # 2b. Tambah entry untuk VPN Gateway (CoA masquerade)
 # PENTING: Saat VPS mengirim CoA Disconnect, paket di-masquerade melalui gateway VPN
 # MikroTik melihat src-address=${gatewayIp} (gateway) bukan ${radiusServerIp} (VPS)
-# Entry ini wajib ada agar secret RADIUS cocok dan CoA diterima
-# src-address=${nasSrcAddress} = VPN IP NAS ini (sama seperti entry utama)
-# timeout=1100ms = lebih cepat fallback agar tidak delay CoA
+/radius add address=${gatewayIp} secret=${radiusSecret} service=ppp,hotspot,login,wireless src-address=${nasSrcAddress} timeout=1100ms comment="CoA from VPS via gateway masquerade"
+` : '';
+    const gatewayRadiusEntryRos7 = isVpnSetup ? `
+# 2b. Tambah entry untuk VPN Gateway (CoA masquerade)
+# PENTING: Saat VPS mengirim CoA Disconnect, paket di-masquerade melalui gateway VPN
+# MikroTik melihat src-address=${gatewayIp} (gateway) bukan ${radiusServerIp} (VPS)
 /radius add address=${gatewayIp} secret=${radiusSecret} service=ppp,hotspot,login,wireless src-address=${nasSrcAddress} timeout=1100ms require-message-auth=no comment="CoA from VPS via gateway masquerade"
 ` : '';
 
@@ -100,10 +104,16 @@ export async function POST(
 /ip firewall filter add chain=input protocol=udp src-address=${gatewayIp} dst-port=${radiusCOAPort} action=accept comment="SALFANET-RADIUS CoA via gateway ${gatewayIp}"
 ` : '';
 
-    // Generate MikroTik script for copy-paste (compatible with ROS 6 & 7)
-    const script = `
+    // Generate MikroTik script — two versions: ROS 6 (no require-message-auth) and ROS 7
+    const buildScript = (rosVersion: 6 | 7) => {
+      const mainRadiusLine = rosVersion === 7
+        ? `/radius add address=${radiusServerIp} secret=${radiusSecret}${srcAddressParam} service=ppp,hotspot,login,wireless authentication-port=${radiusAuthPort} accounting-port=${radiusAcctPort} timeout=3s require-message-auth=no comment="${comment}"`
+        : `/radius add address=${radiusServerIp} secret=${radiusSecret}${srcAddressParam} service=ppp,hotspot,login,wireless authentication-port=${radiusAuthPort} accounting-port=${radiusAcctPort} timeout=3s comment="${comment}"`;
+      const gatewayRadiusEntry = rosVersion === 7 ? gatewayRadiusEntryRos7 : gatewayRadiusEntryRos6;
+
+      return `
 # ============================================
-# SALFANET RADIUS Setup Script
+# SALFANET RADIUS Setup Script (RouterOS ${rosVersion}.x)
 # Router: ${router.name}
 # Router NAS IP: ${nasSrcAddress || router.nasname}
 # RADIUS Server: ${radiusServerIp}
@@ -111,14 +121,13 @@ export async function POST(
 # Connection: ${router.vpnClientId ? 'VPN Tunnel' : 'Public IP'}
 # Generated: ${new Date().toISOString()}
 # ============================================
-# Compatible with RouterOS 6.x and 7.x
 
 # 1. Hapus RADIUS lama (jika ada)
 /radius remove [find where comment~"SALFANET" || comment~"Auto Setup" || comment~"gateway masquerade"]
 
 # 2. Tambah RADIUS Server (utama — auth/acct + CoA)
 ${srcAddressNote}
-/radius add address=${radiusServerIp} secret=${radiusSecret}${srcAddressParam} service=ppp,hotspot,login,wireless authentication-port=${radiusAuthPort} accounting-port=${radiusAcctPort} timeout=3s require-message-auth=no comment="${comment}"
+${mainRadiusLine}
 ${gatewayRadiusEntry}
 # 3. Enable RADIUS untuk PPP + Interim-Update setiap 5 menit
 /ppp aaa set use-radius=yes accounting=yes interim-update=5m
@@ -154,17 +163,11 @@ ${gatewayFirewallRule}
 # ============================================
 # KEEPALIVE & NETWATCH — Deteksi putus lebih cepat
 # ============================================
-# Netwatch: monitor RADIUS server setiap 30 detik
-# Jika RADIUS tidak reachable → log warning otomatis
 /tool netwatch remove [find where comment~"SALFANET"]
-/tool netwatch add host=${radiusServerIp} interval=30s timeout=5s \
-    down-script="/log warning message=\\"SALFANET: RADIUS server ${radiusServerIp} tidak reachable\\"" \
-    up-script="/log info message=\\"SALFANET: RADIUS server ${radiusServerIp} kembali online\\"" \
+/tool netwatch add host=${radiusServerIp} interval=30s timeout=5s \\
+    down-script="/log warning message=\\"SALFANET: RADIUS server ${radiusServerIp} tidak reachable\\"" \\
+    up-script="/log info message=\\"SALFANET: RADIUS server ${radiusServerIp} kembali online\\"" \\
     comment="SALFANET RADIUS Monitor"
-
-# L2TP keepalive (untuk VPN tunnel ke VPS — uncomment jika pakai L2TP)
-# /interface l2tp-client set [find] keepalive-timeout=30
-# /interface l2tp-client set [find] dial-on-demand=no
 
 # ============================================
 # SELESAI! Verifikasi dengan:
@@ -180,6 +183,12 @@ ${gatewayFirewallRule}
 # script firewall isolasi pelanggan.
 # ============================================
 `.trim();
+    };
+
+    const scriptRos6 = buildScript(6);
+    const scriptRos7 = buildScript(7);
+    // Keep backward-compat: default script = ROS 7
+    const script = scriptRos7;
 
     // Sync radius-default group to RADIUS database
     try {
@@ -208,6 +217,8 @@ ${gatewayFirewallRule}
       success: true,
       message: 'Script RADIUS berhasil di-generate. Copy dan paste ke MikroTik Terminal.',
       script,
+      scriptRos6,
+      scriptRos7,
       config: {
         radiusServer: radiusServerIp,
         nasSrcAddress: nasSrcAddress || null,

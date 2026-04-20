@@ -90,7 +90,9 @@ export default function RouterPage() {
   const [settingUpIsolir, setSettingUpIsolir] = useState<string | null>(null)
   const [showScriptModal, setShowScriptModal] = useState(false)
   const [showTutorial, setShowTutorial] = useState(true)
-  const [scriptModalData, setScriptModalData] = useState<{ script: string; config: any } | null>(null)
+  const [scriptModalData, setScriptModalData] = useState<{ script: string; scriptRos6?: string; scriptRos7?: string; config: any } | null>(null)
+  const [scriptRosTab, setScriptRosTab] = useState<6 | 7>(7tRos7?: string; config: any } | null>(null)
+  const [scriptRosTab, setScriptRosTab] = useState<6 | 7>(7)
 
   useEffect(() => {
     loadRouters()
@@ -310,8 +312,10 @@ export default function RouterPage() {
       const response = await fetch(`/api/network/routers/${routerId}/setup-radius`, { method: 'POST' })
       const result = await response.json()
 
-      if (response.ok) {
-        setScriptModalData({ script: result.script, config: result.config })
+      if (response.ok) {scriptRos6: result.scriptRos6, scriptRos7: result.scriptRos7, config: result.config })
+        setScriptRosTab(7
+        setScriptModalData({ script: result.script, scriptRos6: result.scriptRos6, scriptRos7: result.scriptRos7, config: result.config })
+        setScriptRosTab(7)
         setShowScriptModal(true)
       } else {
         showError(result.error + (result.details ? '\n' + result.details : ''))
@@ -377,9 +381,57 @@ export default function RouterPage() {
               <h2 className="font-bold text-[#00f7ff]">{t('network.radiusScriptGenerated')}</h2>
               <button onClick={() => setShowScriptModal(false)} className="text-muted-foreground hover:text-foreground"><X className="w-5 h-5" /></button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1">
+            <d{/* ROS version tabs */}
+              {scriptModalData.scriptRos6 && scriptModalData.scriptRos7 && (
+                <div className="flex gap-1 mb-3 bg-[#0f0a1e] rounded-lg p-1 border border-[#334155]">
+                  <button
+                    onClick={() => setScriptRosTab(6)}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                      scriptRosTab === 6 ? 'bg-amber-500 text-black' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >RouterOS 6.x</button>
+                  <button
+                    onClick={() => setScriptRosTab(7)}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                      scriptRosTab === 7 ? 'bg-[#00f7ff] text-black' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >RouterOS 7.x</button>
+                </div>
+              )}
+              <pre className="bg-[#0f0a1e] border border-[#334155] rounded-lg p-4 text-green-400 text-xs font-mono overflow-auto max-h-64 whitespace-pre-wrap break-words">{
+                scriptRosTab === 6 && scriptModalData.scriptRos6
+                  ? scriptModalData.scriptRos6
+                  : (scriptModalData.scriptRos7 || scriptModalData.script)
+              
               <p className="text-sm text-muted-foreground mb-3">{t('network.copyScriptBelow')}</p>
-              <pre className="bg-[#0f0a1e] border border-[#334155] rounded-lg p-4 text-green-400 text-xs font-mono overflow-auto max-h-64 whitespace-pre-wrap break-words">{scriptModalData.script}</pre>
+              {/* ROS version tabs */}
+              {scriptModalData.scriptRos6 && scriptModalData.scriptRos7 && (
+                <div className="flex gap-1 mb-3 bg-[#0f0a1e] rounded-lg p-1 border border-[#334155]">
+                  <button
+                    onClick={() => setScriptRosTab(6)}
+                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                      scriptRosTab === 6 ? 'bg-amber-500 text-black' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >RouterOS 6.x</button>
+                  <button
+                    onClick={() => setScriptRosTab(7)}
+                    className={`flex-1
+                const toCopy = scriptRosTab === 6 && scriptModalData.scriptRos6
+                  ? scriptModalData.scriptRos6
+                  : (scriptModalData.scriptRos7 || scriptModalData.script);
+                navigator.clipboard.writeText(toCopy);
+                addToast({ type: 'success', title: `Script ROS ${scriptRosTab}.x disalin!` });
+              }} className="flex-1 px-4 py-2 text-sm font-bold bg-[#00f7ff] text-[#1a0f35] rounded-lg">{t('network.copyScript')} (ROS {scriptRosTab})
+                      scriptRosTab === 7 ? 'bg-[#00f7ff] text-black' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >RouterOS 7.x</button>
+                </div>
+              )}
+              <pre className="bg-[#0f0a1e] border border-[#334155] rounded-lg p-4 text-green-400 text-xs font-mono overflow-auto max-h-64 whitespace-pre-wrap break-words">{
+                scriptRosTab === 6 && scriptModalData.scriptRos6
+                  ? scriptModalData.scriptRos6
+                  : (scriptModalData.scriptRos7 || scriptModalData.script)
+              }</pre>
               <div className="mt-4 bg-[#0f0a1e] border border-[#334155] rounded-lg p-3 text-sm">
                 <div className="font-semibold text-[#00f7ff] mb-2">{t('network.configuration')}:</div>
                 <div className="text-gray-400 space-y-1">
@@ -392,7 +444,13 @@ export default function RouterPage() {
             </div>
             <div className="flex gap-2 p-4 border-t border-[#bc13fe]/20">
               <button onClick={() => setShowScriptModal(false)} className="flex-1 px-4 py-2 text-sm border border-gray-600 rounded-lg text-muted-foreground hover:text-foreground">{t('network.close')}</button>
-              <button onClick={() => { navigator.clipboard.writeText(scriptModalData.script); addToast({ type: 'success', title: t('network.scriptCopied') }); }} className="flex-1 px-4 py-2 text-sm font-bold bg-[#00f7ff] text-[#1a0f35] rounded-lg">{t('network.copyScript')}</button>
+              <button onClick={() => {
+                const toCopy = scriptRosTab === 6 && scriptModalData.scriptRos6
+                  ? scriptModalData.scriptRos6
+                  : (scriptModalData.scriptRos7 || scriptModalData.script);
+                navigator.clipboard.writeText(toCopy);
+                addToast({ type: 'success', title: `Script ROS ${scriptRosTab}.x disalin!` });
+              }} className="flex-1 px-4 py-2 text-sm font-bold bg-[#00f7ff] text-[#1a0f35] rounded-lg">{t('network.copyScript')} (ROS {scriptRosTab})</button>
             </div>
           </div>
         </div>,
