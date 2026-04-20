@@ -25,7 +25,13 @@ export async function POST(
     }
 
     // Determine RADIUS server IP based on connection type
-    let radiusServerIp = process.env.RADIUS_SERVER_IP || process.env.VPS_IP || '127.0.0.1';
+    // Fallback order: RADIUS_SERVER_IP → VPS_IP → hostname dari NEXTAUTH_URL/APP_URL → '127.0.0.1'
+    const _appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || '';
+    let _urlHostname = '';
+    try {
+      if (_appUrl) _urlHostname = new URL(_appUrl).hostname;
+    } catch { /* ignore invalid URL */ }
+    let radiusServerIp = process.env.RADIUS_SERVER_IP || process.env.VPS_IP || _urlHostname || '127.0.0.1';
     let nasSrcAddress = ''; // VPN IP of the router (NAS), used as src-address in /radius add
 
     // LOGIC:
