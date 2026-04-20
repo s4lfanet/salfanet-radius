@@ -84,7 +84,7 @@ interface DispatchDataResult {
   olts: { id: string; name: string; ipAddress: string }[];
   odcs: { id: string; name: string; oltId: string }[];
   odps: { id: string; name: string; odcId: string | null; portCount: number }[];
-  customers: { id: string; username: string; name: string | null; phone: string | null; address: string | null; odpAssignment: { odpId: string; odp: { id: string; name: string } } | null }[];
+  customers: { id: string; username: string; name: string | null; phone: string | null; address: string | null; odpAssignment: { odpId: string; odp: { id: string; name: string } } | null; _source?: 'pppoe' | 'billing' }[];
 }
 
 export default function AdminTicketsPage() {
@@ -122,7 +122,12 @@ export default function AdminTicketsPage() {
   const handleCustomerSearchChange = useCallback((value: string) => {
     setCustomerSearch(value);
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-    if (!value.trim()) return;
+    if (!value.trim()) {
+      // Clear customer list when search is empty
+      setDispatchData(prev => prev ? { ...prev, customers: [] } : prev);
+      setCustomerSearchLoading(false);
+      return;
+    }
     setCustomerSearchLoading(true);
     searchDebounceRef.current = setTimeout(async () => {
       try {
@@ -592,14 +597,22 @@ export default function AdminTicketsPage() {
                       )}
                     </div>
                     {dispatchData?.customers && dispatchData.customers.length > 0 && customerSearch && !form.customerId && (
-                      <div className="mt-1 bg-background border border-border rounded-lg max-h-36 overflow-y-auto">
+                      <div className="mt-1 bg-background border border-border rounded-lg max-h-44 overflow-y-auto shadow-lg z-10">
                         {dispatchData.customers.map(c => (
-                          <button key={c.id} onClick={() => selectCustomer(c)} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition flex items-center justify-between gap-2">
-                            <span className="font-medium text-foreground">{c.name || c.username}</span>
-                            <span className="text-muted-foreground">{c.phone}</span>
+                          <button key={c.id} onClick={() => selectCustomer(c)} className="w-full text-left px-3 py-2.5 text-xs hover:bg-muted transition flex items-center justify-between gap-2">
+                            <div className="flex flex-col gap-0.5 min-w-0">
+                              <span className="font-medium text-foreground truncate">{c.name || c.username}</span>
+                              <span className="text-muted-foreground">{c.phone} {c.username && c._source === 'pppoe' ? `· @${c.username}` : ''}</span>
+                            </div>
+                            <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                              c._source === 'billing' ? 'bg-amber-500/20 text-amber-400' : 'bg-[#00f7ff]/15 text-[#00f7ff]'
+                            }`}>{c._source === 'billing' ? 'Pelanggan' : 'PPPoE'}</span>
                           </button>
                         ))}
                       </div>
+                    )}
+                    {customerSearch && !form.customerId && !customerSearchLoading && dispatchData?.customers?.length === 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground px-1">Tidak ada pelanggan ditemukan untuk &quot;{customerSearch}&quot;</p>
                     )}
                     {form.customerId && (
                       <button onClick={() => setForm(f => ({ ...f, customerId: '' }))} className="mt-1 text-[10px] text-[#bc13fe] hover:underline">
