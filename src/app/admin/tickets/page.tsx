@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { 
@@ -101,6 +101,8 @@ export default function AdminTicketsPage() {
   const [dispatchData, setDispatchData] = useState<DispatchDataResult | null>(null);
   const [dispatchDataLoading, setDispatchDataLoading] = useState(false);
   const [customerSearch, setCustomerSearch] = useState('');
+  const [customerSearchLoading, setCustomerSearchLoading] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [form, setForm] = useState<DispatchFormData>({
     customerId: '', customerName: '', customerPhone: '', customerAddress: '',
     subject: '', description: '', categoryId: '', priority: 'MEDIUM',
@@ -115,6 +117,21 @@ export default function AdminTicketsPage() {
     } catch { /* ignore */ } finally {
       setDispatchDataLoading(false);
     }
+  }, []);
+
+  const handleCustomerSearchChange = useCallback((value: string) => {
+    setCustomerSearch(value);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (!value.trim()) return;
+    setCustomerSearchLoading(true);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/tickets/dispatch-data?customerSearch=${encodeURIComponent(value)}`);
+        if (res.ok) setDispatchData(await res.json());
+      } catch { /* ignore */ } finally {
+        setCustomerSearchLoading(false);
+      }
+    }, 400);
   }, []);
 
   const openDispatch = () => {
@@ -152,6 +169,7 @@ export default function AdminTicketsPage() {
       setShowDispatch(false);
       setForm({ customerId: '', customerName: '', customerPhone: '', customerAddress: '', subject: '', description: '', categoryId: '', priority: 'MEDIUM', routerId: '', oltId: '', odcId: '', odpId: '' });
       setCustomerSearch('');
+      setCustomerSearchLoading(false);
       fetchTickets();
       fetchStats();
     } catch (e: any) {
@@ -546,7 +564,7 @@ export default function AdminTicketsPage() {
               </button>
             </div>
 
-            {dispatchDataLoading ? (
+            {dispatchDataLoading && !dispatchData ? (
               <div className="flex items-center justify-center py-16">
                 <Loader2 className="w-8 h-8 animate-spin text-[#bc13fe]" />
               </div>
@@ -564,10 +582,14 @@ export default function AdminTicketsPage() {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                       <input
                         value={customerSearch}
-                        onChange={e => { setCustomerSearch(e.target.value); loadDispatchData(e.target.value); }}
+                        onChange={e => handleCustomerSearchChange(e.target.value)}
                         placeholder="Nama, username, atau telepon..."
-                        className="w-full pl-9 pr-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none"
+                        className="w-full pl-9 pr-8 py-2 text-xs bg-background border border-border rounded-lg text-foreground placeholder:text-muted-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none"
+                        autoComplete="off"
                       />
+                      {customerSearchLoading && (
+                        <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                      )}
                     </div>
                     {dispatchData?.customers && dispatchData.customers.length > 0 && customerSearch && !form.customerId && (
                       <div className="mt-1 bg-background border border-border rounded-lg max-h-36 overflow-y-auto">
