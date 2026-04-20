@@ -362,6 +362,16 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 
 ## 📝 Changelog
 
+### v2.20.0 — April 20, 2026
+- **Fix: Script RADIUS `address=127.0.0.1`** — Fallback chain diperbarui: `RADIUS_SERVER_IP` → `VPS_IP` → hostname dari `NEXTAUTH_URL` → `127.0.0.1`. Instalasi tanpa env var eksplisit (VPS lokal/LXC) kini otomatis pakai IP yang benar.
+- **Fix: Script RADIUS `src-address` hilang untuk non-VPN router** — Tanpa `src-address`, MikroTik memilih source IP otomatis yang bisa berbeda dari `nasname` di FreeRADIUS → ditolak sebagai "unknown client". Sekarang selalu di-set untuk semua router.
+- **Fix: Script RADIUS hapus perintah `rate-limit=""` di hotspot user profile** — Command menyebabkan error `expected end of command` di RouterOS karena bukan parameter valid.
+- **Fix: Script RADIUS hapus `keepalive-timeout` dan `lcp-echo`** — Kedua parameter tidak dikenal di `/ppp profile set` pada RouterOS.
+- **Added: Netwatch monitor RADIUS** — Generated script kini menyertakan `/tool netwatch` yang memonitor RADIUS server setiap 30 detik dengan log warning/info otomatis.
+- **Added: `vpn-watchdog.sh` RADIUS health check** — Watchdog kini cek service `freeradius` + port UDP 1812 dan auto-restart jika mati. Log rotation otomatis.
+- **Changed: `Acct-Interim-Interval` 60 → 300 detik** — Selaras dengan `interim-update=5m` MikroTik, kurangi beban DB.
+- **Changed: Stale session threshold 1 HOUR → 30 MINUTE** — Deteksi sesi zombie lebih cepat (6× interval), tapi tetap beri window reconnect VPN.
+
 ### v2.17.0 — April 10, 2026
 - **Feat: Kamera HP langsung + GPS otomatis di semua form foto pelanggan** — Komponen baru `CameraPhotoInput` dengan tombol [🖼 Galeri] / [📷 Kamera HP] side-by-side. Tombol *Kamera HP* pakai `capture="environment"` sehingga langsung membuka kamera belakang tanpa file picker. Setelah foto diupload, GPS otomatis ditangkap via `navigator.geolocation` dan ditampilkan sebagai badge 📍 lat,lng clickable ke Google Maps.
 - **Files diperbarui:** `src/components/CameraPhotoInput.tsx` (baru), `src/app/daftar/page.tsx`, `src/app/admin/pppoe/users/page.tsx` (AddPppoeUserModal), `src/app/technician/(portal)/register/page.tsx`, `src/components/UserDetailModal.tsx`
