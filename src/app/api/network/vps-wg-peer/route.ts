@@ -50,9 +50,9 @@ async function genKeypair(): Promise<{ privateKey: string; publicKey: string }> 
 
 /**
  * Find the next available VPN IP in the WG subnet.
- * Reads existing [Peer] AllowedIPs from wg.conf, returns first free .x in 2–254.
+ * Reads existing [Peer] AllowedIPs from wg.conf, returns first free .x in poolStart–poolEnd.
  */
-async function nextAvailableIp(subnet: string): Promise<string> {
+async function nextAvailableIp(subnet: string, poolStart = 2, poolEnd = 254): Promise<string> {
   const base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
   let conf = ''
   try { conf = await readFile(WG_CONF, 'utf8') } catch { /* new conf */ }
@@ -63,10 +63,10 @@ async function nextAvailableIp(subnet: string): Promise<string> {
   let m
   while ((m = re.exec(conf)) !== null) used.add(parseInt(m[1]))
 
-  for (let i = 2; i <= 254; i++) {
+  for (let i = poolStart; i <= poolEnd; i++) {
     if (!used.has(i)) return `${base}.${i}`
   }
-  throw new Error('Subnet penuh: tidak ada IP tersisa')
+  throw new Error(`Subnet penuh: tidak ada IP tersisa (range .${poolStart}–.${poolEnd})`)
 }
 
 /**
@@ -273,7 +273,7 @@ export async function POST(req: NextRequest) {
       clientPublicKey = kp.publicKey
     }
 
-    const vpnIp = await nextAvailableIp(info.subnet)
+    const vpnIp = await nextAvailableIp(info.subnet, info.poolStart ?? 2, info.poolEnd ?? 254)
     await addPeerToConf(clientPublicKey, vpnIp, nasName)
 
     // Persist client to DB so it appears in Router dropdown
@@ -397,6 +397,42 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ error: 'action harus "add" atau "remove"' }, { status: 400 })
+}
+
+// ─── PATCH /api/network/vps-wg-peer ─────────────────────────────────────
+// Update pool config (poolStart, poolEnd, gatewayIp) in wg-server-info.json
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const info = await readWgInfo()
+  if (!info) return NextResponse.json({ error: 'WireGuard belum di-install di VPS ini' }, { status: 400 })
+
+  const body = await req.json()
+  const { poolStart, poolEnd, gatewayIp } = body
+
+  if (poolStart !== undefined) {
+    const v = parseInt(poolStart)
+    if (isNaN(v) || v < 2 || v > 253) return NextResponse.json({ error: 'poolStart harus antara 2–253' }, { status: 400 })
+    info.poolStart = v
+  }
+  if (poolEnd !== undefined) {
+    const v = parseInt(poolEnd)
+    if (isNaN(v) || v < 3 || v > 254) return NextResponse.json({ error: 'poolEnd harus antara 3–254' }, { status: 400 })
+    info.poolEnd = v
+  }
+  if (gatewayIp !== undefined) {
+    const trimmed = String(gatewayIp).trim()
+    if (trimmed && !/^(\d{1,3}\.){3}\d{1,3}$/.test(trimmed)) return NextResponse.json({ error: 'Format gatewayIp tidak valid' }, { status: 400 })
+    info.gatewayIp = trimmed || info.gatewayIp
+  }
+
+  if ((info.poolStart ?? 2) >= (info.poolEnd ?? 254)) {
+    return NextResponse.json({ error: 'poolStart harus lebih kecil dari poolEnd' }, { status: 400 })
+  }
+
+  await writeFile(WG_INFO, JSON.stringify(info, null, 2), 'utf8')
+  return NextResponse.json({ success: true, poolStart: info.poolStart, poolEnd: info.poolEnd, gatewayIp: info.gatewayIp })
 }
 
 function formatBytes(b: number): string {

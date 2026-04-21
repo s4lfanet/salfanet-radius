@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth/config'
 import { exec as execCb } from 'child_process'
 import { promisify } from 'util'
-import { readFile } from 'fs/promises'
+import { readFile, writeFile } from 'fs/promises'
 
 const exec = promisify(execCb)
 const L2TP_INFO_FILE = '/etc/salfanet/l2tp/l2tp-server-info.json'
@@ -24,7 +24,7 @@ async function readL2tpInfo(): Promise<Record<string, any> | null> {
   }
 }
 
-async function getNextAvailableIp(subnet: string): Promise<string> {
+async function getNextAvailableIp(subnet: string, poolStart = 10, poolEnd = 254): Promise<string> {
   const base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
   // Read current chap-secrets to find used IPs
   let chap = ''
@@ -34,10 +34,10 @@ async function getNextAvailableIp(subnet: string): Promise<string> {
   const re = /\d+\.\d+\.\d+\.(\d+)/g
   let m
   while ((m = re.exec(chap)) !== null) used.add(parseInt(m[1]))
-  for (let i = 10; i <= 254; i++) {
+  for (let i = poolStart; i <= poolEnd; i++) {
     if (!used.has(i)) return `${base}.${i}`
   }
-  throw new Error('Subnet penuh')
+  throw new Error(`Subnet penuh (range .${poolStart}–.${poolEnd})`)
 }
 
 // ─── GET /api/network/vps-l2tp-peer ────────────────────────────────────────
@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     const username = `nas-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Math.random().toString(36).substring(2, 6)}`
     const password = generatePassword(16)
-    const vpnIp = await getNextAvailableIp(info.subnet || '10.201.0.0/24')
+    const vpnIp = await getNextAvailableIp(info.subnet || '10.201.0.0/24', info.poolStart ?? 10, info.poolEnd ?? 254)
 
     // Add to chap-secrets via helper script
     try {
@@ -125,6 +125,42 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ error: 'action tidak valid. Gunakan: add | remove' }, { status: 400 })
+}
+
+// ─── PATCH /api/network/vps-l2tp-peer ─────────────────────────────
+// Update pool config (poolStart, poolEnd, gateway) in l2tp-server-info.json
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const info = await readL2tpInfo()
+  if (!info) return NextResponse.json({ error: 'L2TP server belum di-install di VPS ini' }, { status: 400 })
+
+  const body = await req.json()
+  const { poolStart, poolEnd, gateway } = body
+
+  if (poolStart !== undefined) {
+    const v = parseInt(poolStart)
+    if (isNaN(v) || v < 2 || v > 253) return NextResponse.json({ error: 'poolStart harus antara 2–253' }, { status: 400 })
+    info.poolStart = v
+  }
+  if (poolEnd !== undefined) {
+    const v = parseInt(poolEnd)
+    if (isNaN(v) || v < 3 || v > 254) return NextResponse.json({ error: 'poolEnd harus antara 3–254' }, { status: 400 })
+    info.poolEnd = v
+  }
+  if (gateway !== undefined) {
+    const trimmed = String(gateway).trim()
+    if (trimmed && !/^(\d{1,3}\.){3}\d{1,3}$/.test(trimmed)) return NextResponse.json({ error: 'Format gateway tidak valid' }, { status: 400 })
+    info.gateway = trimmed || info.gateway
+  }
+
+  if ((info.poolStart ?? 10) >= (info.poolEnd ?? 254)) {
+    return NextResponse.json({ error: 'poolStart harus lebih kecil dari poolEnd' }, { status: 400 })
+  }
+
+  await writeFile(L2TP_INFO_FILE, JSON.stringify(info, null, 2), 'utf8')
+  return NextResponse.json({ success: true, poolStart: info.poolStart, poolEnd: info.poolEnd, gateway: info.gateway })
 }
 
 function generateL2tpScript({ serverIp, username, password, ipsecPsk, vpnIp }: {
