@@ -9,14 +9,63 @@
 
 **Salfanet Radius** adalah sistem billing ISP/RTRW.NET berbasis web dengan integrasi FreeRADIUS penuh. Mendukung PPPoE dan Hotspot, cocok untuk ISP kecil-menengah di Indonesia.
 
-- **Version**: 2.19.0
+- **Version**: 2.21.0
 - **Status**: Production-ready, deployed di VPS
-- **Last Updated**: April 11, 2026
-- **Latest Commit**: `817887a` — tab Foto (KTP + instalasi) + lightbox di UserDetailModal
+- **Last Updated**: April 22, 2026
+- **Latest Commit**: `62b0c88` — fix: PATCH WG updates wg0.conf Address and info.subnet when gatewayIp changes
 - **GitHub**: https://github.com/s4lfanet/salfanet-radius (public)
 - **Live URL**: https://radius.hotspotapp.net
 
-### Recent Patch Log (April 11, 2026 — Kamera & Foto Pelanggan)
+### Recent Patch Log (April 22, 2026 — VPS Built-in VPN Pool IP Config)
+
+- **Feat: Panel "Konfigurasi VPS Built-in VPN" di VPN Client page** (`1903085`, Apr 22, 2026)
+  - Panel collapsible baru untuk mengatur pool IP & gateway WireGuard dan L2TP yang berjalan langsung di VPS.
+  - Terpisah dari VPN Server page (yang khusus MikroTik CHR).
+  - **Files**: `src/app/admin/network/vpn-client/page.tsx`
+
+- **Feat: PATCH endpoint vps-wg-peer** (`1903085`, Apr 22, 2026)
+  - `PATCH /api/network/vps-wg-peer` — update `poolStart`, `poolEnd`, `gatewayIp` di `wg-server-info.json`.
+  - Saat gatewayIp disimpan: juga update baris `Address =` di `wg0.conf`, update `info.subnet`, reload via `wg syncconf`.
+  - **Files**: `src/app/api/network/vps-wg-peer/route.ts`
+
+- **Feat: PATCH endpoint vps-l2tp-peer** (`1903085`, Apr 22, 2026)
+  - `PATCH /api/network/vps-l2tp-peer` — update `poolStart`, `poolEnd`, `gateway` di `l2tp-server-info.json`.
+  - **Files**: `src/app/api/network/vps-l2tp-peer/route.ts`
+
+- **Fix: `loadWgServerInfo` data mapping** (`17d83da`, Apr 22, 2026)
+  - **Root cause**: membaca `data.info?.publicIp` dll. padahal API mengembalikan fields di top level (`data.publicIp`).
+  - **Fix**: mapping diubah ke `data.X` langsung.
+  - **Files**: `src/app/admin/network/vpn-client/page.tsx`
+
+- **Fix: pool config menerima full IP address** (`17d83da`, Apr 22, 2026)
+  - Input poolStart/poolEnd sebelumnya hanya angka terakhir (mis. `2`). Sekarang full IP (mis. `172.16.212.2`).
+  - Validasi backend: full IPv4 regex, bukan range integer 2–254.
+  - **Files**: `vps-wg-peer/route.ts`, `vps-l2tp-peer/route.ts`, `vpn-client/page.tsx`
+
+- **Fix: `nextAvailableIp` / `getNextAvailableIp` selalu gunakan prefix `info.subnet`** (`8636800`, Apr 22, 2026)
+  - **Root cause**: selalu `base = info.subnet.prefix` → alokasi IP selalu di subnet WG interface default.
+  - **Fix**: jika `poolStart` adalah full IP string, gunakan prefixnya sebagai base. Scan "used IPs" dibatasi ke prefix yang sama.
+  - WG ADD response juga diperbaiki: `vpnSubnet` dan `gatewayIp` dihitung dari pool prefix, bukan `info.subnet`.
+  - **Files**: `src/app/api/network/vps-wg-peer/route.ts`, `src/app/api/network/vps-l2tp-peer/route.ts`
+
+- **Fix: display subnet footer pakai `info.subnet` bukan pool subnet** (`6a8bd04`, Apr 22, 2026)
+  - Footer kini tampilkan "Pool subnet: xxx.xxx.xxx.0/24" diturunkan dari prefix poolStart.
+  - Edit button prefill diperbaiki: gunakan prefix dari poolStart yang tersimpan (bukan selalu `info.subnet`).
+  - **Files**: `src/app/admin/network/vpn-client/page.tsx`
+
+- **Fix: Remove redirect paksa di VPN Client jika tidak ada CHR** (`1903085`, Apr 22, 2026)
+  - Sebelumnya: jika `vpnServers.length === 0`, halaman redirect ke VPN Server setup → user tidak bisa akses VPS built-in VPN.
+  - Sekarang: redirect dihapus, halaman selalu tampil normal.
+  - **Files**: `src/app/admin/network/vpn-client/page.tsx`
+
+### Key Architecture Notes — VPN
+
+- **VPN Server page** (`/admin/network/vpn-server`): HANYA untuk MikroTik CHR. Tidak ada VPS built-in config di sini.
+- **VPN Client page** (`/admin/network/vpn-client`): Untuk NAS/router yang connect ke VPS. Panel "Konfigurasi VPS Built-in VPN" ada di sini.
+- **`__vps_wg__`** dan **`__vps_l2tp__`**: Virtual server IDs untuk WireGuard dan L2TP peer yang dikelola langsung di VPS.
+- **`wg-server-info.json`** (`/etc/wireguard/wg-server-info.json`): Fields: `publicIp`, `publicKey`, `listenPort`, `subnet`, `poolStart`, `poolEnd`, `gatewayIp`.
+- **`l2tp-server-info.json`** (`/etc/salfanet/l2tp/l2tp-server-info.json`): Fields: `publicIp`, `ipsecPsk`, `subnet`, `localIp`, `poolStart`, `poolEnd`, `gateway`.
+- **Pool base rule**: saat `poolStart` adalah full IP (mis. `172.16.212.2`), base prefix = `172.16.212`. Selalu gunakan pool prefix, bukan `info.subnet`, saat alokasi IP baru.
 
 - **Fix: `getUserMedia` error langsung fallback ke native camera** (`382dbb3`, Apr 11, 2026)
   - **Root cause**: saat `getUserMedia` melempar error apapun (`NotAllowedError`, Permissions Policy, dll), kode lama menampilkan pesan error merah alih-alih membuka native camera.

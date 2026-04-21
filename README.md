@@ -2,7 +2,7 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.20.0 — Fix script RADIUS (src-address, address IP, hotspot profile), Netwatch monitor, RADIUS keepalive alignment (Apr 20, 2026)
+> **Latest:** v2.21.0 — VPS Built-in VPN pool IP config (WireGuard & L2TP): full IP input, correct subnet routing, auto-sync wg0.conf (Apr 22, 2026)
 
 ---
 
@@ -17,6 +17,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | Category | Key Capabilities |
 |----------|-----------------|
 | **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect |
+| **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
 | **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates |
 | **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal |
