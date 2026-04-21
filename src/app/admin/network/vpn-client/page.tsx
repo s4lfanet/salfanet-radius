@@ -988,10 +988,15 @@ ${vpnCmd}
                         {!wgPoolEdit && (
                           <button
                             onClick={() => {
-                              const base = wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.');
+                              // Derive base from existing poolStart if it's a full IP, else from subnet
+                              const existingStart = wgServerInfo.poolStart;
+                              const base = (typeof existingStart === 'string' && existingStart.includes('.'))
+                                ? existingStart.split('.').slice(0,3).join('.')
+                                : wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.');
                               const toFullIp = (v: number | string | undefined, def: number) =>
                                 v === undefined ? (base ? `${base}.${def}` : '') :
-                                typeof v === 'number' ? (base ? `${base}.${v}` : String(v)) : String(v);
+                                (typeof v === 'string' && v.includes('.')) ? v :
+                                (base ? `${base}.${v}` : String(v));
                               setWgPoolEdit(true);
                               setWgPoolForm({
                                 poolStart: toFullIp(wgServerInfo.poolStart, 2),
@@ -1042,7 +1047,7 @@ ${vpnCmd}
                           </div>
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground mt-2">Subnet WG: <span className="font-mono text-teal-300">{wgServerInfo.subnet}</span> · Server: {wgServerInfo.publicIp}:{wgServerInfo.listenPort}</p>
+                      <p className="text-xs text-muted-foreground mt-2">Pool subnet: <span className="font-mono text-teal-300">{(() => { const s = wgServerInfo.poolStart; const b = (typeof s === 'string' && s.includes('.')) ? s.split('.').slice(0,3).join('.') : wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.'); return b ? `${b}.0/24` : wgServerInfo.subnet || '-'; })()}</span> · WG iface: <span className="font-mono text-teal-300/60">{wgServerInfo.subnet}</span> · Server: {wgServerInfo.publicIp}:{wgServerInfo.listenPort}</p>
                     </div>
                   ) : (
                     <div className="p-4 rounded-xl border border-slate-700/40 bg-slate-900/40 text-center">
@@ -1066,10 +1071,15 @@ ${vpnCmd}
                         {!l2tpPoolEdit && (
                           <button
                             onClick={() => {
-                              const base = l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.');
+                              // Derive base from existing poolStart if it's a full IP, else from subnet
+                              const existingStart = l2tpServerInfo.poolStart;
+                              const base = (typeof existingStart === 'string' && existingStart.includes('.'))
+                                ? existingStart.split('.').slice(0,3).join('.')
+                                : l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.');
                               const toFullIp = (v: number | string | undefined, def: number) =>
                                 v === undefined ? (base ? `${base}.${def}` : '') :
-                                typeof v === 'number' ? (base ? `${base}.${v}` : String(v)) : String(v);
+                                (typeof v === 'string' && v.includes('.')) ? v :
+                                (base ? `${base}.${v}` : String(v));
                               setL2tpPoolEdit(true);
                               setL2tpPoolForm({
                                 poolStart: toFullIp(l2tpServerInfo.poolStart, 10),
@@ -1120,7 +1130,7 @@ ${vpnCmd}
                           </div>
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground mt-2">Server: {l2tpServerInfo.publicIp} · Subnet: <span className="font-mono text-[#bc13fe]">{l2tpServerInfo.subnet || '-'}</span></p>
+                      <p className="text-xs text-muted-foreground mt-2">Pool subnet: <span className="font-mono text-[#bc13fe]">{(() => { const s = l2tpServerInfo.poolStart; const b = (typeof s === 'string' && s.includes('.')) ? s.split('.').slice(0,3).join('.') : l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.'); return b ? `${b}.0/24` : l2tpServerInfo.subnet || '-'; })()}</span> · Server: {l2tpServerInfo.publicIp}</p>
                     </div>
                   ) : (
                     <div className="p-4 rounded-xl border border-slate-700/40 bg-slate-900/40 text-center">
