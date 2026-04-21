@@ -25,28 +25,39 @@ async function readL2tpInfo(): Promise<Record<string, any> | null> {
 }
 
 async function getNextAvailableIp(subnet: string, poolStart: number | string = 10, poolEnd: number | string = 254): Promise<string> {
-  const base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
-  // Normalize poolStart/poolEnd to last-octet integer
-  const toOctet = (v: number | string, def: number) => {
-    if (typeof v === 'number') return v
-    const s = String(v).trim()
-    if (s.includes('.')) { const n = parseInt(s.split('.')[3]); return isNaN(n) ? def : n }
-    const n = parseInt(s); return isNaN(n) ? def : n
+  // If poolStart is a full IP, use its /24 prefix as base; else fall back to subnet prefix
+  let base: string
+  let startOctet: number
+  let endOctet: number
+
+  if (typeof poolStart === 'string' && poolStart.includes('.')) {
+    const parts = poolStart.split('.')
+    base = parts.slice(0, 3).join('.')
+    startOctet = parseInt(parts[3]) || 10
+  } else {
+    base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
+    startOctet = typeof poolStart === 'number' ? poolStart : parseInt(String(poolStart)) || 10
   }
-  const startOctet = toOctet(poolStart, 10)
-  const endOctet = toOctet(poolEnd, 254)
-  // Read current chap-secrets to find used IPs
+
+  if (typeof poolEnd === 'string' && poolEnd.includes('.')) {
+    endOctet = parseInt(poolEnd.split('.')[3]) || 254
+  } else {
+    endOctet = typeof poolEnd === 'number' ? poolEnd : parseInt(String(poolEnd)) || 254
+  }
+
+  // Read current chap-secrets to find used IPs in the same base prefix
   let chap = ''
   try { chap = await readFile('/etc/ppp/chap-secrets', 'utf8') } catch { /* empty */ }
   const used = new Set<number>()
   used.add(1) // gateway
-  const re = /\d+\.\d+\.\d+\.(\d+)/g
+  const escapedBase = base.replace(/\./g, '\\.')
+  const re = new RegExp(`${escapedBase}\\.(\\d+)`, 'g')
   let m
   while ((m = re.exec(chap)) !== null) used.add(parseInt(m[1]))
   for (let i = startOctet; i <= endOctet; i++) {
     if (!used.has(i)) return `${base}.${i}`
   }
-  throw new Error(`Subnet penuh (range .${startOctet}–.${endOctet})`)
+  throw new Error(`Subnet penuh (range ${base}.${startOctet}–${base}.${endOctet})`)
 }
 
 // ─── GET /api/network/vps-l2tp-peer ────────────────────────────────────────

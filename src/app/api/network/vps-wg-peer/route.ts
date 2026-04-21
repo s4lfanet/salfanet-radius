@@ -54,29 +54,40 @@ async function genKeypair(): Promise<{ privateKey: string; publicKey: string }> 
  * poolStart/poolEnd can be full IPs ("10.200.0.2") or last-octet numbers (2).
  */
 async function nextAvailableIp(subnet: string, poolStart: number | string = 2, poolEnd: number | string = 254): Promise<string> {
-  const base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
-  // Normalize poolStart/poolEnd to last-octet integer
-  const toOctet = (v: number | string, def: number) => {
-    if (typeof v === 'number') return v
-    const s = String(v).trim()
-    if (s.includes('.')) { const n = parseInt(s.split('.')[3]); return isNaN(n) ? def : n }
-    const n = parseInt(s); return isNaN(n) ? def : n
+  // If poolStart is a full IP, use its /24 prefix as base; else fall back to subnet prefix
+  let base: string
+  let startOctet: number
+  let endOctet: number
+
+  if (typeof poolStart === 'string' && poolStart.includes('.')) {
+    const parts = poolStart.split('.')
+    base = parts.slice(0, 3).join('.')
+    startOctet = parseInt(parts[3]) || 2
+  } else {
+    base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
+    startOctet = typeof poolStart === 'number' ? poolStart : parseInt(String(poolStart)) || 2
   }
-  const startOctet = toOctet(poolStart, 2)
-  const endOctet = toOctet(poolEnd, 254)
+
+  if (typeof poolEnd === 'string' && poolEnd.includes('.')) {
+    endOctet = parseInt(poolEnd.split('.')[3]) || 254
+  } else {
+    endOctet = typeof poolEnd === 'number' ? poolEnd : parseInt(String(poolEnd)) || 254
+  }
+
   let conf = ''
   try { conf = await readFile(WG_CONF, 'utf8') } catch { /* new conf */ }
 
   const used = new Set<number>()
   used.add(1) // VPS gateway
-  const re = /AllowedIPs\s*=\s*[\d.]+\.(\d+)\/32/g
+  // Only count IPs within the same base prefix to avoid cross-subnet false conflicts
+  const re = new RegExp(`AllowedIPs\\s*=\\s*${base.replace(/\./g, '\\.')}\\.([0-9]+)\\/32`, 'g')
   let m
   while ((m = re.exec(conf)) !== null) used.add(parseInt(m[1]))
 
   for (let i = startOctet; i <= endOctet; i++) {
     if (!used.has(i)) return `${base}.${i}`
   }
-  throw new Error(`Subnet penuh: tidak ada IP tersisa (range .${startOctet}–.${endOctet})`)
+  throw new Error(`Subnet penuh: tidak ada IP tersisa (range ${base}.${startOctet}–${base}.${endOctet})`)
 }
 
 /**
@@ -383,6 +394,13 @@ export async function POST(req: NextRequest) {
       console.error('[vps-wg-peer] Gagal simpan ke DB (lanjutkan):', dbErr)
     }
 
+    // Derive the pool prefix (may differ from wg interface subnet when user customized it)
+    const poolBase = (typeof info.poolStart === 'string' && info.poolStart.includes('.'))
+      ? info.poolStart.split('.').slice(0, 3).join('.')
+      : info.subnet.split('/')[0].split('.').slice(0, 3).join('.')
+    const effectiveVpnSubnet = `${poolBase}.0/24`
+    const effectiveGatewayIp = info.gatewayIp || `${poolBase}.1`
+
     return NextResponse.json({
       success: true,
       vpnIp,
@@ -390,9 +408,9 @@ export async function POST(req: NextRequest) {
       clientPrivateKey, // undefined if caller supplied the key
       serverPublicKey: info.publicKey,
       serverEndpoint: `${info.publicIp}:${info.listenPort}`,
-      vpnSubnet: info.subnet,           // full subnet e.g. 10.200.0.0/24
-      gatewayIp: info.gatewayIp,        // VPS tunnel IP e.g. 10.200.0.1
-      allowedIps: `${info.gatewayIp}/32`, // kept for backward compat
+      vpnSubnet: effectiveVpnSubnet,       // derived from pool prefix
+      gatewayIp: effectiveGatewayIp,       // VPS tunnel IP derived from pool prefix
+      allowedIps: `${effectiveGatewayIp}/32`, // kept for backward compat
       wgPort: info.listenPort,
       nasSecret: nasSecretForResponse,  // RADIUS shared secret for this NAS
       apiUsername: apiUsernameForResponse,
