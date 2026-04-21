@@ -94,10 +94,10 @@ export default function VpnClientPage() {
   const [wgGeneratedScript, setWgGeneratedScript] = useState<string | null>(null);
   const [showWgSection, setShowWgSection] = useState(false);
   // VPS WireGuard server info (fetched from vps-wg-peer GET)
-  const [wgServerInfo, setWgServerInfo] = useState<{ installed: boolean; publicIp?: string; publicKey?: string; listenPort?: number; subnet?: string; poolStart?: number; poolEnd?: number; gatewayIp?: string } | null>(null);
+  const [wgServerInfo, setWgServerInfo] = useState<{ installed: boolean; publicIp?: string; publicKey?: string; listenPort?: number; subnet?: string; poolStart?: number | string; poolEnd?: number | string; gatewayIp?: string } | null>(null);
   const [wgServerInfoLoading, setWgServerInfoLoading] = useState(false);
   // VPS L2TP/IPsec server info
-  const [l2tpServerInfo, setL2tpServerInfo] = useState<{ installed: boolean; publicIp?: string; ipsecPsk?: string; subnet?: string; localIp?: string; poolStart?: number; poolEnd?: number; gateway?: string } | null>(null);
+  const [l2tpServerInfo, setL2tpServerInfo] = useState<{ installed: boolean; publicIp?: string; ipsecPsk?: string; subnet?: string; localIp?: string; poolStart?: number | string; poolEnd?: number | string; gateway?: string } | null>(null);
   const [l2tpServerInfoLoading, setL2tpServerInfoLoading] = useState(false);
   // VPS Pool Config edit states
   const [wgPoolEdit, setWgPoolEdit] = useState(false);
@@ -366,13 +366,13 @@ export default function VpnClientPage() {
       if (data.installed) {
         setWgServerInfo({
           installed: true,
-          publicIp: data.info?.publicIp,
-          publicKey: data.info?.publicKey,
-          listenPort: data.info?.listenPort,
-          subnet: data.info?.subnet,
-          poolStart: data.info?.poolStart,
-          poolEnd: data.info?.poolEnd,
-          gatewayIp: data.info?.gatewayIp,
+          publicIp: data.publicIp,
+          publicKey: data.publicKey,
+          listenPort: data.listenPort,
+          subnet: data.subnet,
+          poolStart: data.poolStart,
+          poolEnd: data.poolEnd,
+          gatewayIp: data.gatewayIp,
         })
       } else {
         setWgServerInfo({ installed: false })
@@ -987,7 +987,18 @@ ${vpnCmd}
                         </p>
                         {!wgPoolEdit && (
                           <button
-                            onClick={() => { setWgPoolEdit(true); setWgPoolForm({ poolStart: String(wgServerInfo.poolStart ?? 2), poolEnd: String(wgServerInfo.poolEnd ?? 254), gatewayIp: wgServerInfo.gatewayIp ?? '' }); }}
+                            onClick={() => {
+                              const base = wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.');
+                              const toFullIp = (v: number | string | undefined, def: number) =>
+                                v === undefined ? (base ? `${base}.${def}` : '') :
+                                typeof v === 'number' ? (base ? `${base}.${v}` : String(v)) : String(v);
+                              setWgPoolEdit(true);
+                              setWgPoolForm({
+                                poolStart: toFullIp(wgServerInfo.poolStart, 2),
+                                poolEnd: toFullIp(wgServerInfo.poolEnd, 254),
+                                gatewayIp: wgServerInfo.gatewayIp || (base ? `${base}.1` : ''),
+                              });
+                            }}
                             className="text-xs text-teal-400 hover:text-teal-300 border border-teal-500/40 px-2 py-1 rounded-lg"
                           >
                             Edit
@@ -998,32 +1009,32 @@ ${vpnCmd}
                         <div className="grid grid-cols-3 gap-3 text-xs">
                           <div>
                             <p className="text-muted-foreground mb-0.5">IP Mulai</p>
-                            <p className="font-mono text-foreground">{wgServerInfo.subnet?.split('.').slice(0,3).join('.')}.{wgServerInfo.poolStart ?? 2}</p>
+                            <p className="font-mono text-foreground">{typeof wgServerInfo.poolStart === 'string' ? wgServerInfo.poolStart : `${wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.${wgServerInfo.poolStart ?? 2}`}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground mb-0.5">IP Akhir</p>
-                            <p className="font-mono text-foreground">{wgServerInfo.subnet?.split('.').slice(0,3).join('.')}.{wgServerInfo.poolEnd ?? 254}</p>
+                            <p className="font-mono text-foreground">{typeof wgServerInfo.poolEnd === 'string' ? wgServerInfo.poolEnd : `${wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.${wgServerInfo.poolEnd ?? 254}`}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground mb-0.5">Gateway VPS</p>
-                            <p className="font-mono text-foreground">{wgServerInfo.gatewayIp || (wgServerInfo.subnet?.split('.').slice(0,3).join('.') + '.1')}</p>
+                            <p className="font-mono text-foreground">{wgServerInfo.gatewayIp || `${wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.1`}</p>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">IP Mulai (x.x.x.<strong>?</strong>)</label>
-                              <input type="number" min={2} max={253} value={wgPoolForm.poolStart} onChange={(e) => setWgPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder="2" />
+                              <label className="text-xs text-muted-foreground mb-1 block">IP Mulai <span className="text-gray-500">(IP lengkap, mis. 10.200.0.2)</span></label>
+                              <input type="text" value={wgPoolForm.poolStart} onChange={(e) => setWgPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder="mis. 10.200.0.2" />
                             </div>
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">IP Akhir (x.x.x.<strong>?</strong>)</label>
-                              <input type="number" min={3} max={254} value={wgPoolForm.poolEnd} onChange={(e) => setWgPoolForm(p => ({...p, poolEnd: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder="254" />
+                              <label className="text-xs text-muted-foreground mb-1 block">IP Akhir <span className="text-gray-500">(IP lengkap, mis. 10.200.0.254)</span></label>
+                              <input type="text" value={wgPoolForm.poolEnd} onChange={(e) => setWgPoolForm(p => ({...p, poolEnd: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder="mis. 10.200.0.254" />
                             </div>
                           </div>
                           <div>
                             <label className="text-xs text-muted-foreground mb-1 block">Gateway IP VPS <span className="text-gray-500">(IP wg0 di VPS, default .1)</span></label>
-                            <input type="text" value={wgPoolForm.gatewayIp} onChange={(e) => setWgPoolForm(p => ({...p, gatewayIp: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder={wgServerInfo.subnet?.split('.').slice(0,3).join('.') + '.1'} />
+                            <input type="text" value={wgPoolForm.gatewayIp} onChange={(e) => setWgPoolForm(p => ({...p, gatewayIp: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder={`${wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.1`} />
                           </div>
                           <div className="flex gap-2 pt-1">
                             <button onClick={handleWgSavePoolConfig} disabled={wgPoolSaving} className="flex-1 py-2 bg-teal-500 text-white text-sm font-bold rounded-lg hover:bg-teal-400 disabled:opacity-50 transition-colors">{wgPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
@@ -1054,7 +1065,18 @@ ${vpnCmd}
                         </p>
                         {!l2tpPoolEdit && (
                           <button
-                            onClick={() => { setL2tpPoolEdit(true); setL2tpPoolForm({ poolStart: String(l2tpServerInfo.poolStart ?? 10), poolEnd: String(l2tpServerInfo.poolEnd ?? 254), gateway: l2tpServerInfo.gateway ?? '' }); }}
+                            onClick={() => {
+                              const base = l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.');
+                              const toFullIp = (v: number | string | undefined, def: number) =>
+                                v === undefined ? (base ? `${base}.${def}` : '') :
+                                typeof v === 'number' ? (base ? `${base}.${v}` : String(v)) : String(v);
+                              setL2tpPoolEdit(true);
+                              setL2tpPoolForm({
+                                poolStart: toFullIp(l2tpServerInfo.poolStart, 10),
+                                poolEnd: toFullIp(l2tpServerInfo.poolEnd, 254),
+                                gateway: l2tpServerInfo.gateway || (base ? `${base}.1` : ''),
+                              });
+                            }}
                             className="text-xs text-[#bc13fe] hover:text-[#d060ff] border border-[#bc13fe]/40 px-2 py-1 rounded-lg"
                           >
                             Edit
@@ -1065,27 +1087,27 @@ ${vpnCmd}
                         <div className="grid grid-cols-3 gap-3 text-xs">
                           <div>
                             <p className="text-muted-foreground mb-0.5">IP Mulai</p>
-                            <p className="font-mono text-foreground">x.x.x.{l2tpServerInfo.poolStart ?? 10}</p>
+                            <p className="font-mono text-foreground">{typeof l2tpServerInfo.poolStart === 'string' ? l2tpServerInfo.poolStart : `${l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.${l2tpServerInfo.poolStart ?? 10}`}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground mb-0.5">IP Akhir</p>
-                            <p className="font-mono text-foreground">x.x.x.{l2tpServerInfo.poolEnd ?? 254}</p>
+                            <p className="font-mono text-foreground">{typeof l2tpServerInfo.poolEnd === 'string' ? l2tpServerInfo.poolEnd : `${l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.${l2tpServerInfo.poolEnd ?? 254}`}</p>
                           </div>
                           <div>
                             <p className="text-muted-foreground mb-0.5">Gateway</p>
-                            <p className="font-mono text-foreground">{l2tpServerInfo.gateway || 'auto (.1)'}</p>
+                            <p className="font-mono text-foreground">{l2tpServerInfo.gateway || `${l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.1`}</p>
                           </div>
                         </div>
                       ) : (
                         <div className="space-y-2">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">IP Mulai (x.x.x.<strong>?</strong>)</label>
-                              <input type="number" min={2} max={253} value={l2tpPoolForm.poolStart} onChange={(e) => setL2tpPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="10" />
+                              <label className="text-xs text-muted-foreground mb-1 block">IP Mulai <span className="text-gray-500">(IP lengkap, mis. 10.201.0.10)</span></label>
+                              <input type="text" value={l2tpPoolForm.poolStart} onChange={(e) => setL2tpPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="mis. 10.201.0.10" />
                             </div>
                             <div>
-                              <label className="text-xs text-muted-foreground mb-1 block">IP Akhir (x.x.x.<strong>?</strong>)</label>
-                              <input type="number" min={3} max={254} value={l2tpPoolForm.poolEnd} onChange={(e) => setL2tpPoolForm(p => ({...p, poolEnd: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="254" />
+                              <label className="text-xs text-muted-foreground mb-1 block">IP Akhir <span className="text-gray-500">(IP lengkap, mis. 10.201.0.254)</span></label>
+                              <input type="text" value={l2tpPoolForm.poolEnd} onChange={(e) => setL2tpPoolForm(p => ({...p, poolEnd: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="mis. 10.201.0.254" />
                             </div>
                           </div>
                           <div>

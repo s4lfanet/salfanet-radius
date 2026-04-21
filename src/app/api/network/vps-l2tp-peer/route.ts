@@ -24,8 +24,17 @@ async function readL2tpInfo(): Promise<Record<string, any> | null> {
   }
 }
 
-async function getNextAvailableIp(subnet: string, poolStart = 10, poolEnd = 254): Promise<string> {
+async function getNextAvailableIp(subnet: string, poolStart: number | string = 10, poolEnd: number | string = 254): Promise<string> {
   const base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
+  // Normalize poolStart/poolEnd to last-octet integer
+  const toOctet = (v: number | string, def: number) => {
+    if (typeof v === 'number') return v
+    const s = String(v).trim()
+    if (s.includes('.')) { const n = parseInt(s.split('.')[3]); return isNaN(n) ? def : n }
+    const n = parseInt(s); return isNaN(n) ? def : n
+  }
+  const startOctet = toOctet(poolStart, 10)
+  const endOctet = toOctet(poolEnd, 254)
   // Read current chap-secrets to find used IPs
   let chap = ''
   try { chap = await readFile('/etc/ppp/chap-secrets', 'utf8') } catch { /* empty */ }
@@ -34,10 +43,10 @@ async function getNextAvailableIp(subnet: string, poolStart = 10, poolEnd = 254)
   const re = /\d+\.\d+\.\d+\.(\d+)/g
   let m
   while ((m = re.exec(chap)) !== null) used.add(parseInt(m[1]))
-  for (let i = poolStart; i <= poolEnd; i++) {
+  for (let i = startOctet; i <= endOctet; i++) {
     if (!used.has(i)) return `${base}.${i}`
   }
-  throw new Error(`Subnet penuh (range .${poolStart}–.${poolEnd})`)
+  throw new Error(`Subnet penuh (range .${startOctet}–.${endOctet})`)
 }
 
 // ─── GET /api/network/vps-l2tp-peer ────────────────────────────────────────
@@ -138,24 +147,30 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json()
   const { poolStart, poolEnd, gateway } = body
+  const IP_RE = /^(\d{1,3}\.){3}\d{1,3}$/
 
   if (poolStart !== undefined) {
-    const v = parseInt(poolStart)
-    if (isNaN(v) || v < 2 || v > 253) return NextResponse.json({ error: 'poolStart harus antara 2–253' }, { status: 400 })
-    info.poolStart = v
+    const s = String(poolStart).trim()
+    if (!IP_RE.test(s)) return NextResponse.json({ error: 'poolStart harus berupa IP lengkap, mis. 10.201.0.10' }, { status: 400 })
+    info.poolStart = s
   }
   if (poolEnd !== undefined) {
-    const v = parseInt(poolEnd)
-    if (isNaN(v) || v < 3 || v > 254) return NextResponse.json({ error: 'poolEnd harus antara 3–254' }, { status: 400 })
-    info.poolEnd = v
+    const s = String(poolEnd).trim()
+    if (!IP_RE.test(s)) return NextResponse.json({ error: 'poolEnd harus berupa IP lengkap, mis. 10.201.0.254' }, { status: 400 })
+    info.poolEnd = s
   }
   if (gateway !== undefined) {
     const trimmed = String(gateway).trim()
-    if (trimmed && !/^(\d{1,3}\.){3}\d{1,3}$/.test(trimmed)) return NextResponse.json({ error: 'Format gateway tidak valid' }, { status: 400 })
+    if (trimmed && !IP_RE.test(trimmed)) return NextResponse.json({ error: 'Format gateway tidak valid' }, { status: 400 })
     info.gateway = trimmed || info.gateway
   }
 
-  if ((info.poolStart ?? 10) >= (info.poolEnd ?? 254)) {
+  // Validate poolStart < poolEnd (compare last octets)
+  const toOctet = (v: any, def: number) => {
+    if (typeof v === 'number') return v
+    const s = String(v); return s.includes('.') ? parseInt(s.split('.')[3]) || def : parseInt(s) || def
+  }
+  if (toOctet(info.poolStart, 10) >= toOctet(info.poolEnd, 254)) {
     return NextResponse.json({ error: 'poolStart harus lebih kecil dari poolEnd' }, { status: 400 })
   }
 

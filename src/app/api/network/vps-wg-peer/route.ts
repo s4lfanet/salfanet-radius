@@ -51,9 +51,19 @@ async function genKeypair(): Promise<{ privateKey: string; publicKey: string }> 
 /**
  * Find the next available VPN IP in the WG subnet.
  * Reads existing [Peer] AllowedIPs from wg.conf, returns first free .x in poolStart–poolEnd.
+ * poolStart/poolEnd can be full IPs ("10.200.0.2") or last-octet numbers (2).
  */
-async function nextAvailableIp(subnet: string, poolStart = 2, poolEnd = 254): Promise<string> {
+async function nextAvailableIp(subnet: string, poolStart: number | string = 2, poolEnd: number | string = 254): Promise<string> {
   const base = subnet.split('/')[0].split('.').slice(0, 3).join('.')
+  // Normalize poolStart/poolEnd to last-octet integer
+  const toOctet = (v: number | string, def: number) => {
+    if (typeof v === 'number') return v
+    const s = String(v).trim()
+    if (s.includes('.')) { const n = parseInt(s.split('.')[3]); return isNaN(n) ? def : n }
+    const n = parseInt(s); return isNaN(n) ? def : n
+  }
+  const startOctet = toOctet(poolStart, 2)
+  const endOctet = toOctet(poolEnd, 254)
   let conf = ''
   try { conf = await readFile(WG_CONF, 'utf8') } catch { /* new conf */ }
 
@@ -63,10 +73,10 @@ async function nextAvailableIp(subnet: string, poolStart = 2, poolEnd = 254): Pr
   let m
   while ((m = re.exec(conf)) !== null) used.add(parseInt(m[1]))
 
-  for (let i = poolStart; i <= poolEnd; i++) {
+  for (let i = startOctet; i <= endOctet; i++) {
     if (!used.has(i)) return `${base}.${i}`
   }
-  throw new Error(`Subnet penuh: tidak ada IP tersisa (range .${poolStart}–.${poolEnd})`)
+  throw new Error(`Subnet penuh: tidak ada IP tersisa (range .${startOctet}–.${endOctet})`)
 }
 
 /**
@@ -410,24 +420,30 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json()
   const { poolStart, poolEnd, gatewayIp } = body
+  const IP_RE = /^(\d{1,3}\.){3}\d{1,3}$/
 
   if (poolStart !== undefined) {
-    const v = parseInt(poolStart)
-    if (isNaN(v) || v < 2 || v > 253) return NextResponse.json({ error: 'poolStart harus antara 2–253' }, { status: 400 })
-    info.poolStart = v
+    const s = String(poolStart).trim()
+    if (!IP_RE.test(s)) return NextResponse.json({ error: 'poolStart harus berupa IP lengkap, mis. 10.200.0.2' }, { status: 400 })
+    info.poolStart = s
   }
   if (poolEnd !== undefined) {
-    const v = parseInt(poolEnd)
-    if (isNaN(v) || v < 3 || v > 254) return NextResponse.json({ error: 'poolEnd harus antara 3–254' }, { status: 400 })
-    info.poolEnd = v
+    const s = String(poolEnd).trim()
+    if (!IP_RE.test(s)) return NextResponse.json({ error: 'poolEnd harus berupa IP lengkap, mis. 10.200.0.254' }, { status: 400 })
+    info.poolEnd = s
   }
   if (gatewayIp !== undefined) {
     const trimmed = String(gatewayIp).trim()
-    if (trimmed && !/^(\d{1,3}\.){3}\d{1,3}$/.test(trimmed)) return NextResponse.json({ error: 'Format gatewayIp tidak valid' }, { status: 400 })
+    if (trimmed && !IP_RE.test(trimmed)) return NextResponse.json({ error: 'Format gatewayIp tidak valid' }, { status: 400 })
     info.gatewayIp = trimmed || info.gatewayIp
   }
 
-  if ((info.poolStart ?? 2) >= (info.poolEnd ?? 254)) {
+  // Validate poolStart < poolEnd (compare last octets)
+  const toOctet = (v: any, def: number) => {
+    if (typeof v === 'number') return v
+    const s = String(v); return s.includes('.') ? parseInt(s.split('.')[3]) || def : parseInt(s) || def
+  }
+  if (toOctet(info.poolStart, 2) >= toOctet(info.poolEnd, 254)) {
     return NextResponse.json({ error: 'poolStart harus lebih kecil dari poolEnd' }, { status: 400 })
   }
 
