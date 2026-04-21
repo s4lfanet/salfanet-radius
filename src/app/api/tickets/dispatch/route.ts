@@ -112,11 +112,28 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Get all active technicians
-    const technicians = await prisma.technician.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, phoneNumber: true },
-    });
+    // Get all active technicians from BOTH sources
+    const [adminTechnicians, fieldTechnicians] = await Promise.all([
+      prisma.adminUser.findMany({
+        where: { role: 'TECHNICIAN', isActive: true },
+        select: { id: true, name: true, phone: true },
+      }),
+      prisma.technician.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true, phoneNumber: true },
+      }),
+    ]);
+
+    // Merge, deduplicate by phone
+    const seenPhones = new Set<string>();
+    const technicians = [
+      ...adminTechnicians
+        .filter((u) => u.phone)
+        .map((u) => { seenPhones.add(u.phone!); return { name: u.name, phoneNumber: u.phone! }; }),
+      ...fieldTechnicians
+        .filter((t) => t.phoneNumber && !seenPhones.has(t.phoneNumber))
+        .map((t) => ({ name: t.name, phoneNumber: t.phoneNumber })),
+    ];
 
     // Send WA to all technicians via WhatsAppService (handles all provider types + failover)
     const priorityLabel: Record<string, string> = {

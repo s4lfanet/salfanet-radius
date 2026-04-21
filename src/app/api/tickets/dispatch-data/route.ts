@@ -11,7 +11,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const customerSearch = searchParams.get('customerSearch') || '';
 
-    const [technicians, categories, routers, olts, odcs, odps, pppoeUsers, billingCustomers] = await Promise.all([
+    const [adminTechnicians, fieldTechnicians, categories, routers, olts, odcs, odps, pppoeUsers, billingCustomers] = await Promise.all([
+      // Admin users with TECHNICIAN role
+      prisma.adminUser.findMany({
+        where: { role: 'TECHNICIAN', isActive: true },
+        select: { id: true, name: true, phone: true },
+        orderBy: { name: 'asc' },
+      }),
+      // Field technicians (separate technicians table, login via OTP)
       prisma.technician.findMany({
         where: { isActive: true },
         select: { id: true, name: true, phoneNumber: true },
@@ -114,6 +121,19 @@ export async function GET(req: NextRequest) {
       ...pppoeUsers.map((u: any) => ({ ...u, _source: 'pppoe' })),
       ...billingOnlyCustomers,
     ].slice(0, 30);
+
+    // Merge both sources into unified technician list (avoid duplicates by phone)
+    const seenPhones = new Set<string>();
+    const technicians = [
+      ...adminTechnicians.map((u: any) => {
+        const phone = u.phone || '';
+        seenPhones.add(phone);
+        return { id: u.id, name: u.name, phoneNumber: phone, _source: 'admin' };
+      }),
+      ...fieldTechnicians
+        .filter((t: any) => !seenPhones.has(t.phoneNumber))
+        .map((t: any) => ({ ...t, _source: 'field' })),
+    ];
 
     return NextResponse.json({ technicians, categories, routers, olts, odcs, odps, customers });
   } catch (error) {
