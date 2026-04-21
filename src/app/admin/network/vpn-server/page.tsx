@@ -85,14 +85,6 @@ export default function VpnServerPage() {
   const [wgAddingPeer, setWgAddingPeer] = useState(false);
   const [wgNewPeerName, setWgNewPeerName] = useState('');
   const [wgGeneratedScript, setWgGeneratedScript] = useState<string | null>(null);
-  // WG Pool Config edit state
-  const [wgPoolEdit, setWgPoolEdit] = useState(false);
-  const [wgPoolForm, setWgPoolForm] = useState({ poolStart: '', poolEnd: '', gatewayIp: '' });
-  const [wgPoolSaving, setWgPoolSaving] = useState(false);
-  // L2TP Pool Config edit state
-  const [l2tpPoolEdit, setL2tpPoolEdit] = useState(false);
-  const [l2tpPoolForm, setL2tpPoolForm] = useState({ poolStart: '', poolEnd: '', gateway: '' });
-  const [l2tpPoolSaving, setL2tpPoolSaving] = useState(false);
 
   // --- Modal States --------------------------------------------------------
   const [showL2tpSshModal, setShowL2tpSshModal] = useState(false);
@@ -488,53 +480,6 @@ export default function VpnServerPage() {
     }
   };
 
-  const handleWgSavePoolConfig = async () => {
-    setWgPoolSaving(true);
-    try {
-      const res = await fetch('/api/network/vps-wg-peer', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          poolStart: wgPoolForm.poolStart || undefined,
-          poolEnd: wgPoolForm.poolEnd || undefined,
-          gatewayIp: wgPoolForm.gatewayIp || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Gagal simpan');
-      setWgServerInfo((prev: any) => ({ ...prev, poolStart: data.poolStart, poolEnd: data.poolEnd, gatewayIp: data.gatewayIp }));
-      setWgPoolEdit(false);
-      addToast({ type: 'success', title: 'Konfigurasi pool WireGuard disimpan' });
-    } catch (e: any) {
-      addToast({ type: 'error', title: 'Gagal simpan pool config', description: e.message });
-    } finally {
-      setWgPoolSaving(false);
-    }
-  };
-
-  const handleL2tpSavePoolConfig = async () => {
-    setL2tpPoolSaving(true);
-    try {
-      const res = await fetch('/api/network/vps-l2tp-peer', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          poolStart: l2tpPoolForm.poolStart || undefined,
-          poolEnd: l2tpPoolForm.poolEnd || undefined,
-          gateway: l2tpPoolForm.gateway || undefined,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Gagal simpan');
-      setL2tpStatus((prev: any) => ({ ...prev, poolStart: data.poolStart, poolEnd: data.poolEnd, gateway: data.gateway }));
-      setL2tpPoolEdit(false);
-      addToast({ type: 'success', title: 'Konfigurasi pool L2TP disimpan' });
-    } catch (e: any) {
-      addToast({ type: 'error', title: 'Gagal simpan pool config', description: e.message });
-    } finally {
-      setL2tpPoolSaving(false);
-    }
-  };
   // ── End WireGuard Handlers ──────────────────────────────────────────────
 
   const handleAdd = () => {
@@ -1462,43 +1407,8 @@ export default function VpnServerPage() {
                     </div>
                   </div>
 
-                  {/* Pool Config */}
-                  <div className="mb-5 p-4 rounded-xl border border-teal-500/30 bg-teal-500/5">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-sm font-bold text-teal-300 flex items-center gap-2"><Settings className="w-4 h-4" /> Konfigurasi Pool IP WireGuard</p>
-                      {!wgPoolEdit && (
-                        <button onClick={() => { setWgPoolEdit(true); setWgPoolForm({ poolStart: String(wgServerInfo.poolStart ?? 2), poolEnd: String(wgServerInfo.poolEnd ?? 254), gatewayIp: wgServerInfo.gatewayIp ?? '' }); }} className="text-xs text-teal-400 hover:text-teal-300 border border-teal-500/40 px-2 py-1 rounded-lg">Edit</button>
-                      )}
-                    </div>
-                    {!wgPoolEdit ? (
-                      <div className="grid grid-cols-3 gap-3 text-xs">
-                        <div><p className="text-muted-foreground mb-0.5">IP Mulai</p><p className="font-mono text-foreground">{wgServerInfo.subnet?.split('.').slice(0,3).join('.')}.{wgServerInfo.poolStart ?? 2}</p></div>
-                        <div><p className="text-muted-foreground mb-0.5">IP Akhir</p><p className="font-mono text-foreground">{wgServerInfo.subnet?.split('.').slice(0,3).join('.')}.{wgServerInfo.poolEnd ?? 254}</p></div>
-                        <div><p className="text-muted-foreground mb-0.5">Gateway VPS</p><p className="font-mono text-foreground">{wgServerInfo.gatewayIp || (wgServerInfo.subnet?.split('.').slice(0,3).join('.') + '.1')}</p></div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <label className="text-xs text-muted-foreground mb-1 block">IP Mulai (x.x.x.<strong>?</strong>)</label>
-                            <input type="number" min={2} max={253} value={wgPoolForm.poolStart} onChange={(e) => setWgPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder="2" />
-                          </div>
-                          <div>
-                            <label className="text-xs text-muted-foreground mb-1 block">IP Akhir (x.x.x.<strong>?</strong>)</label>
-                            <input type="number" min={3} max={254} value={wgPoolForm.poolEnd} onChange={(e) => setWgPoolForm(p => ({...p, poolEnd: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder="254" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="text-xs text-muted-foreground mb-1 block">Gateway IP VPS <span className="text-gray-500">(IP wg0 di VPS, default .1)</span></label>
-                          <input type="text" value={wgPoolForm.gatewayIp} onChange={(e) => setWgPoolForm(p => ({...p, gatewayIp: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm focus:border-teal-400 focus:ring-1 focus:ring-teal-400/30" placeholder={wgServerInfo.subnet?.split('.').slice(0,3).join('.') + '.1'} />
-                        </div>
-                        <div className="flex gap-2 pt-1">
-                          <button onClick={handleWgSavePoolConfig} disabled={wgPoolSaving} className="flex-1 py-2 bg-teal-500 text-white text-sm font-bold rounded-lg hover:bg-teal-400 disabled:opacity-50 transition-colors">{wgPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
-                          <button onClick={() => setWgPoolEdit(false)} className="flex-1 py-2 bg-muted border border-border text-foreground text-sm rounded-lg hover:bg-accent transition-colors">Batal</button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {/* Pool Config moved to VPN Client page → Konfigurasi VPS Built-in VPN */}
+
                   <div className="mb-5">
                     <p className="text-sm font-bold text-teal-300 mb-2">NAS Peers ({wgPeers.length})</p>
                     {wgPeers.length === 0 ? (
@@ -1677,44 +1587,7 @@ export default function VpnServerPage() {
                 </div>
               )}
 
-              {/* L2TP Pool Config */}
-              <div className="mb-5 p-4 rounded-xl border border-[#bc13fe]/30 bg-[#bc13fe]/5">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-bold text-[#bc13fe] flex items-center gap-2"><Settings className="w-4 h-4" /> Konfigurasi Pool IP L2TP</p>
-                  {!l2tpPoolEdit && (
-                    <button onClick={() => { setL2tpPoolEdit(true); setL2tpPoolForm({ poolStart: String(l2tpStatus?.poolStart ?? 10), poolEnd: String(l2tpStatus?.poolEnd ?? 254), gateway: l2tpStatus?.gateway ?? '' }); }} className="text-xs text-[#bc13fe] hover:text-[#d060ff] border border-[#bc13fe]/40 px-2 py-1 rounded-lg">Edit</button>
-                  )}
-                </div>
-                {!l2tpPoolEdit ? (
-                  <div className="grid grid-cols-3 gap-3 text-xs">
-                    <div><p className="text-muted-foreground mb-0.5">IP Mulai</p><p className="font-mono text-foreground">x.x.x.{l2tpStatus?.poolStart ?? 10}</p></div>
-                    <div><p className="text-muted-foreground mb-0.5">IP Akhir</p><p className="font-mono text-foreground">x.x.x.{l2tpStatus?.poolEnd ?? 254}</p></div>
-                    <div><p className="text-muted-foreground mb-0.5">Gateway</p><p className="font-mono text-foreground">{l2tpStatus?.gateway || 'auto (.1)'}</p></div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">IP Mulai (x.x.x.<strong>?</strong>)</label>
-                        <input type="number" min={2} max={253} value={l2tpPoolForm.poolStart} onChange={(e) => setL2tpPoolForm(p => ({...p, poolStart: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="10" />
-                      </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">IP Akhir (x.x.x.<strong>?</strong>)</label>
-                        <input type="number" min={3} max={254} value={l2tpPoolForm.poolEnd} onChange={(e) => setL2tpPoolForm(p => ({...p, poolEnd: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="254" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground mb-1 block">Gateway <span className="text-gray-500">(IP lokal VPS L2TP, kosong = auto .1)</span></label>
-                      <input type="text" value={l2tpPoolForm.gateway} onChange={(e) => setL2tpPoolForm(p => ({...p, gateway: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="mis. 10.201.0.1" />
-                    </div>
-                    <div className="flex gap-2 pt-1">
-                      <button onClick={handleL2tpSavePoolConfig} disabled={l2tpPoolSaving} className="flex-1 py-2 bg-[#bc13fe] text-white text-sm font-bold rounded-lg hover:bg-[#d060ff] disabled:opacity-50 transition-colors">{l2tpPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
-                      <button onClick={() => setL2tpPoolEdit(false)} className="flex-1 py-2 bg-muted border border-border text-foreground text-sm rounded-lg hover:bg-accent transition-colors">Batal</button>
-                    </div>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground mt-2">Perubahan langsung berlaku untuk assign IP client L2TP berikutnya. Tidak memerlukan restart VPS.</p>
-              </div>
+              {/* Pool Config moved to VPN Client page → Konfigurasi VPS Built-in VPN */}
 
               {/* Control Buttons */}
               <div className="flex flex-wrap gap-3 mb-6">
