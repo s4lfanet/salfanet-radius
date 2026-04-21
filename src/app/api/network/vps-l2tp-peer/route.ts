@@ -127,6 +127,7 @@ export async function POST(req: NextRequest) {
       password,
       ipsecPsk: info.ipsecPsk || '',
       vpnIp,
+      label,
     })
 
     return NextResponse.json({ success: true, username, password, vpnIp, routerosScript })
@@ -189,9 +190,15 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({ success: true, poolStart: info.poolStart, poolEnd: info.poolEnd, gateway: info.gateway })
 }
 
-function generateL2tpScript({ serverIp, username, password, ipsecPsk, vpnIp }: {
-  serverIp: string; username: string; password: string; ipsecPsk: string; vpnIp: string
+function toL2tpIfaceName(label: string): string {
+  const safe = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 11)
+  return `vpn-${safe || 'vpn'}`
+}
+
+function generateL2tpScript({ serverIp, username, password, ipsecPsk, vpnIp, label }: {
+  serverIp: string; username: string; password: string; ipsecPsk: string; vpnIp: string; label: string
 }): string {
+  const ifaceName = toL2tpIfaceName(label)
   return `# ═══════════════════════════════════════════════════════
 # SALFANET — Script L2TP/IPsec ke VPS
 # Server : ${serverIp}
@@ -203,7 +210,7 @@ function generateL2tpScript({ serverIp, username, password, ipsecPsk, vpnIp }: {
 
 # [2] Tambah interface L2TP Client
 /interface/l2tp-client/add \\
-  name=vpn-salfanet \\
+  name=${ifaceName} \\
   connect-to=${serverIp} \\
   user="${username}" \\
   password="${password}" \\
@@ -217,6 +224,6 @@ function generateL2tpScript({ serverIp, username, password, ipsecPsk, vpnIp }: {
 # Pastikan status = "connected"
 
 # [4] Route traffic ke RADIUS server via VPN
-/ip/route/add dst-address=0.0.0.0/0 gateway=vpn-salfanet comment="SALFANET-VPN"
+/ip/route/add dst-address=0.0.0.0/0 gateway=${ifaceName} comment="SALFANET-VPN"
 `
 }

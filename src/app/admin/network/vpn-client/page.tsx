@@ -57,6 +57,13 @@ interface Credentials {
   serverHost?: string               // VPN server host (for WG endpoint)
   wgSubnet?: string                 // WireGuard VPN subnet e.g. 10.200.0.0/24
   wgGatewayIp?: string              // VPS tunnel gateway IP e.g. 10.200.0.1
+  nasName?: string                  // Display name of the NAS (used for interface naming)
+}
+
+/** Convert a NAS name to a safe MikroTik interface name segment (max 12 chars, alphanumeric + dash) */
+function toSafeIfaceName(prefix: string, name: string): string {
+  const safe = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 12)
+  return `${prefix}-${safe || 'vpn'}`
 }
 
 export default function VpnClientPage() {
@@ -211,10 +218,10 @@ export default function VpnClientPage() {
 # ──────────────────────────────────────────────────
 
 # 1. Buat WireGuard interface dengan private key NAS
-/interface/wireguard/add name=wg-salfanet private-key="${data.clientPrivateKey || '<PRIVATE_KEY>'}"
+/interface/wireguard/add name=${toSafeIfaceName('wg', wgNewPeerName.trim())} private-key="${data.clientPrivateKey || '<PRIVATE_KEY>'}"
 
 # 2. Tambah peer — allowed-address = seluruh subnet VPN (bukan hanya gateway)
-/interface/wireguard/peers/add interface=wg-salfanet \\
+/interface/wireguard/peers/add interface=${toSafeIfaceName('wg', wgNewPeerName.trim())} \\
   public-key="${data.serverPublicKey}" \\
   endpoint-address="${data.serverEndpoint?.split(':')[0]}" \\
   endpoint-port=${data.wgPort} \\
@@ -222,12 +229,12 @@ export default function VpnClientPage() {
   persistent-keepalive=25
 
 # 3. Assign IP address NAS ke interface WireGuard
-/ip/address/remove [find where interface=wg-salfanet]
-/ip/address/add address=${data.vpnIp}/32 interface=wg-salfanet
+/ip/address/remove [find where interface=${toSafeIfaceName('wg', wgNewPeerName.trim())}]
+/ip/address/add address=${data.vpnIp}/32 interface=${toSafeIfaceName('wg', wgNewPeerName.trim())}
 
 # 4. Route seluruh subnet VPN melalui WireGuard
 /ip/route/remove [find where comment="SALFANET-VPN"]
-/ip/route/add dst-address=${data.vpnSubnet || '10.200.0.0/24'} gateway=wg-salfanet comment="SALFANET-VPN"
+/ip/route/add dst-address=${data.vpnSubnet || '10.200.0.0/24'} gateway=${toSafeIfaceName('wg', wgNewPeerName.trim())} comment="SALFANET-VPN"
 
 # 5. RADIUS via WireGuard (server = VPS gateway IP di subnet VPN)
 /radius/remove [find where comment~"SALFANET"]
@@ -486,6 +493,7 @@ export default function VpnClientPage() {
             server: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
             serverHost: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
             username: formData.name.trim(),
+            nasName: formData.name.trim(),
             password: '',
             vpnIp: data.vpnIp,
             vpnType: 'wireguard',
@@ -664,6 +672,7 @@ export default function VpnClientPage() {
       username: client.username,
       password: client.password,
       vpnIp: client.vpnIp,
+      nasName: client.name,
       winboxPort: client.winboxPort || undefined,
       winboxRemote: client.winboxPort ? `${server.host}:${client.winboxPort}` : undefined,
       apiUsername: client.apiUsername || undefined,
@@ -723,14 +732,15 @@ ${vpnCmd}
 # ============================================================`.trim()
     }
 
+    const nasDisplayName = credentials.nasName || credentials.username
     if (selectedVpnType === 'l2tp') {
       return scriptBase(
-        `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=l2tp-client-salfanet use-ipsec=yes ipsec-secret=salfanet-vpn-secret add-default-route=no allow=mschap2 comment="SALFANET VPN"`,
+        `add connect-to=${credentials.server} user=${credentials.username} password=${credentials.password} disabled=no name=${toSafeIfaceName('l2tp', nasDisplayName)} use-ipsec=yes ipsec-secret=salfanet-vpn-secret add-default-route=no allow=mschap2 comment="SALFANET VPN"`,
         'l2tp-client'
       )
     } else if (selectedVpnType === 'sstp') {
       return scriptBase(
-        `add connect-to=${credentials.server} port=992 user=${credentials.username} password=${credentials.password} disabled=no name=sstp-client-salfanet add-default-route=no authentication=mschap2 certificate=none comment="SALFANET VPN"`,
+        `add connect-to=${credentials.server} port=992 user=${credentials.username} password=${credentials.password} disabled=no name=${toSafeIfaceName('sstp', nasDisplayName)} add-default-route=no authentication=mschap2 certificate=none comment="SALFANET VPN"`,
         'sstp-client'
       )
     } else if (selectedVpnType === 'wireguard') {
@@ -752,11 +762,11 @@ ${vpnCmd}
 # ============================================================
 
 # 1. Buat WireGuard interface dengan private key NAS
-/interface/wireguard/add name=wg-salfanet private-key="${clientPk}"
+/interface/wireguard/add name=${toSafeIfaceName('wg', credentials.nasName || credentials.username)} private-key="${clientPk}"
 
 # 2. Tambah peer (VPS WireGuard server)
 #    allowed-address = subnet VPN agar semua host VPN dapat diakses
-/interface/wireguard/peers/add interface=wg-salfanet \\
+/interface/wireguard/peers/add interface=${toSafeIfaceName('wg', credentials.nasName || credentials.username)} \\
   public-key="${serverPk}" \\
   endpoint-address="${serverHost}" \\
   endpoint-port=${wgPort} \\
@@ -764,12 +774,12 @@ ${vpnCmd}
   persistent-keepalive=25
 
 # 3. Assign IP address NAS ke interface WireGuard
-/ip/address/remove [find where interface=wg-salfanet]
-/ip/address/add address=${credentials.vpnIp}/32 interface=wg-salfanet
+/ip/address/remove [find where interface=${toSafeIfaceName('wg', credentials.nasName || credentials.username)}]
+/ip/address/add address=${credentials.vpnIp}/32 interface=${toSafeIfaceName('wg', credentials.nasName || credentials.username)}
 
 # 4. Route seluruh subnet VPN melalui WireGuard
 /ip/route/remove [find where comment="SALFANET-VPN"]
-/ip/route/add dst-address=${wgSubnet} gateway=wg-salfanet comment="SALFANET-VPN"
+/ip/route/add dst-address=${wgSubnet} gateway=${toSafeIfaceName('wg', credentials.nasName || credentials.username)} comment="SALFANET-VPN"
 
 # 5. Buat API User (untuk remote management MikroTik)
 /user/group/add name=api-users policy=read,write,policy,test,sensitive,api comment="Limited API Access Group"
