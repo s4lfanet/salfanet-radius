@@ -529,22 +529,11 @@ export async function PATCH(req: NextRequest) {
 
   await writeFile(WG_INFO, JSON.stringify(info, null, 2), 'utf8')
 
-  // Sync vpnServer subnet in DB so syncNasClients() derives correct FreeRADIUS gateway IP
+  // Update vpnServer subnet in DB (only if record already exists — PATCH never creates vpnServer)
   try {
-    await prisma.vpnServer.upsert({
+    await prisma.vpnServer.updateMany({
       where: { id: VPS_WG_SERVER_ID },
-      create: {
-        id: VPS_WG_SERVER_ID,
-        name: 'VPS WireGuard Server',
-        host: info.publicIp || 'vps',
-        username: 'vps',
-        password: 'vps',
-        subnet: info.subnet,
-        wgEnabled: true,
-        wgPublicKey: info.publicKey || undefined,
-        wgPort: info.listenPort ?? 51820,
-      },
-      update: {
+      data: {
         subnet: info.subnet,
         ...(info.publicIp ? { host: info.publicIp } : {}),
       },
