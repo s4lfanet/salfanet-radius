@@ -183,24 +183,9 @@ async function syncPeersToDB(
 ): Promise<void> {
   if (confPeers.size === 0) return
   try {
-    // Ensure virtual VPS WG server row exists (as FK parent).
-    // Only CREATE if missing — server config updates belong to PATCH only.
+    // vpnServer harus sudah ada. syncPeersToDB tidak membuat vpnServer baru.
     const serverExists = await prisma.vpnServer.findUnique({ where: { id: VPS_WG_SERVER_ID }, select: { id: true } })
-    if (!serverExists) {
-      await prisma.vpnServer.create({
-        data: {
-          id: VPS_WG_SERVER_ID,
-          name: 'VPS WireGuard Server',
-          host: info.publicIp || 'vps',
-          username: 'vps',
-          password: 'vps',
-          subnet: info.subnet,
-          wgEnabled: true,
-          wgPublicKey: info.publicKey,
-          wgPort: info.listenPort,
-        },
-      })
-    }
+    if (!serverExists) return // belum di-setup, skip sync
 
     // For each conf peer not yet in DB, create a record
     const existingByPubKey = await prisma.vpnClient.findMany({
@@ -315,26 +300,17 @@ export async function POST(req: NextRequest) {
     let nasSecretForResponse: string | undefined
     let apiUsernameForResponse: string | undefined
     let apiPasswordForResponse: string | undefined
+
+    // vpnServer harus sudah ada (dibuat via VPN Server setup). Jangan buat dari sini.
+    const existingWgServer = await prisma.vpnServer.findUnique({ where: { id: VPS_WG_SERVER_ID } })
+    if (!existingWgServer) {
+      return NextResponse.json(
+        { error: 'VPS WireGuard Server belum dikonfigurasi. Setup VPN Server terlebih dahulu sebelum menambah client.' },
+        { status: 400 },
+      )
+    }
+
     try {
-      // Ensure VPS WG virtual server row exists (as FK parent for vpnClient).
-      // Only CREATE if missing — server config updates belong to PATCH only.
-      const existingWgServer = await prisma.vpnServer.findUnique({ where: { id: VPS_WG_SERVER_ID } })
-      if (!existingWgServer) {
-        await prisma.vpnServer.create({
-          data: {
-            id: VPS_WG_SERVER_ID,
-            name: 'VPS WireGuard Server',
-            host: info.publicIp || 'vps',
-            username: 'vps',
-            password: 'vps',
-            subnet: info.subnet,
-            wgEnabled: true,
-            wgPublicKey: info.publicKey,
-            wgPort: info.listenPort,
-          },
-        })
-      }
-      // Use upsert so that if syncPeersToDB already created a stub record (without
       // private key), we update it with the real private key now.
       const username = `wg-${nasName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).substring(2, 6)}`
       const apiUsername = `api-${nasName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`

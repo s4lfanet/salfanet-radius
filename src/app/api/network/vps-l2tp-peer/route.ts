@@ -147,28 +147,21 @@ export async function POST(req: NextRequest) {
 
     // Persist L2TP peer to DB so FreeRADIUS NAS config includes this NAS
     let nasSecretForResponse: string | undefined
+
+    // vpnServer harus sudah ada (dibuat via VPN Server setup). Jangan buat dari sini.
+    const existingL2tpServer = await prisma.vpnServer.findUnique({ where: { id: VPS_L2TP_SERVER_ID } })
+    if (!existingL2tpServer) {
+      return NextResponse.json(
+        { error: 'VPS L2TP Server belum dikonfigurasi. Setup VPN Server terlebih dahulu sebelum menambah client.' },
+        { status: 400 },
+      )
+    }
+
     try {
       const poolBase = typeof info.poolStart === 'string' && info.poolStart.includes('.')
         ? info.poolStart.split('.').slice(0, 3).join('.')
         : (info.subnet || '10.201.0.0/24').split('/')[0].split('.').slice(0, 3).join('.')
       const serverSubnet = `${poolBase}.0/24`
-
-      // Ensure VPS L2TP virtual server row exists (as FK parent for vpnClient).
-      // Only CREATE if missing — server config updates belong to PATCH only.
-      const existingL2tpServer = await prisma.vpnServer.findUnique({ where: { id: VPS_L2TP_SERVER_ID } })
-      if (!existingL2tpServer) {
-        await prisma.vpnServer.create({
-          data: {
-            id: VPS_L2TP_SERVER_ID,
-            name: 'VPS L2TP Server',
-            host: info.publicIp || 'vps-l2tp',
-            username: 'vps',
-            password: 'vps',
-            subnet: serverSubnet,
-            l2tpEnabled: true,
-          },
-        })
-      }
 
       // Upsert VPN client record
       const dbClient = await prisma.vpnClient.upsert({
