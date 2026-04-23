@@ -117,6 +117,18 @@ AllowedIPs = ${vpnIp}/32
     // Fallback if syncconf unavailable
     try { await exec(`wg addpeer ${WG_IFACE} ${pubKey} allowed-ips ${vpnIp}/32`) } catch { /* ignore */ }
   }
+
+  // Ensure iptables rules allow WG peer traffic to reach RADIUS (idempotent check-then-insert)
+  const iptablesRules = [
+    `FORWARD -i ${WG_IFACE} -j ACCEPT`,
+    `FORWARD -o ${WG_IFACE} -j ACCEPT`,
+    `INPUT -i ${WG_IFACE} -p udp -m multiport --dports 1812,1813,3799 -j ACCEPT`,
+  ]
+  for (const rule of iptablesRules) {
+    try {
+      await exec(`iptables -C ${rule} 2>/dev/null || iptables -I ${rule}`, { shell: '/bin/bash' })
+    } catch { /* ignore — may not have iptables */ }
+  }
 }
 
 /**
@@ -472,19 +484,31 @@ export async function PATCH(req: NextRequest) {
     const newSubnet = `${newBase}.0/24`
     // Update subnet in info file
     info.subnet = newSubnet
-    // Update [Interface] Address in wg0.conf
+    // Update [Interface] Address in wg0.conf + ensure PostUp/PostDown include RADIUS INPUT rules
     try {
       let conf = await readFile(WG_CONF, 'utf8')
       conf = conf.replace(/^(Address\s*=\s*)[\d./]+/m, `$1${newGateway}/24`)
-      await writeFile(WG_CONF, conf, 'utf8')
-      // Reload WireGuard interface (zero-downtime)
-      try {
-        await exec(`wg syncconf ${WG_IFACE} <(wg-quick strip ${WG_IFACE})`, { shell: '/bin/bash' })
-      } catch {
-        try { await exec(`ip addr flush dev ${WG_IFACE} && ip addr add ${newGateway}/24 dev ${WG_IFACE}`) } catch { /* ignore */ }
+
+      // PostUp/PostDown: FORWARD rules for WG + INPUT rules for RADIUS ports from WG peers
+      const postUp   = `iptables -I INPUT -p udp --dport 51820 -j ACCEPT; iptables -I FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -I FORWARD -o ${WG_IFACE} -j ACCEPT; iptables -I INPUT -i ${WG_IFACE} -p udp -m multiport --dports 1812,1813,3799 -j ACCEPT`
+      const postDown = `iptables -D INPUT -p udp --dport 51820 -j ACCEPT; iptables -D FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -D FORWARD -o ${WG_IFACE} -j ACCEPT; iptables -D INPUT -i ${WG_IFACE} -p udp -m multiport --dports 1812,1813,3799 -j ACCEPT`
+      if (/^PostUp\s*=/m.test(conf)) {
+        conf = conf.replace(/^PostUp\s*=.*$/m, `PostUp = ${postUp}`)
+      } else {
+        conf = conf.replace(/^(\[Interface\])$/m, `$1\nPostUp = ${postUp}`)
       }
+      if (/^PostDown\s*=/m.test(conf)) {
+        conf = conf.replace(/^PostDown\s*=.*$/m, `PostDown = ${postDown}`)
+      } else {
+        conf = conf.replace(/^(PostUp\s*=.*)$/m, `$1\nPostDown = ${postDown}`)
+      }
+
+      await writeFile(WG_CONF, conf, 'utf8')
+      // Full restart so the new Interface Address and PostUp rules take effect
+      await exec(`wg-quick down ${WG_IFACE} 2>/dev/null || true`, { shell: '/bin/bash' })
+      await exec(`wg-quick up ${WG_IFACE}`, { shell: '/bin/bash' })
     } catch (e) {
-      console.error('[vps-wg-peer] PATCH: failed to update wg0.conf:', e)
+      console.error('[vps-wg-peer] PATCH: failed to update/restart wg interface:', e)
     }
   } else if (info.poolStart && typeof info.poolStart === 'string' && info.poolStart.includes('.')) {
     // Derive subnet from poolStart if no gatewayIp set

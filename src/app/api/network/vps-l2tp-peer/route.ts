@@ -124,6 +124,18 @@ export async function POST(req: NextRequest) {
       try { await exec('systemctl restart xl2tpd') } catch { /* ignore */ }
     }
 
+    // Ensure iptables rules allow PPP traffic to reach RADIUS (idempotent check-then-insert)
+    const pppRules = [
+      'FORWARD -i ppp+ -j ACCEPT',
+      'FORWARD -o ppp+ -j ACCEPT',
+      'INPUT -i ppp+ -p udp -m multiport --dports 1812,1813,3799 -j ACCEPT',
+    ]
+    for (const rule of pppRules) {
+      try {
+        await exec(`iptables -C ${rule} 2>/dev/null || iptables -I ${rule}`, { shell: '/bin/bash' })
+      } catch { /* ignore */ }
+    }
+
     const routerosScript = generateL2tpScript({
       serverIp: info.publicIp || '',
       username,
