@@ -183,22 +183,24 @@ async function syncPeersToDB(
 ): Promise<void> {
   if (confPeers.size === 0) return
   try {
-    // Ensure virtual VPS WG server row exists
-    await prisma.vpnServer.upsert({
-      where: { id: VPS_WG_SERVER_ID },
-      create: {
-        id: VPS_WG_SERVER_ID,
-        name: 'VPS WireGuard Server',
-        host: info.publicIp || 'vps',
-        username: 'vps',
-        password: 'vps',
-        subnet: info.subnet,
-        wgEnabled: true,
-        wgPublicKey: info.publicKey,
-        wgPort: info.listenPort,
-      },
-      update: { host: info.publicIp || 'vps', subnet: info.subnet, wgPublicKey: info.publicKey, wgPort: info.listenPort },
-    })
+    // Ensure virtual VPS WG server row exists (as FK parent).
+    // Only CREATE if missing — server config updates belong to PATCH only.
+    const serverExists = await prisma.vpnServer.findUnique({ where: { id: VPS_WG_SERVER_ID }, select: { id: true } })
+    if (!serverExists) {
+      await prisma.vpnServer.create({
+        data: {
+          id: VPS_WG_SERVER_ID,
+          name: 'VPS WireGuard Server',
+          host: info.publicIp || 'vps',
+          username: 'vps',
+          password: 'vps',
+          subnet: info.subnet,
+          wgEnabled: true,
+          wgPublicKey: info.publicKey,
+          wgPort: info.listenPort,
+        },
+      })
+    }
 
     // For each conf peer not yet in DB, create a record
     const existingByPubKey = await prisma.vpnClient.findMany({
@@ -314,27 +316,24 @@ export async function POST(req: NextRequest) {
     let apiUsernameForResponse: string | undefined
     let apiPasswordForResponse: string | undefined
     try {
-      // Ensure VPS WG virtual server row exists
-      await prisma.vpnServer.upsert({
-        where: { id: VPS_WG_SERVER_ID },
-        create: {
-          id: VPS_WG_SERVER_ID,
-          name: 'VPS WireGuard Server',
-          host: info.publicIp || 'vps',
-          username: 'vps',
-          password: 'vps',
-          subnet: info.subnet,
-          wgEnabled: true,
-          wgPublicKey: info.publicKey,
-          wgPort: info.listenPort,
-        },
-        update: {
-          host: info.publicIp || 'vps',
-          subnet: info.subnet,
-          wgPublicKey: info.publicKey,
-          wgPort: info.listenPort,
-        },
-      })
+      // Ensure VPS WG virtual server row exists (as FK parent for vpnClient).
+      // Only CREATE if missing — server config updates belong to PATCH only.
+      const existingWgServer = await prisma.vpnServer.findUnique({ where: { id: VPS_WG_SERVER_ID } })
+      if (!existingWgServer) {
+        await prisma.vpnServer.create({
+          data: {
+            id: VPS_WG_SERVER_ID,
+            name: 'VPS WireGuard Server',
+            host: info.publicIp || 'vps',
+            username: 'vps',
+            password: 'vps',
+            subnet: info.subnet,
+            wgEnabled: true,
+            wgPublicKey: info.publicKey,
+            wgPort: info.listenPort,
+          },
+        })
+      }
       // Use upsert so that if syncPeersToDB already created a stub record (without
       // private key), we update it with the real private key now.
       const username = `wg-${nasName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Math.random().toString(36).substring(2, 6)}`

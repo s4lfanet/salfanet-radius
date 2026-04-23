@@ -153,20 +153,22 @@ export async function POST(req: NextRequest) {
         : (info.subnet || '10.201.0.0/24').split('/')[0].split('.').slice(0, 3).join('.')
       const serverSubnet = `${poolBase}.0/24`
 
-      // Upsert virtual L2TP server record
-      await prisma.vpnServer.upsert({
-        where: { id: VPS_L2TP_SERVER_ID },
-        create: {
-          id: VPS_L2TP_SERVER_ID,
-          name: 'VPS L2TP Server',
-          host: info.publicIp || 'vps-l2tp',
-          username: 'vps',
-          password: 'vps',
-          subnet: serverSubnet,
-          l2tpEnabled: true,
-        },
-        update: { host: info.publicIp || undefined, subnet: serverSubnet },
-      })
+      // Ensure VPS L2TP virtual server row exists (as FK parent for vpnClient).
+      // Only CREATE if missing — server config updates belong to PATCH only.
+      const existingL2tpServer = await prisma.vpnServer.findUnique({ where: { id: VPS_L2TP_SERVER_ID } })
+      if (!existingL2tpServer) {
+        await prisma.vpnServer.create({
+          data: {
+            id: VPS_L2TP_SERVER_ID,
+            name: 'VPS L2TP Server',
+            host: info.publicIp || 'vps-l2tp',
+            username: 'vps',
+            password: 'vps',
+            subnet: serverSubnet,
+            l2tpEnabled: true,
+          },
+        })
+      }
 
       // Upsert VPN client record
       const dbClient = await prisma.vpnClient.upsert({
