@@ -98,6 +98,7 @@ function SidebarPushToggle({ techId }: { techId: string }) {
   const [subscribed, setSubscribed] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [loading, setLoading] = useState(false);
+  const { addToast } = useToast();
 
   const checkSupport = () =>
     typeof window !== 'undefined' &&
@@ -177,17 +178,26 @@ function SidebarPushToggle({ techId }: { techId: string }) {
             applicationServerKey: urlBase64ToUint8Array(publicKey),
           });
         }
-        await fetch('/api/push/technician-subscribe', {
+        const subRes = await fetch('/api/push/technician-subscribe', {
           method: 'POST',
           credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
         });
+        const subData = await subRes.json().catch(() => ({ success: false }));
+        if (!subData.success) {
+          // Unsubscribe browser-side to keep UI in sync with server state
+          await sub.unsubscribe();
+          throw new Error(subData.error || 'Gagal mendaftarkan notifikasi push ke server');
+        }
         setSubscribed(true);
         setPermission('granted');
+        addToast({ type: 'success', title: 'Push notification aktif', description: 'Terdaftar di server' });
       }
     } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Gagal mengaktifkan notifikasi';
       console.error('[SidebarPush]', e);
+      addToast({ type: 'error', title: 'Gagal aktifkan notifikasi', description: msg });
     } finally {
       setLoading(false);
     }

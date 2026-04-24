@@ -460,9 +460,9 @@ export default function PushNotificationsPage() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {([
                   { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.usersWithTokens ?? 0, unit: 'push' },
-                  { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: stats?.technicianSubscribers ?? 0, unit: 'terdaftar' },
+                  { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'terdaftar' },
                   { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
-                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0), unit: 'total' },
+                  { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
                 ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<any>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
                   const RoleIcon = role.icon;
                   const active = recipientRole === role.value;
@@ -685,12 +685,16 @@ export default function PushNotificationsPage() {
                     {recipientRole === 'technician' && (
                       <>
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Teknisi dengan Push aktif</span>
-                          <span className="font-bold text-amber-600">{stats?.technicianSubscribers ?? 0} teknisi</span>
+                          <span className="text-muted-foreground">Total teknisi dengan Push aktif</span>
+                          <span className="font-bold text-amber-600">{(stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)} teknisi</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Admin dengan Push aktif</span>
-                          <span className="font-bold text-orange-600">{stats?.adminSubscribers ?? 0} admin</span>
+                          <span className="text-muted-foreground text-[10px]">↳ Teknisi OTP</span>
+                          <span className="font-medium text-amber-500">{stats?.technicianSubscribers ?? 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground text-[10px]">↳ Admin via portal teknisi</span>
+                          <span className="font-medium text-orange-500">{stats?.adminSubscribers ?? 0}</span>
                         </div>
                       </>
                     )}
@@ -708,11 +712,7 @@ export default function PushNotificationsPage() {
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Teknisi</span>
-                          <span className="font-bold text-amber-600">{stats?.technicianSubscribers ?? 0}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">Admin</span>
-                          <span className="font-bold text-orange-600">{stats?.adminSubscribers ?? 0}</span>
+                          <span className="font-bold text-amber-600">{(stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Agen</span>
