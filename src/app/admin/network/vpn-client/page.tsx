@@ -278,8 +278,19 @@ export default function VpnClientPage() {
   };
   // ── End WireGuard handlers ──────────────────────────────────────────────
 
+  // Helper: resolve vpnServer info termasuk VPS built-in yang tidak ada di vpnServers list
+  const resolveServer = (vpnServerId: string) => {
+    if (vpnServerId === '__vps_wg_server__') {
+      return { name: 'VPS WireGuard Server', host: wgServerInfo?.publicIp || '103.151.140.110', subnet: wgServerInfo?.subnet || '172.16.212.0/24' }
+    }
+    if (vpnServerId === '__vps_l2tp_server__') {
+      return { name: 'VPS L2TP Server', host: l2tpServerInfo?.publicIp || '103.151.140.110', subnet: l2tpServerInfo?.subnet || '10.201.0.0/24' }
+    }
+    return vpnServers.find(s => s.id === vpnServerId) || null
+  }
+
   const generateVpsRoutingScript = (client: VpnClient): string => {
-    const server = vpnServers.find(s => s.id === client.vpnServerId);
+    const server = resolveServer(client.vpnServerId);
     const subnet = server?.subnet || '10.20.30.0/24';
     const parts = subnet.split('/')[0].split('.');
     const gateway = `${parts[0]}.${parts[1]}.${parts[2]}.1`;
@@ -656,7 +667,7 @@ export default function VpnClientPage() {
   };
 
   const viewCredentials = (client: VpnClient) => {
-    const server = vpnServers.find(s => s.id === client.vpnServerId)
+    const server = resolveServer(client.vpnServerId)
     if (!server) return
 
     const normalizedClientType = String(client.vpnType || 'l2tp').toLowerCase()
@@ -1201,7 +1212,7 @@ ${vpnCmd}
                           <div>
                             <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.vpnServer')}</p>
                             <p className="font-medium text-foreground text-sm">
-                              {vpnServers.find(s => s.id === client.vpnServerId)?.name || 'N/A'}
+                              {resolveServer(client.vpnServerId)?.name || 'N/A'}
                             </p>
                           </div>
                           <div>
@@ -1254,7 +1265,7 @@ ${vpnCmd}
                             <div>
                               <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.winboxRemote')}</p>
                               <p className="font-mono text-[#00f7ff] text-sm drop-shadow-[0_0_6px_rgba(0,247,255,0.6)]">
-                                {vpnServers.find(s => s.id === client.vpnServerId)?.host}:{client.winboxPort}
+                                {resolveServer(client.vpnServerId)?.host}:{client.winboxPort}
                               </p>
                             </div>
                           )}
@@ -1292,7 +1303,7 @@ ${vpnCmd}
                               <span>{t('network.vpsRoutingSetup')}</span>
                               <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
                                 <Route className="w-3 h-3" />
-                                {vpnServers.find(s => s.id === client.vpnServerId)?.subnet || '—'}
+                                {resolveServer(client.vpnServerId)?.subnet || '—'}
                                 {expandedRoutingPanels.has(client.id)
                                   ? <ChevronUp className="w-4 h-4" />
                                   : <ChevronDown className="w-4 h-4" />}
