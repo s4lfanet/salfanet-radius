@@ -30,7 +30,11 @@ export async function GET() {
   }
 
   try {
+    // Exclude VPS built-in servers (WireGuard & L2TP) — mereka dikelola via halaman VPN Client,
+    // bukan VPN Server. Record-nya ada di DB hanya untuk memenuhi FK vpnClient.vpnServerId.
+    const VPS_BUILTIN_IDS = ['__vps_wg_server__', '__vps_l2tp_server__']
     const vpnServers = await prisma.vpnServer.findMany({
+      where: { id: { notIn: VPS_BUILTIN_IDS } },
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

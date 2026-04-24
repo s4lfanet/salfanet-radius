@@ -123,8 +123,9 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     })
 
+    const VPS_BUILTIN_IDS = ['__vps_wg_server__', '__vps_l2tp_server__']
     const vpnServers = await prisma.vpnServer.findMany({
-      where: { isActive: true },
+      where: { isActive: true, id: { notIn: VPS_BUILTIN_IDS } },
       orderBy: { name: 'asc' },
     })
 
