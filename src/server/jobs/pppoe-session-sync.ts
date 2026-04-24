@@ -13,6 +13,7 @@
 
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
+import { randomUUID } from 'crypto';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -44,6 +45,7 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
   isSyncRunning = now;
   const startedAt = Date.now();
   let closed = 0;
+  let imported = 0;
 
   try {
     // 1. Close stale sessions — no Accounting-Update in over 30 minutes
@@ -79,8 +81,89 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
       console.log(`[PPPoE-Sync] 🔴 Closed ${blockedResult} session(s) for blocked/stop users`);
     }
 
-    // 3. Close orphan sessions — username doesn't exist in pppoe_users at all
-    //    and not a hotspot voucher either (those are handled by hotspot-sync)
+    // 3. Auto-import orphan RADIUS sessions into pppoe_users
+    //    Find active sessions where username is not in pppoe_users AND not hotspot voucher.
+    //    For each orphan that has a radcheck entry (legitimate RADIUS user), create a
+    //    minimal pppoe_users record so the session appears in the dashboard.
+    const orphanRows = await prisma.$queryRaw<Array<{ username: string }>>`
+      SELECT DISTINCT ra.username
+      FROM radacct ra
+      LEFT JOIN pppoe_users pu ON pu.username = ra.username
+      LEFT JOIN hotspot_vouchers hv ON hv.code = ra.username
+      WHERE ra.acctstoptime IS NULL
+        AND pu.id IS NULL
+        AND hv.id IS NULL
+        AND ra.acctstarttime < DATE_SUB(NOW(), INTERVAL 2 MINUTE)
+    `;
+
+    if (orphanRows.length > 0) {
+      // Get a default profile to assign (fallback if radusergroup has no match)
+      const defaultProfile = await prisma.pppoeProfile.findFirst({
+        where: { isActive: true },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, groupName: true },
+      });
+
+      for (const { username } of orphanRows) {
+        try {
+          // Look up group from radusergroup → find matching pppoeProfile
+          const userGroup = await prisma.radusergroup.findFirst({
+            where: { username },
+            select: { groupname: true },
+          });
+
+          let profileId = defaultProfile?.id;
+          if (userGroup?.groupname) {
+            const matchedProfile = await prisma.pppoeProfile.findFirst({
+              where: { groupName: userGroup.groupname, isActive: true },
+              select: { id: true },
+            });
+            if (matchedProfile) profileId = matchedProfile.id;
+          }
+
+          if (!profileId) {
+            console.log(`[PPPoE-Sync] ⚠️ Skip import "${username}" — no profile found`);
+            continue;
+          }
+
+          // Get password from radcheck
+          const radcheckRow = await prisma.radcheck.findFirst({
+            where: { username, attribute: 'Cleartext-Password' },
+            select: { value: true },
+          });
+
+          await prisma.pppoeUser.create({
+            data: {
+              id: randomUUID(),
+              username,
+              password: radcheckRow?.value || 'radius-imported',
+              profileId,
+              name: username,
+              phone: '-',
+              status: 'active',
+              syncedToRadius: true,
+              lastSyncAt: new Date(),
+              comment: 'Auto-imported dari sesi RADIUS aktif',
+            },
+          });
+
+          imported++;
+          console.log(`[PPPoE-Sync] ✅ Imported user "${username}" dari sesi RADIUS aktif`);
+        } catch (importErr: any) {
+          // Skip if already exists (race condition) or other DB error
+          if (!importErr.message?.includes('Unique constraint')) {
+            console.error(`[PPPoE-Sync] ⚠️ Gagal import "${username}":`, importErr.message);
+          }
+        }
+      }
+
+      if (imported > 0) {
+        console.log(`[PPPoE-Sync] 📥 Total imported: ${imported} user(s) dari RADIUS`);
+      }
+    }
+
+    // 4. Close orphan sessions — username still not in pppoe_users AND not hotspot voucher
+    //    (after import above, legitimate users should now be in pppoe_users)
     const orphanResult = await prisma.$executeRaw`
       UPDATE radacct ra
       LEFT JOIN pppoe_users pu ON pu.username = ra.username
@@ -95,7 +178,7 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
     `;
     closed += Number(orphanResult);
     if (orphanResult > 0) {
-      console.log(`[PPPoE-Sync] 🔴 Closed ${orphanResult} orphan session(s) (user not found)`);
+      console.log(`[PPPoE-Sync] 🔴 Closed ${orphanResult} orphan session(s) (user tidak terdaftar di RADIUS)`);
     }
 
     // 4. Update acctsessiontime for all active sessions (keep it accurate)
@@ -106,7 +189,7 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
         AND acctstarttime IS NOT NULL
     `;
 
-    // 5. Count active NAS for reporting
+    // 6. Count active NAS for reporting
     const nasCount = await prisma.$queryRaw<Array<{ cnt: bigint }>>`
       SELECT COUNT(DISTINCT nasipaddress) as cnt
       FROM radacct
@@ -114,9 +197,9 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
     `;
     const activeNasCount = Number(nasCount[0]?.cnt || 0);
 
-    // 6. Log to cronHistory
+    // 7. Log to cronHistory
     const duration = Date.now() - startedAt;
-    const message = `Pure RADIUS sync: ${closed} closed, ${activeNasCount} active NAS(es)`;
+    const message = `Pure RADIUS sync: ${closed} closed, ${imported} imported, ${activeNasCount} active NAS(es)`;
 
     await prisma.cronHistory.create({
       data: {
@@ -130,11 +213,11 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
       },
     });
 
-    if (closed > 0) {
+    if (closed > 0 || imported > 0) {
       console.log(`[PPPoE-Sync] ✅ ${message}`);
     }
 
-    return { success: true, inserted: 0, closed, routers: activeNasCount, routerErrors: 0 };
+    return { success: true, inserted: imported, closed, routers: activeNasCount, routerErrors: 0 };
   } catch (error: any) {
     console.error('[PPPoE-Sync] ❌ Error:', error.message);
 
