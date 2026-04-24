@@ -47,8 +47,20 @@ interface VpnClientData {
 }
 
 // ── Redundansi RADIUS Info Panel ────────────────────────────────────────────
-function VpnServerRedundancyPanel() {
+interface RedundancyPanelProps {
+  wgGatewayIp?: string   // VPS WireGuard gateway IP (e.g. 10.20.30.1)
+  l2tpLocalIp?: string   // VPS L2TP local IP (e.g. 172.16.211.1)
+  vpsPublicIp?: string   // VPS public IP
+  l2tpInstalled?: boolean
+}
+
+function VpnServerRedundancyPanel({ wgGatewayIp, l2tpLocalIp, vpsPublicIp, l2tpInstalled }: RedundancyPanelProps) {
   const [open, setOpen] = useState(false);
+
+  const wgIp = wgGatewayIp || '<WG-GATEWAY-IP>'
+  const l2tpIp = l2tpLocalIp || '<L2TP-LOCAL-IP>'
+  const vpsIp = vpsPublicIp || '<VPS-PUBLIC-IP>'
+
   return (
     <div className="mb-8">
       <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-green-500/30 rounded-2xl overflow-hidden">
@@ -80,7 +92,7 @@ function VpnServerRedundancyPanel() {
                     <p className="text-xs font-bold text-teal-300">WireGuard Server (Primary)</p>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">VPS menjalankan WireGuard server (<span className="font-mono text-teal-300">wg0</span>). Setiap NAS/MikroTik connect sebagai peer. RADIUS request dikirim melalui tunnel ini sebagai jalur utama (distance=1).</p>
-                  <div className="mt-2 p-2 rounded-lg bg-teal-500/10 font-mono text-xs text-teal-300">172.16.212.1 (VPS wg0)</div>
+                  <div className="mt-2 p-2 rounded-lg bg-teal-500/10 font-mono text-xs text-teal-300">{wgIp} (VPS wg0)</div>
                 </div>
                 <div className="p-4 rounded-xl border border-[#bc13fe]/30 bg-[#bc13fe]/5">
                   <div className="flex items-center gap-2 mb-2">
@@ -88,7 +100,9 @@ function VpnServerRedundancyPanel() {
                     <p className="text-xs font-bold text-[#d060ff]">L2TP/IPsec LNS (Backup)</p>
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">VPS juga menjalankan L2TP server (<span className="font-mono text-[#bc13fe]">xl2tpd</span> + <span className="font-mono text-[#bc13fe]">strongswan</span>). MikroTik connect sebagai L2TP client. Jika WireGuard drop, jalur ini aktif otomatis (distance=10).</p>
-                  <div className="mt-2 p-2 rounded-lg bg-[#bc13fe]/10 font-mono text-xs text-[#bc13fe]">172.16.211.1 (VPS l2tp)</div>
+                  <div className="mt-2 p-2 rounded-lg bg-[#bc13fe]/10 font-mono text-xs text-[#bc13fe]">
+                    {l2tpInstalled === false ? <span className="text-amber-400">L2TP belum di-install — jalankan install-l2tp-server.sh</span> : <>{l2tpIp} (VPS l2tp)</>}
+                  </div>
                 </div>
               </div>
             </div>
@@ -97,9 +111,9 @@ function VpnServerRedundancyPanel() {
             <div>
               <p className="text-xs font-bold text-green-400 uppercase tracking-wider mb-3">Topologi Jalur RADIUS</p>
               <div className="p-4 rounded-xl border border-slate-600/30 bg-slate-800/30 font-mono text-xs space-y-1 text-muted-foreground">
-                <p><span className="text-[#00f7ff]">MikroTik NAS</span> ──[wg0, dist=1]──▶ <span className="text-teal-300">VPS:172.16.212.1</span> ──▶ FreeRADIUS:1812 <span className="text-green-400">← UTAMA</span></p>
+                <p><span className="text-[#00f7ff]">MikroTik NAS</span> ──[wg0, dist=1]──▶ <span className="text-teal-300">VPS:{wgIp}</span> ──▶ FreeRADIUS:1812 <span className="text-green-400">← UTAMA</span></p>
                 <p className="pl-14 text-slate-500">↘ [check-gateway=ping ~30s]</p>
-                <p><span className="text-[#00f7ff]">MikroTik NAS</span> ──[l2tp, dist=10]─▶ <span className="text-[#bc13fe]">VPS:172.16.211.1</span> ──▶ FreeRADIUS:1812 <span className="text-amber-400">← BACKUP</span></p>
+                <p><span className="text-[#00f7ff]">MikroTik NAS</span> ──[l2tp, dist=10]─▶ <span className="text-[#bc13fe]">VPS:{l2tpIp}</span> ──▶ FreeRADIUS:1812 <span className="text-amber-400">← BACKUP</span></p>
               </div>
               <p className="text-xs text-muted-foreground mt-2">Watchdog service di VPS memantau status peer WireGuard setiap 15 detik. Saat WG drop, routing reply paket RADIUS otomatis dialihkan ke interface L2TP.</p>
             </div>
@@ -125,7 +139,7 @@ function VpnServerRedundancyPanel() {
               </div>
               <div className="mt-3 p-3 rounded-xl border border-slate-600/30 bg-slate-800/30">
                 <p className="text-xs text-muted-foreground">Untuk install/setup komponen redundansi di VPS baru, jalankan script:</p>
-                <p className="font-mono text-xs text-green-300 mt-1">bash scripts/setup-radius-redundancy.sh &lt;nama&gt; &lt;wg-ip&gt; &lt;vps-ip&gt;</p>
+                <p className="font-mono text-xs text-green-300 mt-1">bash scripts/setup-radius-redundancy.sh &lt;nama&gt; &lt;wg-ip&gt; {vpsIp}</p>
               </div>
             </div>
 
@@ -135,16 +149,11 @@ function VpnServerRedundancyPanel() {
               <div className="space-y-2">
                 <div className="p-3 rounded-xl border border-[#00f7ff]/20 bg-[#00f7ff]/5">
                   <p className="text-xs font-bold text-[#00f7ff] mb-1">1. Tambah L2TP client backup</p>
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">{`/interface/l2tp-client/add name=l2tp-vps-backup connect-to=<VPS-IP> \\
-  user="l2tp-<nama>" password="<password>" \\
-  use-ipsec=yes ipsec-secret="<psk>" \\
-  profile=default-encryption disabled=no`}</pre>
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">{`/interface/l2tp-client/add name=l2tp-vps-backup connect-to=${vpsIp} \\\n  user="l2tp-<nama>" password="<password>" \\\n  use-ipsec=yes ipsec-secret="<psk>" \\\n  profile=default-encryption disabled=no`}</pre>
                 </div>
                 <div className="p-3 rounded-xl border border-[#bc13fe]/20 bg-[#bc13fe]/5">
-                  <p className="text-xs font-bold text-[#d060ff] mb-1">2. Tambah backup route ke VPS via L2TP</p>
-                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">{`/ip/route/add dst-address=<WG-SERVER-IP>/32 \\
-  gateway=l2tp-vps-backup distance=10 \\
-  check-gateway=ping comment=RADIUS-BACKUP-L2TP`}</pre>
+                  <p className="text-xs font-bold text-[#d060ff] mb-1">2. Tambah backup route ke WG Gateway via L2TP</p>
+                  <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">{`/ip/route/add dst-address=${wgIp}/32 \\\n  gateway=l2tp-vps-backup distance=10 \\\n  check-gateway=ping comment=RADIUS-BACKUP-L2TP`}</pre>
                 </div>
                 <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/5">
                   <p className="text-xs font-bold text-amber-400 mb-1">3. Aktifkan check-gateway pada route WireGuard</p>
@@ -260,6 +269,9 @@ export default function VpnServerPage() {
   });
   const [showTutorial, setShowTutorial] = useState(true);
 
+  // Redundancy panel data — fetched from API, reflects actual config
+  const [l2tpInfo, setL2tpInfo] = useState<{ installed: boolean; gateway?: string; localIp?: string; publicIp?: string } | null>(null);
+
   useEffect(() => {
     // Restore saved SSH + L2TP credentials from localStorage
     try {
@@ -270,6 +282,8 @@ export default function VpnServerPage() {
     } catch {}
     loadServers();
     loadVpnClients();
+    // Fetch L2TP info for redundancy panel
+    fetch('/api/network/vps-l2tp-info').then(r => r.json()).then(d => setL2tpInfo(d)).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1040,7 +1054,15 @@ export default function VpnServerPage() {
           </div>
 
           {/* ── Redundansi RADIUS Panel ───────────────────────────────── */}
-          <VpnServerRedundancyPanel />
+          <VpnServerRedundancyPanel
+            wgGatewayIp={(() => {
+              const wgServer = servers.find(s => s.wgEnabled) || servers[0];
+              return wgServer?.subnet ? wgServer.subnet.replace(/\.\d+\/\d+$/, '.1') : undefined;
+            })()}
+            l2tpLocalIp={l2tpInfo?.gateway}
+            vpsPublicIp={l2tpInfo?.publicIp}
+            l2tpInstalled={l2tpInfo?.installed}
+          />
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

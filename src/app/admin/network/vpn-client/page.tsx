@@ -67,7 +67,20 @@ function toSafeIfaceName(prefix: string, name: string): string {
 }
 
 // ── Redundansi RADIUS Info Panel ────────────────────────────────────────────
-function RedundancyInfoPanel() {
+interface RedundancyClientPanelProps {
+  wgGatewayIp?: string      // VPS WireGuard gateway IP (e.g. 172.16.212.1)
+  l2tpLocalIp?: string      // VPS L2TP local IP (e.g. 172.16.211.1)
+  vpsPublicIp?: string      // VPS public IP
+  l2tpInstalled?: boolean
+  exampleChrWgIp?: string   // Example CHR peer WG IP (e.g. 172.16.212.11)
+}
+function RedundancyInfoPanel({ wgGatewayIp, l2tpLocalIp, vpsPublicIp, l2tpInstalled, exampleChrWgIp }: RedundancyClientPanelProps) {
+  const wgIp = wgGatewayIp || '<WG-GATEWAY-IP>'
+  const l2tpIp = l2tpLocalIp || '<L2TP-LOCAL-IP>'
+  const vpsIp = vpsPublicIp || '<VPS-PUBLIC-IP>'
+  const chrWgIp = exampleChrWgIp || '<CHR-WG-IP>'
+  const l2tpSubnetX = l2tpLocalIp ? l2tpLocalIp.replace(/\.\d+$/, '.x') : '<L2TP-SUBNET>.x'
+
   const [open, setOpen] = useState(false);
   return (
     <div className="mb-8">
@@ -98,7 +111,7 @@ function RedundancyInfoPanel() {
                   <Wifi className="w-6 h-6 text-green-400 mx-auto mb-2" />
                   <p className="text-xs font-bold text-green-300">WireGuard (Primary)</p>
                   <p className="text-xs text-muted-foreground mt-1">Distance 1 — dipakai selama peer UP</p>
-                  <p className="font-mono text-xs text-green-400 mt-2">172.16.212.11 → 172.16.212.1</p>
+                  <p className="font-mono text-xs text-green-400 mt-2">{chrWgIp} → {wgIp}</p>
                 </div>
                 <div className="flex items-center justify-center">
                   <div className="text-center">
@@ -113,7 +126,7 @@ function RedundancyInfoPanel() {
                   <Radio className="w-6 h-6 text-[#bc13fe] mx-auto mb-2" />
                   <p className="text-xs font-bold text-[#d060ff]">L2TP/IPsec (Backup)</p>
                   <p className="text-xs text-muted-foreground mt-1">Distance 10 — aktif saat WG drop</p>
-                  <p className="font-mono text-xs text-[#bc13fe] mt-2">172.16.211.x → 172.16.211.1</p>
+                  <p className="font-mono text-xs text-[#bc13fe] mt-2">{l2tpSubnetX} → {l2tpIp}</p>
                 </div>
               </div>
             </div>
@@ -124,7 +137,7 @@ function RedundancyInfoPanel() {
               <div className="space-y-2">
                 {[
                   { n: '1', color: 'border-[#bc13fe]/40 bg-[#bc13fe]/5 text-[#bc13fe]', title: 'Daftarkan Router di Dashboard', desc: 'Menu NAS/Router → tambah router baru → isi IP, secret RADIUS.' },
-                  { n: '2', color: 'border-teal-500/40 bg-teal-500/5 text-teal-300', title: 'Hubungkan WireGuard (Primary)', desc: 'Pastikan wg0 peer ke VPS sudah UP dan MikroTik mendapat IP 172.16.212.x. Test dengan ping ke 172.16.212.1.' },
+                  { n: '2', color: 'border-teal-500/40 bg-teal-500/5 text-teal-300', title: 'Hubungkan WireGuard (Primary)', desc: `Pastikan wg0 peer ke VPS sudah UP dan MikroTik mendapat IP ${wgGatewayIp ? wgGatewayIp.replace(/\.\d+$/, '.x') : '172.16.212.x'}. Test dengan ping ke ${wgIp}.` },
                   { n: '3', color: 'border-green-500/40 bg-green-500/5 text-green-300', title: 'Test RADIUS via WireGuard', desc: 'Coba auth PPPoE/Hotspot untuk memastikan RADIUS sudah jalan via WireGuard sebelum setup backup.' },
                   { n: '4', color: 'border-[#00f7ff]/40 bg-[#00f7ff]/5 text-[#00f7ff]', title: 'Tambah L2TP Backup (3 perintah)', desc: 'Jalankan perintah MikroTik: add l2tp-client → add backup route → set check-gateway pada route WireGuard.' },
                 ].map(item => (
@@ -174,7 +187,7 @@ function RedundancyInfoPanel() {
               <p className="text-xs font-bold text-foreground mb-2">Cara Verifikasi Redundansi Aktif</p>
               <div className="space-y-1">
                 <p className="text-xs text-muted-foreground font-mono">• Lihat log watchdog VPS: <span className="text-green-300">journalctl -f -u salfanet-radius-watchdog</span></p>
-                <p className="text-xs text-muted-foreground font-mono">• Test ping VPS ke CHR via WG: <span className="text-green-300">ping -I wg0 172.16.212.11</span></p>
+                <p className="text-xs text-muted-foreground font-mono">• Test ping VPS ke CHR via WG: <span className="text-green-300">ping -I wg0 {chrWgIp}</span></p>
                 <p className="text-xs text-muted-foreground font-mono">• Cek route aktif di MikroTik: <span className="text-green-300">/ip/route/print detail</span></p>
                 <p className="text-xs text-muted-foreground font-mono">• Status L2TP di MikroTik: <span className="text-green-300">/interface/l2tp-client/print</span></p>
               </div>
@@ -241,6 +254,9 @@ export default function VpnClientPage() {
 
   useEffect(() => {
     loadClients();
+    // Pre-load VPS info for redundancy panel
+    loadWgServerInfo();
+    loadL2tpServerInfo();
     // Restore saved routing SSH credentials from localStorage
     try {
       const saved = localStorage.getItem('routing_ssh_credentials');
@@ -249,6 +265,7 @@ export default function VpnClientPage() {
         setApplyRoutingForm(prev => ({ ...prev, ...parsed }));
       }
     } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleRoutingPanel = (clientId: string) => {
@@ -1089,7 +1106,13 @@ ${vpnCmd}
           </div>
 
           {/* ── Redundansi RADIUS ─────────────────────────────────────── */}
-          <RedundancyInfoPanel />
+          <RedundancyInfoPanel
+            wgGatewayIp={wgServerInfo?.gatewayIp || (wgServerInfo?.subnet ? wgServerInfo.subnet.replace(/\.\d+\/\d+$/, '.1') : undefined)}
+            l2tpLocalIp={l2tpServerInfo?.gateway}
+            vpsPublicIp={l2tpServerInfo?.publicIp || wgServerInfo?.publicIp}
+            l2tpInstalled={l2tpServerInfo?.installed}
+            exampleChrWgIp={clients.find(c => c.vpnType === 'wireguard')?.vpnIp}
+          />
 
           {/* ── VPS Built-in VPN Settings ─────────────────────────────── */}
           <div className="mb-8">
