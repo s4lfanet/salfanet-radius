@@ -1,9 +1,9 @@
 {
-  "id": "/technician",
+  "id": "/technician/login",
   "name": "Salfanet Teknisi",
   "short_name": "Teknisi",
   "description": "Portal Teknisi Salfanet - manajemen tiket lapangan dan pelanggan",
-  "start_url": "/technician",
+  "start_url": "/technician/login",
   "scope": "/technician",
   "display": "standalone",
   "orientation": "any",
