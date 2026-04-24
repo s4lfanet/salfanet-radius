@@ -66,6 +66,127 @@ function toSafeIfaceName(prefix: string, name: string): string {
   return `${prefix}-${safe || 'vpn'}`
 }
 
+// ── Redundansi RADIUS Info Panel ────────────────────────────────────────────
+function RedundancyInfoPanel() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mb-8">
+      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-green-500/30 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setOpen(!open)}
+          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-green-500/5 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-green-500/20 rounded-lg flex items-center justify-center">
+              <Shield className="w-4 h-4 text-green-400" />
+            </div>
+            <div>
+              <span className="text-sm font-bold text-green-400 uppercase tracking-wider">Redundansi RADIUS — WireGuard Primary + L2TP Backup</span>
+              <span className="ml-2 text-xs text-muted-foreground">— otomatis failover saat WireGuard putus</span>
+            </div>
+          </div>
+          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+        </button>
+        {open && (
+          <div className="px-6 pb-6 border-t border-green-500/10 pt-5 space-y-5">
+
+            {/* Diagram Alur */}
+            <div>
+              <p className="text-xs font-bold text-green-400 uppercase tracking-wider mb-3">Cara Kerja Failover</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-xl border border-green-500/30 bg-green-500/5 text-center">
+                  <Wifi className="w-6 h-6 text-green-400 mx-auto mb-2" />
+                  <p className="text-xs font-bold text-green-300">WireGuard (Primary)</p>
+                  <p className="text-xs text-muted-foreground mt-1">Distance 1 — dipakai selama peer UP</p>
+                  <p className="font-mono text-xs text-green-400 mt-2">172.16.212.11 → 172.16.212.1</p>
+                </div>
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-8 h-0.5 bg-amber-400 mx-auto mb-1" />
+                    <p className="text-xs text-amber-400">check-gateway=ping</p>
+                    <p className="text-xs text-muted-foreground">~30–60 detik</p>
+                    <div className="w-8 h-0.5 bg-amber-400 mx-auto mt-1" />
+                    <p className="text-xs text-amber-300 mt-2 font-bold">Auto Failover</p>
+                  </div>
+                </div>
+                <div className="p-4 rounded-xl border border-[#bc13fe]/30 bg-[#bc13fe]/5 text-center">
+                  <Radio className="w-6 h-6 text-[#bc13fe] mx-auto mb-2" />
+                  <p className="text-xs font-bold text-[#d060ff]">L2TP/IPsec (Backup)</p>
+                  <p className="text-xs text-muted-foreground mt-1">Distance 10 — aktif saat WG drop</p>
+                  <p className="font-mono text-xs text-[#bc13fe] mt-2">172.16.211.x → 172.16.211.1</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Langkah Setup */}
+            <div>
+              <p className="text-xs font-bold text-green-400 uppercase tracking-wider mb-3">Langkah Setup (Urutan yang Benar)</p>
+              <div className="space-y-2">
+                {[
+                  { n: '1', color: 'border-[#bc13fe]/40 bg-[#bc13fe]/5 text-[#bc13fe]', title: 'Daftarkan Router di Dashboard', desc: 'Menu NAS/Router → tambah router baru → isi IP, secret RADIUS.' },
+                  { n: '2', color: 'border-teal-500/40 bg-teal-500/5 text-teal-300', title: 'Hubungkan WireGuard (Primary)', desc: 'Pastikan wg0 peer ke VPS sudah UP dan MikroTik mendapat IP 172.16.212.x. Test dengan ping ke 172.16.212.1.' },
+                  { n: '3', color: 'border-green-500/40 bg-green-500/5 text-green-300', title: 'Test RADIUS via WireGuard', desc: 'Coba auth PPPoE/Hotspot untuk memastikan RADIUS sudah jalan via WireGuard sebelum setup backup.' },
+                  { n: '4', color: 'border-[#00f7ff]/40 bg-[#00f7ff]/5 text-[#00f7ff]', title: 'Tambah L2TP Backup (3 perintah)', desc: 'Jalankan perintah MikroTik: add l2tp-client → add backup route → set check-gateway pada route WireGuard.' },
+                ].map(item => (
+                  <div key={item.n} className={`flex items-start gap-3 p-3 rounded-xl border ${item.color.split(' ').slice(0,2).join(' ')} ${item.color.split(' ')[1]}`}>
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${item.color} shrink-0`}>{item.n}</span>
+                    <div>
+                      <p className="text-xs font-bold text-foreground">{item.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pertanyaan: apakah auto-trigger? */}
+            <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5">
+              <div className="flex items-start gap-3">
+                <Info className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-amber-300">Apakah ubah IP Pool WireGuard/L2TP otomatis update DB & MikroTik CHR?</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    <strong className="text-amber-400">Tidak otomatis.</strong> Mengubah konfigurasi pool IP (poolStart, poolEnd, gateway) di panel &ldquo;Konfigurasi VPS Built-in VPN&rdquo; hanya mengubah <strong>range alokasi untuk peer baru</strong>. Peer yang <strong>sudah ada tidak berubah</strong> — IP mereka tetap seperti saat didaftarkan.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                    <div className="p-2 rounded-lg border border-red-500/30 bg-red-500/5 text-center">
+                      <p className="text-xs font-bold text-red-400">DB (vpn_clients)</p>
+                      <p className="text-xs text-muted-foreground">Tidak diupdate — vpnIp tetap lama</p>
+                    </div>
+                    <div className="p-2 rounded-lg border border-red-500/30 bg-red-500/5 text-center">
+                      <p className="text-xs font-bold text-red-400">VPS wg0.conf</p>
+                      <p className="text-xs text-muted-foreground">AllowedIPs peer lama tidak berubah</p>
+                    </div>
+                    <div className="p-2 rounded-lg border border-red-500/30 bg-red-500/5 text-center">
+                      <p className="text-xs font-bold text-red-400">MikroTik CHR</p>
+                      <p className="text-xs text-muted-foreground">Perlu re-run script secara manual</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-amber-400/80 mt-1">
+                    💡 Jika ingin ganti IP peer yang sudah ada: edit IP via ikon kunci di kartu VPN Client, lalu update script di MikroTik secara manual.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Cara verifikasi */}
+            <div className="p-4 rounded-xl border border-slate-600/30 bg-slate-800/30">
+              <p className="text-xs font-bold text-foreground mb-2">Cara Verifikasi Redundansi Aktif</p>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground font-mono">• Lihat log watchdog VPS: <span className="text-green-300">journalctl -f -u salfanet-radius-watchdog</span></p>
+                <p className="text-xs text-muted-foreground font-mono">• Test ping VPS ke CHR via WG: <span className="text-green-300">ping -I wg0 172.16.212.11</span></p>
+                <p className="text-xs text-muted-foreground font-mono">• Cek route aktif di MikroTik: <span className="text-green-300">/ip/route/print detail</span></p>
+                <p className="text-xs text-muted-foreground font-mono">• Status L2TP di MikroTik: <span className="text-green-300">/interface/l2tp-client/print</span></p>
+              </div>
+            </div>
+
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function VpnClientPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -966,6 +1087,9 @@ ${vpnCmd}
               )}
             </div>
           </div>
+
+          {/* ── Redundansi RADIUS ─────────────────────────────────────── */}
+          <RedundancyInfoPanel />
 
           {/* ── VPS Built-in VPN Settings ─────────────────────────────── */}
           <div className="mb-8">
