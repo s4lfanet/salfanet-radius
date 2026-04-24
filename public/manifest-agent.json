@@ -4,12 +4,13 @@
   "short_name": "Agent",
   "description": "Portal Agent Salfanet - generate dan kelola voucher",
   "start_url": "/agent",
-  "scope": "/agent",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#0a0520",
   "theme_color": "#8b5cf6",
   "lang": "id-ID",
+  "prefer_related_applications": false,
   "categories": ["business", "utilities"],
   "icons": [
     {

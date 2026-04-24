@@ -4,12 +4,13 @@
   "short_name": "Customer",
   "description": "Portal Pelanggan Salfanet - cek tagihan, paket, dan tiket",
   "start_url": "/customer",
-  "scope": "/customer",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#03131d",
   "theme_color": "#06b6d4",
   "lang": "id-ID",
+  "prefer_related_applications": false,
   "categories": ["business", "utilities"],
   "icons": [
     {

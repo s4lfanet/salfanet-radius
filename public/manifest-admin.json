@@ -4,12 +4,13 @@
   "short_name": "Admin",
   "description": "Panel Admin Salfanet Radius - manajemen ISP/RTRW.NET",
   "start_url": "/admin",
-  "scope": "/admin",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#03131d",
   "theme_color": "#06b6d4",
   "lang": "id-ID",
+  "prefer_related_applications": false,
   "categories": ["business", "utilities"],
   "icons": [
     {
