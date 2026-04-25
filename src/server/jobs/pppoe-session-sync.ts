@@ -48,9 +48,15 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
   let imported = 0;
 
   try {
-    // 1. Close stale sessions — no Accounting-Update in over 30 minutes
-    //    Acct-Interim-Interval = 300s (5 min), so 30 min = 6 missed intervals.
-    //    This gives enough window for VPN to reconnect without closing active sessions.
+    // 1. Close stale sessions — no Accounting-Update in over 90 minutes
+    //    Acct-Interim-Interval = 300s (5 min), so 90 min = 18 missed intervals.
+    //    90 minutes provides a safe window that survives:
+    //    - Web app rebuild (PM2 stop→build→start, typically 5-20 min)
+    //    - Brief FreeRADIUS restart (NAS sync, health check, OOM recovery)
+    //    - MikroTik RADIUS reconnect delay after RADIUS restarts
+    //    The previous 30-minute threshold was too aggressive: if FreeRADIUS
+    //    was killed by OOM during a heavy build, sessions would be marked stale
+    //    before MikroTik had time to send new Accounting-Interim-Update packets.
     const staleResult = await prisma.$executeRaw`
       UPDATE radacct
       SET acctstoptime = NOW(),
@@ -58,7 +64,7 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
           acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, NOW())
       WHERE acctstoptime IS NULL
         AND acctupdatetime IS NOT NULL
-        AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+        AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 90 MINUTE)
     `;
     closed += Number(staleResult);
     if (staleResult > 0) {

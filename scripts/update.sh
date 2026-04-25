@@ -329,6 +329,19 @@ pm2 stop salfanet-radius 2>/dev/null || true
 pm2 stop salfanet-cron 2>/dev/null || true
 sleep 2
 
+# ── Protect FreeRADIUS from OOM killer during build ──────
+# The Next.js build can consume 1-2 GB RAM on a low-memory VPS, triggering
+# the Linux OOM killer. FreeRADIUS manages all active PPPoE/Hotspot sessions
+# so it must NOT be killed — set oom_score_adj to -1000 (never kill).
+FREERADIUS_PID=$(cat /var/run/freeradius/freeradius.pid 2>/dev/null || pgrep -x freeradius 2>/dev/null | head -1 || echo "")
+if [ -n "$FREERADIUS_PID" ] && [ -f "/proc/$FREERADIUS_PID/oom_score_adj" ]; then
+  echo -1000 > /proc/$FREERADIUS_PID/oom_score_adj 2>/dev/null && \
+    ok "FreeRADIUS PID $FREERADIUS_PID protected from OOM killer (oom_score_adj=-1000)" || \
+    log "Warning: could not set FreeRADIUS OOM score (non-fatal)"
+else
+  log "FreeRADIUS PID not found — skipping OOM protection (non-fatal)"
+fi
+
 # ── Build ─────────────────────────────────────────────────
 echo ""
 log "Building application (this takes ~60s)..."

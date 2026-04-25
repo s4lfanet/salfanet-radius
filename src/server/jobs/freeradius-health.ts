@@ -102,10 +102,11 @@ async function checkFreeRADIUSHealth(): Promise<HealthCheckResult> {
 
             // Test if FreeRADIUS is responsive (try to read config)
             try {
-                const { stdout } = await execAsync('freeradius -C 2>&1 || radiusd -C 2>&1', { timeout: 5000 });
+                const { stdout } = await execAsync('freeradius -C 2>&1 || radiusd -C 2>&1', { timeout: 15000 });
                 responsive = stdout.includes('Configuration appears to be OK') || !stdout.includes('Error');
             } catch (error: any) {
-                // If timeout or error, service might be hung
+                // If timeout or error, service might be hung — but don't auto-restart
+                // solely based on config-check timeout (VPS under load can cause false positives)
                 responsive = false;
                 console.error('FreeRADIUS responsiveness check failed:', error.message);
             }
@@ -317,36 +318,35 @@ export async function freeradiusHealthCheck(autoRestart = true): Promise<{
             }
         }
 
-        // If service is running but not responsive
-        if (healthCheck.status.running && !healthCheck.status.responsive && autoRestart) {
-            console.log('FreeRADIUS is running but not responsive, attempting restart...');
-            
-            const restartResult = await restartFreeRADIUS();
-            
+        // If service is running but responsiveness check failed — alert only, DO NOT restart.
+        // The freeradius -C config-check can time out (15s) when the VPS is under load
+        // (e.g., right after a web-app build). Restarting FreeRADIUS based on a config-check
+        // timeout kills all active PPPoE sessions unnecessarily. Alert admins instead so they
+        // can investigate if there is a genuine hang.
+        if (healthCheck.status.running && !healthCheck.status.responsive) {
+            console.log('[FreeRADIUS-Health] Running but responsiveness check failed — alerting only (not restarting)');
+
             await sendAlert(
-                `FreeRADIUS service was unresponsive and has been ${restartResult.success ? 'restarted successfully' : 'restart FAILED'}`,
-                restartResult.success ? 'warning' : 'critical'
+                'FreeRADIUS responsiveness check (freeradius -C) failed or timed out. The service is still running. This may be a false positive under high VPS load. Check manually if active sessions drop.',
+                'warning'
             );
 
-            // Log to cronHistory
             await prisma.cronHistory.create({
                 data: {
                     id: crypto.randomUUID(),
                     jobType: 'freeradius_health',
-                    status: restartResult.success ? 'success' : 'error',
+                    status: 'success',
                     startedAt: new Date(startTime),
                     completedAt: new Date(),
                     duration: Date.now() - startTime,
-                    result: restartResult.success ? 'FreeRADIUS was unresponsive and restarted' : undefined,
-                    error: restartResult.error
+                    result: 'FreeRADIUS running but responsiveness check failed — alerted, not restarted'
                 }
             });
 
             return {
-                success: restartResult.success,
+                success: true,
                 status: healthCheck.status,
-                action: restartResult.success ? 'restarted_unresponsive' : 'restart_failed',
-                error: restartResult.error
+                action: 'responsiveness_check_failed_alert_only'
             };
         }
 
