@@ -491,8 +491,10 @@ export default function VpnClientPage() {
     // VPS WireGuard mode: intercept and use vps-wg-peer flow
     if (formData.vpnType === 'wireguard' && formData.vpnServerId === '__vps_wg__') {
       if (!formData.name.trim()) return
-      setWgNewPeerName(formData.name.trim())
+      const peerName = formData.name.trim()
+      setWgNewPeerName(peerName)
       setShowModal(false)
+      setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' })
       setShowWgSection(true)
       // Trigger add peer with the name from the form
       setCreating(true)
@@ -500,14 +502,13 @@ export default function VpnClientPage() {
         const res = await fetch('/api/network/vps-wg-peer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add', nasName: formData.name.trim() }),
+          body: JSON.stringify({ action: 'add', nasName: peerName }),
         })
         const data = await res.json()
         if (data.success) {
           setWgGeneratedScript(data.routerosScript || null)
           await loadWgPeers()
           showSuccess('WireGuard peer berhasil ditambahkan ke VPS', 'Peer Ditambahkan')
-          setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' })
 
           // Auto-show credentials with generated script so user can copy it immediately
           const wgSubnet = data.vpnSubnet || wgServerInfo?.subnet || '10.200.0.0/24'
@@ -515,8 +516,8 @@ export default function VpnClientPage() {
           setCredentials({
             server: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
             serverHost: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
-            username: formData.name.trim(),
-            nasName: formData.name.trim(),
+            username: peerName,
+            nasName: peerName,
             password: '',
             vpnIp: data.vpnIp,
             vpnType: 'wireguard',
@@ -532,6 +533,7 @@ export default function VpnClientPage() {
           })
           setSelectedVpnType('wireguard')
           setShowCredentials(true)
+          loadClients()
         } else {
           showError(data.error || 'Gagal menambahkan WireGuard peer ke VPS')
         }
@@ -580,6 +582,7 @@ export default function VpnClientPage() {
           setShowWgSection(true)
           showSuccess('L2TP user berhasil ditambahkan ke VPS', 'Berhasil')
           setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' })
+          loadClients()
         } else {
           showError(data.error || 'Gagal menambahkan L2TP user ke VPS')
         }
@@ -1739,7 +1742,7 @@ ${vpnCmd}
               </div>
 
               <button
-                onClick={() => setShowCredentials(false)}
+                onClick={() => { setShowCredentials(false); loadClients(); }}
                 className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-[#bc13fe] to-[#ff44cc] hover:from-[#bc13fe]/90 hover:to-[#ff44cc]/90 rounded-xl transition-all font-bold text-white shadow-[0_0_20px_rgba(188,19,254,0.4)]"
               >
                 {t('common.close')}
