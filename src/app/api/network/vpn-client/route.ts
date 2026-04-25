@@ -654,6 +654,30 @@ export async function DELETE(request: Request) {
       where: { id: client.vpnServerId },
     })
 
+    // ── VPS WireGuard built-in: hapus peer dari wg.conf di VPS ──
+    if (client.vpnServerId === '__vps_wg_server__') {
+      if (client.clientPublicKey) {
+        try {
+          const baseUrl = process.env.NEXTAUTH_URL || `http://localhost:${process.env.PORT || 3000}`
+          await fetch(`${baseUrl}/api/network/vps-wg-peer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'remove', publicKey: client.clientPublicKey }),
+          })
+        } catch (e) {
+          console.error('[vpn-client DELETE] Gagal hapus WG peer dari VPS (lanjutkan):', e)
+        }
+      }
+      await prisma.vpnClient.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
+    // ── VPS L2TP built-in: tidak ada conf file peer, cukup hapus dari DB ──
+    if (client.vpnServerId === '__vps_l2tp_server__') {
+      await prisma.vpnClient.delete({ where: { id } })
+      return NextResponse.json({ success: true })
+    }
+
     if (vpnServer) {
       try {
         const mtik = new MikroTikConnection({
