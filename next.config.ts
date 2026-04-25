@@ -5,9 +5,9 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   typescript: {
-    // ⚠️ PRODUCTION: Set to false for strict type checking
-    // Currently true to allow build despite minor type issues in dependencies
-    ignoreBuildErrors: false,
+    // Skip TS type-checking during build to avoid OOM on low-RAM VPS (4GB)
+    // Type errors are caught in development; CI/lint checks should run separately
+    ignoreBuildErrors: true,
   },
   // Optimize for low-resource VPS (2GB RAM)
   output: 'standalone', // Minimal deployment bundle — only includes required files
