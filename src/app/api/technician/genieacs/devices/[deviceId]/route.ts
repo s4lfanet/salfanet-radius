@@ -117,7 +117,13 @@ const pp = {
   softwareVersion: ['VirtualParameters.softwareVersion', 'InternetGatewayDevice.DeviceInfo.SoftwareVersion', 'Device.DeviceInfo.SoftwareVersion'],
   hardwareVersion: ['InternetGatewayDevice.DeviceInfo.HardwareVersion', 'Device.DeviceInfo.HardwareVersion'],
   lanIP: ['InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress', 'Device.IP.Interface.1.IPv4Address.1.IPAddress'],
-  ponMode: ['VirtualParameters.PonMode', 'InternetGatewayDevice.DeviceInfo.AccessType'],
+  ponMode: [
+    'VirtualParameters.getponmode',
+    'VirtualParameters.PonMode',
+    'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.WANAccessType',
+    'InternetGatewayDevice.DeviceInfo.AccessType',
+    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.PONMode',
+  ],
   pppoeStatus: [
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ConnectionStatus',
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.ConnectionStatus',
@@ -165,21 +171,91 @@ function extractWlanConfigs(device: any) {
 
 function extractConnectedDevices(device: any) {
   const devices: any[] = [];
-  const hostsBase = device?.InternetGatewayDevice?.LANDevice?.['1']?.Hosts?.Host;
-  if (!hostsBase || typeof hostsBase !== 'object') return devices;
 
-  for (const idx of Object.keys(hostsBase)) {
-    if (idx === '_writable' || idx === '_timestamp' || idx === '_object') continue;
-    const host = hostsBase[idx];
-    if (!host || typeof host !== 'object') continue;
-    devices.push({
-      hostName: safeString(host.HostName),
-      ipAddress: safeString(host.IPAddress),
-      macAddress: safeString(host.MACAddress),
-      interfaceType: safeString(host.InterfaceType),
-      active: safeString(host.Active) === 'true' || safeString(host.Active) === '1',
-    });
+  // Build MAC -> host info map from LAN Hosts DHCP table
+  const hostMap = new Map<string, { hostName: string; ipAddress: string }>();
+  const hostsBase = device?.InternetGatewayDevice?.LANDevice?.['1']?.Hosts?.Host;
+  if (hostsBase && typeof hostsBase === 'object') {
+    for (const idx of Object.keys(hostsBase)) {
+      if (idx === '_writable' || idx === '_timestamp' || idx === '_object') continue;
+      const host = hostsBase[idx];
+      if (!host || typeof host !== 'object') continue;
+      const mac = safeString(host.MACAddress).toLowerCase();
+      if (mac && mac !== '-') {
+        hostMap.set(mac, {
+          hostName: safeString(host.HostName),
+          ipAddress: safeString(host.IPAddress),
+        });
+      }
+    }
   }
+
+  // Primary: iterate WLANConfiguration.X.AssociatedDevice.X for actual WiFi clients
+  const wlanBase = device?.InternetGatewayDevice?.LANDevice?.['1']?.WLANConfiguration;
+  if (wlanBase && typeof wlanBase === 'object') {
+    for (const wlanIdx of Object.keys(wlanBase)) {
+      if (wlanIdx === '_writable' || wlanIdx === '_timestamp' || wlanIdx === '_object') continue;
+      const wlan = wlanBase[wlanIdx];
+      if (!wlan || typeof wlan !== 'object') continue;
+
+      const assocBase = wlan.AssociatedDevice;
+      if (!assocBase || typeof assocBase !== 'object') continue;
+
+      const ssid = safeString(wlan.SSID);
+
+      for (const idx of Object.keys(assocBase)) {
+        if (idx === '_writable' || idx === '_timestamp' || idx === '_object') continue;
+        const assoc = assocBase[idx];
+        if (!assoc || typeof assoc !== 'object') continue;
+
+        const rawMac =
+          safeString(assoc.AssociatedDeviceMACAddress) !== '-'
+            ? safeString(assoc.AssociatedDeviceMACAddress)
+            : safeString(assoc.MACAddress);
+        if (!rawMac || rawMac === '-') continue;
+
+        const macLower = rawMac.toLowerCase();
+        const hostInfo = hostMap.get(macLower) ?? { hostName: '-', ipAddress: '-' };
+
+        const rssi =
+          safeString(assoc.SignalStrength) !== '-'
+            ? safeString(assoc.SignalStrength)
+            : safeString(assoc.RSSI) !== '-'
+              ? safeString(assoc.RSSI)
+              : '-';
+
+        devices.push({
+          hostName: hostInfo.hostName !== '-' ? hostInfo.hostName : rawMac,
+          ipAddress: hostInfo.ipAddress,
+          macAddress: rawMac.toUpperCase(),
+          interfaceType: `WiFi (${ssid || 'SSID ' + wlanIdx})`,
+          active: true,
+          rssi,
+        });
+      }
+    }
+  }
+
+  // Fallback: if no AssociatedDevice data, show LAN Hosts table
+  if (devices.length === 0 && hostMap.size > 0) {
+    const hostsBaseArr = device?.InternetGatewayDevice?.LANDevice?.['1']?.Hosts?.Host;
+    if (hostsBaseArr && typeof hostsBaseArr === 'object') {
+      for (const idx of Object.keys(hostsBaseArr)) {
+        if (idx === '_writable' || idx === '_timestamp' || idx === '_object') continue;
+        const host = hostsBaseArr[idx];
+        if (!host || typeof host !== 'object') continue;
+        devices.push({
+          hostName: safeString(host.HostName),
+          ipAddress: safeString(host.IPAddress),
+          macAddress: safeString(host.MACAddress),
+          interfaceType: safeString(host.InterfaceType),
+          active: safeString(host.Active) === 'true' || safeString(host.Active) === '1',
+          rssi: '-',
+        });
+      }
+    }
+  }
+
   return devices;
 }
 

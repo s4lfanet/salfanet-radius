@@ -45,7 +45,7 @@ interface DeviceDetail {
   hardwareVersion: string;
   lanIP: string;
   totalConnected: number;
-  connectedDevices: { hostName: string; ipAddress: string; macAddress: string; interfaceType: string; active: boolean }[];
+  connectedDevices: { hostName: string; ipAddress: string; macAddress: string; interfaceType: string; active: boolean; rssi?: string }[];
   wlanConfigs: { index: number; ssid: string; enabled: boolean; band: string; totalAssociations: number }[];
 }
 
@@ -613,11 +613,16 @@ export default function TechnicianGenieACSPage() {
                       <div className="space-y-1.5 max-h-40 overflow-y-auto">
                         {detailDevice.connectedDevices.map((h, i) => (
                           <div key={i} className="flex items-center justify-between bg-slate-50 dark:bg-[#0a0520]/50 rounded-lg px-3 py-1.5 text-xs">
-                            <div>
-                              <p className="font-medium text-slate-900 dark:text-white">{h.hostName || 'Unknown'}</p>
-                              <p className="text-slate-500 dark:text-[#e0d0ff]/50">{h.ipAddress} - {h.macAddress}</p>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-medium text-slate-900 dark:text-white truncate">{h.hostName || 'Unknown'}</p>
+                              <p className="text-slate-500 dark:text-[#e0d0ff]/50">{h.ipAddress !== '-' ? h.ipAddress + ' · ' : ''}{h.macAddress}</p>
                             </div>
-                            <span className="text-[10px] text-slate-400">{h.interfaceType}</span>
+                            <div className="text-right ml-2">
+                              <p className="text-[10px] text-slate-400">{h.interfaceType}</p>
+                              {h.rssi && h.rssi !== '-' && (
+                                <p className={`text-[10px] font-mono ${parseInt(h.rssi) > -65 ? 'text-green-500' : parseInt(h.rssi) > -80 ? 'text-yellow-500' : 'text-red-500'}`}>{h.rssi} dBm</p>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>

@@ -127,9 +127,11 @@ const parameterPaths = {
     'Device.DeviceInfo.Manufacturer',
   ],
   ponMode: [
+    'VirtualParameters.getponmode',
     'VirtualParameters.PonMode',
-    'InternetGatewayDevice.DeviceInfo.AccessType',
     'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.WANAccessType',
+    'InternetGatewayDevice.DeviceInfo.AccessType',
+    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.PONMode',
   ],
   pppoeIP: [
     'VirtualParameters.pppIP',
