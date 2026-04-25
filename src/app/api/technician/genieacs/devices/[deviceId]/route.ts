@@ -74,6 +74,22 @@ function extractIPFromURL(url: string): string {
   return '-';
 }
 
+function normalizeRxPower(raw: string): string {
+  if (raw === '-' || raw === 'N/A') return raw;
+  const num = parseFloat(raw);
+  if (isNaN(num)) return raw;
+  // Already in valid dBm range
+  if (num < 0 && num >= -100) return `${num.toFixed(2)} dBm`;
+  // Large negative: millidBm format (e.g., -18000 means -18 dBm)
+  if (num < -100) return `${(num / 1000).toFixed(2)} dBm`;
+  // Small positive: 0.1 nW units — apply optical power formula
+  if (num > 0 && num < 10000) {
+    const db = 30 + Math.log10(num * Math.pow(10, -7)) * 10;
+    return `${(Math.ceil(db * 100) / 100).toFixed(2)} dBm`;
+  }
+  return raw;
+}
+
 const pp = {
   pppUsername: [
     'VirtualParameters.pppUsername',
@@ -222,8 +238,8 @@ export async function GET(
       pppoeUsername: getParameterValue(device, pp.pppUsername),
       pppoeIP: getParameterValue(device, pp.pppoeIP),
       tr069IP,
-      rxPower: getParameterValue(device, pp.rxPower),
-      txPower: getParameterValue(device, pp.txPower),
+      rxPower: normalizeRxPower(getParameterValue(device, pp.rxPower)),
+      txPower: normalizeRxPower(getParameterValue(device, pp.txPower)),
       ponMode: getParameterValue(device, pp.ponMode),
       uptime: getParameterValue(device, pp.uptime),
       macAddress: getParameterValue(device, pp.macAddress),

@@ -68,6 +68,10 @@ export default function TechnicianGenieACSPage() {
   const [rebootingId, setRebootingId] = useState<string | null>(null);
   const [wifiEdit, setWifiEdit] = useState<WifiEditState | null>(null);
   const [savingWifi, setSavingWifi] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'online' | 'offline'>('all');
+  const [filterManufacturer, setFilterManufacturer] = useState<string>('all');
+  const PAGE_SIZE = 20;
 
   const fetchDevices = useCallback(async () => {
     try {
@@ -161,12 +165,28 @@ export default function TechnicianGenieACSPage() {
     }
   };
 
-  const filtered = devices.filter(d =>
-    d.serialNumber?.toLowerCase().includes(search.toLowerCase()) ||
-    d.pppoeUsername?.toLowerCase().includes(search.toLowerCase()) ||
-    d.model?.toLowerCase().includes(search.toLowerCase()) ||
-    d.manufacturer?.toLowerCase().includes(search.toLowerCase())
-  );
+  const manufacturers = Array.from(new Set(devices.map(d => d.manufacturer).filter(m => m && m !== '-')));
+
+  const filtered = devices.filter(d => {
+    const matchSearch = !search ||
+      d.serialNumber?.toLowerCase().includes(search.toLowerCase()) ||
+      d.pppoeUsername?.toLowerCase().includes(search.toLowerCase()) ||
+      d.model?.toLowerCase().includes(search.toLowerCase()) ||
+      d.manufacturer?.toLowerCase().includes(search.toLowerCase());
+    const matchStatus = filterStatus === 'all' || d.status === filterStatus;
+    const matchManufacturer = filterManufacturer === 'all' || d.manufacturer === filterManufacturer;
+    return matchSearch && matchStatus && matchManufacturer;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginated = filtered.slice((safeCurrentPage - 1) * PAGE_SIZE, safeCurrentPage * PAGE_SIZE);
+
+  const handleFilterChange = (status: 'all' | 'online' | 'offline', manufacturer?: string) => {
+    if (manufacturer !== undefined) setFilterManufacturer(manufacturer);
+    else setFilterStatus(status);
+    setCurrentPage(1);
+  };
 
   const formatDate = (d: string | null) => {
     if (!d) return '-';
@@ -192,7 +212,7 @@ export default function TechnicianGenieACSPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t('techPortal.genieacs')}</h1>
-            <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{filtered.length} {t('techPortal.devices')}</p>
+            <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{filtered.length} / {devices.length} {t('techPortal.devices')}</p>
           </div>
         </div>
         <button onClick={fetchDevices} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
@@ -203,7 +223,37 @@ export default function TechnicianGenieACSPage() {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.searchDevice')} className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+        <input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} placeholder={t('techPortal.searchDevice')} className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1 bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl p-1">
+          {(['all', 'online', 'offline'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => handleFilterChange(s)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-slate-500 dark:text-[#e0d0ff]/60 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
+            >
+              {s === 'all' ? 'Semua' : s === 'online' ? 'Online' : 'Offline'}
+              {s !== 'all' && (
+                <span className="ml-1 opacity-70">({devices.filter(d => d.status === s).length})</span>
+              )}
+            </button>
+          ))}
+        </div>
+        {manufacturers.length > 0 && (
+          <select
+            value={filterManufacturer}
+            onChange={e => handleFilterChange('all', e.target.value)}
+            className="px-3 py-1.5 bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl text-xs text-slate-700 dark:text-[#e0d0ff]/80 focus:outline-none focus:ring-2 focus:ring-[#00f7ff]/30"
+          >
+            <option value="all">Semua Merk</option>
+            {manufacturers.map(m => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Content */}
@@ -234,7 +284,7 @@ export default function TechnicianGenieACSPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((d) => (
+                {paginated.map((d) => (
                   <tr key={d._id} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition">
                     <td className="px-4 py-3 font-mono text-xs text-slate-900 dark:text-white">{d.serialNumber}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{d.manufacturer}</td>
@@ -280,7 +330,7 @@ export default function TechnicianGenieACSPage() {
 
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-3">
-            {filtered.map((d) => (
+            {paginated.map((d) => (
               <div key={d._id} className="bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="cursor-pointer" onClick={() => handleViewDetail(d._id)}>
@@ -333,6 +383,46 @@ export default function TechnicianGenieACSPage() {
               </div>
             ))}
           </div>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/50">
+                Halaman {safeCurrentPage} dari {totalPages} &bull; {filtered.length} perangkat
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={safeCurrentPage <= 1}
+                  className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
+                >
+                  ← Prev
+                </button>
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let page = i + 1;
+                  if (totalPages > 5) {
+                    const start = Math.max(1, Math.min(safeCurrentPage - 2, totalPages - 4));
+                    page = start + i;
+                  }
+                  return (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 text-xs font-bold rounded-xl transition ${page === safeCurrentPage ? 'bg-blue-500 text-white shadow' : 'bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 text-slate-600 dark:text-[#e0d0ff]/70 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
+                    >
+                      {page}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={safeCurrentPage >= totalPages}
+                  className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
+                >
+                  Next →
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 
