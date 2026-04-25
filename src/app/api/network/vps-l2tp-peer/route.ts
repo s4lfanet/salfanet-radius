@@ -145,32 +145,31 @@ export async function POST(req: NextRequest) {
       label,
     })
 
-    // Persist L2TP peer to DB so FreeRADIUS NAS config includes this NAS
+    // Simpan VPN client ke DB (tanpa auto-create NAS/router)
     let nasSecretForResponse: string | undefined
 
-    // VPS L2TP adalah server built-in — auto-create vpnServer dari info file jika belum ada di DB.
-    // Tidak perlu setup manual di halaman VPN Server terlebih dahulu.
-    const existingL2tpServer = await prisma.vpnServer.findUnique({ where: { id: VPS_L2TP_SERVER_ID } })
-    if (!existingL2tpServer) {
-      const poolBase = typeof info.poolStart === 'string' && info.poolStart.includes('.')
-        ? info.poolStart.split('.').slice(0, 3).join('.')
-        : (info.subnet || '10.201.0.0/24').split('/')[0].split('.').slice(0, 3).join('.')
-      await prisma.vpnServer.create({
-        data: {
-          id: VPS_L2TP_SERVER_ID,
-          name: 'VPS L2TP Server',
-          host: info.publicIp || 'vps-l2tp',
-          username: 'vps',
-          password: 'vps',
-          subnet: `${poolBase}.0/24`,
-          l2tpEnabled: true,
-        },
-      })
-    }
-
     try {
-      // Upsert VPN client record
-      const dbClient = await prisma.vpnClient.upsert({
+      // Auto-create vpnServer built-in jika belum ada
+      const existingL2tpServer = await prisma.vpnServer.findUnique({ where: { id: VPS_L2TP_SERVER_ID } })
+      if (!existingL2tpServer) {
+        const poolBase = typeof info.poolStart === 'string' && info.poolStart.includes('.')
+          ? info.poolStart.split('.').slice(0, 3).join('.')
+          : (info.subnet || '10.201.0.0/24').split('/')[0].split('.').slice(0, 3).join('.')
+        await prisma.vpnServer.create({
+          data: {
+            id: VPS_L2TP_SERVER_ID,
+            name: 'VPS L2TP Server',
+            host: info.publicIp || 'vps-l2tp',
+            username: 'vps',
+            password: 'vps',
+            subnet: `${poolBase}.0/24`,
+            l2tpEnabled: true,
+          },
+        })
+      }
+
+      // Upsert VPN client record saja — NAS/router tidak dibuat otomatis
+      await prisma.vpnClient.upsert({
         where: { vpnServerId_vpnIp: { vpnServerId: VPS_L2TP_SERVER_ID, vpnIp } },
         create: {
           name: label,
@@ -183,40 +182,6 @@ export async function POST(req: NextRequest) {
         },
         update: { name: label, username, password, isActive: true },
       })
-
-      // Upsert router (NAS) record for FreeRADIUS NAS discovery
-      const nasSecret = generatePassword(16)
-      const existingNas = await prisma.router.findFirst({ where: { nasname: vpnIp } })
-      if (existingNas) {
-        nasSecretForResponse = existingNas.secret
-        await prisma.router.update({
-          where: { id: existingNas.id },
-          data: { vpnClientId: dbClient.id },
-        })
-      } else {
-        nasSecretForResponse = nasSecret
-        await prisma.router.create({
-          data: {
-            id: require('crypto').randomUUID(),
-            name: label,
-            nasname: vpnIp,
-            shortname: label.substring(0, 32).replace(/[^a-z0-9]/gi, ''),
-            type: 'mikrotik',
-            ipAddress: vpnIp,
-            username: `api-${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
-            password: generatePassword(16),
-            secret: nasSecretForResponse,
-            ports: 1812,
-            vpnClientId: dbClient.id,
-            description: `Auto-created NAS for L2TP VPS client '${label}'`,
-          },
-        })
-      }
-
-      // Trigger FreeRADIUS NAS config regeneration
-      const { syncNasClients, reloadFreeRadius } = await import('@/server/services/radius/freeradius.service')
-      const changed = await syncNasClients()
-      if (changed) reloadFreeRadius().catch(() => {})
     } catch (dbErr) {
       console.error('[vps-l2tp-peer] POST: failed to save to DB (non-fatal):', dbErr)
     }

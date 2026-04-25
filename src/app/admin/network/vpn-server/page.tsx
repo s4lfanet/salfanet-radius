@@ -46,45 +46,34 @@ interface VpnClientData {
   isRadiusServer: boolean
 }
 
-// ── Redundansi RADIUS Info Panel ────────────────────────────────────────────
-interface RedundancyPanelProps {
-  wgGatewayIp?: string   // VPS WireGuard gateway IP (e.g. 10.20.30.1)
-  l2tpLocalIp?: string   // VPS L2TP local IP (e.g. 172.16.211.1)
-  vpsPublicIp?: string   // VPS public IP
-  l2tpInstalled?: boolean
+/** @deprecated panel redundansi dihapus */
+function VpnServerRedundancyPanel(_props: Record<string, unknown>) {
+  return null;
 }
 
-function VpnServerRedundancyPanel({ wgGatewayIp, l2tpLocalIp, vpsPublicIp, l2tpInstalled }: RedundancyPanelProps) {
-  const [open, setOpen] = useState(false);
+export default function VpnServerPage() {
+  const { t } = useTranslation();
+  const { addToast } = useToast();
 
-  const wgIp = wgGatewayIp || '<WG-GATEWAY-IP>'
-  const l2tpIp = l2tpLocalIp || '<L2TP-LOCAL-IP>'
-  const vpsIp = vpsPublicIp || '<VPS-PUBLIC-IP>'
+  const [servers, setServers] = useState<VpnServer[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [vpnClients, setVpnClients] = useState<VpnClientData[]>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editingServer, setEditingServer] = useState<VpnServer | null>(null);
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [settingUpId, setSettingUpId] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+    identity?: string;
+  } | null>(null);
 
-  return (
-    <div className="mb-8">
-      <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-green-500/30 rounded-2xl overflow-hidden">
-        <button
-          onClick={() => setOpen(!open)}
-          className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-green-500/5 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 bg-green-500/20 rounded-lg flex items-center justify-center">
-              <Shield className="w-4 h-4 text-green-400" />
-            </div>
-            <div>
-              <span className="text-sm font-bold text-green-400 uppercase tracking-wider">Redundansi RADIUS — WireGuard Primary + L2TP Backup</span>
-              <span className="ml-2 text-xs text-muted-foreground">— otomatis failover saat WireGuard putus</span>
-            </div>
-          </div>
-          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
-        </button>
-        {open && (
-          <div className="px-6 pb-6 border-t border-green-500/10 pt-5 space-y-5">
-
-            {/* Peran VPN Server dalam Redundansi */}
-            <div>
-              <p className="text-xs font-bold text-green-400 uppercase tracking-wider mb-3">Peran VPN Server dalam Arsitektur Redundansi</p>
+  // L2TP VPN Control States
+  const [showL2tpControl, setShowL2tpControl] = useState(false);
+  const [l2tpStatus, setL2tpStatus] = useState<any>(null);
+  const [l2tpLoading, setL2tpLoading] = useState(false);
+  const [l2tpLogs, setL2tpLogs] = useState<string[]>([]);
+  const [l2tpConnections, setL2tpConnections] = useState<string>('');
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-4 rounded-xl border border-teal-500/30 bg-teal-500/5">
                   <div className="flex items-center gap-2 mb-2">
@@ -269,9 +258,6 @@ export default function VpnServerPage() {
   });
   const [showTutorial, setShowTutorial] = useState(true);
 
-  // Redundancy panel data — fetched from API, reflects actual config
-  const [l2tpInfo, setL2tpInfo] = useState<{ installed: boolean; gateway?: string; localIp?: string; publicIp?: string } | null>(null);
-
   useEffect(() => {
     // Restore saved SSH + L2TP credentials from localStorage
     try {
@@ -282,8 +268,6 @@ export default function VpnServerPage() {
     } catch {}
     loadServers();
     loadVpnClients();
-    // Fetch L2TP info for redundancy panel
-    fetch('/api/network/vps-l2tp-info').then(r => r.json()).then(d => setL2tpInfo(d)).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1053,16 +1037,7 @@ export default function VpnServerPage() {
             </div>
           </div>
 
-          {/* ── Redundansi RADIUS Panel ───────────────────────────────── */}
-          <VpnServerRedundancyPanel
-            wgGatewayIp={(() => {
-              const wgServer = servers.find(s => s.wgEnabled) || servers[0];
-              return wgServer?.subnet ? wgServer.subnet.replace(/\.\d+\/\d+$/, '.1') : undefined;
-            })()}
-            l2tpLocalIp={l2tpInfo?.gateway}
-            vpsPublicIp={l2tpInfo?.publicIp}
-            l2tpInstalled={l2tpInfo?.installed}
-          />
+
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
