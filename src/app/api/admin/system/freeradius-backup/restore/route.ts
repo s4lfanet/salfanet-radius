@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { existsSync } from 'fs';
 import { execSync } from 'child_process';
 import path from 'path';
 import { getAppDir, getBackupDir, SAFE_BACKUP_FILENAME } from '../route';
@@ -78,16 +77,26 @@ export async function POST(request: NextRequest) {
     for (const f of FILES_TO_RESTORE) {
       const src = path.join(srcDir, f);
       const dest = path.join(FR_DIR, f);
-      if (existsSync(src)) {
-        execSync(`mkdir -p "$(dirname "${dest}")" && cp "${src}" "${dest}"`, {
-          encoding: 'utf-8',
-          shell: '/bin/bash',
-        });
-        log.push(`✔ Restored: ${f}`);
-        restored++;
-      } else {
+      // Use lstat to detect symlinks (existsSync follows symlinks and can miss broken ones)
+      let srcStat: ReturnType<typeof execSync> | null = null;
+      try {
+        srcStat = execSync(`stat -c '%F' "${src}"`, { encoding: 'utf-8', shell: '/bin/bash' });
+      } catch {
         log.push(`  SKIP (not in backup): ${f}`);
+        continue;
       }
+      const fileType = srcStat.trim();
+      execSync(`mkdir -p "$(dirname "${dest}")"`, { encoding: 'utf-8', shell: '/bin/bash' });
+      if (fileType === 'symbolic link') {
+        // Recreate the symlink instead of copying (cp would follow the link and hit same-file error)
+        const linkTarget = execSync(`readlink "${src}"`, { encoding: 'utf-8' }).trim();
+        execSync(`ln -sf "${linkTarget}" "${dest}"`, { encoding: 'utf-8', shell: '/bin/bash' });
+        log.push(`✔ Restored symlink: ${f} → ${linkTarget}`);
+      } else {
+        execSync(`cp "${src}" "${dest}"`, { encoding: 'utf-8', shell: '/bin/bash' });
+        log.push(`✔ Restored: ${f}`);
+      }
+      restored++;
     }
 
     // Fix permissions
