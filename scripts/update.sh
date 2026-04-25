@@ -274,6 +274,13 @@ if [ -d "$APP_DIR/public/uploads" ] && [ "$(ls -A "$APP_DIR/public/uploads" 2>/d
   fi
 fi
 
+# ── Stop PM2 before build to free RAM (low-memory VPS) ───
+echo ""
+log "Stopping PM2 to free RAM before build..."
+pm2 stop salfanet-radius 2>/dev/null || true
+pm2 stop salfanet-cron 2>/dev/null || true
+sleep 2
+
 # ── Build ─────────────────────────────────────────────────
 echo ""
 log "Building application (this takes ~60s)..."
@@ -282,10 +289,9 @@ unset npm_lifecycle_event npm_lifecycle_script npm_package_name npm_package_vers
 unset npm_config_cache npm_config_prefix NODE_APP_INSTANCE
 # Do NOT inherit NODE_OPTIONS from parent process (server may have different flags)
 unset NODE_OPTIONS
-# Allocate 2GB for Next.js build to prevent OOM crash on low-memory VPS
-export NODE_OPTIONS="--max-old-space-size=2048"
 
-npm run build > /tmp/salfanet-next-build.log 2>&1
+# Use low-mem build profile (1024MB heap) — avoids OOM on 4GB VPS with PM2 running
+npm run build:low-mem > /tmp/salfanet-next-build.log 2>&1
 BUILD_EXIT=$?
 # Always show last 40 lines of build output in update log
 tail -40 /tmp/salfanet-next-build.log
