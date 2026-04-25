@@ -94,6 +94,19 @@ setTimeout(async () => {
   await runCronJob('pppoe_auto_isolir', 'PPPoE Auto Isolir (startup)', { lockTtl: 300 });
 }, 20000); // 20s delay — after freeradius_health completes
 
+// Startup: recover PPPoE/Hotspot sessions that were incorrectly closed during the
+// update window. pppoe_session_sync (old threshold: 30 min) may have run just before
+// or during the app restart and closed sessions that were still genuinely active on
+// MikroTik. This reopens those sessions so they appear active again without requiring
+// manual reconnection from MikroTik.
+// Safe: only undoes sessions closed with 'Lost-Carrier' (set by our code, NOT by MikroTik).
+// FreeRADIUS keeps writing Accounting-Interim-Update to radacct even when acctstoptime
+// is set, so recovered sessions will have fresh acctupdatetime and won't be re-closed.
+setTimeout(async () => {
+  console.log('[CRON SERVICE] Startup: running session_recovery to restore sessions closed during update...');
+  await runCronJob('session_recovery', 'Session Recovery (startup)');
+}, 35000); // 35s delay — after pppoe_auto_isolir completes
+
 // 1. Hotspot Voucher Sync - Every minute
 cron.schedule('* * * * *', async () => {
   await runCronJob('hotspot_sync', 'Hotspot Voucher Sync');

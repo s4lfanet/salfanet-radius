@@ -354,6 +354,46 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, error: cleanupErr.message })
         }
 
+      case 'session_recovery':
+        // Reopen radacct sessions that were incorrectly closed by our stale-session cleanup
+        // (acctterminatecause = 'Lost-Carrier') within the last 60 minutes.
+        //
+        // Why this is safe:
+        //   - 'Lost-Carrier' is ONLY set by our pppoe_session_sync / cleanupStaleSessions code.
+        //   - Genuine MikroTik disconnections use Accounting-Stop with causes like 'User-Request',
+        //     'NAS-Reboot', 'Idle-Timeout', etc. — those are NOT touched by this query.
+        //   - FreeRADIUS keeps writing Accounting-Interim-Update to radacct even when acctstoptime
+        //     is set (it updates the existing row by acctuniqueid). So acctupdatetime is already
+        //     fresh after recovery, and pppoe_session_sync (90-min threshold) won't re-close them.
+        //   - If a session was genuinely lost (no MikroTik interim updates coming), the 90-min
+        //     threshold will re-close it correctly after recovery.
+        //
+        // Run automatically at cron startup (post-update) and available as a manual trigger.
+        try {
+          const { prisma: recovPrisma } = await import('@/server/db/client')
+          const recovCount = await recovPrisma.$executeRaw`
+            UPDATE radacct
+            SET acctstoptime    = NULL,
+                acctterminatecause = ''
+            WHERE acctstoptime IS NOT NULL
+              AND acctstoptime >= DATE_SUB(NOW(), INTERVAL 60 MINUTE)
+              AND acctterminatecause = 'Lost-Carrier'
+          `
+          const total = Number(recovCount)
+          if (total > 0) {
+            console.log(`[Session Recovery] ✅ Recovered ${total} session(s) incorrectly closed by stale cleanup`)
+          }
+          return NextResponse.json({
+            success: true,
+            recovered: total,
+            message: total > 0
+              ? `Recovered ${total} session(s) — they will show as active again`
+              : 'No incorrectly-closed sessions found in the last 60 minutes',
+          })
+        } catch (recovErr: any) {
+          return NextResponse.json({ success: false, error: recovErr.message })
+        }
+
       default:
         return NextResponse.json({
           success: false,
