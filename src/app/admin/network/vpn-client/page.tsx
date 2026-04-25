@@ -73,15 +73,67 @@ interface RedundancyClientPanelProps {
   vpsPublicIp?: string      // VPS public IP
   l2tpInstalled?: boolean
   exampleChrWgIp?: string   // Example CHR peer WG IP (e.g. 172.16.212.11)
+  l2tpIpsecPsk?: string     // IPsec pre-shared key for L2TP backup
 }
-function RedundancyInfoPanel({ wgGatewayIp, l2tpLocalIp, vpsPublicIp, l2tpInstalled, exampleChrWgIp }: RedundancyClientPanelProps) {
+function RedundancyInfoPanel({ wgGatewayIp, l2tpLocalIp, vpsPublicIp, l2tpInstalled, exampleChrWgIp, l2tpIpsecPsk }: RedundancyClientPanelProps) {
   const wgIp = wgGatewayIp || '<WG-GATEWAY-IP>'
   const l2tpIp = l2tpLocalIp || '<L2TP-LOCAL-IP>'
   const vpsIp = vpsPublicIp || '<VPS-PUBLIC-IP>'
   const chrWgIp = exampleChrWgIp || '<CHR-WG-IP>'
   const l2tpSubnetX = l2tpLocalIp ? l2tpLocalIp.replace(/\.\d+$/, '.x') : '<L2TP-SUBNET>.x'
+  const ipsecPsk = l2tpIpsecPsk || '<IPSEC-PSK>'
+
+  const chrRedundancyScript = `# ============================================================
+# Script Setup Redundansi CHR — WireGuard Primary + L2TP Backup
+# Paste ke terminal MikroTik CHR (RouterOS 7+)
+# VPS Public IP  : ${vpsIp}
+# WG Gateway VPS : ${wgIp}
+# L2TP Local VPS : ${l2tpIp}
+# ============================================================
+# PRASYARAT:
+#   [OK] WireGuard peer ke VPS sudah UP
+#   [OK] Route "SALFANET-VPN" via WireGuard sudah ada
+#   [!]  Ganti <L2TP-USER> dan <L2TP-PASS> dengan kredensial
+#        dari panel "Tambah VPN Client → VPS L2TP Server"
+# ============================================================
+
+# 1. Tambah L2TP client sebagai backup connection ke VPS
+/interface/l2tp-client/add name=l2tp-vps-backup \\
+  connect-to=${vpsIp} \\
+  user=<L2TP-USER> password=<L2TP-PASS> \\
+  use-ipsec=yes ipsec-secret="${ipsecPsk}" \\
+  add-default-route=no profile=default-encryption \\
+  disabled=no comment="SALFANET BACKUP"
+
+# 2. Route backup ke WireGuard gateway VPS via L2TP (distance=10)
+#    Saat WireGuard putus, route ini otomatis dipakai
+/ip/route/add dst-address=${wgIp}/32 \\
+  gateway=l2tp-vps-backup distance=10 \\
+  comment="RADIUS-BACKUP-L2TP"
+
+# 3. Aktifkan check-gateway pada route WireGuard primary
+#    MikroTik ping gateway tiap ~10 detik, failover <30 detik
+/ip/route/set [find comment="SALFANET-VPN"] check-gateway=ping
+
+# ============================================================
+# VERIFIKASI SETELAH SETUP:
+#   /ip/route/print detail         -> pastikan 2 route ke ${wgIp}
+#   /interface/l2tp-client/print  -> status harus "connected"
+#   Simulasi: /interface/wireguard/disable [find]
+#             -> cek auth PPPoE/Hotspot masih jalan (failover OK)
+#             /interface/wireguard/enable [find]
+# ============================================================`
 
   const [open, setOpen] = useState(false);
+  const [scriptCopied, setScriptCopied] = useState(false);
+
+  const copyScript = async () => {
+    try {
+      await navigator.clipboard.writeText(chrRedundancyScript);
+      setScriptCopied(true);
+      setTimeout(() => setScriptCopied(false), 2000);
+    } catch { /* ignore */ }
+  };
   return (
     <div className="mb-8">
       <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-green-500/30 rounded-2xl overflow-hidden">
@@ -139,7 +191,7 @@ function RedundancyInfoPanel({ wgGatewayIp, l2tpLocalIp, vpsPublicIp, l2tpInstal
                   { n: '1', color: 'border-[#bc13fe]/40 bg-[#bc13fe]/5 text-[#bc13fe]', title: 'Daftarkan Router di Dashboard', desc: 'Menu NAS/Router → tambah router baru → isi IP, secret RADIUS.' },
                   { n: '2', color: 'border-teal-500/40 bg-teal-500/5 text-teal-300', title: 'Hubungkan WireGuard (Primary)', desc: `Pastikan wg0 peer ke VPS sudah UP dan MikroTik mendapat IP ${wgGatewayIp ? wgGatewayIp.replace(/\.\d+$/, '.x') : '172.16.212.x'}. Test dengan ping ke ${wgIp}.` },
                   { n: '3', color: 'border-green-500/40 bg-green-500/5 text-green-300', title: 'Test RADIUS via WireGuard', desc: 'Coba auth PPPoE/Hotspot untuk memastikan RADIUS sudah jalan via WireGuard sebelum setup backup.' },
-                  { n: '4', color: 'border-[#00f7ff]/40 bg-[#00f7ff]/5 text-[#00f7ff]', title: 'Tambah L2TP Backup (3 perintah)', desc: 'Jalankan perintah MikroTik: add l2tp-client → add backup route → set check-gateway pada route WireGuard.' },
+                  { n: '4', color: 'border-[#00f7ff]/40 bg-[#00f7ff]/5 text-[#00f7ff]', title: 'Tambah L2TP Backup — gunakan script di bawah', desc: 'Copy script RouterOS yang sudah digenerate → paste di terminal MikroTik CHR. Ganti <L2TP-USER> & <L2TP-PASS> dengan kredensial dari panel "Tambah VPN Client → VPS L2TP Server".' },
                 ].map(item => (
                   <div key={item.n} className={`flex items-start gap-3 p-3 rounded-xl border ${item.color.split(' ').slice(0,2).join(' ')} ${item.color.split(' ')[1]}`}>
                     <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${item.color} shrink-0`}>{item.n}</span>
@@ -150,6 +202,39 @@ function RedundancyInfoPanel({ wgGatewayIp, l2tpLocalIp, vpsPublicIp, l2tpInstal
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* Script CHR Redundansi — siap copy-paste */}
+            <div className="rounded-xl border border-[#00f7ff]/30 bg-[#00f7ff]/5 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-[#00f7ff]/20">
+                <div className="flex items-center gap-2">
+                  <Terminal className="w-4 h-4 text-[#00f7ff]" />
+                  <span className="text-xs font-bold text-[#00f7ff] uppercase tracking-wider">Script RouterOS — Setup L2TP Backup di CHR</span>
+                  <span className="text-xs text-muted-foreground ml-1">(paste ke terminal MikroTik)</span>
+                </div>
+                <button
+                  onClick={copyScript}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    scriptCopied
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/40'
+                      : 'bg-[#00f7ff]/10 text-[#00f7ff] border border-[#00f7ff]/30 hover:bg-[#00f7ff]/20'
+                  }`}
+                >
+                  {scriptCopied ? <><CheckCircle className="w-3.5 h-3.5" />Tersalin!</> : <><Copy className="w-3.5 h-3.5" />Salin Script</>}
+                </button>
+              </div>
+              <pre className="p-4 text-xs font-mono text-slate-300 leading-relaxed overflow-x-auto whitespace-pre">
+                {chrRedundancyScript}
+              </pre>
+              {(!l2tpIpsecPsk || !vpsPublicIp || !wgGatewayIp) && (
+                <div className="px-4 py-2.5 border-t border-amber-500/20 bg-amber-500/5 flex items-center gap-2">
+                  <Info className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <p className="text-xs text-amber-400">
+                    {!l2tpIpsecPsk ? 'IPsec PSK belum ter-load — ' : ''}{!vpsPublicIp ? 'VPS public IP belum ter-load — ' : ''}{!wgGatewayIp ? 'WG gateway belum ter-load. ' : ''}
+                    Pastikan VPS terhubung dan L2TP terinstall agar script terisi otomatis.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Pertanyaan: apakah auto-trigger? */}
@@ -1112,6 +1197,7 @@ ${vpnCmd}
             vpsPublicIp={l2tpServerInfo?.publicIp || wgServerInfo?.publicIp}
             l2tpInstalled={l2tpServerInfo?.installed}
             exampleChrWgIp={clients.find(c => c.vpnType === 'wireguard')?.vpnIp}
+            l2tpIpsecPsk={l2tpServerInfo?.ipsecPsk}
           />
 
           {/* ── VPS Built-in VPN Settings ─────────────────────────────── */}
