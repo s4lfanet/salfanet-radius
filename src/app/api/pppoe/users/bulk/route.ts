@@ -105,7 +105,17 @@ export async function GET(request: NextRequest) {
       });
     } else if (type === 'export') {
       // Export all users to CSV
+      const paymentStatus = searchParams.get('paymentStatus');
+      const exportWhere: any = {};
+      if (paymentStatus === 'unpaid') {
+        exportWhere.invoices = { some: { status: { in: ['PENDING', 'OVERDUE'] } } };
+      } else if (paymentStatus === 'paid') {
+        exportWhere.NOT = { invoices: { some: { status: { in: ['PENDING', 'OVERDUE'] } } } };
+      } else if (paymentStatus === 'isolated') {
+        exportWhere.status = 'isolated';
+      }
       const users = await prisma.pppoeUser.findMany({
+        where: exportWhere,
         include: {
           profile: true,
           router: true,

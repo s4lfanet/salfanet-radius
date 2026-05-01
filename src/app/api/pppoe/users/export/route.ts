@@ -15,6 +15,7 @@ export async function GET(req: NextRequest) {
   const profileId = searchParams.get('profileId');
   const routerId = searchParams.get('routerId');
   const status = searchParams.get('status');
+  const paymentStatus = searchParams.get('paymentStatus');
 
   try {
     // Build query filters
@@ -36,10 +37,18 @@ export async function GET(req: NextRequest) {
       where.status = status;
     }
 
-    // Fetch PPPoE users with relations (password field explicitly omitted)
+    // Payment status filter via invoice join
+    if (paymentStatus === 'unpaid') {
+      where.invoices = { some: { status: { in: ['PENDING', 'OVERDUE'] } } };
+    } else if (paymentStatus === 'paid') {
+      where.NOT = { invoices: { some: { status: { in: ['PENDING', 'OVERDUE'] } } } };
+    } else if (paymentStatus === 'isolated') {
+      where.status = 'isolated';
+    }
+
+    // Fetch PPPoE users with relations (includes password for backup purposes)
     const users = await prisma.pppoeUser.findMany({
       where,
-      omit: { password: true },
       include: {
         profile: true,
         router: {
@@ -54,10 +63,11 @@ export async function GET(req: NextRequest) {
 
     if (format === 'pdf') {
       // Generate PDF data for client-side rendering
-      const headers = ['No', 'Username', 'Nama', 'Phone', 'Profile', 'Status', 'Expired', 'Router'];
+      const headers = ['No', 'Username', 'Password', 'Nama', 'Phone', 'Profile', 'Status', 'Expired', 'Router'];
       const rows = users.map((u, idx) => [
         idx + 1,
         u.username,
+        u.password,
         u.name,
         u.phone,
         u.profile.name,
@@ -90,6 +100,7 @@ export async function GET(req: NextRequest) {
       { key: 'no', header: 'No', width: 6 },
       { key: 'customerId', header: 'ID Pelanggan', width: 14 },
       { key: 'username', header: 'Username', width: 20 },
+      { key: 'password', header: 'Password', width: 20 },
       { key: 'name', header: 'Nama', width: 25 },
       { key: 'phone', header: 'Telepon', width: 15 },
       { key: 'email', header: 'Email', width: 25 },
@@ -113,6 +124,7 @@ export async function GET(req: NextRequest) {
       no: idx + 1,
       customerId: (u as any).customerId || '',
       username: u.username,
+      password: u.password,
       name: u.name,
       phone: u.phone,
       email: u.email || '',

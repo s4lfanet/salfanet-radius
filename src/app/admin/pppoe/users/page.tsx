@@ -331,6 +331,7 @@ export default function PppoeUsersPage() {
   const [filterRouter, setFilterRouter] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterSession, setFilterSession] = useState('');
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
@@ -956,7 +957,7 @@ export default function PppoeUsersPage() {
       await showError(t('pppoe.downloadTemplateFailed'));
     }
   };
-  const handleExportData = async () => { try { const res = await fetch('/api/pppoe/users/bulk?type=export'); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
+  const handleExportData = async () => { try { const exportParams = new URLSearchParams({ type: 'export' }); if (filterPaymentStatus) exportParams.set('paymentStatus', filterPaymentStatus); const res = await fetch(`/api/pppoe/users/bulk?${exportParams}`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
 
   const handleExportExcel = async () => {
     try {
@@ -965,6 +966,7 @@ export default function PppoeUsersPage() {
       if (filterProfile) params.set('profileId', filterProfile);
       if (filterRouter) params.set('routerId', filterRouter);
       if (filterStatus) params.set('status', filterStatus);
+      if (filterPaymentStatus) params.set('paymentStatus', filterPaymentStatus);
       const res = await fetch(`/api/pppoe/users/export?${params}`);
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -980,6 +982,7 @@ export default function PppoeUsersPage() {
       if (filterProfile) params.set('profileId', filterProfile);
       if (filterRouter) params.set('routerId', filterRouter);
       if (filterStatus) params.set('status', filterStatus);
+      if (filterPaymentStatus) params.set('paymentStatus', filterPaymentStatus);
       const res = await fetch(`/api/pppoe/users/export?${params}`);
       const data = await res.json();
       if (data.pdfData) {
@@ -1096,7 +1099,11 @@ export default function PppoeUsersPage() {
     const matchesRouter = filterRouter === '' || (filterRouter === 'global' ? !user.routerId : user.routerId === filterRouter);
     const matchesStatus = filterStatus === '' || user.status === filterStatus;
     const matchesSession = filterSession === '' || (filterSession === 'online' ? user.isOnline === true : user.isOnline !== true);
-    return matchesSearch && matchesProfile && matchesRouter && matchesStatus && matchesSession;
+    const matchesPaymentStatus = filterPaymentStatus === '' ||
+      (filterPaymentStatus === 'unpaid' && (invoiceCounts[user.id] || 0) > 0) ||
+      (filterPaymentStatus === 'paid' && !(invoiceCounts[user.id] > 0)) ||
+      (filterPaymentStatus === 'isolated' && user.status === 'isolated');
+    return matchesSearch && matchesProfile && matchesRouter && matchesStatus && matchesSession && matchesPaymentStatus;
   }).sort((a, b) => {
     let aVal: any, bVal: any;
 
@@ -1300,8 +1307,16 @@ export default function PppoeUsersPage() {
                 {val === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-current" />}{label}
               </button>
             ))}
-            {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession) && <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); }} className="ml-auto text-[10px] text-primary hover:text-teal-700">{t('common.reset')}</button>}
           </div>
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <Filter className="h-3 w-3 text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Bayar:</span>
+            {([['', 'Semua'], ['paid', 'Sudah Bayar'], ['unpaid', 'Belum Bayar'], ['isolated', 'Isolir']] as [string, string][]).map(([val, label]) => (
+              <button key={val} onClick={() => setFilterPaymentStatus(val)} className={`px-2 py-0.5 text-[10px] rounded-full transition ${filterPaymentStatus === val ? (val === '' ? 'bg-teal-600 text-white' : val === 'paid' ? 'bg-success text-white' : val === 'unpaid' ? 'bg-destructive text-white' : 'bg-warning text-white') : 'bg-muted text-muted-foreground'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus) && <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); setFilterPaymentStatus(''); }} className="ml-auto text-[10px] text-primary hover:text-teal-700 mt-1.5 block">{t('common.reset')}</button>}
           <div className="mt-2 text-[10px] text-muted-foreground">{t('table.showing')} {filteredUsers.length} {t('table.of')} {users.length}</div>
         </div>
 

@@ -14,19 +14,27 @@ rest {
 	connect_uri = "http://localhost:3000"
 
 	#
+	#  How long (in seconds) to wait when establishing a TCP connection.
+	#  Set low so FreeRADIUS fails fast if the app is down/restarting,
+	#  preventing duplicate-packet floods.
+	#
+	connect_timeout = 4
+
+	#
 	#  Authorize - dipanggil SEBELUM autentikasi untuk cek status user/voucher
 	#  Mengembalikan Reply-Message yang tepat jika user kadaluarsa/diblokir,
 	#  sehingga MikroTik menampilkan pesan yang benar di log (bukan "wrong password").
 	#
 	#  Response format (dari /api/radius/authorize):
 	#    Reject:  { "control:Auth-Type": "Reject", "reply:Reply-Message": "Pesan" }
-	#    Allow:   { "success": true, "action": "allow" }
+	#    Allow:   HTTP 204 No Content (no body = pass-through, no attributes set)
 	#
 	authorize {
 		uri = "${..connect_uri}/api/radius/authorize"
 		method = "post"
 		body = "json"
 		data = "{ \"username\": \"%{User-Name}\", \"nasIp\": \"%{NAS-IP-Address}\", \"nasPort\": \"%{NAS-Port}\", \"calledStationId\": \"%{Called-Station-Id}\" }"
+		timeout = 5
 
 		tls = ${..tls}
 	}
@@ -40,6 +48,7 @@ rest {
 		method = "post"
 		body = "json"
 		data = "{ \"username\": \"%{User-Name}\", \"reply\": \"Access-Accept\", \"nasIp\": \"%{NAS-IP-Address}\" }"
+		timeout = 5
 
 		tls = ${..tls}
 	}
@@ -53,6 +62,7 @@ rest {
 		method = "post"
 		body = "json"
 		data = "{ \"username\": \"%{User-Name}\", \"statusType\": \"%{Acct-Status-Type}\", \"sessionId\": \"%{Acct-Session-Id}\", \"nasIp\": \"%{NAS-IP-Address}\", \"framedIp\": \"%{Framed-IP-Address}\", \"callingStationId\": \"%{Calling-Station-Id}\", \"sessionTime\": \"%{Acct-Session-Time}\", \"inputOctets\": \"%{Acct-Input-Octets}\", \"outputOctets\": \"%{Acct-Output-Octets}\" }"
+		timeout = 4
 
 		tls = ${..tls}
 	}
@@ -69,7 +79,7 @@ rest {
 		max = 10
 		spare = 3
 		uses = 0
-		retry_delay = 30
+		retry_delay = 10
 		lifetime = 0
 		idle_timeout = 60
 	}

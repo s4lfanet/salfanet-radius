@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!username || !statusType) {
-      return NextResponse.json({ success: true, action: "ignore" });
+      // HTTP 204: no attributes to set, rlm_rest treats as success
+      return new NextResponse(null, { status: 204 });
     }
 
     const normalizedStatus = statusType?.toLowerCase();
@@ -39,9 +40,11 @@ export async function POST(request: NextRequest) {
       // FreeRADIUS SQL module handles radacct UPDATE directly — nothing else needed
     }
 
-    return NextResponse.json({ success: true, action: normalizedStatus });
+    // HTTP 204: rlm_rest does not log "Server returned no data" for 204 responses
+    return new NextResponse(null, { status: 204 });
   } catch (error: any) {
     console.error("[ACCOUNTING] Error:", error);
-    return NextResponse.json({ success: true, action: "error_ignored" });
+    // HTTP 204 on error: accounting is handled by SQL module, REST failure is non-fatal
+    return new NextResponse(null, { status: 204 });
   }
 }

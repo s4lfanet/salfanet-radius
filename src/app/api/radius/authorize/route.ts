@@ -21,7 +21,8 @@ export async function POST(request: NextRequest) {
     username = body.username;
 
     if (!username) {
-      return NextResponse.json({});
+      // HTTP 204: no attributes to set, let FreeRADIUS continue
+      return new NextResponse(null, { status: 204 });
     }
 
     // Check if this is a hotspot voucher
@@ -74,11 +75,8 @@ export async function POST(request: NextRequest) {
         // radusergroup sudah di-set ke 'isolir' oleh auto-isolation job
         if (pppoeUser.status === 'isolated' || pppoeUser.status === 'ISOLATED') {
           console.log(`[AUTHORIZE] ALLOW (isolated): PPPoE user ${username} in isolir profile`);
-          return NextResponse.json({
-            success: true,
-            action: "allow",
-            message: `PPPoE user isolated - allowing with isolir profile`
-          });
+          // HTTP 204: pass-through, radusergroup in radcheck already enforces isolir profile
+          return new NextResponse(null, { status: 204 });
         }
 
         // Cek apakah masa aktif sudah habis (expiredAt lewat)
@@ -95,12 +93,12 @@ export async function POST(request: NextRequest) {
           }
           // autoIsolationEnabled=false: allow expired user to stay connected
           console.log(`[AUTHORIZE] ALLOW (no-action): PPPoE user ${username} expired but autoIsolationEnabled=false`);
-          return NextResponse.json({});
+          return new NextResponse(null, { status: 204 });
         }
 
         // PPPoE user found and all status checks passed — allow to proceed to SQL/radcheck auth
         console.log(`[AUTHORIZE] ALLOW: PPPoE user ${username} is valid (status: ${pppoeUser.status})`);
-        return NextResponse.json({});
+        return new NextResponse(null, { status: 204 });
       }
 
       // PPPoE user not found in database — REJECT.
@@ -189,8 +187,8 @@ export async function POST(request: NextRequest) {
     // Do NOT set Cleartext-Password here — hotspot voucher passwords are stored
     // in radcheck (via hotspot-sync), and PPPoE user passwords are in radcheck too.
     // Setting username as Cleartext-Password would break PPPoE auth when username ≠ password.
-    // Return empty object so FreeRADIUS REST doesn't fail on invalid attribute names.
-    return NextResponse.json({});
+    // HTTP 204: let FreeRADIUS proceed to SQL/radcheck auth normally.
+    return new NextResponse(null, { status: 204 });
   }
 }
 

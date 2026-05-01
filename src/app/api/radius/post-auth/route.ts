@@ -23,7 +23,8 @@ export async function POST(request: NextRequest) {
 
     // Only process Access-Accept
     if (reply !== "Access-Accept") {
-      return NextResponse.json({});
+      // HTTP 204: no attributes to set for non-Accept replies
+      return new NextResponse(null, { status: 204 });
     }
 
     // Find voucher
@@ -33,11 +34,11 @@ export async function POST(request: NextRequest) {
     });
 
     // If voucher not found in hotspotVoucher table, it might be:
-    // - A PPPoE user (should not reach here due to conditional in FreeRADIUS)
+    // - A PPPoE user (handled by SQL module, no REST action needed)
     // - A legacy/test voucher in radcheck only
-    // Return success to allow authentication to proceed
+    // HTTP 204: no attributes to set, let FreeRADIUS continue normally
     if (!voucher) {
-      return NextResponse.json({});
+      return new NextResponse(null, { status: 204 });
     }
 
     // Get current WIB time stored as WIB-as-UTC (matches the rest of the app's timezone pattern)
@@ -51,13 +52,13 @@ export async function POST(request: NextRequest) {
         data: { status: "EXPIRED" },
       });
 
+      // Return RADIUS reject attributes (rlm_rest will send CoA/Disconnect)
       return NextResponse.json(
         {
-          success: false,
-          error: "Voucher expired",
-          action: "reject",
+          "control:Auth-Type": "Reject",
+          "reply:Reply-Message": "Voucher Kadaluarsa",
         },
-        { status: 403 },
+        { status: 200 },
       );
     }
 
@@ -177,13 +178,15 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      return NextResponse.json({});
+      return new NextResponse(null, { status: 204 });
     }
 
     // Subsequent logins: just verify not expired
-    return NextResponse.json({});
+    return new NextResponse(null, { status: 204 });
   } catch (error: any) {
     console.error("RADIUS post-auth error:", error);
-    return NextResponse.json({}, { status: 500 });
+    // HTTP 204 on error: authentication already succeeded in FreeRADIUS SQL module,
+    // REST failure should not block the user from connecting.
+    return new NextResponse(null, { status: 204 });
   }
 }
