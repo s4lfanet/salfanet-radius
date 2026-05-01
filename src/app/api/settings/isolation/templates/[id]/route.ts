@@ -6,9 +6,10 @@ import { prisma } from '@/server/db/client';
 // GET - Get single template
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -18,7 +19,7 @@ export async function GET(
     }
 
     const template = await prisma.isolationTemplate.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!template) {
@@ -47,9 +48,10 @@ export async function GET(
 // PUT - Update template
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -62,14 +64,13 @@ export async function PUT(
     const { name, subject, message, variables, isActive } = body;
 
     const template = await prisma.isolationTemplate.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         ...(name && { name }),
         ...(subject !== undefined && { subject }),
         ...(message && { message }),
         ...(variables && { variables }),
         ...(isActive !== undefined && { isActive }),
-        updatedAt: new Date()
       }
     });
 
@@ -90,9 +91,10 @@ export async function PUT(
 // DELETE - Delete template
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return NextResponse.json(
@@ -102,7 +104,7 @@ export async function DELETE(
     }
 
     await prisma.isolationTemplate.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({
