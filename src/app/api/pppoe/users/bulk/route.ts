@@ -307,6 +307,20 @@ export async function POST(request: NextRequest) {
             let val = '';
             if (cell.value instanceof Date) {
               val = cell.value.toISOString().split('T')[0];
+            } else if (cell.value !== null && cell.value !== undefined && typeof cell.value === 'object') {
+              // Handle ExcelJS complex cell types: CellHyperlinkValue ({ text, hyperlink }),
+              // CellRichTextValue ({ richText: [{text}] }), CellFormulaValue ({ formula, result })
+              const cv = cell.value as any;
+              if (Array.isArray(cv.richText)) {
+                val = cv.richText.map((r: any) => String(r.text ?? '')).join('').trim();
+              } else if (typeof cv.text === 'string') {
+                // Hyperlink cell — contains { text: 'user@domain', hyperlink: 'mailto:...' }
+                val = cv.text.trim();
+              } else if ('result' in cv) {
+                val = String(cv.result ?? '').trim();
+              } else {
+                val = cell.text?.trim() || '';
+              }
             } else {
               val = String(cell.value ?? '').trim();
             }
@@ -367,6 +381,7 @@ export async function POST(request: NextRequest) {
     // Process data rows
     const results = {
       success: 0,
+      updated: 0,
       failed: 0,
       errors: [] as any[],
     };
@@ -391,21 +406,6 @@ export async function POST(request: NextRequest) {
           ? rowData.password
           : rowData.username + Math.random().toString(36).substring(2, 6);
 
-        // Check if username already exists
-        const existingUser = await prisma.pppoeUser.findUnique({
-          where: { username: rowData.username },
-        });
-
-        if (existingUser) {
-          results.failed++;
-          results.errors.push({
-            line: i + 2,
-            username: rowData.username,
-            error: 'Username already exists',
-          });
-          continue;
-        }
-
         // Resolve subscriptionType (POSTPAID default)
         const rawSubType = (rowData.subscriptiontype || '').toUpperCase();
         const subscriptionType = rawSubType === 'PREPAID' ? 'PREPAID' : 'POSTPAID';
@@ -413,6 +413,85 @@ export async function POST(request: NextRequest) {
         // Resolve profile for this row from 'profilename' column (set by export's "Profile" header)
         const rowProfileName = rowData.profilename?.trim() || '';
         const rowProfile = rowProfileName ? (profileByNameMap.get(rowProfileName.toLowerCase()) || null) : null;
+
+        // Resolve router for this row from 'routername' column (set by export's "Router" header)
+        let rowRouterId: string | null = null;
+        const rowRouterName = rowData.routername?.trim() || '';
+        if (rowRouterName && rowRouterName.toLowerCase() !== 'global') {
+          const foundRouter = routerByNameMap.get(rowRouterName.toLowerCase());
+          if (foundRouter) rowRouterId = foundRouter.id;
+        }
+
+        // Check if username already exists → upsert (update existing user for backup/restore workflow)
+        const existingUser = await prisma.pppoeUser.findUnique({
+          where: { username: rowData.username },
+          include: { profile: true },
+        });
+
+        if (existingUser) {
+          // Use resolved profile from file, or fall back to existing user's profile
+          const upsertProfile = rowProfile || existingUser.profile;
+
+          const updateData: any = {
+            password: password,
+            name: rowData.name,
+            phone: rowData.phone,
+            email: rowData.email || existingUser.email,
+            address: rowData.address || existingUser.address,
+            profileId: upsertProfile.id,
+            routerId: rowRouterId !== null ? rowRouterId : existingUser.routerId,
+          };
+
+          if (rawSubType) updateData.subscriptionType = subscriptionType;
+          if (rowData.ipaddress && rowData.ipaddress.trim()) updateData.ipAddress = rowData.ipaddress.trim();
+          if (rowData.billingday && rowData.billingday !== '') {
+            const bd = parseInt(rowData.billingday, 10);
+            if (!isNaN(bd) && bd >= 1 && bd <= 31) updateData.billingDay = bd;
+          }
+          if (rowData.expiredat && rowData.expiredat !== '') {
+            const d = new Date(rowData.expiredat);
+            if (!isNaN(d.getTime())) updateData.expiredAt = d;
+          }
+          if (rowData.latitude && rowData.longitude) {
+            const lat = parseFloat(rowData.latitude); const lng = parseFloat(rowData.longitude);
+            if (!isNaN(lat) && !isNaN(lng)) { updateData.latitude = lat; updateData.longitude = lng; }
+          }
+          if (rowData.area && rowData.area.trim()) {
+            const areaRec = await prisma.pppoeArea.findFirst({ where: { name: { contains: rowData.area.trim() } } });
+            if (areaRec) updateData.areaId = areaRec.id;
+          }
+          if (rowData.autoisolation !== undefined && rowData.autoisolation !== '') {
+            updateData.autoIsolationEnabled = rowData.autoisolation.toLowerCase() !== 'false' && rowData.autoisolation !== '0';
+          }
+          if (rowData.comment && rowData.comment.trim()) updateData.comment = rowData.comment.trim();
+          if (rowData.macaddress && rowData.macaddress.trim()) updateData.macAddress = rowData.macaddress.trim();
+
+          await prisma.pppoeUser.update({ where: { username: rowData.username }, data: updateData });
+
+          // Sync RADIUS: update password and profile
+          await prisma.$executeRaw`
+            INSERT INTO radcheck (username, attribute, op, value)
+            VALUES (${existingUser.username}, 'Cleartext-Password', ':=', ${password})
+            ON DUPLICATE KEY UPDATE value = ${password}
+          `;
+          await prisma.$executeRaw`DELETE FROM radusergroup WHERE username = ${existingUser.username}`;
+          await prisma.$executeRaw`
+            INSERT INTO radusergroup (username, groupname, priority)
+            VALUES (${existingUser.username}, ${upsertProfile.groupName}, 1)
+          `;
+          if (updateData.ipAddress) {
+            await prisma.$executeRaw`
+              INSERT INTO radreply (username, attribute, op, value)
+              VALUES (${existingUser.username}, 'Framed-IP-Address', ':=', ${updateData.ipAddress})
+              ON DUPLICATE KEY UPDATE value = ${updateData.ipAddress}
+            `;
+          }
+
+          results.updated++;
+          continue;
+        }
+
+        // New user: profile column is required
         if (!rowProfile) {
           results.failed++;
           results.errors.push({
@@ -421,14 +500,6 @@ export async function POST(request: NextRequest) {
             error: `Profile tidak ditemukan: "${rowProfileName || 'kolom Profile tidak ada dalam file'}"`,
           });
           continue;
-        }
-
-        // Resolve router for this row from 'routername' column (set by export's "Router" header)
-        let rowRouterId: string | null = null;
-        const rowRouterName = rowData.routername?.trim() || '';
-        if (rowRouterName && rowRouterName.toLowerCase() !== 'global') {
-          const foundRouter = routerByNameMap.get(rowRouterName.toLowerCase());
-          if (foundRouter) rowRouterId = foundRouter.id;
         }
 
         // Create user

@@ -1680,7 +1680,7 @@ export default function PppoeUsersPage() {
             </div>
             {importResult && (
               <div className="p-3 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/50 text-xs max-h-60 overflow-y-auto">
-                <div className="flex items-center gap-1 text-green-600 dark:text-[#00ff88] mb-2"><CheckCircle2 className="h-3 w-3" />{importResult.success} {t('common.create')}</div>
+                <div className="flex items-center gap-1 text-green-600 dark:text-[#00ff88] mb-2"><CheckCircle2 className="h-3 w-3" />{importResult.success} {t('common.create')}{importResult.updated > 0 && <span className="ml-2 text-blue-500 dark:text-[#00f7ff]">· {importResult.updated} Diperbarui</span>}</div>
                 {importResult.failed > 0 && (
                   <div className="text-red-500 dark:text-[#ff4466]">
                     <div className="font-medium mb-1">{importResult.failed} {t('notifications.failed')}</div>
