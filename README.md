@@ -469,6 +469,19 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.25.16 — 2026-05-02
+
+### Added
+- **Notifikasi WhatsApp ke admin saat pembayaran manual baru masuk** — Saat pelanggan submit bukti pembayaran manual, sistem sekarang mengirim notifikasi WA instan ke semua admin. Pesan berisi nama pelanggan, username, nomor invoice, jumlah bayar, info bank pengirim, dan link langsung ke halaman approval. Sebelumnya hanya membuat record notifikasi di database.
+- **Notifikasi WhatsApp ke semua SUPER_ADMIN** — Notifikasi WA untuk pendaftaran baru dan pembayaran manual kini dikirim ke semua admin (bukan hanya `company.adminPhone`). Nomor dikumpulkan dari dua sumber: `companies.adminPhone` + semua `admin_users` dengan role SUPER_ADMIN yang aktif dan punya nomor HP. Nomor duplikat di-deduplikasi otomatis. Pengiriman paralel (fire-and-forget) sehingga tidak memperlambat response API.
+- **Helper `getAdminPhones()`** — Fungsi di `whatsapp-templates.service.ts` yang mengumpulkan dan mendeduplikasi semua nomor HP admin dari database. Memfilter nomor invalid (< 10 digit).
+- **Helper `notifyAdminsViaWhatsApp(message)`** — Fungsi reusable untuk mengirim pesan WA ke semua admin. Dapat digunakan di endpoint lain yang butuh notifikasi admin.
+
+### Files
+- `src/server/services/notifications/whatsapp-templates.service.ts` — Tambah `getAdminPhones()` + `notifyAdminsViaWhatsApp()`
+- `src/app/api/manual-payments/route.ts` — Tambah notifikasi WA ke semua admin saat POST (pembayaran manual baru)
+- `src/app/api/registrations/route.ts` — Ubah notifikasi dari `adminPhone` saja ke semua admin via `notifyAdminsViaWhatsApp()`
+
 ### v2.25.15 — 2026-05-01
 
 ### Fixed
@@ -533,20 +546,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/admin/genieacs/presets/page.tsx` — Tombol Backup + Restore ditambahkan
 - `src/app/api/genieacs/backup/route.ts` — API endpoint baru (GET + POST)
 - `src/app/api/settings/genieacs/devices/route.ts` — Cache TTL 60s → 300s
-
-### v2.25.11 — 2026-05-02
-
-### Added
-- **Generate Tagihan Manual di Halaman Tagihan** — Tombol "Generate Tagihan" baru di header halaman `/admin/invoices`. Membuka dialog dengan opsi:
-  - **Target**: Semua Pelanggan POSTPAID aktif, atau Satu Pelanggan (dengan pencarian nama/username/HP)
-  - **Bulan Tagihan**: Picker bulan (`YYYY-MM`), default bulan berjalan
-  - **Opsi**: Lewati jika tagihan bulan tersebut sudah ada (default aktif), Kirim notifikasi WhatsApp setelah generate
-  - Setelah generate: tampilkan ringkasan (dibuat / dilewati / gagal) + detail error jika ada
-- **API POST `/api/invoices/generate`** — Endpoint baru untuk generate tagihan manual. Mendukung `scope: 'all' | 'single'`, `targetMonth (YYYY-MM)`, `userId`, `skipExisting`, `sendWa`. Menghitung PPN otomatis sesuai profil. Due date = hari terakhir bulan target.
-
-### Files
-- `src/app/admin/invoices/page.tsx` — Dialog + tombol Generate Tagihan ditambahkan
-- `src/app/api/invoices/generate/route.ts` — API endpoint baru
 
 <!-- AUTO-CHANGELOG:END -->
 
