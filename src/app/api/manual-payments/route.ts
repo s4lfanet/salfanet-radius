@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, nowWIB } from '@/lib/timezone';
+import { notifyAdminsViaWhatsApp } from '@/server/services/notifications/whatsapp-templates.service';
 
 // GET - Get all manual payment submissions
 export async function GET(request: NextRequest) {
@@ -174,6 +175,19 @@ export async function POST(request: NextRequest) {
         createdAt: nowWIB(),
       },
     });
+
+    // Notify all admins via WhatsApp (fire-and-forget)
+    const approvalUrl = (await prisma.company.findFirst({ select: { baseUrl: true } }))?.baseUrl || '';
+    const waMessage =
+      `💳 *Pembayaran Manual Baru Masuk!*\n\n` +
+      `👤 Pelanggan: *${manualPayment.user.name}*\n` +
+      `🔐 Username: *${manualPayment.user.username}*\n` +
+      `🧾 Invoice: *${manualPayment.invoice.invoiceNumber}*\n` +
+      `💰 Jumlah: *Rp ${Number(manualPayment.amount).toLocaleString('id-ID')}*\n` +
+      `🏦 Bank: *${bankName}*${accountNumber ? ` (${accountNumber})` : ''}\n` +
+      `👤 A/N: *${accountName}*\n\n` +
+      `Silakan verifikasi dan setujui di:\n${approvalUrl}/admin/manual-payments`;
+    notifyAdminsViaWhatsApp(waMessage).catch(() => {});
     
     return NextResponse.json({
       success: true,

@@ -36,6 +36,44 @@ function formatBankAccountsForWA(bankAccounts: any): string {
 }
 
 /**
+ * Collect and deduplicate all admin phone numbers from:
+ * 1. companies.adminPhone (primary)
+ * 2. admin_users with role SUPER_ADMIN + active + phone set
+ */
+export async function getAdminPhones(): Promise<string[]> {
+  const phones = new Set<string>();
+
+  try {
+    const company = await prisma.company.findFirst({ select: { adminPhone: true } });
+    if (company?.adminPhone) phones.add(company.adminPhone.trim());
+  } catch (_) {}
+
+  try {
+    const superAdmins = await prisma.adminUser.findMany({
+      where: { role: 'SUPER_ADMIN', isActive: true, phone: { not: null } },
+      select: { phone: true },
+    });
+    for (const a of superAdmins) {
+      const p = a.phone?.trim();
+      if (p && p.replace(/\D/g, '').length >= 10) phones.add(p);
+    }
+  } catch (_) {}
+
+  return Array.from(phones);
+}
+
+/**
+ * Send a WhatsApp message to all admin numbers (fire-and-forget).
+ * Sending is done in parallel; errors are silently swallowed.
+ */
+export async function notifyAdminsViaWhatsApp(message: string): Promise<void> {
+  const phones = await getAdminPhones();
+  await Promise.allSettled(
+    phones.map(phone => WhatsAppService.sendMessage({ phone, message }))
+  );
+}
+
+/**
  * Get template from database by type
  */
 async function getTemplate(type: string): Promise<string | null> {
