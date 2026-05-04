@@ -5,7 +5,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   Plus, Pencil, Trash2, Server, MapPin, Map, X, RefreshCcw, Router as RouterIcon,
-  Activity, Box, Network, Upload, Download, Eye, AlertTriangle,
+  Activity, Box, Network, Upload, Download, Eye,
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import Link from 'next/link';
@@ -1015,112 +1015,28 @@ export default function OLTsPage() {
                     className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
                   >
                     <option value="">-- Select Vendor --</option>
-                    {[...new Set(oltProfiles.map(p => p.vendor))].sort().map(vendor => (
-                      <option key={vendor} value={vendor}>{vendor}</option>
-                    ))}
+                    <option value="huawei">Huawei</option>
+                    <option value="zte">ZTE</option>
+                    <option value="fiberhome">FiberHome</option>
+                    <option value="bdcom">BDCOM</option>
+                    <option value="raisecom">Raisecom</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-[10px] font-medium mb-1">{t('olt.model')} *</label>
-                  <select
+                  <input
+                    type="text"
                     value={formData.model}
                     onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                     required
+                    placeholder="e.g. MA5800-X15"
                     className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
-                    disabled={!formData.vendor}
-                  >
-                    <option value="">-- Select Model --</option>
-                    {oltProfiles
-                      .filter(p => p.vendor.toLowerCase() === formData.vendor.toLowerCase())
-                      .map(p => (
-                        <option key={p.id} value={p.model}>{p.model}</option>
-                      ))
-                    }
-                  </select>
+                  />
                 </div>
               </div>
 
               {/* Model Profile Helper */}
-              {(() => {
-                const hasProfiles = oltProfiles.length > 0;
-                const matchedProfile = formData.vendor && formData.model
-                  ? oltProfiles.find(p => p.vendor.toLowerCase() === formData.vendor.toLowerCase() && p.model.toLowerCase() === formData.model.toLowerCase())
-                  : null;
-                const vendorModels = formData.vendor
-                  ? oltProfiles.filter(p => p.vendor.toLowerCase() === formData.vendor.toLowerCase())
-                  : [];
-
-                if (!hasProfiles) {
-                  return (
-                    <div className="col-span-2 p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-[10px] font-medium text-amber-800 dark:text-amber-200">Belum ada Model Profile</p>
-                          <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">
-                            Buat model profile terlebih dahulu agar OLT dapat dimonitor dengan benar.
-                          </p>
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                            Gunakan OLT Monitoring → Settings untuk mengkonfigurasi monitoring.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (formData.vendor && vendorModels.length === 0) {
-                  return (
-                    <div className="col-span-2 p-2.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-3.5 w-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
-                        <div>
-                          <p className="text-[10px] font-medium text-amber-800 dark:text-amber-200">
-                            Vendor "{formData.vendor}" belum memiliki model profile
-                          </p>
-                          <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">
-                            OLT tetap bisa dibuat, namun monitoring tidak akan berjalan optimal tanpa profile.
-                          </p>
-                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
-                            Konfigurasikan monitoring via OLT Monitoring → Settings.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                if (matchedProfile) {
-                  return (
-                    <div className="col-span-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-green-500 rounded-full" />
-                          <span className="text-[10px] text-green-700 dark:text-green-300">
-                            Model profile ditemukan: <strong>{matchedProfile.vendor} {matchedProfile.model}</strong>
-                            {matchedProfile.poller_type && (
-                              <span className="ml-1 px-1 py-0.5 bg-green-100 dark:bg-green-900/40 rounded text-[9px] uppercase">
-                                {matchedProfile.poller_type}
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        <Link
-                          href="/admin/olt/monitoring"
-                          target="_blank"
-                          className="text-[10px] text-green-600 dark:text-green-400 hover:underline flex items-center gap-1"
-                        >
-                          <Eye className="h-2.5 w-2.5" />
-                          Monitoring
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                }
-
-                return null;
-              })()}
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-medium mb-1">{t('network.username')}</label>
