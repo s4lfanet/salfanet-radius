@@ -23,7 +23,8 @@ const nextConfig: NextConfig = {
   },
   // Node.js-only packages used in API routes — skip Turbopack bundling entirely
   // This prevents static analysis of conditional require('source-map-support') in node-routeros
-  serverExternalPackages: ['node-routeros', 'source-map-support'],
+  // ssh2 uses native crypto and cpu-features that can't be bundled by webpack
+  serverExternalPackages: ['node-routeros', 'source-map-support', 'ssh2', 'cpu-features', 'sshcrypto'],
   // Fix workspace root detection issue
   turbopack: {
     root: path.resolve(__dirname),
