@@ -10,11 +10,15 @@ import { badRequest, unauthorized } from '@/lib/api-response';
  * POST /api/invoices/generate
  *
  * Body:
- *   targetMonth : 'YYYY-MM'   — which billing month (due date = last day of that month)
+ *   targetMonth : 'YYYY-MM'   — billing month (used for POSTPAID due date calculation)
  *   scope       : 'all' | 'single'
  *   userId?     : string       — required when scope='single'
  *   skipExisting: boolean      — skip users that already have invoice for that month (default: true)
  *   sendWa      : boolean      — send WA notification after generating (default: false)
+ *
+ * Due date logic:
+ *   POSTPAID  → billingDay of targetMonth (or last day of month if billingDay > days in month)
+ *   PREPAID   → user.expiredAt (the actual expiry already set on the user)
  *
  * Returns { generated, skipped, errors[] }
  */
@@ -37,13 +41,18 @@ export async function POST(request: NextRequest) {
     }
 
     const [year, month] = targetMonth.split('-').map(Number);
-    // Due date = last day of target month
-    const dueDate = new Date(year, month, 0, 23, 59, 59, 999); // month is 1-based, 0th day = last of prev
 
-    // Build user query
+    // Helper: due date for POSTPAID = billingDay of targetMonth (clamped to days in month)
+    const getDueDatePostpaid = (billingDay: number | null): Date => {
+      const bd = billingDay ?? 1;
+      const daysInMonth = new Date(year, month, 0).getDate(); // last day of targetMonth
+      const day = Math.min(bd, daysInMonth);
+      return new Date(year, month - 1, day, 23, 59, 59, 999);
+    };
+
+    // Build user query — include BOTH POSTPAID and PREPAID
     const userWhere: Record<string, unknown> = {
       status: { in: ['active', 'isolated'] },
-      subscriptionType: 'POSTPAID',
     };
     if (scope === 'single') userWhere.id = userId;
 
@@ -66,11 +75,11 @@ export async function POST(request: NextRequest) {
     const monthStart = new Date(year, month - 1, 1, 0, 0, 0, 0);
     const monthEnd = new Date(year, month, 0, 23, 59, 59, 999);
 
-    // Batch fetch existing invoices for this month (MONTHLY type)
+    // Batch fetch existing invoices for this month (MONTHLY/RENEWAL type)
     const existingInvoices = await prisma.invoice.findMany({
       where: {
         userId: { in: users.map(u => u.id) },
-        invoiceType: 'MONTHLY',
+        invoiceType: { in: ['MONTHLY', 'RENEWAL'] },
         dueDate: { gte: monthStart, lte: monthEnd },
         status: { not: 'CANCELLED' },
       },
@@ -93,6 +102,25 @@ export async function POST(request: NextRequest) {
         if (!user.profile) {
           errors.push({ username: user.username, error: 'Paket tidak ditemukan' });
           continue;
+        }
+
+        // Determine due date based on subscription type
+        const subscriptionType = (user as any).subscriptionType || 'POSTPAID';
+        let dueDate: Date;
+        let invoiceType: string;
+
+        if (subscriptionType === 'PREPAID') {
+          if (!user.expiredAt) {
+            // PREPAID without expiredAt — skip, cannot determine due date
+            skipped++;
+            continue;
+          }
+          dueDate = user.expiredAt;
+          invoiceType = 'RENEWAL';
+        } else {
+          // POSTPAID: due date = billingDay of targetMonth
+          dueDate = getDueDatePostpaid((user as any).billingDay ?? null);
+          invoiceType = 'MONTHLY';
         }
 
         // Calculate amount (apply PPN if enabled)
@@ -119,7 +147,7 @@ export async function POST(request: NextRequest) {
             ...(taxRate !== null && { taxRate }),
             dueDate,
             status: 'PENDING',
-            invoiceType: 'MONTHLY',
+            invoiceType: invoiceType as any,
             customerName: user.name,
             customerPhone: user.phone,
             customerEmail: user.email || null,

@@ -1327,7 +1327,7 @@ export default function InvoicesPage() {
                   <div>
                     <DialogTitle className="text-sm font-bold">Generate Tagihan Manual</DialogTitle>
                     <DialogDescription className="text-[11px] mt-0.5">
-                      Buat tagihan bulanan untuk pelanggan POSTPAID
+                      Buat tagihan untuk pelanggan POSTPAID dan PREPAID
                     </DialogDescription>
                   </div>
                 </div>
@@ -1469,7 +1469,7 @@ export default function InvoicesPage() {
                     <div className="flex items-start gap-2 bg-blue-500/10 border border-blue-500/20 rounded-xl px-3 py-2.5">
                       <AlertCircle className="w-3.5 h-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                       <p className="text-[11px] text-blue-300 leading-snug">
-                        Generate untuk <strong>semua pelanggan POSTPAID aktif</strong>. Pelanggan yang sudah punya tagihan bulan tersebut akan dilewati secara otomatis.
+                        Generate untuk <strong>semua pelanggan aktif (POSTPAID &amp; PREPAID)</strong>. Pelanggan yang sudah punya tagihan bulan tersebut akan dilewati secara otomatis.
                       </p>
                     </div>
                   )}

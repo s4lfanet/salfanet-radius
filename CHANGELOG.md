@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.25.17] — 2026-05-03
+
+### Fixed
+- **Generate tagihan manual hanya untuk POSTPAID** — Endpoint `POST /api/invoices/generate` sebelumnya memfilter `subscriptionType: 'POSTPAID'` sehingga pelanggan PREPAID tidak pernah mendapat tagihan dari fitur generate manual. Filter dihapus sehingga semua pelanggan aktif (POSTPAID dan PREPAID) diproses.
+- **Generate tagihan menggunakan tanggal jatuh tempo yang salah** — Due date sebelumnya selalu diset ke hari terakhir `targetMonth` untuk semua user. Diperbaiki dengan logika per-user:
+  - **POSTPAID**: `dueDate = billingDay user di targetMonth` (diclamped ke hari terakhir bulan jika billingDay > jumlah hari di bulan tersebut)
+  - **PREPAID**: `dueDate = user.expiredAt` (tanggal kedaluwarsa aktual yang sudah tersimpan di profil user)
+- **PREPAID tanpa expiredAt dilewati** — PREPAID user yang belum memiliki `expiredAt` tidak akan di-generate invoice (di-skip) karena tidak ada tanggal jatuh tempo yang bisa dipakai.
+- **Cek duplikat invoice sekarang mencakup tipe RENEWAL** — Batch check existing invoices sebelumnya hanya mengecek `invoiceType: 'MONTHLY'`. Sekarang mengecek keduanya (`MONTHLY` dan `RENEWAL`) agar PREPAID tidak ter-generate ulang.
+- **Invoice PREPAID menggunakan `invoiceType: 'RENEWAL'`** — Sebelumnya semua invoice di-create dengan `invoiceType: 'MONTHLY'`. Invoice untuk PREPAID sekarang menggunakan `RENEWAL` sesuai konvensi sistem.
+- **UI: deskripsi dialog generate tagihan diperbarui** — Teks "Buat tagihan bulanan untuk pelanggan POSTPAID" diganti menjadi "Buat tagihan untuk pelanggan POSTPAID dan PREPAID". Info teks scope "all" juga diperbarui.
+
+### Files
+- `src/app/api/invoices/generate/route.ts` — Hapus filter POSTPAID-only; per-user dueDate (billingDay / expiredAt); invoiceType MONTHLY/RENEWAL; cek duplikat RENEWAL
+- `src/app/admin/invoices/page.tsx` — Update deskripsi dialog generate tagihan
+
+---
+
 ## [2.25.16] — 2026-05-02
 
 ### Added
