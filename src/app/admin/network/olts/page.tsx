@@ -5,7 +5,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   Plus, Pencil, Trash2, Server, MapPin, Map, X, RefreshCcw, Router as RouterIcon,
-  Activity, Box, Network, Upload, Download, Eye, ExternalLink, AlertTriangle,
+  Activity, Box, Network, Upload, Download, Eye, AlertTriangle,
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import Link from 'next/link';
@@ -1060,14 +1060,9 @@ export default function OLTsPage() {
                           <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">
                             Buat model profile terlebih dahulu agar OLT dapat dimonitor dengan benar.
                           </p>
-                          <Link
-                            href="/admin/olt/model-profiles-new/new"
-                            target="_blank"
-                            className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:underline"
-                          >
-                            <ExternalLink className="h-2.5 w-2.5" />
-                            Buat Model Profile
-                          </Link>
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                            Gunakan OLT Monitoring → Settings untuk mengkonfigurasi monitoring.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1086,14 +1081,9 @@ export default function OLTsPage() {
                           <p className="text-[10px] text-amber-700 dark:text-amber-300 mt-0.5">
                             OLT tetap bisa dibuat, namun monitoring tidak akan berjalan optimal tanpa profile.
                           </p>
-                          <Link
-                            href="/admin/olt/model-profiles-new/new"
-                            target="_blank"
-                            className="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 dark:text-amber-300 hover:underline"
-                          >
-                            <ExternalLink className="h-2.5 w-2.5" />
-                            Buat Model Profile untuk {formData.vendor}
-                          </Link>
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">
+                            Konfigurasikan monitoring via OLT Monitoring → Settings.
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1116,12 +1106,12 @@ export default function OLTsPage() {
                           </span>
                         </div>
                         <Link
-                          href={`/admin/olt/model-profiles-new/${matchedProfile.id}`}
+                          href="/admin/olt/monitoring"
                           target="_blank"
                           className="text-[10px] text-green-600 dark:text-green-400 hover:underline flex items-center gap-1"
                         >
                           <Eye className="h-2.5 w-2.5" />
-                          Lihat
+                          Monitoring
                         </Link>
                       </div>
                     </div>
