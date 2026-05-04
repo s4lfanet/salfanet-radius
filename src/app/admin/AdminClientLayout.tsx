@@ -198,6 +198,8 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'network.view',
         children: [
           { titleKey: 'nav.oltManagement', href: '/admin/network/olts', requiredPermission: 'network.view' },
+          { titleKey: 'nav.oltMonitoring', href: '/admin/olt/monitoring', requiredPermission: 'network.view' },
+          { titleKey: 'nav.oltAlerts', href: '/admin/olt/alerts', requiredPermission: 'network.view' },
         ],
       },
       {

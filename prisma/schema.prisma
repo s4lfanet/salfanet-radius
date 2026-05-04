@@ -556,6 +556,7 @@ model pppoeUser {
   referralRewardsGiven    referralReward[] @relation("ReferrerRewards")
   referralRewardsReceived referralReward[] @relation("ReferredRewards")
   pushSubscriptions pushSubscription[]
+  oltOnuStatuses    oltOnuStatus[]
 
   @@index([profileId], map: "pppoe_users_profileId_fkey")
   @@index([routerId], map: "pppoe_users_routerId_fkey")
@@ -1027,12 +1028,247 @@ model networkOLT {
   customRouteWaypoints Json?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
+
+  // Monitoring fields
+  vendor               String?            @default("huawei") // huawei|zte|fiberhome|bdcom|raisecom
+  model                String?
+  firmwareVersion      String?
+  snmpEnabled          Boolean            @default(true)
+  snmpCommunity        String             @default("public")
+  snmpPort             Int                @default(161)
+  telnetEnabled        Boolean            @default(false)
+  telnetPort           Int                @default(23)
+  sshEnabled           Boolean            @default(false)
+  sshPort              Int                @default(22)
+  username             String?
+  password             String?
+  monitoringEnabled    Boolean            @default(false)
+  pollingInterval      Int                @default(300)  // seconds
+  lastPollAt           DateTime?
+  isOnline             Boolean            @default(false)
+  uptime               BigInt             @default(0)
+  temperature          Float?
+  totalOnu             Int                @default(0)
+  onlineOnu            Int                @default(0)
+  offlineOnu           Int                @default(0)
+
   routers              networkOLTRouter[]
   odcs                 networkODC[]
   odps                 networkODP[]
   otbs                 network_otbs[]
+  onuStatuses          oltOnuStatus[]
+  performanceMetrics   oltPerformanceMetric[]
+  alerts               oltAlert[]
+  alertSettings        oltAlertSettings[]
+  monitoringLogs       oltMonitoringLog[]
+  customAlertRules     oltCustomAlertRule[]
 
   @@map("network_olts")
+}
+
+// ONU Status tracking
+model oltOnuStatus {
+  id              String           @id @default(cuid())
+  oltId           String
+  onuIndex        Int              @default(0)
+  frame           Int              @default(0)
+  slot            Int              @default(0)
+  port            Int
+  onuId           Int
+  macAddress      String?
+  serialNumber    String?
+  description     String?          @db.Text
+  status          OltOnuStatus     @default(offline)
+  rxPower         Float?
+  txPower         Float?
+  distance        Int?
+  temperature     Float?
+  voltage         Float?
+  biasCurrent     Float?
+  lastDeregReason String?
+  ipAddress       String?
+  vlanId          Int?
+  bandwidthUp     BigInt           @default(0)
+  bandwidthDown   BigInt           @default(0)
+  customerId      String?
+  firstSeenAt     DateTime         @default(now())
+  lastSeenAt      DateTime?
+  lastOfflineAt   DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  olt             networkOLT       @relation(fields: [oltId], references: [id], onDelete: Cascade)
+  customer        pppoeUser?       @relation(fields: [customerId], references: [id])
+  oltAlerts       oltAlert[]
+
+  @@unique([oltId, frame, slot, port, onuId])
+  @@index([oltId])
+  @@index([status])
+  @@index([serialNumber])
+  @@index([macAddress])
+  @@index([customerId])
+  @@map("olt_onu_status")
+}
+
+// Performance metrics time-series
+model oltPerformanceMetric {
+  id          String     @id @default(cuid())
+  oltId       String
+  cpuUsage    Float?
+  memoryUsage Float?
+  temperature Float?
+  uptime      BigInt?
+  totalOnu    Int        @default(0)
+  onlineOnu   Int        @default(0)
+  offlineOnu  Int        @default(0)
+  rxBytes     BigInt     @default(0)
+  txBytes     BigInt     @default(0)
+  rxErrors    BigInt     @default(0)
+  txErrors    BigInt     @default(0)
+  recordedAt  DateTime   @default(now())
+
+  olt         networkOLT @relation(fields: [oltId], references: [id], onDelete: Cascade)
+
+  @@index([oltId])
+  @@index([recordedAt])
+  @@map("olt_performance_metrics")
+}
+
+// Alert records
+model oltAlert {
+  id                  String           @id @default(cuid())
+  oltId               String?
+  onuId               String?
+  alertType           OltAlertType     @default(onu_offline)
+  severity            OltAlertSeverity @default(warning)
+  message             String           @db.Text
+  details             Json?
+  isResolved          Boolean          @default(false)
+  resolvedAt          DateTime?
+  resolvedBy          String?
+  notifiedViaEmail    Boolean          @default(false)
+  notifiedViaWhatsapp Boolean          @default(false)
+  emailSentAt         DateTime?
+  whatsappSentAt      DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  olt                 networkOLT?      @relation(fields: [oltId], references: [id], onDelete: Cascade)
+  onu                 oltOnuStatus?    @relation(fields: [onuId], references: [id], onDelete: Cascade)
+
+  @@index([oltId])
+  @@index([onuId])
+  @@index([alertType])
+  @@index([severity])
+  @@index([isResolved])
+  @@index([createdAt])
+  @@map("olt_alerts")
+}
+
+// Alert configuration
+model oltAlertSettings {
+  id                  String     @id @default(cuid())
+  oltId               String?
+  alertType           String
+  isEnabled           Boolean    @default(true)
+  thresholdValue      Float?
+  notifyEmail         Boolean    @default(false)
+  notifyWhatsapp      Boolean    @default(true)
+  emailRecipients     String?    @db.Text
+  whatsappRecipients  String?    @db.Text
+  cooldownMinutes     Int        @default(30)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  olt                 networkOLT? @relation(fields: [oltId], references: [id], onDelete: Cascade)
+
+  @@index([oltId])
+  @@index([alertType])
+  @@map("olt_alert_settings")
+}
+
+// Monitoring audit logs
+model oltMonitoringLog {
+  id        String                   @id @default(cuid())
+  oltId     String
+  logType   OltMonitoringLogType     @default(poll)
+  message   String?                  @db.Text
+  data      Json?
+  severity  OltMonitoringLogSeverity @default(info)
+  createdAt DateTime                 @default(now())
+
+  olt       networkOLT @relation(fields: [oltId], references: [id], onDelete: Cascade)
+
+  @@index([oltId])
+  @@index([logType])
+  @@index([severity])
+  @@index([createdAt])
+  @@map("olt_monitoring_logs")
+}
+
+// Custom alert rules engine
+model oltCustomAlertRule {
+  id              String     @id @default(cuid())
+  name            String
+  description     String?    @db.Text
+  oltId           String?
+  isEnabled       Boolean    @default(true)
+  priority        Int        @default(0)
+  conditions      Json
+  actions         Json
+  schedule        Json?
+  cooldownSeconds Int        @default(900)
+  lastTriggeredAt DateTime?
+  triggerCount    Int        @default(0)
+  createdBy       String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  olt             networkOLT? @relation(fields: [oltId], references: [id], onDelete: Cascade)
+
+  @@index([oltId])
+  @@index([isEnabled])
+  @@index([priority])
+  @@map("olt_custom_alert_rules")
+}
+
+enum OltOnuStatus {
+  online
+  offline
+  dying_gasp
+  los
+  auth_failed
+}
+
+enum OltAlertType {
+  olt_offline
+  olt_high_temp
+  onu_offline
+  low_signal
+  high_errors
+  dying_gasp
+  unauthorized_onu
+}
+
+enum OltAlertSeverity {
+  info
+  warning
+  critical
+}
+
+enum OltMonitoringLogType {
+  poll
+  alert
+  command
+  error
+  reboot
+}
+
+enum OltMonitoringLogSeverity {
+  info
+  warning
+  error
+  critical
 }
 
 model networkOLTRouter {

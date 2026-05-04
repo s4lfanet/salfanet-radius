@@ -394,6 +394,8 @@
     "autoProvision": "Auto-Provision",
     "syncGenieacs": "Sync ke GenieACS",
     "oltManagement": "OLT Management",
+    "oltMonitoring": "OLT Monitoring",
+    "oltAlerts": "OLT Alerts",
     "oltAndOnu": "OLT & ONU",
     "onuList": "Daftar ONU",
     "oltTerminal": "OLT Terminal",
