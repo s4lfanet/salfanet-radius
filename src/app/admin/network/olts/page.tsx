@@ -190,7 +190,7 @@ export default function OLTsPage() {
       model: '',
       username: '',
       password: '',
-      snmpCommunity: '',
+      snmpCommunity: 'public',
       sshEnabled: true,
       telnetEnabled: false,
       sshPort: '22',
@@ -555,7 +555,7 @@ export default function OLTsPage() {
                     </td>
                     <td className="px-3 py-2 hidden md:table-cell">
                       <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
-                        {olt.snmp_community || 'public'}
+                        {olt.snmpCommunity || olt.snmp_community || 'public'}
                       </span>
                     </td>
                     <td className="px-3 py-2">
@@ -1077,6 +1077,7 @@ export default function OLTsPage() {
                 <label className="block text-[10px] font-medium mb-1">{t('olt.snmpCommunity')}</label>
                 <input
                   type="text"
+                  autoComplete="off"
                   value={formData.snmpCommunity}
                   onChange={(e) => setFormData({ ...formData, snmpCommunity: e.target.value })}
                   placeholder="public"

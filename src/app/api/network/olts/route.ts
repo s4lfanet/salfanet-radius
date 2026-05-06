@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
         ...(model && { model }),
         ...(username && { username }),
         ...(password && { password }),
-        ...(snmpCommunity && { snmpCommunity }),
+        snmpCommunity: snmpCommunity || 'public',
         ...(sshEnabled !== undefined && { sshEnabled }),
         ...(telnetEnabled !== undefined && { telnetEnabled }),
         ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
