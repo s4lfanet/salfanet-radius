@@ -127,8 +127,8 @@ ListenPort = ${WG_PORT}
 PrivateKey = ${SERVER_PRIVKEY}
 
 # PostUp/PostDown: iptables untuk forward RADIUS dari NAS ke loopback
-PostUp = iptables -I INPUT -p udp --dport ${WG_PORT} -j ACCEPT; iptables -I FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -I FORWARD -o ${WG_IFACE} -j ACCEPT
-PostDown = iptables -D INPUT -p udp --dport ${WG_PORT} -j ACCEPT; iptables -D FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -D FORWARD -o ${WG_IFACE} -j ACCEPT
+PostUp = iptables -I INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT; iptables -I INPUT -i ${WG_IFACE} -p icmp -j ACCEPT; iptables -I INPUT -p udp --dport ${WG_PORT} -j ACCEPT; iptables -I FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -I FORWARD -o ${WG_IFACE} -j ACCEPT
+PostDown = iptables -D INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT; iptables -D INPUT -i ${WG_IFACE} -p icmp -j ACCEPT; iptables -D INPUT -p udp --dport ${WG_PORT} -j ACCEPT; iptables -D FORWARD -i ${WG_IFACE} -j ACCEPT; iptables -D FORWARD -o ${WG_IFACE} -j ACCEPT
 
 # ── NAS Peers ──────────────────────────────────────────────────────────────
 # Peers di bawah ini dikelola otomatis oleh salfanet-radius.

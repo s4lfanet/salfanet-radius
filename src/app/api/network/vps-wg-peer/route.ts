@@ -136,11 +136,13 @@ AllowedIPs = ${allowedIps}
     }
   }
 
-  // Ensure iptables rules allow WG peer traffic to reach RADIUS (idempotent check-then-insert)
+  // Ensure iptables rules allow WG peer traffic to reach RADIUS and ping gateway (idempotent check-then-insert)
   const iptablesRules = [
     `FORWARD -i ${WG_IFACE} -j ACCEPT`,
     `FORWARD -o ${WG_IFACE} -j ACCEPT`,
     `INPUT -i ${WG_IFACE} -p udp -m multiport --dports 1812,1813,3799 -j ACCEPT`,
+    `INPUT -i ${WG_IFACE} -p icmp -j ACCEPT`,
+    `INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT`,
   ]
   for (const rule of iptablesRules) {
     try {
