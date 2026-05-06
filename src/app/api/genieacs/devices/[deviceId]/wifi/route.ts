@@ -16,6 +16,33 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 150
   }
 }
 
+/**
+ * Delete all pending/fault tasks for a device before submitting a new one.
+ * Prevents task accumulation when user retries or makes multiple changes quickly.
+ */
+async function clearPendingTasks(host: string, deviceId: string, authHeader: string): Promise<void> {
+  try {
+    const query = encodeURIComponent(JSON.stringify({ device: deviceId }));
+    const res = await fetch(`${host}/tasks?query=${query}`, {
+      headers: { Authorization: `Basic ${authHeader}` },
+    });
+    if (!res.ok) return;
+    const tasks = await res.json();
+    if (!Array.isArray(tasks) || tasks.length === 0) return;
+    console.log(`[GenieACS] Clearing ${tasks.length} stale task(s) for device...`);
+    await Promise.all(
+      tasks.map((t: { _id: string }) =>
+        fetch(`${host}/tasks/${t._id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Basic ${authHeader}` },
+        }).catch(() => {})
+      )
+    );
+  } catch {
+    // Non-fatal — proceed even if cleanup fails
+  }
+}
+
 // Security mode mapping to TR-069 values
 const securityModeMap: Record<string, { beaconType: string; authMode: string; encryptionMode: string }> = {
   'None': { beaconType: 'None', authMode: 'None', encryptionMode: 'None' },
@@ -72,127 +99,69 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const basePath = `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${wlanIndex}`;
     const authHeader = Buffer.from(`${username}:${geniePassword}`).toString('base64');
     
-    console.log('[Admin WiFi] Update request:', { deviceId, wlanIndex, ssid, hasPassword: !!password });
+    console.log('[Admin WiFi] Update request:', { deviceId, wlanIndex, ssid, securityMode, hasPassword: !!password });
 
-    // Like gembok-bill: Send SEPARATE tasks for SSID and password
+    // Build ALL parameters into ONE setParameterValues task.
+    // Sending separate tasks causes accumulation: only first task benefits from connection_request,
+    // the rest queue up and can fault if device goes offline between tasks.
+    const parameterValues: [string, string | boolean | number, string][] = [
+      [`${basePath}.SSID`, ssid, 'xsd:string'],
+      [`${basePath}.Enable`, Boolean(enabled), 'xsd:boolean'],
+    ];
+
+    // Security mode — combined into same task
+    if (securityMode && securityModeMap[securityMode]) {
+      const { beaconType, authMode, encryptionMode } = securityModeMap[securityMode];
+      parameterValues.push(
+        [`${basePath}.BeaconType`, beaconType, 'xsd:string'],
+        [`${basePath}.WPAAuthenticationMode`, authMode, 'xsd:string'],
+        [`${basePath}.WPAEncryptionModes`, encryptionMode, 'xsd:string'],
+        [`${basePath}.IEEE11iAuthenticationMode`, authMode, 'xsd:string'],
+        [`${basePath}.IEEE11iEncryptionModes`, encryptionMode, 'xsd:string'],
+      );
+    }
+
+    // Password — combined into same task
+    if (!isOpen && password?.trim()) {
+      parameterValues.push(
+        [`${basePath}.KeyPassphrase`, password.trim(), 'xsd:string'],
+        [`${basePath}.PreSharedKey.1.KeyPassphrase`, password.trim(), 'xsd:string'],
+      );
+    }
+
+    // Clear stale pending/fault tasks before submitting — prevents accumulation
+    await clearPendingTasks(host, deviceId, authHeader);
+
+    // ONE task, ONE connection_request — device applies everything in a single TR-069 session
     const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=30000&connection_request`;
-
-    // Task 1: Update SSID + enable (always)
-    const ssidTask = {
-      name: 'setParameterValues',
-      parameterValues: [
-        [`${basePath}.SSID`, ssid, 'xsd:string'],
-        [`${basePath}.Enable`, Boolean(enabled), 'xsd:boolean'],
-      ]
-    };
-
-    console.log('[Admin WiFi] Sending SSID task...');
-    const ssidResponse = await fetchWithTimeout(taskUrl, {
+    const response = await fetchWithTimeout(taskUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${authHeader}`
+        'Authorization': `Basic ${authHeader}`,
       },
-      body: JSON.stringify(ssidTask)
-    });
+      body: JSON.stringify({ name: 'setParameterValues', parameterValues }),
+    }, 35000);
 
-    if (!ssidResponse.ok) {
-      const errorText = await ssidResponse.text();
-      console.error('[Admin WiFi] SSID task error:', ssidResponse.status, errorText);
-      throw new Error(`Failed to update SSID: ${errorText}`);
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error('[Admin WiFi] Task error:', response.status, errText);
+      throw new Error(`GenieACS error: ${errText}`);
     }
 
-    const ssidResult = await ssidResponse.json();
-    console.log('[Admin WiFi] SSID task created:', ssidResult._id);
-
-    // Task 2: Security mode (if changed)
-    if (securityMode && securityModeMap[securityMode]) {
-      const { beaconType, authMode, encryptionMode } = securityModeMap[securityMode];
-      const secTask = {
-        name: 'setParameterValues',
-        parameterValues: [
-          [`${basePath}.BeaconType`, beaconType, 'xsd:string'],
-          [`${basePath}.WPAAuthenticationMode`, authMode, 'xsd:string'],
-          [`${basePath}.WPAEncryptionModes`, encryptionMode, 'xsd:string'],
-          [`${basePath}.IEEE11iAuthenticationMode`, authMode, 'xsd:string'],
-          [`${basePath}.IEEE11iEncryptionModes`, encryptionMode, 'xsd:string'],
-        ]
-      };
-      const secRes = await fetchWithTimeout(taskUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Basic ${authHeader}` },
-        body: JSON.stringify(secTask)
-      });
-      if (!secRes.ok) console.warn('[Admin WiFi] Security mode task failed:', await secRes.text());
-      else console.log('[Admin WiFi] Security mode task sent:', securityMode);
-    }
-
-    // Task 2: Update password if provided (dual path like gembok-bill)
-    let passwordResult = null;
-    if (!isOpen && password && password.trim()) {
-      const passwordTask = {
-        name: 'setParameterValues',
-        parameterValues: [
-          [`${basePath}.KeyPassphrase`, password, 'xsd:string'],
-          [`${basePath}.PreSharedKey.1.KeyPassphrase`, password, 'xsd:string']
-        ]
-      };
-
-      console.log('[Admin WiFi] Sending password task...');
-      const passwordResponse = await fetchWithTimeout(taskUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${authHeader}`
-        },
-        body: JSON.stringify(passwordTask)
-      });
-
-      if (!passwordResponse.ok) {
-        const errorText = await passwordResponse.text();
-        console.error('[Admin WiFi] Password task error:', passwordResponse.status, errorText);
-        // Don't throw - SSID already updated
-        console.warn('[Admin WiFi] Password update failed but SSID was updated');
-      } else {
-        passwordResult = await passwordResponse.json();
-        console.log('[Admin WiFi] Password task created:', passwordResult._id);
-      }
-    }
-
-    // Send refresh task
-    try {
-      const refreshTask = {
-        name: 'refreshObject',
-        objectName: basePath
-      };
-
-      const refreshUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?connection_request`;
-      
-      await fetchWithTimeout(refreshUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Basic ${authHeader}`
-        },
-        body: JSON.stringify(refreshTask)
-      });
-
-      console.log('[Admin WiFi] Refresh task sent');
-    } catch (refreshError) {
-      console.warn('[Admin WiFi] Failed to send refresh task:', refreshError);
-    }
+    const taskResult = await response.json();
+    // 200 = task executed immediately on device during this session
+    // 202 = task queued, will apply on next device TR-069 inform
+    const executed = response.status === 200;
+    console.log(`[Admin WiFi] Task ${executed ? 'executed immediately' : 'queued (will apply on next inform)'}: ${taskResult._id}`);
 
     return NextResponse.json({
       success: true,
-      message: 'Konfigurasi WiFi berhasil dikirim ke device',
-      info: 'Perubahan akan aktif dalam beberapa saat',
-      taskId: ssidResult._id,
-      passwordTaskId: passwordResult?._id,
-      parameters: {
-        ssid,
-        enabled,
-        wlanIndex
-      }
+      message: executed
+        ? 'Konfigurasi WiFi berhasil diterapkan ke device'
+        : 'Konfigurasi WiFi diantrekan, akan diterapkan saat device TR-069 berikutnya',
+      executed,
+      taskId: taskResult._id,
     });
 
   } catch (error) {
