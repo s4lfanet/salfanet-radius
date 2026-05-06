@@ -40,7 +40,10 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      olts,
+      olts: olts.map(olt => ({
+        ...olt,
+        uptime: Number(olt.uptime),
+      })),
     });
   } catch (error: any) {
     console.error('Get OLTs error:', error);
@@ -108,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      olt,
+      olt: { ...olt, uptime: Number(olt.uptime) },
     });
   } catch (error: any) {
     console.error('Create OLT error:', error);
@@ -182,7 +185,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      olt,
+      olt: { ...olt, uptime: Number(olt.uptime) },
     });
   } catch (error: any) {
     console.error('Update OLT error:', error);

@@ -47,7 +47,14 @@ export async function GET(
       return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, olt });
+    return NextResponse.json({
+      success: true,
+      olt: {
+        ...olt,
+        uptime: Number(olt.uptime),
+        onuStatuses: olt.onuStatuses.map(s => ({ ...s, uptime: s.uptime != null ? Number(s.uptime) : null })),
+      },
+    });
   } catch (error: any) {
     console.error('[OLT Detail GET]', error);
     return NextResponse.json({ error: 'Failed to fetch OLT', details: error.message }, { status: 500 });
@@ -95,7 +102,7 @@ export async function PUT(
       },
     });
 
-    return NextResponse.json({ success: true, olt });
+    return NextResponse.json({ success: true, olt: { ...olt, uptime: Number(olt.uptime) } });
   } catch (error: any) {
     console.error('[OLT Detail PUT]', error);
     return NextResponse.json({ error: 'Failed to update OLT', details: error.message }, { status: 500 });

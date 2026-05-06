@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       success: true,
       olts: olts.map((olt) => {
         const { alerts, ...rest } = olt;
-        return { ...rest, unresolvedAlerts: alerts.length };
+        return { ...rest, uptime: Number(rest.uptime), unresolvedAlerts: alerts.length };
       }),
     });
   } catch (error: any) {
