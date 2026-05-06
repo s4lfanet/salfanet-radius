@@ -6,6 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.9] — 2026-05-07
+
+### Fixed
+- **OLT Test Connection selalu gagal (SNMP/SSH/Telnet)** — Root cause dua masalah:
+  1. `snmpget` dan `expect` tidak terinstall di VPS → diinstall manual via `apt-get install snmp expect`
+  2. `ssh.ts` tidak ada legacy algorithms → ZTE/Huawei OLT lama hanya support `aes128-cbc`, `3des-cbc`, `diffie-hellman-group1-sha1` yang tidak ada di default ssh2
+- `testSSH()` diubah menjadi test handshake only (bukan jalankan `display version`) agar lebih reliable lintas vendor
+- `testTelnet()` sekarang cek TCP port open dulu sebelum jalankan full expect auth
+
+### Files
+- `src/lib/olt/ssh.ts` — tambah legacy cipher/kex/hmac algorithms, fix `testSSH()` to handshake-only
+- `src/lib/olt/telnet.ts` — `testTelnet()` cek port open sebelum full auth
+
+---
+
 ## [2.29.8] — 2026-05-07
 
 ### Fixed
