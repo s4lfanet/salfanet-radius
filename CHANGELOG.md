@@ -6,6 +6,32 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.10] — 2026-05-07
+
+### Fixed
+- **SSH gagal dengan "Unsupported algorithm: blowfish-cbc"** — OpenSSL 3.x (Ubuntu 22+) menghapus cipher `blowfish-cbc`. Dihapus dari semua algorithm lists di `ssh.ts` (`executeCommand`, `executeCommandsInShell`, `testSSH`).
+- **OLT status tetap "Offline" setelah Test Connection berhasil** — `test-connection` API tidak mengupdate kolom `isOnline` di DB. Fix: setelah semua test selesai dan `oltId` diketahui, `prisma.networkOLT.update({ isOnline: anySuccess })` dijalankan.
+
+### Added
+- **OLT Port Diagram** — Tab baru "Port Map" di halaman detail OLT (`/admin/olt/[id]`). Menampilkan diagram visual front-panel OLT sesuai merk dan model:
+  - ZTE C320: 1U chassis, 2x 10GE uplink, 2x GPON card masing-masing 8 port
+  - ZTE C300: 7U chassis, 4x 10GE uplink, 4x GPON slot masing-masing 16 port
+  - ZTE C350: 14U chassis, 8x 100GE uplink, 8x GPON slot masing-masing 16 port
+  - Huawei MA5608T: 2U compact, 2x GE/10GE uplink, 8x GPON
+  - Huawei MA5683T/MA5680T: 7U chassis, 4x 10GE uplink, 4x GPON slot
+  - FiberHome AN5516-series: chassis, 4x uplink, 4x GPON slot
+  - Generic: tampilan fallback 2 uplink + 8 PON
+- Setiap port PON diwarnai sesuai status ONU: hijau (semua online), oranye (sebagian offline), merah (semua offline), abu-abu (kosong)
+- Hover tooltip per port menampilkan ID port, jumlah ONU, avg RX power
+- Tabel detail per port PON: progress bar online/total, avg RX power
+
+### Files
+- `src/lib/olt/ssh.ts` — hapus `blowfish-cbc` dari 3 algorithm list
+- `src/app/api/olt/test-connection/route.ts` — update `isOnline` di DB saat test selesai
+- `src/app/admin/olt/[id]/page.tsx` — tambah tab "Port Map" + komponen `OLTPortDiagram` + helper `getOLTTemplate`
+
+---
+
 ## [2.29.9] — 2026-05-07
 
 ### Fixed
