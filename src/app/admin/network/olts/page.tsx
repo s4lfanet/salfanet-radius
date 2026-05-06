@@ -209,7 +209,7 @@ export default function OLTsPage() {
     setConnectionTestResult(null);
 
     try {
-      const response = await fetch('/api/admin/olt/test-connection', {
+      const response = await fetch('/api/olt/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -217,9 +217,10 @@ export default function OLTsPage() {
           vendor: formData.vendor,
           username: formData.username,
           password: formData.password,
+          snmpCommunity: formData.snmpCommunity,
           sshEnabled: formData.sshEnabled,
           telnetEnabled: formData.telnetEnabled,
-          oltId: editingOlt?.id, // Include oltId if editing existing OLT
+          oltId: editingOlt?.id,
         }),
       });
 

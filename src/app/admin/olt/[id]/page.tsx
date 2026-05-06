@@ -12,8 +12,13 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  LineChart, Line, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+} from 'recharts';
+import {
   Server, RefreshCw, AlertCircle, Wifi, WifiOff,
   Thermometer, Clock, Activity, ArrowLeft, Save, TestTube,
+  Power, Download, CheckCircle, Signal,
 } from 'lucide-react';
 
 interface ONU {
@@ -71,6 +76,21 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [onuStatusFilter, setOnuStatusFilter] = useState('all');
+
+  // Metrics & charts
+  const [metrics, setMetrics] = useState<any[]>([]);
+  const [metricsHours, setMetricsHours] = useState(24);
+  const [metricsLoading, setMetricsLoading] = useState(false);
+
+  // Batch reboot
+  const [selectedOnus, setSelectedOnus] = useState<Set<string>>(new Set());
+  const [rebootingOnu, setRebootingOnu] = useState<string | null>(null);
+  const [confirmReboot, setConfirmReboot] = useState<string | null>(null);
+  const [batchRebooting, setBatchRebooting] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<{
+    current: number; total: number;
+    results: { serialNumber: string; success: boolean; error?: string }[];
+  } | null>(null);
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -171,6 +191,127 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     }
   };
 
+  const fetchMetrics = useCallback(async () => {
+    setMetricsLoading(true);
+    try {
+      const res = await fetch(`/api/olt/metrics?oltId=${id}&hours=${metricsHours}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Map recordedAt → timestamp for recharts dataKey
+        setMetrics((data.metrics ?? []).map((m: any) => ({ ...m, timestamp: m.recordedAt })));
+      }
+    } catch (e) {
+      console.error('Failed to fetch metrics', e);
+    } finally {
+      setMetricsLoading(false);
+    }
+  }, [id, metricsHours]);
+
+  useEffect(() => { fetchMetrics(); }, [fetchMetrics]);
+
+  const handleRebootOnu = async (onuId: string) => {
+    setRebootingOnu(onuId);
+    try {
+      const res = await fetch(`/api/olt/${id}/onus/${onuId}/reboot`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? 'Reboot failed');
+      } else {
+        setConfirmReboot(null);
+      }
+    } catch (e) {
+      alert('Reboot request failed');
+    } finally {
+      setRebootingOnu(null);
+    }
+  };
+
+  const handleBatchReboot = async () => {
+    if (selectedOnus.size === 0) return;
+    setBatchRebooting(true);
+    const ids = Array.from(selectedOnus);
+    setBatchProgress({ current: 0, total: ids.length, results: [] });
+    const results: { serialNumber: string; success: boolean; error?: string }[] = [];
+    for (let i = 0; i < ids.length; i++) {
+      const onuId = ids[i];
+      const onu = olt?.onuStatuses.find((o) => o.id === onuId);
+      try {
+        const res = await fetch(`/api/olt/${id}/onus/${onuId}/reboot`, { method: 'POST' });
+        const data = await res.json();
+        results.push({ serialNumber: onu?.serialNumber ?? onuId, success: res.ok, error: !res.ok ? data.error : undefined });
+      } catch (e: any) {
+        results.push({ serialNumber: onu?.serialNumber ?? onuId, success: false, error: e.message });
+      }
+      setBatchProgress({ current: i + 1, total: ids.length, results: [...results] });
+    }
+    setBatchRebooting(false);
+    setSelectedOnus(new Set());
+  };
+
+  const handleExportCSV = () => {
+    if (!olt) return;
+    const rows = [
+      ['Location', 'Serial Number', 'MAC', 'Status', 'RX Power (dBm)', 'Distance (m)', 'Customer', 'Username', 'Last Seen'],
+      ...olt.onuStatuses.map((o) => [
+        `${o.frame}/${o.slot}/${o.port}:${o.onuId}`,
+        o.serialNumber ?? '',
+        o.macAddress ?? '',
+        o.status,
+        o.rxPower?.toString() ?? '',
+        o.distance?.toString() ?? '',
+        o.customer?.name ?? '',
+        o.customer?.username ?? '',
+        o.lastSeenAt ? new Date(o.lastSeenAt).toLocaleString('id-ID') : '',
+      ]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${c}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `onu-list-${olt.name}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSelectOnu = (onuId: string) => {
+    setSelectedOnus((prev) => {
+      const next = new Set(prev);
+      if (next.has(onuId)) next.delete(onuId); else next.add(onuId);
+      return next;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const onus = filteredOnus;
+    if (selectedOnus.size === onus.length) {
+      setSelectedOnus(new Set());
+    } else {
+      setSelectedOnus(new Set(onus.map((o) => o.id)));
+    }
+  };
+
+  const getSignalQuality = (rxPower: number | null) => {
+    if (rxPower === null) return { label: 'N/A', color: 'text-gray-400' };
+    if (rxPower >= -20) return { label: 'Excellent', color: 'text-green-600' };
+    if (rxPower >= -25) return { label: 'Good', color: 'text-blue-600' };
+    if (rxPower >= -27) return { label: 'Fair', color: 'text-yellow-600' };
+    return { label: 'Poor', color: 'text-red-600' };
+  };
+
+  const formatBytes = (bytes: number) => {
+    if (!bytes) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  const formatTimestamp = (ts: string) => {
+    const d = new Date(ts);
+    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  };
+
   const formatUptime = (seconds: number | null) => {
     if (!seconds) return 'N/A';
     const d = Math.floor(seconds / 86400);
@@ -203,7 +344,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   if (!olt) return null;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -213,16 +354,20 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
+            <h1 className="text-lg font-semibold flex items-center gap-2">
               {olt.isOnline
-                ? <Wifi className="h-6 w-6 text-green-500" />
-                : <WifiOff className="h-6 w-6 text-red-500" />}
+                ? <Wifi className="h-5 w-5 text-green-500" />
+                : <WifiOff className="h-5 w-5 text-red-500" />}
               {olt.name}
             </h1>
-            <p className="text-gray-500 font-mono text-sm">{olt.ipAddress}</p>
+            <p className="text-gray-500 font-mono text-xs">{olt.ipAddress}</p>
           </div>
         </div>
         <div className="flex gap-2">
+          <Button onClick={handleExportCSV} variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-1" />
+            Export CSV
+          </Button>
           {olt.monitoringEnabled && (
             <Button onClick={handleManualPoll} variant="outline" size="sm">
               <RefreshCw className="h-4 w-4 mr-2" />
@@ -270,6 +415,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       <Tabs defaultValue="onus">
         <TabsList>
           <TabsTrigger value="onus">ONU List ({olt.totalOnu})</TabsTrigger>
+          <TabsTrigger value="metrics">Metrics</TabsTrigger>
           <TabsTrigger value="alerts">
             Alerts
             {olt.alerts.length > 0 && (
@@ -282,7 +428,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
 
         {/* ONU List Tab */}
         <TabsContent value="onus" className="space-y-4">
-          <div className="flex gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <Select value={onuStatusFilter} onValueChange={setOnuStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter status" />
@@ -296,59 +442,153 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               </SelectContent>
             </Select>
             <span className="text-sm text-gray-500 self-center">{filteredOnus.length} ONUs</span>
+            {selectedOnus.size > 0 && (
+              <>
+                <span className="text-sm font-medium text-blue-600">{selectedOnus.size} selected</span>
+                <Button
+                  onClick={handleBatchReboot}
+                  disabled={batchRebooting}
+                  size="sm"
+                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                >
+                  <Power className="w-3 h-3 mr-1" />
+                  {batchRebooting ? 'Rebooting...' : `Reboot ${selectedOnus.size} ONUs`}
+                </Button>
+              </>
+            )}
           </div>
+
+          {/* Batch Progress */}
+          {batchProgress && (
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-blue-900">Processing batch reboot...</span>
+                <span className="text-sm text-blue-700">{batchProgress.current} / {batchProgress.total}</span>
+              </div>
+              <div className="w-full bg-blue-200 rounded-full h-2">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                />
+              </div>
+              {batchProgress.results.length > 0 && (
+                <div className="mt-3 max-h-32 overflow-y-auto space-y-0.5">
+                  {batchProgress.results.map((r, i) => (
+                    <div key={i} className={`text-xs py-0.5 ${r.success ? 'text-green-700' : 'text-red-700'}`}>
+                      {r.success ? '✓' : '✗'} {r.serialNumber}{r.error && `: ${r.error}`}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-gray-500">
+                  <th className="pb-2 pr-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedOnus.size === filteredOnus.length && filteredOnus.length > 0}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-blue-600 rounded"
+                    />
+                  </th>
                   <th className="pb-2 pr-4">Location</th>
                   <th className="pb-2 pr-4">Serial / MAC</th>
                   <th className="pb-2 pr-4">Status</th>
+                  <th className="pb-2 pr-4">Signal</th>
                   <th className="pb-2 pr-4">RX Power</th>
                   <th className="pb-2 pr-4">Customer</th>
-                  <th className="pb-2">Last Seen</th>
+                  <th className="pb-2 pr-4">Last Seen</th>
+                  <th className="pb-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredOnus.map((onu) => (
-                  <tr key={onu.id} className="border-b hover:bg-gray-50">
-                    <td className="py-2 pr-4 font-mono text-xs">
-                      {onu.frame}/{onu.slot}/{onu.port}:{onu.onuId}
-                    </td>
-                    <td className="py-2 pr-4">
-                      <div className="font-mono text-xs">{onu.serialNumber ?? onu.macAddress ?? 'N/A'}</div>
-                    </td>
-                    <td className="py-2 pr-4">
-                      <span className={`font-medium capitalize ${getStatusColor(onu.status)}`}>
-                        {onu.status.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-4">
-                      {onu.rxPower !== null ? (
-                        <span className={onu.rxPower < -27 ? 'text-red-600' : 'text-green-600'}>
-                          {onu.rxPower.toFixed(2)} dBm
+                {filteredOnus.map((onu) => {
+                  const signalQuality = getSignalQuality(onu.rxPower);
+                  return (
+                    <tr key={onu.id} className="border-b hover:bg-gray-50">
+                      <td className="py-2 pr-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedOnus.has(onu.id)}
+                          onChange={() => handleSelectOnu(onu.id)}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                      </td>
+                      <td className="py-2 pr-4 font-mono text-xs">
+                        {onu.frame}/{onu.slot}/{onu.port}:{onu.onuId}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <div className="font-mono text-xs">{onu.serialNumber ?? onu.macAddress ?? 'N/A'}</div>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className={`font-medium capitalize ${getStatusColor(onu.status)}`}>
+                          {onu.status.replace('_', ' ')}
                         </span>
-                      ) : 'N/A'}
-                    </td>
-                    <td className="py-2 pr-4">
-                      {onu.customer ? (
-                        <div>
-                          <div className="font-medium">{onu.customer.name}</div>
-                          <div className="text-gray-500 text-xs">{onu.customer.username}</div>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400">Unassigned</span>
-                      )}
-                    </td>
-                    <td className="py-2 text-xs text-gray-500">
-                      {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : 'N/A'}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className={`inline-flex items-center gap-1 text-xs font-medium ${signalQuality.color}`}>
+                          <Signal className="w-3 h-3" />
+                          {signalQuality.label}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4">
+                        {onu.rxPower !== null ? (
+                          <span className={onu.rxPower < -27 ? 'text-red-600' : 'text-green-600'}>
+                            {onu.rxPower.toFixed(2)} dBm
+                          </span>
+                        ) : 'N/A'}
+                      </td>
+                      <td className="py-2 pr-4">
+                        {onu.customer ? (
+                          <div>
+                            <div className="font-medium">{onu.customer.name}</div>
+                            <div className="text-gray-500 text-xs">{onu.customer.username}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="py-2 pr-4 text-xs text-gray-500">
+                        {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : 'N/A'}
+                      </td>
+                      <td className="py-2">
+                        {confirmReboot === onu.id ? (
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => handleRebootOnu(onu.id)}
+                              disabled={rebootingOnu === onu.id}
+                              className="px-2 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50"
+                            >
+                              {rebootingOnu === onu.id ? 'Rebooting...' : 'Confirm'}
+                            </button>
+                            <button
+                              onClick={() => setConfirmReboot(null)}
+                              className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmReboot(onu.id)}
+                            disabled={rebootingOnu !== null || batchRebooting}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+                          >
+                            <Power className="w-3 h-3" />
+                            Reboot
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {filteredOnus.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-gray-400">
+                    <td colSpan={9} className="py-8 text-center text-gray-400">
                       No ONUs found
                     </td>
                   </tr>
@@ -356,6 +596,117 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               </tbody>
             </table>
           </div>
+        </TabsContent>
+
+        {/* Metrics Tab */}
+        <TabsContent value="metrics" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold">Performance Metrics</h2>
+            <div className="flex items-center gap-2">
+              {metricsLoading && <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />}
+              <select
+                value={metricsHours}
+                onChange={(e) => setMetricsHours(Number(e.target.value))}
+                className="px-2 py-1 text-xs border rounded dark:bg-gray-800 dark:text-gray-200"
+              >
+                <option value={6}>Last 6 hours</option>
+                <option value={12}>Last 12 hours</option>
+                <option value={24}>Last 24 hours</option>
+                <option value={48}>Last 48 hours</option>
+              </select>
+            </div>
+          </div>
+          {metrics.length === 0 && !metricsLoading ? (
+            <div className="text-center py-12 text-gray-400">
+              <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">No metrics data yet</p>
+              <p className="text-xs">Enable monitoring and wait for polling</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* CPU & Memory */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">CPU &amp; Memory Usage (%)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <LineChart data={metrics}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
+                      <YAxis fontSize={11} />
+                      <Tooltip labelFormatter={(l) => new Date(l).toLocaleString('id-ID')} />
+                      <Legend />
+                      <Line type="monotone" dataKey="cpuUsage" stroke="#3b82f6" name="CPU" strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="memoryUsage" stroke="#10b981" name="Memory" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Temperature */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Temperature (°C)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={metrics}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
+                      <YAxis fontSize={11} />
+                      <Tooltip labelFormatter={(l) => new Date(l).toLocaleString('id-ID')} />
+                      <Legend />
+                      <Area type="monotone" dataKey="temperature" stroke="#f59e0b" fill="#fbbf24" name="Temperature" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* ONU Status */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">ONU Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={metrics}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
+                      <YAxis fontSize={11} />
+                      <Tooltip labelFormatter={(l) => new Date(l).toLocaleString('id-ID')} />
+                      <Legend />
+                      <Area type="monotone" dataKey="onlineOnu" stackId="1" stroke="#10b981" fill="#34d399" name="Online" />
+                      <Area type="monotone" dataKey="offlineOnu" stackId="1" stroke="#ef4444" fill="#f87171" name="Offline" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+
+              {/* Network Traffic */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm">Network Traffic (TX/RX)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={metrics}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
+                      <YAxis tickFormatter={(v) => formatBytes(v)} fontSize={11} />
+                      <Tooltip
+                        labelFormatter={(l) => new Date(l).toLocaleString('id-ID')}
+                        formatter={(v: any) => formatBytes(v)}
+                      />
+                      <Legend />
+                      <Area type="monotone" dataKey="txBytes" stroke="#8b5cf6" fill="#c4b5fd" name="TX" />
+                      <Area type="monotone" dataKey="rxBytes" stroke="#06b6d4" fill="#67e8f9" name="RX" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         {/* Alerts Tab */}

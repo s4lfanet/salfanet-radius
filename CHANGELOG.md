@@ -6,6 +6,28 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.28.0] — 2026-05-06
+
+### Added
+- **OLT Detail: tab Metrics dengan recharts** — Halaman `/admin/olt/[id]` kini memiliki tab "Metrics" berisi 4 chart interaktif: CPU & Memory (LineChart), Temperature (AreaChart), ONU Status online/offline (AreaChart), Network Traffic TX/RX (AreaChart). Range waktu bisa dipilih: 6h, 12h, 24h, 48h.
+- **OLT Detail: batch reboot ONU** — Di tab ONU List, setiap baris kini memiliki checkbox. Pilih beberapa ONU lalu klik "Reboot N ONUs" untuk reboot massal (maks 50 sekaligus). Progress bar real-time menampilkan status per-ONU.
+- **OLT Detail: single ONU reboot** — Tombol "Reboot" per baris ONU dengan confirm step sebelum eksekusi.
+- **OLT Detail: CSV export** — Tombol "Export CSV" di header halaman untuk mengunduh daftar ONU lengkap dengan data customer.
+- **OLT Detail: kolom Signal Quality** — Kolom baru "Signal" di tabel ONU menampilkan kualitas sinyal (Excellent/Good/Fair/Poor) berdasarkan nilai RX Power.
+- **API: POST `/api/olt/[id]/onus/[onuId]/reboot`** — Endpoint baru untuk reboot satu ONU via SSH ke OLT. Mendukung command vendor spesifik: Huawei, ZTE, FiberHome, BDCOM, Raisecom.
+- **API: POST `/api/olt/[id]/onus/batch-reboot`** — Endpoint baru untuk batch reboot ONUs, mengembalikan hasil per-ONU.
+
+### Fixed
+- **OLT Test Connection 404** — Halaman `/admin/network/olts` memanggil `/api/admin/olt/test-connection` yang tidak ada. URL dikoreksi ke `/api/olt/test-connection`.
+
+### Files
+- `src/app/admin/olt/[id]/page.tsx` — Tambah tab Metrics (recharts), batch/single ONU reboot, CSV export, Signal Quality column, layout kompak
+- `src/app/api/olt/[id]/onus/[onuId]/reboot/route.ts` — **BARU** — Single ONU reboot via SSH
+- `src/app/api/olt/[id]/onus/batch-reboot/route.ts` — **BARU** — Batch ONU reboot via SSH
+- `src/app/admin/network/olts/page.tsx` — Fix URL test-connection `/api/admin/olt/...` → `/api/olt/...`
+
+---
+
 ## [2.27.0] — 2026-05-06
 
 ### Added
