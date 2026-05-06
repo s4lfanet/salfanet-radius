@@ -1297,9 +1297,13 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
     const invoiceGenerateDays = company?.invoiceGenerateDays ?? 7;
 
     // ========================================
-    // PREPAID: Users expiring H-(invoiceGenerateDays) to H+30 (invoice generation window)
+    // PREPAID: Users expiring from today onwards up to H+30 (invoice generation window).
+    // Start from today (H+0) so users expiring imminently are always included.
+    // The duplicate-invoice check (existingInvoice) prevents re-generation.
+    // In force mode, look back 90 days so manually-missed users can be caught up.
     // ========================================
-    const prepaidStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + invoiceGenerateDays, 0, 0, 0));
+    const prepaidStartDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0));
+    const prepaidStartDateForce = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 90, 0, 0, 0));
 
     const prepaidEndDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 30, 23, 59, 59, 999));
 
@@ -1308,7 +1312,7 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
         status: { in: eligibleStatuses },
         subscriptionType: 'PREPAID',
         expiredAt: {
-          gte: prepaidStartDate,
+          gte: force ? prepaidStartDateForce : prepaidStartDate,
           lte: prepaidEndDate,
         },
       },
@@ -1319,7 +1323,11 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
       },
     });
 
-    console.log(`[Invoice Generate] Found ${prepaidUsers.length} PREPAID users (range: H+${invoiceGenerateDays} to H+30)`);  
+    if (force) {
+      console.log(`[Invoice Generate] Found ${prepaidUsers.length} PREPAID users (FORCE mode — range: H-90 to H+30)`);
+    } else {
+      console.log(`[Invoice Generate] Found ${prepaidUsers.length} PREPAID users (range: H+0 to H+30)`);
+    }  
 
     // ========================================
     // POSTPAID: tagihan tetap — generate invoiceGenerateDays before billingDay.
@@ -1373,15 +1381,16 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
     }
 
     // ========================================
-    // CATCH-UP: Isolated/blocked/suspended users whose expiredAt is ALREADY PAST
-    // These users missed the normal H+7~H+30 window and need an invoice to pay & reactivate
+    // CATCH-UP: Users whose expiredAt is ALREADY PAST and have no pending invoice.
+    // Includes active users whose status hasn't been updated yet, plus isolated/blocked/suspended.
+    // These users missed the normal H+0~H+30 window and need an invoice to pay & reactivate.
     // ========================================
     const catchUpUsers = await prisma.pppoeUser.findMany({
       where: {
-        status: { in: ['isolated', 'ISOLATED', 'blocked', 'BLOCKED', 'suspended', 'SUSPENDED'] },
+        status: { in: eligibleStatuses },
         subscriptionType: { in: ['PREPAID', 'POSTPAID'] },
         expiredAt: {
-          lt: prepaidStartDate, // Already past the normal window
+          lt: prepaidStartDate, // Already expired (before start of today)
         },
         // Only include users who do NOT already have a PENDING/OVERDUE invoice
         invoices: {
@@ -1397,7 +1406,7 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
       },
     });
 
-    console.log(`[Invoice Generate] Found ${catchUpUsers.length} catch-up users (isolated/expired, no pending invoice)`);
+    console.log(`[Invoice Generate] Found ${catchUpUsers.length} catch-up users (expired before today, no pending invoice)`);
 
     const users = [...prepaidUsers, ...postpaidUsers, ...catchUpUsers];
 
@@ -1504,11 +1513,19 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
         if (!force) {
           const userCreatedAt = new Date(user.createdAt);
           if (user.subscriptionType === 'PREPAID' && user.expiredAt) {
-            // First period window: createdAt + 31 days (adds 1-day buffer for billing cycles)
-            const firstPeriodEnd = new Date(userCreatedAt.getTime() + 31 * 24 * 60 * 60 * 1000);
+            // First period: skip if the user's expiry is still within createdAt + 1 billing cycle + invoiceGenerateDays.
+            // This correctly handles 30-day plans (validityValue=30, validityUnit=DAYS) and
+            // monthly plans (validityUnit=MONTHS) — using 31 days/month as a conservative estimate.
+            // Once the user has renewed (expiredAt > createdAt + 1 cycle + invoiceGenerateDays), invoices are generated.
+            const validityDays = user.profile
+              ? (user.profile.validityUnit === 'MONTHS'
+                  ? user.profile.validityValue * 31  // conservative: 31 days per month
+                  : user.profile.validityValue)
+              : 31; // fallback
+            const firstPeriodEnd = new Date(userCreatedAt.getTime() + (validityDays + invoiceGenerateDays) * 24 * 60 * 60 * 1000);
             if (user.expiredAt <= firstPeriodEnd) {
               skipped++;
-              console.log(`??  Skipped ${user.username} - PREPAID first billing period (created: ${userCreatedAt.toISOString().slice(0, 10)}, expires: ${user.expiredAt.toISOString().slice(0, 10)})`);
+              console.log(`??  Skipped ${user.username} - PREPAID first billing period (created: ${userCreatedAt.toISOString().slice(0, 10)}, expires: ${user.expiredAt.toISOString().slice(0, 10)}, firstPeriodEnd: ${firstPeriodEnd.toISOString().slice(0, 10)})`);
               continue;
             }
           }
