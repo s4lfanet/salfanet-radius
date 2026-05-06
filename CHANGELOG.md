@@ -6,6 +6,30 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.8] — 2026-05-07
+
+### Fixed
+- **POST /api/network/olts/status 404** — Endpoint untuk mengecek status konektivitas OLT belum ada. Halaman `/admin/network/olts` melakukan polling status setiap 30 detik ke endpoint ini. Fix: buat route baru yang membaca `isOnline`, `sshEnabled`, `telnetEnabled` dari DB dan kembalikan `statusMap`.
+- **GET /admin/network/olt/[id] 404** — Link "View detail" di halaman daftar OLT mengarah ke `/admin/network/olt/[id]` tapi halaman detail sebenarnya ada di `/admin/olt/[id]`. Fix: perbaiki dua link di halaman daftar OLT (tabel desktop + kartu mobile).
+
+### Files
+- `src/app/api/network/olts/status/route.ts` — **BARU**: POST handler batch OLT status check
+- `src/app/admin/network/olts/page.tsx` — Perbaiki 2 link ke `/admin/olt/${olt.id}`
+
+---
+
+## [2.29.7] — 2026-05-07
+
+### Fixed
+- **GET /api/network/olts 500 — BigInt tidak bisa di-serialize** — `networkOLT.uptime` bertipe `BigInt` di Prisma schema (MySQL BIGINT). `JSON.stringify` tidak bisa handle BigInt secara native. Fix: convert `uptime` ke `Number()` di semua OLT endpoint responses.
+
+### Files
+- `src/app/api/network/olts/route.ts` — GET/POST/PUT: `uptime: Number(olt.uptime)`
+- `src/app/api/olt/[id]/route.ts` — GET/PUT: convert uptime + ONU statuses uptime
+- `src/app/api/olt/monitoring/route.ts` — GET: convert uptime in map
+
+---
+
 ## [2.29.6] — 2026-05-07
 
 ### Fixed

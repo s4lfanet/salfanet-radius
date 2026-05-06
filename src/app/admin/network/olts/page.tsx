@@ -723,7 +723,7 @@ export default function OLTsPage() {
                     <td className="px-3 py-2 text-right">
                       <div className="flex justify-end gap-1">
                         <Link
-                          href={`/admin/network/olt/${olt.id}`}
+                          href={`/admin/olt/${olt.id}`}
                           className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                           title={t('olt.monitoring.title')}
                         >
@@ -950,7 +950,7 @@ export default function OLTsPage() {
               {/* Actions */}
               <div className="flex justify-end gap-1">
                 <Link
-                  href={`/admin/network/olt/${olt.id}`}
+                  href={`/admin/olt/${olt.id}`}
                   className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
                   title={t('olt.monitoring.title')}
                 >
