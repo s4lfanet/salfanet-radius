@@ -87,6 +87,41 @@ restore_genieacs_data() {
     rm -f "$GENIEACS_BACKUP_SQL"
 }
 
+# Apply flat SQL migration files from prisma/migrations/*.sql
+# Tracks applied files in /var/lib/salfanet-applied-migrations.txt
+# Safe to run multiple times — already-applied files are skipped.
+apply_sql_migrations() {
+    command -v mysql &>/dev/null || return 0
+    _parse_db_parts || return 0
+    local APPLIED_LOG="/var/lib/salfanet-applied-migrations.txt"
+    local MIGRATIONS_DIR="$APP_DIR/prisma/migrations"
+    [ -d "$MIGRATIONS_DIR" ] || return 0
+
+    touch "$APPLIED_LOG" 2>/dev/null || true
+
+    local applied=0
+    local skipped=0
+    # Find all *.sql files directly under prisma/migrations/ (not in sub-folders used by prisma migrate)
+    while IFS= read -r -d '' sql_file; do
+        local filename
+        filename=$(basename "$sql_file")
+        if grep -qxF "$filename" "$APPLIED_LOG" 2>/dev/null; then
+            skipped=$((skipped + 1))
+            continue
+        fi
+        if mysql -h"$_DB_HOST" -P"$_DB_PORT" -u"$_DB_USER" -p"$_DB_PASS" "$_DB_NAME" \
+                < "$sql_file" 2>/tmp/salfanet-migration-err.log; then
+            echo "$filename" >> "$APPLIED_LOG"
+            print_success "Migration applied: $filename"
+            applied=$((applied + 1))
+        else
+            print_info "Migration warning ($filename): $(cat /tmp/salfanet-migration-err.log | tail -1)"
+        fi
+    done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -name "*.sql" -print0 | sort -z)
+
+    [ $applied -gt 0 ] && print_success "Applied $applied SQL migration(s)" || true
+}
+
 # Detect architecture
 if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
     ARCH="arm64"
@@ -260,6 +295,7 @@ if [ -n "$USE_BRANCH" ]; then
     backup_genieacs_data
     node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || node_modules/.bin/prisma db push
     restore_genieacs_data
+    apply_sql_migrations
 
     # ── Auth self-heal for legacy installs ────────────────────────────────
     # Migrate legacy admin_user -> admin_users if needed and ensure
@@ -540,6 +576,7 @@ node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || \
     node_modules/.bin/prisma db push || \
     print_info "DB push skipped (check manually)"
 restore_genieacs_data
+apply_sql_migrations
 
 print_step "Applying seed data (new templates & config)"
 npm run db:seed 2>/dev/null || print_info "Seed skipped (check manually)"
