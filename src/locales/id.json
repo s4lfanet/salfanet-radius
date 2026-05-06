@@ -275,7 +275,9 @@
     "pickOnMap": "Pilih di Peta",
     "saveError": "Gagal menyimpan data",
     "yourLocation": "Lokasi Anda",
-    "damaged": "Rusak"
+    "damaged": "Rusak",
+    "list": "Daftar",
+    "clickAdd": "Klik tombol tambah"
   },
   "auth": {
     "login": "Masuk",
