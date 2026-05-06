@@ -469,6 +469,26 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.8 — 2026-05-07
+
+### Fixed
+- **POST /api/network/olts/status 404** — Endpoint untuk mengecek status konektivitas OLT belum ada. Halaman `/admin/network/olts` melakukan polling status setiap 30 detik ke endpoint ini. Fix: buat route baru yang membaca `isOnline`, `sshEnabled`, `telnetEnabled` dari DB dan kembalikan `statusMap`.
+- **GET /admin/network/olt/[id] 404** — Link "View detail" di halaman daftar OLT mengarah ke `/admin/network/olt/[id]` tapi halaman detail sebenarnya ada di `/admin/olt/[id]`. Fix: perbaiki dua link di halaman daftar OLT (tabel desktop + kartu mobile).
+
+### Files
+- `src/app/api/network/olts/status/route.ts` — **BARU**: POST handler batch OLT status check
+- `src/app/admin/network/olts/page.tsx` — Perbaiki 2 link ke `/admin/olt/${olt.id}`
+
+### v2.29.7 — 2026-05-07
+
+### Fixed
+- **GET /api/network/olts 500 — BigInt tidak bisa di-serialize** — `networkOLT.uptime` bertipe `BigInt` di Prisma schema (MySQL BIGINT). `JSON.stringify` tidak bisa handle BigInt secara native. Fix: convert `uptime` ke `Number()` di semua OLT endpoint responses.
+
+### Files
+- `src/app/api/network/olts/route.ts` — GET/POST/PUT: `uptime: Number(olt.uptime)`
+- `src/app/api/olt/[id]/route.ts` — GET/PUT: convert uptime + ONU statuses uptime
+- `src/app/api/olt/monitoring/route.ts` — GET: convert uptime in map
+
 ### v2.29.6 — 2026-05-07
 
 ### Fixed
@@ -500,33 +520,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `prisma/migrations/20260421_add_vpn_pool_config.sql` — hapus IF NOT EXISTS dari ADD COLUMN
 - `prisma/migrations/20260506_add_olt_monitoring_tables.sql` — split 21 ADD COLUMN, hapus IF NOT EXISTS
 - `prisma/migrations/add_wireguard_fields.sql` — hapus IF NOT EXISTS dari ADD COLUMN
-
-### v2.29.3 — 2026-05-06
-
-### Fixed
-- **Invoice number: format seragam `INV-YYYYMMDD-XXXXXX` di semua tempat** — Sebelumnya ada 3 format berbeda yang dipakai secara tidak konsisten: `INV-YYYYMM-0001` (sequential counter — di cron generate & extend API), `INV-YYYYMM-A3F9B2C1` (8 char UUID prefix — di registrasi user baru & manual generate UI), dan `INV-YYYYMM-0001` (sequential counter dengan DB count — di import CSV). Sekarang semua tempat menggunakan format tunggal: **`INV-YYYYMMDD-XXXXXX`** (tanggal 8 digit + 6 karakter random uppercase hex). Tidak ada lagi DB query untuk hitung urutan; tidak ada lagi race condition pada concurrent invoice generation.
-
-### Changed
-- `generateInvoiceNumber()` di `invoice.service.ts` sekarang fungsi **sync** (tidak async), tidak lagi butuh Prisma DB count.
-
-### Files
-- `src/server/services/billing/invoice.service.ts` — `generateInvoiceNumber()`: format baru, sync, tidak perlu DB
-- `src/server/services/pppoe.service.ts` — pakai `generateInvoiceNumber()` dari billing service
-- `src/server/jobs/voucher-sync.ts` — pakai `generateInvoiceNumber()`; hapus `invoiceCount` DB query
-- `src/app/api/invoices/generate/route.ts` — pakai `generateInvoiceNumber()`; hapus inline format
-- `src/app/api/admin/invoices/import/route.ts` — hapus local `generateInvoiceNumber()`, pakai dari billing service
-- `src/app/api/pppoe/users/[id]/extend/route.ts` — hapus `await` (fungsi sudah sync)
-
-### v2.29.2 — 2026-05-06
-
-### Fixed
-- **Invoice PREPAID: window mulai dari hari ini (H+0), bukan H+invoiceGenerateDays** — Sebelumnya `prepaidStartDate = today + 7`, sehingga user yang jatuh tempo besok (misal May 7 saat today=May 6) tidak termasuk dalam query dan invoice tidak di-generate — bahkan saat manual trigger (force=true). Sekarang window dimulai dari H+0 sehingga semua user yang expire hari ini hingga 30 hari ke depan tercakup. Duplikasi dicegah oleh check `existingInvoice` yang sudah ada.
-- **Invoice PREPAID force mode: window diperlebar 90 hari ke belakang** — Saat admin trigger manual (force=true), query PREPAID sekarang mencakup `H-90` hingga `H+30` sehingga semua user yang missed bisa di-catch-up sekaligus.
-- **Invoice first-period check: gunakan validitas paket, bukan hardcode 31 hari** — Check `firstPeriodEnd = createdAt + 31 hari` memblokir semua user paket 30-hari (karena `expiredAt ≈ createdAt + 30` selalu ≤ `createdAt + 31`). Sekarang `firstPeriodEnd = createdAt + validityDays + invoiceGenerateDays`, di mana `validityDays` diambil dari profil user. Invoice baru di-skip jika user belum pernah renew (masih periode pertama); setelah renew, `expiredAt > firstPeriodEnd` dan invoice di-generate normal.
-- **Invoice catch-up: juga include user ACTIVE yang expiredAt sudah lewat** — Sebelumnya catch-up hanya untuk status `isolated/blocked/suspended`. User ACTIVE yang statusnya belum terupdate tapi `expiredAt` sudah lewat tidak tercakup. Sekarang menggunakan `eligibleStatuses` (termasuk `active`) untuk catch-up query.
-
-### Files
-- `src/server/jobs/voucher-sync.ts` — `generateInvoices()`: fix PREPAID window start, force mode wide window, first-period check berbasis validitas paket, catch-up include active users
 
 <!-- AUTO-CHANGELOG:END -->
 
