@@ -469,6 +469,17 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.2 — 2026-05-06
+
+### Fixed
+- **Invoice PREPAID: window mulai dari hari ini (H+0), bukan H+invoiceGenerateDays** — Sebelumnya `prepaidStartDate = today + 7`, sehingga user yang jatuh tempo besok (misal May 7 saat today=May 6) tidak termasuk dalam query dan invoice tidak di-generate — bahkan saat manual trigger (force=true). Sekarang window dimulai dari H+0 sehingga semua user yang expire hari ini hingga 30 hari ke depan tercakup. Duplikasi dicegah oleh check `existingInvoice` yang sudah ada.
+- **Invoice PREPAID force mode: window diperlebar 90 hari ke belakang** — Saat admin trigger manual (force=true), query PREPAID sekarang mencakup `H-90` hingga `H+30` sehingga semua user yang missed bisa di-catch-up sekaligus.
+- **Invoice first-period check: gunakan validitas paket, bukan hardcode 31 hari** — Check `firstPeriodEnd = createdAt + 31 hari` memblokir semua user paket 30-hari (karena `expiredAt ≈ createdAt + 30` selalu ≤ `createdAt + 31`). Sekarang `firstPeriodEnd = createdAt + validityDays + invoiceGenerateDays`, di mana `validityDays` diambil dari profil user. Invoice baru di-skip jika user belum pernah renew (masih periode pertama); setelah renew, `expiredAt > firstPeriodEnd` dan invoice di-generate normal.
+- **Invoice catch-up: juga include user ACTIVE yang expiredAt sudah lewat** — Sebelumnya catch-up hanya untuk status `isolated/blocked/suspended`. User ACTIVE yang statusnya belum terupdate tapi `expiredAt` sudah lewat tidak tercakup. Sekarang menggunakan `eligibleStatuses` (termasuk `active`) untuk catch-up query.
+
+### Files
+- `src/server/jobs/voucher-sync.ts` — `generateInvoices()`: fix PREPAID window start, force mode wide window, first-period check berbasis validitas paket, catch-up include active users
+
 ### v2.29.1 — 2026-05-06
 
 ### Fixed
@@ -542,22 +553,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/admin/olt/alerts/page.tsx` — Rewrite UI ke gaya admin kompak
 - `src/app/admin/network/olts/page.tsx` — Hapus link mati; vendor static dropdown; model free-text input
 - `next.config.ts` — Tambah `ssh2`, `cpu-features`, `sshcrypto` ke `serverExternalPackages`
-
-### v2.25.17 — 2026-05-03
-
-### Fixed
-- **Generate tagihan manual hanya untuk POSTPAID** — Endpoint `POST /api/invoices/generate` sebelumnya memfilter `subscriptionType: 'POSTPAID'` sehingga pelanggan PREPAID tidak pernah mendapat tagihan dari fitur generate manual. Filter dihapus sehingga semua pelanggan aktif (POSTPAID dan PREPAID) diproses.
-- **Generate tagihan menggunakan tanggal jatuh tempo yang salah** — Due date sebelumnya selalu diset ke hari terakhir `targetMonth` untuk semua user. Diperbaiki dengan logika per-user:
-  - **POSTPAID**: `dueDate = billingDay user di targetMonth` (diclamped ke hari terakhir bulan jika billingDay > jumlah hari di bulan tersebut)
-  - **PREPAID**: `dueDate = user.expiredAt` (tanggal kedaluwarsa aktual yang sudah tersimpan di profil user)
-- **PREPAID tanpa expiredAt dilewati** — PREPAID user yang belum memiliki `expiredAt` tidak akan di-generate invoice (di-skip) karena tidak ada tanggal jatuh tempo yang bisa dipakai.
-- **Cek duplikat invoice sekarang mencakup tipe RENEWAL** — Batch check existing invoices sebelumnya hanya mengecek `invoiceType: 'MONTHLY'`. Sekarang mengecek keduanya (`MONTHLY` dan `RENEWAL`) agar PREPAID tidak ter-generate ulang.
-- **Invoice PREPAID menggunakan `invoiceType: 'RENEWAL'`** — Sebelumnya semua invoice di-create dengan `invoiceType: 'MONTHLY'`. Invoice untuk PREPAID sekarang menggunakan `RENEWAL` sesuai konvensi sistem.
-- **UI: deskripsi dialog generate tagihan diperbarui** — Teks "Buat tagihan bulanan untuk pelanggan POSTPAID" diganti menjadi "Buat tagihan untuk pelanggan POSTPAID dan PREPAID". Info teks scope "all" juga diperbarui.
-
-### Files
-- `src/app/api/invoices/generate/route.ts` — Hapus filter POSTPAID-only; per-user dueDate (billingDay / expiredAt); invoiceType MONTHLY/RENEWAL; cek duplikat RENEWAL
-- `src/app/admin/invoices/page.tsx` — Update deskripsi dialog generate tagihan
 
 <!-- AUTO-CHANGELOG:END -->
 
