@@ -6,6 +6,27 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.0] — 2026-05-10
+
+### Fixed
+- **TSC errors in `poller.ts`** — 3 TypeScript errors (TS2352/TS2322) saat Prisma `JsonValue` di-cast ke custom types. Fixed dengan double-cast `as unknown as Type` dan `as unknown as Prisma.InputJsonValue`.
+- **OLT Add/Edit form missing SSH/Telnet port fields** — Form OLT hanya punya checkbox `sshEnabled`/`telnetEnabled` tanpa input port. Ditambah input field "SSH Port" (22) dan "Telnet Port" (23) yang muncul kondisional saat enabled. Juga tambah SNMP Port (161).
+- **OLT API tidak menyimpan field credentials** — `POST` dan `PUT` `/api/network/olts` hanya menyimpan `name, ipAddress, latitude, longitude, status, followRoad`. Sekarang juga menyimpan: `vendor, model, username, password, snmpCommunity, sshEnabled, telnetEnabled, sshPort, telnetPort, snmpPort`.
+- **OLT Test Connection gagal untuk OLT baru** — Backend hanya menerima `oltId` (DB lookup). Sekarang juga menerima direct params (`ipAddress, username, password, snmpCommunity, sshPort, telnetPort, snmpPort`) sebagai fallback saat `oltId` tidak ada. Semua protocol (SNMP/SSH/Telnet) bisa ditest sekaligus tanpa harus simpan OLT dulu.
+- **Telegram Health double-send race condition** — `startHealthCron()` dan `startBackupCron()` bisa dipanggil dua kali bersamaan (concurrent requests) karena `healthCronJob === null` diperiksa sebelum async DB await selesai. Fixed dengan mutex flag `healthCronStarting` / `backupCronStarting`.
+- **GenieACS task timeout terlalu singkat** — WiFi route menggunakan `timeout=3000ms`, WAN route `timeout=5000ms`. Kedua dinaikan ke `timeout=30000ms` agar device yang lambat merespons tidak langsung fault.
+
+### Files
+- `src/lib/olt/poller.ts` — Fix TSC2352: `as unknown as RuleCondition[]`, `as unknown as RuleAction[]`, `as unknown as Prisma.InputJsonValue`
+- `src/app/api/network/olts/route.ts` — POST/PUT: simpan semua field OLT termasuk credentials dan port
+- `src/app/admin/network/olts/page.tsx` — Tambah `sshPort`, `telnetPort`, `snmpPort` ke state; tambah input fields SSH/Telnet port kondisional; pass port ke test-connection
+- `src/app/api/olt/test-connection/route.ts` — Rewrite: terima direct params ATAU oltId; test semua protocol jika tidak ada protocol tertentu
+- `src/server/jobs/telegram-cron.ts` — Tambah mutex flag `healthCronStarting`/`backupCronStarting` untuk cegah race condition double-send
+- `src/app/api/genieacs/devices/[deviceId]/wifi/route.ts` — Timeout: 3000ms/5000ms → 30000ms
+- `src/app/api/genieacs/devices/[deviceId]/wan/route.ts` — Timeout: 5000ms → 30000ms (semua 3 handler: POST/PUT/DELETE)
+
+---
+
 ## [2.28.0] — 2026-05-06
 
 ### Added
