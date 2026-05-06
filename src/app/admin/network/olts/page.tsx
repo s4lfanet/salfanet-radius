@@ -109,6 +109,9 @@ export default function OLTsPage() {
     snmpCommunity: 'public',
     sshEnabled: true,
     telnetEnabled: false,
+    sshPort: '22',
+    telnetPort: '23',
+    snmpPort: '161',
     latitude: '',
     longitude: '',
     status: 'active',
@@ -190,6 +193,9 @@ export default function OLTsPage() {
       snmpCommunity: '',
       sshEnabled: true,
       telnetEnabled: false,
+      sshPort: '22',
+      telnetPort: '23',
+      snmpPort: '161',
       latitude: '',
       longitude: '',
       status: 'active',
@@ -220,6 +226,9 @@ export default function OLTsPage() {
           snmpCommunity: formData.snmpCommunity,
           sshEnabled: formData.sshEnabled,
           telnetEnabled: formData.telnetEnabled,
+          sshPort: formData.sshPort,
+          telnetPort: formData.telnetPort,
+          snmpPort: formData.snmpPort,
           oltId: editingOlt?.id,
         }),
       });
@@ -268,6 +277,9 @@ export default function OLTsPage() {
       snmpCommunity: community,
       sshEnabled: olt.sshEnabled !== undefined ? olt.sshEnabled : true,
       telnetEnabled: olt.telnetEnabled !== undefined ? olt.telnetEnabled : false,
+      sshPort: String((olt as any).sshPort || 22),
+      telnetPort: String((olt as any).telnetPort || 23),
+      snmpPort: String((olt as any).snmpPort || 161),
       latitude: olt.latitude.toString(),
       longitude: olt.longitude.toString(),
       status: olt.status,
@@ -1073,7 +1085,7 @@ export default function OLTsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-end">
+                <div className="space-y-1.5">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -1083,8 +1095,19 @@ export default function OLTsPage() {
                     />
                     <span className="text-xs">{t('olt.sshEnabled')}</span>
                   </label>
+                  {formData.sshEnabled && (
+                    <input
+                      type="number"
+                      min="1"
+                      max="65535"
+                      value={formData.sshPort}
+                      onChange={(e) => setFormData({ ...formData, sshPort: e.target.value })}
+                      placeholder="SSH Port (22)"
+                      className="w-full px-2 py-1 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                    />
+                  )}
                 </div>
-                <div className="flex items-end">
+                <div className="space-y-1.5">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -1094,7 +1117,31 @@ export default function OLTsPage() {
                     />
                     <span className="text-xs">{t('olt.telnetEnabled')}</span>
                   </label>
+                  {formData.telnetEnabled && (
+                    <input
+                      type="number"
+                      min="1"
+                      max="65535"
+                      value={formData.telnetPort}
+                      onChange={(e) => setFormData({ ...formData, telnetPort: e.target.value })}
+                      placeholder="Telnet Port (23)"
+                      className="w-full px-2 py-1 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                    />
+                  )}
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-medium mb-1">SNMP Port</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="65535"
+                  value={formData.snmpPort}
+                  onChange={(e) => setFormData({ ...formData, snmpPort: e.target.value })}
+                  placeholder="161"
+                  className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                />
               </div>
 
               <div>

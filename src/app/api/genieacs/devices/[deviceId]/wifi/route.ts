@@ -75,7 +75,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.log('[Admin WiFi] Update request:', { deviceId, wlanIndex, ssid, hasPassword: !!password });
 
     // Like gembok-bill: Send SEPARATE tasks for SSID and password
-    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=3000&connection_request`;
+    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=30000&connection_request`;
 
     // Task 1: Update SSID + enable (always)
     const ssidTask = {
@@ -333,7 +333,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
     const { host, username, password: geniePass } = credentials;
     const authHeader = Buffer.from(`${username}:${geniePass}`).toString('base64');
-    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=5000&connection_request`;
+    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=30000&connection_request`;
 
     const wlanBase = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration';
 

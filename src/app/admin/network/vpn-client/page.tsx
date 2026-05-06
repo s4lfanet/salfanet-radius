@@ -1541,8 +1541,8 @@ ${vpnCmd}
                   />
                 </div>
 
-                {/* Local Networks — only for VPS WireGuard (allows VPS to route to local subnets behind NAS) */}
-                {formData.vpnType === 'wireguard' && formData.vpnServerId === '__vps_wg__' && (
+                {/* Local Networks — for any WireGuard peer (VPS routes to local subnets behind NAS) */}
+                {formData.vpnType === 'wireguard' && (
                   <div>
                     <label className="block text-sm font-medium text-[#00f7ff] mb-2">
                       IP Lokal / Subnet di Balik NAS <span className="text-muted-foreground font-normal">(opsional)</span>

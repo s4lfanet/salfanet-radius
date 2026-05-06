@@ -54,7 +54,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, ipAddress, latitude, longitude, status, routerIds, ponPorts, followRoad } = body;
+    const {
+      name, ipAddress, latitude, longitude, status, routerIds, followRoad,
+      vendor, model, username, password, snmpCommunity,
+      sshEnabled, telnetEnabled,
+      sshPort, telnetPort, snmpPort,
+    } = body;
 
     if (!name || !ipAddress || latitude === undefined || longitude === undefined) {
       return NextResponse.json(
@@ -65,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const oltId = crypto.randomUUID();
 
-    // Create OLT
+    // Create OLT with all fields
     const olt = await prisma.networkOLT.create({
       data: {
         id: oltId,
@@ -75,6 +80,16 @@ export async function POST(request: NextRequest) {
         longitude: parseFloat(longitude),
         status: status || 'active',
         followRoad: followRoad || false,
+        ...(vendor && { vendor }),
+        ...(model && { model }),
+        ...(username && { username }),
+        ...(password && { password }),
+        ...(snmpCommunity && { snmpCommunity }),
+        ...(sshEnabled !== undefined && { sshEnabled }),
+        ...(telnetEnabled !== undefined && { telnetEnabled }),
+        ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
+        ...(telnetPort !== undefined && telnetPort !== '' && { telnetPort: parseInt(String(telnetPort)) || 23 }),
+        ...(snmpPort !== undefined && snmpPort !== '' && { snmpPort: parseInt(String(snmpPort)) || 161 }),
       },
     });
 
@@ -107,7 +122,12 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, ipAddress, latitude, longitude, status, routerIds, followRoad } = body;
+    const {
+      id, name, ipAddress, latitude, longitude, status, routerIds, followRoad,
+      vendor, model, username, password, snmpCommunity,
+      sshEnabled, telnetEnabled,
+      sshPort, telnetPort, snmpPort,
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -116,7 +136,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Update OLT
+    // Update OLT with all fields
     const olt = await prisma.networkOLT.update({
       where: { id },
       data: {
@@ -126,6 +146,16 @@ export async function PUT(request: NextRequest) {
         ...(longitude !== undefined && { longitude: parseFloat(longitude) }),
         ...(status && { status }),
         ...(followRoad !== undefined && { followRoad }),
+        ...(vendor !== undefined && { vendor }),
+        ...(model !== undefined && { model }),
+        ...(username !== undefined && { username }),
+        ...(password !== undefined && { password }),
+        ...(snmpCommunity !== undefined && { snmpCommunity }),
+        ...(sshEnabled !== undefined && { sshEnabled }),
+        ...(telnetEnabled !== undefined && { telnetEnabled }),
+        ...(sshPort !== undefined && sshPort !== '' && { sshPort: parseInt(String(sshPort)) || 22 }),
+        ...(telnetPort !== undefined && telnetPort !== '' && { telnetPort: parseInt(String(telnetPort)) || 23 }),
+        ...(snmpPort !== undefined && snmpPort !== '' && { snmpPort: parseInt(String(snmpPort)) || 161 }),
       },
     });
 

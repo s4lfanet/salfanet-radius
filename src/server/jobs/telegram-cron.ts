@@ -9,6 +9,10 @@ import * as fs from 'fs/promises';
 let backupCronJob: ScheduledTask | null = null;
 let healthCronJob: ScheduledTask | null = null;
 
+// Mutex flags to prevent race-condition double-start
+let backupCronStarting = false;
+let healthCronStarting = false;
+
 /**
  * Create and send database backup to Telegram
  */
@@ -331,6 +335,13 @@ async function getComprehensiveHealth() {
  */
 export async function startBackupCron() {
   try {
+    // Prevent concurrent starts (race condition guard)
+    if (backupCronStarting) {
+      console.log('[Telegram Backup Cron] Already starting, skipping duplicate call');
+      return;
+    }
+    backupCronStarting = true;
+
     // Stop existing job if running
     if (backupCronJob) {
       backupCronJob.stop();
@@ -345,6 +356,7 @@ export async function startBackupCron() {
 
     if (!settings) {
       console.log('[Telegram Backup Cron] Disabled or not configured, skipping');
+      backupCronStarting = false;
       return;
     }
 
@@ -391,6 +403,8 @@ export async function startBackupCron() {
   console.log('[Telegram Backup Cron] Successfully started');
   } catch (error) {
     console.error('[Telegram Backup Cron] Failed to start:', error);
+  } finally {
+    backupCronStarting = false;
   }
 }
 
@@ -399,6 +413,13 @@ export async function startBackupCron() {
  */
 export async function startHealthCron() {
   try {
+    // Prevent concurrent starts (race condition guard)
+    if (healthCronStarting) {
+      console.log('[Telegram Health Cron] Already starting, skipping duplicate call');
+      return;
+    }
+    healthCronStarting = true;
+
     // Stop existing job if running
     if (healthCronJob) {
       healthCronJob.stop();
@@ -413,6 +434,7 @@ export async function startHealthCron() {
 
     if (!settings) {
       console.log('[Telegram Health Cron] Disabled or not configured, skipping');
+      healthCronStarting = false;
       return;
     }
 
@@ -430,6 +452,8 @@ export async function startHealthCron() {
     console.log('[Telegram Health Cron] Successfully started');
   } catch (error) {
     console.error('[Telegram Health Cron] Failed to start:', error);
+  } finally {
+    healthCronStarting = false;
   }
 }
 

@@ -323,9 +323,9 @@ async function checkAlerts(
       customRules.map((r) => ({
         id: r.id,
         name: r.name,
-        conditions: r.conditions as RuleCondition[],
-        actions: r.actions as RuleAction[],
-        schedule: r.schedule as RuleSchedule | null,
+        conditions: r.conditions as unknown as RuleCondition[],
+        actions: r.actions as unknown as RuleAction[],
+        schedule: r.schedule as unknown as RuleSchedule | null,
         cooldownSeconds: r.cooldownSeconds,
         lastTriggeredAt: r.lastTriggeredAt,
       })),
@@ -347,7 +347,7 @@ async function checkAlerts(
           logType: 'alert',
           severity: 'warning',
           message: `Custom rule triggered: ${t.ruleName}`,
-          data: { ruleId: t.ruleId, actions: t.actions },
+          data: { ruleId: t.ruleId, actions: t.actions as unknown as import('@prisma/client').Prisma.InputJsonValue },
         },
       });
     }

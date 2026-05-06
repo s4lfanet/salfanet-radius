@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const { host, username: genieUser, password: geniePass } = credentials;
     const authHeader = Buffer.from(`${genieUser}:${geniePass}`).toString('base64');
-    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=5000&connection_request`;
+    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=30000&connection_request`;
 
     const parameterValues: [string, string | boolean | number, string][] = [];
 
@@ -120,7 +120,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const { host, username: genieUser, password: geniePass } = credentials;
     const authHeader = Buffer.from(`${genieUser}:${geniePass}`).toString('base64');
-    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=5000&connection_request`;
+    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=30000&connection_request`;
 
     const connType = connectionType === 'IP' ? 'WANIPConnection' : 'WANPPPConnection';
     const objectBasePath = `InternetGatewayDevice.WANDevice.${wanDeviceIndex}.WANConnectionDevice.${wanConnectionDeviceIndex}.${connType}`;
@@ -214,7 +214,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     const { host, username: genieUser, password: geniePass } = credentials;
     const authHeader = Buffer.from(`${genieUser}:${geniePass}`).toString('base64');
-    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=5000&connection_request`;
+    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=30000&connection_request`;
 
     const { ok, text } = await sendTask(taskUrl, authHeader, {
       name: 'deleteObject',
