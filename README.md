@@ -469,6 +469,19 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.9 — 2026-05-07
+
+### Fixed
+- **OLT Test Connection selalu gagal (SNMP/SSH/Telnet)** — Root cause dua masalah:
+  1. `snmpget` dan `expect` tidak terinstall di VPS → diinstall manual via `apt-get install snmp expect`
+  2. `ssh.ts` tidak ada legacy algorithms → ZTE/Huawei OLT lama hanya support `aes128-cbc`, `3des-cbc`, `diffie-hellman-group1-sha1` yang tidak ada di default ssh2
+- `testSSH()` diubah menjadi test handshake only (bukan jalankan `display version`) agar lebih reliable lintas vendor
+- `testTelnet()` sekarang cek TCP port open dulu sebelum jalankan full expect auth
+
+### Files
+- `src/lib/olt/ssh.ts` — tambah legacy cipher/kex/hmac algorithms, fix `testSSH()` to handshake-only
+- `src/lib/olt/telnet.ts` — `testTelnet()` cek port open sebelum full auth
+
 ### v2.29.8 — 2026-05-07
 
 ### Fixed
@@ -504,22 +517,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/server/jobs/telegram-cron.ts` — `autoBackupToTelegram()`: tambah deduplication guard (cek recent run dalam 5 menit terakhir sebelum proceed)
-
-### v2.29.4 — 2026-05-08
-
-### Fixed
-- **SQL migration: `ADD COLUMN IF NOT EXISTS` tidak didukung MySQL (hanya MariaDB)** — Semua file migration yang pakai syntax MariaDB-only ini sekarang dipecah menjadi satu `ALTER TABLE ADD COLUMN` per statement dan syntax `IF NOT EXISTS` dihapus. `CREATE TABLE IF NOT EXISTS` tetap digunakan (MySQL sudah support). File yang diperbaiki: `20251223_add_billing_fields.sql`, `20260228_add_registration_fields.sql`, `20260320_add_pppoe_profile_hpp_ppn.sql`, `20260421_add_vpn_pool_config.sql`, `20260506_add_olt_monitoring_tables.sql`, `add_wireguard_fields.sql`.
-- **`apply_sql_migrations()` di `updater.sh`: migration gagal tidak dicatat, muncul ulang tiap update** — Sebelumnya file hanya dicatat ke APPLIED_LOG jika exit code 0; jika ada error (termasuk yang benign seperti ERROR 1060 duplicate column), file akan dijalankan ulang di setiap update. Sekarang: (1) `mysql --force` digunakan agar error di satu statement tidak menghentikan statement lainnya; (2) semua file selalu dicatat sebagai applied setelah dijalankan (prisma db push adalah source of truth untuk schema); (3) hanya error real (bukan 1060 duplicate column / 1061 duplicate index) yang ditampilkan ke user.
-- **`CREATE INDEX IF NOT EXISTS` di migration billing** — Diganti dengan `CREATE INDEX` biasa (MySQL tidak support IF NOT EXISTS untuk INDEX; --force handle duplikasi).
-
-### Files
-- `vps-install/updater.sh` — `apply_sql_migrations()`: `mysql --force`, selalu mark applied, filter error 1060/1061
-- `prisma/migrations/20251223_add_billing_fields.sql` — split ADD COLUMN, hapus IF NOT EXISTS
-- `prisma/migrations/20260228_add_registration_fields.sql` — split ADD COLUMN, hapus IF NOT EXISTS
-- `prisma/migrations/20260320_add_pppoe_profile_hpp_ppn.sql` — split ADD COLUMN, hapus IF NOT EXISTS
-- `prisma/migrations/20260421_add_vpn_pool_config.sql` — hapus IF NOT EXISTS dari ADD COLUMN
-- `prisma/migrations/20260506_add_olt_monitoring_tables.sql` — split 21 ADD COLUMN, hapus IF NOT EXISTS
-- `prisma/migrations/add_wireguard_fields.sql` — hapus IF NOT EXISTS dari ADD COLUMN
 
 <!-- AUTO-CHANGELOG:END -->
 
