@@ -37,6 +37,12 @@ export async function executeCommand(config: SSHConfig, command: string): Promis
       readyTimeout: config.timeout || 30000,
       keepaliveInterval: 10000,
       keepaliveCountMax: 3,
+      algorithms: {
+        kex: ['diffie-hellman-group1-sha1', 'diffie-hellman-group14-sha1', 'diffie-hellman-group-exchange-sha1', 'diffie-hellman-group-exchange-sha256', 'ecdh-sha2-nistp256', 'ecdh-sha2-nistp384', 'ecdh-sha2-nistp521'],
+        cipher: ['aes128-cbc', '3des-cbc', 'blowfish-cbc', 'aes192-cbc', 'aes256-cbc', 'aes128-ctr', 'aes192-ctr', 'aes256-ctr'],
+        serverHostKey: ['ssh-rsa', 'ssh-dss', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521', 'ssh-ed25519'],
+        hmac: ['hmac-sha1', 'hmac-sha2-256', 'hmac-sha2-512', 'hmac-md5'],
+      },
     };
 
     const timeout = setTimeout(() => {
@@ -101,6 +107,12 @@ export async function executeCommandsInShell(config: SSHConfig, commands: string
       readyTimeout: config.timeout || 30000,
       keepaliveInterval: 10000,
       keepaliveCountMax: 3,
+      algorithms: {
+        kex: ['diffie-hellman-group1-sha1', 'diffie-hellman-group14-sha1', 'diffie-hellman-group-exchange-sha1', 'diffie-hellman-group-exchange-sha256', 'ecdh-sha2-nistp256', 'ecdh-sha2-nistp384', 'ecdh-sha2-nistp521'],
+        cipher: ['aes128-cbc', '3des-cbc', 'blowfish-cbc', 'aes192-cbc', 'aes256-cbc', 'aes128-ctr', 'aes192-ctr', 'aes256-ctr'],
+        serverHostKey: ['ssh-rsa', 'ssh-dss', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521', 'ssh-ed25519'],
+        hmac: ['hmac-sha1', 'hmac-sha2-256', 'hmac-sha2-512', 'hmac-md5'],
+      },
     };
 
     const timeout = setTimeout(() => {
@@ -167,9 +179,39 @@ export async function executeCommandsInShell(config: SSHConfig, commands: string
 }
 
 /**
- * Test SSH connectivity
+ * Test SSH connectivity — just check if handshake/auth succeeds, no command needed
  */
 export async function testSSH(config: SSHConfig): Promise<boolean> {
-  const result = await executeCommand(config, 'display version');
-  return result.success;
+  return new Promise((resolve) => {
+    const client = new Client();
+    const timeout = setTimeout(() => {
+      client.end();
+      resolve(false);
+    }, config.timeout || 15000);
+
+    client.on('ready', () => {
+      clearTimeout(timeout);
+      client.end();
+      resolve(true);
+    });
+
+    client.on('error', () => {
+      clearTimeout(timeout);
+      resolve(false);
+    });
+
+    client.connect({
+      host: config.host,
+      port: config.port || 22,
+      username: config.username,
+      password: config.password,
+      readyTimeout: config.timeout || 15000,
+      algorithms: {
+        kex: ['diffie-hellman-group1-sha1', 'diffie-hellman-group14-sha1', 'diffie-hellman-group-exchange-sha1', 'diffie-hellman-group-exchange-sha256', 'ecdh-sha2-nistp256', 'ecdh-sha2-nistp384', 'ecdh-sha2-nistp521'],
+        cipher: ['aes128-cbc', '3des-cbc', 'blowfish-cbc', 'aes192-cbc', 'aes256-cbc', 'aes128-ctr', 'aes192-ctr', 'aes256-ctr'],
+        serverHostKey: ['ssh-rsa', 'ssh-dss', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521', 'ssh-ed25519'],
+        hmac: ['hmac-sha1', 'hmac-sha2-256', 'hmac-sha2-512', 'hmac-md5'],
+      },
+    });
+  });
 }

@@ -82,9 +82,24 @@ expect eof
 }
 
 /**
- * Test Telnet connectivity
+ * Test Telnet connectivity — check port open first, then try auth
  */
 export async function testTelnet(config: TelnetConfig): Promise<boolean> {
+  // First just check if port is open (fast TCP check)
+  const portOpen = await new Promise<boolean>((resolve) => {
+    const net = require('net');
+    const socket = new net.Socket();
+    const timeout = setTimeout(() => { socket.destroy(); resolve(false); }, 5000);
+    socket.connect(config.port || 23, config.host, () => {
+      clearTimeout(timeout);
+      socket.destroy();
+      resolve(true);
+    });
+    socket.on('error', () => { clearTimeout(timeout); resolve(false); });
+  });
+  if (!portOpen) return false;
+
+  // Port open — try full auth via expect
   const result = await executeCommand(config, 'display version');
   return result.success;
 }
