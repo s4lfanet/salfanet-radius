@@ -68,6 +68,241 @@ interface OLTDetail {
   monitoringLogs: any[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// OLT Physical Port Diagram helpers
+// ─────────────────────────────────────────────────────────────────────────────
+interface PortGroupDef {
+  type: 'uplink' | 'gpon' | 'epon';
+  label: string;
+  portType: string;
+  slot: number;
+  portCount: number;
+}
+interface OLTTemplateDef {
+  displayName: string;
+  chassis: string;
+  groups: PortGroupDef[];
+}
+
+function getOLTTemplate(vendor: string | null, model: string | null): OLTTemplateDef {
+  const v = (vendor ?? '').toLowerCase();
+  const m = (model ?? '').toUpperCase();
+
+  if (v === 'zte') {
+    if (m.includes('C320')) return {
+      displayName: 'ZTE C320', chassis: '1U Compact GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'Uplink (10GE XFP)', portType: '10GE', slot: 0, portCount: 2 },
+        { type: 'gpon', label: 'GPON Card 1 (Slot 1)', portType: 'GPON', slot: 1, portCount: 8 },
+        { type: 'gpon', label: 'GPON Card 2 (Slot 2)', portType: 'GPON', slot: 2, portCount: 8 },
+      ],
+    };
+    if (m.includes('C300')) return {
+      displayName: 'ZTE C300', chassis: '7U Chassis GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'Uplink HUVB (10GE)', portType: '10GE', slot: 0, portCount: 4 },
+        ...Array.from({ length: 4 }, (_, i) => ({ type: 'gpon' as const, label: `GPON Slot ${i + 1}`, portType: 'GPON', slot: i + 1, portCount: 16 })),
+      ],
+    };
+    if (m.includes('C350')) return {
+      displayName: 'ZTE C350', chassis: '14U Chassis GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'Uplink HUVB (100GE)', portType: '100GE', slot: 0, portCount: 8 },
+        ...Array.from({ length: 8 }, (_, i) => ({ type: 'gpon' as const, label: `GPON Slot ${i + 1}`, portType: 'GPON', slot: i + 1, portCount: 16 })),
+      ],
+    };
+    // Generic ZTE
+    return {
+      displayName: `ZTE ${model ?? 'OLT'}`, chassis: 'ZTE GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'Uplink (GE/10GE)', portType: 'GE/10GE', slot: 0, portCount: 2 },
+        { type: 'gpon', label: 'GPON Slot 1', portType: 'GPON', slot: 1, portCount: 8 },
+      ],
+    };
+  }
+
+  if (v === 'huawei') {
+    if (m.includes('MA5608T')) return {
+      displayName: 'Huawei MA5608T', chassis: '2U Compact GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'GE/10GE Uplink (GICF)', portType: 'GE/10GE SFP+', slot: -1, portCount: 2 },
+        { type: 'gpon', label: 'H802GPFD (Slot 0)', portType: 'GPON', slot: 0, portCount: 8 },
+      ],
+    };
+    if (m.includes('MA5683T') || m.includes('MA5680T')) return {
+      displayName: `Huawei ${m}`, chassis: '7U Chassis GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'SCUN Uplink (10GE)', portType: '10GE', slot: -1, portCount: 4 },
+        ...Array.from({ length: 4 }, (_, i) => ({ type: 'gpon' as const, label: `GPFD Slot ${i}`, portType: 'GPON', slot: i, portCount: 8 })),
+      ],
+    };
+    return {
+      displayName: `Huawei ${model ?? 'OLT'}`, chassis: 'Huawei GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'Uplink (GE/10GE)', portType: 'GE/10GE', slot: -1, portCount: 2 },
+        { type: 'gpon', label: 'GPON Slot 0', portType: 'GPON', slot: 0, portCount: 8 },
+      ],
+    };
+  }
+
+  if (v === 'fiberhome') {
+    if (m.includes('AN5516')) return {
+      displayName: `FiberHome ${m}`, chassis: 'FiberHome Chassis GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'GE Uplink', portType: 'GE/10GE', slot: -1, portCount: 4 },
+        ...Array.from({ length: 4 }, (_, i) => ({ type: 'gpon' as const, label: `GPON Slot ${i + 1}`, portType: 'GPON', slot: i + 1, portCount: 8 })),
+      ],
+    };
+  }
+
+  // Generic / unknown — show uplink + one PON group
+  return {
+    displayName: `${vendor ?? 'Unknown'} ${model ?? 'OLT'}`, chassis: 'Generic OLT',
+    groups: [
+      { type: 'uplink', label: 'Uplink', portType: 'GE/10GE', slot: -1, portCount: 2 },
+      { type: 'gpon', label: 'PON Ports', portType: 'GPON/EPON', slot: 1, portCount: 8 },
+    ],
+  };
+}
+
+function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
+  const template = getOLTTemplate(olt.vendor, olt.model);
+
+  // Build per-port statistics from ONU data
+  const portStats: Record<string, { total: number; online: number; rxPowers: number[] }> = {};
+  for (const onu of olt.onuStatuses) {
+    const key = `${onu.slot}/${onu.port}`;
+    if (!portStats[key]) portStats[key] = { total: 0, online: 0, rxPowers: [] };
+    portStats[key].total++;
+    if (onu.status === 'online') portStats[key].online++;
+    if (onu.rxPower !== null) portStats[key].rxPowers.push(onu.rxPower);
+  }
+
+  const getPortStyle = (group: PortGroupDef, portIndex: number) => {
+    if (group.type === 'uplink') {
+      return { bg: 'bg-blue-600', border: 'border-blue-400', text: 'text-white', badge: 'UP' };
+    }
+    const key = `${group.slot}/${portIndex}`;
+    const s = portStats[key];
+    if (!s || s.total === 0) {
+      return { bg: 'bg-gray-600', border: 'border-gray-500', text: 'text-gray-300', badge: String(portIndex) };
+    }
+    if (s.online === s.total) {
+      return { bg: 'bg-green-500', border: 'border-green-300', text: 'text-white', badge: `${s.total}` };
+    }
+    if (s.online === 0) {
+      return { bg: 'bg-red-600', border: 'border-red-400', text: 'text-white', badge: `${s.total}` };
+    }
+    return { bg: 'bg-orange-500', border: 'border-orange-300', text: 'text-white', badge: `${s.online}/${s.total}` };
+  };
+
+  const getPortTitle = (group: PortGroupDef, portIndex: number): string => {
+    const portId = `0/${group.slot < 0 ? 'uplink' : group.slot}/${portIndex}`;
+    if (group.type === 'uplink') return `${group.portType} Uplink Port ${portIndex}\n${portId}`;
+    const s = portStats[`${group.slot}/${portIndex}`];
+    if (!s) return `Port ${portId}\n(kosong — tidak ada ONU)`;
+    const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
+    return `Port ${portId}\nONU: ${s.online} online / ${s.total} total${avgRx ? `\nAvg RX: ${avgRx} dBm` : ''}`;
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Chassis visual */}
+      <div className="bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-700 shadow-lg">
+        {/* Chassis top bar */}
+        <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className={`w-3 h-3 rounded-full border-2 ${olt.isOnline ? 'bg-green-400 border-green-300 animate-pulse' : 'bg-red-500 border-red-400'}`} />
+            <span className="text-sm font-bold text-white tracking-wide">{template.displayName}</span>
+            <span className="text-xs text-gray-400 border border-gray-600 px-2 py-0.5 rounded">{template.chassis}</span>
+          </div>
+          <span className="text-xs font-mono text-gray-400">{olt.ipAddress}</span>
+        </div>
+
+        {/* Slots */}
+        <div className="p-4 space-y-3">
+          {template.groups.map((group) => (
+            <div key={`${group.slot}-${group.label}`} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <span className={`text-[11px] font-semibold uppercase tracking-widest ${group.type === 'uplink' ? 'text-blue-400' : 'text-green-400'}`}>
+                  {group.label}
+                </span>
+                <span className="text-[9px] text-gray-500 font-mono">{group.portType} × {group.portCount}</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {Array.from({ length: group.portCount }, (_, i) => {
+                  const style = getPortStyle(group, i);
+                  return (
+                    <div
+                      key={i}
+                      title={getPortTitle(group, i)}
+                      className={`relative flex flex-col items-center justify-center w-11 h-11 rounded border-2 ${style.bg} ${style.border} cursor-default select-none transition-transform hover:scale-110 hover:z-10`}
+                    >
+                      <span className={`text-[9px] font-bold leading-tight ${style.text}`}>{style.badge}</span>
+                      <span className={`text-[7px] leading-none ${style.text} opacity-60 mt-0.5`}>:{i}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400 px-1">
+        {[
+          { color: 'bg-blue-600 border-blue-400', label: 'Uplink Port' },
+          { color: 'bg-green-500 border-green-300', label: 'PON — Semua ONU Online' },
+          { color: 'bg-orange-500 border-orange-300', label: 'PON — Sebagian ONU Offline' },
+          { color: 'bg-red-600 border-red-400', label: 'PON — Semua ONU Offline' },
+          { color: 'bg-gray-600 border-gray-500', label: 'PON — Kosong (belum ada ONU)' },
+        ].map((item) => (
+          <div key={item.label} className="flex items-center gap-1.5">
+            <div className={`w-4 h-4 rounded border-2 ${item.color}`} />
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-port detail table */}
+      {Object.keys(portStats).length > 0 && (
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <h3 className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">Detail Per Port PON</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {Object.entries(portStats)
+              .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+              .map(([portKey, s]) => {
+                const pct = s.total > 0 ? (s.online / s.total) * 100 : 0;
+                const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
+                return (
+                  <div key={portKey} className="border border-gray-100 dark:border-gray-800 rounded-lg p-2.5">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">0/{portKey}</span>
+                      <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
+                        {s.online}/{s.total}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 mb-1">
+                      <div
+                        className={`h-1.5 rounded-full ${pct === 100 ? 'bg-green-500' : pct === 0 ? 'bg-red-500' : 'bg-orange-400'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[9px] text-gray-400">
+                      <span>{s.total} ONU</span>
+                      {avgRx && <span>RX {avgRx} dBm</span>}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OLTDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -415,6 +650,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       <Tabs defaultValue="onus">
         <TabsList>
           <TabsTrigger value="onus">ONU List ({olt.totalOnu})</TabsTrigger>
+          <TabsTrigger value="portmap">Port Map</TabsTrigger>
           <TabsTrigger value="metrics">Metrics</TabsTrigger>
           <TabsTrigger value="alerts">
             Alerts
@@ -959,6 +1195,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Port Map Tab */}
+        <TabsContent value="portmap">
+          <OLTPortDiagram olt={olt} />
         </TabsContent>
       </Tabs>
     </div>

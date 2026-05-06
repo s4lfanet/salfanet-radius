@@ -137,6 +137,19 @@ export async function POST(request: NextRequest) {
     }
 
     const anySuccess = results.some(r => r.success);
+
+    // Update isOnline status in DB when oltId is known and result is clear
+    if (oltId) {
+      try {
+        await prisma.networkOLT.update({
+          where: { id: oltId },
+          data: { isOnline: anySuccess },
+        });
+      } catch (_) {
+        // non-fatal – ignore DB update errors
+      }
+    }
+
     return NextResponse.json({
       success: anySuccess,
       results: { tests: results },
