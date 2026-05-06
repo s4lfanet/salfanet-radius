@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.4] — 2026-05-08
+
+### Fixed
+- **SQL migration: `ADD COLUMN IF NOT EXISTS` tidak didukung MySQL (hanya MariaDB)** — Semua file migration yang pakai syntax MariaDB-only ini sekarang dipecah menjadi satu `ALTER TABLE ADD COLUMN` per statement dan syntax `IF NOT EXISTS` dihapus. `CREATE TABLE IF NOT EXISTS` tetap digunakan (MySQL sudah support). File yang diperbaiki: `20251223_add_billing_fields.sql`, `20260228_add_registration_fields.sql`, `20260320_add_pppoe_profile_hpp_ppn.sql`, `20260421_add_vpn_pool_config.sql`, `20260506_add_olt_monitoring_tables.sql`, `add_wireguard_fields.sql`.
+- **`apply_sql_migrations()` di `updater.sh`: migration gagal tidak dicatat, muncul ulang tiap update** — Sebelumnya file hanya dicatat ke APPLIED_LOG jika exit code 0; jika ada error (termasuk yang benign seperti ERROR 1060 duplicate column), file akan dijalankan ulang di setiap update. Sekarang: (1) `mysql --force` digunakan agar error di satu statement tidak menghentikan statement lainnya; (2) semua file selalu dicatat sebagai applied setelah dijalankan (prisma db push adalah source of truth untuk schema); (3) hanya error real (bukan 1060 duplicate column / 1061 duplicate index) yang ditampilkan ke user.
+- **`CREATE INDEX IF NOT EXISTS` di migration billing** — Diganti dengan `CREATE INDEX` biasa (MySQL tidak support IF NOT EXISTS untuk INDEX; --force handle duplikasi).
+
+### Files
+- `vps-install/updater.sh` — `apply_sql_migrations()`: `mysql --force`, selalu mark applied, filter error 1060/1061
+- `prisma/migrations/20251223_add_billing_fields.sql` — split ADD COLUMN, hapus IF NOT EXISTS
+- `prisma/migrations/20260228_add_registration_fields.sql` — split ADD COLUMN, hapus IF NOT EXISTS
+- `prisma/migrations/20260320_add_pppoe_profile_hpp_ppn.sql` — split ADD COLUMN, hapus IF NOT EXISTS
+- `prisma/migrations/20260421_add_vpn_pool_config.sql` — hapus IF NOT EXISTS dari ADD COLUMN
+- `prisma/migrations/20260506_add_olt_monitoring_tables.sql` — split 21 ADD COLUMN, hapus IF NOT EXISTS
+- `prisma/migrations/add_wireguard_fields.sql` — hapus IF NOT EXISTS dari ADD COLUMN
+
+---
+
 ## [2.29.3] — 2026-05-06
 
 ### Fixed

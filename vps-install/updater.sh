@@ -109,17 +109,29 @@ apply_sql_migrations() {
             skipped=$((skipped + 1))
             continue
         fi
-        if mysql -h"$_DB_HOST" -P"$_DB_PORT" -u"$_DB_USER" -p"$_DB_PASS" "$_DB_NAME" \
-                < "$sql_file" 2>/tmp/salfanet-migration-err.log; then
-            echo "$filename" >> "$APPLIED_LOG"
-            print_success "Migration applied: $filename"
-            applied=$((applied + 1))
+        # Run with --force so multi-statement files don't abort on first error.
+        # Schema state is authoritative via prisma db push; SQL files are best-effort
+        # (e.g. ADD COLUMN for things outside Prisma, or index creation).
+        # Errors 1060 (duplicate column) and 1061 (duplicate index) are harmless —
+        # they mean the column/index was already created by a previous db push.
+        mysql --force -h"$_DB_HOST" -P"$_DB_PORT" -u"$_DB_USER" -p"$_DB_PASS" "$_DB_NAME" \
+            < "$sql_file" 2>/tmp/salfanet-migration-err.log
+        # Always mark as applied (prisma db push is the source of truth for schema)
+        echo "$filename" >> "$APPLIED_LOG"
+        applied=$((applied + 1))
+        # Show only non-trivial errors (ignore duplicate column/index, which are expected)
+        local real_errors
+        real_errors=$(grep -v "ERROR 1060\|ERROR 1061\|Duplicate column\|Duplicate key" \
+            /tmp/salfanet-migration-err.log 2>/dev/null | grep "ERROR" | head -3)
+        if [ -n "$real_errors" ]; then
+            print_info "Migration note ($filename): $real_errors"
         else
-            print_info "Migration warning ($filename): $(cat /tmp/salfanet-migration-err.log | tail -1)"
+            print_success "Migration applied: $filename"
         fi
     done < <(find "$MIGRATIONS_DIR" -maxdepth 1 -name "*.sql" -print0 | sort -z)
 
-    [ $applied -gt 0 ] && print_success "Applied $applied SQL migration(s)" || true
+    [ $applied -gt 0 ] && print_success "Applied $applied SQL migration(s), skipped $skipped" || \
+        print_info "SQL migrations: $skipped already applied, nothing new"
 }
 
 # Detect architecture

@@ -1,31 +1,31 @@
 -- Migration: Add OLT monitoring columns and tables (v2.26.0)
--- Uses IF NOT EXISTS so safe to run on existing installs
+-- MySQL-compatible: no ADD COLUMN IF NOT EXISTS (MariaDB only).
+-- Run with mysql --force so duplicate-column errors (1060) are skipped safely.
 -- Adds: monitoring columns on network_olts + all related monitoring tables
 
--- ─── 1. Add monitoring columns to network_olts ──────────────────────────────
+-- ─── 1. Add monitoring columns to network_olts (one per statement for --force) ─
 
-ALTER TABLE `network_olts`
-  ADD COLUMN IF NOT EXISTS `vendor`             VARCHAR(191)   DEFAULT 'huawei',
-  ADD COLUMN IF NOT EXISTS `model`              VARCHAR(191)   NULL,
-  ADD COLUMN IF NOT EXISTS `firmwareVersion`    VARCHAR(191)   NULL,
-  ADD COLUMN IF NOT EXISTS `snmpEnabled`        TINYINT(1)     NOT NULL DEFAULT 1,
-  ADD COLUMN IF NOT EXISTS `snmpCommunity`      VARCHAR(191)   NOT NULL DEFAULT 'public',
-  ADD COLUMN IF NOT EXISTS `snmpPort`           INT            NOT NULL DEFAULT 161,
-  ADD COLUMN IF NOT EXISTS `telnetEnabled`      TINYINT(1)     NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `telnetPort`         INT            NOT NULL DEFAULT 23,
-  ADD COLUMN IF NOT EXISTS `sshEnabled`         TINYINT(1)     NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `sshPort`            INT            NOT NULL DEFAULT 22,
-  ADD COLUMN IF NOT EXISTS `username`           VARCHAR(191)   NULL,
-  ADD COLUMN IF NOT EXISTS `password`           VARCHAR(191)   NULL,
-  ADD COLUMN IF NOT EXISTS `monitoringEnabled`  TINYINT(1)     NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `pollingInterval`    INT            NOT NULL DEFAULT 300,
-  ADD COLUMN IF NOT EXISTS `lastPollAt`         DATETIME(3)    NULL,
-  ADD COLUMN IF NOT EXISTS `isOnline`           TINYINT(1)     NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `uptime`             BIGINT         NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `temperature`        DOUBLE         NULL,
-  ADD COLUMN IF NOT EXISTS `totalOnu`           INT            NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `onlineOnu`          INT            NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS `offlineOnu`         INT            NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `vendor`            VARCHAR(191)   DEFAULT 'huawei';
+ALTER TABLE `network_olts` ADD COLUMN `model`             VARCHAR(191)   NULL;
+ALTER TABLE `network_olts` ADD COLUMN `firmwareVersion`   VARCHAR(191)   NULL;
+ALTER TABLE `network_olts` ADD COLUMN `snmpEnabled`       TINYINT(1)     NOT NULL DEFAULT 1;
+ALTER TABLE `network_olts` ADD COLUMN `snmpCommunity`     VARCHAR(191)   NOT NULL DEFAULT 'public';
+ALTER TABLE `network_olts` ADD COLUMN `snmpPort`          INT            NOT NULL DEFAULT 161;
+ALTER TABLE `network_olts` ADD COLUMN `telnetEnabled`     TINYINT(1)     NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `telnetPort`        INT            NOT NULL DEFAULT 23;
+ALTER TABLE `network_olts` ADD COLUMN `sshEnabled`        TINYINT(1)     NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `sshPort`           INT            NOT NULL DEFAULT 22;
+ALTER TABLE `network_olts` ADD COLUMN `username`          VARCHAR(191)   NULL;
+ALTER TABLE `network_olts` ADD COLUMN `password`          VARCHAR(191)   NULL;
+ALTER TABLE `network_olts` ADD COLUMN `monitoringEnabled` TINYINT(1)     NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `pollingInterval`   INT            NOT NULL DEFAULT 300;
+ALTER TABLE `network_olts` ADD COLUMN `lastPollAt`        DATETIME(3)    NULL;
+ALTER TABLE `network_olts` ADD COLUMN `isOnline`          TINYINT(1)     NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `uptime`            BIGINT         NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `temperature`       DOUBLE         NULL;
+ALTER TABLE `network_olts` ADD COLUMN `totalOnu`          INT            NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `onlineOnu`         INT            NOT NULL DEFAULT 0;
+ALTER TABLE `network_olts` ADD COLUMN `offlineOnu`        INT            NOT NULL DEFAULT 0;
 
 -- ─── 2. ONU status per-OLT ──────────────────────────────────────────────────
 
