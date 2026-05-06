@@ -10,6 +10,56 @@ import {
 import MapPicker from '@/components/MapPicker';
 import Link from 'next/link';
 
+// Vendor → available models (aligned with backend vendor libs + OIDs)
+const VENDOR_MODELS: Record<string, Array<{ value: string; label: string; ponType: string }>> = {
+  zte: [
+    { value: 'C320', label: 'ZTE C320 (GPON, 2-slot compact)', ponType: 'GPON' },
+    { value: 'C300', label: 'ZTE C300 (GPON, 7U chassis)', ponType: 'GPON' },
+    { value: 'C350', label: 'ZTE C350 (GPON, 14U chassis)', ponType: 'GPON' },
+    { value: 'C600', label: 'ZTE C600 (GPON/XGS-PON)', ponType: 'GPON/XGS-PON' },
+    { value: 'C610', label: 'ZTE C610 (XGS-PON)', ponType: 'XGS-PON' },
+    { value: 'C650', label: 'ZTE C650 (NG-PON)', ponType: 'NG-PON' },
+  ],
+  huawei: [
+    { value: 'MA5608T', label: 'Huawei MA5608T (GPON, 2U compact)', ponType: 'GPON' },
+    { value: 'MA5680T', label: 'Huawei MA5680T (GPON, 7U chassis)', ponType: 'GPON' },
+    { value: 'MA5683T', label: 'Huawei MA5683T (GPON, 7U chassis)', ponType: 'GPON' },
+    { value: 'MA5800-X15', label: 'Huawei MA5800-X15 (GPON/XGS-PON)', ponType: 'GPON/XGS-PON' },
+    { value: 'MA5800-X7', label: 'Huawei MA5800-X7 (GPON/XGS-PON)', ponType: 'GPON/XGS-PON' },
+    { value: 'MA5800-X2', label: 'Huawei MA5800-X2 (GPON compact)', ponType: 'GPON' },
+  ],
+  fiberhome: [
+    { value: 'AN5516-01', label: 'FiberHome AN5516-01 (GPON, 10U)', ponType: 'GPON' },
+    { value: 'AN5516-06', label: 'FiberHome AN5516-06 (GPON, 7U)', ponType: 'GPON' },
+    { value: 'AN5516-04', label: 'FiberHome AN5516-04 (GPON, 4U)', ponType: 'GPON' },
+    { value: 'AN5506-04-B', label: 'FiberHome AN5506-04-B (GPON, compact)', ponType: 'GPON' },
+    { value: 'AN5516-06B', label: 'FiberHome AN5516-06B (GPON/XGS-PON)', ponType: 'GPON/XGS-PON' },
+  ],
+  hioso: [
+    { value: 'HA7304V', label: 'Hioso HA7304V (EPON, 4-port, profile HIOSO_C)', ponType: 'EPON' },
+    { value: 'HA7304VX', label: 'Hioso HA7304VX (EPON, 4-port, profile HIOSO_VX)', ponType: 'EPON' },
+    { value: 'HA7304C', label: 'Hioso HA7304C (EPON, 4-port, profile HIOSO_B2)', ponType: 'EPON' },
+    { value: 'HA8080G', label: 'Hioso HA8080G (GPON, profile HIOSO_GPON)', ponType: 'GPON' },
+    { value: 'HA8040G', label: 'Hioso HA8040G (GPON, profile HIOSO_GPON)', ponType: 'GPON' },
+  ],
+  bdcom: [
+    { value: 'P3310C', label: 'BDCOM P3310C (EPON, 8-port)', ponType: 'EPON' },
+    { value: 'P3310D', label: 'BDCOM P3310D (EPON, 16-port)', ponType: 'EPON' },
+    { value: 'GP3600', label: 'BDCOM GP3600 (GPON)', ponType: 'GPON' },
+    { value: 'GP3000', label: 'BDCOM GP3000 (GPON)', ponType: 'GPON' },
+    { value: 'P3320C', label: 'BDCOM P3320C (clone, MIB .3320.101.10)', ponType: 'EPON' },
+  ],
+  raisecom: [
+    { value: 'ISCOM5508', label: 'Raisecom ISCOM5508 (GPON, 8U)', ponType: 'GPON' },
+    { value: 'ISCOM5504', label: 'Raisecom ISCOM5504 (GPON, 4U)', ponType: 'GPON' },
+    { value: 'ISCOM5516', label: 'Raisecom ISCOM5516 (GPON, 16-port)', ponType: 'GPON' },
+  ],
+  other: [
+    { value: 'Generic-GPON', label: 'Generic GPON OLT', ponType: 'GPON' },
+    { value: 'Generic-EPON', label: 'Generic EPON OLT', ponType: 'EPON' },
+  ],
+};
+
 interface OLT {
   id: string;
   name: string;
@@ -1031,6 +1081,7 @@ export default function OLTsPage() {
                     <option value="huawei">Huawei</option>
                     <option value="zte">ZTE</option>
                     <option value="fiberhome">FiberHome</option>
+                    <option value="hioso">Hioso / C-Data</option>
                     <option value="bdcom">BDCOM</option>
                     <option value="raisecom">Raisecom</option>
                     <option value="other">Other</option>
@@ -1038,14 +1089,35 @@ export default function OLTsPage() {
                 </div>
                 <div>
                   <label className="block text-[10px] font-medium mb-1">{t('olt.model')} *</label>
-                  <input
-                    type="text"
-                    value={formData.model}
-                    onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                    required
-                    placeholder="e.g. MA5800-X15"
-                    className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
-                  />
+                  {formData.vendor && VENDOR_MODELS[formData.vendor] ? (
+                    <select
+                      value={formData.model}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      required
+                      className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                    >
+                      <option value="">-- Pilih Model --</option>
+                      {VENDOR_MODELS[formData.vendor].map((m) => (
+                        <option key={m.value} value={m.value}>
+                          {m.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={formData.model}
+                      onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                      required
+                      placeholder="e.g. MA5800-X15"
+                      className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                    />
+                  )}
+                  {formData.vendor && formData.model && VENDOR_MODELS[formData.vendor] && (
+                    <p className="text-[9px] text-teal-600 mt-0.5">
+                      PON: {VENDOR_MODELS[formData.vendor].find((m) => m.value === formData.model)?.ponType ?? ''}
+                    </p>
+                  )}
                 </div>
               </div>
 

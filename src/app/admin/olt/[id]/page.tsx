@@ -155,6 +155,37 @@ function getOLTTemplate(vendor: string | null, model: string | null): OLTTemplat
     };
   }
 
+  if (v === 'hioso') {
+    const isGpon = m.includes('8040') || m.includes('8080') || m.includes('GPON');
+    return {
+      displayName: `Hioso ${model ?? 'OLT'}`, chassis: isGpon ? 'Hioso/C-Data GPON OLT' : 'Hioso/C-Data EPON OLT',
+      groups: [
+        { type: 'uplink', label: 'GE Uplink', portType: 'GE', slot: -1, portCount: 2 },
+        { type: isGpon ? 'gpon' : 'epon', label: `${isGpon ? 'GPON' : 'EPON'} Ports (Slot 1)`, portType: isGpon ? 'GPON' : 'EPON', slot: 1, portCount: 4 },
+      ],
+    };
+  }
+
+  if (v === 'bdcom') {
+    return {
+      displayName: `BDCOM ${model ?? 'OLT'}`, chassis: 'BDCOM PON OLT',
+      groups: [
+        { type: 'uplink', label: 'GE/10GE Uplink', portType: 'GE/10GE', slot: -1, portCount: 2 },
+        { type: 'epon', label: 'EPON/GPON Ports', portType: 'PON', slot: 1, portCount: m.includes('P3310C') ? 8 : 16 },
+      ],
+    };
+  }
+
+  if (v === 'raisecom') {
+    return {
+      displayName: `Raisecom ${model ?? 'OLT'}`, chassis: 'Raisecom GPON OLT',
+      groups: [
+        { type: 'uplink', label: 'GE/10GE Uplink', portType: 'GE/10GE', slot: -1, portCount: 4 },
+        { type: 'gpon', label: 'GPON Slots', portType: 'GPON', slot: 1, portCount: 8 },
+      ],
+    };
+  }
+
   // Generic / unknown — show uplink + one PON group
   return {
     displayName: `${vendor ?? 'Unknown'} ${model ?? 'OLT'}`, chassis: 'Generic OLT',
@@ -999,6 +1030,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       <SelectItem value="huawei">Huawei</SelectItem>
                       <SelectItem value="zte">ZTE</SelectItem>
                       <SelectItem value="fiberhome">FiberHome</SelectItem>
+                      <SelectItem value="hioso">Hioso / C-Data</SelectItem>
                       <SelectItem value="bdcom">BDCOM</SelectItem>
                       <SelectItem value="raisecom">Raisecom</SelectItem>
                     </SelectContent>

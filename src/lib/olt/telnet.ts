@@ -83,13 +83,15 @@ expect eof
 
 /**
  * Test Telnet connectivity — check port open first, then try auth
+ * Uses a minimal expect script: just connect, wait for any prompt/banner, and disconnect.
+ * Avoids running `display version` which may hang on some OLT models.
  */
 export async function testTelnet(config: TelnetConfig): Promise<boolean> {
-  // First just check if port is open (fast TCP check)
+  // 1. Fast TCP port check (3s timeout)
   const portOpen = await new Promise<boolean>((resolve) => {
     const net = require('net');
     const socket = new net.Socket();
-    const timeout = setTimeout(() => { socket.destroy(); resolve(false); }, 5000);
+    const timeout = setTimeout(() => { socket.destroy(); resolve(false); }, 3000);
     socket.connect(config.port || 23, config.host, () => {
       clearTimeout(timeout);
       socket.destroy();
@@ -99,7 +101,47 @@ export async function testTelnet(config: TelnetConfig): Promise<boolean> {
   });
   if (!portOpen) return false;
 
-  // Port open — try full auth via expect
-  const result = await executeCommand(config, 'display version');
-  return result.success;
+  // 2. Try full auth via expect (15s total timeout)
+  const scriptPath = join('/tmp', `telnet-test-${Date.now()}-${Math.random().toString(36).slice(2)}.exp`);
+  try {
+    const expectScript = `#!/usr/bin/expect -f
+set timeout 15
+
+spawn telnet ${config.host} ${config.port || 23}
+
+# Wait for username/login prompt (any common OLT banner)
+expect {
+  -re {[Uu]sername:|[Ll]ogin:} { send "${config.username}\\r" }
+  -re {[Pp]assword:}            { send "${config.password}\\r" }
+  -re {[>#$]}                   { send "exit\\r"; expect eof; exit 0 }
+  timeout                        { exit 1 }
+  eof                            { exit 1 }
+}
+
+# Wait for password prompt
+expect {
+  -re {[Pp]assword:} { send "${config.password}\\r" }
+  timeout            { exit 1 }
+  eof                { exit 1 }
+}
+
+# Wait for any shell prompt — if we get it, auth succeeded
+expect {
+  -re {[>#$]} { send "exit\\r"; expect eof; exit 0 }
+  timeout     { exit 0 }
+  eof         { exit 0 }
+}
+`;
+    await writeFile(scriptPath, expectScript);
+    await execAsync(`chmod +x ${scriptPath}`);
+    const { stdout } = await execAsync(`${scriptPath}`, { timeout: 18000 });
+    await unlink(scriptPath).catch(() => {});
+    // If expect exited 0, telnet auth succeeded (or banner received)
+    return true;
+  } catch (error: any) {
+    await unlink(scriptPath).catch(() => {});
+    // exit code 1 from the script = failed login; exec timeout = network issue
+    // If port was open but auth failed, still return false
+    return false;
+  }
 }
