@@ -115,7 +115,7 @@ export async function POST(
     }
 
     // Create invoice record (already PAID)
-    const invoiceNumber = await generateInvoiceNumber();
+    const invoiceNumber = generateInvoiceNumber();
     
     // Generate payment token and link for record keeping
     const company = await prisma.company.findFirst();

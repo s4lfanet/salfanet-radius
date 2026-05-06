@@ -1,27 +1,13 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import type { PrismaClient } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import Papa from 'papaparse';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/server/db/client';
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
-}
-
-// Generate next invoice number for a given month
-async function generateInvoiceNumber(prismaClient: PrismaClient): Promise<string> {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const prefix = `INV-${year}${month}-`;
-
-  const count = await prismaClient.invoice.count({
-    where: { invoiceNumber: { startsWith: prefix } },
-  });
-
-  return `${prefix}${String(count + 1).padStart(4, '0')}`;
 }
 
 // Download CSV template
@@ -142,7 +128,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Generate invoice number
-      const invoiceNumber = await generateInvoiceNumber(prisma);
+      const invoiceNumber = generateInvoiceNumber();
       const paymentToken = generatePaymentToken();
       const paymentLink = `${baseUrl}/pay/${paymentToken}`;
 

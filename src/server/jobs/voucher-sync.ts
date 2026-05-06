@@ -5,6 +5,7 @@ import { nanoid } from 'nanoid'
 import { randomBytes } from 'crypto'
 import { startBackupCron, startHealthCron } from './telegram-cron'
 import { nowWIB, formatWIB, startOfDayWIBtoUTC, endOfDayWIBtoUTC } from '@/lib/timezone'
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service'
 
 let isRunning = false
 let isAutoIsolirRunning = false
@@ -1426,19 +1427,6 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
 
     console.log(`[Invoice Generate] Total ${users.length} users to process`);
 
-    // Get current month/year for invoice numbering
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-
-    // Get existing invoice count for this month
-    let invoiceCount = await prisma.invoice.count({
-      where: {
-        invoiceNumber: {
-          startsWith: `INV-${year}${month}-`,
-        },
-      },
-    });
-
     // company & baseUrl already fetched above (before date calculations)
 
     for (const user of users) {
@@ -1575,8 +1563,7 @@ export async function generateInvoices(force = false): Promise<{ success: boolea
         }
 
         // Generate invoice number
-        invoiceCount++;
-        const invoiceNumber = `INV-${year}${month}-${String(invoiceCount).padStart(4, '0')}`;
+        const invoiceNumber = generateInvoiceNumber();
 
         // Generate payment token and link
         const paymentToken = randomBytes(32).toString('hex');

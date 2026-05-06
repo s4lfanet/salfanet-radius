@@ -5,6 +5,7 @@ import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
 import { badRequest, unauthorized } from '@/lib/api-response';
+import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 
 /**
  * POST /api/invoices/generate
@@ -133,7 +134,7 @@ export async function POST(request: NextRequest) {
         }
 
         const invoiceId = nanoid();
-        const invoiceNumber = `INV-${year}${String(month).padStart(2, '0')}-${invoiceId.slice(0, 8).toUpperCase()}`;
+        const invoiceNumber = generateInvoiceNumber();
         const paymentToken = randomBytes(32).toString('hex');
         const paymentLink = `${baseUrl}/pay/${paymentToken}`;
 

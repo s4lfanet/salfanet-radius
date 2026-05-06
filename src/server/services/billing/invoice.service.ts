@@ -1,29 +1,18 @@
 import 'server-only'
-import { prisma } from '@/server/db/client';
+import { randomBytes } from 'crypto';
 
 /**
- * Generate invoice number dengan format: INV-YYYYMM-XXXX
- * Contoh: INV-202512-0001
+ * Generate invoice number dengan format: INV-YYYYMMDD-XXXXXX
+ * Contoh: INV-20260506-A3F9B2
+ * Format: tahun+bulan+tanggal + 6 random uppercase hex chars
  */
-export async function generateInvoiceNumber(): Promise<string> {
+export function generateInvoiceNumber(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, '0');
-  const prefix = `INV-${year}${month}-`;
-
-  // Get count of invoices for this month
-  const count = await prisma.invoice.count({
-    where: {
-      invoiceNumber: {
-        startsWith: prefix,
-      },
-    },
-  });
-
-  // Generate invoice number with incremented counter
-  const invoiceNumber = `${prefix}${String(count + 1).padStart(4, '0')}`;
-  
-  return invoiceNumber;
+  const day = String(now.getDate()).padStart(2, '0');
+  const random = randomBytes(3).toString('hex').toUpperCase();
+  return `INV-${year}${month}${day}-${random}`;
 }
 
 /**
