@@ -100,6 +100,7 @@ export default function VpnClientPage() {
     vpnServerId: '',
     vpnType: 'l2tp' as 'l2tp' | 'pptp' | 'sstp' | 'wireguard',
     customVpnIp: '',
+    localNetworks: '', // IP lokal di balik NAS (misal: 192.168.75.0/24,136.1.1.100/32)
   });
   // WireGuard NAS Peers (VPS as WG server)
   const [wgPeers, setWgPeers] = useState<{ publicKey: string; endpoint?: string; allowedIps?: string; lastHandshake?: string }[]>([]);
@@ -492,9 +493,10 @@ export default function VpnClientPage() {
     if (formData.vpnType === 'wireguard' && formData.vpnServerId === '__vps_wg__') {
       if (!formData.name.trim()) return
       const peerName = formData.name.trim()
+      const localNetworks = formData.localNetworks.trim()
       setWgNewPeerName(peerName)
       setShowModal(false)
-      setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' })
+      setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
       setShowWgSection(true)
       // Trigger add peer with the name from the form
       setCreating(true)
@@ -502,7 +504,7 @@ export default function VpnClientPage() {
         const res = await fetch('/api/network/vps-wg-peer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add', nasName: peerName }),
+          body: JSON.stringify({ action: 'add', nasName: peerName, localNetworks: localNetworks || undefined }),
         })
         const data = await res.json()
         if (data.success) {
@@ -581,7 +583,7 @@ export default function VpnClientPage() {
           setWgGeneratedScript(data.routerosScript || null)
           setShowWgSection(true)
           showSuccess('L2TP user berhasil ditambahkan ke VPS', 'Berhasil')
-          setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' })
+          setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
           loadClients()
         } else {
           showError(data.error || 'Gagal menambahkan L2TP user ke VPS')
@@ -611,7 +613,7 @@ export default function VpnClientPage() {
         setSelectedVpnType(createdType === 'pptp' || createdType === 'sstp' ? createdType : 'l2tp');
         setShowCredentials(true);
         setShowModal(false);
-        setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' });
+        setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' });
         loadClients();
         showSuccess(t('network.clientCredentialsDisplayed'), t('network.vpnClientCreated'));
       } else {
@@ -899,7 +901,7 @@ ${vpnCmd}
               </div>
               <button
                 onClick={() => {
-                  setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' })
+                  setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
                 className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(0,247,255,0.5)] transition-all duration-300 transform hover:scale-105"
@@ -1206,7 +1208,7 @@ ${vpnCmd}
               </p>
               <button
                 onClick={() => {
-                  setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '' })
+                  setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
                 className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(0,247,255,0.5)] transition-all duration-300 transform hover:scale-105"
@@ -1538,6 +1540,25 @@ ${vpnCmd}
                     rows={3}
                   />
                 </div>
+
+                {/* Local Networks — only for VPS WireGuard (allows VPS to route to local subnets behind NAS) */}
+                {formData.vpnType === 'wireguard' && formData.vpnServerId === '__vps_wg__' && (
+                  <div>
+                    <label className="block text-sm font-medium text-[#00f7ff] mb-2">
+                      IP Lokal / Subnet di Balik NAS <span className="text-muted-foreground font-normal">(opsional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.localNetworks}
+                      onChange={(e) => setFormData({ ...formData, localNetworks: e.target.value })}
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                      placeholder="cth: 192.168.75.0/24,136.1.1.100/32"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Pisahkan dengan koma. IP/subnet ini akan ditambahkan ke <span className="text-[#00f7ff] font-mono">AllowedIPs</span> peer WireGuard di VPS sehingga VPS bisa menjangkau jaringan lokal di balik NAS (Mikrotik).
+                    </p>
+                  </div>
+                )}
 
                 {/* Custom VPN IP — only for non-VPS WG (VPS WG assigns IPs automatically) */}
                 {formData.vpnServerId && formData.vpnServerId !== '__vps_wg__' && (

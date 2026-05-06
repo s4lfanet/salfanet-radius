@@ -92,20 +92,28 @@ async function nextAvailableIp(subnet: string, poolStart: number | string = 2, p
 
 /**
  * Append a [Peer] block to wg.conf and apply with `wg syncconf`.
+ * localNetworks: optional comma-separated CIDRs to add to AllowedIPs (e.g. "192.168.75.0/24,136.1.1.100/32")
  */
 async function addPeerToConf(
   pubKey: string,
   vpnIp: string,
   label: string,
+  localNetworks?: string,
 ): Promise<void> {
   let conf = ''
   try { conf = await readFile(WG_CONF, 'utf8') } catch { /* empty */ }
+
+  // Build AllowedIPs: vpnIp/32 + any caller-provided local networks
+  const parsedLocalNets = localNetworks
+    ? localNetworks.split(',').map((s) => s.trim()).filter((s) => s && s.includes('/'))
+    : []
+  const allowedIps = [`${vpnIp}/32`, ...parsedLocalNets].join(', ')
 
   const peerBlock = `
 # Peer: ${label}
 [Peer]
 PublicKey = ${pubKey}
-AllowedIPs = ${vpnIp}/32
+AllowedIPs = ${allowedIps}
 # PersistentKeepalive = 25
 `
   await writeFile(WG_CONF, conf + peerBlock, 'utf8')
@@ -115,7 +123,17 @@ AllowedIPs = ${vpnIp}/32
     await exec(`wg syncconf ${WG_IFACE} <(wg-quick strip ${WG_IFACE})`, { shell: '/bin/bash' })
   } catch {
     // Fallback if syncconf unavailable
-    try { await exec(`wg addpeer ${WG_IFACE} ${pubKey} allowed-ips ${vpnIp}/32`) } catch { /* ignore */ }
+    try { await exec(`wg addpeer ${WG_IFACE} ${pubKey} allowed-ips ${allowedIps.replace(/\s/g, '')}`) } catch { /* ignore */ }
+  }
+
+  // Add ip routes on VPS so local networks behind the peer are reachable via the tunnel
+  if (parsedLocalNets.length > 0) {
+    for (const net of parsedLocalNets) {
+      try {
+        // Skip if route already exists
+        await exec(`ip route show ${net} | grep -q . || ip route add ${net} via ${vpnIp} dev ${WG_IFACE}`, { shell: '/bin/bash' })
+      } catch { /* ignore — route may already exist or net inaccessible */ }
+    }
   }
 
   // Ensure iptables rules allow WG peer traffic to reach RADIUS (idempotent check-then-insert)
@@ -284,7 +302,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { action, nasName, publicKey: suppliedPubKey } = body
+  const { action, nasName, publicKey: suppliedPubKey, localNetworks } = body
 
   const info = await readWgInfo()
   if (!info) {
@@ -326,7 +344,7 @@ export async function POST(req: NextRequest) {
     }
 
     const vpnIp = await nextAvailableIp(info.subnet, info.poolStart ?? 2, info.poolEnd ?? 254)
-    await addPeerToConf(clientPublicKey, vpnIp, nasName)
+    await addPeerToConf(clientPublicKey, vpnIp, nasName, localNetworks)
 
     // Persist client to DB so it appears in Router dropdown
     let apiUsernameForResponse: string | undefined
@@ -407,6 +425,7 @@ export async function POST(req: NextRequest) {
       gatewayIp: effectiveGatewayIp,       // VPS tunnel IP derived from pool prefix
       allowedIps: `${effectiveGatewayIp}/32`, // kept for backward compat
       wgPort: info.listenPort,
+      localNetworks: localNetworks || null, // echo back the local networks that were configured
       apiUsername: apiUsernameForResponse,
       apiPassword: apiPasswordForResponse,
     })

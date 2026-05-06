@@ -2,11 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Server, RefreshCw, AlertCircle, Activity, WifiOff, Wifi,
   Thermometer, Clock, Search, Settings,
@@ -90,224 +85,233 @@ export default function OLTMonitoringPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="h-6 w-6 animate-spin text-teal-600" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">OLT Monitoring</h1>
-          <p className="text-gray-500">Real-time monitoring of all OLT devices</p>
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-teal-600" />
+            OLT Monitoring
+          </h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">Real-time monitoring of all OLT devices</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={fetchOLTs} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
+          <button
+            onClick={fetchOLTs}
+            className="inline-flex items-center px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-gray-300"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
             Refresh
-          </Button>
+          </button>
           <Link href="/admin/olt/alerts">
-            <Button variant={totalAlerts > 0 ? 'destructive' : 'outline'} size="sm">
-              <AlertCircle className="h-4 w-4 mr-2" />
+            <button className={`inline-flex items-center px-3 py-1.5 text-xs rounded ${totalAlerts > 0 ? 'bg-red-600 hover:bg-red-700 text-white' : 'border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'}`}>
+              <AlertCircle className="h-3 w-3 mr-1" />
               Alerts ({totalAlerts})
-            </Button>
+            </button>
           </Link>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total OLTs</CardTitle>
-            <Server className="h-4 w-4 text-gray-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{olts.length}</div>
-            <p className="text-xs text-gray-500">{onlineCount} online</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Alerts</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{totalAlerts}</div>
-            <p className="text-xs text-gray-500">Unresolved issues</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total ONUs</CardTitle>
-            <Activity className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {olts.reduce((s, o) => s + (o.totalOnu || 0), 0)}
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase font-medium">Total OLT</p>
+              <p className="text-xl font-bold text-teal-600">{olts.length}</p>
+              <p className="text-[10px] text-gray-400">{onlineCount} online</p>
             </div>
-            <p className="text-xs text-gray-500">
-              {olts.reduce((s, o) => s + (o.onlineOnu || 0), 0)} online
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Offline ONUs</CardTitle>
-            <WifiOff className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{totalOnuOffline}</div>
-            <p className="text-xs text-gray-500">Requires attention</p>
-          </CardContent>
-        </Card>
+            <Server className="h-6 w-6 text-teal-600" />
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase font-medium">Active Alerts</p>
+              <p className="text-xl font-bold text-red-600">{totalAlerts}</p>
+              <p className="text-[10px] text-gray-400">Unresolved</p>
+            </div>
+            <AlertCircle className="h-6 w-6 text-red-500" />
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase font-medium">Total ONU</p>
+              <p className="text-xl font-bold text-blue-600">{olts.reduce((s, o) => s + (o.totalOnu || 0), 0)}</p>
+              <p className="text-[10px] text-gray-400">{olts.reduce((s, o) => s + (o.onlineOnu || 0), 0)} online</p>
+            </div>
+            <Activity className="h-6 w-6 text-blue-500" />
+          </div>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[10px] text-gray-500 uppercase font-medium">Offline ONU</p>
+              <p className="text-xl font-bold text-orange-600">{totalOnuOffline}</p>
+              <p className="text-[10px] text-gray-400">Perlu perhatian</p>
+            </div>
+            <WifiOff className="h-6 w-6 text-orange-500" />
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by name or IP..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="online">Online Only</SelectItem>
-                <SelectItem value="offline">Offline Only</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex-1 relative">
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Cari nama atau IP..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            />
           </div>
-        </CardContent>
-      </Card>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          >
+            <option value="all">Semua Status</option>
+            <option value="online">Online Only</option>
+            <option value="offline">Offline Only</option>
+          </select>
+        </div>
+      </div>
 
       {/* OLT Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {olts.map((olt) => (
-          <Card key={olt.id} className={`hover:shadow-lg transition-shadow ${!olt.isOnline ? 'border-red-200' : ''}`}>
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    {olt.isOnline
-                      ? <Wifi className="h-5 w-5 text-green-500" />
-                      : <WifiOff className="h-5 w-5 text-red-500" />}
-                    {olt.name}
-                  </CardTitle>
-                  <CardDescription className="mt-1 font-mono text-xs">{olt.ipAddress}</CardDescription>
+      {olts.length === 0 ? (
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-12 text-center">
+          <Server className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Belum ada OLT</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+            {searchTerm || statusFilter !== 'all'
+              ? 'Coba ubah filter pencarian'
+              : 'Tambah OLT dari menu Network → OLT, lalu aktifkan monitoring'}
+          </p>
+          <Link href="/admin/network/olts" className="mt-4 inline-flex items-center px-3 py-1.5 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded">
+            <Server className="h-3 w-3 mr-1" />
+            Kelola OLT
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {olts.map((olt) => (
+            <div
+              key={olt.id}
+              className={`bg-white dark:bg-gray-900 rounded-lg border ${
+                !olt.isOnline && olt.monitoringEnabled
+                  ? 'border-red-300 dark:border-red-800'
+                  : 'border-gray-200 dark:border-gray-800'
+              } p-3 hover:shadow-md transition-shadow`}
+            >
+              {/* OLT Card Header */}
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {olt.isOnline
+                    ? <Wifi className="h-4 w-4 text-green-500 flex-shrink-0" />
+                    : <WifiOff className="h-4 w-4 text-red-500 flex-shrink-0" />}
+                  <div className="min-w-0">
+                    <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">{olt.name}</h3>
+                    <p className="text-[10px] font-mono text-gray-500 dark:text-gray-400">{olt.ipAddress}</p>
+                  </div>
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-shrink-0 ml-2">
                   {olt.unresolvedAlerts > 0 && (
-                    <Badge variant="destructive">{olt.unresolvedAlerts}</Badge>
+                    <span className="px-1.5 py-0.5 text-[9px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded font-bold">
+                      {olt.unresolvedAlerts} alert
+                    </span>
                   )}
                   {!olt.monitoringEnabled && (
-                    <Badge variant="secondary">Monitoring Off</Badge>
+                    <span className="px-1.5 py-0.5 text-[9px] bg-gray-100 dark:bg-gray-800 text-gray-500 rounded">
+                      Off
+                    </span>
                   )}
                 </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-sm">
+
+              {/* OLT Info */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
                 <div>
-                  <span className="text-gray-500">Vendor:</span>
-                  <div className="font-medium capitalize">{olt.vendor ?? 'N/A'}</div>
+                  <div className="text-[9px] text-gray-400 uppercase">Vendor</div>
+                  <div className="text-[10px] font-medium capitalize text-gray-700 dark:text-gray-300">{olt.vendor ?? '-'}</div>
                 </div>
                 <div>
-                  <span className="text-gray-500">Model:</span>
-                  <div className="font-medium">{olt.model ?? 'N/A'}</div>
+                  <div className="text-[9px] text-gray-400 uppercase">Model</div>
+                  <div className="text-[10px] font-medium text-gray-700 dark:text-gray-300">{olt.model ?? '-'}</div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Thermometer className="h-3 w-3 text-gray-500" />
-                  <span className="text-gray-500">Temp:</span>
-                  <div className={`font-medium ml-1 ${olt.temperature !== null && olt.temperature > 60 ? 'text-red-600' : ''}`}>
-                    {olt.temperature !== null ? `${olt.temperature}°C` : 'N/A'}
+                  <Thermometer className="h-2.5 w-2.5 text-gray-400" />
+                  <div>
+                    <div className="text-[9px] text-gray-400 uppercase">Suhu</div>
+                    <div className={`text-[10px] font-medium ${olt.temperature !== null && olt.temperature > 60 ? 'text-red-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                      {olt.temperature !== null ? `${olt.temperature}°C` : 'N/A'}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-gray-500" />
-                  <span className="text-gray-500">Uptime:</span>
-                  <div className="font-medium ml-1">{formatUptime(olt.uptime)}</div>
+                  <Clock className="h-2.5 w-2.5 text-gray-400" />
+                  <div>
+                    <div className="text-[9px] text-gray-400 uppercase">Uptime</div>
+                    <div className="text-[10px] font-medium text-gray-700 dark:text-gray-300">{formatUptime(olt.uptime)}</div>
+                  </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-sm pt-2 border-t">
-                <div className="flex gap-4">
-                  <span>
-                    <span className="text-green-600 font-bold">{olt.onlineOnu}</span>
-                    <span className="text-gray-500"> on</span>
-                  </span>
-                  <span>
-                    <span className="text-red-600 font-bold">{olt.offlineOnu}</span>
-                    <span className="text-gray-500"> off</span>
-                  </span>
-                  <span className="text-gray-400">/ {olt.totalOnu} total</span>
-                </div>
+              {/* ONU Stats */}
+              <div className="flex gap-2 mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <span className="text-[9px] px-1.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded font-medium">
+                  🟢 {olt.onlineOnu} Online
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded font-medium">
+                  🔴 {olt.offlineOnu} Offline
+                </span>
+                <span className="text-[9px] px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded">
+                  Total: {olt.totalOnu}
+                </span>
               </div>
 
-              <div className="flex gap-2 pt-1">
+              {/* Actions */}
+              <div className="flex gap-1">
                 <Link href={`/admin/olt/${olt.id}`} className="flex-1">
-                  <Button variant="outline" size="sm" className="w-full">
-                    Details
-                  </Button>
+                  <button className="w-full inline-flex items-center justify-center px-2 py-1 text-[10px] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded text-gray-700 dark:text-gray-300">
+                    Detail
+                  </button>
                 </Link>
-                <Link href={`/admin/network/olts`}>
-                  <Button variant="outline" size="sm" title="OLT Settings">
-                    <Settings className="h-4 w-4" />
-                  </Button>
+                <Link href="/admin/network/olts">
+                  <button className="inline-flex items-center px-2 py-1 text-[10px] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded text-gray-700 dark:text-gray-300" title="Pengaturan OLT">
+                    <Settings className="h-3 w-3" />
+                  </button>
                 </Link>
                 {olt.monitoringEnabled && (
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={() => handleManualPoll(olt.id)}
                     disabled={polling === olt.id}
-                    title="Manual Poll"
+                    className="inline-flex items-center px-2 py-1 text-[10px] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 rounded text-gray-700 dark:text-gray-300 disabled:opacity-50"
+                    title="Poll Manual"
                   >
-                    <RefreshCw className={`h-4 w-4 ${polling === olt.id ? 'animate-spin' : ''}`} />
-                  </Button>
+                    <RefreshCw className={`h-3 w-3 ${polling === olt.id ? 'animate-spin' : ''}`} />
+                  </button>
                 )}
               </div>
 
               {olt.lastPollAt && (
-                <div className="text-xs text-gray-400 text-center">
-                  Last poll: {new Date(olt.lastPollAt).toLocaleString('id-ID')}
+                <div className="text-[9px] text-gray-400 text-center mt-1.5">
+                  Poll terakhir: {new Date(olt.lastPollAt).toLocaleString('id-ID')}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {olts.length === 0 && !loading && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center h-64">
-            <Server className="h-16 w-16 text-gray-300 mb-4" />
-            <p className="text-gray-500 text-lg">No OLTs found</p>
-            <p className="text-sm text-gray-400 mt-1">
-              {searchTerm || statusFilter !== 'all'
-                ? 'Try adjusting your filters'
-                : 'Add OLT devices from Network → OLT menu, then enable monitoring'}
-            </p>
-            <Link href="/admin/network/olts" className="mt-4">
-              <Button variant="outline" size="sm">Go to OLT Management</Button>
-            </Link>
-          </CardContent>
-        </Card>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );

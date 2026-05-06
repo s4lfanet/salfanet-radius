@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertCircle, CheckCircle, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { AlertCircle, CheckCircle, RefreshCw, Wifi } from 'lucide-react';
 
 interface Alert {
   id: string;
@@ -99,109 +95,147 @@ export default function OLTAlertsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+      <div className="flex items-center justify-center h-64">
+        <RefreshCw className="h-6 w-6 animate-spin text-teal-600" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold">OLT Alerts</h1>
-          <p className="text-gray-500">
-            {unresolvedCount} unresolved alerts
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-red-500" />
+            OLT Alerts
+          </h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {unresolvedCount} alert belum selesai
             {criticalCount > 0 && <span className="text-red-600 font-semibold"> — {criticalCount} critical</span>}
           </p>
         </div>
-        <Button onClick={fetchAlerts} variant="outline" size="sm">
-          <RefreshCw className="h-4 w-4 mr-2" />
+        <button
+          onClick={fetchAlerts}
+          className="inline-flex items-center px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-gray-300"
+        >
+          <RefreshCw className="h-3 w-3 mr-1" />
           Refresh
-        </Button>
+        </button>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <p className="text-[10px] text-gray-500 uppercase font-medium">Total Alert</p>
+          <p className="text-xl font-bold text-gray-800 dark:text-gray-200">{alerts.length}</p>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <p className="text-[10px] text-gray-500 uppercase font-medium">Critical</p>
+          <p className="text-xl font-bold text-red-600">{criticalCount}</p>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <p className="text-[10px] text-gray-500 uppercase font-medium">Warning</p>
+          <p className="text-xl font-bold text-yellow-600">
+            {alerts.filter((a) => a.severity === 'warning' && !a.isResolved).length}
+          </p>
+        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+          <p className="text-[10px] text-gray-500 uppercase font-medium">Resolved</p>
+          <p className="text-xl font-bold text-green-600">{alerts.filter((a) => a.isResolved).length}</p>
+        </div>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-wrap gap-4">
-            <Select value={resolvedFilter} onValueChange={setResolvedFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Alerts</SelectItem>
-                <SelectItem value="false">Unresolved</SelectItem>
-                <SelectItem value="true">Resolved</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={severityFilter} onValueChange={setSeverityFilter}>
-              <SelectTrigger className="w-[160px]">
-                <SelectValue placeholder="Severity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Severity</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="warning">Warning</SelectItem>
-                <SelectItem value="info">Info</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={typeFilter} onValueChange={setTypeFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Alert Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="olt_offline">OLT Offline</SelectItem>
-                <SelectItem value="olt_high_temp">High Temperature</SelectItem>
-                <SelectItem value="onu_offline">ONU Offline</SelectItem>
-                <SelectItem value="low_signal">Low Signal</SelectItem>
-                <SelectItem value="dying_gasp">Dying Gasp</SelectItem>
-                <SelectItem value="unauthorized_onu">Unauthorized ONU</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={resolvedFilter}
+            onChange={(e) => setResolvedFilter(e.target.value)}
+            className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          >
+            <option value="all">Semua Alert</option>
+            <option value="false">Belum Selesai</option>
+            <option value="true">Sudah Selesai</option>
+          </select>
+          <select
+            value={severityFilter}
+            onChange={(e) => setSeverityFilter(e.target.value)}
+            className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          >
+            <option value="all">Semua Severity</option>
+            <option value="critical">Critical</option>
+            <option value="warning">Warning</option>
+            <option value="info">Info</option>
+          </select>
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          >
+            <option value="all">Semua Tipe</option>
+            <option value="olt_offline">OLT Offline</option>
+            <option value="olt_high_temp">Suhu Tinggi</option>
+            <option value="onu_offline">ONU Offline</option>
+            <option value="low_signal">Signal Lemah</option>
+            <option value="dying_gasp">Dying Gasp</option>
+            <option value="unauthorized_onu">ONU Tidak Sah</option>
+          </select>
+        </div>
+      </div>
 
       {/* Alert List */}
-      <div className="space-y-3">
-        {alerts.map((alert) => (
-          <Card key={alert.id} className={`${alert.severity === 'critical' && !alert.isResolved ? 'border-red-300' : ''}`}>
-            <CardContent className="pt-4 pb-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-start gap-3 flex-1">
-                  <div className="mt-1">
+      <div className="space-y-2">
+        {alerts.length === 0 ? (
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-12 text-center">
+            <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-3" />
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Tidak ada alert</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500">Semua sistem berjalan normal</p>
+          </div>
+        ) : (
+          alerts.map((alert) => (
+            <div
+              key={alert.id}
+              className={`bg-white dark:bg-gray-900 rounded-lg border p-3 ${
+                alert.severity === 'critical' && !alert.isResolved
+                  ? 'border-red-300 dark:border-red-800'
+                  : 'border-gray-200 dark:border-gray-800'
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2 flex-1">
+                  <div className="mt-0.5 flex-shrink-0">
                     {alert.isResolved
-                      ? <CheckCircle className="h-5 w-5 text-green-500" />
+                      ? <CheckCircle className="h-4 w-4 text-green-500" />
                       : alert.severity === 'critical'
-                        ? <AlertCircle className="h-5 w-5 text-red-500" />
-                        : <AlertCircle className="h-5 w-5 text-orange-500" />}
+                        ? <AlertCircle className="h-4 w-4 text-red-500" />
+                        : <AlertCircle className="h-4 w-4 text-orange-500" />}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                      <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                         {ALERT_TYPE_LABEL[alert.alertType] ?? alert.alertType}
                       </span>
-                      <Badge variant={SEVERITY_COLOR[alert.severity] as any}>
+                      <span className={`px-1.5 py-0.5 text-[9px] rounded font-bold uppercase ${
+                        alert.severity === 'critical'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          : alert.severity === 'warning'
+                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                            : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                      }`}>
                         {alert.severity}
-                      </Badge>
+                      </span>
                       {alert.isResolved && (
-                        <Badge variant="outline" className="text-green-600 border-green-300">
-                          Resolved
-                        </Badge>
+                        <span className="px-1.5 py-0.5 text-[9px] rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                          Selesai
+                        </span>
                       )}
                     </div>
-
-                    <p className="text-gray-700 mt-1">{alert.message}</p>
-
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-gray-500">
+                    <p className="text-xs text-gray-700 dark:text-gray-300">{alert.message}</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-gray-500 dark:text-gray-400">
                       {alert.olt && (
-                        <span className="flex items-center gap-1">
-                          <Wifi className="h-3 w-3" />
+                        <span className="flex items-center gap-0.5">
+                          <Wifi className="h-2.5 w-2.5" />
                           {alert.olt.name} ({alert.olt.ipAddress})
                         </span>
                       )}
@@ -215,38 +249,26 @@ export default function OLTAlertsPage() {
                       )}
                       <span>{new Date(alert.createdAt).toLocaleString('id-ID')}</span>
                       {alert.resolvedAt && (
-                        <span>Resolved: {new Date(alert.resolvedAt).toLocaleString('id-ID')}</span>
+                        <span>Selesai: {new Date(alert.resolvedAt).toLocaleString('id-ID')}</span>
                       )}
                     </div>
                   </div>
                 </div>
 
                 {!alert.isResolved && (
-                  <Button
-                    variant="outline"
-                    size="sm"
+                  <button
                     onClick={() => handleResolve(alert.id)}
                     disabled={resolving === alert.id}
+                    className="inline-flex items-center px-2 py-1 text-[10px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-gray-300 disabled:opacity-50 flex-shrink-0"
                   >
                     {resolving === alert.id
-                      ? <RefreshCw className="h-4 w-4 animate-spin" />
-                      : <CheckCircle className="h-4 w-4 mr-1" />}
-                    Resolve
-                  </Button>
+                      ? <RefreshCw className="h-3 w-3 animate-spin" />
+                      : <><CheckCircle className="h-3 w-3 mr-1" />Selesai</>}
+                  </button>
                 )}
               </div>
-            </CardContent>
-          </Card>
-        ))}
-
-        {alerts.length === 0 && (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center h-48">
-              <CheckCircle className="h-12 w-12 text-green-400 mb-3" />
-              <p className="text-gray-500">No alerts found</p>
-              <p className="text-sm text-gray-400">All systems are operating normally</p>
-            </CardContent>
-          </Card>
+            </div>
+          ))
         )}
       </div>
     </div>
