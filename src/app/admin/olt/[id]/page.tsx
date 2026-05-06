@@ -213,7 +213,8 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
     if (group.type === 'uplink') {
       return { bg: 'bg-blue-600', border: 'border-blue-400', text: 'text-white', badge: 'UP' };
     }
-    const key = `${group.slot}/${portIndex}`;
+    // portIndex is 0-based (display), DB stores ports 1-based → add 1 for lookup
+    const key = `${group.slot}/${portIndex + 1}`;
     const s = portStats[key];
     if (!s || s.total === 0) {
       return { bg: 'bg-gray-600', border: 'border-gray-500', text: 'text-gray-300', badge: String(portIndex) };
@@ -228,9 +229,11 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
   };
 
   const getPortTitle = (group: PortGroupDef, portIndex: number): string => {
+    // ZTE notation: 0/slot/portIndex (portIndex is 0-based on front panel)
     const portId = `0/${group.slot < 0 ? 'uplink' : group.slot}/${portIndex}`;
     if (group.type === 'uplink') return `${group.portType} Uplink Port ${portIndex}\n${portId}`;
-    const s = portStats[`${group.slot}/${portIndex}`];
+    // portIndex is 0-based for display; DB port is portIndex+1
+    const s = portStats[`${group.slot}/${portIndex + 1}`];
     if (!s) return `Port ${portId}\n(kosong — tidak ada ONU)`;
     const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
     return `Port ${portId}\nONU: ${s.online} online / ${s.total} total${avgRx ? `\nAvg RX: ${avgRx} dBm` : ''}`;
@@ -243,7 +246,22 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
         {/* Chassis top bar */}
         <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
           <div className="flex items-center gap-3">
-            <div className={`w-3 h-3 rounded-full border-2 ${olt.isOnline ? 'bg-green-400 border-green-300 animate-pulse' : 'bg-red-500 border-red-400'}`} />
+            {/* PWR/SYS/ALM LEDs (visible for ZTE-style chassis) */}
+            <div className="flex items-center gap-1.5">
+              <div className="flex flex-col items-center">
+                <div className={`w-2.5 h-2.5 rounded-full border ${olt.isOnline ? 'bg-green-400 border-green-300' : 'bg-gray-600 border-gray-500'}`} />
+                <span className="text-[7px] text-gray-500 mt-0.5">PWR</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className={`w-2.5 h-2.5 rounded-full border ${olt.isOnline ? 'bg-green-400 border-green-300 animate-pulse' : 'bg-gray-600 border-gray-500'}`} />
+                <span className="text-[7px] text-gray-500 mt-0.5">SYS</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <div className={`w-2.5 h-2.5 rounded-full border ${olt.alerts?.length > 0 ? 'bg-red-500 border-red-400 animate-pulse' : 'bg-gray-600 border-gray-500'}`} />
+                <span className="text-[7px] text-gray-500 mt-0.5">ALM</span>
+              </div>
+            </div>
+            <div className="w-px h-5 bg-gray-600" />
             <span className="text-sm font-bold text-white tracking-wide">{template.displayName}</span>
             <span className="text-xs text-gray-400 border border-gray-600 px-2 py-0.5 rounded">{template.chassis}</span>
           </div>

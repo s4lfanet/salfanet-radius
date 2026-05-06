@@ -91,10 +91,15 @@ export async function pollOLT(oltId: string): Promise<{ success: boolean; error?
       ]);
     }
 
-    // Discover ONUs
-    if (sshConfig && isOnline) {
+    // Discover ONUs — try SNMP first (ZTE C320 supports SNMP-based ONU discovery)
+    if (snmpConfig && isOnline && typeof (vendor as any).discoverONUsSNMP === 'function') {
+      try {
+        discoveredOnus = await (vendor as any).discoverONUsSNMP(snmpConfig, olt.firmwareVersion);
+      } catch { /* fallback to SSH/Telnet */ }
+    }
+    if (discoveredOnus.length === 0 && sshConfig && isOnline) {
       discoveredOnus = await vendor.discoverONUsSSH(sshConfig);
-    } else if (telnetConfig && isOnline) {
+    } else if (discoveredOnus.length === 0 && telnetConfig && isOnline) {
       discoveredOnus = await vendor.discoverONUs(telnetConfig);
     }
 
@@ -218,7 +223,7 @@ async function upsertONU(
   try {
     let opticalInfo: any = null;
 
-    // Get optical info if connection is available
+    // Get optical info if connection is available (SSH/Telnet)
     if (sshConfig) {
       opticalInfo = await vendor.getOnuOpticalInfoSSH(sshConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
     } else if (telnetConfig) {
@@ -227,6 +232,9 @@ async function upsertONU(
 
     const status = mapOnuStatus(onu.status);
     const now = new Date();
+    // Use SNMP-discovered rxPower as fallback if optical not available
+    const rxPower = opticalInfo?.rxPower ?? onu.rxPower ?? null;
+    const txPower = opticalInfo?.txPower ?? null;
 
     await prisma.oltOnuStatus.upsert({
       where: {
@@ -248,8 +256,8 @@ async function upsertONU(
         serialNumber: onu.serialNumber ?? null,
         macAddress: onu.macAddress ?? null,
         status,
-        rxPower: opticalInfo?.rxPower ?? null,
-        txPower: opticalInfo?.txPower ?? null,
+        rxPower,
+        txPower,
         distance: opticalInfo?.distance ?? null,
         temperature: opticalInfo?.temperature ?? null,
         voltage: opticalInfo?.voltage ?? null,
@@ -259,8 +267,8 @@ async function upsertONU(
       },
       update: {
         status,
-        rxPower: opticalInfo?.rxPower ?? null,
-        txPower: opticalInfo?.txPower ?? null,
+        rxPower,
+        txPower,
         distance: opticalInfo?.distance ?? null,
         temperature: opticalInfo?.temperature ?? null,
         voltage: opticalInfo?.voltage ?? null,
