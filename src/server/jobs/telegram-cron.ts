@@ -18,7 +18,24 @@ let healthCronStarting = false;
  */
 export async function autoBackupToTelegram(): Promise<{ success: boolean; error?: string }> {
   const startedAt = new Date();
-  
+
+  // Deduplication guard: skip if another instance already started within the last 5 minutes.
+  // This prevents double-send when multiple processes (e.g. runner.ts + cron-service) both
+  // trigger backup at the same scheduled time.
+  const fiveMinutesAgo = new Date(startedAt.getTime() - 5 * 60 * 1000);
+  const recentRun = await prisma.cronHistory.findFirst({
+    where: {
+      jobType: 'telegram_backup',
+      status: { in: ['running', 'success'] },
+      startedAt: { gt: fiveMinutesAgo },
+    },
+    orderBy: { startedAt: 'desc' },
+  });
+  if (recentRun) {
+    console.log(`[Telegram Backup] Skipping duplicate — already ${recentRun.status} since ${recentRun.startedAt.toISOString()}`);
+    return { success: true };
+  }
+
   const history = await prisma.cronHistory.create({
     data: {
       id: nanoid(),

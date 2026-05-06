@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.5] — 2026-05-07
+
+### Fixed
+- **Telegram backup dikirim 2x ke bot** — `autoBackupToTelegram()` bisa dipanggil dari dua proses/trigger berbeda (misal `runner.ts` + proses lain) pada waktu yang sama. Ditambahkan deduplication guard: sebelum mulai, cek apakah ada `cronHistory` dengan `jobType=telegram_backup` dan status `running` atau `success` dalam 5 menit terakhir. Jika ada, langsung skip (return success tanpa kirim backup). Ini menghilangkan double-send tanpa perlu koordinasi antar proses.
+
+### Files
+- `src/server/jobs/telegram-cron.ts` — `autoBackupToTelegram()`: tambah deduplication guard (cek recent run dalam 5 menit terakhir sebelum proceed)
+
+---
+
 ## [2.29.4] — 2026-05-08
 
 ### Fixed
