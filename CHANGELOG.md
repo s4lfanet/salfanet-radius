@@ -6,6 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.1] — 2026-05-06
+
+### Fixed
+- **GenieACS WiFi: task pending/fault tidak lagi menumpuk** — Sebelumnya `POST /api/genieacs/devices/[id]/wifi` mengirim 3 task terpisah (SSID, security mode, password). Hanya task pertama yang manfaatkan `connection_request`; task berikutnya masuk antrean dan bisa fault jika device offline di antara task. Sekarang semua parameter (SSID, mode, password) digabung dalam **1 task `setParameterValues`** → 1 connection request → device menerapkan semua sekaligus.
+- **GenieACS WAN: vendor VLAN params tidak lagi memblokir koneksi** — Parameter vendor-specific (`X_HW_VLAN`, `X_ZTE-COM_VLANIDMark`, `X_CMCC_VLANIDMark`) berada dalam task yang sama dengan PPPoE username/password. Jika device tidak support salah satu path, seluruh task fault termasuk koneksi. Sekarang dipisah jadi task tersendiri (best-effort) — koneksi PPPoE tetap diterapkan meski VLAN vendor gagal.
+- **GenieACS: stale task accumulation** — Setiap kali user ubah setting, task baru ditumpuk di atas task pending lama. Ditambah helper `clearPendingTasks()` yang membersihkan semua pending/fault task milik device sebelum task baru dikirim.
+- **GenieACS: 202 response ditangani benar** — Status 200 = task langsung dieksekusi di device; 202 = task diantrekan (device akan terapkan pada sesi TR-069 berikutnya). Keduanya dianggap sukses dengan pesan berbeda. Tidak ada lagi error palsu saat device lambat merespons.
+- **GenieACS WiFi: hapus `refreshObject` task yang redundan** — Setelah update, sebelumnya ada task `refreshObject` tambahan yang kirim connection request lagi tanpa manfaat nyata.
+
+### Files
+- `src/app/api/genieacs/devices/[deviceId]/wifi/route.ts` — POST: gabung 3 task → 1 task; tambah `clearPendingTasks()`; hapus `refreshObject`; handle 202
+- `src/app/api/genieacs/devices/[deviceId]/wan/route.ts` — POST/PUT/DELETE: tambah `clearPendingTasks()`; pisah vendor VLAN ke task best-effort; handle 202; tambah field `executed` di response
+
+---
+
 ## [2.29.0] — 2026-05-10
 
 ### Fixed
