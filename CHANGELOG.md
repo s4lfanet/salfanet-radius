@@ -6,6 +6,30 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.11] — 2026-05-07
+
+### Fixed
+- **Telnet Test Connection selalu timeout (30s)** — Script expect sebelumnya menunggu prompt `#`/`>` lalu menjalankan `display version` yang bisa hang. Diganti dengan script yang lebih robust: TCP port check 3s dulu, kemudian expect yang menunggu pola prompt manapun (`#`, `>`, `$`, atau username/password prompt) dan langsung exit. Total timeout 15s, tidak perlu menjalankan perintah CLI apapun.
+
+### Added
+- **Dropdown Model OLT per Vendor** — Field "Model" di form tambah/edit OLT sekarang menjadi dropdown dinamis yang berubah sesuai vendor yang dipilih:
+  - **ZTE**: C320, C300, C350, C600, C610, C650
+  - **Huawei**: MA5608T, MA5680T, MA5683T, MA5800-X15, MA5800-X7, MA5800-X2
+  - **FiberHome**: AN5516-01, AN5516-06, AN5516-04, AN5506-04-B, AN5516-06B
+  - **Hioso / C-Data**: HA7304V, HA7304VX, HA7304C, HA8080G, HA8040G (dengan profil SNMP yang sesuai)
+  - **BDCOM**: P3310C, P3310D, GP3600, GP3000, P3320C
+  - **Raisecom**: ISCOM5508, ISCOM5504, ISCOM5516
+  - Masing-masing model menampilkan tipe PON (GPON/EPON/XGS-PON)
+- **Vendor Hioso ditambahkan** di dropdown vendor OLT (form OLT Management dan Settings detail OLT)
+- **Port Diagram untuk Hioso, BDCOM, Raisecom** — Diagram fisik port OLT di tab "Port Map" sekarang mendukung semua vendor tersebut
+
+### Files
+- `src/lib/olt/telnet.ts` — `testTelnet()` diganti dengan robust expect script
+- `src/app/admin/network/olts/page.tsx` — `VENDOR_MODELS` constant + dropdown model dinamis + tambah Hioso di vendor list
+- `src/app/admin/olt/[id]/page.tsx` — tambah Hioso di vendor select settings, tambah template port diagram Hioso/BDCOM/Raisecom
+
+---
+
 ## [2.29.10] — 2026-05-07
 
 ### Fixed
