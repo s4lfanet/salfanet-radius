@@ -5,6 +5,7 @@ import { prisma } from '@/server/db/client'
 import { MikroTikConnection } from '@/server/services/mikrotik/client'
 import { generateKeyPairSync, randomUUID } from 'crypto'
 import crypto from 'crypto'
+import { removePeerFromConf } from '@/lib/wg-utils'
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-this-32'
 const ALGORITHM = 'aes-256-cbc'
@@ -658,14 +659,9 @@ export async function DELETE(request: Request) {
     if (client.vpnServerId === '__vps_wg_server__') {
       if (client.clientPublicKey) {
         try {
-          const baseUrl = process.env.NEXTAUTH_URL || `http://localhost:${process.env.PORT || 3000}`
-          await fetch(`${baseUrl}/api/network/vps-wg-peer`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'remove', publicKey: client.clientPublicKey }),
-          })
+          await removePeerFromConf(client.clientPublicKey)
         } catch (e) {
-          console.error('[vpn-client DELETE] Gagal hapus WG peer dari VPS (lanjutkan):', e)
+          console.error('[vpn-client DELETE] Gagal hapus WG peer dari wg.conf (lanjutkan):', e)
         }
       }
       await prisma.vpnClient.delete({ where: { id } })
