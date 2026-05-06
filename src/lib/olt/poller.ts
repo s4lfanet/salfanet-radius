@@ -13,16 +13,20 @@ import * as zte from './vendors/zte';
 import * as fiberhome from './vendors/fiberhome';
 import * as bdcom from './vendors/bdcom';
 import * as raisecom from './vendors/raisecom';
+import * as hioso from './vendors/hioso';
 
 type VendorModule = typeof huawei;
 
 function getVendorModule(vendor: string | null | undefined): VendorModule {
   switch (vendor?.toLowerCase()) {
-    case 'zte':      return zte as any as VendorModule;
+    case 'zte':       return zte as any as VendorModule;
     case 'fiberhome': return fiberhome as any as VendorModule;
-    case 'bdcom':    return bdcom as any as VendorModule;
-    case 'raisecom': return raisecom as any as VendorModule;
-    default:         return huawei;
+    case 'bdcom':     return bdcom as any as VendorModule;
+    case 'raisecom':  return raisecom as any as VendorModule;
+    case 'hioso':
+    case 'cdata':
+    case 'c-data':    return hioso as any as VendorModule;
+    default:          return huawei;
   }
 }
 
