@@ -469,6 +469,28 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.27.0 — 2026-05-06
+
+### Added
+- **OLT Monitoring: field "IP Lokal / Subnet di Balik NAS" saat tambah VPN WireGuard peer** — Form tambah VPN client (WireGuard VPS) kini memiliki input opsional untuk memasukkan IP/subnet lokal di balik NAS Mikrotik (contoh: `192.168.75.0/24,136.1.1.100/32`). Network lokal yang diisikan otomatis:
+  - Ditambahkan ke `AllowedIPs` peer block di `wg.conf` VPS sehingga WireGuard tahu harus meneruskan traffic ke peer tersebut.
+  - Ditambahkan route kernel di VPS (`ip route add`) sehingga VPS bisa menjangkau jaringan lokal dan IP OLT di balik Mikrotik tanpa konfigurasi manual.
+- **OLT Monitoring UI: tampilan halaman `/admin/olt/monitoring` diperbarui** — Seluruh halaman diubah mengikuti gaya admin kompak (bukan `container mx-auto p-6`): heading kecil `text-lg font-semibold` + ikon teal, stat card native Tailwind tanpa shadcn, filter menggunakan `<select>/<input>` native, card OLT grid ringkas dengan dark mode support.
+- **OLT Alerts UI: tampilan halaman `/admin/olt/alerts` diperbarui** — Konsisten dengan gaya admin: stat summary 4 kolom, filter native select, alert card compact dengan badge severity inline.
+
+### Fixed
+- **OLT Monitoring: link mati ke `/admin/olt/model-profiles-new/new`** — Tiga link yang mengarah ke halaman yang tidak ada dihapus dari halaman daftar OLT.
+- **OLT Monitoring: dropdown vendor/model kosong** — Vendor diganti ke static dropdown (Huawei, ZTE, FiberHome, BDCOM, Raisecom, Other) dan model diubah ke input teks bebas, karena tabel `oltProfiles` belum ada di database.
+- **Build error `ssh2` bundling** — Paket `ssh2`, `cpu-features`, dan `sshcrypto` ditambahkan ke `serverExternalPackages` di `next.config.ts` untuk mencegah Next.js mencoba bundling modul native crypto.
+
+### Files
+- `src/app/admin/network/vpn-client/page.tsx` — Tambah field `localNetworks` di form + UI input subnet lokal
+- `src/app/api/network/vps-wg-peer/route.ts` — Terima `localNetworks`, tambahkan ke `AllowedIPs` wg.conf + `ip route` di VPS
+- `src/app/admin/olt/monitoring/page.tsx` — Rewrite UI ke gaya admin kompak
+- `src/app/admin/olt/alerts/page.tsx` — Rewrite UI ke gaya admin kompak
+- `src/app/admin/network/olts/page.tsx` — Hapus link mati; vendor static dropdown; model free-text input
+- `next.config.ts` — Tambah `ssh2`, `cpu-features`, `sshcrypto` ke `serverExternalPackages`
+
 ### v2.25.17 — 2026-05-03
 
 ### Fixed
@@ -532,21 +554,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/pppoe/users/export/route.ts` — Tambah paymentStatus filter + kolom password
 - `src/app/api/pppoe/users/bulk/route.ts` — Tambah paymentStatus filter pada type=export
 - `src/app/admin/pppoe/users/page.tsx` — Filter UI "Bayar" + pass paymentStatus ke semua export handler
-
-### v2.25.13 — 2026-05-01
-
-### Fixed
-- **Password PPPoE tidak berubah saat approval pembayaran manual** — Ditambahkan diagnostic logging di approval handler untuk membuktikan bahwa `pppoe_users.password` tidak berubah saat pembayaran disetujui. Perubahan yang terlihat di `radcheck.value` adalah perilaku yang disengaja (sinkronisasi RADIUS). Ditambahkan `autoComplete="new-password"` di modal edit user untuk mencegah browser autofill mengisi field password secara diam-diam.
-- **Gambar bukti pembayaran manual tidak tampil** — URL gambar yang tersimpan di DB adalah path relatif (`/uploads/...`) sehingga komponen `Image` Next.js tidak bisa merendernya. Diperbaiki dengan membangun URL absolut menggunakan `NEXT_PUBLIC_BASE_URL` sebelum dikirim ke client.
-- **Error approval pembayaran manual (500)** — Prisma update `manualPayment.status` gagal karena field `updatedAt` tidak ada di schema. Diperbaiki dengan menghapus field `updatedAt` dari data update.
-- **Logo APK mobile tidak tampil** — Aset icon APK tidak ter-resolve dengan benar. Diperbaiki path resolusi icon.
-
-### Changed
-- **Diagnostic logging approval manual payment** — Log password sebelum dan sesudah transaksi approval agar dapat diverifikasi via `pm2 logs`.
-
-### Files
-- `src/app/api/manual-payments/[id]/route.ts` — Diagnostic logging + fix `updatedAt` field
-- `src/components/UserDetailModal.tsx` — `autoComplete="new-password"` pada field password
 
 <!-- AUTO-CHANGELOG:END -->
 
