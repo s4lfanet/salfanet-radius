@@ -6,6 +6,24 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.3] — 2026-05-06
+
+### Fixed
+- **Invoice number: format seragam `INV-YYYYMMDD-XXXXXX` di semua tempat** — Sebelumnya ada 3 format berbeda yang dipakai secara tidak konsisten: `INV-YYYYMM-0001` (sequential counter — di cron generate & extend API), `INV-YYYYMM-A3F9B2C1` (8 char UUID prefix — di registrasi user baru & manual generate UI), dan `INV-YYYYMM-0001` (sequential counter dengan DB count — di import CSV). Sekarang semua tempat menggunakan format tunggal: **`INV-YYYYMMDD-XXXXXX`** (tanggal 8 digit + 6 karakter random uppercase hex). Tidak ada lagi DB query untuk hitung urutan; tidak ada lagi race condition pada concurrent invoice generation.
+
+### Changed
+- `generateInvoiceNumber()` di `invoice.service.ts` sekarang fungsi **sync** (tidak async), tidak lagi butuh Prisma DB count.
+
+### Files
+- `src/server/services/billing/invoice.service.ts` — `generateInvoiceNumber()`: format baru, sync, tidak perlu DB
+- `src/server/services/pppoe.service.ts` — pakai `generateInvoiceNumber()` dari billing service
+- `src/server/jobs/voucher-sync.ts` — pakai `generateInvoiceNumber()`; hapus `invoiceCount` DB query
+- `src/app/api/invoices/generate/route.ts` — pakai `generateInvoiceNumber()`; hapus inline format
+- `src/app/api/admin/invoices/import/route.ts` — hapus local `generateInvoiceNumber()`, pakai dari billing service
+- `src/app/api/pppoe/users/[id]/extend/route.ts` — hapus `await` (fungsi sudah sync)
+
+---
+
 ## [2.29.2] — 2026-05-06
 
 ### Fixed
