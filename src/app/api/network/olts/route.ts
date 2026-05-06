@@ -45,7 +45,7 @@ export async function GET() {
   } catch (error: any) {
     console.error('Get OLTs error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error.message, code: error.code },
       { status: 500 }
     );
   }
