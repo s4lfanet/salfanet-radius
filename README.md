@@ -469,6 +469,25 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.12 — 2026-05-08
+
+### Fixed
+- **ZTE C320 ONU list menampilkan 0 ONU** — Root cause: OID yang digunakan salah (dari C300/C600 MIB bukan C320). Rewrite `zte.ts` dengan OID yang benar dari referensi go-api-c320:
+  - V2.1 firmware: base `1.3.6.1.4.1.3902.1012`, PON index = `board_base + pon × 256`
+  - V2.2 firmware: base `1.3.6.1.4.1.3902.1082`, ID suffix & type suffix per board/PON
+- **ONU discovery via SNMP untuk ZTE C320** — `poller.ts` sekarang mencoba SNMP dulu (`discoverONUsSNMP`) sebelum fallback ke SSH/Telnet. Ini lebih reliable untuk C320.
+- **RxPower dari SNMP V2.2** — RX power diambil langsung saat SNMP discovery (V2.2 supports it × 0.01 dBm). Digunakan sebagai fallback jika opticalInfo Telnet/SSH tidak tersedia.
+- **Port diagram slot count** — Telnet/SSH discovery di `zte.ts` sebelumnya iterasi slot 1–4; C320 hanya punya 2 GCOB cards, diperbaiki menjadi slot 1–2.
+- **Port diagram index mismatch** — Port Map tab menampilkan semua port kosong karena lookup menggunakan 0-based index (`port 0`) sementara DB menyimpan port 1-based (`port 1–8`). Fix: `getPortStyle` dan `getPortTitle` sekarang menggunakan `portIndex + 1` untuk key lookup `portStats`.
+
+### Changed
+- **ZTE C320 Port Diagram — LED indicators** — Header chassis sekarang menampilkan LED PWR/SYS/ALM sesuai kondisi OLT dan alerts, memberi tampilan lebih mirip hardware asli.
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Complete rewrite dengan V2.1 + V2.2 OID profiles, `discoverONUsSNMP()`, fix slot count 1-2
+- `src/lib/olt/poller.ts` — SNMP discovery diprioritaskan, `rxPower` dari SNMP digunakan sebagai fallback
+- `src/app/admin/olt/[id]/page.tsx` — Fix port index bug (0-based→1-based), LED indicators di chassis header
+
 ### v2.29.11 — 2026-05-07
 
 ### Fixed
@@ -1006,16 +1025,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/api/network/olts/status/route.ts` — **BARU**: POST handler batch OLT status check
 - `src/app/admin/network/olts/page.tsx` — Perbaiki 2 link ke `/admin/olt/${olt.id}`
-
-### v2.29.7 — 2026-05-07
-
-### Fixed
-- **GET /api/network/olts 500 — BigInt tidak bisa di-serialize** — `networkOLT.uptime` bertipe `BigInt` di Prisma schema (MySQL BIGINT). `JSON.stringify` tidak bisa handle BigInt secara native. Fix: convert `uptime` ke `Number()` di semua OLT endpoint responses.
-
-### Files
-- `src/app/api/network/olts/route.ts` — GET/POST/PUT: `uptime: Number(olt.uptime)`
-- `src/app/api/olt/[id]/route.ts` — GET/PUT: convert uptime + ONU statuses uptime
-- `src/app/api/olt/monitoring/route.ts` — GET: convert uptime in map
 
 <!-- AUTO-CHANGELOG:END -->
 
