@@ -469,6 +469,26 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.28.0 — 2026-05-06
+
+### Added
+- **OLT Detail: tab Metrics dengan recharts** — Halaman `/admin/olt/[id]` kini memiliki tab "Metrics" berisi 4 chart interaktif: CPU & Memory (LineChart), Temperature (AreaChart), ONU Status online/offline (AreaChart), Network Traffic TX/RX (AreaChart). Range waktu bisa dipilih: 6h, 12h, 24h, 48h.
+- **OLT Detail: batch reboot ONU** — Di tab ONU List, setiap baris kini memiliki checkbox. Pilih beberapa ONU lalu klik "Reboot N ONUs" untuk reboot massal (maks 50 sekaligus). Progress bar real-time menampilkan status per-ONU.
+- **OLT Detail: single ONU reboot** — Tombol "Reboot" per baris ONU dengan confirm step sebelum eksekusi.
+- **OLT Detail: CSV export** — Tombol "Export CSV" di header halaman untuk mengunduh daftar ONU lengkap dengan data customer.
+- **OLT Detail: kolom Signal Quality** — Kolom baru "Signal" di tabel ONU menampilkan kualitas sinyal (Excellent/Good/Fair/Poor) berdasarkan nilai RX Power.
+- **API: POST `/api/olt/[id]/onus/[onuId]/reboot`** — Endpoint baru untuk reboot satu ONU via SSH ke OLT. Mendukung command vendor spesifik: Huawei, ZTE, FiberHome, BDCOM, Raisecom.
+- **API: POST `/api/olt/[id]/onus/batch-reboot`** — Endpoint baru untuk batch reboot ONUs, mengembalikan hasil per-ONU.
+
+### Fixed
+- **OLT Test Connection 404** — Halaman `/admin/network/olts` memanggil `/api/admin/olt/test-connection` yang tidak ada. URL dikoreksi ke `/api/olt/test-connection`.
+
+### Files
+- `src/app/admin/olt/[id]/page.tsx` — Tambah tab Metrics (recharts), batch/single ONU reboot, CSV export, Signal Quality column, layout kompak
+- `src/app/api/olt/[id]/onus/[onuId]/reboot/route.ts` — **BARU** — Single ONU reboot via SSH
+- `src/app/api/olt/[id]/onus/batch-reboot/route.ts` — **BARU** — Batch ONU reboot via SSH
+- `src/app/admin/network/olts/page.tsx` — Fix URL test-connection `/api/admin/olt/...` → `/api/olt/...`
+
 ### v2.27.0 — 2026-05-06
 
 ### Added
@@ -531,29 +551,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/pppoe/users/bulk/route.ts` — Fix ExcelJS cell parsing + upsert logic untuk existing users
 - `src/app/admin/pppoe/users/page.tsx` — Tampilkan counter "Diperbarui" di hasil import
 - `src/app/api/settings/isolation/templates/[id]/route.ts` — Fix async params Next.js 15
-
-### v2.25.14 — 2026-05-01
-
-### Fixed
-- **FreeRADIUS log error "Server returned no data"** — `rlm_rest` mencatat error ini setiap kali API radius mengembalikan `{}` (JSON kosong tanpa attribute RADIUS). Diperbaiki dengan mengubah semua response pass-through menjadi HTTP 204 No Content. `rlm_rest` mengenali 204 sebagai "tidak ada atribut yang di-set" dan tidak mencatat error.
-- **FreeRADIUS error "Connection failed: 7 / Opening connection failed"** — REST module tidak punya timeout, sehingga saat app di-restart (npm build + pm2 restart) FreeRADIUS menunggu indefinitely dan menumpuk duplicate packets. Diperbaiki dengan menambahkan `connect_timeout = 4` detik dan `timeout = 4-5` detik per-seksi di konfigurasi REST module.
-- **FreeRADIUS "Ignoring duplicate packet ... unfinished request in component authorize module rest"** — Akibat tidak adanya timeout di REST module. Setelah timeout ditambahkan, FreeRADIUS cepat fail-over ke SQL module (karena `-rest` non-fatal) tanpa menunggu.
-- **Post-auth: voucher expired mengembalikan HTTP 403 dengan JSON non-RADIUS** — Response `{success: false, error: "Voucher expired"}` tidak dipahami rlm_rest. Diperbaiki menjadi RADIUS attribute format: `{"control:Auth-Type": "Reject", "reply:Reply-Message": "Voucher Kadaluarsa"}`.
-- **FreeRADIUS REST `retry_delay` dikurangi** — Dari 30 detik menjadi 10 detik agar koneksi ke app pulih lebih cepat setelah restart.
-
-### Added
-- **Export PPPoE: filter status pembayaran** — Dropdown filter "Bayar" di halaman Pelanggan PPPoE dengan opsi: Semua, Sudah Bayar, Belum Bayar, Isolir. Filter berlaku untuk export Excel, PDF, dan CSV.
-- **Export PPPoE: kolom Password di Excel dan PDF** — Password PPPoE sekarang disertakan di ekspor Excel dan PDF untuk keperluan backup/recovery (sebelumnya hanya tersedia di ekspor CSV).
-- **Export PPPoE: filter paymentStatus di API** — Endpoint `/api/pppoe/users/export` dan `/api/pppoe/users/bulk?type=export` mendukung query param `paymentStatus=paid|unpaid|isolated` menggunakan join tabel Invoice.
-
-### Files
-- `freeradius-config/mods-available/rest` — Tambah `connect_timeout`, `timeout` per-seksi, kurangi `retry_delay`
-- `src/app/api/radius/authorize/route.ts` — Pass-through responses → HTTP 204
-- `src/app/api/radius/post-auth/route.ts` — Pass-through responses → HTTP 204, fix expired reject format
-- `src/app/api/radius/accounting/route.ts` — Response → HTTP 204
-- `src/app/api/pppoe/users/export/route.ts` — Tambah paymentStatus filter + kolom password
-- `src/app/api/pppoe/users/bulk/route.ts` — Tambah paymentStatus filter pada type=export
-- `src/app/admin/pppoe/users/page.tsx` — Filter UI "Bayar" + pass paymentStatus ke semua export handler
 
 <!-- AUTO-CHANGELOG:END -->
 
