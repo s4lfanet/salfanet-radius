@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.6] — 2026-05-07
+
+### Fixed
+- **Update terhenti setelah GenieACS restore** — `apply_sql_migrations()` memanggil `mysql --force` yang tetap exit code non-zero meski ada SQL error (1060 duplicate column, 1061 duplicate index). Karena `updater.sh` pakai `set -e` + `set -o pipefail`, script langsung abort tepat setelah GenieACS restore, sebelum sempat build. Fix: tambah `|| true` setelah pemanggilan `mysql --force` (error dari mysql diabaikan — kita selalu mark file sebagai applied dan cek error real secara manual), dan `|| true` di kedua call site `apply_sql_migrations` sebagai defense-in-depth.
+
+### Files
+- `vps-install/updater.sh` — `mysql --force ... || true` + `apply_sql_migrations || true` di kedua call site (incremental + fresh install path)
+
+---
+
 ## [2.29.5] — 2026-05-07
 
 ### Fixed

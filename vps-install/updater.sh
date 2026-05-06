@@ -115,7 +115,7 @@ apply_sql_migrations() {
         # Errors 1060 (duplicate column) and 1061 (duplicate index) are harmless —
         # they mean the column/index was already created by a previous db push.
         mysql --force -h"$_DB_HOST" -P"$_DB_PORT" -u"$_DB_USER" -p"$_DB_PASS" "$_DB_NAME" \
-            < "$sql_file" 2>/tmp/salfanet-migration-err.log
+            < "$sql_file" 2>/tmp/salfanet-migration-err.log || true
         # Always mark as applied (prisma db push is the source of truth for schema)
         echo "$filename" >> "$APPLIED_LOG"
         applied=$((applied + 1))
@@ -307,9 +307,7 @@ if [ -n "$USE_BRANCH" ]; then
     backup_genieacs_data
     node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || node_modules/.bin/prisma db push
     restore_genieacs_data
-    apply_sql_migrations
-
-    # ── Auth self-heal for legacy installs ────────────────────────────────
+    apply_sql_migrations || true ────────────────────────────────
     # Migrate legacy admin_user -> admin_users if needed and ensure
     # at least one active SUPER_ADMIN exists.
     if [ -f "$APP_DIR/vps-install/fix-auth-after-update.sh" ]; then
@@ -588,7 +586,7 @@ node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || \
     node_modules/.bin/prisma db push || \
     print_info "DB push skipped (check manually)"
 restore_genieacs_data
-apply_sql_migrations
+apply_sql_migrations || true
 
 print_step "Applying seed data (new templates & config)"
 npm run db:seed 2>/dev/null || print_info "Seed skipped (check manually)"
