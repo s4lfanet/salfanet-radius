@@ -36,7 +36,8 @@ export async function snmpGet(config: SNMPConfig, oid: string): Promise<SNMPResu
   const port = config.port || 161;
   const timeout = config.timeout || 10;
 
-  const command = `snmpget -v${version} -c ${config.community} -t ${timeout} ${config.host}:${port} ${oid} 2>&1`;
+  // -On forces numeric OID output (avoids "iso." prefix from MIB lookups)
+  const command = `snmpget -On -v${version} -c ${config.community} -t ${timeout} ${config.host}:${port} ${oid} 2>&1`;
 
   try {
     const { stdout } = await execAsync(command);
@@ -46,13 +47,13 @@ export async function snmpGet(config: SNMPConfig, oid: string): Promise<SNMPResu
       return { success: false, error: 'OID not found' };
     }
 
-    // Parse value from output like: "1.3.6.1.2.1.1.5.0 = STRING: hostname"
-    const match = output.match(/=\s*\w+:\s*(.+)$/m);
+    // Parse value — type may include hyphen (e.g. "Hex-STRING:", "Timeticks:")
+    const match = output.match(/=\s*[\w-]+:\s*(.+)$/m);
     if (match) {
       return { success: true, value: match[1].trim().replace(/"/g, '') };
     }
 
-    // For INTEGER values without type prefix
+    // For bare INTEGER values without type prefix
     const intMatch = output.match(/=\s*(\d+)$/m);
     if (intMatch) {
       return { success: true, value: intMatch[1] };
@@ -72,7 +73,8 @@ export async function snmpWalk(config: SNMPConfig, oid: string): Promise<SNMPWal
   const port = config.port || 161;
   const timeout = config.timeout || 30;
 
-  const command = `snmpwalk -v${version} -c ${config.community} -t ${timeout} ${config.host}:${port} ${oid} 2>&1`;
+  // -On forces numeric OID output (avoids "iso." prefix and MIB name translations)
+  const command = `snmpwalk -On -v${version} -c ${config.community} -t ${timeout} ${config.host}:${port} ${oid} 2>&1`;
 
   try {
     const { stdout } = await execAsync(command);
@@ -86,10 +88,16 @@ export async function snmpWalk(config: SNMPConfig, oid: string): Promise<SNMPWal
     const lines = output.split('\n');
 
     for (const line of lines) {
-      const match = line.match(/^([\d.]+)\s*=\s*(?:\w+:\s*)?(.+)$/);
+      // Handle both ".1.3.6..." (with -On) and legacy "1.3.6..." numeric formats.
+      // Type prefix may include hyphens (e.g. "Hex-STRING:", "Timeticks:").
+      const match = line.match(/^\.?([\d][\d.]+)\s*=\s*(?:[\w-]+:\s*)?(.+)$/);
       if (match) {
         results[match[1].trim()] = match[2].trim().replace(/"/g, '');
       }
+    }
+
+    if (Object.keys(results).length === 0) {
+      return { success: false, error: 'No parseable OIDs in SNMP walk output' };
     }
 
     return { success: true, results };

@@ -13,15 +13,18 @@ import { TelnetConfig, executeCommand } from '../telnet';
 import { SSHConfig, executeCommand as sshExecute } from '../ssh';
 
 // ── ZTE C320 V2.1.0 OID Profile (base: 1.3.6.1.4.1.3902.1012) ──────────────
+// OIDs verified against real ZTE C320 V2.1.0 via live SNMP walk.
+// Uses the 3.50.11.2 ONU-info table which is reliably populated in V2.1.
 const V21 = {
   base: '1.3.6.1.4.1.3902.1012',
-  onuName:     '.3.13.3.1.5',    // Device SN used as name (STRING)
-  onuSerial:   '.3.13.3.1.2',    // Serial number (Hex-STRING bytes)
-  onuModel:    '.3.13.3.1.10',   // ONU model string
-  onuFirmware: '.3.13.3.1.11',   // Firmware version
-  onuStatus:   '.3.31.4.1.100',  // Online status (INTEGER: 1=online)
-  board1Base:  268500992,         // pon1 = 268501248
-  board2Base:  268509184,         // pon1 = 268509440
+  // 3.50.11.2 ONU info table (indexed by .{ponIndex}.{onuId})
+  onuName:     '.3.50.11.2.1.1',   // Vendor prefix string ("ZTEG", "HWTC", etc.) — used for discovery walk
+  onuFirmware: '.3.50.11.2.1.2',   // ONU firmware version string
+  onuSerial:   '.3.50.11.2.1.3',   // Serial (Hex-STRING: 8 bytes = 4 ASCII vendor + 4 hex id)
+  onuStatus:   '.3.50.11.2.1.6',   // Run state INTEGER: 2=online/working, 1=init, 3=fault, 4=dying-gasp
+  onuModel:    '.3.50.11.2.1.9',   // ONU model/type string (e.g. "F670LV9.0")
+  board1Base:  268500992,           // pon1 index = board1Base + 1*256 = 268501248
+  board2Base:  268509184,           // pon1 index = board2Base + 1*256 = 268509440
   ponIncrement: 256,
 };
 
@@ -77,38 +80,71 @@ function extractLastId(oid: string): number | null {
   return isNaN(n) ? null : n;
 }
 
+/**
+ * Convert ZTE ONU serial from raw SNMP value to printable form.
+ * ZTE GPON serial format: 8 bytes where first 4 are ASCII vendor code
+ * (e.g. "ZTEG", "HWTC", "FHTT") and last 4 are hex serial digits.
+ * Input: "5A 54 45 47 DA 59 18 AC"  Output: "ZTEGDA5918AC"
+ */
 function hexBytesToSerial(val: string): string {
-  if (!val) return val;
-  if (/^[A-Z0-9]{4,}$/i.test(val)) return val;
-  try {
-    return val.split(/\s+/).map((h) => String.fromCharCode(parseInt(h, 16))).join('');
-  } catch { return val; }
+  if (!val) return '';
+  // Already a clean serial string (4 ASCII + 8 hex, no spaces)
+  if (/^[A-Z]{4}[0-9A-F]{8}$/i.test(val)) return val.toUpperCase();
+  // Space-separated hex bytes (8 bytes = ZTE format)
+  const parts = val.trim().split(/\s+/);
+  if (parts.length === 8 && parts.every(p => /^[0-9A-Fa-f]{2}$/.test(p))) {
+    try {
+      const prefix = parts.slice(0, 4).map(h => String.fromCharCode(parseInt(h, 16))).join('');
+      // Verify prefix is printable ASCII letters/digits
+      if (/^[A-Za-z0-9]{4}$/.test(prefix)) {
+        const suffix = parts.slice(4).map(h => h.toUpperCase()).join('');
+        return (prefix + suffix).toUpperCase();
+      }
+    } catch { /* fall through */ }
+  }
+  // Other hex-string: convert all bytes to ASCII
+  if (parts.length >= 4 && parts.every(p => /^[0-9A-Fa-f]{1,2}$/.test(p))) {
+    try {
+      return parts.map(h => String.fromCharCode(parseInt(h, 16))).join('');
+    } catch { /* fall through */ }
+  }
+  return val;
 }
 
 // ── SNMP Performance Metrics ─────────────────────────────────────────────────
 
-/** Walk a table OID and return the first numeric value found */
-async function walkFirstNumber(config: SNMPConfig, baseOid: string): Promise<number | null> {
+/** Walk a table OID and return the first numeric value found, optionally filtered */
+async function walkFirstNumber(
+  config: SNMPConfig,
+  baseOid: string,
+  isValid?: (n: number) => boolean
+): Promise<number | null> {
   const res = await snmpWalk(config, baseOid);
   if (res.success && res.results) {
     for (const val of Object.values(res.results)) {
       const n = parseFloat(val);
-      if (!isNaN(n) && n > 0) return n;
+      if (!isNaN(n) && n > 0 && (!isValid || isValid(n))) return n;
     }
   }
   return null;
 }
 
+// Temperatures must be in plausible range for network equipment (10–85°C)
+const isValidTemp = (n: number) => n >= 10 && n <= 85;
+
 export async function getTemperature(config: SNMPConfig): Promise<number | null> {
   // 1) C320 V2.1
-  const t21 = await walkFirstNumber(config, C320_TEMP_V21);
+  const t21 = await walkFirstNumber(config, C320_TEMP_V21, isValidTemp);
   if (t21 !== null) return t21;
   // 2) C320 V2.2
-  const t22 = await walkFirstNumber(config, C320_TEMP_V22);
+  const t22 = await walkFirstNumber(config, C320_TEMP_V22, isValidTemp);
   if (t22 !== null) return t22;
   // 3) C300/C600 generic
   const res = await snmpGet(config, ZTE_OIDS.temperature);
-  if (res.success && res.value) return parseFloat(res.value);
+  if (res.success && res.value) {
+    const n = parseFloat(res.value);
+    if (isValidTemp(n)) return n;
+  }
   return null;
 }
 
@@ -151,12 +187,18 @@ async function discoverPonV21(config: SNMPConfig, board: number, pon: number): P
     const serialR = await snmpGet(config, `${base}${V21.onuSerial}.${ponIndex}.${onuId}`);
 
     const statusVal = statusR.success && statusR.value ? parseInt(statusR.value) : 0;
+    // In 3.50.11.2.1.6 run-state: 2=working/online, 1=initializing, 3=fault, 4=dying-gasp
+    const onuStatus = statusVal === 2 ? 'online' : statusVal === 0 ? 'unknown' : 'offline';
 
     onus.push({
-      frame: 1, slot: board, port: pon, onuId,
+      frame: 1, slot: board,
+      // SNMP pon=1 maps to CLI port 0 (ZTE uses 0-based port numbers in CLI).
+      // Store as 0-based so it matches telnet discovery and port diagram keys.
+      port: pon - 1,
+      onuId,
       serialNumber: hexBytesToSerial(serialR.value ?? nameVal ?? ''),
       macAddress: null,
-      status: statusVal === 1 ? 'online' : 'offline',
+      status: onuStatus,
       onuType: typeR.value ?? null,
       rxPower: null,
     });

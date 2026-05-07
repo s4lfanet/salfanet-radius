@@ -385,6 +385,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const [olt, setOlt] = useState<OLTDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [polling, setPolling] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
   const [onuStatusFilter, setOnuStatusFilter] = useState('all');
 
@@ -503,15 +504,24 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   };
 
   const handleManualPoll = async () => {
+    setPolling(true);
     try {
-      await fetch('/api/olt/monitoring', {
+      const res = await fetch('/api/olt/monitoring', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oltId: id }),
       });
-      await fetchOLT();
+      const data = await res.json();
+      if (!res.ok) {
+        alert(`Poll failed: ${data.error ?? 'Unknown error'}`);
+      } else {
+        await fetchOLT();
+      }
     } catch (e) {
       console.error('Poll failed', e);
+      alert('Poll failed — check network connection');
+    } finally {
+      setPolling(false);
     }
   };
 
@@ -694,9 +704,9 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             Export CSV
           </Button>
           {olt.monitoringEnabled && (
-            <Button onClick={handleManualPoll} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Poll Now
+            <Button onClick={handleManualPoll} variant="outline" size="sm" disabled={polling}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${polling ? 'animate-spin' : ''}`} />
+              {polling ? 'Polling…' : 'Poll Now'}
             </Button>
           )}
         </div>
