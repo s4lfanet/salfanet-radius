@@ -202,13 +202,27 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
 
   // Build per-port statistics from ONU data
   const portStats: Record<string, { total: number; online: number; rxPowers: number[] }> = {};
+  // Track max port index seen per slot — used to dynamically expand port count in diagram
+  const maxPortPerSlot: Record<number, number> = {};
   for (const onu of olt.onuStatuses) {
     const key = `${onu.slot}/${onu.port}`;
     if (!portStats[key]) portStats[key] = { total: 0, online: 0, rxPowers: [] };
     portStats[key].total++;
     if (onu.status === 'online') portStats[key].online++;
     if (onu.rxPower !== null) portStats[key].rxPowers.push(onu.rxPower);
+    // Track max port per slot for dynamic port count
+    if (maxPortPerSlot[onu.slot] === undefined || onu.port > maxPortPerSlot[onu.slot]) {
+      maxPortPerSlot[onu.slot] = onu.port;
+    }
   }
+
+  // Return effective port count: at least the template value, or max seen from actual SNMP data
+  const getEffectivePortCount = (group: PortGroupDef): number => {
+    if (group.type === 'uplink') return group.portCount;
+    const maxSeen = maxPortPerSlot[group.slot];
+    if (maxSeen === undefined) return group.portCount;
+    return Math.max(group.portCount, maxSeen + 1);
+  };
 
   // Returns color class for a GPON port (0-based portIndex)
   const getPortStyle = (group: PortGroupDef, portIndex: number) => {
@@ -280,19 +294,21 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
 
         {/* Port panels */}
         <div className="p-3 space-y-2.5">
-          {template.groups.map((group) => (
+          {template.groups.map((group) => {
+            const effectivePortCount = getEffectivePortCount(group);
+            return (
             <div key={`${group.slot}-${group.label}`} className="bg-[#111] rounded border border-[#2c2c2c] px-3 py-2.5">
               {/* Card label */}
               <div className="flex items-center justify-between mb-2">
                 <span className={`text-[9px] font-bold uppercase tracking-widest font-mono ${group.type === 'uplink' ? 'text-blue-400' : 'text-green-500'}`}>
                   {group.label}
                 </span>
-                <span className="text-[8px] text-gray-600 font-mono">{group.portType} × {group.portCount}</span>
+                <span className="text-[8px] text-gray-600 font-mono">{group.portType} × {effectivePortCount}</span>
               </div>
 
               {/* Port row — SFP/GPON port style */}
               <div className="flex flex-wrap gap-1">
-                {Array.from({ length: group.portCount }, (_, i) => {
+                {Array.from({ length: effectivePortCount }, (_, i) => {
                   const style = getPortStyle(group, i);
                   const isUplink = group.type === 'uplink';
                   return (
@@ -318,7 +334,8 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
                 })}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Bottom info strip */}

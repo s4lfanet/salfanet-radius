@@ -41,6 +41,11 @@ const V22 = {
   idIncrement: 1,              typeIncrement: 256,
 };
 
+// ── PON Port Discovery Table (V2.1) ─────────────────────────────────────────
+// Walking this OID returns one entry per provisioned PON port (indexed by ponIndex).
+// Allows dynamic port count discovery instead of hardcoding 2 boards × 8 ports.
+const ZTE_V21_PON_TABLE = '1.3.6.1.4.1.3902.1012.3.11.3.1.1';
+
 // ── ZTE Performance OIDs (tried in order) ───────────────────────────────────
 // C320 V2.1 board-level OIDs (instance = board base index, e.g. 268500992)
 const C320_TEMP_V21     = '1.3.6.1.4.1.3902.1012.3.50.12.1.1.4';  // walk → first value
@@ -168,6 +173,51 @@ export async function getMemoryUsage(config: SNMPConfig): Promise<number | null>
   return null;
 }
 
+// ── Dynamic PON Port Discovery (V2.1) ───────────────────────────────────────
+
+/**
+ * Walk the ZTE C320 V2.1 PON port table to discover all provisioned PON ports.
+ * Converts each ponIndex back to (board, pon) using the V21 base constants.
+ * Falls back to the traditional 2 boards × 8 ports if the walk fails.
+ */
+async function discoverPONPortsV21(config: SNMPConfig): Promise<Array<{board: number, pon: number}>> {
+  const res = await snmpWalk(config, ZTE_V21_PON_TABLE);
+
+  const seenPonIndexes = new Set<number>();
+  if (res.success && res.results && Object.keys(res.results).length > 0) {
+    // ponIndexes are very large numbers (> 268 million) — scan all OID components
+    // to handle any MIB column layout (e.g. .col.ponIndex or .ponIndex directly)
+    for (const oid of Object.keys(res.results)) {
+      for (const part of oid.split('.')) {
+        const n = parseInt(part, 10);
+        if (!isNaN(n) && n > 268000000) seenPonIndexes.add(n);
+      }
+    }
+  }
+
+  const ports: Array<{board: number, pon: number}> = [];
+  const maxPonsPerBoard = 128; // safety cap
+
+  for (const ponIndex of seenPonIndexes) {
+    if (ponIndex > V21.board1Base && ponIndex < V21.board1Base + maxPonsPerBoard * V21.ponIncrement) {
+      const pon = (ponIndex - V21.board1Base) / V21.ponIncrement;
+      if (Number.isInteger(pon) && pon >= 1) ports.push({ board: 1, pon });
+    } else if (ponIndex > V21.board2Base && ponIndex < V21.board2Base + maxPonsPerBoard * V21.ponIncrement) {
+      const pon = (ponIndex - V21.board2Base) / V21.ponIncrement;
+      if (Number.isInteger(pon) && pon >= 1) ports.push({ board: 2, pon });
+    }
+  }
+
+  if (ports.length > 0) {
+    return ports.sort((a, b) => a.board !== b.board ? a.board - b.board : a.pon - b.pon);
+  }
+
+  // Fallback: traditional 2 boards × 8 ports
+  const fallback: Array<{board: number, pon: number}> = [];
+  for (let b = 1; b <= 2; b++) for (let p = 1; p <= 8; p++) fallback.push({ board: b, pon: p });
+  return fallback;
+}
+
 // ── SNMP ONU Discovery — V2.1 ────────────────────────────────────────────────
 
 async function discoverPonV21(config: SNMPConfig, board: number, pon: number): Promise<any[]> {
@@ -249,7 +299,8 @@ async function discoverPonV22(config: SNMPConfig, board: number, pon: number): P
 /**
  * Discover all ONUs via SNMP — primary method for ZTE C320.
  * Supports V2.1.0 (base 1012) and V2.2+ (base 1082).
- * C320 has 2 GCOB boards, each with 8 GPON ports.
+ * For V2.1: dynamically discovers PON ports from the PON table (supports 8, 16, or more ports).
+ * For V2.2: falls back to scanning 2 boards × 8 ports.
  */
 export async function discoverONUsSNMP(
   config: SNMPConfig,
@@ -258,14 +309,24 @@ export async function discoverONUsSNMP(
   const useV22 = isV22(firmwareVersion);
   const onus: any[] = [];
 
-  for (let board = 1; board <= 2; board++) {
-    for (let pon = 1; pon <= 8; pon++) {
+  if (!useV22) {
+    // V2.1: walk PON port table to discover actual port count dynamically
+    const ponPorts = await discoverPONPortsV21(config);
+    for (const { board, pon } of ponPorts) {
       try {
-        const ponOnus = useV22
-          ? await discoverPonV22(config, board, pon)
-          : await discoverPonV21(config, board, pon);
+        const ponOnus = await discoverPonV21(config, board, pon);
         onus.push(...ponOnus);
       } catch { /* empty/unprovisioned PON — skip */ }
+    }
+  } else {
+    // V2.2: scan 2 boards × 8 ports (V2.2 port table OID not yet mapped)
+    for (let board = 1; board <= 2; board++) {
+      for (let pon = 1; pon <= 8; pon++) {
+        try {
+          const ponOnus = await discoverPonV22(config, board, pon);
+          onus.push(...ponOnus);
+        } catch { /* empty/unprovisioned PON — skip */ }
+      }
     }
   }
   return onus;
