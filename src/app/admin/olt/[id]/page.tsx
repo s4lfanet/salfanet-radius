@@ -94,7 +94,7 @@ function getOLTTemplate(vendor: string | null, model: string | null): OLTTemplat
       displayName: 'ZTE C320', chassis: '1U Compact GPON OLT',
       groups: [
         { type: 'uplink', label: 'Uplink (10GE XFP)', portType: '10GE', slot: 0, portCount: 2 },
-        { type: 'gpon', label: 'GPON Card 1 (Slot 1)', portType: 'GPON', slot: 1, portCount: 8 },
+        { type: 'gpon', label: 'GPON Card 1 (Slot 1)', portType: 'GPON', slot: 1, portCount: 16 },
         { type: 'gpon', label: 'GPON Card 2 (Slot 2)', portType: 'GPON', slot: 2, portCount: 8 },
       ],
     };

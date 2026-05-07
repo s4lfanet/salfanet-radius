@@ -14,15 +14,18 @@ import { SSHConfig, executeCommand as sshExecute } from '../ssh';
 
 // ── ZTE C320 V2.1.0 OID Profile (base: 1.3.6.1.4.1.3902.1012) ──────────────
 // OIDs verified against real ZTE C320 V2.1.0 via live SNMP walk.
-// Uses the 3.50.11.2 ONU-info table which is reliably populated in V2.1.
+// Uses zxAnGponOnuCfgTable (3.28.1.1) and zxAnGponOnuRegTable (3.50.12.1.1).
 const V21 = {
   base: '1.3.6.1.4.1.3902.1012',
-  // 3.50.11.2 ONU info table (indexed by .{ponIndex}.{onuId})
-  onuName:     '.3.50.11.2.1.1',   // Vendor prefix string ("ZTEG", "HWTC", etc.) — used for discovery walk
-  onuFirmware: '.3.50.11.2.1.2',   // ONU firmware version string
-  onuSerial:   '.3.50.11.2.1.3',   // Serial (Hex-STRING: 8 bytes = 4 ASCII vendor + 4 hex id)
-  onuStatus:   '.3.50.11.2.1.6',   // Run state INTEGER: 2=online/working, 1=init, 3=fault, 4=dying-gasp
-  onuModel:    '.3.50.11.2.1.9',   // ONU model/type string (e.g. "F670LV9.0")
+  // zxAnGponOnuCfgTable (3.28.1.1) — indexed by .{col}.{ponIndex}.{onuId}
+  // VERIFIED WORKING on ZTE C320 V2.1.0 via live SNMP walk
+  onuName:      '.3.28.1.1.2',    // ONU name/description string
+  onuSerial:    '.3.28.1.1.5',    // Serial (Hex-STRING: 8 bytes = 4 ASCII vendor + 4 hex id)
+  // zxAnGponOnuRegTable (3.50.12.1.1) — indexed by .{col}.{ponIndex}.{onuSlot}.{onuId}
+  // VERIFIED WORKING on ZTE C320 V2.1.0 via live SNMP walk
+  onuRegStatus: '.3.50.12.1.1.1',  // Registration status: 1=registered/active
+  onuOperState: '.3.50.12.1.1.6',  // Oper state: 5=working/online, others=offline
+  onuRxPower:   '.3.50.12.1.1.10', // ONU RX power (raw positive int, dBm = -(raw/1000))
   board1Base:  268500992,           // pon1 index = board1Base + 1*256 = 268501248
   board2Base:  268509184,           // pon1 index = board2Base + 1*256 = 268509440
   ponIncrement: 256,
@@ -47,10 +50,12 @@ const V22 = {
 const ZTE_V21_PON_TABLE = '1.3.6.1.4.1.3902.1012.3.11.3.1.1';
 
 // ── ZTE Performance OIDs (tried in order) ───────────────────────────────────
-// C320 V2.1 board-level OIDs (instance = board base index, e.g. 268500992)
-const C320_TEMP_V21     = '1.3.6.1.4.1.3902.1012.3.50.12.1.1.4';  // walk → first value
-const C320_CPU_V21      = '1.3.6.1.4.1.3902.1012.3.50.11.1.1.4';  // walk → first value
-const C320_MEM_V21      = '1.3.6.1.4.1.3902.1012.3.50.11.1.1.3';  // walk → first value
+// C320 V2.1: temperature/CPU/memory not accessible via SNMP community "public".
+// All known OIDs return "No Such Object" on ZTE C320 V2.1.0 firmware.
+// getTemperature/getCpuUsage/getMemoryUsage will return null → UI shows N/A.
+const C320_TEMP_V21     = '1.3.6.1.4.1.3902.1012.3.36.1.1.4';  // board temp table (likely unavailable)
+const C320_CPU_V21      = '1.3.6.1.4.1.3902.1012.3.38.1.1.4';  // board CPU table (likely unavailable)
+const C320_MEM_V21      = '1.3.6.1.4.1.3902.1012.3.38.1.1.3';  // board memory table (likely unavailable)
 // C320 V2.2 board OIDs
 const C320_TEMP_V22     = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.4';
 const C320_CPU_V22      = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.2';
@@ -224,33 +229,52 @@ async function discoverPonV21(config: SNMPConfig, board: number, pon: number): P
   const ponIndex = ponIndexV21(board, pon);
   const base = V21.base;
 
-  const nameWalk = await snmpWalk(config, `${base}${V21.onuName}.${ponIndex}`);
-  if (!nameWalk.success || !nameWalk.results) return [];
+  // Walk zxAnGponOnuRegTable col 1 (registration status) for this PON port.
+  // OID index format: .{col}.{ponIndex}.{onuSlot}.{onuId}
+  // VERIFIED WORKING: 3.50.12.1.1.1.268501248.1.1 = INTEGER: 1 on ZTE C320 V2.1.0
+  const regWalk = await snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`);
+  if (!regWalk.success || !regWalk.results) return [];
 
   const onus: any[] = [];
-  for (const [oid, nameVal] of Object.entries(nameWalk.results)) {
-    const onuId = extractLastId(oid);
-    if (onuId === null || onuId <= 0 || onuId > 128) continue;
+  for (const [oid, regVal] of Object.entries(regWalk.results)) {
+    // OID ends in .{ponIndex}.{onuSlot}.{onuId}
+    const parts = oid.split('.');
+    const onuId   = parseInt(parts[parts.length - 1], 10);
+    const onuSlot = parseInt(parts[parts.length - 2], 10);
+    if (isNaN(onuId) || isNaN(onuSlot) || onuId <= 0 || onuId > 128) continue;
+    if (parseInt(regVal) !== 1) continue; // skip non-registered ONUs
 
-    const statusR = await snmpGet(config, `${base}${V21.onuStatus}.${ponIndex}.${onuId}`);
-    const typeR   = await snmpGet(config, `${base}${V21.onuModel}.${ponIndex}.${onuId}`);
+    // Get oper state (col 6): 5=working/online on ZTE C320 V2.1
+    const operR  = await snmpGet(config, `${base}${V21.onuOperState}.${ponIndex}.${onuSlot}.${onuId}`);
+    // Get serial from zxAnGponOnuCfgTable col 5 (Hex-STRING, 8 bytes = vendor prefix + hex id)
     const serialR = await snmpGet(config, `${base}${V21.onuSerial}.${ponIndex}.${onuId}`);
+    // Get RX power from col 10 (raw positive integer in 0.001 dBm units, actual = -(raw/1000))
+    const rxR    = await snmpGet(config, `${base}${V21.onuRxPower}.${ponIndex}.${onuSlot}.${onuId}`);
 
-    const statusVal = statusR.success && statusR.value ? parseInt(statusR.value) : 0;
-    // In 3.50.11.2.1.6 run-state: 2=working/online, 1=initializing, 3=fault, 4=dying-gasp
-    const onuStatus = statusVal === 2 ? 'online' : statusVal === 0 ? 'unknown' : 'offline';
+    const operVal = operR.success && operR.value ? parseInt(operR.value) : 0;
+    // ZTE C320 reg table col 6: 5=working/online, 1=init, 2=registered, 3=auth, 4=working(alt)
+    const onuStatus = operVal === 5 || operVal === 4 ? 'online'
+                    : operVal === 0                   ? 'unknown'
+                    : 'offline';
+
+    let rxPower: number | null = null;
+    if (rxR.success && rxR.value) {
+      const raw = parseInt(rxR.value);
+      // Stored as positive integer in 0.001 dBm; negate to get actual received power in dBm.
+      // Valid GPON RX range: -8 to -30 dBm → raw 8000–30000
+      if (!isNaN(raw) && raw > 0 && raw < 50000) rxPower = -(raw / 1000);
+    }
 
     onus.push({
       frame: 1, slot: board,
-      // SNMP pon=1 maps to CLI port 0 (ZTE uses 0-based port numbers in CLI).
-      // Store as 0-based so it matches telnet discovery and port diagram keys.
+      // ZTE SNMP pon=1 maps to CLI/display port 0 (0-based).
       port: pon - 1,
       onuId,
-      serialNumber: hexBytesToSerial(serialR.value ?? nameVal ?? ''),
+      serialNumber: hexBytesToSerial(serialR.value ?? ''),
       macAddress: null,
       status: onuStatus,
-      onuType: typeR.value ?? null,
-      rxPower: null,
+      onuType: null,
+      rxPower,
     });
   }
   return onus;
