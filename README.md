@@ -469,19 +469,30 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
-### v2.29.16 — 2026-05-07
+### v2.29.17 — 2026-05-08
 
 ### Fixed
-- **WireGuard peer hilang setelah reboot/re-install** — Root cause: `install-wg-server.sh` membuat ulang `wg0.conf` tanpa peer saat dijalankan ulang. Dibuat `wg-peer-watchdog.sh` yang berjalan tiap 5 menit via cron — otomatis restore peer dari database jika hilang dari `wg0.conf`.
-- **LocalNetworks tidak tersimpan di DB** — API `POST /api/network/vps-wg-peer` kini menyimpan `localNetworks` ke kolom `description` (`localNets=x.x.x.x/yy,...`) agar watchdog bisa restore AllowedIPs dengan benar.
+- **ONU List selalu kosong (0/0)** — Root cause 3 bug sekaligus:
+  1. **SNMP parser gagal parse OID** — NET-SNMP mengembalikan format `iso.3.6.1...` (dengan prefix `iso.`) tapi regex hanya cocok `^[\d.]+`. Diperbaiki: tambah flag `-On` ke `snmpget`/`snmpwalk` agar output selalu numeric (`1.3.6.1...`), dan update regex untuk handle leading dot.
+  2. **OID status salah (V2.1)** — OID `.3.31.4.1.100` mengembalikan INTEGER: 1 untuk SEMUA 8 slot per PON (bukan status ONU individual). Diperbaiki ke tabel `3.50.11.2` yang terbukti via live SNMP test.
+  3. **Hex-STRING serial gagal parse** — Type prefix `Hex-STRING:` (dengan tanda hubung) tidak cocok dengan regex `\w+:`. Diperbaiki regex ke `[\w-]+:`.
+- **Status ONU terbalik** — OID `3.50.11.2.1.6`: nilai `2=online` (bukan `1=online`). Terbukti dari ONU dengan uptime 83 hari yang return status=2.
+- **Port numbering salah** — SNMP V2.1 `pon=1` harus disimpan sebagai `port=0` (ZTE CLI pakai 0-based port). Diperbaiki dengan offset `pon - 1`.
+- **Serial number salah format** — ZTE GPON serial 8 bytes: 4 bytes ASCII vendor prefix + 4 bytes hex suffix. Misal `5A 54 45 47 DA 59 18 AC` → `ZTEGDA5918AC`. Konversi sebelumnya tidak benar.
+- **Temperature menampilkan nilai tidak valid** — OID `3.50.12.1.1.4` mengembalikan `1` (bukan suhu). Ditambah validasi range 10–85°C agar nilai tidak masuk akal ditolak.
+- **Poll Now tidak ada feedback** — Tambah loading state (`polling` state + spinner) dan alert jika gagal.
 
-### Added
-- **`/usr/local/bin/wg-peer-watchdog.sh`** — Script watchdog WireGuard di VPS: cek semua peer aktif dari DB, restore ke `wg0.conf` + `wg syncconf` jika hilang. Crontab: `*/5 * * * *`.
-- **`scripts/wg-peer-watchdog.sh`** — Source script tersimpan di repo untuk referensi.
+### Changed
+- **OID profile ZTE C320 V2.1** diupdate ke tabel `3.50.11.2` yang sudah diverifikasi live:
+  - `onuName`: `.3.50.11.2.1.1` (vendor prefix string, dipakai untuk walk discovery)
+  - `onuSerial`: `.3.50.11.2.1.3` (Hex-STRING 8 bytes)
+  - `onuStatus`: `.3.50.11.2.1.6` (INTEGER: 2=online, 1=init, 3=fault)
+  - `onuModel`: `.3.50.11.2.1.9` (STRING model name)
 
 ### Files
-- `src/app/api/network/vps-wg-peer/route.ts` — Simpan localNetworks ke `description` saat create/update vpnClient
-- `scripts/wg-peer-watchdog.sh` — Script watchdog WireGuard peer
+- `src/lib/olt/snmp.ts` — Tambah `-On` flag, fix regex parser untuk `iso.` prefix dan `Hex-STRING:` type
+- `src/lib/olt/vendors/zte.ts` — Update V21 OID profile, fix serial conversion, fix status mapping, fix port offset, fix temperature validation
+- `src/app/admin/olt/[id]/page.tsx` — Tambah `polling` state + spinner + error feedback pada Poll Now
 
 ### v2.29.15 — 2026-05-07
 
