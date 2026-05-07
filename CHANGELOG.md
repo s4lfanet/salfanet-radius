@@ -6,6 +6,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.24] — 2026-05-07
+### Changed
+- **ZTE C320 chassis diagram redesign** — Ganti tampilan horizontal strip (slot chip berjejer) ke layout **vertical rack blade** ala NMS profesional: setiap slot ditampilkan sebagai baris horizontal (card label | port grid | slot number), FAN column di kiri dengan animasi, 6 stats card di header (Uptime, Chassis Temp, Avg CPU, Avg Memory, Active Cards, Fan Status), legend di bawah (Online/Disabled/Admin UP Port DOWN/LOS ONU/Unregistered), dan indikator LED PWR/SYS/ALM di header. Port squares 6×24px berwarna dengan dot di dalam (hijau=online, merah=LOS, oranye=partial, biru=uplink, kosong=slate). Badge kuning kecil muncul di atas port yang punya unregistered ONU.
+
+### Files
+- `src/app/admin/olt/[id]/page.tsx` — Rewrite `ZTEChassisView` dari horizontal chip → vertical rack blade NMS-style
+
+---
+
 ## [2.29.23] — 2026-05-10
 ### Added
 - **Realistic ZTE C320 chassis diagram** — Halaman detail OLT kini menampilkan diagram front-panel chassis ZTE C320 dengan semua 18 slot: MCU-A (slot 0), 14 service card slots (1–14), 2 uplink slots (15–16, GICF), MCU-B (slot 17), plus FAN dan PWR di kiri/kanan. Setiap slot menampilkan card type label (GTGQ/GTGH/GTGO/GICF/MCUD1), grid port berwarna (hijau=online, oranye=partial, merah=offline, hitam=kosong), dan slot kosong ditampilkan gelap. Chassis disertai panel detail per-port (persentase online, avg RX power) di bawahnya
