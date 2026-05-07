@@ -469,6 +469,25 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.23 — 2026-05-10
+
+### Added
+- **Realistic ZTE C320 chassis diagram** — Halaman detail OLT kini menampilkan diagram front-panel chassis ZTE C320 dengan semua 18 slot: MCU-A (slot 0), 14 service card slots (1–14), 2 uplink slots (15–16, GICF), MCU-B (slot 17), plus FAN dan PWR di kiri/kanan. Setiap slot menampilkan card type label (GTGQ/GTGH/GTGO/GICF/MCUD1), grid port berwarna (hijau=online, oranye=partial, merah=offline, hitam=kosong), dan slot kosong ditampilkan gelap. Chassis disertai panel detail per-port (persentase online, avg RX power) di bawahnya
+- **ONU registration modal** — Tombol "Register" muncul di kolom aksi tabel ONU untuk ONU yang berstatus `auth_failed` (unregistered). Tombol membuka modal yang menampilkan: form ONU ID, ONU type (ZTE-F609, F660, F673, F600W, CZTE, All, dll), VLAN, TCONT profile (1G/100M/50M/20M/10M), deskripsi, serta preview command Telnet yang akan dikirim ke OLT
+- **ONU register API** (`POST /api/olt/[id]/onus/register`) — Endpoint baru yang membangun dan mengirim command registrasi ZTE via Telnet (`configure terminal → interface gpon-olt → onu … type All sn … → tcont → gemport → service-port → exit/end`) menggunakan `executeMultipleCommands()`
+- **Telnet multi-command** (`executeMultipleCommands()` di `telnet.ts`) — Fungsi baru yang membuat expect script untuk mengirim banyak command sekaligus ke OLT via sesi Telnet, menunggu prompt `[>#]` setelah setiap command
+- **Chassis API** (`GET /api/olt/[id]/chassis`) — Endpoint baru yang mengembalikan layout slot chassis ZTE C320 beserta data per-port dari DB dan SNMP
+
+### Changed
+- **ONU action column** — Untuk ONU unregistered (`auth_failed`), kolom aksi menampilkan tombol "Register" (hijau) alih-alih tombol "Reboot"
+- **Port diagram tab** — Diganti dari layout grup horizontal lama (`OLTPortDiagram`) ke komponen `ZTEChassisView` baru yang realistis
+
+### Files
+- `src/app/admin/olt/[id]/page.tsx` — Ganti `OLTPortDiagram`/`getOLTTemplate` dengan `ZTEChassisView`; tambah `ONURegisterModal`; tambah state `registeringOnu`; tombol Register di tabel ONU
+- `src/app/api/olt/[id]/onus/register/route.ts` — **NEW** POST endpoint registrasi ONU via Telnet
+- `src/app/api/olt/[id]/chassis/route.ts` — **NEW** GET endpoint layout chassis
+- `src/lib/olt/telnet.ts` — Tambah `executeMultipleCommands()`
+
 ### v2.29.22 — 2026-05-09
 
 ### Added
@@ -522,18 +541,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/lib/olt/vendors/zte.ts` — Tambah `ZTE_V21_PON_TABLE` OID, fungsi `discoverPONPortsV21()`, update `discoverONUsSNMP` ke dynamic loop
 - `src/app/admin/olt/[id]/page.tsx` — Tambah `maxPortPerSlot` tracking, `getEffectivePortCount()`, gunakan di render port diagram
-
-### v2.29.18 — 2026-05-07
-
-### Fixed
-- **HTTP 500 pada `/api/olt/[id]`** — BigInt fields (`bandwidthUp`, `bandwidthDown` di `onuStatuses`, serta `uptime`, `rxBytes`, `txBytes`, `rxErrors`, `txErrors` di `performanceMetrics`) tidak dikonversi sebelum JSON serialization. Diperbaiki dengan map eksplisit `Number()` di response.
-- **HTTP 500 pada `/api/olt/metrics`** — Sama, BigInt fields di `oltPerformanceMetric` tidak dikonversi. Diperbaiki.
-- **Telnet tidak tampilkan username/password** — Saat hanya Telnet enabled (SSH disabled), field username/password tidak muncul di Settings tab OLT detail. Kini username/password tampil di bagian Telnet jika SSH dinonaktifkan.
-
-### Files
-- `src/app/api/olt/[id]/route.ts` — Konversi BigInt di `performanceMetrics` dan `onuStatuses` sebelum JSON response
-- `src/app/api/olt/metrics/route.ts` — Konversi BigInt di metrics response
-- `src/app/admin/olt/[id]/page.tsx` — Tampilkan username/password di Telnet section saat SSH disabled
 
 <!-- AUTO-CHANGELOG:END -->
 
