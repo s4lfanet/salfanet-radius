@@ -231,7 +231,12 @@ async function discoverPONPortsV21(config: SNMPConfig): Promise<Array<{board: nu
 
 // ── SNMP ONU Discovery — V2.1 ────────────────────────────────────────────────
 
-async function discoverPonV21(config: SNMPConfig, board: number, pon: number): Promise<any[]> {
+async function discoverPonV21(
+  config: SNMPConfig,
+  board: number,
+  pon: number,
+  telnetConfig?: TelnetConfig | null,
+): Promise<any[]> {
   const ponIndex = ponIndexV21(board, pon);
   const base = V21.base;
 
@@ -306,17 +311,51 @@ async function discoverPonV21(config: SNMPConfig, board: number, pon: number): P
   // Walk returns both registered (onuId=1) and unregistered (onuId=2) entries.
   const seenWalk = await snmpWalk(config, `${ZTE_V21_SEEN_ONU_TABLE}.${ponIndex}`);
   if (seenWalk.success && seenWalk.results) {
+    const unregisteredIds: number[] = [];
     for (const oid of Object.keys(seenWalk.results)) {
-      // OID format: .{ponIndex}.{onuSlot}.{onuId} → last component is onuId
+      // OID format: {base}.{ponIndex}.{onuSlot}.{onuId} — last component is onuId
       const parts = oid.split('.');
       const onuId = parseInt(parts[parts.length - 1], 10);
       if (isNaN(onuId) || onuId <= 0 || onuId > 128) continue;
       if (registeredIds.has(onuId)) continue; // already discovered as registered
+      unregisteredIds.push(onuId);
+    }
 
-      // Serial not accessible for unregistered ONUs (cfg table has no entry)
+    // Try to get serial numbers of unregistered ONUs via Telnet.
+    // SNMP cfg table has no entry for unregistered ONUs so serial = null there.
+    // ZTE C320 CLI: show pon onu uncfg gpon-olt_1/{board}/{pon}
+    // Output: "gpon-onu_1/1/1:2  ZTEGDA5918AC  ..." or "  2  ZTEGDA5918AC"
+    const uncfgSerials = new Map<number, string>();
+    if (unregisteredIds.length > 0 && telnetConfig) {
+      try {
+        const telnetResult = await executeCommand(
+          telnetConfig,
+          `show pon onu uncfg gpon-olt_1/${board}/${pon}`,
+        );
+        if (telnetResult.success && telnetResult.output) {
+          for (const line of telnetResult.output.split('\n')) {
+            // Format A: "gpon-onu_1/1/1:2  ZTEGDA5918AC  ..."
+            const mA = line.match(/gpon-onu_\d+\/\d+\/\d+:(\d+)\s+([A-Z0-9]{8,16})/i);
+            if (mA) {
+              uncfgSerials.set(parseInt(mA[1]), mA[2].toUpperCase());
+              continue;
+            }
+            // Format B: "  2    ZTEGDA5918AC" (numeric ONU-ID followed by SN)
+            const mB = line.match(/^\s*(\d{1,3})\s+([A-Z0-9]{8,16})\s/);
+            if (mB) {
+              const id = parseInt(mB[1]);
+              if (id > 0 && id <= 128) uncfgSerials.set(id, mB[2].toUpperCase());
+            }
+          }
+        }
+      } catch { /* Telnet unavailable — continue without serial */ }
+    }
+
+    for (const onuId of unregisteredIds) {
       onus.push({
         frame: 1, slot: board, port: pon - 1, onuId,
-        serialNumber: null, macAddress: null,
+        serialNumber: uncfgSerials.get(onuId) ?? null,
+        macAddress: null,
         status: 'unregistered',
         description: null, onuType: null, rxPower: null, distance: null,
       });
@@ -374,7 +413,8 @@ async function discoverPonV22(config: SNMPConfig, board: number, pon: number): P
  */
 export async function discoverONUsSNMP(
   config: SNMPConfig,
-  firmwareVersion?: string | null
+  firmwareVersion?: string | null,
+  telnetConfig?: TelnetConfig | null,
 ): Promise<any[]> {
   const useV22 = isV22(firmwareVersion);
   const onus: any[] = [];
@@ -384,7 +424,7 @@ export async function discoverONUsSNMP(
     const ponPorts = await discoverPONPortsV21(config);
     for (const { board, pon } of ponPorts) {
       try {
-        const ponOnus = await discoverPonV21(config, board, pon);
+        const ponOnus = await discoverPonV21(config, board, pon, telnetConfig);
         onus.push(...ponOnus);
       } catch { /* empty/unprovisioned PON — skip */ }
     }

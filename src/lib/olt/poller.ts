@@ -94,7 +94,7 @@ export async function pollOLT(oltId: string): Promise<{ success: boolean; error?
     // Discover ONUs — try SNMP first (ZTE C320 supports SNMP-based ONU discovery)
     if (snmpConfig && isOnline && typeof (vendor as any).discoverONUsSNMP === 'function') {
       try {
-        discoveredOnus = await (vendor as any).discoverONUsSNMP(snmpConfig, olt.firmwareVersion);
+        discoveredOnus = await (vendor as any).discoverONUsSNMP(snmpConfig, olt.firmwareVersion, telnetConfig);
       } catch { /* fallback to SSH/Telnet */ }
     }
     if (discoveredOnus.length === 0 && sshConfig && isOnline) {
@@ -268,6 +268,7 @@ async function upsertONU(
         updatedAt: now,
       },
       update: {
+        ...(onu.serialNumber != null ? { serialNumber: onu.serialNumber } : {}),
         status,
         description: onu.description ?? undefined,
         rxPower,
