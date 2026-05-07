@@ -6,6 +6,20 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.18] — 2026-05-07
+
+### Fixed
+- **HTTP 500 pada `/api/olt/[id]`** — BigInt fields (`bandwidthUp`, `bandwidthDown` di `onuStatuses`, serta `uptime`, `rxBytes`, `txBytes`, `rxErrors`, `txErrors` di `performanceMetrics`) tidak dikonversi sebelum JSON serialization. Diperbaiki dengan map eksplisit `Number()` di response.
+- **HTTP 500 pada `/api/olt/metrics`** — Sama, BigInt fields di `oltPerformanceMetric` tidak dikonversi. Diperbaiki.
+- **Telnet tidak tampilkan username/password** — Saat hanya Telnet enabled (SSH disabled), field username/password tidak muncul di Settings tab OLT detail. Kini username/password tampil di bagian Telnet jika SSH dinonaktifkan.
+
+### Files
+- `src/app/api/olt/[id]/route.ts` — Konversi BigInt di `performanceMetrics` dan `onuStatuses` sebelum JSON response
+- `src/app/api/olt/metrics/route.ts` — Konversi BigInt di metrics response
+- `src/app/admin/olt/[id]/page.tsx` — Tampilkan username/password di Telnet section saat SSH disabled
+
+---
+
 ## [2.29.17] — 2026-05-08
 
 ### Fixed

@@ -1,6 +1,6 @@
 {
   "name": "salfanet-radius",
-  "version": "2.29.17",
+  "version": "2.29.18",
   "private": false,
   "scripts": {
     "dev": "next dev",
