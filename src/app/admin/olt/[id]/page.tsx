@@ -30,6 +30,7 @@ interface ONU {
   serialNumber: string | null;
   macAddress: string | null;
   status: string;
+  description: string | null;
   rxPower: number | null;
   txPower: number | null;
   temperature: number | null;
@@ -851,9 +852,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   </th>
                   <th className="pb-2 pr-4">Location</th>
                   <th className="pb-2 pr-4">Serial / MAC</th>
+                  <th className="pb-2 pr-4">Name</th>
                   <th className="pb-2 pr-4">Status</th>
                   <th className="pb-2 pr-4">Signal</th>
                   <th className="pb-2 pr-4">RX Power</th>
+                  <th className="pb-2 pr-4">Distance</th>
                   <th className="pb-2 pr-4">Customer</th>
                   <th className="pb-2 pr-4">Last Seen</th>
                   <th className="pb-2">Actions</th>
@@ -879,8 +882,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         <div className="font-mono text-xs">{onu.serialNumber ?? onu.macAddress ?? 'N/A'}</div>
                       </td>
                       <td className="py-2 pr-4">
-                        <span className={`font-medium capitalize ${getStatusColor(onu.status)}`}>
-                          {onu.status.replace('_', ' ')}
+                        <div className="text-xs text-gray-700 dark:text-gray-300">{onu.description ?? <span className="text-gray-400">—</span>}</div>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className={`font-medium ${getStatusColor(onu.status)}`}>
+                          {onu.status === 'auth_failed' ? 'Unregistered' : onu.status.replace(/_/g, ' ')}
                         </span>
                       </td>
                       <td className="py-2 pr-4">
@@ -895,6 +901,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             {onu.rxPower.toFixed(2)} dBm
                           </span>
                         ) : 'N/A'}
+                      </td>
+                      <td className="py-2 pr-4 text-xs">
+                        {onu.distance !== null ? (
+                          <span className="font-mono">{onu.distance} m</span>
+                        ) : <span className="text-gray-400">N/A</span>}
                       </td>
                       <td className="py-2 pr-4">
                         {onu.customer ? (
@@ -942,7 +953,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                 })}
                 {filteredOnus.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-gray-400">
+                    <td colSpan={10} className="py-8 text-center text-gray-400">
                       No ONUs found
                     </td>
                   </tr>

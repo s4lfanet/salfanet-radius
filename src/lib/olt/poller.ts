@@ -232,9 +232,10 @@ async function upsertONU(
 
     const status = mapOnuStatus(onu.status);
     const now = new Date();
-    // Use SNMP-discovered rxPower as fallback if optical not available
+    // Use SNMP-discovered rxPower/distance as fallback if optical info not available
     const rxPower = opticalInfo?.rxPower ?? onu.rxPower ?? null;
-    const txPower = opticalInfo?.txPower ?? null;
+    const txPower = opticalInfo?.txPower ?? onu.txPower ?? null;
+    const distance = opticalInfo?.distance ?? onu.distance ?? null;
 
     await prisma.oltOnuStatus.upsert({
       where: {
@@ -256,9 +257,10 @@ async function upsertONU(
         serialNumber: onu.serialNumber ?? null,
         macAddress: onu.macAddress ?? null,
         status,
+        description: onu.description ?? null,
         rxPower,
         txPower,
-        distance: opticalInfo?.distance ?? null,
+        distance,
         temperature: opticalInfo?.temperature ?? null,
         voltage: opticalInfo?.voltage ?? null,
         firstSeenAt: now,
@@ -267,9 +269,10 @@ async function upsertONU(
       },
       update: {
         status,
+        description: onu.description ?? undefined,
         rxPower,
         txPower,
-        distance: opticalInfo?.distance ?? null,
+        distance,
         temperature: opticalInfo?.temperature ?? null,
         voltage: opticalInfo?.voltage ?? null,
         lastSeenAt: now,

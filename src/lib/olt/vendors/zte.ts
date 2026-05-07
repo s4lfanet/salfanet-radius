@@ -19,17 +19,23 @@ const V21 = {
   base: '1.3.6.1.4.1.3902.1012',
   // zxAnGponOnuCfgTable (3.28.1.1) — indexed by .{col}.{ponIndex}.{onuId}
   // VERIFIED WORKING on ZTE C320 V2.1.0 via live SNMP walk
-  onuName:      '.3.28.1.1.2',    // ONU name/description string
-  onuSerial:    '.3.28.1.1.5',    // Serial (Hex-STRING: 8 bytes = 4 ASCII vendor + 4 hex id)
+  onuDescription: '.3.28.1.1.2',    // ONU name/description string (e.g. "test-customer")
+  onuSerial:      '.3.28.1.1.5',    // Serial (Hex-STRING: 8 bytes = 4 ASCII vendor + 4 hex id)
   // zxAnGponOnuRegTable (3.50.12.1.1) — indexed by .{col}.{ponIndex}.{onuSlot}.{onuId}
   // VERIFIED WORKING on ZTE C320 V2.1.0 via live SNMP walk
-  onuRegStatus: '.3.50.12.1.1.1',  // Registration status: 1=registered/active
-  onuOperState: '.3.50.12.1.1.6',  // Oper state: 5=working/online, others=offline
-  onuRxPower:   '.3.50.12.1.1.10', // ONU RX power (raw positive int, dBm = -(raw/1000))
-  board1Base:  268500992,           // pon1 index = board1Base + 1*256 = 268501248
-  board2Base:  268509184,           // pon1 index = board2Base + 1*256 = 268509440
+  onuRegStatus: '.3.50.12.1.1.1',   // Registration status: 1=registered/active
+  onuOperState: '.3.50.12.1.1.6',   // Oper state: 5=working/online, others=offline
+  onuRxPower:   '.3.50.12.1.1.10',  // ONU RX power (raw positive int, dBm = -(raw/1000))
+  onuDistance:  '.3.50.12.1.1.21',  // ONU distance from OLT in meters (VERIFIED: 328m on test site)
+  board1Base:  268500992,            // pon1 index = board1Base + 1*256 = 268501248
+  board2Base:  268509184,            // pon1 index = board2Base + 1*256 = 268509440
   ponIncrement: 256,
 };
+// Seen-ONU table: zxAnGponOnuDiscoveredInfoTable (3.27.4.1.1)
+// Contains ALL ONUs seen on a PON port including unregistered ones.
+// Indexed by .{ponIndex}.{onuSlot}.{onuId} — only col 1 accessible.
+// VERIFIED: returns INTEGER: 2 for both registered (onuId=1) and unregistered (onuId=2).
+const ZTE_V21_SEEN_ONU_TABLE = '1.3.6.1.4.1.3902.1012.3.27.4.1.1';
 
 // ── ZTE C320 V2.2+ OID Profile (base: 1.3.6.1.4.1.3902.1082) ───────────────
 const V22 = {
@@ -233,50 +239,90 @@ async function discoverPonV21(config: SNMPConfig, board: number, pon: number): P
   // OID index format: .{col}.{ponIndex}.{onuSlot}.{onuId}
   // VERIFIED WORKING: 3.50.12.1.1.1.268501248.1.1 = INTEGER: 1 on ZTE C320 V2.1.0
   const regWalk = await snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`);
-  if (!regWalk.success || !regWalk.results) return [];
 
   const onus: any[] = [];
-  for (const [oid, regVal] of Object.entries(regWalk.results)) {
-    // OID ends in .{ponIndex}.{onuSlot}.{onuId}
-    const parts = oid.split('.');
-    const onuId   = parseInt(parts[parts.length - 1], 10);
-    const onuSlot = parseInt(parts[parts.length - 2], 10);
-    if (isNaN(onuId) || isNaN(onuSlot) || onuId <= 0 || onuId > 128) continue;
-    if (parseInt(regVal) !== 1) continue; // skip non-registered ONUs
+  const registeredIds = new Set<number>();
 
-    // Get oper state (col 6): 5=working/online on ZTE C320 V2.1
-    const operR  = await snmpGet(config, `${base}${V21.onuOperState}.${ponIndex}.${onuSlot}.${onuId}`);
-    // Get serial from zxAnGponOnuCfgTable col 5 (Hex-STRING, 8 bytes = vendor prefix + hex id)
-    const serialR = await snmpGet(config, `${base}${V21.onuSerial}.${ponIndex}.${onuId}`);
-    // Get RX power from col 10 (raw positive integer in 0.001 dBm units, actual = -(raw/1000))
-    const rxR    = await snmpGet(config, `${base}${V21.onuRxPower}.${ponIndex}.${onuSlot}.${onuId}`);
+  if (regWalk.success && regWalk.results) {
+    for (const [oid, regVal] of Object.entries(regWalk.results)) {
+      // OID ends in .{ponIndex}.{onuSlot}.{onuId}
+      const parts = oid.split('.');
+      const onuId   = parseInt(parts[parts.length - 1], 10);
+      const onuSlot = parseInt(parts[parts.length - 2], 10);
+      if (isNaN(onuId) || isNaN(onuSlot) || onuId <= 0 || onuId > 128) continue;
+      if (parseInt(regVal) !== 1) continue; // skip non-registered ONUs
+      registeredIds.add(onuId);
 
-    const operVal = operR.success && operR.value ? parseInt(operR.value) : 0;
-    // ZTE C320 reg table col 6: 5=working/online, 1=init, 2=registered, 3=auth, 4=working(alt)
-    const onuStatus = operVal === 5 || operVal === 4 ? 'online'
-                    : operVal === 0                   ? 'unknown'
-                    : 'offline';
+      // Fetch all ONU details in parallel for better performance
+      const [operR, serialR, rxR, descR, distR] = await Promise.all([
+        // reg table (indexed by .{col}.{ponIndex}.{onuSlot}.{onuId})
+        snmpGet(config, `${base}${V21.onuOperState}.${ponIndex}.${onuSlot}.${onuId}`),
+        // cfg table (indexed by .{col}.{ponIndex}.{onuId} — no onuSlot component)
+        snmpGet(config, `${base}${V21.onuSerial}.${ponIndex}.${onuId}`),
+        snmpGet(config, `${base}${V21.onuRxPower}.${ponIndex}.${onuSlot}.${onuId}`),
+        snmpGet(config, `${base}${V21.onuDescription}.${ponIndex}.${onuId}`),
+        snmpGet(config, `${base}${V21.onuDistance}.${ponIndex}.${onuSlot}.${onuId}`),
+      ]);
 
-    let rxPower: number | null = null;
-    if (rxR.success && rxR.value) {
-      const raw = parseInt(rxR.value);
-      // Stored as positive integer in 0.001 dBm; negate to get actual received power in dBm.
-      // Valid GPON RX range: -8 to -30 dBm → raw 8000–30000
-      if (!isNaN(raw) && raw > 0 && raw < 50000) rxPower = -(raw / 1000);
+      const operVal = operR.success && operR.value ? parseInt(operR.value) : 0;
+      // ZTE C320 reg table col 6: 5=working/online, 1=init, 2=registered, 3=auth, 4=working(alt)
+      const onuStatus = operVal === 5 || operVal === 4 ? 'online'
+                      : operVal === 0                   ? 'unknown'
+                      : 'offline';
+
+      let rxPower: number | null = null;
+      if (rxR.success && rxR.value) {
+        const raw = parseInt(rxR.value);
+        // Stored as positive integer in 0.001 dBm; negate to get actual received power in dBm.
+        // Valid GPON RX range: -8 to -30 dBm → raw 8000–30000
+        if (!isNaN(raw) && raw > 0 && raw < 50000) rxPower = -(raw / 1000);
+      }
+
+      let distance: number | null = null;
+      if (distR.success && distR.value) {
+        const d = parseInt(distR.value);
+        // VERIFIED: 328m on test site; valid GPON range: 0–20km
+        if (!isNaN(d) && d > 0 && d < 100000) distance = d;
+      }
+
+      onus.push({
+        frame: 1, slot: board,
+        // ZTE SNMP pon=1 maps to CLI/display port 0 (0-based).
+        port: pon - 1,
+        onuId,
+        serialNumber: hexBytesToSerial(serialR.value ?? ''),
+        macAddress: null,
+        status: onuStatus,
+        description: descR.success && descR.value ? descR.value.trim() : null,
+        onuType: null,
+        rxPower,
+        distance,
+      });
     }
-
-    onus.push({
-      frame: 1, slot: board,
-      // ZTE SNMP pon=1 maps to CLI/display port 0 (0-based).
-      port: pon - 1,
-      onuId,
-      serialNumber: hexBytesToSerial(serialR.value ?? ''),
-      macAddress: null,
-      status: onuStatus,
-      onuType: null,
-      rxPower,
-    });
   }
+
+  // Discover unregistered ONUs via the seen-ONU table (zxAnGponOnuDiscoveredInfoTable).
+  // This table contains ALL ONUs the OLT has seen, including unauthorized/unregistered ones.
+  // Walk returns both registered (onuId=1) and unregistered (onuId=2) entries.
+  const seenWalk = await snmpWalk(config, `${ZTE_V21_SEEN_ONU_TABLE}.${ponIndex}`);
+  if (seenWalk.success && seenWalk.results) {
+    for (const oid of Object.keys(seenWalk.results)) {
+      // OID format: .{ponIndex}.{onuSlot}.{onuId} → last component is onuId
+      const parts = oid.split('.');
+      const onuId = parseInt(parts[parts.length - 1], 10);
+      if (isNaN(onuId) || onuId <= 0 || onuId > 128) continue;
+      if (registeredIds.has(onuId)) continue; // already discovered as registered
+
+      // Serial not accessible for unregistered ONUs (cfg table has no entry)
+      onus.push({
+        frame: 1, slot: board, port: pon - 1, onuId,
+        serialNumber: null, macAddress: null,
+        status: 'unregistered',
+        description: null, onuType: null, rxPower: null, distance: null,
+      });
+    }
+  }
+
   return onus;
 }
 
