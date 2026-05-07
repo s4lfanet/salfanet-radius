@@ -38,11 +38,20 @@ const V22 = {
   idIncrement: 1,              typeIncrement: 256,
 };
 
-// ── General ZTE C300/C600 performance OIDs ───────────────────────────────────
+// ── ZTE Performance OIDs (tried in order) ───────────────────────────────────
+// C320 V2.1 board-level OIDs (instance = board base index, e.g. 268500992)
+const C320_TEMP_V21     = '1.3.6.1.4.1.3902.1012.3.50.12.1.1.4';  // walk → first value
+const C320_CPU_V21      = '1.3.6.1.4.1.3902.1012.3.50.11.1.1.4';  // walk → first value
+const C320_MEM_V21      = '1.3.6.1.4.1.3902.1012.3.50.11.1.1.3';  // walk → first value
+// C320 V2.2 board OIDs
+const C320_TEMP_V22     = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.4';
+const C320_CPU_V22      = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.2';
+const C320_MEM_V22      = '1.3.6.1.4.1.3902.1082.500.20.2.1.2.1.3';
+// Generic ZTE C300/C600 fallback
 const ZTE_OIDS = {
-  temperature: '1.3.6.1.4.1.3902.1015.1015.6.1.3.1.2',
-  cpuUsage:    '1.3.6.1.4.1.3902.1015.1015.6.1.1.1.5',
-  memoryUsage: '1.3.6.1.4.1.3902.1015.1015.6.1.1.1.6',
+  temperature: '1.3.6.1.4.1.3902.1015.1015.6.1.3.1.2.0',
+  cpuUsage:    '1.3.6.1.4.1.3902.1015.1015.6.1.1.1.5.0',
+  memoryUsage: '1.3.6.1.4.1.3902.1015.1015.6.1.1.1.6.0',
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -78,21 +87,48 @@ function hexBytesToSerial(val: string): string {
 
 // ── SNMP Performance Metrics ─────────────────────────────────────────────────
 
+/** Walk a table OID and return the first numeric value found */
+async function walkFirstNumber(config: SNMPConfig, baseOid: string): Promise<number | null> {
+  const res = await snmpWalk(config, baseOid);
+  if (res.success && res.results) {
+    for (const val of Object.values(res.results)) {
+      const n = parseFloat(val);
+      if (!isNaN(n) && n > 0) return n;
+    }
+  }
+  return null;
+}
+
 export async function getTemperature(config: SNMPConfig): Promise<number | null> {
-  const result = await snmpGet(config, `${ZTE_OIDS.temperature}.0`);
-  if (result.success && result.value) return parseFloat(result.value);
+  // 1) C320 V2.1
+  const t21 = await walkFirstNumber(config, C320_TEMP_V21);
+  if (t21 !== null) return t21;
+  // 2) C320 V2.2
+  const t22 = await walkFirstNumber(config, C320_TEMP_V22);
+  if (t22 !== null) return t22;
+  // 3) C300/C600 generic
+  const res = await snmpGet(config, ZTE_OIDS.temperature);
+  if (res.success && res.value) return parseFloat(res.value);
   return null;
 }
 
 export async function getCpuUsage(config: SNMPConfig): Promise<number | null> {
-  const result = await snmpGet(config, `${ZTE_OIDS.cpuUsage}.0`);
-  if (result.success && result.value) return parseInt(result.value);
+  const c21 = await walkFirstNumber(config, C320_CPU_V21);
+  if (c21 !== null) return c21;
+  const c22 = await walkFirstNumber(config, C320_CPU_V22);
+  if (c22 !== null) return c22;
+  const res = await snmpGet(config, ZTE_OIDS.cpuUsage);
+  if (res.success && res.value) return parseInt(res.value);
   return null;
 }
 
 export async function getMemoryUsage(config: SNMPConfig): Promise<number | null> {
-  const result = await snmpGet(config, `${ZTE_OIDS.memoryUsage}.0`);
-  if (result.success && result.value) return parseInt(result.value);
+  const m21 = await walkFirstNumber(config, C320_MEM_V21);
+  if (m21 !== null) return m21;
+  const m22 = await walkFirstNumber(config, C320_MEM_V22);
+  if (m22 !== null) return m22;
+  const res = await snmpGet(config, ZTE_OIDS.memoryUsage);
+  if (res.success && res.value) return parseInt(res.value);
   return null;
 }
 
@@ -215,6 +251,29 @@ function parseOnuInfo(output: string, frame: number, slot: number, port: number)
   return onus;
 }
 
+/** Parse output of `show gpon onu uncfg gpon-olt_x/y/z` */
+function parseUncfgOnuInfo(output: string, frame: number, slot: number, port: number): any[] {
+  const onus: any[] = [];
+  const lines = output.split('\n');
+  let onuIdCounter = 0;
+  for (const line of lines) {
+    // ZTE: "  SN: ZTEG12345678" or "  SN:ZTEG12345678"
+    const snMatch = line.match(/SN:\s*([0-9A-Za-z]{8,})/i);
+    if (snMatch) {
+      onuIdCounter++;
+      onus.push({
+        frame, slot, port,
+        onuId: 200 + onuIdCounter,  // virtual ID for unregistered (>128 to separate from registered)
+        serialNumber: snMatch[1].trim(),
+        macAddress: null,
+        status: 'unregistered',
+        rxPower: null,
+      });
+    }
+  }
+  return onus;
+}
+
 function parseOpticalInfo(output: string): any {
   const info: any = {};
   const rxMatch = output.match(/rx\s*power[^:]*:\s*([-\d.]+)/i);
@@ -230,10 +289,16 @@ export async function discoverONUs(config: TelnetConfig): Promise<any[]> {
   const onus: any[] = [];
   // C320: 2 boards (GCOB cards), 8 GPON ports each
   for (let slot = 1; slot <= 2; slot++) {
-    for (let port = 1; port <= 8; port++) {
-      const result = await executeCommand(config, `show gpon onu state gpon-olt_1/${slot}/${port}`);
-      if (result.success && result.output) {
-        onus.push(...parseOnuInfo(result.output, 1, slot, port));
+    for (let port = 0; port <= 7; port++) {
+      // Registered ONUs
+      const r = await executeCommand(config, `show gpon onu state gpon-olt_1/${slot}/${port}`);
+      if (r.success && r.output) {
+        onus.push(...parseOnuInfo(r.output, 1, slot, port));
+      }
+      // Unregistered ONUs
+      const u = await executeCommand(config, `show gpon onu uncfg gpon-olt_1/${slot}/${port}`);
+      if (u.success && u.output) {
+        onus.push(...parseUncfgOnuInfo(u.output, 1, slot, port));
       }
     }
   }
@@ -243,10 +308,16 @@ export async function discoverONUs(config: TelnetConfig): Promise<any[]> {
 export async function discoverONUsSSH(config: SSHConfig): Promise<any[]> {
   const onus: any[] = [];
   for (let slot = 1; slot <= 2; slot++) {
-    for (let port = 1; port <= 8; port++) {
-      const result = await sshExecute(config, `show gpon onu state gpon-olt_1/${slot}/${port}`);
-      if (result.success && result.output) {
-        onus.push(...parseOnuInfo(result.output, 1, slot, port));
+    for (let port = 0; port <= 7; port++) {
+      // Registered ONUs
+      const r = await sshExecute(config, `show gpon onu state gpon-olt_1/${slot}/${port}`);
+      if (r.success && r.output) {
+        onus.push(...parseOnuInfo(r.output, 1, slot, port));
+      }
+      // Unregistered ONUs
+      const u = await sshExecute(config, `show gpon onu uncfg gpon-olt_1/${slot}/${port}`);
+      if (u.success && u.output) {
+        onus.push(...parseUncfgOnuInfo(u.output, 1, slot, port));
       }
     }
   }

@@ -284,11 +284,12 @@ async function upsertONU(
 
 function mapOnuStatus(status: string): 'online' | 'offline' | 'dying_gasp' | 'los' | 'auth_failed' {
   switch (status?.toLowerCase()) {
-    case 'online':       return 'online';
-    case 'dying_gasp':   return 'dying_gasp';
-    case 'los':          return 'los';
-    case 'auth_failed':  return 'auth_failed';
-    default:             return 'offline';
+    case 'online':        return 'online';
+    case 'dying_gasp':    return 'dying_gasp';
+    case 'los':           return 'los';
+    case 'auth_failed':   return 'auth_failed';
+    case 'unregistered':  return 'auth_failed';  // map to auth_failed (closest match)
+    default:              return 'offline';
   }
 }
 

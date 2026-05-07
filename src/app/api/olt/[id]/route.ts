@@ -20,6 +20,10 @@ export async function GET(
     const olt = await prisma.networkOLT.findUnique({
       where: { id },
       include: {
+        routers: {
+          include: { router: { select: { id: true, name: true, ipAddress: true } } },
+          orderBy: { priority: 'asc' },
+        },
         onuStatuses: {
           where: onuStatus ? { status: onuStatus as any } : {},
           include: {
@@ -80,6 +84,7 @@ export async function PUT(
       sshEnabled, sshPort,
       username, password,
       monitoringEnabled, pollingInterval,
+      routerIds,
     } = body;
 
     const olt = await prisma.networkOLT.update({
@@ -101,6 +106,22 @@ export async function PUT(
         ...(pollingInterval !== undefined && { pollingInterval }),
       },
     });
+
+    // Update router assignments if provided
+    if (routerIds !== undefined && Array.isArray(routerIds)) {
+      await prisma.networkOLTRouter.deleteMany({ where: { oltId: id } });
+      if (routerIds.length > 0) {
+        await prisma.networkOLTRouter.createMany({
+          data: routerIds.map((routerId: string, index: number) => ({
+            id: crypto.randomUUID(),
+            oltId: id,
+            routerId,
+            priority: index,
+            isActive: true,
+          })),
+        });
+      }
+    }
 
     return NextResponse.json({ success: true, olt: { ...olt, uptime: Number(olt.uptime) } });
   } catch (error: any) {

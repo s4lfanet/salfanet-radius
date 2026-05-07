@@ -66,6 +66,7 @@ interface OLTDetail {
   alerts: any[];
   performanceMetrics: any[];
   monitoringLogs: any[];
+  routers: { id: string; routerId: string; router: { id: string; name: string; ipAddress: string } }[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -209,86 +210,109 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
     if (onu.rxPower !== null) portStats[key].rxPowers.push(onu.rxPower);
   }
 
+  // Returns color class for a GPON port (0-based portIndex)
   const getPortStyle = (group: PortGroupDef, portIndex: number) => {
     if (group.type === 'uplink') {
-      return { bg: 'bg-blue-600', border: 'border-blue-400', text: 'text-white', badge: 'UP' };
+      return { bg: 'bg-blue-700', border: 'border-blue-500', text: 'text-white', dot: 'bg-blue-400', label: `UP ${portIndex + 1}` };
     }
-    // portIndex is 0-based (display), DB stores ports 1-based → add 1 for lookup
-    const key = `${group.slot}/${portIndex + 1}`;
+    const key = `${group.slot}/${portIndex}`;  // DB stores port 0-based for ZTE
     const s = portStats[key];
     if (!s || s.total === 0) {
-      return { bg: 'bg-gray-600', border: 'border-gray-500', text: 'text-gray-300', badge: String(portIndex) };
+      return { bg: 'bg-gray-800', border: 'border-gray-600', text: 'text-gray-500', dot: 'bg-gray-700', label: `${portIndex}` };
     }
     if (s.online === s.total) {
-      return { bg: 'bg-green-500', border: 'border-green-300', text: 'text-white', badge: `${s.total}` };
+      return { bg: 'bg-green-800', border: 'border-green-500', text: 'text-white', dot: 'bg-green-400', label: `${s.total}` };
     }
     if (s.online === 0) {
-      return { bg: 'bg-red-600', border: 'border-red-400', text: 'text-white', badge: `${s.total}` };
+      return { bg: 'bg-red-900', border: 'border-red-600', text: 'text-white', dot: 'bg-red-500', label: `${s.total}` };
     }
-    return { bg: 'bg-orange-500', border: 'border-orange-300', text: 'text-white', badge: `${s.online}/${s.total}` };
+    return { bg: 'bg-orange-900', border: 'border-orange-500', text: 'text-white', dot: 'bg-orange-400', label: `${s.online}/${s.total}` };
   };
 
   const getPortTitle = (group: PortGroupDef, portIndex: number): string => {
-    // ZTE notation: 0/slot/portIndex (portIndex is 0-based on front panel)
-    const portId = `0/${group.slot < 0 ? 'uplink' : group.slot}/${portIndex}`;
-    if (group.type === 'uplink') return `${group.portType} Uplink Port ${portIndex}\n${portId}`;
-    // portIndex is 0-based for display; DB port is portIndex+1
-    const s = portStats[`${group.slot}/${portIndex + 1}`];
-    if (!s) return `Port ${portId}\n(kosong — tidak ada ONU)`;
+    if (group.type === 'uplink') return `${group.portType} Uplink Port ${portIndex + 1}`;
+    const s = portStats[`${group.slot}/${portIndex}`];
+    if (!s) return `Port 0/${group.slot}/${portIndex}\n(kosong — tidak ada ONU)`;
     const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
-    return `Port ${portId}\nONU: ${s.online} online / ${s.total} total${avgRx ? `\nAvg RX: ${avgRx} dBm` : ''}`;
+    return `Port 0/${group.slot}/${portIndex}\nONU: ${s.online} online / ${s.total} total${avgRx ? `\nAvg RX: ${avgRx} dBm` : ''}`;
   };
 
   return (
     <div className="space-y-4">
-      {/* Chassis visual */}
-      <div className="bg-gray-900 rounded-xl overflow-hidden border-2 border-gray-700 shadow-lg">
-        {/* Chassis top bar */}
-        <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
+      {/* ── Real Front-Panel Style Chassis ── */}
+      <div className="bg-[#1a1a1a] rounded-lg overflow-hidden border border-[#3a3a3a] shadow-2xl select-none">
+
+        {/* Top bezel with model + LEDs */}
+        <div className="flex items-center justify-between px-5 py-1.5 bg-[#111] border-b border-[#2a2a2a]">
           <div className="flex items-center gap-3">
-            {/* PWR/SYS/ALM LEDs (visible for ZTE-style chassis) */}
-            <div className="flex items-center gap-1.5">
-              <div className="flex flex-col items-center">
-                <div className={`w-2.5 h-2.5 rounded-full border ${olt.isOnline ? 'bg-green-400 border-green-300' : 'bg-gray-600 border-gray-500'}`} />
-                <span className="text-[7px] text-gray-500 mt-0.5">PWR</span>
+            {/* Status LEDs */}
+            <div className="flex items-center gap-2">
+              {[
+                { label: 'PWR', on: olt.isOnline, color: 'bg-green-500', pulse: false },
+                { label: 'SYS', on: olt.isOnline, color: 'bg-green-500', pulse: true },
+                { label: 'ALM', on: (olt.alerts?.length ?? 0) > 0, color: 'bg-red-500', pulse: true },
+              ].map((led) => (
+                <div key={led.label} className="flex flex-col items-center gap-0.5">
+                  <div
+                    className={`w-2 h-2 rounded-full shadow-md ${led.on ? `${led.color} ${led.pulse ? 'animate-pulse' : ''} shadow-current` : 'bg-gray-700'}`}
+                    style={led.on ? { boxShadow: `0 0 6px 1px currentColor` } : {}}
+                  />
+                  <span className="text-[7px] font-mono text-gray-500 tracking-widest">{led.label}</span>
+                </div>
+              ))}
+            </div>
+            <div className="w-px h-6 bg-[#333]" />
+            <span className="text-[11px] font-bold text-gray-300 tracking-wider font-mono">{template.displayName}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] text-gray-500 font-mono">{olt.ipAddress}</span>
+            {/* Console/MGMT dummy port */}
+            <div className="flex items-center gap-1">
+              <div className="w-5 h-3.5 bg-[#222] border border-[#444] rounded-sm flex items-center justify-center">
+                <span className="text-[6px] text-gray-600">CON</span>
               </div>
-              <div className="flex flex-col items-center">
-                <div className={`w-2.5 h-2.5 rounded-full border ${olt.isOnline ? 'bg-green-400 border-green-300 animate-pulse' : 'bg-gray-600 border-gray-500'}`} />
-                <span className="text-[7px] text-gray-500 mt-0.5">SYS</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <div className={`w-2.5 h-2.5 rounded-full border ${olt.alerts?.length > 0 ? 'bg-red-500 border-red-400 animate-pulse' : 'bg-gray-600 border-gray-500'}`} />
-                <span className="text-[7px] text-gray-500 mt-0.5">ALM</span>
+              <div className="w-5 h-3.5 bg-[#222] border border-[#444] rounded-sm flex items-center justify-center">
+                <span className="text-[6px] text-gray-600">MGT</span>
               </div>
             </div>
-            <div className="w-px h-5 bg-gray-600" />
-            <span className="text-sm font-bold text-white tracking-wide">{template.displayName}</span>
-            <span className="text-xs text-gray-400 border border-gray-600 px-2 py-0.5 rounded">{template.chassis}</span>
           </div>
-          <span className="text-xs font-mono text-gray-400">{olt.ipAddress}</span>
         </div>
 
-        {/* Slots */}
-        <div className="p-4 space-y-3">
+        {/* Port panels */}
+        <div className="p-3 space-y-2.5">
           {template.groups.map((group) => (
-            <div key={`${group.slot}-${group.label}`} className="bg-gray-800 rounded-lg p-3 border border-gray-700">
+            <div key={`${group.slot}-${group.label}`} className="bg-[#111] rounded border border-[#2c2c2c] px-3 py-2.5">
+              {/* Card label */}
               <div className="flex items-center justify-between mb-2">
-                <span className={`text-[11px] font-semibold uppercase tracking-widest ${group.type === 'uplink' ? 'text-blue-400' : 'text-green-400'}`}>
+                <span className={`text-[9px] font-bold uppercase tracking-widest font-mono ${group.type === 'uplink' ? 'text-blue-400' : 'text-green-500'}`}>
                   {group.label}
                 </span>
-                <span className="text-[9px] text-gray-500 font-mono">{group.portType} × {group.portCount}</span>
+                <span className="text-[8px] text-gray-600 font-mono">{group.portType} × {group.portCount}</span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+
+              {/* Port row — SFP/GPON port style */}
+              <div className="flex flex-wrap gap-1">
                 {Array.from({ length: group.portCount }, (_, i) => {
                   const style = getPortStyle(group, i);
+                  const isUplink = group.type === 'uplink';
                   return (
                     <div
                       key={i}
                       title={getPortTitle(group, i)}
-                      className={`relative flex flex-col items-center justify-center w-11 h-11 rounded border-2 ${style.bg} ${style.border} cursor-default select-none transition-transform hover:scale-110 hover:z-10`}
+                      className={`relative flex flex-col items-center justify-between rounded cursor-default transition-transform hover:scale-110 hover:z-10
+                        ${isUplink ? 'w-12 h-14' : 'w-10 h-12'}
+                        border-2 ${style.bg} ${style.border}`}
                     >
-                      <span className={`text-[9px] font-bold leading-tight ${style.text}`}>{style.badge}</span>
-                      <span className={`text-[7px] leading-none ${style.text} opacity-60 mt-0.5`}>:{i}</span>
+                      {/* SFP slot hole (visual) */}
+                      <div className={`mt-1 ${isUplink ? 'w-7 h-4' : 'w-6 h-3'} rounded-sm bg-black border border-[#333] flex items-center justify-center`}>
+                        {/* Fiber indicator dot */}
+                        <div className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                      </div>
+                      {/* Port label + ONU count */}
+                      <div className="mb-0.5 text-center">
+                        <div className={`text-[8px] font-mono font-bold leading-none ${style.text}`}>{style.label}</div>
+                        <div className={`text-[6px] font-mono leading-none ${style.text} opacity-50`}>{i}</div>
+                      </div>
                     </div>
                   );
                 })}
@@ -296,22 +320,25 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Legend */}
-      <div className="flex flex-wrap gap-4 text-xs text-gray-600 dark:text-gray-400 px-1">
-        {[
-          { color: 'bg-blue-600 border-blue-400', label: 'Uplink Port' },
-          { color: 'bg-green-500 border-green-300', label: 'PON — Semua ONU Online' },
-          { color: 'bg-orange-500 border-orange-300', label: 'PON — Sebagian ONU Offline' },
-          { color: 'bg-red-600 border-red-400', label: 'PON — Semua ONU Offline' },
-          { color: 'bg-gray-600 border-gray-500', label: 'PON — Kosong (belum ada ONU)' },
-        ].map((item) => (
-          <div key={item.label} className="flex items-center gap-1.5">
-            <div className={`w-4 h-4 rounded border-2 ${item.color}`} />
-            <span>{item.label}</span>
+        {/* Bottom info strip */}
+        <div className="flex items-center justify-between px-5 py-1 bg-[#0d0d0d] border-t border-[#222]">
+          <div className="flex items-center gap-4">
+            {[
+              { color: 'bg-blue-700 border-blue-500', label: 'Uplink' },
+              { color: 'bg-green-800 border-green-500', label: 'Semua Online' },
+              { color: 'bg-orange-900 border-orange-500', label: 'Sebagian Offline' },
+              { color: 'bg-red-900 border-red-600', label: 'Semua Offline' },
+              { color: 'bg-gray-800 border-gray-600', label: 'Kosong' },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-1">
+                <div className={`w-3 h-3 rounded border ${item.color}`} />
+                <span className="text-[8px] text-gray-500">{item.label}</span>
+              </div>
+            ))}
           </div>
-        ))}
+          <span className="text-[8px] text-gray-600 font-mono">{template.chassis}</span>
+        </div>
       </div>
 
       {/* Per-port detail table */}
@@ -380,6 +407,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const [settings, setSettings] = useState({
     vendor: 'huawei',
     model: '',
+    firmwareVersion: '',
     monitoringEnabled: false,
     snmpEnabled: true,
     snmpCommunity: 'public',
@@ -391,7 +419,9 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     username: '',
     password: '',
     pollingInterval: 300,
+    routerIds: [] as string[],
   });
+  const [routerList, setRouterList] = useState<{ id: string; name: string; ipAddress: string }[]>([]);
 
   const fetchOLT = useCallback(async () => {
     try {
@@ -403,6 +433,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         setSettings({
           vendor: o.vendor ?? 'huawei',
           model: o.model ?? '',
+          firmwareVersion: o.firmwareVersion ?? '',
           monitoringEnabled: o.monitoringEnabled,
           snmpEnabled: o.snmpEnabled,
           snmpCommunity: o.snmpCommunity,
@@ -414,6 +445,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           username: o.username ?? '',
           password: '',
           pollingInterval: o.pollingInterval,
+          routerIds: (o.routers ?? []).map((r: any) => r.routerId),
         });
       } else {
         router.push('/admin/olt/monitoring');
@@ -426,6 +458,14 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   }, [id, router]);
 
   useEffect(() => { fetchOLT(); }, [fetchOLT]);
+
+  // Fetch available routers for assignment
+  useEffect(() => {
+    fetch('/api/network/routers')
+      .then((r) => r.json())
+      .then((data) => setRouterList(data.routers ?? []))
+      .catch(() => {});
+  }, []);
 
   const handleSaveSettings = async () => {
     setSaving(true);
@@ -606,10 +646,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'online':     return 'text-green-600';
-      case 'dying_gasp': return 'text-red-600';
-      case 'los':        return 'text-orange-600';
-      default:           return 'text-gray-500';
+      case 'online':       return 'text-green-600';
+      case 'dying_gasp':   return 'text-red-600';
+      case 'los':          return 'text-orange-600';
+      case 'auth_failed':  return 'text-yellow-600';
+      default:             return 'text-gray-500';
     }
   };
 
@@ -724,6 +765,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                 <SelectItem value="offline">Offline</SelectItem>
                 <SelectItem value="dying_gasp">Dying Gasp</SelectItem>
                 <SelectItem value="los">LOS</SelectItem>
+                <SelectItem value="auth_failed">Unregistered</SelectItem>
               </SelectContent>
             </Select>
             <span className="text-sm text-gray-500 self-center">{filteredOnus.length} ONUs</span>
@@ -1059,7 +1101,15 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                   <Input
                     value={settings.model}
                     onChange={(e) => setSettings((s) => ({ ...s, model: e.target.value }))}
-                    placeholder="e.g. MA5608T"
+                    placeholder="e.g. C320"
+                  />
+                </div>
+                <div>
+                  <Label>Firmware Version</Label>
+                  <Input
+                    value={settings.firmwareVersion}
+                    onChange={(e) => setSettings((s) => ({ ...s, firmwareVersion: e.target.value }))}
+                    placeholder="e.g. V2.1.0 atau V2.2.0"
                   />
                 </div>
                 <div>
@@ -1072,6 +1122,39 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                     max={3600}
                   />
                 </div>
+              </div>
+
+              {/* Router / NAS */}
+              <div className="border rounded-lg p-4 space-y-3">
+                <Label className="font-semibold">Router / NAS</Label>
+                <p className="text-xs text-gray-500">Pilih router yang terhubung ke OLT ini. Digunakan untuk isolasi dan routing.</p>
+                {routerList.length === 0 ? (
+                  <p className="text-xs text-gray-400 italic">Tidak ada router. Tambahkan dulu di menu Router.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {routerList.map((r) => (
+                      <label key={r.id} className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <input
+                          type="checkbox"
+                          checked={settings.routerIds.includes(r.id)}
+                          onChange={(e) => {
+                            setSettings((s) => ({
+                              ...s,
+                              routerIds: e.target.checked
+                                ? [...s.routerIds, r.id]
+                                : s.routerIds.filter((rid) => rid !== r.id),
+                            }));
+                          }}
+                          className="w-4 h-4 text-blue-600 rounded"
+                        />
+                        <div>
+                          <div className="text-sm font-medium">{r.name}</div>
+                          <div className="text-xs text-gray-400 font-mono">{r.ipAddress}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3">

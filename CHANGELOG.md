@@ -6,7 +6,28 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.29.12] — 2026-05-08
+## [2.29.13] — 2026-05-07
+
+### Fixed
+- **ZTE C320 suhu/CPU/memori selalu N/A** — OID `1.3.6.1.4.1.3902.1015.1015.*` adalah untuk C300/C600, bukan C320. Diganti dengan walk-based approach yang mencoba C320 V2.1 OIDs (`1.3.6.1.4.1.3902.1012.3.50.12.*`), V2.2 OIDs (`1.3.6.1.4.1.3902.1082.500.20.2.1.2.*`), lalu fallback ke C300/C600.
+- **ONU unregistered tidak terdeteksi (ZTE)** — Ditambahkan discovery `show gpon onu uncfg gpon-olt_1/{slot}/{port}` via Telnet/SSH. ONU belum terdaftar akan muncul dengan status `auth_failed` (unregistered).
+- **ZTE port numbering** — Telnet/SSH discovery diperbaiki dari port 1–8 menjadi 0–7 sesuai notasi ZTE (`gpon-olt_1/1/0` bukan `gpon-olt_1/1/1`).
+- **Router/NAS tidak bisa disimpan** — Halaman Settings OLT tidak memiliki field router sama sekali. Ditambahkan router selector (multi-checkbox) + simpan ke `networkOLTRouter` junction table via API PUT.
+- **Firmware version tidak ada di Settings** — Ditambahkan field Firmware Version di Settings OLT. Ini kritis untuk memilih OID yang benar (V2.1 vs V2.2).
+
+### Changed
+- **Port diagram** — Redesign visual menjadi front-panel style (seperti NetMument): dark metallic chassis, SFP slot hole, fiber dot indicator, badge ONU count per port, CON/MGT port dummy, LED PWR/SYS/ALM glow effect.
+- **API GET `/api/olt/[id]`** — Sekarang include `routers` (dengan data router name + IP) di response.
+- **API PUT `/api/olt/[id]`** — Support `routerIds[]` untuk update router assignments.
+- **package.json** — Version synced ke `2.29.12`
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Fix temperature/CPU/memory OIDs, add unregistered ONU discovery, fix port 0-based numbering
+- `src/lib/olt/poller.ts` — Map `unregistered` status ke `auth_failed`
+- `src/app/api/olt/[id]/route.ts` — Add routers include in GET, add routerIds handling in PUT
+- `src/app/admin/olt/[id]/page.tsx` — Add firmware field, router selector, unregistered filter, redesign port diagram
+
+
 
 ### Fixed
 - **ZTE C320 ONU list menampilkan 0 ONU** — Root cause: OID yang digunakan salah (dari C300/C600 MIB bukan C320). Rewrite `zte.ts` dengan OID yang benar dari referensi go-api-c320:
