@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.16] — 2026-05-07
+
+### Fixed
+- **WireGuard peer hilang setelah reboot/re-install** — Root cause: `install-wg-server.sh` membuat ulang `wg0.conf` tanpa peer saat dijalankan ulang. Dibuat `wg-peer-watchdog.sh` yang berjalan tiap 5 menit via cron — otomatis restore peer dari database jika hilang dari `wg0.conf`.
+- **LocalNetworks tidak tersimpan di DB** — API `POST /api/network/vps-wg-peer` kini menyimpan `localNetworks` ke kolom `description` (`localNets=x.x.x.x/yy,...`) agar watchdog bisa restore AllowedIPs dengan benar.
+
+### Added
+- **`/usr/local/bin/wg-peer-watchdog.sh`** — Script watchdog WireGuard di VPS: cek semua peer aktif dari DB, restore ke `wg0.conf` + `wg syncconf` jika hilang. Crontab: `*/5 * * * *`.
+- **`scripts/wg-peer-watchdog.sh`** — Source script tersimpan di repo untuk referensi.
+
+### Files
+- `src/app/api/network/vps-wg-peer/route.ts` — Simpan localNetworks ke `description` saat create/update vpnClient
+- `scripts/wg-peer-watchdog.sh` — Script watchdog WireGuard peer
+
+---
+
 ## [2.29.15] — 2026-05-07
 
 ### Fixed

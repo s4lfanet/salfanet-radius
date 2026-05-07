@@ -391,6 +391,7 @@ export async function POST(req: NextRequest) {
           vpnType: 'WIREGUARD',
           clientPublicKey,
           clientPrivateKey: clientPrivateKey || null,
+          description: localNetworks ? `localNets=${localNetworks}` : null,
           isActive: true,
         },
         update: {
@@ -399,6 +400,7 @@ export async function POST(req: NextRequest) {
           clientPrivateKey: clientPrivateKey || null,
           apiUsername,
           apiPassword,
+          description: localNetworks ? `localNets=${localNetworks}` : undefined,
           isActive: true,
         },
       })
