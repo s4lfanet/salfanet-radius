@@ -6,6 +6,26 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.23] — 2026-05-10
+### Added
+- **Realistic ZTE C320 chassis diagram** — Halaman detail OLT kini menampilkan diagram front-panel chassis ZTE C320 dengan semua 18 slot: MCU-A (slot 0), 14 service card slots (1–14), 2 uplink slots (15–16, GICF), MCU-B (slot 17), plus FAN dan PWR di kiri/kanan. Setiap slot menampilkan card type label (GTGQ/GTGH/GTGO/GICF/MCUD1), grid port berwarna (hijau=online, oranye=partial, merah=offline, hitam=kosong), dan slot kosong ditampilkan gelap. Chassis disertai panel detail per-port (persentase online, avg RX power) di bawahnya
+- **ONU registration modal** — Tombol "Register" muncul di kolom aksi tabel ONU untuk ONU yang berstatus `auth_failed` (unregistered). Tombol membuka modal yang menampilkan: form ONU ID, ONU type (ZTE-F609, F660, F673, F600W, CZTE, All, dll), VLAN, TCONT profile (1G/100M/50M/20M/10M), deskripsi, serta preview command Telnet yang akan dikirim ke OLT
+- **ONU register API** (`POST /api/olt/[id]/onus/register`) — Endpoint baru yang membangun dan mengirim command registrasi ZTE via Telnet (`configure terminal → interface gpon-olt → onu … type All sn … → tcont → gemport → service-port → exit/end`) menggunakan `executeMultipleCommands()`
+- **Telnet multi-command** (`executeMultipleCommands()` di `telnet.ts`) — Fungsi baru yang membuat expect script untuk mengirim banyak command sekaligus ke OLT via sesi Telnet, menunggu prompt `[>#]` setelah setiap command
+- **Chassis API** (`GET /api/olt/[id]/chassis`) — Endpoint baru yang mengembalikan layout slot chassis ZTE C320 beserta data per-port dari DB dan SNMP
+
+### Changed
+- **ONU action column** — Untuk ONU unregistered (`auth_failed`), kolom aksi menampilkan tombol "Register" (hijau) alih-alih tombol "Reboot"
+- **Port diagram tab** — Diganti dari layout grup horizontal lama (`OLTPortDiagram`) ke komponen `ZTEChassisView` baru yang realistis
+
+### Files
+- `src/app/admin/olt/[id]/page.tsx` — Ganti `OLTPortDiagram`/`getOLTTemplate` dengan `ZTEChassisView`; tambah `ONURegisterModal`; tambah state `registeringOnu`; tombol Register di tabel ONU
+- `src/app/api/olt/[id]/onus/register/route.ts` — **NEW** POST endpoint registrasi ONU via Telnet
+- `src/app/api/olt/[id]/chassis/route.ts` — **NEW** GET endpoint layout chassis
+- `src/lib/olt/telnet.ts` — Tambah `executeMultipleCommands()`
+
+---
+
 ## [2.29.22] — 2026-05-09
 ### Added
 - **ONU description/name (ZTE V2.1)** — `discoverPonV21()` kini fetch nama ONU dari `zxAnGponOnuCfgTable` col 2 (`.3.28.1.1.2.{ponIndex}.{onuId}`) secara paralel, disimpan ke kolom `description` di DB, dan ditampilkan sebagai kolom "Name" di tabel ONU pada halaman detail OLT
