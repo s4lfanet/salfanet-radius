@@ -18,7 +18,7 @@ import {
 import {
   Server, RefreshCw, AlertCircle, Wifi, WifiOff,
   Thermometer, Clock, Activity, ArrowLeft, Save, TestTube,
-  Power, Download, CheckCircle, Signal,
+  Power, Download, CheckCircle, Signal, Plus, X, Cpu, Zap,
 } from 'lucide-react';
 
 interface ONU {
@@ -71,299 +71,305 @@ interface OLTDetail {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// OLT Physical Port Diagram helpers
+// ZTE C320 Realistic Chassis Diagram
 // ─────────────────────────────────────────────────────────────────────────────
-interface PortGroupDef {
-  type: 'uplink' | 'gpon' | 'epon';
+
+/** Card type visual metadata */
+const CARD_META: Record<string, { label: string; color: string; portRows: number; portCols: number }> = {
+  MCUD1:  { label: 'MCUD1',  color: '#2563eb', portRows: 0, portCols: 0 },
+  MCUD:   { label: 'MCUD',   color: '#2563eb', portRows: 0, portCols: 0 },
+  GTGQ:   { label: 'GTGQ',   color: '#15803d', portRows: 4, portCols: 4 },  // 16-port GPON
+  GTGH:   { label: 'GTGH',   color: '#15803d', portRows: 2, portCols: 4 },  // 8-port GPON
+  GTGO:   { label: 'GTGO',   color: '#15803d', portRows: 1, portCols: 4 },  // 4-port GPON
+  GICF:   { label: 'GICF',   color: '#1e40af', portRows: 2, portCols: 2 },  // 4-port uplink
+  GISF:   { label: 'GISF',   color: '#1e40af', portRows: 1, portCols: 4 },
+  empty:  { label: 'EMPTY',  color: '#374151', portRows: 0, portCols: 0 },
+};
+
+/** ZTE C320 18-slot chassis definition (0=MCU-A … 17=MCU-B) */
+const ZTE_C320_SLOTS = [
+  { index: 0,  label: 'MCU-A', type: 'mcud',    fixedCard: 'MCUD1' },
+  ...Array.from({ length: 14 }, (_, i) => ({
+    index: i + 1, label: `${i + 1}`, type: 'service', fixedCard: null,
+  })),
+  { index: 15, label: 'UPL-A', type: 'uplink',  fixedCard: 'GICF' },
+  { index: 16, label: 'UPL-B', type: 'uplink',  fixedCard: 'GICF' },
+  { index: 17, label: 'MCU-B', type: 'mcud',    fixedCard: 'MCUD1' },
+];
+
+interface ChassisSlot {
+  index: number;
   label: string;
-  portType: string;
-  slot: number;
+  type: string;
+  present: boolean;
+  cardType: string;
   portCount: number;
-}
-interface OLTTemplateDef {
-  displayName: string;
-  chassis: string;
-  groups: PortGroupDef[];
+  ports: Array<{ port: number; onuCount: number; onlineCount: number }>;
 }
 
-function getOLTTemplate(vendor: string | null, model: string | null): OLTTemplateDef {
-  const v = (vendor ?? '').toLowerCase();
-  const m = (model ?? '').toUpperCase();
-
-  if (v === 'zte') {
-    if (m.includes('C320')) return {
-      displayName: 'ZTE C320', chassis: '1U Compact GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'Uplink (10GE XFP)', portType: '10GE', slot: 0, portCount: 2 },
-        { type: 'gpon', label: 'GPON Card 1 (Slot 1)', portType: 'GPON', slot: 1, portCount: 16 },
-        { type: 'gpon', label: 'GPON Card 2 (Slot 2)', portType: 'GPON', slot: 2, portCount: 8 },
-      ],
-    };
-    if (m.includes('C300')) return {
-      displayName: 'ZTE C300', chassis: '7U Chassis GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'Uplink HUVB (10GE)', portType: '10GE', slot: 0, portCount: 4 },
-        ...Array.from({ length: 4 }, (_, i) => ({ type: 'gpon' as const, label: `GPON Slot ${i + 1}`, portType: 'GPON', slot: i + 1, portCount: 16 })),
-      ],
-    };
-    if (m.includes('C350')) return {
-      displayName: 'ZTE C350', chassis: '14U Chassis GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'Uplink HUVB (100GE)', portType: '100GE', slot: 0, portCount: 8 },
-        ...Array.from({ length: 8 }, (_, i) => ({ type: 'gpon' as const, label: `GPON Slot ${i + 1}`, portType: 'GPON', slot: i + 1, portCount: 16 })),
-      ],
-    };
-    // Generic ZTE
-    return {
-      displayName: `ZTE ${model ?? 'OLT'}`, chassis: 'ZTE GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'Uplink (GE/10GE)', portType: 'GE/10GE', slot: 0, portCount: 2 },
-        { type: 'gpon', label: 'GPON Slot 1', portType: 'GPON', slot: 1, portCount: 8 },
-      ],
-    };
-  }
-
-  if (v === 'huawei') {
-    if (m.includes('MA5608T')) return {
-      displayName: 'Huawei MA5608T', chassis: '2U Compact GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'GE/10GE Uplink (GICF)', portType: 'GE/10GE SFP+', slot: -1, portCount: 2 },
-        { type: 'gpon', label: 'H802GPFD (Slot 0)', portType: 'GPON', slot: 0, portCount: 8 },
-      ],
-    };
-    if (m.includes('MA5683T') || m.includes('MA5680T')) return {
-      displayName: `Huawei ${m}`, chassis: '7U Chassis GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'SCUN Uplink (10GE)', portType: '10GE', slot: -1, portCount: 4 },
-        ...Array.from({ length: 4 }, (_, i) => ({ type: 'gpon' as const, label: `GPFD Slot ${i}`, portType: 'GPON', slot: i, portCount: 8 })),
-      ],
-    };
-    return {
-      displayName: `Huawei ${model ?? 'OLT'}`, chassis: 'Huawei GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'Uplink (GE/10GE)', portType: 'GE/10GE', slot: -1, portCount: 2 },
-        { type: 'gpon', label: 'GPON Slot 0', portType: 'GPON', slot: 0, portCount: 8 },
-      ],
-    };
-  }
-
-  if (v === 'fiberhome') {
-    if (m.includes('AN5516')) return {
-      displayName: `FiberHome ${m}`, chassis: 'FiberHome Chassis GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'GE Uplink', portType: 'GE/10GE', slot: -1, portCount: 4 },
-        ...Array.from({ length: 4 }, (_, i) => ({ type: 'gpon' as const, label: `GPON Slot ${i + 1}`, portType: 'GPON', slot: i + 1, portCount: 8 })),
-      ],
-    };
-  }
-
-  if (v === 'hioso') {
-    const isGpon = m.includes('8040') || m.includes('8080') || m.includes('GPON');
-    return {
-      displayName: `Hioso ${model ?? 'OLT'}`, chassis: isGpon ? 'Hioso/C-Data GPON OLT' : 'Hioso/C-Data EPON OLT',
-      groups: [
-        { type: 'uplink', label: 'GE Uplink', portType: 'GE', slot: -1, portCount: 2 },
-        { type: isGpon ? 'gpon' : 'epon', label: `${isGpon ? 'GPON' : 'EPON'} Ports (Slot 1)`, portType: isGpon ? 'GPON' : 'EPON', slot: 1, portCount: 4 },
-      ],
-    };
-  }
-
-  if (v === 'bdcom') {
-    return {
-      displayName: `BDCOM ${model ?? 'OLT'}`, chassis: 'BDCOM PON OLT',
-      groups: [
-        { type: 'uplink', label: 'GE/10GE Uplink', portType: 'GE/10GE', slot: -1, portCount: 2 },
-        { type: 'epon', label: 'EPON/GPON Ports', portType: 'PON', slot: 1, portCount: m.includes('P3310C') ? 8 : 16 },
-      ],
-    };
-  }
-
-  if (v === 'raisecom') {
-    return {
-      displayName: `Raisecom ${model ?? 'OLT'}`, chassis: 'Raisecom GPON OLT',
-      groups: [
-        { type: 'uplink', label: 'GE/10GE Uplink', portType: 'GE/10GE', slot: -1, portCount: 4 },
-        { type: 'gpon', label: 'GPON Slots', portType: 'GPON', slot: 1, portCount: 8 },
-      ],
-    };
-  }
-
-  // Generic / unknown — show uplink + one PON group
-  return {
-    displayName: `${vendor ?? 'Unknown'} ${model ?? 'OLT'}`, chassis: 'Generic OLT',
-    groups: [
-      { type: 'uplink', label: 'Uplink', portType: 'GE/10GE', slot: -1, portCount: 2 },
-      { type: 'gpon', label: 'PON Ports', portType: 'GPON/EPON', slot: 1, portCount: 8 },
-    ],
-  };
-}
-
-function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
-  const template = getOLTTemplate(olt.vendor, olt.model);
-
-  // Build per-port statistics from ONU data
-  const portStats: Record<string, { total: number; online: number; rxPowers: number[] }> = {};
-  // Track max port index seen per slot — used to dynamically expand port count in diagram
+function ZTEChassisView({ olt }: { olt: OLTDetail }) {
+  // ── Build per-port data from ONU list ──────────────────────────────────────
+  const portStats: Record<string, { total: number; online: number; unregistered: number; rxPowers: number[] }> = {};
   const maxPortPerSlot: Record<number, number> = {};
+
   for (const onu of olt.onuStatuses) {
     const key = `${onu.slot}/${onu.port}`;
-    if (!portStats[key]) portStats[key] = { total: 0, online: 0, rxPowers: [] };
+    if (!portStats[key]) portStats[key] = { total: 0, online: 0, unregistered: 0, rxPowers: [] };
     portStats[key].total++;
     if (onu.status === 'online') portStats[key].online++;
+    if (onu.status === 'auth_failed') portStats[key].unregistered++;
     if (onu.rxPower !== null) portStats[key].rxPowers.push(onu.rxPower);
-    // Track max port per slot for dynamic port count
-    if (maxPortPerSlot[onu.slot] === undefined || onu.port > maxPortPerSlot[onu.slot]) {
+    if (maxPortPerSlot[onu.slot] === undefined || onu.port > maxPortPerSlot[onu.slot])
       maxPortPerSlot[onu.slot] = onu.port;
-    }
   }
 
-  // Return effective port count: at least the template value, or max seen from actual SNMP data
-  const getEffectivePortCount = (group: PortGroupDef): number => {
-    if (group.type === 'uplink') return group.portCount;
-    const maxSeen = maxPortPerSlot[group.slot];
-    if (maxSeen === undefined) return group.portCount;
-    return Math.max(group.portCount, maxSeen + 1);
+  // ── Determine card present in each slot ───────────────────────────────────
+  const slots: ChassisSlot[] = ZTE_C320_SLOTS.map(def => {
+    if (def.type === 'mcud') {
+      // MCU-A always present; MCU-B shown as present (redundant) only if OLT is online
+      const present = def.index === 0 ? true : olt.isOnline;
+      return { index: def.index, label: def.label, type: def.type, present, cardType: 'MCUD1', portCount: 0, ports: [] };
+    }
+    if (def.type === 'uplink') {
+      // Uplink slot A always present if the OLT has any traffic; slot B optional
+      const present = def.index === 15;
+      const portCount = 4;
+      const ports = Array.from({ length: portCount }, (_, i) => ({
+        port: i, onuCount: 0, onlineCount: present ? 1 : 0, // show uplink as "online" visually
+      }));
+      return { index: def.index, label: def.label, type: def.type, present, cardType: 'GICF', portCount, ports };
+    }
+    // Service slot
+    const boardSlot = def.index;
+    const maxPort = maxPortPerSlot[boardSlot] ?? -1;
+    if (maxPort < 0) {
+      return { index: def.index, label: def.label, type: 'service', present: false, cardType: 'empty', portCount: 0, ports: [] };
+    }
+    const portCount = Math.max(maxPort + 1, 16); // at least 16 for a GTGQ card
+    const cardType = portCount <= 4 ? 'GTGO' : portCount <= 8 ? 'GTGH' : 'GTGQ';
+    const ports = Array.from({ length: portCount }, (_, i) => {
+      const s = portStats[`${boardSlot}/${i}`];
+      return { port: i, onuCount: s?.total ?? 0, onlineCount: s?.online ?? 0 };
+    });
+    return { index: def.index, label: def.label, type: 'service', present: true, cardType, portCount, ports };
+  });
+
+  /** Get port dot color */
+  const portDot = (slot: ChassisSlot, portIdx: number): string => {
+    if (slot.type === 'uplink') return portIdx < 2 ? '#22c55e' : '#374151';
+    if (slot.type === 'mcud')   return '#3b82f6';
+    const p = slot.ports[portIdx];
+    if (!p || p.onuCount === 0) return '#1f2937';  // empty port
+    if (p.onlineCount === p.onuCount)  return '#22c55e';  // all online
+    if (p.onlineCount === 0)           return '#ef4444';  // all offline
+    return '#f59e0b';                                       // partial
   };
 
-  // Returns color class for a GPON port (0-based portIndex)
-  const getPortStyle = (group: PortGroupDef, portIndex: number) => {
-    if (group.type === 'uplink') {
-      return { bg: 'bg-blue-700', border: 'border-blue-500', text: 'text-white', dot: 'bg-blue-400', label: `UP ${portIndex + 1}` };
-    }
-    const key = `${group.slot}/${portIndex}`;  // DB stores port 0-based for ZTE
+  const portTitle = (slot: ChassisSlot, portIdx: number): string => {
+    if (slot.type === 'uplink') return `Uplink port ${portIdx + 1}`;
+    if (slot.type === 'mcud')   return 'Management port';
+    const p = slot.ports[portIdx];
+    const key = `${slot.index}/${portIdx}`;
     const s = portStats[key];
-    if (!s || s.total === 0) {
-      return { bg: 'bg-gray-800', border: 'border-gray-600', text: 'text-gray-500', dot: 'bg-gray-700', label: `${portIndex}` };
-    }
-    if (s.online === s.total) {
-      return { bg: 'bg-green-800', border: 'border-green-500', text: 'text-white', dot: 'bg-green-400', label: `${s.total}` };
-    }
-    if (s.online === 0) {
-      return { bg: 'bg-red-900', border: 'border-red-600', text: 'text-white', dot: 'bg-red-500', label: `${s.total}` };
-    }
-    return { bg: 'bg-orange-900', border: 'border-orange-500', text: 'text-white', dot: 'bg-orange-400', label: `${s.online}/${s.total}` };
+    const avgRx = s && s.rxPowers.length > 0
+      ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
+    return `PON 0/${slot.index}/${portIdx}\nONU: ${p?.onlineCount ?? 0}/${p?.onuCount ?? 0}${avgRx ? `\nAvg RX: ${avgRx} dBm` : ''}`;
   };
 
-  const getPortTitle = (group: PortGroupDef, portIndex: number): string => {
-    if (group.type === 'uplink') return `${group.portType} Uplink Port ${portIndex + 1}`;
-    const s = portStats[`${group.slot}/${portIndex}`];
-    if (!s) return `Port 0/${group.slot}/${portIndex}\n(kosong — tidak ada ONU)`;
-    const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
-    return `Port 0/${group.slot}/${portIndex}\nONU: ${s.online} online / ${s.total} total${avgRx ? `\nAvg RX: ${avgRx} dBm` : ''}`;
+  const slotBg = (slot: ChassisSlot) => {
+    if (!slot.present) return '#111';
+    if (slot.type === 'mcud')   return '#1e3a5f';
+    if (slot.type === 'uplink') return '#1e3a5f';
+    return '#1a2e1a';
+  };
+
+  const slotBorder = (slot: ChassisSlot) => {
+    if (!slot.present) return '#222';
+    if (slot.type === 'mcud')   return '#2563eb';
+    if (slot.type === 'uplink') return '#1d4ed8';
+    return '#16a34a';
+  };
+
+  const renderPortGrid = (slot: ChassisSlot) => {
+    if (!slot.present || slot.type === 'mcud') {
+      if (slot.type === 'mcud' && slot.present) {
+        // Show MCU ports: console + mgmt
+        return (
+          <div className="flex flex-col gap-0.5 mt-1">
+            {['CON', 'MGT', 'AUX'].map(p => (
+              <div key={p} className="w-5 h-2 rounded-sm border border-[#3b82f6] bg-[#1e3a5f] flex items-center justify-center">
+                <span className="text-[5px] text-blue-300">{p}</span>
+              </div>
+            ))}
+            <div className="mt-0.5 w-2 h-2 rounded-full bg-[#22c55e] animate-pulse self-center" />
+          </div>
+        );
+      }
+      return null;
+    }
+    if (slot.type === 'uplink') {
+      return (
+        <div className="grid grid-cols-2 gap-0.5 mt-1">
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="relative w-4 h-5 bg-black border border-[#1d4ed8] rounded-sm flex items-center justify-center">
+              <div className={`w-1.5 h-1.5 rounded-full ${i < 2 ? 'bg-green-400' : 'bg-gray-700'}`} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    // GPON service card — show port grid
+    const meta = CARD_META[slot.cardType] ?? CARD_META.GTGQ;
+    const rows = meta.portRows, cols = meta.portCols;
+    const total = rows * cols;
+    return (
+      <div className="mt-1" style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: '2px' }}>
+        {Array.from({ length: total }, (_, i) => (
+          <div
+            key={i}
+            title={portTitle(slot, i)}
+            className="cursor-default transition-transform hover:scale-125 hover:z-10"
+            style={{ width: 8, height: 8, borderRadius: 2, background: portDot(slot, i) }}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-4">
-      {/* ── Real Front-Panel Style Chassis ── */}
-      <div className="bg-[#1a1a1a] rounded-lg overflow-hidden border border-[#3a3a3a] shadow-2xl select-none">
-
-        {/* Top bezel with model + LEDs */}
-        <div className="flex items-center justify-between px-5 py-1.5 bg-[#111] border-b border-[#2a2a2a]">
+    <div className="space-y-3">
+      {/* ── Physical chassis panel ── */}
+      <div
+        className="rounded-lg overflow-hidden shadow-2xl select-none"
+        style={{ background: '#0f0f0f', border: '2px solid #2a2a2a' }}
+      >
+        {/* Top bezel */}
+        <div className="flex items-center justify-between px-4 py-1.5" style={{ background: '#111', borderBottom: '1px solid #1e1e1e' }}>
           <div className="flex items-center gap-3">
-            {/* Status LEDs */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               {[
-                { label: 'PWR', on: olt.isOnline, color: 'bg-green-500', pulse: false },
-                { label: 'SYS', on: olt.isOnline, color: 'bg-green-500', pulse: true },
-                { label: 'ALM', on: (olt.alerts?.length ?? 0) > 0, color: 'bg-red-500', pulse: true },
-              ].map((led) => (
+                { label: 'PWR', on: true,        color: '#22c55e' },
+                { label: 'SYS', on: olt.isOnline, color: '#22c55e' },
+                { label: 'ALM', on: olt.alerts.length > 0, color: '#ef4444' },
+              ].map(led => (
                 <div key={led.label} className="flex flex-col items-center gap-0.5">
                   <div
-                    className={`w-2 h-2 rounded-full shadow-md ${led.on ? `${led.color} ${led.pulse ? 'animate-pulse' : ''} shadow-current` : 'bg-gray-700'}`}
-                    style={led.on ? { boxShadow: `0 0 6px 1px currentColor` } : {}}
+                    className={led.on ? 'animate-pulse' : ''}
+                    style={{ width: 7, height: 7, borderRadius: '50%', background: led.on ? led.color : '#374151', boxShadow: led.on ? `0 0 6px ${led.color}` : 'none' }}
                   />
-                  <span className="text-[7px] font-mono text-gray-500 tracking-widest">{led.label}</span>
+                  <span style={{ fontSize: 7, fontFamily: 'monospace', color: '#6b7280' }}>{led.label}</span>
                 </div>
               ))}
             </div>
-            <div className="w-px h-6 bg-[#333]" />
-            <span className="text-[11px] font-bold text-gray-300 tracking-wider font-mono">{template.displayName}</span>
+            <div style={{ width: 1, height: 20, background: '#333' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: '#d1d5db', fontFamily: 'monospace', letterSpacing: 2 }}>
+              ZTE {olt.model ?? 'C320'}
+            </span>
           </div>
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 9, color: '#6b7280', fontFamily: 'monospace' }}>{olt.ipAddress}</span>
+            <div style={{ width: 16, height: 10, background: '#1a1a1a', border: '1px solid #333', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 5, color: '#6b7280' }}>CON</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Chassis row — all slots side by side */}
+        <div className="p-2 overflow-x-auto">
+          <div className="flex gap-1 min-w-max">
+            {/* Left FAN */}
+            <div className="flex flex-col items-center justify-center rounded"
+              style={{ width: 20, minHeight: 90, background: '#1a1a1a', border: '1px solid #333' }}>
+              <span style={{ fontSize: 6, color: '#6b7280', writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'monospace' }}>FAN</span>
+              <div className="animate-spin mt-1" style={{ width: 8, height: 8, borderRadius: '50%', borderTop: '2px solid #22c55e', borderRight: '2px solid transparent', borderBottom: '2px solid transparent', borderLeft: '2px solid transparent' }} />
+            </div>
+
+            {/* Left PWR */}
+            <div className="flex flex-col items-center justify-between rounded py-1"
+              style={{ width: 18, minHeight: 90, background: '#1a1a1a', border: '1px solid #333' }}>
+              <span style={{ fontSize: 5, color: '#6b7280', writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'monospace' }}>PWR</span>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: '#22c55e' }} />
+            </div>
+
+            {/* All 18 card slots */}
+            {slots.map(slot => (
+              <div
+                key={slot.index}
+                className="flex flex-col items-center rounded transition-all hover:brightness-125"
+                style={{
+                  width: slot.type === 'mcud' ? 32 : slot.type === 'uplink' ? 30 : 28,
+                  minHeight: 90,
+                  background: slotBg(slot),
+                  border: `1px solid ${slotBorder(slot)}`,
+                  padding: '3px 2px',
+                  cursor: 'default',
+                  position: 'relative',
+                }}
+                title={slot.present ? `Slot ${slot.index} — ${slot.cardType}` : `Slot ${slot.index} — Empty`}
+              >
+                {/* Slot number badge */}
+                <div className="absolute top-0.5 left-0.5 right-0.5 flex justify-between items-center">
+                  <span style={{ fontSize: 5, fontFamily: 'monospace', color: slot.present ? '#9ca3af' : '#374151' }}>
+                    {slot.label}
+                  </span>
+                  {slot.present && (
+                    <span style={{ fontSize: 5, fontFamily: 'monospace', color: slot.type === 'mcud' ? '#60a5fa' : slot.type === 'uplink' ? '#60a5fa' : '#4ade80' }}>
+                      {slot.cardType}
+                    </span>
+                  )}
+                </div>
+
+                {/* Port grid */}
+                <div className="mt-4 flex-1 flex items-center justify-center">
+                  {renderPortGrid(slot)}
+                </div>
+
+                {/* Bottom slot line indicator */}
+                <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: slot.present ? slotBorder(slot) : '#1f2937' }} />
+              </div>
+            ))}
+
+            {/* Right PWR */}
+            <div className="flex flex-col items-center justify-between rounded py-1"
+              style={{ width: 18, minHeight: 90, background: '#1a1a1a', border: '1px solid #333' }}>
+              <span style={{ fontSize: 5, color: '#6b7280', writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'monospace' }}>PWR</span>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: '#d97706' }} />
+            </div>
+
+            {/* Right FAN */}
+            <div className="flex flex-col items-center justify-center rounded"
+              style={{ width: 20, minHeight: 90, background: '#1a1a1a', border: '1px solid #333' }}>
+              <span style={{ fontSize: 6, color: '#6b7280', writingMode: 'vertical-rl', transform: 'rotate(180deg)', fontFamily: 'monospace' }}>FAN</span>
+              <div className="animate-spin mt-1" style={{ width: 8, height: 8, borderRadius: '50%', borderTop: '2px solid #22c55e', borderRight: '2px solid transparent', borderBottom: '2px solid transparent', borderLeft: '2px solid transparent' }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Legend strip */}
+        <div className="flex items-center justify-between px-4 py-1" style={{ background: '#0a0a0a', borderTop: '1px solid #1e1e1e' }}>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] text-gray-500 font-mono">{olt.ipAddress}</span>
-            {/* Console/MGMT dummy port */}
-            <div className="flex items-center gap-1">
-              <div className="w-5 h-3.5 bg-[#222] border border-[#444] rounded-sm flex items-center justify-center">
-                <span className="text-[6px] text-gray-600">CON</span>
-              </div>
-              <div className="w-5 h-3.5 bg-[#222] border border-[#444] rounded-sm flex items-center justify-center">
-                <span className="text-[6px] text-gray-600">MGT</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Port panels */}
-        <div className="p-3 space-y-2.5">
-          {template.groups.map((group) => {
-            const effectivePortCount = getEffectivePortCount(group);
-            return (
-            <div key={`${group.slot}-${group.label}`} className="bg-[#111] rounded border border-[#2c2c2c] px-3 py-2.5">
-              {/* Card label */}
-              <div className="flex items-center justify-between mb-2">
-                <span className={`text-[9px] font-bold uppercase tracking-widest font-mono ${group.type === 'uplink' ? 'text-blue-400' : 'text-green-500'}`}>
-                  {group.label}
-                </span>
-                <span className="text-[8px] text-gray-600 font-mono">{group.portType} × {effectivePortCount}</span>
-              </div>
-
-              {/* Port row — SFP/GPON port style */}
-              <div className="flex flex-wrap gap-1">
-                {Array.from({ length: effectivePortCount }, (_, i) => {
-                  const style = getPortStyle(group, i);
-                  const isUplink = group.type === 'uplink';
-                  return (
-                    <div
-                      key={i}
-                      title={getPortTitle(group, i)}
-                      className={`relative flex flex-col items-center justify-between rounded cursor-default transition-transform hover:scale-110 hover:z-10
-                        ${isUplink ? 'w-12 h-14' : 'w-10 h-12'}
-                        border-2 ${style.bg} ${style.border}`}
-                    >
-                      {/* SFP slot hole (visual) */}
-                      <div className={`mt-1 ${isUplink ? 'w-7 h-4' : 'w-6 h-3'} rounded-sm bg-black border border-[#333] flex items-center justify-center`}>
-                        {/* Fiber indicator dot */}
-                        <div className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
-                      </div>
-                      {/* Port label + ONU count */}
-                      <div className="mb-0.5 text-center">
-                        <div className={`text-[8px] font-mono font-bold leading-none ${style.text}`}>{style.label}</div>
-                        <div className={`text-[6px] font-mono leading-none ${style.text} opacity-50`}>{i}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom info strip */}
-        <div className="flex items-center justify-between px-5 py-1 bg-[#0d0d0d] border-t border-[#222]">
-          <div className="flex items-center gap-4">
             {[
-              { color: 'bg-blue-700 border-blue-500', label: 'Uplink' },
-              { color: 'bg-green-800 border-green-500', label: 'Semua Online' },
-              { color: 'bg-orange-900 border-orange-500', label: 'Sebagian Offline' },
-              { color: 'bg-red-900 border-red-600', label: 'Semua Offline' },
-              { color: 'bg-gray-800 border-gray-600', label: 'Kosong' },
-            ].map((item) => (
+              { color: '#22c55e', label: 'Online' },
+              { color: '#f59e0b', label: 'Partial' },
+              { color: '#ef4444', label: 'Offline' },
+              { color: '#1f2937', label: 'Empty port' },
+              { color: '#374151', label: 'Empty slot' },
+            ].map(item => (
               <div key={item.label} className="flex items-center gap-1">
-                <div className={`w-3 h-3 rounded border ${item.color}`} />
-                <span className="text-[8px] text-gray-500">{item.label}</span>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: item.color }} />
+                <span style={{ fontSize: 8, color: '#6b7280' }}>{item.label}</span>
               </div>
             ))}
           </div>
-          <span className="text-[8px] text-gray-600 font-mono">{template.chassis}</span>
+          <span style={{ fontSize: 8, color: '#4b5563', fontFamily: 'monospace' }}>ZTE C320 · 18 Slots · GPON OLT</span>
         </div>
       </div>
 
-      {/* Per-port detail table */}
+      {/* ── Per-port detail table ── */}
       {Object.keys(portStats).length > 0 && (
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
           <h3 className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">Detail Per Port PON</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
             {Object.entries(portStats)
               .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
               .map(([portKey, s]) => {
@@ -371,7 +377,7 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
                 const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
                 return (
                   <div key={portKey} className="border border-gray-100 dark:border-gray-800 rounded-lg p-2.5">
-                    <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center justify-between mb-1">
                       <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">0/{portKey}</span>
                       <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
                         {s.online}/{s.total}
@@ -380,12 +386,12 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
                     <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 mb-1">
                       <div
                         className={`h-1.5 rounded-full ${pct === 100 ? 'bg-green-500' : pct === 0 ? 'bg-red-500' : 'bg-orange-400'}`}
-                        style={{ width: `${pct}%` }}
+                        style={{ width: `${Math.max(pct, s.total > 0 ? 5 : 0)}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-[9px] text-gray-400">
-                      <span>{s.total} ONU</span>
-                      {avgRx && <span>RX {avgRx} dBm</span>}
+                      <span>{s.total} ONU{s.unregistered > 0 ? ` · ${s.unregistered} unreg` : ''}</span>
+                      {avgRx && <span>{avgRx} dBm</span>}
                     </div>
                   </div>
                 );
@@ -393,6 +399,209 @@ function OLTPortDiagram({ olt }: { olt: OLTDetail }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ONU Registration Modal
+// ─────────────────────────────────────────────────────────────────────────────
+
+const ZTE_ONU_TYPES = [
+  { value: 'All',       label: 'All (Auto-detect)' },
+  { value: 'ZTE-F609',  label: 'ZTE-F609 (Router ONU)' },
+  { value: 'ZTE-F660',  label: 'ZTE-F660 (Router ONU)' },
+  { value: 'ZTE-F673',  label: 'ZTE-F673 (Router ONU)' },
+  { value: 'ZTE-F600W', label: 'ZTE-F600W (Compact ONU)' },
+  { value: 'ZTE-F612W', label: 'ZTE-F612W (WiFi ONU)' },
+  { value: 'CZTE',      label: 'CZTE (Generic ZTE)' },
+  { value: 'ZTEF680',   label: 'ZTEF680 (Enterprise ONU)' },
+];
+
+const ZTE_TCONT_PROFILES = [
+  { value: '1G',   label: '1 Gbps' },
+  { value: '100M', label: '100 Mbps' },
+  { value: '50M',  label: '50 Mbps' },
+  { value: '20M',  label: '20 Mbps' },
+  { value: '10M',  label: '10 Mbps' },
+  { value: 'FTTH-1G', label: 'FTTH-1G (if defined)' },
+];
+
+interface RegisterModalProps {
+  oltId: string;
+  onu: ONU;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+function ONURegisterModal({ oltId, onu, onClose, onSuccess }: RegisterModalProps) {
+  const [onuType, setOnuType] = useState('All');
+  const [vlan, setVlan] = useState(100);
+  const [tcontProfile, setTcontProfile] = useState('1G');
+  const [description, setDescription] = useState('');
+  const [onuId, setOnuId] = useState(onu.onuId ?? 1);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await fetch(`/api/olt/${oltId}/onus/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          frame: onu.frame,
+          slot:  onu.slot,
+          port:  onu.port,
+          onuId,
+          serialNumber: onu.serialNumber,
+          onuType,
+          vlan,
+          tcontProfile,
+          description: description || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setResult({ ok: true, msg: data.message });
+        setTimeout(() => { onSuccess(); onClose(); }, 1500);
+      } else {
+        setResult({ ok: false, msg: data.error ?? 'Registration failed' });
+      }
+    } catch (e: any) {
+      setResult({ ok: false, msg: e.message });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800 bg-green-50 dark:bg-green-950">
+          <div>
+            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Plus className="h-4 w-4 text-green-600" /> Register ONU
+            </h2>
+            <p className="text-xs text-gray-500 mt-0.5 font-mono">
+              PON 0/{onu.frame}/{onu.slot}/{onu.port} · ONU ID {onuId}
+            </p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 space-y-4">
+          {/* Serial number (read-only) */}
+          <div>
+            <Label className="text-xs text-gray-500">Serial Number (OLT detected)</Label>
+            <div className="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md font-mono text-sm text-gray-700 dark:text-gray-300">
+              {onu.serialNumber ?? <span className="text-yellow-600">Unknown (unregistered ONU — no serial via SNMP)</span>}
+            </div>
+          </div>
+
+          {/* ONU ID */}
+          <div>
+            <Label className="text-xs text-gray-500">ONU ID (1-128)</Label>
+            <Input
+              type="number" min={1} max={128}
+              value={onuId}
+              onChange={e => setOnuId(parseInt(e.target.value) || 1)}
+              className="mt-1 font-mono"
+            />
+          </div>
+
+          {/* ONU Type */}
+          <div>
+            <Label className="text-xs text-gray-500">ONU Type</Label>
+            <Select value={onuType} onValueChange={setOnuType}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ZTE_ONU_TYPES.map(t => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* VLAN */}
+          <div>
+            <Label className="text-xs text-gray-500">Service VLAN</Label>
+            <Input
+              type="number" min={1} max={4094}
+              value={vlan}
+              onChange={e => setVlan(parseInt(e.target.value) || 100)}
+              className="mt-1 font-mono"
+            />
+          </div>
+
+          {/* TCONT Profile */}
+          <div>
+            <Label className="text-xs text-gray-500">TCONT Profile (bandwidth)</Label>
+            <Select value={tcontProfile} onValueChange={setTcontProfile}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ZTE_TCONT_PROFILES.map(p => (
+                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Description */}
+          <div>
+            <Label className="text-xs text-gray-500">Description / Customer Name (optional)</Label>
+            <Input
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="e.g. customer-name"
+              className="mt-1"
+            />
+          </div>
+
+          {/* Telnet command preview */}
+          <div className="bg-gray-900 rounded-md p-3 text-xs font-mono text-green-400 space-y-0.5">
+            <div className="text-gray-500 mb-1">Command preview:</div>
+            <div>configure terminal</div>
+            <div>interface gpon-olt_{onu.frame}/{onu.slot}/{onu.port + 1}</div>
+            <div>  onu {onuId} type All sn {onu.serialNumber ?? '???'}</div>
+            {description && <div>  onu {onuId} description {description}</div>}
+            <div>exit</div>
+            <div>interface gpon-onu_{onu.frame}/{onu.slot}/{onu.port + 1}:{onuId}</div>
+            <div>  tcont 1 profile {tcontProfile}</div>
+            <div>  gemport 1 tcont 1</div>
+            <div>  service-port 1 vport 1 user-vlan {vlan} vlan {vlan}</div>
+            <div>exit; end</div>
+          </div>
+
+          {/* Result */}
+          {result && (
+            <div className={`px-3 py-2 rounded-md text-sm ${result.ok ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'}`}>
+              {result.ok ? '✓ ' : '✗ '}{result.msg}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-2 px-5 py-4 border-t dark:border-gray-800">
+          <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !onu.serialNumber}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {loading ? <><RefreshCw className="h-3 w-3 mr-2 animate-spin" /> Registering…</> : <><Plus className="h-3 w-3 mr-1" /> Register ONU</>}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -421,6 +630,9 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     current: number; total: number;
     results: { serialNumber: string; success: boolean; error?: string }[];
   } | null>(null);
+
+  // ONU registration
+  const [registeringOnu, setRegisteringOnu] = useState<ONU | null>(null);
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -921,7 +1133,16 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : 'N/A'}
                       </td>
                       <td className="py-2">
-                        {confirmReboot === onu.id ? (
+                        {onu.status === 'auth_failed' ? (
+                          /* Unregistered ONU — show Register button */
+                          <button
+                            onClick={() => setRegisteringOnu(onu)}
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Register
+                          </button>
+                        ) : confirmReboot === onu.id ? (
                           <div className="flex gap-1">
                             <button
                               onClick={() => handleRebootOnu(onu.id)}
@@ -1389,11 +1610,21 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           </Card>
         </TabsContent>
 
-        {/* Port Map Tab */}
+        {/* Port Map Tab — Realistic ZTE C320 Chassis Diagram */}
         <TabsContent value="portmap">
-          <OLTPortDiagram olt={olt} />
+          <ZTEChassisView olt={olt} />
         </TabsContent>
       </Tabs>
+
+      {/* ONU Registration Modal */}
+      {registeringOnu && (
+        <ONURegisterModal
+          oltId={id}
+          onu={registeringOnu}
+          onClose={() => setRegisteringOnu(null)}
+          onSuccess={() => { setRegisteringOnu(null); fetchOLT(); }}
+        />
+      )}
     </div>
   );
 }

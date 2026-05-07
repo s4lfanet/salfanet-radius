@@ -82,6 +82,66 @@ expect eof
 }
 
 /**
+ * Execute multiple commands in sequence via Telnet — for ZTE ONU registration workflows.
+ * Connects once, runs each command in order, then disconnects.
+ */
+export async function executeMultipleCommands(
+  config: TelnetConfig,
+  commands: string[]
+): Promise<TelnetResult> {
+  const scriptPath = join('/tmp', `telnet-multi-${Date.now()}-${Math.random().toString(36).slice(2)}.exp`);
+
+  // Build the commands section of the expect script
+  const cmdLines = commands.map(cmd => {
+    const escaped = cmd.replace(/[[\]{}\\^$.|?*+()"'`]/g, '\\$&');
+    return `\nsend "${cmd}\\r"\nexpect -re {[>#]} { }`;
+  }).join('\n');
+
+  try {
+    const expectScript = `#!/usr/bin/expect -f
+set timeout ${config.timeout || 30}
+
+spawn telnet ${config.host} ${config.port || 23}
+
+expect {
+  -re {[Uu]sername:|[Ll]ogin:} { send "${config.username}\\r" }
+  timeout { exit 1 }
+  eof { exit 1 }
+}
+
+expect {
+  -re {[Pp]assword:} { send "${config.password}\\r" }
+  timeout { exit 1 }
+  eof { exit 1 }
+}
+
+expect {
+  -re {[>#]} { }
+  timeout { exit 1 }
+  eof { exit 1 }
+}
+
+send "terminal length 0\\r"
+expect -re {[>#]} { }
+${cmdLines}
+
+send "exit\\r"
+expect eof
+`;
+
+    await writeFile(scriptPath, expectScript);
+    await execAsync(`chmod +x ${scriptPath}`);
+    const { stdout, stderr } = await execAsync(scriptPath, { timeout: ((config.timeout || 30) + 15) * 1000 });
+    await unlink(scriptPath).catch(() => {});
+
+    return { success: true, output: stdout };
+  } catch (error: any) {
+    await unlink(scriptPath).catch(() => {});
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Test Telnet connectivity — check port open first, then try auth
  * Uses a minimal expect script: just connect, wait for any prompt/banner, and disconnect.
  * Avoids running `display version` which may hang on some OLT models.
