@@ -469,6 +469,23 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.22 — 2026-05-09
+
+### Added
+- **ONU description/name (ZTE V2.1)** — `discoverPonV21()` kini fetch nama ONU dari `zxAnGponOnuCfgTable` col 2 (`.3.28.1.1.2.{ponIndex}.{onuId}`) secara paralel, disimpan ke kolom `description` di DB, dan ditampilkan sebagai kolom "Name" di tabel ONU pada halaman detail OLT
+- **ONU distance (ZTE V2.1)** — Jarak ONU ke OLT diambil dari `zxAnGponOnuRegTable` col 21 (`.3.50.12.1.1.21.{ponIndex}.{slot}.{onuId}`) dalam satuan meter, disimpan ke DB, dan ditampilkan sebagai kolom "Distance" di tabel ONU
+- **Unregistered ONU discovery (ZTE V2.1)** — Setelah menemukan ONU terdaftar, `discoverPonV21()` kini juga walk tabel `zxAnGponOnuDiscoveredInfoTable` (`.3.27.4.1.1.{ponIndex}`) untuk menemukan semua ONU yang terdeteksi OLT tetapi belum diregistrasi, ditambahkan dengan status `unregistered` (→ DB: `auth_failed`)
+- **Parallel SNMP fetches (ZTE V2.1)** — Pengambilan oper-state, serial, RX power, description, dan distance dilakukan secara paralel menggunakan `Promise.all()` per ONU untuk mempercepat polling
+
+### Changed
+- **ONU table columns** — Halaman detail OLT kini menampilkan kolom "Name" (deskripsi ONU) dan "Distance" di tabel ONU list; status `auth_failed` kini ditampilkan sebagai "Unregistered" (bukan "Auth failed")
+- **`poller.ts` upsertONU** — Kini menyimpan field `description` dari SNMP; `distance` dan `txPower` menggunakan `onu.distance`/`onu.txPower` sebagai fallback jika data optik tidak tersedia
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Update V21 constants (tambah `onuDescription`, `onuDistance`, `ZTE_V21_SEEN_ONU_TABLE`); rewrite `discoverPonV21()` dengan parallel fetch + unregistered ONU discovery
+- `src/lib/olt/poller.ts` — `upsertONU()` simpan `description`, gunakan `onu.distance`/`onu.txPower` sebagai fallback
+- `src/app/admin/olt/[id]/page.tsx` — Tambah field `description` di interface ONU; tambah kolom Name + Distance di tabel; fix label "Unregistered" untuk status `auth_failed`
+
 ### v2.29.21 — 2026-05-09
 
 ### Fixed
@@ -517,31 +534,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/route.ts` — Konversi BigInt di `performanceMetrics` dan `onuStatuses` sebelum JSON response
 - `src/app/api/olt/metrics/route.ts` — Konversi BigInt di metrics response
 - `src/app/admin/olt/[id]/page.tsx` — Tampilkan username/password di Telnet section saat SSH disabled
-
-### v2.29.17 — 2026-05-08
-
-### Fixed
-- **ONU List selalu kosong (0/0)** — Root cause 3 bug sekaligus:
-  1. **SNMP parser gagal parse OID** — NET-SNMP mengembalikan format `iso.3.6.1...` (dengan prefix `iso.`) tapi regex hanya cocok `^[\d.]+`. Diperbaiki: tambah flag `-On` ke `snmpget`/`snmpwalk` agar output selalu numeric (`1.3.6.1...`), dan update regex untuk handle leading dot.
-  2. **OID status salah (V2.1)** — OID `.3.31.4.1.100` mengembalikan INTEGER: 1 untuk SEMUA 8 slot per PON (bukan status ONU individual). Diperbaiki ke tabel `3.50.11.2` yang terbukti via live SNMP test.
-  3. **Hex-STRING serial gagal parse** — Type prefix `Hex-STRING:` (dengan tanda hubung) tidak cocok dengan regex `\w+:`. Diperbaiki regex ke `[\w-]+:`.
-- **Status ONU terbalik** — OID `3.50.11.2.1.6`: nilai `2=online` (bukan `1=online`). Terbukti dari ONU dengan uptime 83 hari yang return status=2.
-- **Port numbering salah** — SNMP V2.1 `pon=1` harus disimpan sebagai `port=0` (ZTE CLI pakai 0-based port). Diperbaiki dengan offset `pon - 1`.
-- **Serial number salah format** — ZTE GPON serial 8 bytes: 4 bytes ASCII vendor prefix + 4 bytes hex suffix. Misal `5A 54 45 47 DA 59 18 AC` → `ZTEGDA5918AC`. Konversi sebelumnya tidak benar.
-- **Temperature menampilkan nilai tidak valid** — OID `3.50.12.1.1.4` mengembalikan `1` (bukan suhu). Ditambah validasi range 10–85°C agar nilai tidak masuk akal ditolak.
-- **Poll Now tidak ada feedback** — Tambah loading state (`polling` state + spinner) dan alert jika gagal.
-
-### Changed
-- **OID profile ZTE C320 V2.1** diupdate ke tabel `3.50.11.2` yang sudah diverifikasi live:
-  - `onuName`: `.3.50.11.2.1.1` (vendor prefix string, dipakai untuk walk discovery)
-  - `onuSerial`: `.3.50.11.2.1.3` (Hex-STRING 8 bytes)
-  - `onuStatus`: `.3.50.11.2.1.6` (INTEGER: 2=online, 1=init, 3=fault)
-  - `onuModel`: `.3.50.11.2.1.9` (STRING model name)
-
-### Files
-- `src/lib/olt/snmp.ts` — Tambah `-On` flag, fix regex parser untuk `iso.` prefix dan `Hex-STRING:` type
-- `src/lib/olt/vendors/zte.ts` — Update V21 OID profile, fix serial conversion, fix status mapping, fix port offset, fix temperature validation
-- `src/app/admin/olt/[id]/page.tsx` — Tambah `polling` state + spinner + error feedback pada Poll Now
 
 <!-- AUTO-CHANGELOG:END -->
 
