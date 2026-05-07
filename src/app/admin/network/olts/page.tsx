@@ -66,6 +66,7 @@ interface OLT {
   ipAddress: string;
   vendor?: string;
   model?: string;
+  firmwareVersion?: string;
   username?: string;
   password?: string;
   snmpCommunity?: string;
@@ -154,6 +155,7 @@ export default function OLTsPage() {
     ipAddress: '',
     vendor: 'huawei',
     model: '',
+    firmwareVersion: '',
     username: '',
     password: '',
     snmpCommunity: 'public',
@@ -240,6 +242,7 @@ export default function OLTsPage() {
       model: '',
       username: '',
       password: '',
+      firmwareVersion: '',
       snmpCommunity: 'public',
       sshEnabled: true,
       telnetEnabled: false,
@@ -322,6 +325,7 @@ export default function OLTsPage() {
       ipAddress: olt.ipAddress,
       vendor: olt.vendor || '',
       model: olt.model || '',
+      firmwareVersion: olt.firmwareVersion || '',
       username: olt.username || '',
       password: olt.password || '',
       snmpCommunity: community,
@@ -1118,6 +1122,17 @@ export default function OLTsPage() {
                       PON: {VENDOR_MODELS[formData.vendor].find((m) => m.value === formData.model)?.ponType ?? ''}
                     </p>
                   )}
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium mb-1">Firmware Version</label>
+                  <input
+                    type="text"
+                    value={formData.firmwareVersion}
+                    onChange={(e) => setFormData({ ...formData, firmwareVersion: e.target.value })}
+                    placeholder="e.g. V2.1.0 atau V2.2.0"
+                    className="w-full px-2 py-1.5 text-xs border dark:border-gray-700 rounded dark:bg-gray-800"
+                  />
+                  <p className="text-[9px] text-gray-400 mt-0.5">Penting untuk ZTE C320: V2.1 vs V2.2 menentukan OID yang digunakan</p>
                 </div>
               </div>
 

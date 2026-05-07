@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       name, ipAddress, latitude, longitude, status, routerIds, followRoad,
-      vendor, model, username, password, snmpCommunity,
+      vendor, model, firmwareVersion, username, password, snmpCommunity,
       sshEnabled, telnetEnabled,
       sshPort, telnetPort, snmpPort,
     } = body;
@@ -85,6 +85,7 @@ export async function POST(request: NextRequest) {
         followRoad: followRoad || false,
         ...(vendor && { vendor }),
         ...(model && { model }),
+        ...(firmwareVersion !== undefined && firmwareVersion !== '' && { firmwareVersion }),
         ...(username && { username }),
         ...(password && { password }),
         snmpCommunity: snmpCommunity || 'public',
@@ -127,7 +128,7 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const {
       id, name, ipAddress, latitude, longitude, status, routerIds, followRoad,
-      vendor, model, username, password, snmpCommunity,
+      vendor, model, firmwareVersion, username, password, snmpCommunity,
       sshEnabled, telnetEnabled,
       sshPort, telnetPort, snmpPort,
     } = body;
@@ -151,6 +152,7 @@ export async function PUT(request: NextRequest) {
         ...(followRoad !== undefined && { followRoad }),
         ...(vendor !== undefined && { vendor }),
         ...(model !== undefined && { model }),
+        ...(firmwareVersion !== undefined && { firmwareVersion: firmwareVersion || null }),
         ...(username !== undefined && { username }),
         ...(password !== undefined && { password }),
         ...(snmpCommunity !== undefined && { snmpCommunity }),
