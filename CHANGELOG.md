@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.19] — 2026-05-08
+
+### Fixed
+- **Port OLT terbaca hanya 8 dari 16** — `discoverONUsSNMP` sebelumnya hardcode 2 boards × 8 pon. Kini untuk V2.1, fungsi `discoverPONPortsV21()` walk PON port table (`1.3.6.1.4.1.3902.1012.3.11.3.1.1`) secara dinamis, ekstrak semua ponIndex, konversi ke pasangan (board, pon). ZTE C320 dengan 16 port di board 1 kini terdiskover semuanya. Fallback ke 2×8 jika walk gagal.
+- **Diagram OLT menampilkan jumlah port yang tidak sesuai** — Port diagram sebelumnya pakai `portCount` dari template hardcode. Kini `getEffectivePortCount()` mengambil `max(templatePortCount, maxPortDariData + 1)` berdasarkan data `onuStatuses` aktual, sehingga diagram otomatis scale ke 16 port jika SNMP menemukan ONU di port 8–15.
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Tambah `ZTE_V21_PON_TABLE` OID, fungsi `discoverPONPortsV21()`, update `discoverONUsSNMP` ke dynamic loop
+- `src/app/admin/olt/[id]/page.tsx` — Tambah `maxPortPerSlot` tracking, `getEffectivePortCount()`, gunakan di render port diagram
+
+---
+
 ## [2.29.18] — 2026-05-07
 
 ### Fixed
