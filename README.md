@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.19 — 2026-05-08
+
+### Fixed
+- **Port OLT terbaca hanya 8 dari 16** — `discoverONUsSNMP` sebelumnya hardcode 2 boards × 8 pon. Kini untuk V2.1, fungsi `discoverPONPortsV21()` walk PON port table (`1.3.6.1.4.1.3902.1012.3.11.3.1.1`) secara dinamis, ekstrak semua ponIndex, konversi ke pasangan (board, pon). ZTE C320 dengan 16 port di board 1 kini terdiskover semuanya. Fallback ke 2×8 jika walk gagal.
+- **Diagram OLT menampilkan jumlah port yang tidak sesuai** — Port diagram sebelumnya pakai `portCount` dari template hardcode. Kini `getEffectivePortCount()` mengambil `max(templatePortCount, maxPortDariData + 1)` berdasarkan data `onuStatuses` aktual, sehingga diagram otomatis scale ke 16 port jika SNMP menemukan ONU di port 8–15.
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Tambah `ZTE_V21_PON_TABLE` OID, fungsi `discoverPONPortsV21()`, update `discoverONUsSNMP` ke dynamic loop
+- `src/app/admin/olt/[id]/page.tsx` — Tambah `maxPortPerSlot` tracking, `getEffectivePortCount()`, gunakan di render port diagram
+
 ### v2.29.18 — 2026-05-07
 
 ### Fixed
@@ -524,46 +534,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/admin/network/olts/page.tsx` — Tambah `firmwareVersion` ke formData, OLT interface, handleEdit, dan form UI
 - `src/app/api/network/olts/route.ts` — Tambah `firmwareVersion` ke POST (create) dan PUT (update) handler
-
-### v2.29.13 — 2026-05-07
-
-### Fixed
-- **ZTE C320 suhu/CPU/memori selalu N/A** — OID `1.3.6.1.4.1.3902.1015.1015.*` adalah untuk C300/C600, bukan C320. Diganti dengan walk-based approach yang mencoba C320 V2.1 OIDs (`1.3.6.1.4.1.3902.1012.3.50.12.*`), V2.2 OIDs (`1.3.6.1.4.1.3902.1082.500.20.2.1.2.*`), lalu fallback ke C300/C600.
-- **ONU unregistered tidak terdeteksi (ZTE)** — Ditambahkan discovery `show gpon onu uncfg gpon-olt_1/{slot}/{port}` via Telnet/SSH. ONU belum terdaftar akan muncul dengan status `auth_failed` (unregistered).
-- **ZTE port numbering** — Telnet/SSH discovery diperbaiki dari port 1–8 menjadi 0–7 sesuai notasi ZTE (`gpon-olt_1/1/0` bukan `gpon-olt_1/1/1`).
-- **Router/NAS tidak bisa disimpan** — Halaman Settings OLT tidak memiliki field router sama sekali. Ditambahkan router selector (multi-checkbox) + simpan ke `networkOLTRouter` junction table via API PUT.
-- **Firmware version tidak ada di Settings** — Ditambahkan field Firmware Version di Settings OLT. Ini kritis untuk memilih OID yang benar (V2.1 vs V2.2).
-
-### Changed
-- **Port diagram** — Redesign visual menjadi front-panel style (seperti NetMument): dark metallic chassis, SFP slot hole, fiber dot indicator, badge ONU count per port, CON/MGT port dummy, LED PWR/SYS/ALM glow effect.
-- **API GET `/api/olt/[id]`** — Sekarang include `routers` (dengan data router name + IP) di response.
-- **API PUT `/api/olt/[id]`** — Support `routerIds[]` untuk update router assignments.
-- **package.json** — Version synced ke `2.29.12`
-
-### Files
-- `src/lib/olt/vendors/zte.ts` — Fix temperature/CPU/memory OIDs, add unregistered ONU discovery, fix port 0-based numbering
-- `src/lib/olt/poller.ts` — Map `unregistered` status ke `auth_failed`
-- `src/app/api/olt/[id]/route.ts` — Add routers include in GET, add routerIds handling in PUT
-- `src/app/admin/olt/[id]/page.tsx` — Add firmware field, router selector, unregistered filter, redesign port diagram
-
-
-
-### Fixed
-- **ZTE C320 ONU list menampilkan 0 ONU** — Root cause: OID yang digunakan salah (dari C300/C600 MIB bukan C320). Rewrite `zte.ts` dengan OID yang benar dari referensi go-api-c320:
-  - V2.1 firmware: base `1.3.6.1.4.1.3902.1012`, PON index = `board_base + pon × 256`
-  - V2.2 firmware: base `1.3.6.1.4.1.3902.1082`, ID suffix & type suffix per board/PON
-- **ONU discovery via SNMP untuk ZTE C320** — `poller.ts` sekarang mencoba SNMP dulu (`discoverONUsSNMP`) sebelum fallback ke SSH/Telnet. Ini lebih reliable untuk C320.
-- **RxPower dari SNMP V2.2** — RX power diambil langsung saat SNMP discovery (V2.2 supports it × 0.01 dBm). Digunakan sebagai fallback jika opticalInfo Telnet/SSH tidak tersedia.
-- **Port diagram slot count** — Telnet/SSH discovery di `zte.ts` sebelumnya iterasi slot 1–4; C320 hanya punya 2 GCOB cards, diperbaiki menjadi slot 1–2.
-- **Port diagram index mismatch** — Port Map tab menampilkan semua port kosong karena lookup menggunakan 0-based index (`port 0`) sementara DB menyimpan port 1-based (`port 1–8`). Fix: `getPortStyle` dan `getPortTitle` sekarang menggunakan `portIndex + 1` untuk key lookup `portStats`.
-
-### Changed
-- **ZTE C320 Port Diagram — LED indicators** — Header chassis sekarang menampilkan LED PWR/SYS/ALM sesuai kondisi OLT dan alerts, memberi tampilan lebih mirip hardware asli.
-
-### Files
-- `src/lib/olt/vendors/zte.ts` — Complete rewrite dengan V2.1 + V2.2 OID profiles, `discoverONUsSNMP()`, fix slot count 1-2
-- `src/lib/olt/poller.ts` — SNMP discovery diprioritaskan, `rxPower` dari SNMP digunakan sebagai fallback
-- `src/app/admin/olt/[id]/page.tsx` — Fix port index bug (0-based→1-based), LED indicators di chassis header
 
 <!-- AUTO-CHANGELOG:END -->
 
