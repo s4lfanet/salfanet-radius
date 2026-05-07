@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.15] — 2026-05-07
+
+### Fixed
+- **Router selalu "No router"** — Field name mismatch: API mengembalikan `routers[].router` tapi UI membaca `network_olt_routers[].nas`. Diperbaiki agar konsisten menggunakan `routers[].router`.
+- **Router tidak ter-load saat Edit OLT** — `handleEdit` menggunakan `olt.network_olt_routers?.map(r => r.nas?.id)` yang selalu undefined. Diperbaiki ke `olt.routers?.map(r => r.router?.id)`.
+- **Kolom "Model Profile" selalu "No profile"** — Model profile API adalah stub (selalu return `[]`). Diganti tampilkan `vendor + model` langsung dari data OLT.
+
+### Files
+- `src/app/admin/network/olts/page.tsx` — Fix OLT interface, handleEdit, display table, mobile card
+
+---
+
 ## [2.29.14] — 2026-05-07
 
 ### Added
