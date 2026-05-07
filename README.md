@@ -469,6 +469,18 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.21 — 2026-05-09
+
+### Fixed
+- **ONU discovery ZTE C320 V2.1.0 (CRITICAL)** — `discoverPonV21()` sebelumnya walk OID `.3.50.11.2.1.1` yang tidak ada di firmware V2.1.0, menyebabkan 0 ONU terdiskover. Kini menggunakan tabel registrasi yang telah diverifikasi live via SNMP: walk `zxAnGponOnuRegTable` col 1 (`.3.50.12.1.1.1.{ponIndex}`) untuk menemukan ONU terdaftar, lalu GET serial dari `zxAnGponOnuCfgTable` col 5 (`.3.28.1.1.5`), oper-state dari col 6 registrasi tabel (nilai 5=online), dan RX power dari col 10 (formula: `-(raw/1000)` dBm)
+- **ONU RX power ZTE V2.1** — Kini membaca dari kolom 10 tabel registrasi (`3.50.12.1.1.10.{ponIndex}.{slot}.{onuId}`), disimpan sebagai integer positif dalam satuan 0.001 dBm, dikonversi dengan `-(raw/1000)`. Contoh: nilai 9501 → −9.501 dBm (valid GPON)
+- **ZTE C320 template port count** — Template diagram ZTE C320 slot 1 diubah dari 8 menjadi 16 port agar sesuai dengan data SNMP aktual (16 PON port pada board 1). `getEffectivePortCount` tetap mengexpand lebih jauh jika ada ONU di port >15
+- **Temperature/CPU/memory OIDs V2.1** — OID `C320_TEMP_V21/CPU/MEM` yang menunjuk ke tabel ONU yang salah kini diganti dengan alamat yang lebih tepat; jika tidak accessible, semua metrik return null dan UI menampilkan N/A dengan benar
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Update V21 OID constants; rewrite `discoverPonV21()` dengan OIDs terverifikasi dari SNMP live
+- `src/app/admin/olt/[id]/page.tsx` — ZTE C320 template slot 1 portCount: 8 → 16
+
 ### v2.29.20 — 2026-05-09
 
 ### Fixed
@@ -530,16 +542,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/lib/olt/snmp.ts` — Tambah `-On` flag, fix regex parser untuk `iso.` prefix dan `Hex-STRING:` type
 - `src/lib/olt/vendors/zte.ts` — Update V21 OID profile, fix serial conversion, fix status mapping, fix port offset, fix temperature validation
 - `src/app/admin/olt/[id]/page.tsx` — Tambah `polling` state + spinner + error feedback pada Poll Now
-
-### v2.29.15 — 2026-05-07
-
-### Fixed
-- **Router selalu "No router"** — Field name mismatch: API mengembalikan `routers[].router` tapi UI membaca `network_olt_routers[].nas`. Diperbaiki agar konsisten menggunakan `routers[].router`.
-- **Router tidak ter-load saat Edit OLT** — `handleEdit` menggunakan `olt.network_olt_routers?.map(r => r.nas?.id)` yang selalu undefined. Diperbaiki ke `olt.routers?.map(r => r.router?.id)`.
-- **Kolom "Model Profile" selalu "No profile"** — Model profile API adalah stub (selalu return `[]`). Diganti tampilkan `vendor + model` langsung dari data OLT.
-
-### Files
-- `src/app/admin/network/olts/page.tsx` — Fix OLT interface, handleEdit, display table, mobile card
 
 <!-- AUTO-CHANGELOG:END -->
 
