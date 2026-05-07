@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.20] — 2026-05-09
+### Fixed
+- **VPN route persistence (WireGuard)** — `addPeerToConf()` now writes `PostUp`/`PostDown` lines to `wg.conf [Interface]` so local-network routes (e.g. OLT IPs) survive WG interface restarts and VPS reboots
+- **VPN route persistence (watchdog WG)** — `vpn-watchdog.sh` (CHECK D) now parses `wg0.conf` every 2 min and re-adds any missing kernel routes for WG peer local networks
+- **VPN route persistence (watchdog L2TP)** — `vpn-watchdog.sh` (CHECK E) reads `/etc/salfanet/l2tp/peer-routes.conf` and restores missing L2TP peer local-network routes when ppp0 is up
+- **L2TP localNetworks persistence** — `vps-l2tp-peer` API now accepts `localNetworks`, appends idempotent `ip route replace` lines to `/etc/ppp/ip-up.d/99-vpn-routes`, and saves routes to `/etc/salfanet/l2tp/peer-routes.conf`
+- **L2TP UI localNetworks** — VPN client page now sends `localNetworks` field when adding an L2TP VPS peer
+
+### Files
+- `vpn-watchdog.sh` — Added CHECK D (WireGuard route restoration) and CHECK E (L2TP route restoration)
+- `src/app/api/network/vps-wg-peer/route.ts` — PostUp/PostDown persistence in wg.conf
+- `src/app/api/network/vps-l2tp-peer/route.ts` — Handle localNetworks: ip-up.d append + peer-routes.conf
+- `src/app/admin/network/vpn-client/page.tsx` — Pass localNetworks for L2TP VPS peer creation
+
+---
+
 ## [2.29.19] — 2026-05-08
 
 ### Fixed
