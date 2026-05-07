@@ -78,16 +78,11 @@ interface OLT {
   status: string;
   followRoad: boolean;
   createdAt: string;
-  model_profile?: {
-    id: string;
-    vendor: string;
-    model: string;
-  };
-  network_olt_routers?: Array<{
+  routers?: Array<{
     id: string;
     priority: number;
     isActive: boolean;
-    nas: {
+    router: {
       id: string;
       name: string;
       nasname: string;
@@ -338,7 +333,7 @@ export default function OLTsPage() {
       longitude: olt.longitude.toString(),
       status: olt.status,
       followRoad: olt.followRoad,
-      routerIds: olt.network_olt_routers?.map(r => r.nas?.id).filter(Boolean) || [],
+      routerIds: olt.routers?.map(r => r.router?.id).filter(Boolean) || [],
     });
     setIsDialogOpen(true);
   };
@@ -568,7 +563,7 @@ export default function OLTsPage() {
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase hidden xl:table-cell">{t('common.location')}</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase hidden xl:table-cell">{t('olt.followRoad')}</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase hidden lg:table-cell">{t('nav.routers')}</th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase hidden xl:table-cell">Model Profile</th>
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase hidden xl:table-cell">Vendor / Model</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">ONUs</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">ONU Status</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase hidden sm:table-cell">ODC</th>
@@ -673,7 +668,7 @@ export default function OLTsPage() {
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell">
                       <div className="flex flex-wrap gap-1">
-                        {olt.network_olt_routers?.map((r, idx) => (
+                        {olt.routers?.map((r, idx) => (
                           <span
                             key={r.id}
                             className={`px-1.5 py-0.5 text-[9px] rounded ${
@@ -682,26 +677,26 @@ export default function OLTsPage() {
                                 : 'bg-gray-100 text-gray-600 dark:bg-gray-800'
                             }`}
                           >
-                            {r.nas?.name || 'Unknown'}
+                            {r.router?.name || 'Unknown'}
                           </span>
                         ))}
-                        {(!olt.network_olt_routers || olt.network_olt_routers.length === 0) && (
+                        {(!olt.routers || olt.routers.length === 0) && (
                           <span className="text-[10px] text-gray-400">No router</span>
                         )}
                       </div>
                     </td>
                     <td className="px-3 py-2">
-                      {olt.model_profile ? (
+                      {(olt.vendor || olt.model) ? (
                         <div className="flex flex-col gap-0.5">
                           <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
-                            {olt.model_profile.vendor}
+                            {olt.vendor?.toUpperCase()}
                           </span>
                           <span className="text-[9px] text-gray-500 dark:text-gray-400">
-                            {olt.model_profile.model}
+                            {olt.model}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-gray-400">No profile</span>
+                        <span className="text-[10px] text-gray-400">-</span>
                       )}
                     </td>
                     <td className="px-3 py-2">
@@ -909,22 +904,20 @@ export default function OLTsPage() {
                 </div>
               )}
 
-              {/* Model Profile */}
+              {/* Model / Vendor */}
+              {(olt.vendor || olt.model) && (
               <div className="mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
-                <div className="text-[9px] text-gray-400 uppercase mb-1">Model Profile</div>
-                {olt.model_profile ? (
+                <div className="text-[9px] text-gray-400 uppercase mb-1">Vendor / Model</div>
                   <div className="flex flex-col gap-0.5">
                     <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
-                      {olt.model_profile.vendor}
+                      {olt.vendor?.toUpperCase()}
                     </span>
                     <span className="text-[9px] text-gray-500 dark:text-gray-400">
-                      {olt.model_profile.model}
+                      {olt.model}
                     </span>
                   </div>
-                ) : (
-                  <span className="text-[10px] text-gray-400">No profile</span>
-                )}
               </div>
+              )}
 
               {/* ONU Status - Clickable badges */}
               {olt.onu_stats && (olt.onu_stats.online > 0 || olt.onu_stats.dying_gasp > 0 || olt.onu_stats.los > 0 || olt.onu_stats.unconfig > 0 || olt.onu_stats.offline > 0) && (
@@ -981,11 +974,11 @@ export default function OLTsPage() {
               )}
 
               {/* Routers */}
-              {olt.network_olt_routers && olt.network_olt_routers.length > 0 && (
+              {olt.routers && olt.routers.length > 0 && (
                 <div className="mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
                   <div className="text-[9px] text-gray-400 uppercase mb-1">{t('nav.routers')}</div>
                   <div className="flex flex-wrap gap-1">
-                    {olt.network_olt_routers.map((r, idx) => (
+                    {olt.routers.map((r, idx) => (
                       <span
                         key={r.id}
                         className={`px-1.5 py-0.5 text-[9px] rounded ${
@@ -994,7 +987,7 @@ export default function OLTsPage() {
                             : 'bg-gray-100 text-gray-600 dark:bg-gray-800'
                         }`}
                       >
-                        {r.nas?.name || 'Unknown'}
+                        {r.router?.name || 'Unknown'}
                       </span>
                     ))}
                   </div>
