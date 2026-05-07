@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.15 — 2026-05-07
+
+### Fixed
+- **Router selalu "No router"** — Field name mismatch: API mengembalikan `routers[].router` tapi UI membaca `network_olt_routers[].nas`. Diperbaiki agar konsisten menggunakan `routers[].router`.
+- **Router tidak ter-load saat Edit OLT** — `handleEdit` menggunakan `olt.network_olt_routers?.map(r => r.nas?.id)` yang selalu undefined. Diperbaiki ke `olt.routers?.map(r => r.router?.id)`.
+- **Kolom "Model Profile" selalu "No profile"** — Model profile API adalah stub (selalu return `[]`). Diganti tampilkan `vendor + model` langsung dari data OLT.
+
+### Files
+- `src/app/admin/network/olts/page.tsx` — Fix OLT interface, handleEdit, display table, mobile card
+
 ### v2.29.14 — 2026-05-07
 
 ### Added
@@ -1032,19 +1042,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/lib/olt/ssh.ts` — hapus `blowfish-cbc` dari 3 algorithm list
 - `src/app/api/olt/test-connection/route.ts` — update `isOnline` di DB saat test selesai
 - `src/app/admin/olt/[id]/page.tsx` — tambah tab "Port Map" + komponen `OLTPortDiagram` + helper `getOLTTemplate`
-
-### v2.29.9 — 2026-05-07
-
-### Fixed
-- **OLT Test Connection selalu gagal (SNMP/SSH/Telnet)** — Root cause dua masalah:
-  1. `snmpget` dan `expect` tidak terinstall di VPS → diinstall manual via `apt-get install snmp expect`
-  2. `ssh.ts` tidak ada legacy algorithms → ZTE/Huawei OLT lama hanya support `aes128-cbc`, `3des-cbc`, `diffie-hellman-group1-sha1` yang tidak ada di default ssh2
-- `testSSH()` diubah menjadi test handshake only (bukan jalankan `display version`) agar lebih reliable lintas vendor
-- `testTelnet()` sekarang cek TCP port open dulu sebelum jalankan full expect auth
-
-### Files
-- `src/lib/olt/ssh.ts` — tambah legacy cipher/kex/hmac algorithms, fix `testSSH()` to handshake-only
-- `src/lib/olt/telnet.ts` — `testTelnet()` cek port open sebelum full auth
 
 <!-- AUTO-CHANGELOG:END -->
 
