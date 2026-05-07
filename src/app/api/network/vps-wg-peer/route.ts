@@ -134,6 +134,27 @@ AllowedIPs = ${allowedIps}
         await exec(`ip route show ${net} | grep -q . || ip route add ${net} via ${vpnIp} dev ${WG_IFACE}`, { shell: '/bin/bash' })
       } catch { /* ignore — route may already exist or net inaccessible */ }
     }
+
+    // Also persist the routes via PostUp in the [Interface] section so they survive
+    // wg-quick down/up or VPS reboots (wg syncconf does not restore kernel routes).
+    try {
+      let updatedConf = await readFile(WG_CONF, 'utf8')
+      for (const net of parsedLocalNets) {
+        const postUpLine  = `PostUp = ip route replace ${net} via ${vpnIp} dev ${WG_IFACE} 2>/dev/null || true`
+        const postDownLine = `PostDown = ip route del ${net} dev ${WG_IFACE} 2>/dev/null || true`
+        // Only add if not already present
+        if (!updatedConf.includes(`ip route replace ${net} via ${vpnIp}`)) {
+          // Insert just before the first [Peer] block (i.e. end of [Interface] section)
+          const peerIdx = updatedConf.indexOf('\n[Peer]')
+          if (peerIdx !== -1) {
+            updatedConf = updatedConf.slice(0, peerIdx) + '\n' + postUpLine + '\n' + postDownLine + updatedConf.slice(peerIdx)
+          } else {
+            updatedConf = updatedConf.trimEnd() + '\n' + postUpLine + '\n' + postDownLine + '\n'
+          }
+        }
+      }
+      await writeFile(WG_CONF, updatedConf, 'utf8')
+    } catch { /* non-fatal — ephemeral routes still added above */ }
   }
 
   // Ensure iptables rules allow WG peer traffic to reach RADIUS and ping gateway (idempotent check-then-insert)

@@ -28,6 +28,57 @@ PEER_IP=10.20.30.1     # IP MikroTik di VPN tunnel (side router)
 RADIUS_PORT=1812       # FreeRADIUS auth port
 TS=$(date '+%Y-%m-%d %H:%M:%S')
 
+# ============================================================
+# CHECK D: WireGuard peer local-network routes
+# Reads wg.conf, finds each peer's VPN IP (the /32 address) and
+# any additional CIDRs (local networks behind that peer).
+# If the kernel route for a local network is missing, re-adds it.
+# This makes WG local routes survive interface restarts / reboots
+# even if wg-quick PostUp is not yet written.
+# ============================================================
+WG_CONF_FILE="/etc/wireguard/wg0.conf"
+WG_DEV="wg0"
+# Allow override via env or wg-server-info.json
+if [ -f /etc/wireguard/wg-server-info.json ]; then
+  _WG_DEV=$(python3 -c "import json,sys; d=json.load(open('/etc/wireguard/wg-server-info.json')); print(d.get('interface','wg0'))" 2>/dev/null)
+  [ -n "$_WG_DEV" ] && WG_DEV="$_WG_DEV"
+  WG_CONF_FILE="/etc/wireguard/${WG_DEV}.conf"
+fi
+
+if [ -f "$WG_CONF_FILE" ] && ip link show "$WG_DEV" &>/dev/null; then
+  CURRENT_VPN_IP=""
+  while IFS= read -r rawline; do
+    # Strip inline comments and leading/trailing whitespace
+    line="${rawline%%#*}"
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+
+    if [[ "$line" == "[Peer]" ]]; then
+      CURRENT_VPN_IP=""
+    elif [[ "$line" == AllowedIPs* ]]; then
+      IPS="${line#*=}"
+      IPS="${IPS// /}"
+      FIRST_IP=1
+      IFS=',' read -ra IP_LIST <<< "$IPS"
+      for ip in "${IP_LIST[@]}"; do
+        ip="${ip// /}"
+        if [[ $FIRST_IP -eq 1 ]] && [[ "$ip" == *"/32" ]]; then
+          CURRENT_VPN_IP="${ip%/32}"
+          FIRST_IP=0
+        elif [[ "$ip" == *"/"* ]] && [ -n "$CURRENT_VPN_IP" ]; then
+          # This is a local-network CIDR behind the peer
+          if ! ip route show "$ip" 2>/dev/null | grep -q .; then
+            ip route replace "$ip" via "$CURRENT_VPN_IP" dev "$WG_DEV" 2>/dev/null || true
+            logger -t vpn-watchdog "WG route restored: $ip via $CURRENT_VPN_IP dev $WG_DEV"
+            echo "[$TS] WG route restored: $ip via $CURRENT_VPN_IP" >> "$LOG_FILE"
+          fi
+        fi
+      done
+    fi
+  done < "$WG_CONF_FILE"
+fi
+
+
 # Batas baris log agar tidak unbounded growth (~5000 baris / ~500KB)
 MAX_LOG_LINES=5000
 if [ -f "$LOG_FILE" ] && [ "$(wc -l < "$LOG_FILE")" -gt "$MAX_LOG_LINES" ]; then
@@ -65,7 +116,31 @@ fi
 # ============================================================
 if ip link show "$IFACE" &>/dev/null && ip link show "$IFACE" | grep -q 'LOWER_UP'; then
   if ping -c 2 -W 3 -I "$IFACE" "$PEER_IP" &>/dev/null; then
-    # VPN connected and peer reachable — all good, silent exit
+    # VPN connected and peer reachable — restore any missing L2TP local-network routes
+
+    # CHECK E: L2TP peer local-network routes (written by vps-l2tp-peer API)
+    L2TP_ROUTES_FILE="/etc/salfanet/l2tp/peer-routes.conf"
+    if [ -f "$L2TP_ROUTES_FILE" ]; then
+      # Resolve the PPP remote (Mikrotik-side) IP from the ppp0 route table
+      REMOTE_PPP_IP=$(ip route show dev "$IFACE" | awk '/via/{print $3; exit}')
+      while IFS= read -r rline; do
+        rline="${rline%%#*}"
+        rline="${rline#"${rline%%[![:space:]]*}"}"
+        rline="${rline%"${rline##*[![:space:]]}"}"
+        [ -z "$rline" ] && continue
+        # Format: "192.168.1.0/24 via 10.201.0.2"
+        NET=$(echo "$rline" | awk '{print $1}')
+        VIA_IP=$(echo "$rline" | awk '{print $3}')
+        [ -z "$NET" ] || [ -z "$VIA_IP" ] && continue
+        if ! ip route show "$NET" 2>/dev/null | grep -q .; then
+          GW="${REMOTE_PPP_IP:-$VIA_IP}"
+          ip route replace "$NET" via "$GW" dev "$IFACE" metric 100 2>/dev/null || true
+          logger -t vpn-watchdog "L2TP route restored: $NET via $GW dev $IFACE"
+          echo "[$TS] L2TP route restored: $NET via $GW" >> "$LOG_FILE"
+        fi
+      done < "$L2TP_ROUTES_FILE"
+    fi
+
     exit 0
   fi
   # ppp0 up but ping to MikroTik fails — transient or MikroTik rebooting.

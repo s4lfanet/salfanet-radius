@@ -110,6 +110,11 @@ export async function POST(req: NextRequest) {
   if (action === 'add') {
     if (!label) return NextResponse.json({ error: 'label wajib diisi' }, { status: 400 })
 
+    const { localNetworks } = body
+    const parsedLocalNets: string[] = localNetworks
+      ? String(localNetworks).split(',').map((s: string) => s.trim()).filter((s: string) => s && s.includes('/'))
+      : []
+
     const username = `nas-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Math.random().toString(36).substring(2, 6)}`
     const password = generatePassword(16)
     const vpnIp = await getNextAvailableIp(info.subnet || '10.201.0.0/24', info.poolStart ?? 10, info.poolEnd ?? 254)
@@ -122,6 +127,49 @@ export async function POST(req: NextRequest) {
       const entry = `"${username}" * "${password}" ${vpnIp}\n`
       await exec(`echo '${entry.trimEnd()}' >> /etc/ppp/chap-secrets && chmod 600 /etc/ppp/chap-secrets`)
       try { await exec('systemctl restart xl2tpd') } catch { /* ignore */ }
+    }
+
+    // Persist local-network routes so they are restored every time PPP comes up.
+    // Appends idempotent `ip route replace` lines to ip-up.d/99-vpn-routes for each
+    // local network behind this Mikrotik peer. Uses $REMOTE_IP (PPP peer IP) and $IFACE
+    // which are provided automatically by the PPP ip-up framework.
+    if (parsedLocalNets.length > 0) {
+      const IP_UP_SCRIPT = '/etc/ppp/ip-up.d/99-vpn-routes'
+      try {
+        const { readFile: fsRead, writeFile: fsWrite } = await import('fs/promises')
+        let ipUpContent = ''
+        try { ipUpContent = await fsRead(IP_UP_SCRIPT, 'utf8') } catch { /* first time */ }
+
+        for (const net of parsedLocalNets) {
+          // Marker to avoid duplicate entries
+          if (ipUpContent.includes(`# localnet:${net}`)) continue
+          const routeLines = [
+            `# localnet:${net} peer:${vpnIp}`,
+            `ip route replace ${net} via $REMOTE_IP dev $IFACE metric 100 2>/dev/null || \\`,
+            `  ip route add ${net} via $REMOTE_IP dev $IFACE metric 100 2>/dev/null || true`,
+          ].join('\n')
+          ipUpContent = ipUpContent.trimEnd() + '\n' + routeLines + '\n'
+        }
+        await fsWrite(IP_UP_SCRIPT, ipUpContent, 'utf8')
+        await exec(`chmod +x ${IP_UP_SCRIPT}`)
+      } catch { /* non-fatal */ }
+
+      // Also persist in a simple route file so vpn-watchdog can restore without re-parsing
+      // Format: one line per local net: "net via vpnIp"
+      const L2TP_ROUTES_FILE = '/etc/salfanet/l2tp/peer-routes.conf'
+      try {
+        const { mkdir, readFile: fsRead, writeFile: fsWrite } = await import('fs/promises')
+        await mkdir('/etc/salfanet/l2tp', { recursive: true })
+        let existing = ''
+        try { existing = await fsRead(L2TP_ROUTES_FILE, 'utf8') } catch { /* first time */ }
+        for (const net of parsedLocalNets) {
+          const line = `${net} via ${vpnIp}`
+          if (!existing.includes(line)) {
+            existing = existing.trimEnd() + '\n' + line + '\n'
+          }
+        }
+        await fsWrite(L2TP_ROUTES_FILE, existing.trimStart(), 'utf8')
+      } catch { /* non-fatal */ }
     }
 
     // Ensure iptables rules allow PPP traffic to reach RADIUS (idempotent check-then-insert)

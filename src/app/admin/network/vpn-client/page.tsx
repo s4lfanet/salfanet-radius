@@ -555,7 +555,7 @@ export default function VpnClientPage() {
         const res = await fetch('/api/network/vps-l2tp-peer', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'add', label: formData.name.trim() }),
+          body: JSON.stringify({ action: 'add', label: formData.name.trim(), localNetworks: formData.localNetworks.trim() || undefined }),
         })
         const data = await res.json()
         if (data.success) {
