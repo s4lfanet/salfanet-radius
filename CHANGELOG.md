@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.14] — 2026-05-07
+
+### Added
+- **Firmware Version di modal Add/Edit OLT** — Field Firmware Version (e.g. `V2.1.0`, `V2.2.0`) ditambahkan ke form Add OLT dan Edit OLT di halaman `/admin/network/olts`. Kritis untuk ZTE C320 agar OID yang digunakan sesuai versi firmware.
+
+### Files
+- `src/app/admin/network/olts/page.tsx` — Tambah `firmwareVersion` ke formData, OLT interface, handleEdit, dan form UI
+- `src/app/api/network/olts/route.ts` — Tambah `firmwareVersion` ke POST (create) dan PUT (update) handler
+
+---
+
 ## [2.29.13] — 2026-05-07
 
 ### Fixed
