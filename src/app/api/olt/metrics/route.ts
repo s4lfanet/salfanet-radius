@@ -30,7 +30,17 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    return NextResponse.json({ success: true, metrics });
+    return NextResponse.json({
+      success: true,
+      metrics: metrics.map(m => ({
+        ...m,
+        uptime: m.uptime != null ? Number(m.uptime) : null,
+        rxBytes: Number(m.rxBytes),
+        txBytes: Number(m.txBytes),
+        rxErrors: Number(m.rxErrors),
+        txErrors: Number(m.txErrors),
+      })),
+    });
   } catch (error: any) {
     console.error('[OLT Metrics GET]', error);
     return NextResponse.json({ error: 'Failed to fetch metrics', details: error.message }, { status: 500 });

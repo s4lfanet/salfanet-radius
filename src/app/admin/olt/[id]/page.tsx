@@ -1287,6 +1287,27 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         onChange={(e) => setSettings((s) => ({ ...s, telnetPort: parseInt(e.target.value) || 23 }))}
                       />
                     </div>
+                    {!settings.sshEnabled && (
+                      <>
+                        <div>
+                          <Label>Username</Label>
+                          <Input
+                            value={settings.username}
+                            onChange={(e) => setSettings((s) => ({ ...s, username: e.target.value }))}
+                            placeholder="admin"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label>Password</Label>
+                          <Input
+                            type="password"
+                            value={settings.password}
+                            onChange={(e) => setSettings((s) => ({ ...s, password: e.target.value }))}
+                            placeholder="Leave blank to keep existing"
+                          />
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
                 {settings.telnetEnabled && (

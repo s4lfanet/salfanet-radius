@@ -56,7 +56,19 @@ export async function GET(
       olt: {
         ...olt,
         uptime: Number(olt.uptime),
-        onuStatuses: olt.onuStatuses.map(s => ({ ...s, uptime: s.uptime != null ? Number(s.uptime) : null })),
+        performanceMetrics: olt.performanceMetrics.map(m => ({
+          ...m,
+          uptime: m.uptime != null ? Number(m.uptime) : null,
+          rxBytes: Number(m.rxBytes),
+          txBytes: Number(m.txBytes),
+          rxErrors: Number(m.rxErrors),
+          txErrors: Number(m.txErrors),
+        })),
+        onuStatuses: olt.onuStatuses.map(s => ({
+          ...s,
+          bandwidthUp: Number(s.bandwidthUp),
+          bandwidthDown: Number(s.bandwidthDown),
+        })),
       },
     });
   } catch (error: any) {
