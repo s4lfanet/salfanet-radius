@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.14 — 2026-05-07
+
+### Added
+- **Firmware Version di modal Add/Edit OLT** — Field Firmware Version (e.g. `V2.1.0`, `V2.2.0`) ditambahkan ke form Add OLT dan Edit OLT di halaman `/admin/network/olts`. Kritis untuk ZTE C320 agar OID yang digunakan sesuai versi firmware.
+
+### Files
+- `src/app/admin/network/olts/page.tsx` — Tambah `firmwareVersion` ke formData, OLT interface, handleEdit, dan form UI
+- `src/app/api/network/olts/route.ts` — Tambah `firmwareVersion` ke POST (create) dan PUT (update) handler
+
 ### v2.29.13 — 2026-05-07
 
 ### Fixed
@@ -1036,16 +1045,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/lib/olt/ssh.ts` — tambah legacy cipher/kex/hmac algorithms, fix `testSSH()` to handshake-only
 - `src/lib/olt/telnet.ts` — `testTelnet()` cek port open sebelum full auth
-
-### v2.29.8 — 2026-05-07
-
-### Fixed
-- **POST /api/network/olts/status 404** — Endpoint untuk mengecek status konektivitas OLT belum ada. Halaman `/admin/network/olts` melakukan polling status setiap 30 detik ke endpoint ini. Fix: buat route baru yang membaca `isOnline`, `sshEnabled`, `telnetEnabled` dari DB dan kembalikan `statusMap`.
-- **GET /admin/network/olt/[id] 404** — Link "View detail" di halaman daftar OLT mengarah ke `/admin/network/olt/[id]` tapi halaman detail sebenarnya ada di `/admin/olt/[id]`. Fix: perbaiki dua link di halaman daftar OLT (tabel desktop + kartu mobile).
-
-### Files
-- `src/app/api/network/olts/status/route.ts` — **BARU**: POST handler batch OLT status check
-- `src/app/admin/network/olts/page.tsx` — Perbaiki 2 link ke `/admin/olt/${olt.id}`
 
 <!-- AUTO-CHANGELOG:END -->
 
