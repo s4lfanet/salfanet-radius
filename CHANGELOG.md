@@ -6,6 +6,28 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.29] — 2026-05-13
+### Fixed
+- **Unregistered ONU serial N/A** — Parser kini gunakan global `show pon onu uncfg` (satu Telnet call) yang hasilkan format `gpon_olt-1/1/0  N/A  ZTEGDA5918AC  unknown`; fallback per-port juga handle format `gpon-onu_1/1/0:N` (prefix berbeda + ONU ID setelah titik dua)
+- **Chassis diagram card type** — Sebelumnya hardcoded GTGQ; sekarang baca `show card` via Telnet → card type aktual (GTGHG, SMXA-B, MCUD1)
+- **Uplink slot posisi** — Sebelumnya hardcoded slot 15/16 (GICF); sekarang baca slot aktual SMXA dari `show card` (slot 3 & 4 di ZTE C320 ini)
+
+### Added
+- **Uplink Port Modal** — Klik port dot SMXA di chassis diagram untuk lihat detail dengan 4 tab: Status, VLAN, Config (running-config), Optical (DDM)
+- **Uplink Configuration** — Tambah/hapus tagged VLAN dan enable/disable port lewat modal
+- **`/api/olt/[id]/uplink` endpoint** — GET (4 tab) + POST (addVlan, removeVlan, enable, disable, setDescription) dengan validasi input port dan VLAN ID
+
+### Changed
+- **Chassis API** — `/api/olt/[id]/chassis` kini: Telnet `show card` sebagai sumber utama, SNMP+DB sebagai fallback. Response tambah field `uplinkIfaces`, `hardVer`, `softVer`, `cardStatus`, `source`
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Fix ONU serial: global uncfg pre-fetch + dual-format parser
+- `src/app/api/olt/[id]/chassis/route.ts` — Rewrite: Telnet show card + SNMP fallback
+- `src/app/api/olt/[id]/uplink/route.ts` — **NEW**: Uplink port detail & config API
+- `src/app/admin/olt/[id]/page.tsx` — UplinkPortModal, ZTEChassisView gunakan data dari chassis API
+
+---
+
 ## [2.29.28] — 2026-05-09
 ### Fixed
 - **Unregistered ONU serial number** — Serial number ONU yang belum terdaftar (status `auth_failed`) kini tampil di UI. Fix 2 bug di `zte.ts`:
