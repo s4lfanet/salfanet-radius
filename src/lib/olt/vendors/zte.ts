@@ -184,6 +184,52 @@ export async function getMemoryUsage(config: SNMPConfig): Promise<number | null>
   return null;
 }
 
+// ── Telnet-based System Metrics (best-effort) ─────────────────────────────────
+// ZTE C320 V2.1 does NOT expose CPU/memory/temp via Telnet CLI either
+// (confirmed by oltc320_v2.1.1_linux CHANGELOG: "Removed unsupported monitoring").
+// This function tries common ZTE CLI commands and parses what is available.
+// On C320 V2.1 these will all return null; newer models (C600/C300) may respond.
+export async function getSystemMetricsTelnet(
+  telnetConfig: TelnetConfig
+): Promise<{ temperature: number | null; cpuUsage: number | null; memoryUsage: number | null }> {
+  const result = { temperature: null as number | null, cpuUsage: null as number | null, memoryUsage: null as number | null };
+  try {
+    // Try "show card" — some ZTE models show board temp here
+    const cardResult = await executeCommand(telnetConfig, 'show card');
+    if (cardResult.success && cardResult.output) {
+      const tempMatch = cardResult.output.match(/temp(?:erature)?\s*[:\s]+(\d+)/i);
+      if (tempMatch) {
+        const t = parseInt(tempMatch[1]);
+        if (t >= 10 && t <= 85) result.temperature = t;
+      }
+      const cpuMatch = cardResult.output.match(/cpu\s*(?:usage|utilization)?\s*[:\s]+(\d+)/i);
+      if (cpuMatch) {
+        const c = parseInt(cpuMatch[1]);
+        if (c >= 0 && c <= 100) result.cpuUsage = c;
+      }
+      const memMatch = cardResult.output.match(/mem(?:ory)?\s*(?:usage|util)?\s*[:\s]+(\d+)/i);
+      if (memMatch) {
+        const m = parseInt(memMatch[1]);
+        if (m >= 0 && m <= 100) result.memoryUsage = m;
+      }
+    }
+    // Try "show environment" as fallback for temperature
+    if (result.temperature === null) {
+      const envResult = await executeCommand(telnetConfig, 'show environment');
+      if (envResult.success && envResult.output) {
+        const tempMatch = envResult.output.match(/temp(?:erature)?\s*[:\s]+(\d+)/i);
+        if (tempMatch) {
+          const t = parseInt(tempMatch[1]);
+          if (t >= 10 && t <= 85) result.temperature = t;
+        }
+      }
+    }
+  } catch {
+    // Silently ignore — Telnet may not be configured or supported
+  }
+  return result;
+}
+
 // ── Dynamic PON Port Discovery (V2.1) ───────────────────────────────────────
 
 /**

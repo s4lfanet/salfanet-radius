@@ -417,7 +417,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// ONU Registration Modal
+// ONU Registration Modal — vendor-aware (ZTE / Huawei / FiberHome)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ZTE_ONU_TYPES = [
@@ -432,29 +432,53 @@ const ZTE_ONU_TYPES = [
 ];
 
 const ZTE_TCONT_PROFILES = [
-  { value: '1G',   label: '1 Gbps' },
-  { value: '100M', label: '100 Mbps' },
-  { value: '50M',  label: '50 Mbps' },
-  { value: '20M',  label: '20 Mbps' },
-  { value: '10M',  label: '10 Mbps' },
+  { value: '1G',      label: '1 Gbps' },
+  { value: '100M',    label: '100 Mbps' },
+  { value: '50M',     label: '50 Mbps' },
+  { value: '20M',     label: '20 Mbps' },
+  { value: '10M',     label: '10 Mbps' },
   { value: 'FTTH-1G', label: 'FTTH-1G (if defined)' },
+];
+
+const FIBERHOME_ONU_TYPES = [
+  { value: 'AN5506-04-FA',  label: 'AN5506-04-FA (4-port GPON ONU)' },
+  { value: 'AN5506-04-F',   label: 'AN5506-04-F (4-port GPON ONU)' },
+  { value: 'AN5506-02-B',   label: 'AN5506-02-B (2-port ONU)' },
+  { value: 'AN5506-01-A',   label: 'AN5506-01-A (1-port ONU)' },
+  { value: 'RP2602',        label: 'RP2602 (SFU ONU)' },
+  { value: 'GH3-001',       label: 'GH3-001 (Generic FiberHome)' },
+  { value: 'default',       label: 'Default (Auto-detect)' },
 ];
 
 interface RegisterModalProps {
   oltId: string;
   onu: ONU;
+  vendor: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-function ONURegisterModal({ oltId, onu, onClose, onSuccess }: RegisterModalProps) {
-  const [onuType, setOnuType] = useState('All');
-  const [vlan, setVlan] = useState(100);
-  const [tcontProfile, setTcontProfile] = useState('1G');
-  const [description, setDescription] = useState('');
-  const [onuId, setOnuId] = useState(onu.onuId ?? 1);
+function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterModalProps) {
+  const v = (vendor ?? 'zte').toLowerCase();
+  const isHuawei     = v === 'huawei';
+  const isFiberHome  = v === 'fiberhome';
+  const isZTE        = !isHuawei && !isFiberHome;
+
+  const [onuType,       setOnuType]       = useState(isZTE ? 'All' : isFiberHome ? 'default' : '');
+  const [vlan,          setVlan]          = useState(100);
+  const [tcontProfile,  setTcontProfile]  = useState('1G');
+  const [description,   setDescription]   = useState('');
+  const [onuId,         setOnuId]         = useState(onu.onuId ?? 1);
+  // Huawei-specific
+  const [lineProfileId, setLineProfileId] = useState(1);
+  const [srvProfileId,  setSrvProfileId]  = useState(1);
+  // FiberHome-specific
+  const [profileName,   setProfileName]   = useState('default');
+
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const ponPort = onu.port + 1;
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -471,8 +495,14 @@ function ONURegisterModal({ oltId, onu, onClose, onSuccess }: RegisterModalProps
           serialNumber: onu.serialNumber,
           onuType,
           vlan,
-          tcontProfile,
           description: description || undefined,
+          // ZTE
+          tcontProfile,
+          // Huawei
+          lineProfileId,
+          srvProfileId,
+          // FiberHome
+          profileName,
         }),
       });
       const data = await res.json();
@@ -489,17 +519,52 @@ function ONURegisterModal({ oltId, onu, onClose, onSuccess }: RegisterModalProps
     }
   };
 
+  // Build command preview per vendor
+  const cmdPreview = isHuawei ? [
+    'enable',
+    'config',
+    `interface gpon ${onu.frame}/${onu.slot}`,
+    `  ont add ${ponPort} ${onuId} sn-auth ${onu.serialNumber ?? '???'} omci ont-lineprofile-id ${lineProfileId} ont-srvprofile-id ${srvProfileId}${description ? ` desc ${description}` : ''}`,
+    'quit',
+    `service-port 1 vlan ${vlan} gpon ${onu.frame}/${onu.slot}/${ponPort} ont ${onuId} gemport 0 multi-service user-vlan ${vlan} tag-transform translate`,
+    'quit',
+  ] : isFiberHome ? [
+    'enable',
+    'config',
+    `interface gpon-olt_${onu.frame}/${onu.slot}/${ponPort}`,
+    `  onu add ${onuId} type ${onuType} sn ${onu.serialNumber ?? '???'}`,
+    `  onu ${onuId} profile ${profileName}`,
+    `  onu ${onuId} vlan ${vlan} mode translate`,
+    ...(description ? [`  onu ${onuId} description ${description}`] : []),
+    '  commit',
+    'exit',
+  ] : [
+    // ZTE C320 V2.1 — reference: zte_command.py → register_onu_stepbystep()
+    'configure terminal',
+    `interface gpon-olt_${onu.frame}/${onu.slot}/${ponPort}`,
+    `  onu ${onuId} type All sn ${onu.serialNumber ?? '???'}`,
+    ...(description ? [`  onu ${onuId} description ${description}`] : []),
+    'exit',
+    `interface gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    `  tcont 1 profile ${tcontProfile}`,
+    '  gemport 1 tcont 1',
+    `  service-port 1 vport 1 user-vlan ${vlan} vlan ${vlan}`,
+    'exit',
+    'end',
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800 bg-green-50 dark:bg-green-950">
+        <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800 bg-green-50 dark:bg-green-950 flex-shrink-0">
           <div>
             <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
               <Plus className="h-4 w-4 text-green-600" /> Register ONU
+              <span className="text-xs font-normal text-gray-500 uppercase ml-1">{v}</span>
             </h2>
             <p className="text-xs text-gray-500 mt-0.5 font-mono">
-              PON 0/{onu.frame}/{onu.slot}/{onu.port} · ONU ID {onuId}
+              PON {onu.frame}/{onu.slot}/{ponPort} · ONU ID {onuId}
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
@@ -507,111 +572,137 @@ function ONURegisterModal({ oltId, onu, onClose, onSuccess }: RegisterModalProps
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-5 space-y-4">
+        {/* Body — scrollable */}
+        <div className="p-5 space-y-4 overflow-y-auto">
           {/* Serial number (read-only) */}
           <div>
             <Label className="text-xs text-gray-500">Serial Number (OLT detected)</Label>
             <div className="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md font-mono text-sm text-gray-700 dark:text-gray-300">
-              {onu.serialNumber ?? <span className="text-yellow-600">Unknown (unregistered ONU — no serial via SNMP)</span>}
+              {onu.serialNumber ?? <span className="text-yellow-600">Unknown — no serial via SNMP (enter manually)</span>}
             </div>
           </div>
 
           {/* ONU ID */}
           <div>
             <Label className="text-xs text-gray-500">ONU ID (1-128)</Label>
-            <Input
-              type="number" min={1} max={128}
-              value={onuId}
+            <Input type="number" min={1} max={128} value={onuId}
               onChange={e => setOnuId(parseInt(e.target.value) || 1)}
-              className="mt-1 font-mono"
-            />
-          </div>
-
-          {/* ONU Type */}
-          <div>
-            <Label className="text-xs text-gray-500">ONU Type</Label>
-            <Select value={onuType} onValueChange={setOnuType}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ZTE_ONU_TYPES.map(t => (
-                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              className="mt-1 font-mono" />
           </div>
 
           {/* VLAN */}
           <div>
             <Label className="text-xs text-gray-500">Service VLAN</Label>
-            <Input
-              type="number" min={1} max={4094}
-              value={vlan}
+            <Input type="number" min={1} max={4094} value={vlan}
               onChange={e => setVlan(parseInt(e.target.value) || 100)}
-              className="mt-1 font-mono"
-            />
+              className="mt-1 font-mono" />
           </div>
 
-          {/* TCONT Profile */}
-          <div>
-            <Label className="text-xs text-gray-500">TCONT Profile (bandwidth)</Label>
-            <Select value={tcontProfile} onValueChange={setTcontProfile}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ZTE_TCONT_PROFILES.map(p => (
-                  <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* ── ZTE-only fields ── */}
+          {isZTE && (<>
+            <div>
+              <Label className="text-xs text-gray-500">ONU Type</Label>
+              <Select value={onuType} onValueChange={setOnuType}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ZTE_ONU_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">TCONT Profile (bandwidth)</Label>
+              <Select value={tcontProfile} onValueChange={setTcontProfile}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ZTE_TCONT_PROFILES.map(p => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </>)}
+
+          {/* ── Huawei-only fields ── */}
+          {isHuawei && (<>
+            <div>
+              <Label className="text-xs text-gray-500">ONT Line Profile ID</Label>
+              <Input type="number" min={1} value={lineProfileId}
+                onChange={e => setLineProfileId(parseInt(e.target.value) || 1)}
+                className="mt-1 font-mono" />
+              <p className="text-xs text-gray-400 mt-1">ont-lineprofile-id — defines GEM/TCONT mapping</p>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">ONT Service Profile ID</Label>
+              <Input type="number" min={1} value={srvProfileId}
+                onChange={e => setSrvProfileId(parseInt(e.target.value) || 1)}
+                className="mt-1 font-mono" />
+              <p className="text-xs text-gray-400 mt-1">ont-srvprofile-id — defines port/service config</p>
+            </div>
+          </>)}
+
+          {/* ── FiberHome-only fields ── */}
+          {isFiberHome && (<>
+            <div>
+              <Label className="text-xs text-gray-500">ONU Type</Label>
+              <Select value={onuType} onValueChange={setOnuType}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FIBERHOME_ONU_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500">Service Profile Name</Label>
+              <Input value={profileName}
+                onChange={e => setProfileName(e.target.value || 'default')}
+                placeholder="default"
+                className="mt-1 font-mono" />
+              <p className="text-xs text-gray-400 mt-1">Must match a profile already configured on the OLT</p>
+            </div>
+          </>)}
 
           {/* Description */}
           <div>
             <Label className="text-xs text-gray-500">Description / Customer Name (optional)</Label>
-            <Input
-              value={description}
+            <Input value={description}
               onChange={e => setDescription(e.target.value)}
               placeholder="e.g. customer-name"
-              className="mt-1"
-            />
+              className="mt-1" />
           </div>
 
-          {/* Telnet command preview */}
+          {/* Command preview */}
           <div className="bg-gray-900 rounded-md p-3 text-xs font-mono text-green-400 space-y-0.5">
-            <div className="text-gray-500 mb-1">Command preview:</div>
-            <div>configure terminal</div>
-            <div>interface gpon-olt_{onu.frame}/{onu.slot}/{onu.port + 1}</div>
-            <div>  onu {onuId} type All sn {onu.serialNumber ?? '???'}</div>
-            {description && <div>  onu {onuId} description {description}</div>}
-            <div>exit</div>
-            <div>interface gpon-onu_{onu.frame}/{onu.slot}/{onu.port + 1}:{onuId}</div>
-            <div>  tcont 1 profile {tcontProfile}</div>
-            <div>  gemport 1 tcont 1</div>
-            <div>  service-port 1 vport 1 user-vlan {vlan} vlan {vlan}</div>
-            <div>exit; end</div>
+            <div className="text-gray-500 mb-1">Telnet command preview ({v}):</div>
+            {cmdPreview.map((line, i) => (
+              <div key={i}>{line}</div>
+            ))}
           </div>
 
           {/* Result */}
           {result && (
-            <div className={`px-3 py-2 rounded-md text-sm ${result.ok ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400' : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'}`}>
+            <div className={`px-3 py-2 rounded-md text-sm ${result.ok
+              ? 'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400'
+              : 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400'}`}>
               {result.ok ? '✓ ' : '✗ '}{result.msg}
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-2 px-5 py-4 border-t dark:border-gray-800">
+        <div className="flex justify-end gap-2 px-5 py-4 border-t dark:border-gray-800 flex-shrink-0">
           <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button
             onClick={handleSubmit}
             disabled={loading || !onu.serialNumber}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
-            {loading ? <><RefreshCw className="h-3 w-3 mr-2 animate-spin" /> Registering…</> : <><Plus className="h-3 w-3 mr-1" /> Register ONU</>}
+            {loading
+              ? <><RefreshCw className="h-3 w-3 mr-2 animate-spin" /> Registering…</>
+              : <><Plus className="h-3 w-3 mr-1" /> Register ONU</>}
           </Button>
         </div>
       </div>
@@ -1634,6 +1725,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         <ONURegisterModal
           oltId={id}
           onu={registeringOnu}
+          vendor={olt?.vendor ?? null}
           onClose={() => setRegisteringOnu(null)}
           onSuccess={() => { setRegisteringOnu(null); fetchOLT(); }}
         />
