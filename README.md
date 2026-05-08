@@ -469,6 +469,24 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.27 — 2026-05-08
+
+### Added
+- **Vendor-aware ONU Registration Modal** — Modal Register ONU di halaman OLT Detail kini otomatis menyesuaikan field dan preview command berdasarkan vendor OLT:
+  - **ZTE C320** — ONU Type (All/ZTE-F6xx) + TCONT Profile (1G/100M/…) + Telnet CLI `configure terminal → interface gpon-olt → onu N type All sn SN → tcont/gemport/service-port → end`
+  - **Huawei MA5608T/MA5800** — Line Profile ID + Service Profile ID + Telnet CLI `enable → config → interface gpon → ont add → service-port → quit`
+  - **FiberHome AN5516/AN6010** — ONU Type (AN5506-04-FA/…) + Service Profile Name + Telnet CLI `enable → config → interface gpon-olt → onu add → onu profile → onu vlan → commit → exit`
+- **Vendor-aware Register API** — `POST /api/olt/[id]/onus/register` kini membangun urutan command yang berbeda per vendor berdasarkan referensi `zte_command.py → register_onu_stepbystep()` dari oltc320_v2.1.1_linux
+- **ZTE Telnet System Metrics (best-effort)** — Tambah `getSystemMetricsTelnet()` di `zte.ts` yang mencoba `show card` dan `show environment` via Telnet untuk parse CPU/Memory/Temp. Pada ZTE C320 V2.1 akan selalu return null (hardware tidak support), tapi tersedia untuk model ZTE lain (C600/C300)
+
+### Notes
+- ZTE C320 V2.1 CPU/Memory/Temp via Telnet tetap tidak tersedia — dikonfirmasi oleh oltc320_v2.1.1_linux CHANGELOG: "Removed unsupported CPU/memory/temperature monitoring". UI menampilkan N/A, perilaku ini sudah benar.
+
+### Files
+- `src/app/admin/olt/[id]/page.tsx` — ONURegisterModal rewritten: vendor-aware fields + preview; prop `vendor` ditambahkan ke render call
+- `src/app/api/olt/[id]/onus/register/route.ts` — Full rewrite: vendor detection + per-vendor CLI command sequence
+- `src/lib/olt/vendors/zte.ts` — Tambah `getSystemMetricsTelnet()` best-effort function
+
 ### v2.29.26 — 2026-05-08
 
 ### Fixed
@@ -522,23 +540,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/onus/register/route.ts` — **NEW** POST endpoint registrasi ONU via Telnet
 - `src/app/api/olt/[id]/chassis/route.ts` — **NEW** GET endpoint layout chassis
 - `src/lib/olt/telnet.ts` — Tambah `executeMultipleCommands()`
-
-### v2.29.22 — 2026-05-09
-
-### Added
-- **ONU description/name (ZTE V2.1)** — `discoverPonV21()` kini fetch nama ONU dari `zxAnGponOnuCfgTable` col 2 (`.3.28.1.1.2.{ponIndex}.{onuId}`) secara paralel, disimpan ke kolom `description` di DB, dan ditampilkan sebagai kolom "Name" di tabel ONU pada halaman detail OLT
-- **ONU distance (ZTE V2.1)** — Jarak ONU ke OLT diambil dari `zxAnGponOnuRegTable` col 21 (`.3.50.12.1.1.21.{ponIndex}.{slot}.{onuId}`) dalam satuan meter, disimpan ke DB, dan ditampilkan sebagai kolom "Distance" di tabel ONU
-- **Unregistered ONU discovery (ZTE V2.1)** — Setelah menemukan ONU terdaftar, `discoverPonV21()` kini juga walk tabel `zxAnGponOnuDiscoveredInfoTable` (`.3.27.4.1.1.{ponIndex}`) untuk menemukan semua ONU yang terdeteksi OLT tetapi belum diregistrasi, ditambahkan dengan status `unregistered` (→ DB: `auth_failed`)
-- **Parallel SNMP fetches (ZTE V2.1)** — Pengambilan oper-state, serial, RX power, description, dan distance dilakukan secara paralel menggunakan `Promise.all()` per ONU untuk mempercepat polling
-
-### Changed
-- **ONU table columns** — Halaman detail OLT kini menampilkan kolom "Name" (deskripsi ONU) dan "Distance" di tabel ONU list; status `auth_failed` kini ditampilkan sebagai "Unregistered" (bukan "Auth failed")
-- **`poller.ts` upsertONU** — Kini menyimpan field `description` dari SNMP; `distance` dan `txPower` menggunakan `onu.distance`/`onu.txPower` sebagai fallback jika data optik tidak tersedia
-
-### Files
-- `src/lib/olt/vendors/zte.ts` — Update V21 constants (tambah `onuDescription`, `onuDistance`, `ZTE_V21_SEEN_ONU_TABLE`); rewrite `discoverPonV21()` dengan parallel fetch + unregistered ONU discovery
-- `src/lib/olt/poller.ts` — `upsertONU()` simpan `description`, gunakan `onu.distance`/`onu.txPower` sebagai fallback
-- `src/app/admin/olt/[id]/page.tsx` — Tambah field `description` di interface ONU; tambah kolom Name + Distance di tabel; fix label "Unregistered" untuk status `auth_failed`
 
 <!-- AUTO-CHANGELOG:END -->
 
