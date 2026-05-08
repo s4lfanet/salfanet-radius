@@ -6,6 +6,30 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.28] — 2026-05-09
+### Fixed
+- **Unregistered ONU serial number** — Serial number ONU yang belum terdaftar (status `auth_failed`) kini tampil di UI. Fix 2 bug di `zte.ts`:
+  1. Port 0-based vs 1-based: command Telnet `show pon onu uncfg gpon-olt_1/{board}/{pon-1}` — sebelumnya salah kirim `pon` (SNMP 1-based), sekarang benar kirim `pon-1` (CLI 0-based)
+  2. Regex parser salah format: sebelumnya cari `gpon-onu_` (format ONU terdaftar), kini parse format aktual ZTE C320 — `gpon_olt-1/1/0  N/A  ZTEGDA5918AC  unknown` (field[2] = serial)
+- **CPU/Memory/Temp display** — Panel ZTE Chassis kini menampilkan `—` (dash) alih-alih `N/A` untuk metrik yang tidak didukung hardware ZTE C320 V2.1, dengan tooltip penjelasan. Status card Temperature juga menampilkan `—` dan sub-label "Not available (C320)"
+
+### Changed
+- **OLT Detail page redesign** — Halaman `/admin/olt/[id]` diperbarui:
+  - Status cards (4 kartu): tambah `border-l-4` dengan warna aksen per tipe (hijau/merah untuk status, amber untuk temp, biru untuk uptime, teal untuk ONU). Setiap kartu kini punya sub-label informatif (waktu polling terakhir, vendor, model, jumlah offline)
+  - Header: tampilkan vendor badge, model, firmware version di subtitle IP address
+  - Tabel ONU: status kini ditampilkan sebagai **pill badge** berwarna (hijau/kuning/merah/abu). Row hover fix dark mode (`dark:hover:bg-gray-800/50`). Header tabel punya `bg-gray-50 dark:bg-gray-900/60`. Padding semua cell konsisten (`py-2.5`). Kolom Actions rapi dengan `rounded-md` dan `transition-colors`
+  - Cancel button di confirm-reboot kini support dark mode: `dark:bg-gray-700 dark:text-gray-300`
+  - Tabel dibungkus `rounded-lg border border-gray-200 dark:border-gray-800`
+- **Command preview block** — Terminal preview di modal Register ONU kini: background `bg-gray-950 dark:bg-black`, border `border-gray-800`, label uppercase tracking, fake blinking block cursor di akhir
+- **Input caret color** — Field ONU ID dan VLAN di modal Register ONU kini explicit `caret-gray-900 dark:caret-white` agar cursor terlihat di semua tema
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Fix unregistered ONU serial: port 0-based + regex parser format ZTE C320
+- `src/app/admin/olt/[id]/page.tsx` — Redesign status cards, header, ONU table, command preview, cursor color
+- `package.json` — Bump ke 2.29.28
+
+---
+
 ## [2.29.27] — 2026-05-08
 ### Added
 - **Vendor-aware ONU Registration Modal** — Modal Register ONU di halaman OLT Detail kini otomatis menyesuaikan field dan preview command berdasarkan vendor OLT:

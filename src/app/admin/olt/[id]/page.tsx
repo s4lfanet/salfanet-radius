@@ -301,19 +301,19 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
         {/* Stats row — 6 cards */}
         <div className="grid grid-cols-6" style={{ borderBottom: '1px solid #21262d' }}>
           {[
-            { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),                         accent: '#3b82f6' },
-            { Icon: Thermometer, label: 'CHASSIS TEMP', value: olt.temperature ? `${olt.temperature}°C` : 'N/A', accent: '#22c55e' },
-            { Icon: Activity,    label: 'AVG CPU',      value: 'N/A',                                            accent: '#22c55e' },
-            { Icon: Server,      label: 'AVG MEMORY',   value: 'N/A',                                            accent: '#a855f7' },
-            { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),                         accent: '#3b82f6' },
-            { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : 'N/A',                 accent: '#06b6d4' },
-          ].map(({ Icon, label, value, accent }, i) => (
-            <div key={i} className="p-3" style={{ background: '#161b22', borderRight: i < 5 ? '1px solid #21262d' : 'none', borderLeft: `3px solid ${accent}` }}>
+            { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),                            accent: '#3b82f6', title: undefined },
+            { Icon: Thermometer, label: 'CHASSIS TEMP', value: olt.temperature ? `${olt.temperature}°C` : '—',     accent: '#22c55e', title: 'ZTE C320 V2.1: temp via SNMP tidak tersedia' },
+            { Icon: Activity,    label: 'AVG CPU',      value: '—',                                                 accent: '#22c55e', title: 'ZTE C320 V2.1: CPU monitoring tidak tersedia' },
+            { Icon: Server,      label: 'AVG MEMORY',   value: '—',                                                 accent: '#a855f7', title: 'ZTE C320 V2.1: Memory monitoring tidak tersedia' },
+            { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),                            accent: '#3b82f6', title: undefined },
+            { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : '—',                      accent: '#06b6d4', title: undefined },
+          ].map(({ Icon, label, value, accent, title }, i) => (
+            <div key={i} className="p-3" title={title} style={{ background: '#161b22', borderRight: i < 5 ? '1px solid #21262d' : 'none', borderLeft: `3px solid ${accent}` }}>
               <div className="flex items-center gap-1 mb-1">
                 <Icon className="h-3 w-3" style={{ color: accent }} />
                 <span className="text-[8px] font-bold tracking-widest" style={{ color: accent }}>{label}</span>
               </div>
-              <div className="text-sm font-bold text-white">{value}</div>
+              <div className={`text-sm font-bold ${value === '—' ? 'text-gray-600' : 'text-white'}`}>{value}</div>
             </div>
           ))}
         </div>
@@ -587,7 +587,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             <Label className="text-xs text-gray-500">ONU ID (1-128)</Label>
             <Input type="number" min={1} max={128} value={onuId}
               onChange={e => setOnuId(parseInt(e.target.value) || 1)}
-              className="mt-1 font-mono" />
+              className="mt-1 font-mono caret-gray-900 dark:caret-white" />
           </div>
 
           {/* VLAN */}
@@ -595,7 +595,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             <Label className="text-xs text-gray-500">Service VLAN</Label>
             <Input type="number" min={1} max={4094} value={vlan}
               onChange={e => setVlan(parseInt(e.target.value) || 100)}
-              className="mt-1 font-mono" />
+              className="mt-1 font-mono caret-gray-900 dark:caret-white" />
           </div>
 
           {/* ── ZTE-only fields ── */}
@@ -675,11 +675,15 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           </div>
 
           {/* Command preview */}
-          <div className="bg-gray-900 rounded-md p-3 text-xs font-mono text-green-400 space-y-0.5">
-            <div className="text-gray-500 mb-1">Telnet command preview ({v}):</div>
+          <div className="bg-gray-950 dark:bg-black rounded-md border border-gray-800 p-3 text-xs font-mono text-green-400 space-y-0.5 select-text">
+            <div className="text-gray-500 mb-1.5 text-[10px] uppercase tracking-widest">Telnet preview · {v}</div>
             {cmdPreview.map((line, i) => (
-              <div key={i}>{line}</div>
+              <div key={i} className="leading-5">{line}</div>
             ))}
+            <div className="flex items-center gap-0.5 mt-1">
+              <span className="text-green-400 opacity-70">#</span>
+              <span className="inline-block w-2 h-3.5 bg-green-400 opacity-70 ml-0.5 animate-pulse" />
+            </div>
           </div>
 
           {/* Result */}
@@ -1013,7 +1017,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   if (!olt) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5 p-1">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -1028,8 +1032,17 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                 ? <Wifi className="h-5 w-5 text-green-500" />
                 : <WifiOff className="h-5 w-5 text-red-500" />}
               {olt.name}
+              {olt.vendor && (
+                <span className="text-xs font-normal bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full uppercase">
+                  {olt.vendor}
+                </span>
+              )}
             </h1>
-            <p className="text-gray-500 font-mono text-xs">{olt.ipAddress}</p>
+            <p className="text-gray-500 dark:text-gray-400 font-mono text-xs mt-0.5">
+              {olt.ipAddress}
+              {olt.model && <span className="ml-2 text-gray-400">· {olt.model}</span>}
+              {olt.firmwareVersion && <span className="ml-2 text-gray-400">· {olt.firmwareVersion}</span>}
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -1047,35 +1060,55 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-sm text-gray-500">Status</div>
-            <div className={`font-bold text-lg ${olt.isOnline ? 'text-green-600' : 'text-red-600'}`}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Card className={`border-l-4 ${olt.isOnline ? 'border-l-green-500' : 'border-l-red-500'}`}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <Wifi className="h-3 w-3" /> Status
+            </div>
+            <div className={`font-bold text-xl ${olt.isOnline ? 'text-green-600' : 'text-red-600'}`}>
               {olt.isOnline ? 'Online' : 'Offline'}
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-sm text-gray-500 flex items-center gap-1"><Thermometer className="h-3 w-3" /> Temperature</div>
-            <div className={`font-bold text-lg ${olt.temperature !== null && olt.temperature > 60 ? 'text-red-600' : ''}`}>
-              {olt.temperature !== null ? `${olt.temperature}°C` : 'N/A'}
+            <div className="text-xs text-gray-400 mt-0.5">
+              {olt.lastPollAt ? `Polled ${new Date(olt.lastPollAt).toLocaleTimeString('id-ID')}` : 'Not polled yet'}
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-sm text-gray-500 flex items-center gap-1"><Clock className="h-3 w-3" /> Uptime</div>
-            <div className="font-bold text-lg">{formatUptime(olt.uptime)}</div>
+        <Card className={`border-l-4 ${olt.temperature !== null && olt.temperature > 60 ? 'border-l-red-500' : 'border-l-amber-500'}`}>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <Thermometer className="h-3 w-3" /> Temperature
+            </div>
+            <div className={`font-bold text-xl ${olt.temperature !== null && olt.temperature > 60 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
+              {olt.temperature !== null ? `${olt.temperature}°C` : '—'}
+            </div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              {olt.temperature !== null ? (olt.temperature > 60 ? 'Warning: High temp' : 'Normal') : 'Not available (C320)'}
+            </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="pt-4">
-            <div className="text-sm text-gray-500 flex items-center gap-1"><Activity className="h-3 w-3" /> ONUs</div>
-            <div className="font-bold text-lg">
+        <Card className="border-l-4 border-l-blue-500">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <Clock className="h-3 w-3" /> Uptime
+            </div>
+            <div className="font-bold text-xl text-gray-900 dark:text-white">{formatUptime(olt.uptime)}</div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              {olt.vendor ?? 'OLT'} {olt.model ?? ''}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-l-4 border-l-teal-500">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+              <Activity className="h-3 w-3" /> ONUs
+            </div>
+            <div className="font-bold text-xl">
               <span className="text-green-600">{olt.onlineOnu}</span>
-              <span className="text-gray-400">/{olt.totalOnu}</span>
+              <span className="text-gray-400 text-base">/{olt.totalOnu}</span>
+            </div>
+            <div className="text-xs text-gray-400 mt-0.5">
+              {olt.offlineOnu > 0 ? `${olt.offlineOnu} offline` : 'All online'}
             </div>
           </CardContent>
         </Card>
@@ -1154,11 +1187,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b text-left text-gray-500">
-                  <th className="pb-2 pr-2">
+                <tr className="border-b dark:border-gray-700 text-left text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/60">
+                  <th className="py-2.5 pl-3 pr-2">
                     <input
                       type="checkbox"
                       checked={selectedOnus.size === filteredOnus.length && filteredOnus.length > 0}
@@ -1166,24 +1199,24 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       className="w-4 h-4 text-blue-600 rounded"
                     />
                   </th>
-                  <th className="pb-2 pr-4">Location</th>
-                  <th className="pb-2 pr-4">Serial / MAC</th>
-                  <th className="pb-2 pr-4">Name</th>
-                  <th className="pb-2 pr-4">Status</th>
-                  <th className="pb-2 pr-4">Signal</th>
-                  <th className="pb-2 pr-4">RX Power</th>
-                  <th className="pb-2 pr-4">Distance</th>
-                  <th className="pb-2 pr-4">Customer</th>
-                  <th className="pb-2 pr-4">Last Seen</th>
-                  <th className="pb-2">Actions</th>
+                  <th className="py-2.5 pr-4 font-medium">Location</th>
+                  <th className="py-2.5 pr-4 font-medium">Serial / MAC</th>
+                  <th className="py-2.5 pr-4 font-medium">Name</th>
+                  <th className="py-2.5 pr-4 font-medium">Status</th>
+                  <th className="py-2.5 pr-4 font-medium">Signal</th>
+                  <th className="py-2.5 pr-4 font-medium">RX Power</th>
+                  <th className="py-2.5 pr-4 font-medium">Distance</th>
+                  <th className="py-2.5 pr-4 font-medium">Customer</th>
+                  <th className="py-2.5 pr-4 font-medium">Last Seen</th>
+                  <th className="py-2.5 pr-3 font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredOnus.map((onu) => {
                   const signalQuality = getSignalQuality(onu.rxPower);
                   return (
-                    <tr key={onu.id} className="border-b hover:bg-gray-50">
-                      <td className="py-2 pr-2">
+                    <tr key={onu.id} className="border-b dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                      <td className="py-2.5 pl-3 pr-2">
                         <input
                           type="checkbox"
                           checked={selectedOnus.has(onu.id)}
@@ -1191,57 +1224,65 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                           className="w-4 h-4 text-blue-600 rounded"
                         />
                       </td>
-                      <td className="py-2 pr-4 font-mono text-xs">
+                      <td className="py-2.5 pr-4 font-mono text-xs text-gray-700 dark:text-gray-300">
                         {onu.frame}/{onu.slot}/{onu.port}:{onu.onuId}
                       </td>
-                      <td className="py-2 pr-4">
-                        <div className="font-mono text-xs">{onu.serialNumber ?? onu.macAddress ?? 'N/A'}</div>
+                      <td className="py-2.5 pr-4">
+                        <div className="font-mono text-xs text-gray-900 dark:text-gray-100">
+                          {onu.serialNumber ?? onu.macAddress ?? <span className="text-yellow-600 dark:text-yellow-400">N/A</span>}
+                        </div>
                       </td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2.5 pr-4">
                         <div className="text-xs text-gray-700 dark:text-gray-300">{onu.description ?? <span className="text-gray-400">—</span>}</div>
                       </td>
-                      <td className="py-2 pr-4">
-                        <span className={`font-medium ${getStatusColor(onu.status)}`}>
+                      <td className="py-2.5 pr-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          onu.status === 'online' ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-400' :
+                          onu.status === 'auth_failed' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400' :
+                          onu.status === 'dying_gasp' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-400' :
+                          onu.status === 'los' ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-400' :
+                          'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                        }`}>
                           {onu.status === 'auth_failed' ? 'Unregistered' : onu.status.replace(/_/g, ' ')}
                         </span>
                       </td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2.5 pr-4">
                         <span className={`inline-flex items-center gap-1 text-xs font-medium ${signalQuality.color}`}>
                           <Signal className="w-3 h-3" />
                           {signalQuality.label}
                         </span>
                       </td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2.5 pr-4">
                         {onu.rxPower !== null ? (
-                          <span className={onu.rxPower < -27 ? 'text-red-600' : 'text-green-600'}>
+                          <span className={`font-mono text-xs font-medium ${onu.rxPower < -27 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                             {onu.rxPower.toFixed(2)} dBm
                           </span>
-                        ) : 'N/A'}
+                        ) : <span className="text-gray-400 text-xs">—</span>}
                       </td>
-                      <td className="py-2 pr-4 text-xs">
+                      <td className="py-2.5 pr-4 text-xs">
                         {onu.distance !== null ? (
-                          <span className="font-mono">{onu.distance} m</span>
-                        ) : <span className="text-gray-400">N/A</span>}
+                          <span className="font-mono text-gray-700 dark:text-gray-300">{onu.distance} m</span>
+                        ) : <span className="text-gray-400">—</span>}
                       </td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2.5 pr-4">
                         {onu.customer ? (
                           <div>
-                            <div className="font-medium">{onu.customer.name}</div>
-                            <div className="text-gray-500 text-xs">{onu.customer.username}</div>
+                            <div className="text-xs font-medium text-gray-900 dark:text-white">{onu.customer.name}</div>
+                            <div className="text-gray-500 dark:text-gray-400 text-xs">{onu.customer.username}</div>
                           </div>
                         ) : (
-                          <span className="text-gray-400">Unassigned</span>
+                          <span className="text-gray-400 text-xs">Unassigned</span>
                         )}
                       </td>
-                      <td className="py-2 pr-4 text-xs text-gray-500">
-                        {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : 'N/A'}
+                      <td className="py-2.5 pr-4 text-xs text-gray-500 dark:text-gray-400">
+                        {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : '—'}
                       </td>
-                      <td className="py-2">
+                      <td className="py-2.5 pr-3">
                         {onu.status === 'auth_failed' ? (
                           /* Unregistered ONU — show Register button */
                           <button
                             onClick={() => setRegisteringOnu(onu)}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
                           >
                             <Plus className="w-3 h-3" />
                             Register
@@ -1257,7 +1298,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             </button>
                             <button
                               onClick={() => setConfirmReboot(null)}
-                              className="px-2 py-1 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
                             >
                               Cancel
                             </button>
@@ -1266,7 +1307,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                           <button
                             onClick={() => setConfirmReboot(onu.id)}
                             disabled={rebootingOnu !== null || batchRebooting}
-                            className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 transition-colors"
                           >
                             <Power className="w-3 h-3" />
                             Reboot
@@ -1278,7 +1319,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                 })}
                 {filteredOnus.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="py-8 text-center text-gray-400">
+                    <td colSpan={11} className="py-8 text-center text-gray-400">
                       No ONUs found
                     </td>
                   </tr>

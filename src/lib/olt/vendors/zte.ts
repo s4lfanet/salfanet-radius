@@ -369,29 +369,39 @@ async function discoverPonV21(
 
     // Try to get serial numbers of unregistered ONUs via Telnet.
     // SNMP cfg table has no entry for unregistered ONUs so serial = null there.
-    // ZTE C320 CLI: show pon onu uncfg gpon-olt_1/{board}/{pon}
-    // Output: "gpon-onu_1/1/1:2  ZTEGDA5918AC  ..." or "  2  ZTEGDA5918AC"
+    // ZTE C320 CLI: show pon onu uncfg gpon-olt_1/{board}/{pon-1}  (0-based port!)
+    // Actual output format (confirmed from ZTE C320 V2.1 firmware):
+    //   OnuIndex                       OnuType     OnuSn           State
+    //   gpon_olt-1/1/0                 N/A         ZTEGDA5918AC    unknown
+    // Note: port in output is 0-based; SNMP pon=1 → CLI port=0 (pon-1).
     const uncfgSerials = new Map<number, string>();
     if (unregisteredIds.length > 0 && telnetConfig) {
       try {
+        const cliPort = pon - 1; // convert SNMP 1-based pon → CLI 0-based port
         const telnetResult = await executeCommand(
           telnetConfig,
-          `show pon onu uncfg gpon-olt_1/${board}/${pon}`,
+          `show pon onu uncfg gpon-olt_1/${board}/${cliPort}`,
         );
         if (telnetResult.success && telnetResult.output) {
+          const serialList: string[] = [];
           for (const line of telnetResult.output.split('\n')) {
-            // Format A: "gpon-onu_1/1/1:2  ZTEGDA5918AC  ..."
-            const mA = line.match(/gpon-onu_\d+\/\d+\/\d+:(\d+)\s+([A-Z0-9]{8,16})/i);
-            if (mA) {
-              uncfgSerials.set(parseInt(mA[1]), mA[2].toUpperCase());
-              continue;
+            const trimmed = line.trim();
+            // Skip empty lines and header/separator lines
+            if (!trimmed || trimmed.includes('OnuIndex') || trimmed.includes('OnuType') || trimmed.startsWith('-')) continue;
+            // ZTE C320 format: "gpon_olt-1/1/0    N/A    ZTEGDA5918AC    unknown"
+            const parts = trimmed.split(/\s+/);
+            if (parts.length >= 3 && /gpon[_-]olt/i.test(parts[0])) {
+              // parts[0]=OnuIndex, parts[1]=OnuType(N/A), parts[2]=OnuSn, parts[3]=State
+              const sn = parts[2];
+              if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) {
+                serialList.push(sn.toUpperCase());
+              }
             }
-            // Format B: "  2    ZTEGDA5918AC" (numeric ONU-ID followed by SN)
-            const mB = line.match(/^\s*(\d{1,3})\s+([A-Z0-9]{8,16})\s/);
-            if (mB) {
-              const id = parseInt(mB[1]);
-              if (id > 0 && id <= 128) uncfgSerials.set(id, mB[2].toUpperCase());
-            }
+          }
+          // Map serials to unregisteredIds in sorted order
+          const sortedIds = [...unregisteredIds].sort((a, b) => a - b);
+          for (let i = 0; i < Math.min(serialList.length, sortedIds.length); i++) {
+            uncfgSerials.set(sortedIds[i], serialList[i]);
           }
         }
       } catch { /* Telnet unavailable — continue without serial */ }
