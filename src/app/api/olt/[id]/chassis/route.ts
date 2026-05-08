@@ -134,12 +134,12 @@ export async function GET(
     let telnetCards: CardInfo[] | null = null;
     let uplinkIfacesBySlot: Map<number, string[]> = new Map();
 
-    if ((olt as any).telnetEnabled || (olt as any).sshEnabled) {
+    if (olt.telnetEnabled || olt.sshEnabled) {
       const telnetConfig: TelnetConfig = {
         host:     olt.ipAddress,
-        port:     (olt as any).telnetPort ?? 23,
-        username: (olt as any).telnetUsername ?? '',
-        password: (olt as any).telnetPassword ?? '',
+        port:     olt.telnetPort ?? 23,
+        username: olt.username ?? '',
+        password: olt.password ?? '',
         timeout:  15,
       };
       try {

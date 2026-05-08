@@ -12,8 +12,8 @@ async function getTelnetConfig(olt: any): Promise<TelnetConfig | null> {
   return {
     host:     olt.ipAddress,
     port:     olt.telnetPort ?? 23,
-    username: olt.telnetUsername ?? '',
-    password: olt.telnetPassword ?? '',
+    username: olt.username ?? '',
+    password: olt.password ?? '',
     timeout:  20,
   };
 }
