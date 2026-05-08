@@ -469,6 +469,29 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.28 — 2026-05-09
+
+### Fixed
+- **Unregistered ONU serial number** — Serial number ONU yang belum terdaftar (status `auth_failed`) kini tampil di UI. Fix 2 bug di `zte.ts`:
+  1. Port 0-based vs 1-based: command Telnet `show pon onu uncfg gpon-olt_1/{board}/{pon-1}` — sebelumnya salah kirim `pon` (SNMP 1-based), sekarang benar kirim `pon-1` (CLI 0-based)
+  2. Regex parser salah format: sebelumnya cari `gpon-onu_` (format ONU terdaftar), kini parse format aktual ZTE C320 — `gpon_olt-1/1/0  N/A  ZTEGDA5918AC  unknown` (field[2] = serial)
+- **CPU/Memory/Temp display** — Panel ZTE Chassis kini menampilkan `—` (dash) alih-alih `N/A` untuk metrik yang tidak didukung hardware ZTE C320 V2.1, dengan tooltip penjelasan. Status card Temperature juga menampilkan `—` dan sub-label "Not available (C320)"
+
+### Changed
+- **OLT Detail page redesign** — Halaman `/admin/olt/[id]` diperbarui:
+  - Status cards (4 kartu): tambah `border-l-4` dengan warna aksen per tipe (hijau/merah untuk status, amber untuk temp, biru untuk uptime, teal untuk ONU). Setiap kartu kini punya sub-label informatif (waktu polling terakhir, vendor, model, jumlah offline)
+  - Header: tampilkan vendor badge, model, firmware version di subtitle IP address
+  - Tabel ONU: status kini ditampilkan sebagai **pill badge** berwarna (hijau/kuning/merah/abu). Row hover fix dark mode (`dark:hover:bg-gray-800/50`). Header tabel punya `bg-gray-50 dark:bg-gray-900/60`. Padding semua cell konsisten (`py-2.5`). Kolom Actions rapi dengan `rounded-md` dan `transition-colors`
+  - Cancel button di confirm-reboot kini support dark mode: `dark:bg-gray-700 dark:text-gray-300`
+  - Tabel dibungkus `rounded-lg border border-gray-200 dark:border-gray-800`
+- **Command preview block** — Terminal preview di modal Register ONU kini: background `bg-gray-950 dark:bg-black`, border `border-gray-800`, label uppercase tracking, fake blinking block cursor di akhir
+- **Input caret color** — Field ONU ID dan VLAN di modal Register ONU kini explicit `caret-gray-900 dark:caret-white` agar cursor terlihat di semua tema
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Fix unregistered ONU serial: port 0-based + regex parser format ZTE C320
+- `src/app/admin/olt/[id]/page.tsx` — Redesign status cards, header, ONU table, command preview, cursor color
+- `package.json` — Bump ke 2.29.28
+
 ### v2.29.27 — 2026-05-08
 
 ### Added
@@ -521,25 +544,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/app/admin/olt/[id]/page.tsx` — Rewrite `ZTEChassisView` dari horizontal chip → vertical rack blade NMS-style
-
-### v2.29.23 — 2026-05-10
-
-### Added
-- **Realistic ZTE C320 chassis diagram** — Halaman detail OLT kini menampilkan diagram front-panel chassis ZTE C320 dengan semua 18 slot: MCU-A (slot 0), 14 service card slots (1–14), 2 uplink slots (15–16, GICF), MCU-B (slot 17), plus FAN dan PWR di kiri/kanan. Setiap slot menampilkan card type label (GTGQ/GTGH/GTGO/GICF/MCUD1), grid port berwarna (hijau=online, oranye=partial, merah=offline, hitam=kosong), dan slot kosong ditampilkan gelap. Chassis disertai panel detail per-port (persentase online, avg RX power) di bawahnya
-- **ONU registration modal** — Tombol "Register" muncul di kolom aksi tabel ONU untuk ONU yang berstatus `auth_failed` (unregistered). Tombol membuka modal yang menampilkan: form ONU ID, ONU type (ZTE-F609, F660, F673, F600W, CZTE, All, dll), VLAN, TCONT profile (1G/100M/50M/20M/10M), deskripsi, serta preview command Telnet yang akan dikirim ke OLT
-- **ONU register API** (`POST /api/olt/[id]/onus/register`) — Endpoint baru yang membangun dan mengirim command registrasi ZTE via Telnet (`configure terminal → interface gpon-olt → onu … type All sn … → tcont → gemport → service-port → exit/end`) menggunakan `executeMultipleCommands()`
-- **Telnet multi-command** (`executeMultipleCommands()` di `telnet.ts`) — Fungsi baru yang membuat expect script untuk mengirim banyak command sekaligus ke OLT via sesi Telnet, menunggu prompt `[>#]` setelah setiap command
-- **Chassis API** (`GET /api/olt/[id]/chassis`) — Endpoint baru yang mengembalikan layout slot chassis ZTE C320 beserta data per-port dari DB dan SNMP
-
-### Changed
-- **ONU action column** — Untuk ONU unregistered (`auth_failed`), kolom aksi menampilkan tombol "Register" (hijau) alih-alih tombol "Reboot"
-- **Port diagram tab** — Diganti dari layout grup horizontal lama (`OLTPortDiagram`) ke komponen `ZTEChassisView` baru yang realistis
-
-### Files
-- `src/app/admin/olt/[id]/page.tsx` — Ganti `OLTPortDiagram`/`getOLTTemplate` dengan `ZTEChassisView`; tambah `ONURegisterModal`; tambah state `registeringOnu`; tombol Register di tabel ONU
-- `src/app/api/olt/[id]/onus/register/route.ts` — **NEW** POST endpoint registrasi ONU via Telnet
-- `src/app/api/olt/[id]/chassis/route.ts` — **NEW** GET endpoint layout chassis
-- `src/lib/olt/telnet.ts` — Tambah `executeMultipleCommands()`
 
 <!-- AUTO-CHANGELOG:END -->
 
