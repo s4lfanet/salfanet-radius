@@ -316,6 +316,8 @@ if [ -n "$USE_BRANCH" ]; then
     fi
 
     print_step "Building application"
+    print_info "Removing previous .next build cache for clean build..."
+    rm -rf "$APP_DIR/.next" 2>/dev/null || true
     NODE_OPTIONS="--max-old-space-size=1536" NEXT_TELEMETRY_DISABLED=1 npm run build
 
     # ── Copy static assets to standalone ──────────────────────────────────

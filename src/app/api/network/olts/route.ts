@@ -30,6 +30,7 @@ export async function GET() {
         _count: {
           select: {
             odps: true,
+            onuStatuses: true,
           },
         },
       },
@@ -43,6 +44,17 @@ export async function GET() {
       olts: olts.map(olt => ({
         ...olt,
         uptime: Number(olt.uptime),
+        _count: {
+          ...olt._count,
+          olt_onu_status: olt._count.onuStatuses,
+        },
+        onu_stats: {
+          online: olt.onlineOnu,
+          offline: olt.offlineOnu,
+          los: 0,
+          dying_gasp: 0,
+          unconfig: 0,
+        },
       })),
     });
   } catch (error: any) {

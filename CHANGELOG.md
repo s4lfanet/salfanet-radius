@@ -6,7 +6,23 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.29.25] — 2026-05-11
+## [2.29.26] — 2026-05-08
+### Fixed
+- **OLT Management ONU count** — Halaman OLT Management (network/olts) sebelumnya selalu menampilkan "0 ONUs" karena API `GET /api/network/olts` tidak menyertakan `_count.onuStatuses`. Kini field `olt_onu_status` (jumlah ONU) dan `onu_stats` (online/offline) disertakan dari field `totalOnu` & `onlineOnu` yang sudah tersimpan di DB setelah polling
+- **Password OLT tidak muncul** — Halaman Settings di OLT Detail (`/admin/olt/[id]`) selalu me-reset field password ke kosong saat halaman di-refresh. Kini password diambil dari API response dan ditampilkan. PUT handler juga diubah agar tidak menghapus password yang tersimpan jika field dikirim kosong (hanya update jika ada isi)
+- **updater.sh clean build** — Tambah `rm -rf .next` sebelum `npm run build` di updater agar tidak ada artifact build lama yang menyebabkan update tidak efektif / lock file conflict
+- **package.json version sync** — Versi di `package.json` kini diselaraskan dengan versi CHANGELOG (sebelumnya masih `2.29.20`)
+
+### Files
+- `vps-install/updater.sh` — Tambah `rm -rf .next` sebelum build
+- `package.json` — Bump version ke `2.29.26`
+- `src/app/api/network/olts/route.ts` — Tambah `_count.onuStatuses` + mapping `olt_onu_status` + `onu_stats`
+- `src/app/admin/olt/[id]/page.tsx` — Load `password` dari API response di `fetchOLT`
+- `src/app/api/olt/[id]/route.ts` — PUT: skip update password jika kosong
+
+---
+
+## [2.29.25] — 2026-05-08
 ### Fixed
 - **ZTE C320 unregistered ONU discovery** — ONU yang belum diregister (tampak di seen-ONU table SNMP tapi tidak di reg table) kini berhasil di-discover dan disimpan ke DB dengan status `auth_failed`. Serial number diambil via **Telnet** (`show pon onu uncfg gpon-olt_1/{board}/{pon}`) karena SNMP cfg table tidak memiliki entry untuk ONU yang belum register. Parsing mendukung dua format output ZTE C320: `gpon-onu_1/1/1:2  ZTEGDA5918AC` dan `  2  ZTEGDA5918AC`
 - **upsertONU serial update** — Kolom `serialNumber` kini ikut di-update ketika polling berikutnya berhasil mendapat serial (sebelumnya hanya disimpan saat create, tidak di-update)

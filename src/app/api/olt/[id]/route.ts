@@ -113,7 +113,7 @@ export async function PUT(
         ...(sshEnabled !== undefined && { sshEnabled }),
         ...(sshPort !== undefined && { sshPort }),
         ...(username !== undefined && { username }),
-        ...(password !== undefined && { password }),
+        ...(password ? { password } : {}),
         ...(monitoringEnabled !== undefined && { monitoringEnabled }),
         ...(pollingInterval !== undefined && { pollingInterval }),
       },

@@ -687,7 +687,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           telnetEnabled: o.telnetEnabled,
           telnetPort: o.telnetPort,
           username: o.username ?? '',
-          password: '',
+          password: o.password ?? '',
           pollingInterval: o.pollingInterval,
           routerIds: (o.routers ?? []).map((r: any) => r.routerId),
         });
