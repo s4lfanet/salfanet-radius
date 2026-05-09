@@ -469,6 +469,20 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.49 — 2026-05-09
+
+### Fixed
+- **ONU unconfigured tetap hanya 1 setelah sync** — Discovery ZTE C320 sekarang menjadikan output CLI `show gpon onu uncfg` sebagai sumber utama untuk ONU unconfigured. Data CLI global tidak lagi diproses hanya jika SNMP seen-table punya entry; port yang hanya muncul dari CLI global juga ditambahkan ke daftar PON yang dipoll.
+- **Port Map lambat saat membaca uplink** — Status uplink GE/XGE di chassis sekarang memakai satu command cepat `show interface port-status`, lalu SNMP IF-MIB hanya sebagai fallback. Ini menghindari multi-command/per-interface Telnet untuk port map.
+- **Komposisi warna OLT Monitoring dan Alerts** — Card, filter, dan action surface di halaman OLT Monitoring/Alerts diperhalus memakai slate surface yang konsisten untuk light/dark mode.
+
+### Files
+- `package.json` — bump versi aplikasi ke `2.29.49`.
+- `src/lib/olt/vendors/zte.ts` — CLI global uncfg authoritative; merge port PON dari CLI uncfg ke discovery; unregistered IDs tidak lagi bergantung pada seen-table SNMP.
+- `src/app/api/olt/[id]/chassis/route.ts` — port map uplink memakai parser `show interface port-status` satu kali, SNMP status jadi fallback.
+- `src/app/admin/olt/monitoring/page.tsx` — perbaikan palette light/dark pada card/filter/control.
+- `src/app/admin/olt/alerts/page.tsx` — perbaikan palette light/dark pada card/filter/control.
+
 ### v2.29.48 — 2026-05-09
 
 ### Fixed
@@ -509,15 +523,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/app/api/olt/[id]/uplink/route.ts` — Tambah `parseInterfacePortStatus` (parser tabular); STATUS tab pakai `show interface port-status` dulu lalu fallback; CONFIG tab pakai `show running-config interface` langsung.
-
-### v2.29.44 — 2026-05-09
-
-### Fixed
-- **Uplink port STATUS "Admin: Unknown · Port: Unknown"** — `show interface gei_1/x/x` via Telnet kadang gagal (ZTE session limit, SMXA card OFFLINE, atau output format berbeda). Sekarang API menambahkan fallback ke SNMP IF-MIB (ifAdminStatus + ifOperStatus + ifHighSpeed + ifAlias) sehingga status port tetap terbaca meski Telnet tidak responsif.
-- **Uplink STATUS tidak lagi mengembalikan 503 jika Telnet tidak dikonfigurasi** — STATUS tab sekarang bisa jalan via SNMP saja; hanya VLAN/config/optical tab yang membutuhkan Telnet.
-
-### Files
-- `src/app/api/olt/[id]/uplink/route.ts` — Import `snmpWalk/snmpGet/SNMPConfig`; tambah `getSnmpConfig` + `getInterfaceStatusSNMP`; STATUS tab try Telnet dulu, fallback ke SNMP IF-MIB jika gagal.
 
 <!-- AUTO-CHANGELOG:END -->
 
