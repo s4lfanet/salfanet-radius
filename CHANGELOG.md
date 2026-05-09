@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.2] — 2026-05-10
+### Added
+- **Next.js frontend deployed on VPS** — Full stack running at `http://103.151.140.110`: Go API backend (port 8080) + Next.js frontend (port 3000) behind nginx reverse proxy
+- **Database schema migrated** — `prisma db push` applied all 100+ tables to MariaDB `salfanet_radius`; custom SQL migrations confirmed already included in schema
+- **PM2 process management** — `salfanet-frontend` and `wa-service` managed by PM2, auto-start on boot via `pm2-root.service` systemd unit
+- **nginx proxy updated** — `/api/*` → `:8080` (Go), `/ws/*` → `:8080` (Go), `/*` → `:3000` (Next.js)
+- **Company seed data** — Initial company record seeded via `npm run db:seed:company`
+### Files
+- `nginx-frontend.conf` — nginx config template with frontend proxy
+### Notes
+- Admin login: `http://103.151.140.110/admin/login`
+- Customer portal: `http://103.151.140.110/customer/login`
+- API health: `http://103.151.140.110/api/system/health`
+
+---
+
 ## [2.31.1] — 2026-05-10
 ### Fixed
 - **CustomerAuthMiddleware** — Replace placeholder with real DB-backed session validation (`customer_sessions` table, token lookup, expiry check)
