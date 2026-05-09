@@ -469,6 +469,17 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.54 — 2026-05-09
+
+### Fixed
+- **VLAN tab masih kosong (Mode/TLS/Tagged VLANs —)** — Root cause: `executeMultipleCommands(['show vlan port …', 'show running-config interface …'])` kadang gagal/hang karena `show vlan port xgei_1/3/2` tidak valid atau menyebabkan sesi Telnet terganggu. Fix: VLAN tab sekarang hanya menggunakan satu `executeCommand('show running-config interface …')` yang sudah terbukti bekerja. `parseRunningConfigInterface` mengekstrak `Mode`, `TLS`, `Tagged Vlan` (dari `switchport vlan 1,30,69,100,151 tag` — comma-separated), `Description`, `Speed`, `Duplex`, `Flow Control`, `Physical Type`.
+### Changed
+- **Chassis stats row dihapus dari Port Map** — Baris stat (UPTIME, AVG CPU, AVG MEMORY, ACTIVE CARDS, FAN STATUS) di dalam panel "ZTE C320 Rack Diagram" dihapus. AVG CPU (11%) dan AVG MEMORY (32%) adalah static placeholder yang menyesatkan; FAN STATUS dan ACTIVE CARDS belum real-time. Tampilan chassis sekarang langsung ke rack diagram.
+- **Tab Metrics dihapus** — Tab "Metrics" dihapus dari halaman OLT detail (ONU List | Port Map | Alerts | Settings | Logs). State `metrics`, `metricsHours`, `metricsLoading`, callback `fetchMetrics`, dan `useEffect`-nya juga dibersihkan.
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — VLAN tab: ganti multi-command ke single `executeCommand('show running-config interface')`
+- `src/app/admin/olt/[id]/page.tsx` — hapus chassis stats row; hapus Metrics TabsTrigger + TabsContent + state vars
+
 ### v2.29.53 — 2026-05-10
 
 ### Fixed
@@ -516,20 +527,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/admin/olt/monitoring/page.tsx` — Redesign monitoring: progress bar, countdown, poll-all, sort, relative time
 - `src/app/admin/olt/alerts/page.tsx` — Redesign alerts: border accent, resolve-all, relative time, back nav
-
-### v2.29.49 — 2026-05-09
-
-### Fixed
-- **ONU unconfigured tetap hanya 1 setelah sync** — Discovery ZTE C320 sekarang menjadikan output CLI `show gpon onu uncfg` sebagai sumber utama untuk ONU unconfigured. Data CLI global tidak lagi diproses hanya jika SNMP seen-table punya entry; port yang hanya muncul dari CLI global juga ditambahkan ke daftar PON yang dipoll.
-- **Port Map lambat saat membaca uplink** — Status uplink GE/XGE di chassis sekarang memakai satu command cepat `show interface port-status`, lalu SNMP IF-MIB hanya sebagai fallback. Ini menghindari multi-command/per-interface Telnet untuk port map.
-- **Komposisi warna OLT Monitoring dan Alerts** — Card, filter, dan action surface di halaman OLT Monitoring/Alerts diperhalus memakai slate surface yang konsisten untuk light/dark mode.
-
-### Files
-- `package.json` — bump versi aplikasi ke `2.29.49`.
-- `src/lib/olt/vendors/zte.ts` — CLI global uncfg authoritative; merge port PON dari CLI uncfg ke discovery; unregistered IDs tidak lagi bergantung pada seen-table SNMP.
-- `src/app/api/olt/[id]/chassis/route.ts` — port map uplink memakai parser `show interface port-status` satu kali, SNMP status jadi fallback.
-- `src/app/admin/olt/monitoring/page.tsx` — perbaikan palette light/dark pada card/filter/control.
-- `src/app/admin/olt/alerts/page.tsx` — perbaikan palette light/dark pada card/filter/control.
 
 <!-- AUTO-CHANGELOG:END -->
 
