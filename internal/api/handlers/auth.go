@@ -233,3 +233,46 @@ func generateOTP() string {
 	}
 	return fmt.Sprintf("%06d", n.Int64())
 }
+
+// AgentLogin godoc
+// POST /api/auth/agent/login  — simple phone+PIN login for agents
+func (h *AuthHandler) AgentLogin(c fiber.Ctx) error {
+	var body struct {
+		Phone string `json:"phone"`
+		PIN   string `json:"pin"`
+	}
+	if err := c.Bind().JSON(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	var agent models.Agent
+	if err := h.db.Where("phone = ? AND is_active = true", body.Phone).First(&agent).Error; err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(agent.PIN), []byte(body.PIN)); err != nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
+	}
+
+	// Issue JWT with role AGENT and agentId
+	claims := middleware.Claims{
+		UserID: agent.ID,
+		Email:  agent.Phone,
+		Role:   "AGENT",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ID:        uuid.NewString(),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	signed, err := token.SignedString([]byte(config.C.JWTSecret))
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "token error"})
+	}
+
+	return c.JSON(fiber.Map{
+		"token": signed,
+		"agent": fiber.Map{"id": agent.ID, "name": agent.Name, "phone": agent.Phone},
+	})
+}

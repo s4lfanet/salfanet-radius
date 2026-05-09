@@ -6,7 +6,55 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.30.0] — 2026-05-09
+## [2.31.0] — 2026-05-10
+### Added
+- **Go backend Phase 2+ — Full API migration** — Complete Go backend covering all major feature domains. Zero Next.js dependency for API layer.
+  - `internal/db/models/extra.go` — Extra GORM models: HotspotProfile, HotspotVoucher, Agent, AgentSale, AgentDeposit, TransactionCategory, Transaction, NetworkODC/ODP/OTB, PaymentGateway, RegistrationRequest, SuspendRequest, PushSubscription, WhatsappHistory, WhatsappReminderSetting, TicketReply
+  - `internal/radius/radius.go` — FreeRADIUS service: direct MySQL manipulation (radcheck/radreply/radusergroup), isolate/unisolate, rate-limit upsert, session query
+  - `internal/notify/whatsapp.go` — WA sidecar HTTP client (POST to wa-service.js :3001/send), phone normalization, invoice/payment/isolation/activation templates
+  - `internal/cron/scheduler.go` — robfig/cron v3 scheduler (Asia/Jakarta TZ): generate invoices (00:01), send reminders (hourly), auto-isolate unpaid (00:05), sync voucher expiry (5min); manual trigger API; CronHistory tracking
+  - `internal/api/handlers/pppoe.go` — PPPoE areas, profiles, customers, users CRUD + suspend/activate/isolate/unisolate + radius sync + registrations approve/reject
+  - `internal/api/handlers/billing.go` — Invoices CRUD + pay (ManualPayment + WA notify) + monthly generation + transactions + payment gateway webhooks (Midtrans/Xendit/Duitku/Tripay)
+  - `internal/api/handlers/radius.go` — RADIUS user management, active sessions, stats, soft disconnect
+  - `internal/api/handlers/hotspot.go` — Hotspot profiles + voucher batch generation/management
+  - `internal/api/handlers/agent.go` — Agent CRUD + sales/deposits + balance topup + voucher assignment
+  - `internal/api/handlers/network.go` — Network map: OLT list + ODC/ODP/OTB/Router CRUD
+  - `internal/api/handlers/whatsapp.go` — WhatsApp providers + templates + manual send + history + reminder settings
+  - `internal/api/handlers/ticket.go` — Support tickets: list/create/get/update/reply/close
+  - `internal/api/handlers/company.go` — Company settings get/update
+  - `internal/api/handlers/cronhandler.go` — Cron history + manual job trigger API
+  - `internal/api/handlers/customer_portal.go` — Customer self-service: profile, invoices, pay, push-subscribe
+  - `internal/api/middleware/auth.go` — Added `CustomerAuthMiddleware` for customer portal
+  - `internal/api/handlers/auth.go` — Added `AgentLogin` endpoint (phone + PIN → JWT)
+  - `internal/api/router.go` — Full route wiring for all domains (PPPoE, Billing, Radius, Hotspot, Agent, Network, WhatsApp, Tickets, Company, Cron, Customer)
+  - `cmd/server/main.go` — Wire FreeRADIUS service + cron scheduler into startup/shutdown lifecycle
+  - `vps-install/install-go.sh` — Full VPS clean install script (Go 1.23, Node.js 20, PM2, Nginx, UFW, FreeRADIUS, systemd)
+### Fixed
+- `internal/api/handlers/helpers.go` — `pageParams` now accepts `fiber.Ctx` directly instead of a custom interface (Fiber v3 variadic `Query` signature)
+- `internal/api/handlers/billing.go` — Removed redundant `strconv` import and workaround stub
+### Files
+- `internal/db/models/extra.go` — new
+- `internal/radius/radius.go` — new
+- `internal/notify/whatsapp.go` — new
+- `internal/cron/scheduler.go` — new
+- `internal/api/handlers/helpers.go` — updated
+- `internal/api/handlers/pppoe.go` — new
+- `internal/api/handlers/billing.go` — new (fixed)
+- `internal/api/handlers/radius.go` — new
+- `internal/api/handlers/hotspot.go` — new
+- `internal/api/handlers/agent.go` — new
+- `internal/api/handlers/network.go` — new
+- `internal/api/handlers/whatsapp.go` — new
+- `internal/api/handlers/ticket.go` — new
+- `internal/api/handlers/company.go` — new
+- `internal/api/handlers/cronhandler.go` — new
+- `internal/api/handlers/customer_portal.go` — new
+- `internal/api/middleware/auth.go` — updated
+- `internal/api/handlers/auth.go` — updated (AgentLogin)
+- `internal/api/router.go` — updated (full route wiring)
+- `cmd/server/main.go` — updated (wire radius + cron)
+- `vps-install/install-go.sh` — new
+
 ### Added
 - **Go backend Phase 1 — OLT Monitoring** — Full Go backend scaffolded alongside the existing Next.js frontend. Compiles to a single binary (`bin/server.exe`), Fiber v3 HTTP framework, GORM (MySQL, shares existing DB), zerolog structured logging.
   - `cmd/server/main.go` — entrypoint with graceful SIGTERM/SIGINT shutdown

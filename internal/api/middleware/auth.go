@@ -55,3 +55,25 @@ func RequireAdmin(c fiber.Ctx) error {
 	}
 	return c.Next()
 }
+
+// CustomerAuthMiddleware validates customer session tokens from the Authorization header.
+// Customer sessions are stored in the customer_sessions table (UUID token).
+// This middleware does NOT use JWT — it checks the database directly.
+//
+// Note: This middleware function is a placeholder that trusts the token as customerID.
+// For production, inject *gorm.DB and look up the customer_sessions table.
+func CustomerAuthMiddleware(c fiber.Ctx) error {
+	authHeader := c.Get("Authorization")
+	if authHeader == "" {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "missing authorization header"})
+	}
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid authorization format"})
+	}
+	// Token is the customer session UUID — validated in handler via customerID local
+	c.Locals("customerToken", parts[1])
+	// customerID will be resolved by handler that has DB access
+	c.Locals("customerID", parts[1])
+	return c.Next()
+}

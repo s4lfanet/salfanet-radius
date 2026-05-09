@@ -12,8 +12,10 @@ import (
 
 	"github.com/s4lfanet/salfanet-radius-go/internal/api"
 	"github.com/s4lfanet/salfanet-radius-go/internal/config"
+	"github.com/s4lfanet/salfanet-radius-go/internal/cron"
 	"github.com/s4lfanet/salfanet-radius-go/internal/db"
 	"github.com/s4lfanet/salfanet-radius-go/internal/olt/poller"
+	"github.com/s4lfanet/salfanet-radius-go/internal/radius"
 	"github.com/s4lfanet/salfanet-radius-go/internal/ws"
 )
 
@@ -38,15 +40,24 @@ func main() {
 	}
 	log.Info().Msg("database connected")
 
+	// ─── FreeRADIUS service ───────────────────────────────────────────────────
+	radSvc := radius.New(gormDB)
+	log.Info().Msg("radius service initialized")
+
+	// ─── Cron Scheduler ──────────────────────────────────────────────────────
+	scheduler := cron.New(gormDB, radSvc)
+	scheduler.Start()
+	log.Info().Msg("cron scheduler started")
+
 	// ─── WebSocket Hub ────────────────────────────────────────────────────────
 	hub := ws.New()
 
 	// ─── OLT Poller ───────────────────────────────────────────────────────────
 	p := poller.New(gormDB, hub.Adapter())
-	p.StartAll() // Start all OLTs with monitoring_enabled = true
+	p.StartAll()
 
 	// ─── HTTP API ─────────────────────────────────────────────────────────────
-	app := api.New(gormDB, p, hub)
+	app := api.New(gormDB, p, hub, radSvc, scheduler)
 
 	// ─── Graceful shutdown ────────────────────────────────────────────────────
 	quit := make(chan os.Signal, 1)
@@ -55,6 +66,9 @@ func main() {
 	go func() {
 		<-quit
 		log.Info().Msg("shutting down...")
+
+		// Stop cron scheduler
+		scheduler.Stop()
 
 		// Stop all pollers
 		p.StopAll()
