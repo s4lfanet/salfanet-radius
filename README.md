@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.38 — 2026-05-09
+
+### Fixed
+- **Status uplink tidak lagi semua DIS** — Root cause: `smxaUplinkPorts(slot, 'SMXA')` sebelumnya menghasilkan 6 interface per slot (slot+1), sehingga dua SMXA card berbeda (slot 3 dan 4) menghasilkan interface `gei_1/5/X` yang tidak ada. Semua `show interface` gagal → semua port DIS. Sekarang tiap SMXA card menghasilkan 3 port sesuai slotnya sendiri; dua card = 6 port total dari dua row terpisah.
+- **SNMP IF-MIB sebagai primary source status uplink** — Ditambahkan `loadUplinkPortStatesSNMP` yang memakai `ifDescr`/`ifAdminStatus`/`ifOperStatus`/`ifHighSpeed`/`ifAlias` dari IF-MIB standard. SNMP dipakai duluan jika OLT `snmpEnabled`; Telnet multi-command hanya sebagai fallback.
+- **SMXA OFFLINE tidak lagi disembunyikan** — `isOperationalCard` kini tidak memfilter status `OFFLINE`. Pada ZTE C320, SMXA dengan status OFFLINE di `show card` tetap memiliki port fisik aktif yang harus ditampilkan di rack diagram.
+
+### Files
+- `src/app/api/olt/[id]/chassis/route.ts` — Fix `smxaUplinkPorts` SMXA→3 port/slot, tambah `loadUplinkPortStatesSNMP` (IF-MIB), SNMP primary + Telnet fallback, fix `isOperationalCard` biarkan OFFLINE.
+
 ### v2.29.37 — 2026-05-09
 
 ### Fixed
@@ -518,19 +528,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/sync/route.ts` — Tambah endpoint manual sync OLT per perangkat.
 - `src/lib/olt/poller.ts` — Tambah mode sync manual dan cleanup ONU stale saat polling.
 - `src/app/admin/olt/[id]/page.tsx` — Tambah tombol Sync OLT, Delete ONU, dan refresh otomatis setelah register/reboot.
-
-### v2.29.33 — 2026-05-09
-
-### Added
-- **Template config di modal register ONU** — Register ONU ZTE sekarang punya pilihan flow `Basic register`, `ZTE Full`, `Huawei Full`, dan `Fiberhome VEIP` langsung di modal, mengikuti struktur wizard referensi `oltc320_v2.1.1_linux`.
-- **Traffic profile live dari OLT** — Modal register kini memuat daftar `traffic profile` dari OLT lewat `show gpon profile traffic`, jadi template full tidak lagi bergantung pada input dummy.
-
-### Changed
-- **Flow register ZTE selaras ke wizard CLI** — Endpoint register sekarang bisa menerapkan rangkaian command template untuk dual VLAN, VEIP, service-port, WAN DHCP, TR-069, dan ACS sesuai template yang dipilih saat register ONU.
-
-### Files
-- `src/app/api/olt/[id]/onus/register/route.ts` — Tambah metadata `trafficProfiles` dan eksekusi template `zte_full`, `huawei_full`, `fiberhome_veip`.
-- `src/app/admin/olt/[id]/page.tsx` — Tambah pilihan template config, field template-specific, dan preview command sesuai flow register.
 
 <!-- AUTO-CHANGELOG:END -->
 
