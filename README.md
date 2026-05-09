@@ -469,6 +469,19 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.47 — 2026-05-09
+
+### Fixed
+- **ONU unconfigured masih hanya tampil 1 padahal CLI ada 2** — Pembacaan ZTE `show gpon onu uncfg` tidak lagi memetakan serial CLI secara posisi ke `onuId` dari SNMP seen-table. Sekarang parser memakai entri CLI aktual per port; jika CLI tidak memberi `onuId`, sistem membuat virtual ID yang stabil dari serial ONU agar semua ONU unconfigured tetap muncul di DB/UI.
+- **Tab Uplink VLAN / Config / Optical belum sesuai output ZTE C320** — VLAN sekarang fallback ke `show running-config interface`, sehingga `switchport mode`, `switchport tls`, `description`, dan daftar `switchport vlan ... tag` terbaca langsung dari config nyata seperti output `xgei_1/3/2`. Tab Optical juga fallback ke `show interface optical-module-info` agar data SFP C320 bisa dibaca selain `show ddmi interface`.
+- **Halaman OLT detail kurang responsif dan hardcoded gelap** — Modal uplink dan rack panel dirapikan untuk mobile/desktop (`max-height`, scroll, grid responsif), dan komponen yang disentuh sekarang memakai warna light/dark yang lebih konsisten.
+
+### Files
+- `package.json` — bump versi aplikasi ke `2.29.47`.
+- `src/lib/olt/vendors/zte.ts` — parser ONU unconfigured ZTE sekarang memakai CLI entries aktual dan virtual ID stabil berbasis serial.
+- `src/app/api/olt/[id]/uplink/route.ts` — tambah parser `show running-config interface` dan `show interface optical-module-info`; VLAN/optical fallback diperbaiki.
+- `src/app/admin/olt/[id]/page.tsx` — modal uplink dan rack panel dibuat lebih responsif serta theme-aware.
+
 ### v2.29.46 — 2026-05-09
 
 ### Fixed
@@ -508,14 +521,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/lib/olt/vendors/zte.ts` — Perbaikan global uncfg command, regex port, dan indeks kolom serial.
-
-### v2.29.42 — 2026-05-09
-
-### Fixed
-- **Sync OLT tidak lagi timeout 524** — `pollOLTWithOptions` sekarang dijalankan fire-and-forget (tanpa `await`). API langsung return 202 dengan `background: true`; frontend sudah punya path untuk ini: auto-refresh setelah 30 detik. ZTE C320 SNMP+Telnet discovery bisa memakan waktu >100 detik, sebelumnya menyebabkan Cloudflare/reverse-proxy memutus koneksi dengan status 524, lalu frontend menerima HTML error page dan melempar `SyntaxError: Unexpected token '<'`.
-
-### Files
-- `src/app/api/olt/[id]/sync/route.ts` — Ganti `await pollOLTWithOptions(...)` menjadi fire-and-forget dengan `.catch()` error logging; return 202 `{ success, background: true, message }`.
 
 <!-- AUTO-CHANGELOG:END -->
 
