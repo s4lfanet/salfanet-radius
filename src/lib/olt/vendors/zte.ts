@@ -397,6 +397,7 @@ async function discoverPonV21(
   const displayPort = pon - 1; // DB/display port is 0-based
   const cliPon = pon;          // ZTE C320 CLI PON port is 1-based
   const portKey = `${board}/${displayPort}`;
+  let hadTelnetData = false;   // true if Telnet was available and returned results
 
   const addSerial = (serial: string, fallbackIndex: number, preferredId?: number) => {
     const normalizedSerial = serial.toUpperCase();
@@ -412,14 +413,20 @@ async function discoverPonV21(
   };
 
   // Method 1: pre-fetched global CLI output (fastest, one Telnet session for all ports)
-  if (globalUncfgMap?.has(portKey)) {
-    const entries = globalUncfgMap.get(portKey)!;
-    entries.forEach((entry, index) => addSerial(entry.serial, index, entry.onuId));
+  // When globalUncfgMap is present (even with 0 entries for this port), Telnet was available.
+  // Trust Telnet as authoritative for unregistered ONU serials.
+  if (globalUncfgMap !== null && globalUncfgMap !== undefined) {
+    hadTelnetData = true; // global Telnet call succeeded (map built)
+    if (globalUncfgMap.has(portKey)) {
+      const entries = globalUncfgMap.get(portKey)!;
+      entries.forEach((entry, index) => addSerial(entry.serial, index, entry.onuId));
+    }
   } else if (telnetConfig) {
-    // Method 2: per-port CLI fallback
+    // Method 2: per-port CLI fallback (when global map unavailable)
     try {
       const result = await executeCommand(telnetConfig, `show gpon onu uncfg gpon-olt_1/${board}/${cliPon}`);
       if (result.success && result.output) {
+        hadTelnetData = true;
         const serialList: string[] = [];
         for (const line of result.output.split('\n')) {
           const trimmed = line.trim();
@@ -443,11 +450,17 @@ async function discoverPonV21(
 
         serialList.forEach((serial, index) => addSerial(serial, index));
       }
-    } catch { /* Telnet unavailable — continue with SNMP seen-table IDs */ }
+    } catch { /* Telnet unavailable */ }
   }
 
-  for (const id of unregisteredIds) {
-    if (!uncfgSerials.has(id)) uncfgSerials.set(id, '');
+  // SNMP seenWalk fallback: only use when Telnet was completely unavailable.
+  // The OLT's seen table can contain stale entries (ONUs previously connected),
+  // so if Telnet data is present (authoritative), we must NOT add ghost entries
+  // from the seen table — doing so creates phantom "N/A" unregistered ONUs.
+  if (!hadTelnetData) {
+    for (const id of unregisteredIds) {
+      if (!uncfgSerials.has(id)) uncfgSerials.set(id, '');
+    }
   }
 
   for (const [onuId, serialNumber] of uncfgSerials) {
