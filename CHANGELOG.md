@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.40] — 2026-05-09
+### Fixed
+- **Sync OLT kembali benar-benar menjalankan poller** — Endpoint sync tidak lagi melepas `pollOLTWithOptions` secara fire-and-forget. Sekarang request menunggu poll selesai, tetapi memakai mode ringan `skipOpticalInfo` supaya tetap cukup cepat untuk manual refresh dan delete follow-up.
+- **ONU yang dihapus tetap muncul di daftar register/unconfigured** — Delete ONU tidak lagi langsung menghapus row `oltOnuStatus` dari database sebelum refresh selesai. Row kini sementara diubah ke status `auth_failed` dan `customerId` dibersihkan, sehingga ONU tetap terlihat sebagai unregistered sampai hasil poll berikutnya mengonfirmasi state live dari OLT.
+- **Manual sync/delete lebih ringan** — Poller manual kini bisa melewati query optical-info per ONU agar sync tidak terasa macet dan lebih andal dipakai untuk refresh setelah aksi operasional.
+
+### Files
+- `src/lib/olt/poller.ts` — Tambah opsi `skipOpticalInfo` untuk poll ringan pada manual sync/delete.
+- `src/app/api/olt/[id]/sync/route.ts` — Kembalikan sync ke mode awaited dengan poll ringan, bukan background fire-and-forget.
+- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Ubah delete flow agar status ONU dipertahankan sebagai unregistered sampai sync selesai.
+
 ## [2.29.39] — 2026-05-09
 ### Fixed
 - **Sync OLT tidak lagi error 524 (Cloudflare timeout)** — `pollOLTWithOptions` sebelumnya berjalan sinkron di dalam API handler; untuk OLT dengan banyak ONU, proses bisa >100 detik sehingga Cloudflare membalas HTML error (524) bukan JSON. Sekarang sync dijalankan di background (fire-and-forget), endpoint langsung merespon `202` JSON. Frontend otomatis refresh setelah 30 detik.

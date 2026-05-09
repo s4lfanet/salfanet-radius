@@ -124,9 +124,23 @@ export async function DELETE(
       }, { status: 500 });
     }
 
-    await prisma.oltOnuStatus.delete({ where: { id: onu.id } }).catch(() => {});
+    // Keep the ONU row visible as unregistered until the poll refresh confirms
+    // its new live state. Deleting the row first makes the ONU disappear from the
+    // register list when sync is slow or fails.
+    await prisma.oltOnuStatus.update({
+      where: { id: onu.id },
+      data: {
+        status: 'auth_failed',
+        customerId: null,
+        updatedAt: new Date(),
+        lastOfflineAt: new Date(),
+      },
+    }).catch(() => {});
 
-    const syncResult = await pollOLTWithOptions(oltId, { ignoreMonitoringDisabled: true });
+    const syncResult = await pollOLTWithOptions(oltId, {
+      ignoreMonitoringDisabled: true,
+      skipOpticalInfo: true,
+    });
 
     await prisma.oltMonitoringLog.create({
       data: {

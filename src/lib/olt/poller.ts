@@ -39,7 +39,7 @@ export async function pollOLT(oltId: string): Promise<{ success: boolean; error?
 
 export async function pollOLTWithOptions(
   oltId: string,
-  options: { ignoreMonitoringDisabled?: boolean } = {}
+  options: { ignoreMonitoringDisabled?: boolean; skipOpticalInfo?: boolean } = {}
 ): Promise<{ success: boolean; error?: string }> {
   const olt = await prisma.networkOLT.findUnique({ where: { id: oltId } });
   if (!olt) return { success: false, error: 'OLT not found' };
@@ -116,7 +116,7 @@ export async function pollOLTWithOptions(
     const discoveredKeys = new Set<string>();
     for (const onu of discoveredOnus) {
       discoveredKeys.add(buildOnuKey(onu));
-      await upsertONU(oltId, onu, sshConfig, telnetConfig, vendor);
+      await upsertONU(oltId, onu, sshConfig, telnetConfig, vendor, options);
     }
 
     if (discoveredOnus.length > 0) {
@@ -254,16 +254,19 @@ async function upsertONU(
   onu: any,
   sshConfig: any,
   telnetConfig: any,
-  vendor: VendorModule
+  vendor: VendorModule,
+  options: { skipOpticalInfo?: boolean } = {}
 ): Promise<void> {
   try {
     let opticalInfo: any = null;
 
-    // Get optical info if connection is available (SSH/Telnet)
-    if (sshConfig) {
-      opticalInfo = await vendor.getOnuOpticalInfoSSH(sshConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
-    } else if (telnetConfig) {
-      opticalInfo = await vendor.getOnuOpticalInfo(telnetConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
+    // Manual sync/delete refresh should stay lightweight so the request can finish.
+    if (!options.skipOpticalInfo) {
+      if (sshConfig) {
+        opticalInfo = await vendor.getOnuOpticalInfoSSH(sshConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
+      } else if (telnetConfig) {
+        opticalInfo = await vendor.getOnuOpticalInfo(telnetConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
+      }
     }
 
     const status = mapOnuStatus(onu.status);
