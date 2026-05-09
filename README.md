@@ -469,6 +469,13 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.58 — 2026-05-09
+
+### Fixed
+- **Poller fully SNMP — hapus per-ONU Telnet serial fallback dari `discoverPonV21`** — Root cause: `discoverPonV21` menampung ONU yang gagal di-parse serial-nya dari SNMP hex ke dalam array `needsTelnetSerial`, lalu memanggil `show gpon onu detail-info gpon-onu_1/B/P:ID` via Telnet secara paralel (N `Promise.all` sessions) untuk setiap ONU dengan serial null. Jika ada banyak ONU dengan format serial non-standar (misalnya byte non-ASCII), ini bisa spawn banyak Telnet sessions secara serentak, yang saturates OLT concurrent session limit. Fix: hapus `needsTelnetSerial` array dan `Promise.all` Telnet block. Jika SNMP hex tidak bisa di-parse, `serialNumber` tetap `null` di DB — ONU masih ter-track via `onuId`. Serial bisa diisi on-demand saat user buka detail ONU (endpoint individual yang masih boleh Telnet). Polling cycle sekarang pure SNMP untuk registered ONUs.
+### Files
+- `src/lib/olt/vendors/zte.ts` — `discoverPonV21`: hapus `needsTelnetSerial` array + `Promise.all` Telnet serial lookup block
+
 ### v2.29.57 — 2026-05-09
 
 ### Fixed
@@ -506,18 +513,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/api/olt/[id]/uplink/route.ts` — VLAN tab: ganti multi-command ke single `executeCommand('show running-config interface')`
 - `src/app/admin/olt/[id]/page.tsx` — hapus chassis stats row; hapus Metrics TabsTrigger + TabsContent + state vars
-
-### v2.29.53 — 2026-05-10
-
-### Fixed
-- **Temperature card dihapus dari top stat** — Kartu "Temperature" di baris 4 stat card atas selalu "Not available (C320)" karena ZTE C320 tidak melaporkan suhu via SNMP. Dihapus → layout sekarang 3 kolom (Status, Uptime, ONUs). Grid berubah dari `md:grid-cols-4` → `md:grid-cols-3`.
-- **CHASSIS TEMP dihapus dari chassis stats row** — Kolom "CHASSIS TEMP" di stats row chassis diagram juga dihapus (selalu "Unknown"). Grid chassis stats: dari `xl:grid-cols-6` → `xl:grid-cols-5`, border logic diperbarui.
-- **VLAN tab kosong (Mode/TLS/PVID semua —)** — `parseVlanPort` hanya menangani format key:value, tapi ZTE C320 bisa mengembalikan format tabular (`VLAN Port Mode Pvid TLS`). Ditambahkan tabular fallback parser. `parseRunningConfigInterface` juga diperluas untuk menangani ZTE non-switchport style (`vlan N tag`, `pvid N`, `mode hybrid` tanpa prefix `switchport`). VLAN tab sekarang selalu return raw output untuk diagnosis bahkan jika parsing gagal.
-- **CONFIG tab kosong (No configuration data)** — Config tab tidak menampilkan apa pun jika `hasCliError` triggered pada output. Diubah: raw output selalu dikembalikan ke UI, user bisa melihat output asli OLT meski ada error-string di output.
-- **`parseVlanPort` "Tagged vlan(s)" tidak dikenali** — Normalisasi key sebelumnya hanya mencocokkan `'tagged vlan'` (exact). Sekarang menggunakan `startsWith('tagged vlan')` sehingga varian `tagged vlan(s)` juga ditangkap.
-### Files
-- `src/app/admin/olt/[id]/page.tsx` — hapus Temperature card top stats; hapus CHASSIS TEMP dari chassis stats row
-- `src/app/api/olt/[id]/uplink/route.ts` — tabular fallback di `parseVlanPort`; ZTE non-switchport variants di `parseRunningConfigInterface`; VLAN tab & CONFIG tab selalu return raw
 
 <!-- AUTO-CHANGELOG:END -->
 
