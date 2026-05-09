@@ -462,10 +462,19 @@ async function discoverPonV21(
         } catch { /* Telnet unavailable — continue without serial */ }
       }
 
-      if (uncfgSerials.size === 0 && fallbackSerialList.length > 0) {
+      if (fallbackSerialList.length > 0) {
+        const existingSerials = new Set([...uncfgSerials.values()].map((serial) => serial.toUpperCase()));
         for (let index = 0; index < fallbackSerialList.length; index++) {
-          const serial = fallbackSerialList[index];
-          uncfgSerials.set(buildVirtualUncfgOnuId(serial, index), serial);
+          const serial = fallbackSerialList[index].toUpperCase();
+          if (existingSerials.has(serial)) continue;
+
+          let virtualId = buildVirtualUncfgOnuId(serial, index);
+          while (uncfgSerials.has(virtualId)) {
+            virtualId++;
+          }
+
+          uncfgSerials.set(virtualId, serial);
+          existingSerials.add(serial);
         }
       }
     }

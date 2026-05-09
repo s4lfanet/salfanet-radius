@@ -6,6 +6,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.48] — 2026-05-09
+### Fixed
+- **ONU unconfigured kedua masih hilang meski versi 2.29.47 sudah terpasang** — Parser ZTE sebelumnya masih bisa membuang serial fallback jika satu ONU unconfigured sudah lebih dulu terpetakan ke `onuId` nyata. Sekarang serial fallback selalu digabung ke hasil akhir dengan virtual ID stabil, sehingga kombinasi `1 ONU ada ID + 1 ONU hanya serial` tidak lagi berakhir jadi satu baris.
+
+### Files
+- `package.json` — bump versi aplikasi ke `2.29.48`.
+- `src/lib/olt/vendors/zte.ts` — merge fallback serial list ke `uncfgSerials` meski sebagian ONU unconfigured sudah punya ID nyata.
+
 ## [2.29.47] — 2026-05-09
 ### Fixed
 - **ONU unconfigured masih hanya tampil 1 padahal CLI ada 2** — Pembacaan ZTE `show gpon onu uncfg` tidak lagi memetakan serial CLI secara posisi ke `onuId` dari SNMP seen-table. Sekarang parser memakai entri CLI aktual per port; jika CLI tidak memberi `onuId`, sistem membuat virtual ID yang stabil dari serial ONU agar semua ONU unconfigured tetap muncul di DB/UI.
