@@ -6,6 +6,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.50] — 2026-05-09
+### Changed
+- **OLT Monitoring — redesign terbaik** — Monitoring page dirancang ulang dengan: ONU progress bar per OLT dengan persentase warna adaptif (hijau/kuning/merah), countdown auto-refresh 30d dengan indikator visual, tombol "Poll Semua" parallel, sort by status/name/alerts/offline-ONU, timestamp relative ("2m lalu"), animasi ping pada OLT online, badge alert mengarah ke halaman alerts, suhu color-coded (hijau < 50°C, kuning 50–65°C, merah ≥ 65°C), styling card berlapis dengan border aksen sesuai kondisi.
+- **OLT Alerts — redesign terbaik** — Alerts page dirancang ulang dengan: border-left accent berwarna per severity (merah/amber/biru/abu), tombol "Selesaikan Semua" batch resolve, relative timestamp dengan tooltip tanggal penuh, back-button ke monitoring, stat card adaptif warna jika ada critical/warning, link OLT name menuju halaman detail OLT, resolved alerts tampil transparan (opacity-60).
+
+### Files
+- `src/app/admin/olt/monitoring/page.tsx` — Redesign monitoring: progress bar, countdown, poll-all, sort, relative time
+- `src/app/admin/olt/alerts/page.tsx` — Redesign alerts: border accent, resolve-all, relative time, back nav
+
 ## [2.29.49] — 2026-05-09
 ### Fixed
 - **ONU unconfigured tetap hanya 1 setelah sync** — Discovery ZTE C320 sekarang menjadikan output CLI `show gpon onu uncfg` sebagai sumber utama untuk ONU unconfigured. Data CLI global tidak lagi diproses hanya jika SNMP seen-table punya entry; port yang hanya muncul dari CLI global juga ditambahkan ke daftar PON yang dipoll.
