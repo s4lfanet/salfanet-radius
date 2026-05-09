@@ -469,6 +469,22 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.52 — 2026-05-10
+
+### Fixed
+- **Uplink tab lambat (status/vlan/optical)** — Setiap tab dulu membuka 2 sesi Telnet terpisah (primary + fallback) masing-masing ~5 detik → total ~10 detik per tab. Sekarang: satu `executeMultipleCommands` session mengirim primary + fallback command sekaligus. Total: ~5 detik → **2× lebih cepat**.
+- **SNMP fallback getInterfaceStatusSNMP lambat** — Dulu: `snmpWalk(ifDescr)` sequential, lalu baru `Promise.all([4 snmpGet])`. Sekarang: 5 `snmpWalk` berjalan **paralel** (ifDescr, ifAdmin, ifOper, ifHighSpeed, ifAlias) + O(1) Map lookup per index.
+- **removeVlan 3 sesi Telnet** — `removeVlan` POST dulu loop 3 `commandAttempts` masing-masing sesi Telnet terpisah (~15 detik worst-case). Sekarang: satu sesi tunggal dengan ketiga `no switchport` command dikirim sekaligus — OLT mengabaikan command yang tidak berlaku.
+- **OLT sync lambat (`discoverPonV21`)** — Dulu: per-ONU `Promise.all([5 snmpGet])` secara sequential antar ONU = N × 5 subprocess spawns. Sekarang: **7 `snmpWalk` paralel** untuk seluruh PON port sekaligus (regStatus, operState, serial, rxPower, description, distance, seenTable), lalu build Map + lookup O(1) per ONU. Telnet serial lookup yang gagal SNMP di-batch via `Promise.all` tanpa blokir ONU lain.
+### Added
+- **PVID Management di VLAN tab** — Sebelumnya PVID hanya tampil read-only. Sekarang: tombol **Remove** di samping PVID aktif, dropdown berubah antara "Tagged (Trunk)" dan "Set as PVID", tombol berubah label antara "Add VLAN" dan "Set PVID". Backend: actions `setPvid` dan `removePvid` baru di POST `/api/olt/[id]/uplink`.
+- **Remove VLAN button lebih jelas** — Badge VLAN tagged kini punya tombol `×` yang lebih terlihat dengan hover merah dan border animasi.
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — `executeMultipleCommands` per tab; 5 parallel walks SNMP; `removeVlan` single session; `setPvid`/`removePvid` actions baru
+- `src/lib/olt/vendors/zte.ts` — `discoverPonV21` rewrite: 7 parallel bulk walks → O(1) Map lookup; batch Telnet serial fallback
+- `src/app/admin/olt/[id]/page.tsx` — PVID remove button; "Set as PVID" dropdown; improved VLAN remove UX
+
 ### v2.29.51 — 2026-05-09
 
 ### Fixed
@@ -511,19 +527,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `package.json` — bump versi aplikasi ke `2.29.48`.
 - `src/lib/olt/vendors/zte.ts` — merge fallback serial list ke `uncfgSerials` meski sebagian ONU unconfigured sudah punya ID nyata.
-
-### v2.29.47 — 2026-05-09
-
-### Fixed
-- **ONU unconfigured masih hanya tampil 1 padahal CLI ada 2** — Pembacaan ZTE `show gpon onu uncfg` tidak lagi memetakan serial CLI secara posisi ke `onuId` dari SNMP seen-table. Sekarang parser memakai entri CLI aktual per port; jika CLI tidak memberi `onuId`, sistem membuat virtual ID yang stabil dari serial ONU agar semua ONU unconfigured tetap muncul di DB/UI.
-- **Tab Uplink VLAN / Config / Optical belum sesuai output ZTE C320** — VLAN sekarang fallback ke `show running-config interface`, sehingga `switchport mode`, `switchport tls`, `description`, dan daftar `switchport vlan ... tag` terbaca langsung dari config nyata seperti output `xgei_1/3/2`. Tab Optical juga fallback ke `show interface optical-module-info` agar data SFP C320 bisa dibaca selain `show ddmi interface`.
-- **Halaman OLT detail kurang responsif dan hardcoded gelap** — Modal uplink dan rack panel dirapikan untuk mobile/desktop (`max-height`, scroll, grid responsif), dan komponen yang disentuh sekarang memakai warna light/dark yang lebih konsisten.
-
-### Files
-- `package.json` — bump versi aplikasi ke `2.29.47`.
-- `src/lib/olt/vendors/zte.ts` — parser ONU unconfigured ZTE sekarang memakai CLI entries aktual dan virtual ID stabil berbasis serial.
-- `src/app/api/olt/[id]/uplink/route.ts` — tambah parser `show running-config interface` dan `show interface optical-module-info`; VLAN/optical fallback diperbaiki.
-- `src/app/admin/olt/[id]/page.tsx` — modal uplink dan rack panel dibuat lebih responsif serta theme-aware.
 
 <!-- AUTO-CHANGELOG:END -->
 
