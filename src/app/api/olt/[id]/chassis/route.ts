@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
-import { executeCommand, TelnetConfig } from '@/lib/olt/telnet';
+import { executeCommand, executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 import { snmpWalk, SNMPConfig } from '@/lib/olt/snmp';
 
 // ── ZTE C320 Board/Shelf MIB OIDs ─────────────────────────────────────────────
@@ -144,7 +144,11 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
     ];
   }
   if (ct === 'SMXA') {
-    return [`gei_1/${slot}/1`, `gei_1/${slot}/2`, `gei_1/${slot}/3`];
+    // ZTE C320 SMXA card spans two slot addresses: ports 1-3 on slot N, ports 1-3 on slot N+1
+    return [
+      `gei_1/${slot}/1`, `gei_1/${slot}/2`, `gei_1/${slot}/3`,
+      `gei_1/${slot + 1}/1`, `gei_1/${slot + 1}/2`, `gei_1/${slot + 1}/3`,
+    ];
   }
   return [`gei_1/${slot}/1`, `gei_1/${slot}/2`];
 }
@@ -196,16 +200,29 @@ async function loadUplinkPortStates(
   ifaces: string[]
 ): Promise<Map<string, UplinkPortState>> {
   const stateMap = new Map<string, UplinkPortState>();
+  if (ifaces.length === 0) return stateMap;
 
-  await Promise.all(ifaces.map(async (iface) => {
-    try {
-      const result = await executeCommand(telnetConfig, `show interface ${iface}`);
-      if (!result.success || !result.output) return;
-      stateMap.set(iface, parseUplinkInterfaceStatus(result.output, iface));
-    } catch {
-      // Ignore per-port failures so other interfaces still render.
+  // Run all show-interface commands in ONE Telnet session to avoid multiple
+  // parallel connections that the OLT may reject or throttle.
+  try {
+    const commands = ifaces.map(iface => `show interface ${iface}`);
+    const result = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
+    if (!result.success || !result.output) return stateMap;
+
+    for (let i = 0; i < ifaces.length; i++) {
+      const startMarker = `__COPILOT_CMD_${i}_START__`;
+      const endMarker   = `__COPILOT_CMD_${i}_END__`;
+      const startIdx = result.output.indexOf(startMarker);
+      const endIdx   = result.output.indexOf(endMarker);
+      if (startIdx === -1 || endIdx === -1) continue;
+      const cmdOutput = result.output.slice(startIdx + startMarker.length, endIdx).trim();
+      if (cmdOutput) {
+        stateMap.set(ifaces[i], parseUplinkInterfaceStatus(cmdOutput, ifaces[i]));
+      }
     }
-  }));
+  } catch {
+    // Telnet unavailable — return empty map, ports will show as unknown.
+  }
 
   return stateMap;
 }
