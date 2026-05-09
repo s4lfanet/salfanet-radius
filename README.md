@@ -469,6 +469,30 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.30 — 2026-05-09
+
+### Fixed
+- **ZTE Telnet login matcher** — Expect script tidak lagi salah menangkap teks `Last login` sebagai prompt `login:`, sehingga command Telnet (`show card`, detail ONU, reboot ONU) benar-benar jalan setelah autentikasi.
+- **SMXA card tidak muncul** — Parser `show card` kini mendukung format real ZTE C320 V2.1: `Rack Shelf Slot CfgType RealType Port HardVer SoftVer Status`, termasuk card `SMXA` dan `GTGHG`.
+- **ONU serial number registered/unregistered** — Mapping port Telnet ZTE C320 diperbaiki: CLI memakai PON 1-based (`gpon-olt_1/1/1`), sementara DB/UI tetap 0-based. Registered ONU yang SNMP-nya kosong kini fallback ke `show gpon onu detail-info` untuk mengambil `Serial number`.
+- **Reboot ONU failed** — Reboot ZTE kini pakai workflow Telnet `configure terminal → pon-onu-mng gpon-onu_... → reboot`, bukan SSH-only command lama.
+- **404 `/admin/network/onus`** — Route redirect ditambahkan agar link statistik ONU dari OLT Management tidak lagi 404.
+
+### Added
+- **ONU Detail Modal** — Tombol Detail pada ONU List menampilkan detail Telnet (`show gpon onu detail-info`, optical power, running-config) dan data customer/ODP terkait.
+- **Assign Customer ONU** — Tombol Assign pada ONU registered untuk menghubungkan ONU ke PPPoE customer (`olt_onu_status.customerId`).
+
+### Files
+- `src/lib/olt/telnet.ts` — Fix matcher login dan multi-command Telnet.
+- `src/lib/olt/vendors/zte.ts` — Fix mapping CLI port, serial fallback dari detail-info, optical command parser.
+- `src/lib/olt/poller.ts` — Simpan serial dari Telnet optical/detail fallback.
+- `src/app/api/olt/[id]/chassis/route.ts` — Parser `show card` format Rack/Shelf/Slot.
+- `src/app/api/olt/[id]/onus/[onuId]/reboot/route.ts` — Reboot ZTE via Telnet `pon-onu-mng`.
+- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — **NEW** detail ONU API.
+- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — **NEW** assign customer API.
+- `src/app/admin/network/onus/page.tsx` — **NEW** redirect route untuk link lama.
+- `src/app/admin/olt/[id]/page.tsx` — Detail/Assign modal dan filter dari query string.
+
 ### v2.29.29 — 2026-05-13
 
 ### Fixed
@@ -545,18 +569,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/network/olts/route.ts` — Tambah `_count.onuStatuses` + mapping `olt_onu_status` + `onu_stats`
 - `src/app/admin/olt/[id]/page.tsx` — Load `password` dari API response di `fetchOLT`
 - `src/app/api/olt/[id]/route.ts` — PUT: skip update password jika kosong
-
-### v2.29.25 — 2026-05-08
-
-### Fixed
-- **ZTE C320 unregistered ONU discovery** — ONU yang belum diregister (tampak di seen-ONU table SNMP tapi tidak di reg table) kini berhasil di-discover dan disimpan ke DB dengan status `auth_failed`. Serial number diambil via **Telnet** (`show pon onu uncfg gpon-olt_1/{board}/{pon}`) karena SNMP cfg table tidak memiliki entry untuk ONU yang belum register. Parsing mendukung dua format output ZTE C320: `gpon-onu_1/1/1:2  ZTEGDA5918AC` dan `  2  ZTEGDA5918AC`
-- **upsertONU serial update** — Kolom `serialNumber` kini ikut di-update ketika polling berikutnya berhasil mendapat serial (sebelumnya hanya disimpan saat create, tidak di-update)
-- **discoverONUsSNMP telnet passthrough** — Fungsi `discoverONUsSNMP` kini menerima parameter `telnetConfig` opsional dan meneruskannya ke `discoverPonV21`, memungkinkan fetch serial via Telnet ketika OLT memiliki Telnet enabled
-- **Poller telnet passthrough** — `pollOLT` kini meneruskan `telnetConfig` ke `discoverONUsSNMP` agar unregistered ONU dapat memiliki serial
-
-### Files
-- `src/lib/olt/vendors/zte.ts` — `discoverPonV21` + Telnet serial fetch untuk unregistered ONU; `discoverONUsSNMP` signature + telnetConfig passthrough
-- `src/lib/olt/poller.ts` — Pass `telnetConfig` ke `discoverONUsSNMP`; update `serialNumber` di block update upsert
 
 <!-- AUTO-CHANGELOG:END -->
 
