@@ -34,9 +34,18 @@ function getVendorModule(vendor: string | null | undefined): VendorModule {
  * Poll a single OLT and update monitoring data
  */
 export async function pollOLT(oltId: string): Promise<{ success: boolean; error?: string }> {
+  return pollOLTWithOptions(oltId);
+}
+
+export async function pollOLTWithOptions(
+  oltId: string,
+  options: { ignoreMonitoringDisabled?: boolean } = {}
+): Promise<{ success: boolean; error?: string }> {
   const olt = await prisma.networkOLT.findUnique({ where: { id: oltId } });
   if (!olt) return { success: false, error: 'OLT not found' };
-  if (!olt.monitoringEnabled) return { success: false, error: 'Monitoring not enabled' };
+  if (!olt.monitoringEnabled && !options.ignoreMonitoringDisabled) {
+    return { success: false, error: 'Monitoring not enabled' };
+  }
 
   const now = new Date();
   let isOnline = false;
@@ -104,8 +113,14 @@ export async function pollOLT(oltId: string): Promise<{ success: boolean; error?
     }
 
     // Upsert ONU statuses
+    const discoveredKeys = new Set<string>();
     for (const onu of discoveredOnus) {
+      discoveredKeys.add(buildOnuKey(onu));
       await upsertONU(oltId, onu, sshConfig, telnetConfig, vendor);
+    }
+
+    if (discoveredOnus.length > 0) {
+      await pruneMissingOnus(oltId, discoveredKeys);
     }
 
     // Count ONU statuses
@@ -208,6 +223,27 @@ export async function pollAllOLTs(): Promise<void> {
       console.error(`[OLT Poller] Failed for ${olt.name}:`, err);
     }
   }
+}
+
+function buildOnuKey(onu: { frame?: number | null; slot?: number | null; port: number; onuId: number }): string {
+  return [onu.frame ?? 0, onu.slot ?? 0, onu.port, onu.onuId].join(':');
+}
+
+async function pruneMissingOnus(oltId: string, discoveredKeys: Set<string>): Promise<void> {
+  const currentOnus = await prisma.oltOnuStatus.findMany({
+    where: { oltId },
+    select: { id: true, frame: true, slot: true, port: true, onuId: true },
+  });
+
+  const staleIds = currentOnus
+    .filter((onu) => !discoveredKeys.has(buildOnuKey(onu)))
+    .map((onu) => onu.id);
+
+  if (staleIds.length === 0) return;
+
+  await prisma.oltOnuStatus.deleteMany({
+    where: { id: { in: staleIds } },
+  });
 }
 
 /**

@@ -6,6 +6,26 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.34] — 2026-05-09
+### Added
+- **Delete ONU terdaftar + sync OLT** — ONU yang sudah terdaftar sekarang bisa dihapus penuh dari ZTE OLT melalui flow clear config service lalu unregister `no onu`, lalu langsung disinkronkan kembali ke database/frontend.
+- **Manual Sync OLT di halaman detail** — Halaman detail OLT sekarang punya tombol `Sync OLT` untuk memaksa refresh data dari OLT walau monitoring terjadwal tidak aktif.
+
+### Fixed
+- **Assign customer tidak lagi 500** — Response endpoint assign ONU sekarang aman untuk JSON serialization karena field `BigInt` pada status ONU disanitasi sebelum dikirim balik.
+- **Reboot ONU menampilkan error OLT yang lebih nyata** — Route reboot ZTE sekarang mengekstrak output command `reboot` dari transcript Telnet, sehingga kegagalan tidak lagi selalu jatuh ke pesan generik.
+- **Sync OLT membersihkan ONU yang sudah hilang di perangkat** — Poller sekarang menghapus row ONU stale yang tidak lagi ditemukan saat polling, sehingga hasil register/delete lebih konsisten antara OLT dan frontend.
+
+### Files
+- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — Sanitasi response assign ONU agar tidak gagal serialisasi `BigInt`.
+- `src/app/api/olt/[id]/onus/[onuId]/reboot/route.ts` — Perbaiki parsing output reboot Telnet dan error reporting.
+- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Tambah endpoint delete/unregister ONU penuh untuk ZTE + sync setelah aksi.
+- `src/app/api/olt/[id]/sync/route.ts` — Tambah endpoint manual sync OLT per perangkat.
+- `src/lib/olt/poller.ts` — Tambah mode sync manual dan cleanup ONU stale saat polling.
+- `src/app/admin/olt/[id]/page.tsx` — Tambah tombol Sync OLT, Delete ONU, dan refresh otomatis setelah register/reboot.
+
+---
+
 ## [2.29.33] — 2026-05-09
 ### Added
 - **Template config di modal register ONU** — Register ONU ZTE sekarang punya pilihan flow `Basic register`, `ZTE Full`, `Huawei Full`, dan `Fiberhome VEIP` langsung di modal, mengikuti struktur wizard referensi `oltc320_v2.1.1_linux`.

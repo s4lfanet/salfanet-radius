@@ -4,6 +4,44 @@ import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
 
+function serializeOnuAssignment(onu: {
+  id: string;
+  oltId: string;
+  onuIndex: number;
+  frame: number;
+  slot: number;
+  port: number;
+  onuId: number;
+  macAddress: string | null;
+  serialNumber: string | null;
+  description: string | null;
+  status: string;
+  rxPower: number | null;
+  txPower: number | null;
+  distance: number | null;
+  temperature: number | null;
+  voltage: number | null;
+  biasCurrent: number | null;
+  lastDeregReason: string | null;
+  ipAddress: string | null;
+  vlanId: number | null;
+  bandwidthUp: bigint;
+  bandwidthDown: bigint;
+  customerId: string | null;
+  firstSeenAt: Date;
+  lastSeenAt: Date | null;
+  lastOfflineAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+  customer: { id: string; username: string; name: string; phone: string | null; customerId: string } | null;
+}) {
+  return {
+    ...onu,
+    bandwidthUp: Number(onu.bandwidthUp),
+    bandwidthDown: Number(onu.bandwidthDown),
+  };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; onuId: string }> }
@@ -65,7 +103,7 @@ export async function POST(
     }
 
     const updated = await prisma.oltOnuStatus.update({
-      where: { id: onuId },
+      where: { id: onu.id },
       data: { customerId: customerId || null },
       include: { customer: { select: { id: true, username: true, name: true, phone: true, customerId: true } } },
     });
@@ -79,7 +117,7 @@ export async function POST(
       },
     }).catch(() => {});
 
-    return NextResponse.json({ success: true, onu: updated });
+    return NextResponse.json({ success: true, onu: serializeOnuAssignment(updated) });
   } catch (error: any) {
     console.error('[ONU Assign POST]', error);
     return NextResponse.json({ error: error.message ?? 'Failed to assign customer' }, { status: 500 });

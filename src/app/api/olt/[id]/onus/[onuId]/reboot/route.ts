@@ -5,6 +5,34 @@ import { prisma } from '@/server/db/client';
 import { Client as SSHClient } from 'ssh2';
 import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 
+function normalizeTelnetOutput(output: string): string {
+  return output
+    .replace(/\r/g, '')
+    .replace(/\x08/g, '')
+    .replace(/--More--/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function extractCommandSection(output: string, index: number, command: string): string {
+  const startToken = `__COPILOT_CMD_${index}_START__`;
+  const endToken = `__COPILOT_CMD_${index}_END__`;
+  const start = output.indexOf(startToken);
+  if (start === -1) return '';
+  const from = start + startToken.length;
+  const end = output.indexOf(endToken, from);
+  const section = end === -1 ? output.slice(from) : output.slice(from, end);
+  const lines = normalizeTelnetOutput(section)
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .filter(Boolean);
+
+  while (lines.length && lines[0].trim() === command.trim()) lines.shift();
+  while (lines.length && /^[A-Za-z0-9_.-]+[>#]/.test(lines[lines.length - 1].trim())) lines.pop();
+
+  return lines.join('\n').trim();
+}
+
 // POST - Reboot a single ONU via SSH command to the parent OLT
 export async function POST(
   _request: NextRequest,
@@ -36,6 +64,7 @@ export async function POST(
 
     let success = false;
     let commandLabel = '';
+    let failureDetail = '';
 
     if (vendor === 'zte' && olt.telnetEnabled && olt.username && password) {
       const iface = `gpon-onu_${onu.frame}/${onu.slot}/${onu.port + 1}:${onu.onuId}`;
@@ -52,10 +81,12 @@ export async function POST(
         'reboot',
         'exit',
         'end',
-      ]);
+      ], { sendEnd: false });
       const output = result.output ?? result.error ?? '';
-      success = result.success && !/%Error|invalid input|invalid command|bad password/i.test(output);
+      const rebootOutput = extractCommandSection(output, 2, 'reboot') || normalizeTelnetOutput(output);
+      success = result.success && !/%Error|invalid input|invalid command|bad password/i.test(rebootOutput);
       commandLabel = `pon-onu-mng ${iface} -> reboot`;
+      failureDetail = rebootOutput;
     } else if (olt.sshEnabled && password) {
       const rebootCmd = buildRebootCommand(vendor, onu.frame, onu.slot, onu.port, onu.onuId);
       success = await sshCommand(
@@ -85,7 +116,7 @@ export async function POST(
       return NextResponse.json({ success: true, message: 'Reboot command sent' });
     }
 
-    return NextResponse.json({ error: 'Failed to send reboot command' }, { status: 500 });
+    return NextResponse.json({ error: failureDetail || 'Failed to send reboot command' }, { status: 500 });
   } catch (err: any) {
     console.error('ONU reboot error:', err);
     return NextResponse.json({ error: err.message ?? 'Reboot failed' }, { status: 500 });

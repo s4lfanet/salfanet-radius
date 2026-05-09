@@ -19,7 +19,7 @@ import {
   Server, RefreshCw, AlertCircle, Wifi, WifiOff,
   Thermometer, Clock, Activity, ArrowLeft, Save, TestTube,
   Power, Download, CheckCircle, Signal, Plus, X, Cpu, Zap,
-  Eye, UserPlus,
+  Eye, UserPlus, Trash2,
 } from 'lucide-react';
 
 interface ONU {
@@ -1570,6 +1570,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [polling, setPolling] = useState(false);
+  const [deletingOnu, setDeletingOnu] = useState<string | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
   const [onuStatusFilter, setOnuStatusFilter] = useState(urlFilter ?? 'all');
 
@@ -1696,27 +1697,24 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
     }
   };
 
-  const handleManualPoll = async () => {
+  const handleSyncOLT = useCallback(async ({ silent = false }: { silent?: boolean } = {}) => {
     setPolling(true);
     try {
-      const res = await fetch('/api/olt/monitoring', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ oltId: id }),
-      });
+      const res = await fetch(`/api/olt/${id}/sync`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        alert(`Poll failed: ${data.error ?? 'Unknown error'}`);
+        if (!silent) alert(`Sync failed: ${data.error ?? 'Unknown error'}`);
       } else {
         await fetchOLT();
+        if (!silent) alert(data.message ?? 'OLT sync completed');
       }
     } catch (e) {
-      console.error('Poll failed', e);
-      alert('Poll failed — check network connection');
+      console.error('Sync failed', e);
+      if (!silent) alert('Sync failed — check network connection');
     } finally {
       setPolling(false);
     }
-  };
+  }, [fetchOLT, id]);
 
   const fetchMetrics = useCallback(async () => {
     setMetricsLoading(true);
@@ -1745,11 +1743,37 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         alert(data.error ?? 'Reboot failed');
       } else {
         setConfirmReboot(null);
+        await handleSyncOLT({ silent: true });
       }
     } catch (e) {
       alert('Reboot request failed');
     } finally {
       setRebootingOnu(null);
+    }
+  };
+
+  const handleDeleteOnu = async (onu: ONU) => {
+    const confirmed = window.confirm(
+      `Hapus ONU ${onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`} dari OLT?\n\nAksi ini akan clear config service dan unregister ONU.`
+    );
+    if (!confirmed) return;
+
+    setDeletingOnu(onu.id);
+    try {
+      const res = await fetch(`/api/olt/${id}/onus/${onu.id}/delete`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error ?? 'Delete ONU failed');
+      } else {
+        await fetchOLT();
+        if (data.sync?.success === false) {
+          alert(data.message ?? 'ONU deleted, but sync failed');
+        }
+      }
+    } catch (e) {
+      alert('Delete ONU request failed');
+    } finally {
+      setDeletingOnu(null);
     }
   };
 
@@ -1905,12 +1929,10 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             <Download className="h-4 w-4 mr-1" />
             Export CSV
           </Button>
-          {olt.monitoringEnabled && (
-            <Button onClick={handleManualPoll} variant="outline" size="sm" disabled={polling}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${polling ? 'animate-spin' : ''}`} />
-              {polling ? 'Polling…' : 'Poll Now'}
-            </Button>
-          )}
+          <Button onClick={() => handleSyncOLT()} variant="outline" size="sm" disabled={polling}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${polling ? 'animate-spin' : ''}`} />
+            {polling ? 'Syncing…' : 'Sync OLT'}
+          </Button>
         </div>
       </div>
 
@@ -2178,18 +2200,27 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             </button>
                             <button
                               onClick={() => setAssigningOnu(onu)}
-                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                              disabled={deletingOnu === onu.id}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                             >
                               <UserPlus className="w-3 h-3" />
                               Assign
                             </button>
                             <button
                               onClick={() => setConfirmReboot(onu.id)}
-                              disabled={rebootingOnu !== null || batchRebooting}
+                              disabled={deletingOnu === onu.id || rebootingOnu !== null || batchRebooting}
                               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 transition-colors"
                             >
                               <Power className="w-3 h-3" />
                               Reboot
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOnu(onu)}
+                              disabled={deletingOnu === onu.id || rebootingOnu !== null || batchRebooting}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
+                            >
+                              {deletingOnu === onu.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                              {deletingOnu === onu.id ? 'Deleting...' : 'Delete'}
                             </button>
                           </div>
                         )}
@@ -2648,7 +2679,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           onu={registeringOnu}
           vendor={olt?.vendor ?? null}
           onClose={() => setRegisteringOnu(null)}
-          onSuccess={() => { setRegisteringOnu(null); fetchOLT(); }}
+          onSuccess={async () => { setRegisteringOnu(null); await handleSyncOLT({ silent: true }); }}
         />
       )}
 
