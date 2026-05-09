@@ -4,7 +4,7 @@ import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
 import { executeCommand, executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
-import { snmpWalk, snmpGet, SNMPConfig } from '@/lib/olt/snmp';
+import { snmpWalk, SNMPConfig } from '@/lib/olt/snmp';
 
 // ── Telnet helpers ────────────────────────────────────────────────────────────
 
@@ -307,23 +307,26 @@ function getSnmpConfig(olt: any): SNMPConfig | null {
 }
 
 /**
- * Read interface admin/oper/speed status from SNMP IF-MIB.
- * Used as fallback when Telnet `show interface` fails or returns no data.
+ * Read interface status from SNMP IF-MIB using parallel bulk walks.
+ * Replaces sequential walk+4xGET with 5 parallel walks → O(1) map lookup.
  */
 async function getInterfaceStatusSNMP(
   snmpConfig: SNMPConfig,
   ifaceName: string
 ): Promise<Record<string, string>> {
-  const OID_ifDescr       = '1.3.6.1.2.1.2.2.1.2';
-  const OID_ifAdminStatus = '1.3.6.1.2.1.2.2.1.7';
-  const OID_ifOperStatus  = '1.3.6.1.2.1.2.2.1.8';
-  const OID_ifHighSpeed   = '1.3.6.1.2.1.31.1.1.1.15';
-  const OID_ifAlias       = '1.3.6.1.2.1.31.1.1.1.18';
   const normalize = (s: string) => s.toLowerCase().replace(/[-_]/g, '_');
 
-  const descrWalk = await snmpWalk(snmpConfig, OID_ifDescr);
+  const [descrWalk, adminWalk, operWalk, speedWalk, aliasWalk] = await Promise.all([
+    snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.2'),     // ifDescr
+    snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.7'),     // ifAdminStatus
+    snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.8'),     // ifOperStatus
+    snmpWalk(snmpConfig, '1.3.6.1.2.1.31.1.1.1.15'), // ifHighSpeed
+    snmpWalk(snmpConfig, '1.3.6.1.2.1.31.1.1.1.18'), // ifAlias
+  ]);
+
   if (!descrWalk.success || !descrWalk.results) return {};
 
+  // Build normalizedName → ifIndex map
   let idx: string | undefined;
   for (const [oid, name] of Object.entries(descrWalk.results)) {
     if (normalize(name) === normalize(ifaceName)) {
@@ -333,21 +336,23 @@ async function getInterfaceStatusSNMP(
   }
   if (!idx) return {};
 
-  const [adminRes, operRes, speedRes, aliasRes] = await Promise.all([
-    snmpGet(snmpConfig, `${OID_ifAdminStatus}.${idx}`),
-    snmpGet(snmpConfig, `${OID_ifOperStatus}.${idx}`),
-    snmpGet(snmpConfig, `${OID_ifHighSpeed}.${idx}`),
-    snmpGet(snmpConfig, `${OID_ifAlias}.${idx}`),
-  ]);
+  const getIdx = (walk: typeof descrWalk) => {
+    if (!walk.success || !walk.results) return undefined;
+    const entry = Object.entries(walk.results).find(([oid]) => oid.split('.').pop() === idx);
+    return entry?.[1];
+  };
 
-  const adminVal = parseInt(adminRes.value ?? '2', 10);
-  const operVal  = parseInt(operRes.value  ?? '2', 10);
+  const adminVal = parseInt(getIdx(adminWalk) ?? '2', 10);
+  const operVal  = parseInt(getIdx(operWalk)  ?? '2', 10);
+  const speedVal = getIdx(speedWalk);
+  const aliasVal = getIdx(aliasWalk);
+
   const result: Record<string, string> = {
     'Admin Status': adminVal === 1 ? 'Up' : 'Down',
     'Link Status':  operVal  === 1 ? 'Up' : 'Down',
   };
-  if (speedRes.success && speedRes.value) result['Speed'] = `${speedRes.value}M`;
-  if (aliasRes.success && aliasRes.value) result['Description'] = aliasRes.value;
+  if (speedVal) result['Speed'] = `${speedVal}M`;
+  if (aliasVal) result['Description'] = aliasVal;
   return result;
 }
 
@@ -395,53 +400,61 @@ export async function GET(
       let parsed: Record<string, string> = {};
       let rawOutput = '';
 
-      // 1) Try Telnet `show interface port-status` (tabular ZTE C320 format)
+      // Run both Telnet commands in ONE session (primary + fallback simultaneously)
       if (telnetConfig) {
-        const result = await executeCommand(telnetConfig, `show interface port-status ${port}`);
-        rawOutput = result.output ?? '';
-        if (result.success && !hasCliError(rawOutput)) {
-          parsed = parseInterfacePortStatus(rawOutput, port);
-        }
-        // Fallback: try `show interface` (key-value format) if tabular parse found nothing
-        if (!parsed['Admin Status']) {
-          const r2 = await executeCommand(telnetConfig, `show interface ${port}`);
-          const out2 = r2.output ?? '';
-          if (r2.success && !hasCliError(out2)) {
-            parsed = parseInterfaceStatus(out2);
-            if (rawOutput) rawOutput = out2; else rawOutput = out2;
+        const multi = await executeMultipleCommands(
+          telnetConfig,
+          [`show interface port-status ${port}`, `show interface ${port}`],
+          { sendEnd: false }
+        ).catch(() => null);
+
+        if (multi?.success && multi.output) {
+          const [out0, out1] = splitMultipleCommandOutput(multi.output, 2);
+          if (out0 && !hasCliError(out0)) {
+            rawOutput = out0;
+            parsed = parseInterfacePortStatus(out0, port);
+          }
+          if (!parsed['Admin Status'] && out1 && !hasCliError(out1)) {
+            rawOutput = out1;
+            parsed = parseInterfaceStatus(out1);
           }
         }
       }
 
-      // 2) SNMP IF-MIB fallback — used when Telnet fails or returns no Admin/Link Status
+      // SNMP fallback — 5 parallel walks, no extra Telnet connection
       if ((!parsed['Admin Status'] || !parsed['Link Status']) && snmpConfig) {
         const snmpParsed = await getInterfaceStatusSNMP(snmpConfig, port).catch(() => ({}));
-        // Merge: Telnet keys take precedence, SNMP fills in missing fields
         parsed = { ...snmpParsed, ...parsed };
       }
 
       data = { raw: rawOutput, parsed };
     } else if (tab === 'vlan') {
-      const result = await executeCommand(telnetConfig, `show vlan port ${port}`);
-      const output = result.output ?? '';
-      let parsed = result.success && !hasCliError(output) ? parseVlanPort(output) : {};
-      let raw = output;
+      let parsed: Record<string, string> = {};
+      let raw = '';
 
-      if (!parsed.Mode && !parsed['Tagged Vlan'] && !parsed.Pvid) {
-        const configResult = await executeCommand(telnetConfig, `show running-config interface ${port}`);
-        const configOutput = configResult.output ?? '';
-        if (configResult.success && !hasCliError(configOutput)) {
-          parsed = parseRunningConfigInterface(configOutput);
-          raw = configOutput;
+      // Run both Telnet commands in ONE session
+      if (telnetConfig) {
+        const multi = await executeMultipleCommands(
+          telnetConfig,
+          [`show vlan port ${port}`, `show running-config interface ${port}`],
+          { sendEnd: false }
+        ).catch(() => null);
+
+        if (multi?.success && multi.output) {
+          const [out0, out1] = splitMultipleCommandOutput(multi.output, 2);
+          if (out0 && !hasCliError(out0)) {
+            const p = parseVlanPort(out0);
+            if (p.Mode || p['Tagged Vlan'] || p.Pvid) { parsed = p; raw = out0; }
+          }
+          if (!parsed.Mode && !parsed['Tagged Vlan'] && !parsed.Pvid && out1 && !hasCliError(out1)) {
+            parsed = parseRunningConfigInterface(out1);
+            raw = out1;
+          }
         }
       }
 
-      data = {
-        raw,
-        parsed,
-      };
+      data = { raw, parsed };
     } else if (tab === 'config') {
-      // Use `show running-config interface` for real config (includes VLAN switchport settings)
       const result = await executeCommand(telnetConfig!, `show running-config interface ${port}`);
       const output = result.output ?? '';
       data = {
@@ -449,20 +462,31 @@ export async function GET(
         parsed: result.success && !hasCliError(output) ? parseRunningConfigInterface(output) : {},
       };
     } else if (tab === 'optical') {
-      let result = await executeCommand(telnetConfig, `show interface optical-module-info ${port}`);
-      let output = result.output ?? '';
-      let parsed = result.success && !hasCliError(output) ? parseOpticalModuleInfo(output) : {};
+      let parsed: Record<string, string> = {};
+      let raw = '';
 
-      if (Object.keys(parsed).length === 0) {
-        result = await executeCommand(telnetConfig, `show ddmi interface ${port}`);
-        output = result.output ?? '';
-        parsed = result.success && !hasCliError(output) ? { ...parseOpticalModuleInfo(output), ...parseDdmi(output) } : {};
+      // Run both optical commands in ONE session
+      if (telnetConfig) {
+        const multi = await executeMultipleCommands(
+          telnetConfig,
+          [`show interface optical-module-info ${port}`, `show ddmi interface ${port}`],
+          { sendEnd: false }
+        ).catch(() => null);
+
+        if (multi?.success && multi.output) {
+          const [out0, out1] = splitMultipleCommandOutput(multi.output, 2);
+          if (out0 && !hasCliError(out0)) {
+            const p = parseOpticalModuleInfo(out0);
+            if (Object.keys(p).length > 0) { parsed = p; raw = out0; }
+          }
+          if (Object.keys(parsed).length === 0 && out1 && !hasCliError(out1)) {
+            parsed = { ...parseOpticalModuleInfo(out1), ...parseDdmi(out1) };
+            raw = out1;
+          }
+        }
       }
 
-      data = {
-        raw: output,
-        parsed,
-      };
+      data = { raw, parsed };
     } else {
       return NextResponse.json({ error: 'Invalid tab' }, { status: 400 });
     }
@@ -528,11 +552,16 @@ export async function POST(
       if (!vlanId) return NextResponse.json({ error: 'vlanId required' }, { status: 400 });
       const vid = parseInt(vlanId);
       if (isNaN(vid) || vid < 1 || vid > 4094) return NextResponse.json({ error: 'Invalid VLAN ID' }, { status: 400 });
-      commandAttempts = [
-        ['configure terminal', `interface ${port}`, `no switchport vlan ${vid} tag`, 'exit', 'end'],
-        ['configure terminal', `interface ${port}`, 'no switchport default vlan', 'exit', 'end'],
-        ['configure terminal', `interface ${port}`, `no switchport vlan ${vid}`, 'exit', 'end'],
-      ];
+      // Send all possible removal commands in ONE session — OLT silently ignores inapplicable ones
+      commandAttempts = [[
+        'configure terminal',
+        `interface ${port}`,
+        `no switchport vlan ${vid} tag`,
+        'no switchport default vlan',
+        `no switchport vlan ${vid}`,
+        'exit',
+        'end',
+      ]];
     } else if (action === 'enable') {
       commandAttempts = [[
         'configure terminal',
@@ -557,6 +586,25 @@ export async function POST(
         'configure terminal',
         `interface ${port}`,
         `description ${safeDesc}`,
+        'exit',
+        'end',
+      ]];
+    } else if (action === 'setPvid') {
+      if (!vlanId) return NextResponse.json({ error: 'vlanId required' }, { status: 400 });
+      const vid = parseInt(vlanId);
+      if (isNaN(vid) || vid < 1 || vid > 4094) return NextResponse.json({ error: 'Invalid VLAN ID' }, { status: 400 });
+      commandAttempts = [[
+        'configure terminal',
+        `interface ${port}`,
+        `switchport default vlan ${vid}`,
+        'exit',
+        'end',
+      ]];
+    } else if (action === 'removePvid') {
+      commandAttempts = [[
+        'configure terminal',
+        `interface ${port}`,
+        'no switchport default vlan',
         'exit',
         'end',
       ]];

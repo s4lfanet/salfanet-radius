@@ -299,17 +299,42 @@ async function discoverPonV21(
   const ponIndex = ponIndexV21(board, pon);
   const base = V21.base;
 
-  // Walk zxAnGponOnuRegTable col 1 (registration status) for this PON port.
-  // OID index format: .{col}.{ponIndex}.{onuSlot}.{onuId}
-  // VERIFIED WORKING: 3.50.12.1.1.1.268501248.1.1 = INTEGER: 1 on ZTE C320 V2.1.0
-  const regWalk = await snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`);
+  // Walk ALL OID subtrees for this PON port in PARALLEL (7 concurrent SNMP walks).
+  // This replaces N_onu × 5 sequential snmpGet calls with a single bulk walk pass.
+  const [regWalk, operWalk, serialWalk, rxWalk, descWalk, distWalk, seenWalk] = await Promise.all([
+    snmpWalk(config, `${base}${V21.onuRegStatus}.${ponIndex}`),    // reg status  (.ponIndex.slot.onuId)
+    snmpWalk(config, `${base}${V21.onuOperState}.${ponIndex}`),    // oper state  (.ponIndex.slot.onuId)
+    snmpWalk(config, `${base}${V21.onuSerial}.${ponIndex}`),       // serial      (.ponIndex.onuId)
+    snmpWalk(config, `${base}${V21.onuRxPower}.${ponIndex}`),      // rx power    (.ponIndex.slot.onuId)
+    snmpWalk(config, `${base}${V21.onuDescription}.${ponIndex}`),  // description (.ponIndex.onuId)
+    snmpWalk(config, `${base}${V21.onuDistance}.${ponIndex}`),     // distance    (.ponIndex.slot.onuId)
+    snmpWalk(config, `${ZTE_V21_SEEN_ONU_TABLE}.${ponIndex}`),     // seen/uncfg  (.ponIndex.slot.onuId)
+  ]);
+
+  // Build O(1) lookup maps keyed by "onuSlot.onuId" (3-component OIDs) or "onuId" (2-component OIDs)
+  const lastTwoKey   = (oid: string) => oid.split('.').slice(-2).join('.');  // slot.onuId
+  const lastOneKey   = (oid: string) => oid.split('.').slice(-1)[0];         // onuId
+
+  const operMap   = new Map<string, string>();
+  const rxMap     = new Map<string, string>();
+  const distMap   = new Map<string, string>();
+  const serialMap = new Map<string, string>();
+  const descMap   = new Map<string, string>();
+
+  if (operWalk.success && operWalk.results)   for (const [k,v] of Object.entries(operWalk.results))   operMap.set(lastTwoKey(k), v);
+  if (rxWalk.success && rxWalk.results)       for (const [k,v] of Object.entries(rxWalk.results))     rxMap.set(lastTwoKey(k), v);
+  if (distWalk.success && distWalk.results)   for (const [k,v] of Object.entries(distWalk.results))   distMap.set(lastTwoKey(k), v);
+  if (serialWalk.success && serialWalk.results) for (const [k,v] of Object.entries(serialWalk.results)) serialMap.set(lastOneKey(k), v);
+  if (descWalk.success && descWalk.results)   for (const [k,v] of Object.entries(descWalk.results))   descMap.set(lastOneKey(k), v);
 
   const onus: any[] = [];
   const registeredIds = new Set<number>();
 
   if (regWalk.success && regWalk.results) {
+    // Collect ONUs needing Telnet serial lookup (SNMP hex-parse failed)
+    const needsTelnetSerial: Array<{ onuId: number; onuSlot: number }> = [];
+
     for (const [oid, regVal] of Object.entries(regWalk.results)) {
-      // OID ends in .{ponIndex}.{onuSlot}.{onuId}
       const parts = oid.split('.');
       const onuId   = parseInt(parts[parts.length - 1], 10);
       const onuSlot = parseInt(parts[parts.length - 2], 10);
@@ -317,77 +342,75 @@ async function discoverPonV21(
       if (parseInt(regVal) !== 1) continue; // skip non-registered ONUs
       registeredIds.add(onuId);
 
-      // Fetch all ONU details in parallel for better performance
-      const [operR, serialR, rxR, descR, distR] = await Promise.all([
-        // reg table (indexed by .{col}.{ponIndex}.{onuSlot}.{onuId})
-        snmpGet(config, `${base}${V21.onuOperState}.${ponIndex}.${onuSlot}.${onuId}`),
-        // cfg table (indexed by .{col}.{ponIndex}.{onuId} — no onuSlot component)
-        snmpGet(config, `${base}${V21.onuSerial}.${ponIndex}.${onuId}`),
-        snmpGet(config, `${base}${V21.onuRxPower}.${ponIndex}.${onuSlot}.${onuId}`),
-        snmpGet(config, `${base}${V21.onuDescription}.${ponIndex}.${onuId}`),
-        snmpGet(config, `${base}${V21.onuDistance}.${ponIndex}.${onuSlot}.${onuId}`),
-      ]);
+      const slotIdKey = `${onuSlot}.${onuId}`;
+      const idKey     = `${onuId}`;
 
-      const operVal = operR.success && operR.value ? parseInt(operR.value) : 0;
-      // ZTE C320 reg table col 6: 5=working/online, 1=init, 2=registered, 3=auth, 4=working(alt)
+      // Oper state
+      const operVal = parseInt(operMap.get(slotIdKey) ?? '0', 10);
       const onuStatus = operVal === 5 || operVal === 4 ? 'online'
                       : operVal === 0                   ? 'unknown'
                       : 'offline';
 
+      // Rx Power
       let rxPower: number | null = null;
-      if (rxR.success && rxR.value) {
-        const raw = parseInt(rxR.value);
-        // Stored as positive integer in 0.001 dBm; negate to get actual received power in dBm.
-        // Valid GPON RX range: -8 to -30 dBm → raw 8000–30000
-        if (!isNaN(raw) && raw > 0 && raw < 50000) rxPower = -(raw / 1000);
-      }
+      const rxRaw = parseInt(rxMap.get(slotIdKey) ?? '0', 10);
+      if (!isNaN(rxRaw) && rxRaw > 0 && rxRaw < 50000) rxPower = -(rxRaw / 1000);
 
+      // Distance
       let distance: number | null = null;
-      if (distR.success && distR.value) {
-        const d = parseInt(distR.value);
-        // VERIFIED: 328m on test site; valid GPON range: 0–20km
-        if (!isNaN(d) && d > 0 && d < 100000) distance = d;
-      }
+      const distRaw = parseInt(distMap.get(slotIdKey) ?? '0', 10);
+      if (!isNaN(distRaw) && distRaw > 0 && distRaw < 100000) distance = distRaw;
 
-      let serialNumber = normalizeSerialNumber(hexBytesToSerial(serialR.value ?? ''));
-      if (!serialNumber && telnetConfig) {
-        try {
-          const detail = await executeCommand(
-            telnetConfig,
-            `show gpon onu detail-info gpon-onu_1/${board}/${pon}:${onuId}`,
-          );
-          if (detail.success && detail.output) serialNumber = parseSerialFromDetail(detail.output);
-        } catch { /* keep SNMP value */ }
-      }
+      // Serial (hex bytes → ASCII)
+      let serialNumber = normalizeSerialNumber(hexBytesToSerial(serialMap.get(idKey) ?? ''));
+      if (!serialNumber) needsTelnetSerial.push({ onuId, onuSlot });
 
       onus.push({
         frame: 1, slot: board,
-        // ZTE SNMP pon=1 maps to CLI/display port 0 (0-based).
         port: pon - 1,
         onuId,
         serialNumber,
         macAddress: null,
         status: onuStatus,
-        description: descR.success && descR.value ? descR.value.trim() : null,
+        description: descMap.get(idKey)?.trim() ?? null,
         onuType: null,
         rxPower,
         distance,
       });
     }
+
+    // Batch Telnet lookups for ONUs missing serial numbers (usually 0 or very few)
+    if (needsTelnetSerial.length > 0 && telnetConfig) {
+      const telnetSerials = await Promise.all(
+        needsTelnetSerial.map(async ({ onuId }) => {
+          try {
+            const detail = await executeCommand(
+              telnetConfig,
+              `show gpon onu detail-info gpon-onu_1/${board}/${pon}:${onuId}`,
+            );
+            if (detail.success && detail.output) return { onuId, serial: parseSerialFromDetail(detail.output) };
+          } catch { /* keep null */ }
+          return { onuId, serial: '' };
+        })
+      );
+      // Patch onus with Telnet-resolved serials
+      const serialByOnuId = new Map(telnetSerials.map(r => [r.onuId, r.serial]));
+      for (const onu of onus) {
+        if (!onu.serialNumber && serialByOnuId.has(onu.onuId)) {
+          onu.serialNumber = serialByOnuId.get(onu.onuId) || null;
+        }
+      }
+    }
   }
 
-  // Discover unregistered ONUs.
-  // ZTE C320 SNMP seen-table can be stale/incomplete, so CLI `show gpon onu uncfg`
-  // is authoritative whenever available.
-  const seenWalk = await snmpWalk(config, `${ZTE_V21_SEEN_ONU_TABLE}.${ponIndex}`);
+  // Discover unregistered ONUs from seenWalk (already fetched above in parallel)
   const unregisteredIds: number[] = [];
   if (seenWalk.success && seenWalk.results) {
     for (const oid of Object.keys(seenWalk.results)) {
-      // OID format: {base}.{ponIndex}.{onuSlot}.{onuId} — last component is onuId
       const parts = oid.split('.');
       const onuId = parseInt(parts[parts.length - 1], 10);
       if (isNaN(onuId) || onuId <= 0 || onuId > 128) continue;
-      if (registeredIds.has(onuId)) continue; // already discovered as registered
+      if (registeredIds.has(onuId)) continue;
       unregisteredIds.push(onuId);
     }
   }

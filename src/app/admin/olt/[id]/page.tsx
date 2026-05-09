@@ -200,38 +200,66 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
 
   const renderVlan = () => {
     const taggedVlans = (parsed['Tagged Vlan'] ?? '').split(/[\s,]+/).filter(Boolean);
+    const pvid = parsed['Pvid'] ?? '';
+    const mode = parsed['Mode'] ?? '—';
     return (
       <div className="space-y-4">
+        {/* Info row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {([['Mode', parsed['Mode'] ?? '—'], ['PVID', parsed['Pvid'] ?? '—'], ['TLS', parsed['TLS'] ?? '—']] as [string,string][]).map(([label, val]) => (
+          {([['Mode', mode], ['TLS', parsed['TLS'] ?? '—']] as [string,string][]).map(([label, val]) => (
             <div key={label} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center">
               <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">{label}</div>
               <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 break-all">{val}</div>
             </div>
           ))}
+          {/* PVID with inline edit/remove */}
+          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase mb-1">PVID (Access)</div>
+            {pvid && pvid !== '—' ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm font-bold font-mono text-amber-400">{pvid}</span>
+                <button onClick={() => doAction('removePvid')} disabled={actionLoading}
+                  title="Remove PVID"
+                  className="ml-auto px-1.5 py-0.5 text-[10px] rounded bg-red-900/60 hover:bg-red-800 text-red-300 border border-red-700 disabled:opacity-50">remove</button>
+              </div>
+            ) : (
+              <span className="text-xs text-slate-500 italic">None</span>
+            )}
+          </div>
         </div>
+        {/* Tagged VLANs */}
         <div>
           <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">Tagged VLANs</div>
           <div className="flex flex-wrap gap-1.5 min-h-8">
             {taggedVlans.length > 0 ? taggedVlans.map(v => (
               <div key={v} className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-950 border border-blue-700 text-xs font-mono text-blue-300">
                 {v}
-                <button onClick={() => doAction('removeVlan', { vlanId: v })} disabled={actionLoading} className="ml-1 text-gray-500 hover:text-red-400 font-bold">×</button>
+                <button onClick={() => doAction('removeVlan', { vlanId: v })} disabled={actionLoading}
+                  title={`Remove VLAN ${v}`}
+                  className="ml-1 w-4 h-4 flex items-center justify-center rounded-full bg-blue-900 hover:bg-red-800 text-slate-400 hover:text-red-200 leading-none font-bold text-[10px] border border-blue-700 hover:border-red-700 disabled:opacity-40 transition-colors">×</button>
               </div>
             )) : <span className="text-xs text-gray-600 italic">No tagged VLANs configured</span>}
           </div>
         </div>
+        {/* Add VLAN / Set PVID */}
         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center pt-3 border-t border-slate-200 dark:border-slate-800">
           <input value={newVlanId} onChange={e => setNewVlanId(e.target.value.replace(/\D/g, ''))} placeholder="VLAN ID" maxLength={4}
             className="w-full sm:w-20 px-2 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white" />
           <select value={vlanMode} onChange={e => setVlanMode(e.target.value as 'tag' | 'access')}
             className="w-full sm:w-auto px-2 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white">
             <option value="tag">Tagged (Trunk)</option>
-            <option value="access">Access (PVID)</option>
+            <option value="access">Set as PVID</option>
           </select>
-          <button onClick={() => { doAction('addVlan', { vlanId: newVlanId, mode: vlanMode }); setNewVlanId(''); }}
+          <button onClick={() => {
+              vlanMode === 'access'
+                ? doAction('setPvid', { vlanId: newVlanId })
+                : doAction('addVlan', { vlanId: newVlanId, mode: 'tag' });
+              setNewVlanId('');
+            }}
             disabled={!newVlanId || actionLoading}
-            className="px-3 py-1 text-xs rounded bg-blue-700 hover:bg-blue-600 text-white disabled:opacity-50">Add VLAN</button>
+            className="px-3 py-1 text-xs rounded bg-blue-700 hover:bg-blue-600 text-white disabled:opacity-50">
+            {vlanMode === 'access' ? 'Set PVID' : 'Add VLAN'}
+          </button>
         </div>
       </div>
     );
