@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.48 — 2026-05-09
+
+### Fixed
+- **ONU unconfigured kedua masih hilang meski versi 2.29.47 sudah terpasang** — Parser ZTE sebelumnya masih bisa membuang serial fallback jika satu ONU unconfigured sudah lebih dulu terpetakan ke `onuId` nyata. Sekarang serial fallback selalu digabung ke hasil akhir dengan virtual ID stabil, sehingga kombinasi `1 ONU ada ID + 1 ONU hanya serial` tidak lagi berakhir jadi satu baris.
+
+### Files
+- `package.json` — bump versi aplikasi ke `2.29.48`.
+- `src/lib/olt/vendors/zte.ts` — merge fallback serial list ke `uncfgSerials` meski sebagian ONU unconfigured sudah punya ID nyata.
+
 ### v2.29.47 — 2026-05-09
 
 ### Fixed
@@ -509,18 +518,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/app/api/olt/[id]/uplink/route.ts` — Import `snmpWalk/snmpGet/SNMPConfig`; tambah `getSnmpConfig` + `getInterfaceStatusSNMP`; STATUS tab try Telnet dulu, fallback ke SNMP IF-MIB jika gagal.
-
-### v2.29.43 — 2026-05-09
-
-### Fixed
-- **ONU unregistered serial tidak terbaca / hanya 1 ONU muncul** — Tiga bug sekaligus di `discoverONUsSNMP` dan `discoverPonV21`:
-  1. **Command salah**: kode menggunakan `show pon onu uncfg` tapi ZTE C320 V2.1 hanya mengenali `show gpon onu uncfg`. Karena command gagal, global uncfg map selalu kosong.
-  2. **Regex port tidak cocok**: regex `gpon[_-]olt[_-]` tidak mencocokkan format output asli `gpon-onu_1/1/1:1`. Akibatnya tidak ada entri yang dimasukkan ke map meskipun command benar.
-  3. **Kolom serial salah**: output `show gpon onu uncfg` punya 3 kolom (`OnuIndex Sn State`), serial ada di `parts[1]`. Kode lama membaca `parts[2]` yang isinya `State` ("unknown"), bukan serial number.
-- **Per-port fallback** — command `show pon onu uncfg gpon-olt_...` juga diubah ke `show gpon onu uncfg gpon-olt_...`; Format A (3-col `gpon-onu_` output) sekarang membaca serial dari `parts[1]`, format 4-col tetap dari `parts[2]`.
-
-### Files
-- `src/lib/olt/vendors/zte.ts` — Perbaikan global uncfg command, regex port, dan indeks kolom serial.
 
 <!-- AUTO-CHANGELOG:END -->
 
