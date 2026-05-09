@@ -232,6 +232,10 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
+    // Unlink network_otbs records before delete — this table has no onDelete cascade in schema
+    // so MySQL will throw FK constraint error if we skip this step.
+    await prisma.network_otbs.updateMany({ where: { oltId: id }, data: { oltId: null } });
+
     await prisma.networkOLT.delete({
       where: { id },
     });

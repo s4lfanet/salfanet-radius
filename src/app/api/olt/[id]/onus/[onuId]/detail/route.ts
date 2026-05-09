@@ -142,7 +142,7 @@ function parseUnconfiguredOnuLine(
         state: parts[3] ?? null,
       };
     })
-    .filter((value): value is { raw: string; interface: string; onuId: number | null; onuType: string | null; serialNumber: string | null; state: string | null } => Boolean(value));
+    .filter((value): value is { raw: string; interface: string; onuId: number | null; onuType: string | null; serialNumber: string | null; state: string } => Boolean(value));
 
   const byId = target.onuId != null
     ? candidates.find(candidate => candidate.onuId === target.onuId)

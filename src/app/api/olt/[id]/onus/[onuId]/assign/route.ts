@@ -33,7 +33,7 @@ function serializeOnuAssignment(onu: {
   lastOfflineAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
-  customer: { id: string; username: string; name: string; phone: string | null; customerId: string } | null;
+  customer: { id: string; username: string; name: string; phone: string | null; customerId: string | null } | null;
 }) {
   return {
     ...onu,

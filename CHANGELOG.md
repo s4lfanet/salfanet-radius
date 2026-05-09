@@ -6,6 +6,19 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.59] — 2026-05-09
+### Fixed
+- **OLT Delete 500 — FK constraint `network_otbs.oltId`** — Root cause: `network_otbs` tabel punya kolom `oltId` dengan foreign key ke `networkOLT` tanpa `onDelete: SetNull`. Saat OLT dihapus, MySQL raise FK constraint violation → handler return 500. Fix: (1) Di DELETE handler `/api/network/olts` tambah `prisma.network_otbs.updateMany({ ... data: { oltId: null } })` sebelum `networkOLT.delete`. (2) Schema Prisma diperbarui: tambah `onDelete: SetNull` ke `network_otbs.olt` relation.
+- **TSC — `ZteServiceTemplate` & `RegisterMetadata` tidak terdefinisi** — Kedua tipe digunakan di `ONURegisterModal` component di `src/app/admin/olt/[id]/page.tsx` tapi tidak pernah dideklarasikan. Fix: tambah `type ZteServiceTemplate = 'basic' | 'zte_full' | 'huawei_full' | 'fiberhome_veip'` dan `interface RegisterMetadata { onuTypes, tcontProfiles, trafficProfiles, suggestedOnuId, detectedOnuType }` sebelum component. Efek domino: ini juga memperbaiki 4 error "Parameter 'type'/'profile' implicitly has an 'any' type" di map callbacks (karena sebelumnya `metadata` bertipe `any`).
+- **TSC — `assign/route.ts` customer.customerId type mismatch** — `serializeOnuAssignment` function mendeclare `customer.customerId: string` tapi Prisma query include menghasilkan `customerId: string | null`. Fix: ubah ke `customerId: string | null`.
+- **TSC — `detail/route.ts` type predicate state mismatch** — `.filter()` predicate mendeclare `state: string | null` tapi TypeScript meng-infer `state: string` dari `parts[3] ?? null` (tanpa `noUncheckedIndexedAccess`, `string[]` index akses menghasilkan `string`, bukan `string | undefined`). Fix: ubah predicate ke `state: string`. Ini sekaligus memperbaiki error "candidate is possibly null" di `.find()` callbacks (karena sebelumnya TS tidak bisa narrow array type akibat predicate yang broken).
+### Files
+- `src/app/api/network/olts/route.ts` — DELETE handler: unlink `network_otbs` sebelum delete OLT
+- `prisma/schema.prisma` — `network_otbs.olt`: tambah `onDelete: SetNull`
+- `src/app/admin/olt/[id]/page.tsx` — tambah `ZteServiceTemplate` type dan `RegisterMetadata` interface
+- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — `serializeOnuAssignment`: `customerId: string | null`
+- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — filter predicate: `state: string`
+
 ## [2.29.58] — 2026-05-09
 ### Fixed
 - **Poller fully SNMP — hapus per-ONU Telnet serial fallback dari `discoverPonV21`** — Root cause: `discoverPonV21` menampung ONU yang gagal di-parse serial-nya dari SNMP hex ke dalam array `needsTelnetSerial`, lalu memanggil `show gpon onu detail-info gpon-onu_1/B/P:ID` via Telnet secara paralel (N `Promise.all` sessions) untuk setiap ONU dengan serial null. Jika ada banyak ONU dengan format serial non-standar (misalnya byte non-ASCII), ini bisa spawn banyak Telnet sessions secara serentak, yang saturates OLT concurrent session limit. Fix: hapus `needsTelnetSerial` array dan `Promise.all` Telnet block. Jika SNMP hex tidak bisa di-parse, `serialNumber` tetap `null` di DB — ONU masih ter-track via `onuId`. Serial bisa diisi on-demand saat user buka detail ONU (endpoint individual yang masih boleh Telnet). Polling cycle sekarang pure SNMP untuk registered ONUs.

@@ -2195,7 +2195,7 @@ model network_otbs {
   totalSpliceCapacity Int            @default(24)
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
-  olt                 networkOLT?    @relation(fields: [oltId], references: [id])
+  olt                 networkOLT?    @relation(fields: [oltId], references: [id], onDelete: SetNull)
   odcs                networkODC[]
 
   @@index([code])

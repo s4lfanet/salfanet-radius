@@ -720,6 +720,16 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
     );
 }
 
+type ZteServiceTemplate = 'basic' | 'zte_full' | 'huawei_full' | 'fiberhome_veip';
+
+interface RegisterMetadata {
+  onuTypes: string[];
+  tcontProfiles: string[];
+  trafficProfiles: string[];
+  suggestedOnuId: number | null;
+  detectedOnuType: string | null;
+}
+
 interface RegisterModalProps {
   oltId: string;
   onu: ONU;
