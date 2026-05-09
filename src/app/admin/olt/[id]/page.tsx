@@ -624,25 +624,6 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
             </div>
           </div>
 
-          {/* Stats row */}
-          <div className="grid grid-cols-2 xl:grid-cols-5 border-b border-slate-200 dark:border-slate-800">
-            {[
-              { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),     accent: '#3b82f6', title: undefined },
-              { Icon: Activity,    label: 'AVG CPU',      value: '11%',                        accent: '#22c55e', title: 'Static placeholder until vendor metrics available' },
-              { Icon: Server,      label: 'AVG MEMORY',   value: '32%',                        accent: '#a855f7', title: 'Static placeholder until vendor metrics available' },
-              { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),     accent: '#3b82f6', title: 'Counts service and uplink cards only' },
-              { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : '—', accent: '#06b6d4', title: undefined },
-            ].map(({ Icon, label, value, accent, title }, i) => (
-              <div key={i} className="p-3 bg-slate-50 dark:bg-slate-900" title={title} style={{ borderRight: i < 4 ? '1px solid rgba(148,163,184,0.18)' : 'none', borderLeft: `3px solid ${accent}` }}>
-                <div className="flex items-center gap-1 mb-1">
-                  <Icon className="h-3 w-3" style={{ color: accent }} />
-                  <span className="text-[8px] font-bold tracking-widest" style={{ color: accent }}>{label}</span>
-                </div>
-                <div className={`text-sm font-bold ${value === '—' ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>{value}</div>
-              </div>
-            ))}
-          </div>
-
           {/* Rack diagram body */}
           <div className="p-3 sm:p-4 flex flex-col lg:flex-row gap-3 overflow-x-auto">
             {/* FAN column */}
@@ -1683,11 +1664,6 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   const [testing, setTesting] = useState<string | null>(null);
   const [onuStatusFilter, setOnuStatusFilter] = useState(urlFilter ?? 'all');
 
-  // Metrics & charts
-  const [metrics, setMetrics] = useState<any[]>([]);
-  const [metricsHours, setMetricsHours] = useState(24);
-  const [metricsLoading, setMetricsLoading] = useState(false);
-
   // Batch reboot
   const [selectedOnus, setSelectedOnus] = useState<Set<string>>(new Set());
   const [rebootingOnu, setRebootingOnu] = useState<string | null>(null);
@@ -1832,24 +1808,6 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       setPolling(false);
     }
   }, [fetchOLT, id]);
-
-  const fetchMetrics = useCallback(async () => {
-    setMetricsLoading(true);
-    try {
-      const res = await fetch(`/api/olt/metrics?oltId=${id}&hours=${metricsHours}`);
-      if (res.ok) {
-        const data = await res.json();
-        // Map recordedAt → timestamp for recharts dataKey
-        setMetrics((data.metrics ?? []).map((m: any) => ({ ...m, timestamp: m.recordedAt })));
-      }
-    } catch (e) {
-      console.error('Failed to fetch metrics', e);
-    } finally {
-      setMetricsLoading(false);
-    }
-  }, [id, metricsHours]);
-
-  useEffect(() => { fetchMetrics(); }, [fetchMetrics]);
 
   const handleRebootOnu = async (onuId: string) => {
     setRebootingOnu(onuId);
@@ -2100,7 +2058,6 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         <TabsList>
           <TabsTrigger value="onus">ONU List ({olt.totalOnu})</TabsTrigger>
           <TabsTrigger value="portmap">Port Map</TabsTrigger>
-          <TabsTrigger value="metrics">Metrics</TabsTrigger>
           <TabsTrigger value="alerts">
             Alerts
             {olt.alerts.length > 0 && (
@@ -2343,117 +2300,6 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               </tbody>
             </table>
           </div>
-        </TabsContent>
-
-        {/* Metrics Tab */}
-        <TabsContent value="metrics" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Performance Metrics</h2>
-            <div className="flex items-center gap-2">
-              {metricsLoading && <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />}
-              <select
-                value={metricsHours}
-                onChange={(e) => setMetricsHours(Number(e.target.value))}
-                className="px-2 py-1 text-xs border rounded dark:bg-gray-800 dark:text-gray-200"
-              >
-                <option value={6}>Last 6 hours</option>
-                <option value={12}>Last 12 hours</option>
-                <option value={24}>Last 24 hours</option>
-                <option value={48}>Last 48 hours</option>
-              </select>
-            </div>
-          </div>
-          {metrics.length === 0 && !metricsLoading ? (
-            <div className="text-center py-12 text-gray-400">
-              <Activity className="h-10 w-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">No metrics data yet</p>
-              <p className="text-xs">Enable monitoring and wait for polling</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* CPU & Memory */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">CPU &amp; Memory Usage (%)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <LineChart data={metrics}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
-                      <YAxis fontSize={11} />
-                      <Tooltip labelFormatter={(l) => new Date(l).toLocaleString('id-ID')} />
-                      <Legend />
-                      <Line type="monotone" dataKey="cpuUsage" stroke="#3b82f6" name="CPU" strokeWidth={2} dot={false} />
-                      <Line type="monotone" dataKey="memoryUsage" stroke="#10b981" name="Memory" strokeWidth={2} dot={false} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Temperature */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Temperature (°C)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <AreaChart data={metrics}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
-                      <YAxis fontSize={11} />
-                      <Tooltip labelFormatter={(l) => new Date(l).toLocaleString('id-ID')} />
-                      <Legend />
-                      <Area type="monotone" dataKey="temperature" stroke="#f59e0b" fill="#fbbf24" name="Temperature" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* ONU Status */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">ONU Status</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <AreaChart data={metrics}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
-                      <YAxis fontSize={11} />
-                      <Tooltip labelFormatter={(l) => new Date(l).toLocaleString('id-ID')} />
-                      <Legend />
-                      <Area type="monotone" dataKey="onlineOnu" stackId="1" stroke="#10b981" fill="#34d399" name="Online" />
-                      <Area type="monotone" dataKey="offlineOnu" stackId="1" stroke="#ef4444" fill="#f87171" name="Offline" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              {/* Network Traffic */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">Network Traffic (TX/RX)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <AreaChart data={metrics}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="timestamp" tickFormatter={formatTimestamp} fontSize={11} />
-                      <YAxis tickFormatter={(v) => formatBytes(v)} fontSize={11} />
-                      <Tooltip
-                        labelFormatter={(l) => new Date(l).toLocaleString('id-ID')}
-                        formatter={(v: any) => formatBytes(v)}
-                      />
-                      <Legend />
-                      <Area type="monotone" dataKey="txBytes" stroke="#8b5cf6" fill="#c4b5fd" name="TX" />
-                      <Area type="monotone" dataKey="rxBytes" stroke="#06b6d4" fill="#67e8f9" name="RX" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </TabsContent>
 
         {/* Alerts Tab */}

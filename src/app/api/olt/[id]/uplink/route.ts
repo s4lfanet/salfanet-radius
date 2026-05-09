@@ -477,38 +477,14 @@ export async function GET(
 
       data = { raw: rawOutput, parsed };
     } else if (tab === 'vlan') {
-      let parsed: Record<string, string> = {};
-      let raw = '';
-
-      // Run both Telnet commands in ONE session
-      if (telnetConfig) {
-        const multi = await executeMultipleCommands(
-          telnetConfig,
-          [`show vlan port ${port}`, `show running-config interface ${port}`],
-          { sendEnd: false }
-        ).catch(() => null);
-
-        if (multi?.success && multi.output) {
-          const [out0, out1] = splitMultipleCommandOutput(multi.output, 2);
-          if (out0 && !hasCliError(out0)) {
-            const p = parseVlanPort(out0);
-            if (p.Mode || p['Tagged Vlan'] || p.Pvid) { parsed = p; raw = out0; }
-            else if (!raw) raw = out0; // keep raw for debugging even if parse fails
-          } else if (out0) {
-            raw = out0; // show even error output for diagnosis
-          }
-          if (!parsed.Mode && !parsed['Tagged Vlan'] && !parsed.Pvid && out1 && !hasCliError(out1)) {
-            const p2 = parseRunningConfigInterface(out1);
-            if (p2.Mode || p2['Tagged Vlan'] || p2.Pvid || p2['Admin Status']) {
-              parsed = p2; raw = out1;
-            } else if (!raw) raw = out1;
-          } else if (!raw && out1) {
-            raw = out1;
-          }
-        }
-      }
-
-      data = { raw, parsed };
+      // Use running-config as the sole source — show vlan port can fail or hang on ZTE C320.
+      // running-config reliably contains switchport mode/tls/vlan lines.
+      const result = await executeCommand(telnetConfig!, `show running-config interface ${port}`);
+      const output = result.output ?? '';
+      data = {
+        raw: output,
+        parsed: output ? parseRunningConfigInterface(output) : {},
+      };
     } else if (tab === 'config') {
       const result = await executeCommand(telnetConfig!, `show running-config interface ${port}`);
       const output = result.output ?? '';
