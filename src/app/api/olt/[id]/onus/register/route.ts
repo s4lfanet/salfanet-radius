@@ -11,26 +11,29 @@ function parseZteOnuTypes(output: string): string[] {
     const line = rawLine.trim();
     if (!line) continue;
 
+    // "show onu-type" format (C320 V2.1): "ONU type name:          All"
+    let match = line.match(/^ONU\s+type\s+name\s*:\s*(\S+)/i);
+    if (match) {
+      const name = match[1];
+      if (!/^(N\/A|NA|none|null)$/i.test(name)) types.add(name);
+      continue;
+    }
+
     // Running-config format: "onu-type ZTEG-F670L gpon ..."
-    let match = line.match(/\bonu-type\s+([^\s]+)\s+gpon\b/i);
+    match = line.match(/\bonu-type\s+([^\s]+)\s+gpon\b/i);
     if (match) {
       types.add(match[1]);
       continue;
     }
 
-    // Table format from "show gpon onu-type": skip header/separator lines
-    if (/^(Onu-type|ONU.Type|-+|show)/i.test(line)) continue;
+    // Table format (some firmware): skip header/separator/attribute lines
+    // Do NOT use a catch-all here — Telnet preamble artifacts (Connected, Trying,
+    // Welcome, ZXAN#show, etc.) would be picked up.
+    if (/^(Onu-type|ONU|PON|Description|Max|Service|WIFI|OMCI|Default|VRG|MGC|Extended|Location|-+|show)/i.test(line)) continue;
 
-    // Legacy running-config: "ZTEG-F670L gpon ..."
+    // Running-config legacy: "ZTEG-F670L gpon ..."
     match = line.match(/^([^\s]+)\s+gpon(?:\s|$)/i);
-    if (match && !/^(show|onu-type|description|capability)$/i.test(match[1])) {
-      types.add(match[1]);
-      continue;
-    }
-
-    // Table format: first token is the ONU type name (e.g. "ZTEG-F670L  F670L GPON ONT")
-    match = line.match(/^([A-Za-z0-9_][A-Za-z0-9_.-]*)(?:\s|$)/);
-    if (match && !/^(show|onu-type|description|capability|all)$/i.test(match[1])) {
+    if (match && !/^(show|onu-type|description|capability|enable|disable)$/i.test(match[1])) {
       types.add(match[1]);
     }
   }
@@ -375,7 +378,7 @@ export async function GET(
 
       const [typesResult, tcontResult, trafficResult, onuInfoResult, uncfgResult] =
         await Promise.allSettled([
-          executeCommand(telnetConfig, 'show gpon onu-type'),
+          executeCommand(telnetConfig, 'show onu-type'),
           executeCommand(telnetConfig, 'show gpon profile tcont'),
           executeCommand(telnetConfig, 'show gpon profile traffic'),
           executeCommand(telnetConfig, `show gpon onu-info ${ponInterface}`),

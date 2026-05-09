@@ -6,6 +6,12 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.61] — 2026-05-09
+### Fixed
+- **ONU Type dropdown salah isi (Telnet artifacts)** — Root cause dua masalah: (1) Command yang dipakai `show gpon onu-type` tidak valid di ZTE C320 V2.1 — command yang benar adalah `show onu-type`. (2) Parser `parseZteOnuTypes` punya catch-all regex `^([A-Za-z0-9_][A-Za-z0-9_.-]*)` yang memungut kata apa saja dari awal baris, termasuk artefak sesi Telnet seperti `Connected`, `Trying`, `Welcome`, `Last`, `spawn`, `ince`, `ZXAN#show`. Fix: (1) Ubah command ke `show onu-type`. (2) Tambah parser untuk format `ONU type name:  <name>` (output `show onu-type`). (3) Hapus catch-all regex, ganti dengan filter eksplisit untuk header/attribute lines.
+### Files
+- `src/app/api/olt/[id]/onus/register/route.ts` — command: `show gpon onu-type` → `show onu-type`; parser: tambah `ONU type name:` pattern, hapus catch-all
+
 ## [2.29.60] — 2026-05-09
 ### Fixed
 - **OLT Import Template 404** — `GET /api/network/olts/template` dan `POST /api/network/olts/import` tidak ada (route files belum dibuat). Tombol "Download Template Excel" dan upload import Excel di halaman `/admin/network/olts` selalu 404/error. Fix: buat kedua route. Template menghasilkan file `.xlsx` dengan contoh 2 baris (kolom: name, ipAddress, latitude, longitude, vendor, model, snmpCommunity, snmpPort, telnetPort, username, password, pollingInterval). Import route mem-parse Excel, validasi IP + vendor, skip duplicate IP, dan insert via Prisma.
