@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
-import { executeCommand, TelnetConfig } from '@/lib/olt/telnet';
+import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 import { snmpWalk, SNMPConfig } from '@/lib/olt/snmp';
 
 // ── ZTE C320 Board/Shelf MIB OIDs ─────────────────────────────────────────────
@@ -190,91 +190,107 @@ function parseUplinkPortStatusTable(output: string, ifaces: string[]): Map<strin
   return stateMap;
 }
 
+// ── IF-MIB bulk data (pre-walked) ──────────────────────────────────────────
+interface IfMibData {
+  descr:  Record<string, string>;
+  admin:  Record<string, string>;
+  oper:   Record<string, string>;
+  speed:  Record<string, string>;
+  alias:  Record<string, string>;
+}
+
+interface SNMPChassisData {
+  ponWalk: Record<string, string> | null;
+  ifMib:   IfMibData | null;
+}
+
+/** Extract __COPILOT_CMD_N_START__ ... __COPILOT_CMD_N_END__ block from multi-cmd output */
+function extractCmdOutput(multiOutput: string, index: number): string {
+  const startTag = `__COPILOT_CMD_${index}_START__`;
+  const endTag   = `__COPILOT_CMD_${index}_END__`;
+  const s = multiOutput.indexOf(startTag);
+  const e = multiOutput.indexOf(endTag);
+  if (s === -1 || e === -1 || e <= s) return '';
+  return multiOutput.slice(s + startTag.length, e);
+}
+
 /**
- * Load uplink port status via SNMP IF-MIB (RFC 2863).
- * Walks ifDescr to build a name→ifIndex map, then reads
- * ifAdminStatus + ifOperStatus + ifHighSpeed for each uplink interface.
+ * Fetch board presence (ZTE_PON_TABLE walk) + IF-MIB status walks in parallel.
+ * Returns pre-parsed data for both, avoiding N×4 individual snmpGet calls.
  */
-async function loadUplinkPortStatesSNMP(
-  snmpConfig: SNMPConfig,
+async function fetchSNMPChassisData(snmpConfig: SNMPConfig): Promise<SNMPChassisData> {
+  const [ponResult, descrResult, adminResult, operResult, speedResult, aliasResult] =
+    await Promise.all([
+      snmpWalk(snmpConfig, ZTE_PON_TABLE),
+      snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.2'),    // ifDescr
+      snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.7'),    // ifAdminStatus
+      snmpWalk(snmpConfig, '1.3.6.1.2.1.2.2.1.8'),    // ifOperStatus
+      snmpWalk(snmpConfig, '1.3.6.1.2.1.31.1.1.1.15'), // ifHighSpeed
+      snmpWalk(snmpConfig, '1.3.6.1.2.1.31.1.1.1.18'), // ifAlias
+    ]);
+
+  return {
+    ponWalk: ponResult.success ? (ponResult.results ?? null) : null,
+    ifMib: descrResult.success ? {
+      descr:  descrResult.results ?? {},
+      admin:  adminResult.results ?? {},
+      oper:   operResult.results  ?? {},
+      speed:  speedResult.results ?? {},
+      alias:  aliasResult.results ?? {},
+    } : null,
+  };
+}
+
+/** Build ifIndex → value lookup map from a walked OID table */
+function buildIdxValueMap(results: Record<string, string>): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const [oid, val] of Object.entries(results)) {
+    m.set(oid.split('.').pop() ?? '', val);
+  }
+  return m;
+}
+
+/**
+ * Build uplink port states from pre-walked IF-MIB data.
+ * O(n) lookup — no additional SNMP calls required.
+ */
+function buildUplinkStatesFromSNMP(
+  ifMib: IfMibData,
   ifaces: string[]
-): Promise<Map<string, UplinkPortState>> {
+): Map<string, UplinkPortState> {
   const stateMap = new Map<string, UplinkPortState>();
-  if (ifaces.length === 0) return stateMap;
-
-  // IF-MIB base OIDs
-  const OID_ifDescr       = '1.3.6.1.2.1.2.2.1.2';
-  const OID_ifAdminStatus = '1.3.6.1.2.1.2.2.1.7';
-  const OID_ifOperStatus  = '1.3.6.1.2.1.2.2.1.8';
-  const OID_ifHighSpeed   = '1.3.6.1.2.1.31.1.1.1.15';
-  const OID_ifAlias       = '1.3.6.1.2.1.31.1.1.1.18';
-
-  // Normalize interface name for comparison (gei_1/3/1 ↔ gei-1/3/1)
   const normalizeIface = (s: string) => s.toLowerCase().replace(/[-_]/g, '_');
 
-  const descrWalk = await snmpWalk(snmpConfig, OID_ifDescr);
-  if (!descrWalk.success || !descrWalk.results) return stateMap;
-
-  // Build map: normalizedName → ifIndex
+  // Build normalizedName → ifIndex from ifDescr walk
   const nameToIdx = new Map<string, string>();
-  for (const [oid, name] of Object.entries(descrWalk.results)) {
-    const idx = oid.split('.').pop() ?? '';
-    nameToIdx.set(normalizeIface(name), idx);
+  for (const [oid, name] of Object.entries(ifMib.descr)) {
+    nameToIdx.set(normalizeIface(name), oid.split('.').pop() ?? '');
   }
 
-  // For each requested interface, look up status
+  const adminMap = buildIdxValueMap(ifMib.admin);
+  const operMap  = buildIdxValueMap(ifMib.oper);
+  const speedMap = buildIdxValueMap(ifMib.speed);
+  const aliasMap = buildIdxValueMap(ifMib.alias);
+
   for (const iface of ifaces) {
     const idx = nameToIdx.get(normalizeIface(iface));
     if (!idx) continue;
 
-    const [adminRes, operRes, speedRes, aliasRes] = await Promise.all([
-      snmpGet(snmpConfig, `${OID_ifAdminStatus}.${idx}`),
-      snmpGet(snmpConfig, `${OID_ifOperStatus}.${idx}`),
-      snmpGet(snmpConfig, `${OID_ifHighSpeed}.${idx}`),
-      snmpGet(snmpConfig, `${OID_ifAlias}.${idx}`),
-    ]);
-
-    // ifAdminStatus: 1=up, 2=down, 3=testing
-    const adminVal = parseInt(adminRes.value ?? '2', 10);
-    const operVal  = parseInt(operRes.value  ?? '2', 10);
-    const adminStatus = adminVal === 1 ? 'Up' : 'Down';
-    const linkStatus  = operVal  === 1 ? 'Up' : 'Down';
-    const speedMbps   = speedRes.success ? speedRes.value : undefined;
-    const description = aliasRes.success && aliasRes.value ? aliasRes.value : undefined;
+    const adminVal = parseInt(adminMap.get(idx) ?? '2', 10);
+    const operVal  = parseInt(operMap.get(idx)  ?? '2', 10);
+    const speedVal = speedMap.get(idx);
+    const aliasVal = aliasMap.get(idx);
 
     stateMap.set(iface, {
       iface,
-      adminStatus,
-      linkStatus,
-      speed: speedMbps ? `${speedMbps}M` : undefined,
+      adminStatus:  adminVal === 1 ? 'Up' : 'Down',
+      linkStatus:   operVal  === 1 ? 'Up' : 'Down',
+      speed:        speedVal ? `${speedVal}M` : undefined,
       physicalType: undefined,
-      description,
-      isEnabled: adminVal === 1,
-      isLinked:  operVal  === 1,
+      description:  aliasVal || undefined,
+      isEnabled:    adminVal === 1,
+      isLinked:     operVal  === 1,
     });
-  }
-
-  return stateMap;
-}
-
-async function loadUplinkPortStates(
-  telnetConfig: TelnetConfig,
-  ifaces: string[]
-): Promise<Map<string, UplinkPortState>> {
-  const stateMap = new Map<string, UplinkPortState>();
-  if (ifaces.length === 0) return stateMap;
-
-  // Run all show-interface commands in ONE Telnet session to avoid multiple
-  // parallel connections that the OLT may reject or throttle.
-  try {
-
-    const result = await executeCommand(telnetConfig, 'show interface port-status');
-    if (result.success && result.output) {
-      const parsed = parseUplinkPortStatusTable(result.output, ifaces);
-      if (parsed.size > 0) return parsed;
-    }
-  } catch {
-    // Telnet unavailable — return empty map, ports will show as unknown.
   }
 
   return stateMap;
@@ -321,10 +337,10 @@ export async function GET(
     });
     if (!olt) return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
 
-    // ── Step 1: Try Telnet "show card" for real card topology ─────────────────
-    let telnetCards: CardInfo[] | null = null;
-    let uplinkIfacesBySlot: Map<number, string[]> = new Map();
-    let uplinkStatesByIface: Map<string, UplinkPortState> = new Map();
+    // ── Step 1: Fire Telnet (single multi-cmd session) + SNMP in PARALLEL ─────
+    const snmpConfig: SNMPConfig | null = olt.snmpEnabled
+      ? { host: olt.ipAddress, community: olt.snmpCommunity ?? 'public', port: olt.snmpPort ?? 161 }
+      : null;
 
     let telnetConfig: TelnetConfig | null = null;
     if (olt.telnetEnabled || olt.sshEnabled) {
@@ -335,23 +351,47 @@ export async function GET(
         password: olt.password ?? '',
         timeout:  15,
       };
-      try {
-        const result = await executeCommand(telnetConfig, 'show card');
-        if (result.success && result.output && result.output.length > 20) {
-          telnetCards = parseShowCard(result.output);
-          // Pre-compute uplink interfaces per SMXA/GICF slot
-          for (const card of telnetCards) {
-            if (card.slotType === 'uplink') {
-              uplinkIfacesBySlot.set(card.slot, smxaUplinkPorts(card.slot, card.cardType));
-            }
-          }
+    }
 
-          const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
-          if (allUplinkIfaces.length > 0) {
-            uplinkStatesByIface = await loadUplinkPortStates(telnetConfig, allUplinkIfaces);
+    // Run Telnet (single session, 2 commands) + all SNMP walks in parallel.
+    // This cuts total wait time roughly in half vs. sequential execution.
+    const [telnetMultiOut, snmpData] = await Promise.all([
+      telnetConfig
+        ? executeMultipleCommands(
+            telnetConfig,
+            ['show card', 'show interface port-status'],
+            { sendEnd: false }
+          ).catch(() => null)
+        : Promise.resolve(null),
+      snmpConfig ? fetchSNMPChassisData(snmpConfig).catch(() => null) : Promise.resolve(null),
+    ]);
+
+    // ── Step 2: Parse Telnet multi-command output ──────────────────────────────
+    let telnetCards: CardInfo[] | null = null;
+    let uplinkIfacesBySlot: Map<number, string[]> = new Map();
+    let uplinkStatesByIface: Map<string, UplinkPortState> = new Map();
+
+    if (telnetMultiOut?.success && telnetMultiOut.output) {
+      const showCardOut   = extractCmdOutput(telnetMultiOut.output, 0);
+      const portStatusOut = extractCmdOutput(telnetMultiOut.output, 1);
+
+      if (showCardOut.length > 20) {
+        telnetCards = parseShowCard(showCardOut);
+        for (const card of telnetCards) {
+          if (card.slotType === 'uplink') {
+            uplinkIfacesBySlot.set(card.slot, smxaUplinkPorts(card.slot, card.cardType));
           }
         }
-      } catch { /* Telnet unavailable — use SNMP fallback */ }
+
+        const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
+        if (portStatusOut && allUplinkIfaces.length > 0) {
+          uplinkStatesByIface = parseUplinkPortStatusTable(portStatusOut, allUplinkIfaces);
+        }
+        // SNMP IF-MIB fallback (already pre-fetched in parallel — zero extra wait)
+        if (uplinkStatesByIface.size === 0 && allUplinkIfaces.length > 0 && snmpData?.ifMib) {
+          uplinkStatesByIface = buildUplinkStatesFromSNMP(snmpData.ifMib, allUplinkIfaces);
+        }
+      }
     }
 
     // ── Step 2: Build slot occupancy from DB ONU data ─────────────────────────
@@ -384,39 +424,17 @@ export async function GET(
       else                           data.cardType = 'GTGQ';
     }
 
-    // ── Step 3: Try SNMP for board presence + uplink port status ─────────────
+    // ── Step 3: Extract SNMP board presence (already fetched in parallel) ──────
     let snmpBoardSlots: Set<number> = new Set();
-    if (olt.snmpEnabled) {
-      const snmpConfig: SNMPConfig = { host: olt.ipAddress, community: olt.snmpCommunity ?? 'public', port: olt.snmpPort ?? 161 };
-      try {
-        const ponWalk = await snmpWalk(snmpConfig, ZTE_PON_TABLE);
-        if (ponWalk.success && ponWalk.results) {
-          for (const oid of Object.keys(ponWalk.results)) {
-            for (const part of oid.split('.')) {
-              const n = parseInt(part, 10);
-              if (!isNaN(n) && n > 268000000) {
-                const mapped = ponIndexToBoard(n);
-                if (mapped) snmpBoardSlots.add(mapped.board);
-              }
-            }
+    if (snmpData?.ponWalk) {
+      for (const oid of Object.keys(snmpData.ponWalk)) {
+        for (const part of oid.split('.')) {
+          const n = parseInt(part, 10);
+          if (!isNaN(n) && n > 268000000) {
+            const mapped = ponIndexToBoard(n);
+            if (mapped) snmpBoardSlots.add(mapped.board);
           }
         }
-
-        // SNMP IF-MIB fallback for uplink port status if fast Telnet port-status did not return data.
-        const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
-        if (uplinkStatesByIface.size === 0 && allUplinkIfaces.length > 0) {
-          uplinkStatesByIface = await loadUplinkPortStatesSNMP(snmpConfig, allUplinkIfaces);
-        }
-      } catch { /* SNMP unavailable */ }
-    }
-
-    // If SNMP didn't return uplink states, try Telnet multi-command fallback
-    if (uplinkStatesByIface.size === 0 && telnetConfig) {
-      const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
-      if (allUplinkIfaces.length > 0) {
-        try {
-          uplinkStatesByIface = await loadUplinkPortStates(telnetConfig, allUplinkIfaces);
-        } catch { /* Telnet unavailable */ }
       }
     }
 
