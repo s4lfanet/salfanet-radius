@@ -127,6 +127,18 @@ function hexBytesToSerial(val: string): string {
   return val;
 }
 
+function normalizeSerialNumber(val: string | null | undefined): string | null {
+  const serial = (val ?? '').trim().toUpperCase();
+  if (!serial || serial === 'N/A' || serial === 'NA' || serial === 'NULL' || serial === 'NONE') return null;
+  if (!/^[A-Z0-9_-]{4,32}$/.test(serial)) return null;
+  return serial;
+}
+
+function parseSerialFromDetail(output: string): string | null {
+  const match = output.match(/Serial\s+number\s*:\s*([A-Z0-9_-]+)/i);
+  return normalizeSerialNumber(match?.[1]);
+}
+
 // ── SNMP Performance Metrics ─────────────────────────────────────────────────
 
 /** Walk a table OID and return the first numeric value found, optionally filtered */
@@ -337,12 +349,23 @@ async function discoverPonV21(
         if (!isNaN(d) && d > 0 && d < 100000) distance = d;
       }
 
+      let serialNumber = normalizeSerialNumber(hexBytesToSerial(serialR.value ?? ''));
+      if (!serialNumber && telnetConfig) {
+        try {
+          const detail = await executeCommand(
+            telnetConfig,
+            `show gpon onu detail-info gpon-onu_1/${board}/${pon}:${onuId}`,
+          );
+          if (detail.success && detail.output) serialNumber = parseSerialFromDetail(detail.output);
+        } catch { /* keep SNMP value */ }
+      }
+
       onus.push({
         frame: 1, slot: board,
         // ZTE SNMP pon=1 maps to CLI/display port 0 (0-based).
         port: pon - 1,
         onuId,
-        serialNumber: hexBytesToSerial(serialR.value ?? ''),
+        serialNumber,
         macAddress: null,
         status: onuStatus,
         description: descR.success && descR.value ? descR.value.trim() : null,
@@ -380,8 +403,9 @@ async function discoverPonV21(
     //    (prefix is gpon-onu_, ONU ID after colon)
     const uncfgSerials = new Map<number, string>();
     if (unregisteredIds.length > 0) {
-      const cliPort = pon - 1; // SNMP 1-based pon → CLI 0-based port
-      const portKey = `${board}/${cliPort}`;
+      const displayPort = pon - 1; // DB/display port is 0-based
+      const cliPon = pon;          // ZTE C320 CLI PON port is 1-based
+      const portKey = `${board}/${displayPort}`;
 
       // Method 1: Use pre-fetched global uncfg map (preferred — one Telnet call for all ports)
       if (globalUncfgMap?.has(portKey)) {
@@ -396,7 +420,7 @@ async function discoverPonV21(
         try {
           const result = await executeCommand(
             telnetConfig,
-            `show pon onu uncfg gpon-olt_1/${board}/${cliPort}`,
+            `show pon onu uncfg gpon-olt_1/${board}/${cliPon}`,
           );
           if (result.success && result.output) {
             const serialList: string[] = []; // for positional fallback
@@ -405,7 +429,7 @@ async function discoverPonV21(
               if (!trimmed || /OnuIndex|OnuType|^-/.test(trimmed)) continue;
               const parts = trimmed.split(/\s+/);
               if (parts.length >= 3) {
-                // Format A: "gpon-onu_1/1/0:N  TYPE  SN  STATE" — ONU ID in :N suffix
+                // Format A: "gpon-onu_1/1/1:N  TYPE  SN  STATE" — ONU ID in :N suffix
                 const onuMatch = parts[0].match(/gpon-onu_\d+\/\d+\/\d+:(\d+)/i);
                 if (onuMatch) {
                   const id = parseInt(onuMatch[1]);
@@ -415,7 +439,7 @@ async function discoverPonV21(
                   }
                   continue;
                 }
-                // Format B: "gpon_olt-1/1/0  TYPE  SN  STATE" — no ONU ID, map positionally
+                // Format B: "gpon-olt_1/1/1  TYPE  SN  STATE" — no ONU ID, map positionally
                 if (/gpon[_-]olt/i.test(parts[0])) {
                   const sn = parts[2];
                   if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) {
@@ -508,7 +532,7 @@ export async function discoverONUsSNMP(
     // Pre-fetch ALL unregistered ONU serials via ONE global Telnet call.
     // "show pon onu uncfg" output format:
     //   OnuIndex                       OnuType     OnuSn           State
-    //   gpon_olt-1/1/0                 N/A         ZTEGDA5918AC    unknown
+    //   gpon-olt_1/1/1                 N/A         ZTEGDA5918AC    unknown
     let globalUncfgMap: Map<string, string[]> | null = null;
     if (telnetConfig) {
       try {
@@ -520,14 +544,15 @@ export async function discoverONUsSNMP(
             if (!trimmed || /OnuIndex|OnuType|^-/.test(trimmed)) continue;
             const parts = trimmed.split(/\s+/);
             if (parts.length >= 3) {
-              // "gpon_olt-1/1/0" or "gpon-olt_1/1/0" — extract board/cliPort
+              // "gpon_olt-1/1/1" or "gpon-olt_1/1/1" — extract board/CLI PON port
               const portMatch = parts[0].match(/gpon[_-]olt[_-](\d+)\/(\d+)\/(\d+)/i);
               if (portMatch) {
                 const b = parseInt(portMatch[2]);
-                const cliPort = parseInt(portMatch[3]); // 0-based
+                const cliPort = parseInt(portMatch[3]); // ZTE C320 CLI is normally 1-based
                 const sn = parts[2];
+                const displayPort = cliPort > 0 ? cliPort - 1 : cliPort;
                 if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) {
-                  const key = `${b}/${cliPort}`;
+                  const key = `${b}/${displayPort}`;
                   if (!globalUncfgMap.has(key)) globalUncfgMap.set(key, []);
                   globalUncfgMap.get(key)!.push(sn.toUpperCase());
                 }
@@ -577,6 +602,22 @@ function parseOnuInfo(output: string, frame: number, slot: number, port: number)
         status: status.toLowerCase().replace('-', '_'),
         rxPower: null,
       });
+      continue;
+    }
+
+    // ZTE C320 V2.1 state output has no serial:
+    //   1/1/1:1 enable enable working 1(GPON)
+    const stateMatch = line.match(/^\s*\d+\/\d+\/\d+:(\d+)\s+\S+\s+\S+\s+(working|online|los|offline|dying-gasp|dyinggasp)/i);
+    if (stateMatch) {
+      const [, onuId, status] = stateMatch;
+      onus.push({
+        frame, slot, port,
+        onuId: parseInt(onuId, 10),
+        serialNumber: null,
+        macAddress: null,
+        status: /working|online/i.test(status) ? 'online' : status.toLowerCase().replace('-', '_'),
+        rxPower: null,
+      });
     }
   }
   return onus;
@@ -609,10 +650,14 @@ function parseOpticalInfo(output: string): any {
   const info: any = {};
   const rxMatch = output.match(/rx\s*power[^:]*:\s*([-\d.]+)/i);
   if (rxMatch) info.rxPower = parseFloat(rxMatch[1]);
+  const rxTableMatch = output.match(/gpon-onu_\d+\/\d+\/\d+:\d+\s+([-\d.]+)\s*\(?dbm\)?/i);
+  if (!info.rxPower && rxTableMatch) info.rxPower = parseFloat(rxTableMatch[1]);
   const txMatch = output.match(/tx\s*power[^:]*:\s*([-\d.]+)/i);
   if (txMatch) info.txPower = parseFloat(txMatch[1]);
   const distMatch = output.match(/distance[^:]*:\s*(\d+)/i);
   if (distMatch) info.distance = parseInt(distMatch[1]);
+  const serial = parseSerialFromDetail(output);
+  if (serial) info.serialNumber = serial;
   return info;
 }
 
@@ -621,13 +666,14 @@ export async function discoverONUs(config: TelnetConfig): Promise<any[]> {
   // C320: 2 boards (GCOB cards), 8 GPON ports each
   for (let slot = 1; slot <= 2; slot++) {
     for (let port = 0; port <= 7; port++) {
+      const cliPon = port + 1;
       // Registered ONUs
-      const r = await executeCommand(config, `show gpon onu state gpon-olt_1/${slot}/${port}`);
+      const r = await executeCommand(config, `show gpon onu state gpon-olt_1/${slot}/${cliPon}`);
       if (r.success && r.output) {
         onus.push(...parseOnuInfo(r.output, 1, slot, port));
       }
       // Unregistered ONUs
-      const u = await executeCommand(config, `show gpon onu uncfg gpon-olt_1/${slot}/${port}`);
+      const u = await executeCommand(config, `show pon onu uncfg gpon-olt_1/${slot}/${cliPon}`);
       if (u.success && u.output) {
         onus.push(...parseUncfgOnuInfo(u.output, 1, slot, port));
       }
@@ -640,13 +686,14 @@ export async function discoverONUsSSH(config: SSHConfig): Promise<any[]> {
   const onus: any[] = [];
   for (let slot = 1; slot <= 2; slot++) {
     for (let port = 0; port <= 7; port++) {
+      const cliPon = port + 1;
       // Registered ONUs
-      const r = await sshExecute(config, `show gpon onu state gpon-olt_1/${slot}/${port}`);
+      const r = await sshExecute(config, `show gpon onu state gpon-olt_1/${slot}/${cliPon}`);
       if (r.success && r.output) {
         onus.push(...parseOnuInfo(r.output, 1, slot, port));
       }
       // Unregistered ONUs
-      const u = await sshExecute(config, `show gpon onu uncfg gpon-olt_1/${slot}/${port}`);
+      const u = await sshExecute(config, `show pon onu uncfg gpon-olt_1/${slot}/${cliPon}`);
       if (u.success && u.output) {
         onus.push(...parseUncfgOnuInfo(u.output, 1, slot, port));
       }
@@ -658,18 +705,21 @@ export async function discoverONUsSSH(config: SSHConfig): Promise<any[]> {
 export async function getOnuOpticalInfo(
   config: TelnetConfig, frame: number, slot: number, port: number, onuId: number
 ): Promise<any> {
-  const result = await executeCommand(
-    config, `show gpon onu detail-info gpon-olt_${frame}/${slot}/${port} ${onuId}`
-  );
-  if (result.success && result.output) return parseOpticalInfo(result.output);
-  return null;
+  const iface = `gpon-onu_${frame}/${slot}/${port + 1}:${onuId}`;
+  const [detail, power] = await Promise.all([
+    executeCommand(config, `show gpon onu detail-info ${iface}`),
+    executeCommand(config, `show pon power onu-rx ${iface}`),
+  ]);
+  const output = `${detail.output ?? ''}\n${power.output ?? ''}`;
+  return output.trim() ? parseOpticalInfo(output) : null;
 }
 
 export async function getOnuOpticalInfoSSH(
   config: SSHConfig, frame: number, slot: number, port: number, onuId: number
 ): Promise<any> {
+  const iface = `gpon-onu_${frame}/${slot}/${port + 1}:${onuId}`;
   const result = await sshExecute(
-    config, `show gpon onu detail-info gpon-olt_${frame}/${slot}/${port} ${onuId}`
+    config, `show gpon onu detail-info ${iface}`
   );
   if (result.success && result.output) return parseOpticalInfo(result.output);
   return null;

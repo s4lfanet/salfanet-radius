@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, use } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +19,7 @@ import {
   Server, RefreshCw, AlertCircle, Wifi, WifiOff,
   Thermometer, Clock, Activity, ArrowLeft, Save, TestTube,
   Power, Download, CheckCircle, Signal, Plus, X, Cpu, Zap,
+  Eye, UserPlus,
 } from 'lucide-react';
 
 interface ONU {
@@ -912,15 +913,189 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
   );
 }
 
+function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onClose: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [detail, setDetail] = useState<any>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/olt/${oltId}/onus/${onu.id}/detail`)
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to load ONU detail');
+        setDetail(json);
+      })
+      .catch((e: any) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [oltId, onu.id]);
+
+  const parsed = detail?.telnet?.detail?.parsed ?? {};
+  const customer = detail?.onu?.customer;
+  const detailItems = [
+    ['Interface', detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`],
+    ['Serial Number', parsed['Serial number'] ?? onu.serialNumber ?? 'N/A'],
+    ['Name', parsed.Name ?? onu.description ?? 'N/A'],
+    ['Type', parsed.Type ?? 'N/A'],
+    ['State', parsed.State ?? onu.status],
+    ['Phase', parsed['Phase state'] ?? 'N/A'],
+    ['Config', parsed['Config state'] ?? 'N/A'],
+    ['Distance', parsed['ONU Distance'] ?? (onu.distance !== null ? `${onu.distance}m` : 'N/A')],
+    ['Online Duration', parsed['Online Duration'] ?? 'N/A'],
+    ['RX Power', onu.rxPower !== null ? `${onu.rxPower.toFixed(2)} dBm` : 'N/A'],
+  ];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800">
+          <div>
+            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Eye className="h-4 w-4 text-blue-500" /> Detail ONU
+            </h2>
+            <p className="text-xs text-gray-500 font-mono mt-0.5">{detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="p-5 overflow-y-auto space-y-4">
+          {loading && <div className="py-10 text-center text-gray-400"><RefreshCw className="h-6 w-6 mx-auto animate-spin mb-2" />Loading detail...</div>}
+          {error && <div className="px-3 py-2 rounded bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 text-sm">{error}</div>}
+          {!loading && !error && detail && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {detailItems.map(([label, value]) => (
+                  <div key={label} className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white mt-1 break-words">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+                <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Customer Assignment</div>
+                {customer ? (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+                    <div><span className="text-gray-500">Name:</span> {customer.name}</div>
+                    <div><span className="text-gray-500">Username:</span> {customer.username}</div>
+                    <div><span className="text-gray-500">Phone:</span> {customer.phone ?? '-'}</div>
+                    <div><span className="text-gray-500">Profile:</span> {customer.profile?.name ?? '-'}</div>
+                    <div><span className="text-gray-500">Area:</span> {customer.area?.name ?? '-'}</div>
+                    <div><span className="text-gray-500">ODP:</span> {customer.odpAssignment?.odp?.name ?? '-'}</div>
+                    <div><span className="text-gray-500">ODP Port:</span> {customer.odpAssignment?.portNumber ?? '-'}</div>
+                    <div><span className="text-gray-500">Status:</span> {customer.status}</div>
+                  </div>
+                ) : <div className="text-sm text-gray-400">Belum terhubung ke customer.</div>}
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <pre className="text-[11px] font-mono bg-gray-950 text-green-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet.detail.raw || 'No detail output'}</pre>
+                <pre className="text-[11px] font-mono bg-gray-950 text-blue-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet.config.raw || detail.telnet.optical.raw || 'No config/optical output'}</pre>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ONUAssignModal({ oltId, onu, onClose, onSuccess }: { oltId: string; onu: ONU; onClose: () => void; onSuccess: () => void }) {
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState(onu.customer?.id ?? '');
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadCustomers = useCallback(() => {
+    setLoading(true);
+    fetch(`/api/olt/${oltId}/onus/${onu.id}/assign${query ? `?q=${encodeURIComponent(query)}` : ''}`)
+      .then(async (res) => {
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to load customers');
+        setCustomers(json.customers ?? []);
+        if (json.currentCustomer?.id) setSelectedCustomerId(json.currentCustomer.id);
+      })
+      .catch((e: any) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [oltId, onu.id, query]);
+
+  useEffect(() => {
+    const t = setTimeout(loadCustomers, 250);
+    return () => clearTimeout(t);
+  }, [loadCustomers]);
+
+  const save = async (customerId: string | null) => {
+    setSaving(true); setError(null);
+    try {
+      const res = await fetch(`/api/olt/${oltId}/onus/${onu.id}/assign`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerId }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to assign customer');
+      await onSuccess();
+      onClose();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800">
+          <div>
+            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><UserPlus className="h-4 w-4 text-indigo-500" /> Assign Customer</h2>
+            <p className="text-xs text-gray-500 font-mono mt-0.5">{onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="h-5 w-5" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <Label className="text-xs text-gray-500">Search Customer</Label>
+            <Input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="name, username, phone, customer ID" className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs text-gray-500">Customer</Label>
+            <Select value={selectedCustomerId || 'none'} onValueChange={(v) => setSelectedCustomerId(v === 'none' ? '' : v)}>
+              <SelectTrigger className="mt-1"><SelectValue placeholder={loading ? 'Loading...' : 'Select customer'} /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Unassigned</SelectItem>
+                {customers.map((customer) => (
+                  <SelectItem key={customer.id} value={customer.id}>{customer.name} - {customer.username}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {error && <div className="px-3 py-2 rounded bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 text-sm">{error}</div>}
+        </div>
+        <div className="flex justify-between gap-2 px-5 py-4 border-t dark:border-gray-800">
+          <Button variant="outline" onClick={() => save(null)} disabled={saving}>Unassign</Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose} disabled={saving}>Cancel</Button>
+            <Button onClick={() => save(selectedCustomerId || null)} disabled={saving || loading}>
+              {saving ? <><RefreshCw className="h-3 w-3 mr-2 animate-spin" />Saving...</> : 'Save Assignment'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function OLTDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlFilter = searchParams.get('filter');
   const [olt, setOlt] = useState<OLTDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [polling, setPolling] = useState(false);
   const [testing, setTesting] = useState<string | null>(null);
-  const [onuStatusFilter, setOnuStatusFilter] = useState('all');
+  const [onuStatusFilter, setOnuStatusFilter] = useState(urlFilter ?? 'all');
 
   // Metrics & charts
   const [metrics, setMetrics] = useState<any[]>([]);
@@ -939,6 +1114,8 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
 
   // ONU registration
   const [registeringOnu, setRegisteringOnu] = useState<ONU | null>(null);
+  const [detailOnu, setDetailOnu] = useState<ONU | null>(null);
+  const [assigningOnu, setAssigningOnu] = useState<ONU | null>(null);
 
   // Settings state
   const [settings, setSettings] = useState({
@@ -995,6 +1172,10 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
   }, [id, router]);
 
   useEffect(() => { fetchOLT(); }, [fetchOLT]);
+
+  useEffect(() => {
+    if (urlFilter) setOnuStatusFilter(urlFilter);
+  }, [urlFilter]);
 
   // Fetch available routers for assignment
   useEffect(() => {
@@ -1478,13 +1659,22 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       <td className="py-2.5 pr-3">
                         {onu.status === 'auth_failed' ? (
                           /* Unregistered ONU — show Register button */
-                          <button
-                            onClick={() => setRegisteringOnu(onu)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-                          >
-                            <Plus className="w-3 h-3" />
-                            Register
-                          </button>
+                          <div className="flex flex-wrap gap-1">
+                            <button
+                              onClick={() => setDetailOnu(onu)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              <Eye className="w-3 h-3" />
+                              Detail
+                            </button>
+                            <button
+                              onClick={() => setRegisteringOnu(onu)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                            >
+                              <Plus className="w-3 h-3" />
+                              Register
+                            </button>
+                          </div>
                         ) : confirmReboot === onu.id ? (
                           <div className="flex gap-1">
                             <button
@@ -1502,14 +1692,30 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             </button>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => setConfirmReboot(onu.id)}
-                            disabled={rebootingOnu !== null || batchRebooting}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 transition-colors"
-                          >
-                            <Power className="w-3 h-3" />
-                            Reboot
-                          </button>
+                          <div className="flex flex-wrap gap-1">
+                            <button
+                              onClick={() => setDetailOnu(onu)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                            >
+                              <Eye className="w-3 h-3" />
+                              Detail
+                            </button>
+                            <button
+                              onClick={() => setAssigningOnu(onu)}
+                              className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+                            >
+                              <UserPlus className="w-3 h-3" />
+                              Assign
+                            </button>
+                            <button
+                              onClick={() => setConfirmReboot(onu.id)}
+                              disabled={rebootingOnu !== null || batchRebooting}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 transition-colors"
+                            >
+                              <Power className="w-3 h-3" />
+                              Reboot
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -1967,6 +2173,23 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           vendor={olt?.vendor ?? null}
           onClose={() => setRegisteringOnu(null)}
           onSuccess={() => { setRegisteringOnu(null); fetchOLT(); }}
+        />
+      )}
+
+      {detailOnu && (
+        <ONUDetailModal
+          oltId={id}
+          onu={detailOnu}
+          onClose={() => setDetailOnu(null)}
+        />
+      )}
+
+      {assigningOnu && (
+        <ONUAssignModal
+          oltId={id}
+          onu={assigningOnu}
+          onClose={() => setAssigningOnu(null)}
+          onSuccess={fetchOLT}
         />
       )}
     </div>

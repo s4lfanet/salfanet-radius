@@ -21,10 +21,19 @@ type SlotType = 'mcud' | 'service' | 'uplink' | 'empty';
 interface CardInfo {
   slot: number;
   cardType: string;
+  cfgType?: string;
   hardVer?: string;
   softVer?: string;
   status: string;
   slotType: SlotType;
+  portCount?: number;
+}
+
+function classifyCard(cardType: string): SlotType {
+  const ctUpper = cardType.toUpperCase();
+  if (ctUpper.startsWith('MCUD') || ctUpper.startsWith('MCUA') || ctUpper === 'MCU') return 'mcud';
+  if (ctUpper.startsWith('SMXA') || ctUpper.startsWith('GICF') || ctUpper.startsWith('GISF') || ctUpper.startsWith('UPLINK')) return 'uplink';
+  return 'service';
 }
 
 /**
@@ -42,24 +51,56 @@ function parseShowCard(output: string): CardInfo[] {
   const cards: CardInfo[] = [];
   for (const line of output.split('\n')) {
     const trimmed = line.trim();
-    if (!trimmed || /Slot\s+CardType|^-/.test(trimmed) || trimmed.startsWith('---')) continue;
+    if (!trimmed || /Slot\s+CardType|Rack\s+Shelf\s+Slot|^-/.test(trimmed) || trimmed.startsWith('---')) continue;
     const parts = trimmed.split(/\s+/);
+
+    // Firmware V2.1 format:
+    // Rack Shelf Slot CfgType RealType Port HardVer SoftVer Status
+    // 1    1     1    GTGH    GTGHG    16   V1.0.0 V2.1.0 INSERVICE
+    // 1    1     4    SMXA             3                   OFFLINE
+    const isRackShelfFormat = parts.length >= 6
+      && /^\d+$/.test(parts[0])
+      && /^\d+$/.test(parts[1])
+      && /^\d+$/.test(parts[2]);
+
+    if (isRackShelfFormat) {
+      const slot = parseInt(parts[2], 10);
+      const cfgType = parts[3];
+      let cardType = cfgType;
+      let portCount = 0;
+      let hardVer: string | undefined;
+      let softVer: string | undefined;
+      let status = parts[parts.length - 1] ?? 'UNKNOWN';
+
+      if (/^\d+$/.test(parts[4])) {
+        // RealType column is blank, so Port shifted into parts[4].
+        portCount = parseInt(parts[4], 10);
+      } else {
+        cardType = parts[4] || cfgType;
+        portCount = /^\d+$/.test(parts[5]) ? parseInt(parts[5], 10) : 0;
+        hardVer = parts[6];
+        softVer = parts[7];
+        status = parts.slice(8).join(' ') || status;
+      }
+
+      cards.push({ slot, cardType, cfgType, hardVer, softVer, status, slotType: classifyCard(cardType), portCount });
+      continue;
+    }
+
+    // Older/common format:
+    // Slot CardType HardVer SoftVer Status
     if (parts.length < 5) continue;
-    const slot = parseInt(parts[0]);
+    const slot = parseInt(parts[0], 10);
     if (isNaN(slot)) continue;
     const cardType = parts[1];
-    const hardVer  = parts[2];
-    const softVer  = parts[3];
-    const status   = parts[4];
-
-    let slotType: SlotType = 'service';
-    const ctUpper = cardType.toUpperCase();
-    if (ctUpper.startsWith('MCUD') || ctUpper.startsWith('MCUA') || ctUpper === 'MCU') {
-      slotType = 'mcud';
-    } else if (ctUpper.startsWith('SMXA') || ctUpper.startsWith('GICF') || ctUpper.startsWith('UPLINK')) {
-      slotType = 'uplink';
-    }
-    cards.push({ slot, cardType, hardVer, softVer, status, slotType });
+    cards.push({
+      slot,
+      cardType,
+      hardVer: parts[2],
+      softVer: parts[3],
+      status: parts.slice(4).join(' ') || 'UNKNOWN',
+      slotType: classifyCard(cardType),
+    });
   }
   return cards;
 }
@@ -85,6 +126,9 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
       `gei_1/${slot}/1`, `gei_1/${slot}/2`,
       `xgei_1/${slot}/1`, `xgei_1/${slot}/2`,
     ];
+  }
+  if (ct === 'SMXA') {
+    return [`gei_1/${slot}/1`, `gei_1/${slot}/2`, `gei_1/${slot}/3`];
   }
   return [`gei_1/${slot}/1`, `gei_1/${slot}/2`];
 }
@@ -240,7 +284,7 @@ export async function GET(
             return { port: pi, onuCount: pe?.onuCount ?? 0, onlineCount: pe?.onlineCount ?? 0, hasOnus: (pe?.onuCount ?? 0) > 0 };
           });
         } else if (slotType === 'service' && !dbData) {
-          portCount = 16;
+          portCount = card?.portCount && card.portCount > 0 ? card.portCount : 16;
         } else if (slotType === 'uplink') {
           const ifaces = uplinkIfacesBySlot.get(i) ?? smxaUplinkPorts(i, cardType);
           portCount = ifaces.length;

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { Client as SSHClient } from 'ssh2';
+import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 
 // POST - Batch reboot multiple ONUs (up to 50 at once)
 export async function POST(
@@ -45,13 +46,34 @@ export async function POST(
     const results: { onuId: string; serialNumber: string; success: boolean; error?: string }[] = [];
 
     for (const onu of onus) {
-      if (!olt.sshEnabled || !password) {
-        results.push({ onuId: onu.id, serialNumber: onu.serialNumber ?? onu.id, success: false, error: 'SSH not configured' });
+      if (!password || !olt.username) {
+        results.push({ onuId: onu.id, serialNumber: onu.serialNumber ?? onu.id, success: false, error: 'Credentials not configured' });
         continue;
       }
-      const rebootCmd = buildRebootCommand(vendor, onu.frame, onu.slot, onu.port, onu.onuId);
       try {
-        const ok = await sshCommand(olt.ipAddress, olt.sshPort ?? 22, olt.username ?? 'admin', password, rebootCmd);
+        let ok = false;
+        if (vendor === 'zte' && olt.telnetEnabled) {
+          const iface = `gpon-onu_${onu.frame}/${onu.slot}/${onu.port + 1}:${onu.onuId}`;
+          const telnetConfig: TelnetConfig = {
+            host: olt.ipAddress,
+            port: olt.telnetPort ?? 23,
+            username: olt.username,
+            password,
+            timeout: 20,
+          };
+          const result = await executeMultipleCommands(telnetConfig, [
+            'configure terminal',
+            `pon-onu-mng ${iface}`,
+            'reboot',
+            'exit',
+            'end',
+          ]);
+          const output = result.output ?? result.error ?? '';
+          ok = result.success && !/%Error|invalid input|invalid command|bad password/i.test(output);
+        } else if (olt.sshEnabled) {
+          const rebootCmd = buildRebootCommand(vendor, onu.frame, onu.slot, onu.port, onu.onuId);
+          ok = await sshCommand(olt.ipAddress, olt.sshPort ?? 22, olt.username ?? 'admin', password, rebootCmd);
+        }
         results.push({ onuId: onu.id, serialNumber: onu.serialNumber ?? onu.id, success: ok, error: ok ? undefined : 'Command failed' });
       } catch (e: any) {
         results.push({ onuId: onu.id, serialNumber: onu.serialNumber ?? onu.id, success: false, error: e.message });

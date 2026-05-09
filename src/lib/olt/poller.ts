@@ -232,6 +232,7 @@ async function upsertONU(
 
     const status = mapOnuStatus(onu.status);
     const now = new Date();
+    const serialNumber = onu.serialNumber ?? opticalInfo?.serialNumber ?? null;
     // Use SNMP-discovered rxPower/distance as fallback if optical info not available
     const rxPower = opticalInfo?.rxPower ?? onu.rxPower ?? null;
     const txPower = opticalInfo?.txPower ?? onu.txPower ?? null;
@@ -254,7 +255,7 @@ async function upsertONU(
         slot: onu.slot ?? 0,
         port: onu.port,
         onuId: onu.onuId,
-        serialNumber: onu.serialNumber ?? null,
+        serialNumber,
         macAddress: onu.macAddress ?? null,
         status,
         description: onu.description ?? null,
@@ -268,7 +269,7 @@ async function upsertONU(
         updatedAt: now,
       },
       update: {
-        ...(onu.serialNumber != null ? { serialNumber: onu.serialNumber } : {}),
+        ...(serialNumber != null ? { serialNumber } : {}),
         status,
         description: onu.description ?? undefined,
         rxPower,

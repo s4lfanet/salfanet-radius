@@ -38,7 +38,7 @@ spawn telnet ${config.host} ${config.port}
 
 expect {
   "Username:" { send "${config.username}\\r" }
-  "login:" { send "${config.username}\\r" }
+  -re {(^|\r|\n)[Ll]ogin:} { send "${config.username}\\r" }
   timeout { exit 1 }
 }
 
@@ -93,8 +93,8 @@ export async function executeMultipleCommands(
 
   // Build the commands section of the expect script
   const cmdLines = commands.map(cmd => {
-    const escaped = cmd.replace(/[[\]{}\\^$.|?*+()"'`]/g, '\\$&');
-    return `\nsend "${cmd}\\r"\nexpect -re {[>#]} { }`;
+    const escaped = cmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$');
+    return `\nsend "${escaped}\\r"\nexpect -re {[>#]} { }`;
   }).join('\n');
 
   try {
@@ -104,7 +104,7 @@ set timeout ${config.timeout || 30}
 spawn telnet ${config.host} ${config.port || 23}
 
 expect {
-  -re {[Uu]sername:|[Ll]ogin:} { send "${config.username}\\r" }
+  -re {(^|\r|\n)([Uu]sername|[Ll]ogin):} { send "${config.username}\\r" }
   timeout { exit 1 }
   eof { exit 1 }
 }
@@ -121,10 +121,10 @@ expect {
   eof { exit 1 }
 }
 
-send "terminal length 0\\r"
-expect -re {[>#]} { }
 ${cmdLines}
 
+send "end\\r"
+expect -re {[>#]} { }
 send "exit\\r"
 expect eof
 `;
@@ -171,7 +171,7 @@ spawn telnet ${config.host} ${config.port || 23}
 
 # Wait for username/login prompt (any common OLT banner)
 expect {
-  -re {[Uu]sername:|[Ll]ogin:} { send "${config.username}\\r" }
+  -re {(^|\r|\n)([Uu]sername|[Ll]ogin):} { send "${config.username}\\r" }
   -re {[Pp]assword:}            { send "${config.password}\\r" }
   -re {[>#$]}                   { send "exit\\r"; expect eof; exit 0 }
   timeout                        { exit 1 }

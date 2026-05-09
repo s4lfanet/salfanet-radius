@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { Client as SSHClient } from 'ssh2';
+import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 
 // POST - Reboot a single ONU via SSH command to the parent OLT
 export async function POST(
@@ -30,24 +31,47 @@ export async function POST(
       );
     }
 
+    const vendor = (olt.vendor ?? '').toLowerCase();
     const password = olt.password ?? '';
-    if (!olt.sshEnabled || !password) {
+
+    let success = false;
+    let commandLabel = '';
+
+    if (vendor === 'zte' && olt.telnetEnabled && olt.username && password) {
+      const iface = `gpon-onu_${onu.frame}/${onu.slot}/${onu.port + 1}:${onu.onuId}`;
+      const telnetConfig: TelnetConfig = {
+        host: olt.ipAddress,
+        port: olt.telnetPort ?? 23,
+        username: olt.username,
+        password,
+        timeout: 20,
+      };
+      const result = await executeMultipleCommands(telnetConfig, [
+        'configure terminal',
+        `pon-onu-mng ${iface}`,
+        'reboot',
+        'exit',
+        'end',
+      ]);
+      const output = result.output ?? result.error ?? '';
+      success = result.success && !/%Error|invalid input|invalid command|bad password/i.test(output);
+      commandLabel = `pon-onu-mng ${iface} -> reboot`;
+    } else if (olt.sshEnabled && password) {
+      const rebootCmd = buildRebootCommand(vendor, onu.frame, onu.slot, onu.port, onu.onuId);
+      success = await sshCommand(
+        olt.ipAddress,
+        olt.sshPort ?? 22,
+        olt.username ?? 'admin',
+        password,
+        rebootCmd,
+      );
+      commandLabel = rebootCmd;
+    } else {
       return NextResponse.json(
-        { error: 'SSH credentials not configured on this OLT' },
+        { error: 'Telnet or SSH credentials not configured on this OLT' },
         { status: 400 }
       );
     }
-
-    const vendor = (olt.vendor ?? '').toLowerCase();
-    const rebootCmd = buildRebootCommand(vendor, onu.frame, onu.slot, onu.port, onu.onuId);
-
-    const success = await sshCommand(
-      olt.ipAddress,
-      olt.sshPort ?? 22,
-      olt.username ?? 'admin',
-      password,
-      rebootCmd,
-    );
 
     if (success) {
       await prisma.oltMonitoringLog.create({
@@ -55,7 +79,7 @@ export async function POST(
           oltId,
           logType: 'command',
           severity: 'info',
-          message: `ONU ${onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}/${onu.onuId}`} reboot command sent`,
+          message: `ONU ${onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}/${onu.onuId}`} reboot command sent (${commandLabel})`,
         },
       });
       return NextResponse.json({ success: true, message: 'Reboot command sent' });
