@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.36 — 2026-05-09
+
+### Fixed
+- **SMXA uplink menampilkan 6 port (bukan 3)** — `smxaUplinkPorts` untuk card type `SMXA` plain kini mengembalikan 6 interface: `gei_1/{slot}/1..3` + `gei_1/{slot+1}/1..3`, sesuai hardware ZTE C320 yang portnya tersebar di dua alamat slot.
+- **Status port uplink (DIS/UP/DOWN) kini akurat** — `loadUplinkPortStates` sebelumnya memanggil `show interface` tiap port secara parallel (masing-masing buka koneksi Telnet baru), menyebabkan OLT menolak koneksi berlebihan sehingga semua port fallback ke `isEnabled: false` (DIS). Sekarang semua command dijalankan dalam satu sesi Telnet via `executeMultipleCommands`.
+
+### Files
+- `src/app/api/olt/[id]/chassis/route.ts` — `smxaUplinkPorts`: SMXA plain → 6 port; `loadUplinkPortStates`: satu sesi Telnet untuk semua `show interface`.
+
 ### v2.29.35 — 2026-05-09
 
 ### Fixed
@@ -527,20 +536,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — Branch detail khusus ONU unregistered pakai `show pon onu uncfg`.
 - `src/app/api/olt/[id]/onus/register/route.ts` — Tambah GET metadata live dari OLT dan ubah register ZTE agar pakai actual ONU type.
 - `src/app/admin/olt/[id]/page.tsx` — Modal register pakai data live OLT untuk ONU type/TCONT/suggested ID.
-
-### v2.29.31 — 2026-05-09
-
-### Fixed
-- **ONU detail loading lebih cepat** — Endpoint detail ONU ZTE tidak lagi membuka 3 sesi Telnet terpisah. Detail dan running-config kini diambil dalam satu sesi multi-command, dan optical command hanya dipanggil bila data power/jarak belum ada di DB.
-- **Pager `--More--` ZTE merusak output detail** — Script Expect sekarang otomatis menekan spasi saat output Telnet dipaginasi, sehingga modal detail tidak lagi menampilkan output terpotong/aneh seperti `ZXAN#xit`.
-
-### Added
-- **Detail vendor ONT & service summary** — Modal detail ONU kini menampilkan vendor ONT dari prefix serial, auth mode, SN bind, admin/channel state, DBA/vport/profile, VLAN service, TCONT profile, dan service-port mapping.
-
-### Files
-- `src/lib/olt/telnet.ts` — Handle pager `--More--` dan opsi multi-command tanpa `end` paksa.
-- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — Multi-command Telnet transcript parser + summary vendor/config ONU.
-- `src/app/admin/olt/[id]/page.tsx` — Tambah kartu technical detail dan service summary di modal ONU.
 
 <!-- AUTO-CHANGELOG:END -->
 
