@@ -469,6 +469,17 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.41 — 2026-05-09
+
+### Fixed
+- **ONU yang dihapus/unregistered tidak lagi hilang setelah sync** — Akar masalah pertama: `pruneMissingOnus` menghapus baris `auth_failed` (unregistered) saat SNMP discovery tidak mengembalikannya dalam satu siklus (timing ZTE SEEN_ONU_TABLE). Sekarang baris `auth_failed` tidak pernah dipruning oleh poller; baris tersebut tetap terlihat di daftar Unregistered sampai operator mendaftar ulang ONU atau menghapus entri secara manual.
+- **Delete ONU tidak lagi memicu poll langsung** — Akar masalah kedua: setelah ONU dihapus dari OLT, ZTE membutuhkan ~10–30 detik sebelum ONU muncul kembali di `SEEN_ONU_TABLE` sebagai unregistered. Poll yang dijalankan segera setelah delete tidak menemukan ONU itu, dan pruner (2.29.40) menghapus baris `auth_failed` yang baru dibuat. Sekarang delete route hanya menandai row sebagai `auth_failed` lalu langsung return — scheduled poller yang akan memperbarui statusnya pada siklus berikutnya.
+- **Pengurangan tekanan koneksi Telnet** — Menghilangkan `pollOLTWithOptions` dari delete route mengurangi concurrent Telnet session. Sebelumnya delete + sync + chassis API bisa membuka 3+ sesi bersamaan dan menghabiskan session pool ZTE C320, menyebabkan `show card` gagal dan rack diagram menampilkan fallback SNMP tanpa kartu SMXA.
+
+### Files
+- `src/lib/olt/poller.ts` — `pruneMissingOnus` sekarang membaca kolom `status` dan melewati baris `auth_failed`.
+- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Hapus `pollOLTWithOptions` dari delete flow; hanya update DB dan return success.
+
 ### v2.29.40 — 2026-05-09
 
 ### Fixed
@@ -509,15 +520,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/app/api/olt/[id]/uplink/route.ts` — Deteksi error CLI ZTE, config uplink sintetis dari command valid, dan eksekusi action uplink dalam satu sesi Telnet.
-
-### v2.29.36 — 2026-05-09
-
-### Fixed
-- **SMXA uplink menampilkan 6 port (bukan 3)** — `smxaUplinkPorts` untuk card type `SMXA` plain kini mengembalikan 6 interface: `gei_1/{slot}/1..3` + `gei_1/{slot+1}/1..3`, sesuai hardware ZTE C320 yang portnya tersebar di dua alamat slot.
-- **Status port uplink (DIS/UP/DOWN) kini akurat** — `loadUplinkPortStates` sebelumnya memanggil `show interface` tiap port secara parallel (masing-masing buka koneksi Telnet baru), menyebabkan OLT menolak koneksi berlebihan sehingga semua port fallback ke `isEnabled: false` (DIS). Sekarang semua command dijalankan dalam satu sesi Telnet via `executeMultipleCommands`.
-
-### Files
-- `src/app/api/olt/[id]/chassis/route.ts` — `smxaUplinkPorts`: SMXA plain → 6 port; `loadUplinkPortStates`: satu sesi Telnet untuk semua `show interface`.
 
 <!-- AUTO-CHANGELOG:END -->
 
