@@ -16,6 +16,7 @@ import (
 	"github.com/s4lfanet/salfanet-radius-go/internal/api/middleware"
 	"github.com/s4lfanet/salfanet-radius-go/internal/config"
 	"github.com/s4lfanet/salfanet-radius-go/internal/db/models"
+	"github.com/s4lfanet/salfanet-radius-go/internal/notify"
 )
 
 // AuthHandler handles authentication endpoints.
@@ -160,8 +161,11 @@ func (h *AuthHandler) CustomerLogin(c fiber.Ctx) error {
 	}
 	h.db.Create(&session)
 
-	// TODO: Send OTP via wa-service
-	log.Info().Str("phone", body.Phone).Str("otp", otp).Msg("customer login OTP generated")
+	// Send OTP via wa-service (non-blocking — log error but don't fail login)
+	if err := notify.SendOTP(body.Phone, otp); err != nil {
+		log.Warn().Err(err).Str("phone", body.Phone).Msg("customer login: failed to send OTP via WA")
+	}
+	log.Info().Str("phone", body.Phone).Msg("customer login OTP generated")
 
 	return c.JSON(fiber.Map{
 		"message":   "OTP sent via WhatsApp",

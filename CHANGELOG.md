@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.1] — 2026-05-10
+### Fixed
+- **CustomerAuthMiddleware** — Replace placeholder with real DB-backed session validation (`customer_sessions` table, token lookup, expiry check)
+- **Customer OTP send** — Plug in `notify.SendOTP` in `CustomerLogin` handler (was TODO)
+### Files
+- `internal/api/middleware/auth.go` — `NewCustomerAuthMiddleware(db)` factory, real session DB lookup
+- `internal/api/handlers/auth.go` — Import `notify` package, call `SendOTP` on customer login
+- `internal/api/router.go` — Pass DB to `NewCustomerAuthMiddleware`
+- `vps-install/wa-package.json` — Valid package.json for wa-service npm install on VPS
+
+---
+
 ## [2.31.0] — 2026-05-10
 ### Added
 - **Go backend Phase 2+ — Full API migration** — Complete Go backend covering all major feature domains. Zero Next.js dependency for API layer.

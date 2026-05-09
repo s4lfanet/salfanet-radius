@@ -237,8 +237,8 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	cronGrp.Get("/history", cronH.ListHistory)
 	cronGrp.Post("/trigger/:job", cronH.TriggerJob)
 
-	// Customer Portal (JWT-less, uses customer session token)
-	customer := app.Group("/api/customer", middleware.CustomerAuthMiddleware)
+	// Customer Portal (JWT-less, uses customer session token validated against DB)
+	customer := app.Group("/api/customer", middleware.NewCustomerAuthMiddleware(db))
 	customer.Get("/profile", customerH.GetProfile)
 	customer.Get("/invoices", customerH.GetInvoices)
 	customer.Post("/invoices/:id/pay", customerH.PayInvoice)

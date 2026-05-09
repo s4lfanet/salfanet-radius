@@ -3,10 +3,14 @@ package middleware
 
 import (
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v3"
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
+
 	"github.com/s4lfanet/salfanet-radius-go/internal/config"
+	"github.com/s4lfanet/salfanet-radius-go/internal/db/models"
 )
 
 // Claims is the JWT payload structure.
@@ -56,24 +60,30 @@ func RequireAdmin(c fiber.Ctx) error {
 	return c.Next()
 }
 
-// CustomerAuthMiddleware validates customer session tokens from the Authorization header.
-// Customer sessions are stored in the customer_sessions table (UUID token).
-// This middleware does NOT use JWT — it checks the database directly.
-//
-// Note: This middleware function is a placeholder that trusts the token as customerID.
-// For production, inject *gorm.DB and look up the customer_sessions table.
-func CustomerAuthMiddleware(c fiber.Ctx) error {
-	authHeader := c.Get("Authorization")
-	if authHeader == "" {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "missing authorization header"})
+// NewCustomerAuthMiddleware returns a Fiber middleware that validates customer session
+// tokens against the customer_sessions table in the database.
+func NewCustomerAuthMiddleware(db *gorm.DB) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "missing authorization header"})
+		}
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid authorization format"})
+		}
+		tokenStr := parts[1]
+
+		var session models.CustomerSession
+		if err := db.Where("token = ? AND verified = 1", tokenStr).First(&session).Error; err != nil {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid or expired session"})
+		}
+		if session.ExpiresAt != nil && session.ExpiresAt.Before(time.Now()) {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "session expired"})
+		}
+
+		c.Locals("customerToken", tokenStr)
+		c.Locals("customerID", session.UserID)
+		return c.Next()
 	}
-	parts := strings.SplitN(authHeader, " ", 2)
-	if len(parts) != 2 || !strings.EqualFold(parts[0], "bearer") {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid authorization format"})
-	}
-	// Token is the customer session UUID — validated in handler via customerID local
-	c.Locals("customerToken", parts[1])
-	// customerID will be resolved by handler that has DB access
-	c.Locals("customerID", parts[1])
-	return c.Next()
 }
