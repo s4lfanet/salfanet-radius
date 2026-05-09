@@ -469,6 +469,20 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.59 — 2026-05-09
+
+### Fixed
+- **OLT Delete 500 — FK constraint `network_otbs.oltId`** — Root cause: `network_otbs` tabel punya kolom `oltId` dengan foreign key ke `networkOLT` tanpa `onDelete: SetNull`. Saat OLT dihapus, MySQL raise FK constraint violation → handler return 500. Fix: (1) Di DELETE handler `/api/network/olts` tambah `prisma.network_otbs.updateMany({ ... data: { oltId: null } })` sebelum `networkOLT.delete`. (2) Schema Prisma diperbarui: tambah `onDelete: SetNull` ke `network_otbs.olt` relation.
+- **TSC — `ZteServiceTemplate` & `RegisterMetadata` tidak terdefinisi** — Kedua tipe digunakan di `ONURegisterModal` component di `src/app/admin/olt/[id]/page.tsx` tapi tidak pernah dideklarasikan. Fix: tambah `type ZteServiceTemplate = 'basic' | 'zte_full' | 'huawei_full' | 'fiberhome_veip'` dan `interface RegisterMetadata { onuTypes, tcontProfiles, trafficProfiles, suggestedOnuId, detectedOnuType }` sebelum component. Efek domino: ini juga memperbaiki 4 error "Parameter 'type'/'profile' implicitly has an 'any' type" di map callbacks (karena sebelumnya `metadata` bertipe `any`).
+- **TSC — `assign/route.ts` customer.customerId type mismatch** — `serializeOnuAssignment` function mendeclare `customer.customerId: string` tapi Prisma query include menghasilkan `customerId: string | null`. Fix: ubah ke `customerId: string | null`.
+- **TSC — `detail/route.ts` type predicate state mismatch** — `.filter()` predicate mendeclare `state: string | null` tapi TypeScript meng-infer `state: string` dari `parts[3] ?? null` (tanpa `noUncheckedIndexedAccess`, `string[]` index akses menghasilkan `string`, bukan `string | undefined`). Fix: ubah predicate ke `state: string`. Ini sekaligus memperbaiki error "candidate is possibly null" di `.find()` callbacks (karena sebelumnya TS tidak bisa narrow array type akibat predicate yang broken).
+### Files
+- `src/app/api/network/olts/route.ts` — DELETE handler: unlink `network_otbs` sebelum delete OLT
+- `prisma/schema.prisma` — `network_otbs.olt`: tambah `onDelete: SetNull`
+- `src/app/admin/olt/[id]/page.tsx` — tambah `ZteServiceTemplate` type dan `RegisterMetadata` interface
+- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — `serializeOnuAssignment`: `customerId: string | null`
+- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — filter predicate: `state: string`
+
 ### v2.29.58 — 2026-05-09
 
 ### Fixed
@@ -502,17 +516,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/api/olt/[id]/uplink/route.ts` — removeVlan: pisah jadi 2 commandAttempts terpisah
 - `src/app/api/olt/[id]/onus/register/route.ts` — ONU type GET: `Promise.allSettled(5x executeCommand)` + `show gpon onu-type` + parser update
-
-### v2.29.54 — 2026-05-09
-
-### Fixed
-- **VLAN tab masih kosong (Mode/TLS/Tagged VLANs —)** — Root cause: `executeMultipleCommands(['show vlan port …', 'show running-config interface …'])` kadang gagal/hang karena `show vlan port xgei_1/3/2` tidak valid atau menyebabkan sesi Telnet terganggu. Fix: VLAN tab sekarang hanya menggunakan satu `executeCommand('show running-config interface …')` yang sudah terbukti bekerja. `parseRunningConfigInterface` mengekstrak `Mode`, `TLS`, `Tagged Vlan` (dari `switchport vlan 1,30,69,100,151 tag` — comma-separated), `Description`, `Speed`, `Duplex`, `Flow Control`, `Physical Type`.
-### Changed
-- **Chassis stats row dihapus dari Port Map** — Baris stat (UPTIME, AVG CPU, AVG MEMORY, ACTIVE CARDS, FAN STATUS) di dalam panel "ZTE C320 Rack Diagram" dihapus. AVG CPU (11%) dan AVG MEMORY (32%) adalah static placeholder yang menyesatkan; FAN STATUS dan ACTIVE CARDS belum real-time. Tampilan chassis sekarang langsung ke rack diagram.
-- **Tab Metrics dihapus** — Tab "Metrics" dihapus dari halaman OLT detail (ONU List | Port Map | Alerts | Settings | Logs). State `metrics`, `metricsHours`, `metricsLoading`, callback `fetchMetrics`, dan `useEffect`-nya juga dibersihkan.
-### Files
-- `src/app/api/olt/[id]/uplink/route.ts` — VLAN tab: ganti multi-command ke single `executeCommand('show running-config interface')`
-- `src/app/admin/olt/[id]/page.tsx` — hapus chassis stats row; hapus Metrics TabsTrigger + TabsContent + state vars
 
 <!-- AUTO-CHANGELOG:END -->
 
