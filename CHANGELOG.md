@@ -6,6 +6,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.60] — 2026-05-09
+### Fixed
+- **OLT Import Template 404** — `GET /api/network/olts/template` dan `POST /api/network/olts/import` tidak ada (route files belum dibuat). Tombol "Download Template Excel" dan upload import Excel di halaman `/admin/network/olts` selalu 404/error. Fix: buat kedua route. Template menghasilkan file `.xlsx` dengan contoh 2 baris (kolom: name, ipAddress, latitude, longitude, vendor, model, snmpCommunity, snmpPort, telnetPort, username, password, pollingInterval). Import route mem-parse Excel, validasi IP + vendor, skip duplicate IP, dan insert via Prisma.
+### Files
+- `src/app/api/network/olts/template/route.ts` — baru: GET → download OLT_Import_Template.xlsx
+- `src/app/api/network/olts/import/route.ts` — baru: POST → import OLT dari Excel
+
 ## [2.29.59] — 2026-05-09
 ### Fixed
 - **OLT Delete 500 — FK constraint `network_otbs.oltId`** — Root cause: `network_otbs` tabel punya kolom `oltId` dengan foreign key ke `networkOLT` tanpa `onDelete: SetNull`. Saat OLT dihapus, MySQL raise FK constraint violation → handler return 500. Fix: (1) Di DELETE handler `/api/network/olts` tambah `prisma.network_otbs.updateMany({ ... data: { oltId: null } })` sebelum `networkOLT.delete`. (2) Schema Prisma diperbarui: tambah `onDelete: SetNull` ke `network_otbs.olt` relation.
