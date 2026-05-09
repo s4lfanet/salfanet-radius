@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.44 — 2026-05-09
+
+### Fixed
+- **Uplink port STATUS "Admin: Unknown · Port: Unknown"** — `show interface gei_1/x/x` via Telnet kadang gagal (ZTE session limit, SMXA card OFFLINE, atau output format berbeda). Sekarang API menambahkan fallback ke SNMP IF-MIB (ifAdminStatus + ifOperStatus + ifHighSpeed + ifAlias) sehingga status port tetap terbaca meski Telnet tidak responsif.
+- **Uplink STATUS tidak lagi mengembalikan 503 jika Telnet tidak dikonfigurasi** — STATUS tab sekarang bisa jalan via SNMP saja; hanya VLAN/config/optical tab yang membutuhkan Telnet.
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — Import `snmpWalk/snmpGet/SNMPConfig`; tambah `getSnmpConfig` + `getInterfaceStatusSNMP`; STATUS tab try Telnet dulu, fallback ke SNMP IF-MIB jika gagal.
+
 ### v2.29.43 — 2026-05-09
 
 ### Fixed
@@ -511,15 +520,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/lib/olt/poller.ts` — Tambah opsi `skipOpticalInfo` untuk poll ringan pada manual sync/delete.
 - `src/app/api/olt/[id]/sync/route.ts` — Kembalikan sync ke mode awaited dengan poll ringan, bukan background fire-and-forget.
 - `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Ubah delete flow agar status ONU dipertahankan sebagai unregistered sampai sync selesai.
-
-### v2.29.39 — 2026-05-09
-
-### Fixed
-- **Sync OLT tidak lagi error 524 (Cloudflare timeout)** — `pollOLTWithOptions` sebelumnya berjalan sinkron di dalam API handler; untuk OLT dengan banyak ONU, proses bisa >100 detik sehingga Cloudflare membalas HTML error (524) bukan JSON. Sekarang sync dijalankan di background (fire-and-forget), endpoint langsung merespon `202` JSON. Frontend otomatis refresh setelah 30 detik.
-
-### Files
-- `src/app/api/olt/[id]/sync/route.ts` — Background sync, return 202 langsung tanpa tunggu poll selesai.
-- `src/app/admin/olt/[id]/page.tsx` — Handle response `background:true`, auto-refresh setelah 30 detik.
 
 <!-- AUTO-CHANGELOG:END -->
 
