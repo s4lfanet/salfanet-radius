@@ -114,6 +114,64 @@ function parseOnuConfigOutput(output: string) {
   return summary;
 }
 
+function parseUnconfiguredOnuLine(
+  output: string,
+  target: { onuId?: number; serialNumber?: string | null }
+) {
+  const lines = normalizeTelnetOutput(output)
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !/OnuIndex|OnuType|OnuSn|^-+/i.test(line));
+
+  const candidates = lines
+    .map(line => {
+      const parts = line.split(/\s+/);
+      if (parts.length < 3) return null;
+
+      const idMatch = parts[0].match(/:(\d+)/);
+      const normalizedInterface = parts[0]
+        .replace('gpon_olt-', 'gpon-olt_')
+        .replace('gpon-onu_', 'gpon-onu_');
+
+      return {
+        raw: line,
+        interface: normalizedInterface,
+        onuId: idMatch ? Number(idMatch[1]) : null,
+        onuType: parts[1] !== 'N/A' ? parts[1] : null,
+        serialNumber: parts[2] !== 'N/A' ? parts[2] : null,
+        state: parts[3] ?? null,
+      };
+    })
+    .filter((value): value is { raw: string; interface: string; onuId: number | null; onuType: string | null; serialNumber: string | null; state: string | null } => Boolean(value));
+
+  const byId = target.onuId != null
+    ? candidates.find(candidate => candidate.onuId === target.onuId)
+    : null;
+  const bySerial = target.serialNumber
+    ? candidates.find(candidate => candidate.serialNumber?.toUpperCase() === target.serialNumber?.toUpperCase())
+    : null;
+
+  const match = byId ?? bySerial ?? candidates[0] ?? null;
+  if (!match) return null;
+
+  return {
+    raw: match.raw,
+    parsed: {
+      OnuIndex: match.interface,
+      OnuType: match.onuType ?? 'N/A',
+      OnuSn: match.serialNumber ?? 'N/A',
+      State: match.state ?? 'unknown',
+    },
+    summary: {
+      vendor: inferOntVendor(match.serialNumber),
+      serialPrefix: match.serialNumber?.slice(0, 4)?.toUpperCase() ?? null,
+      detectedType: match.onuType,
+      statusSource: 'show pon onu uncfg',
+    },
+    interface: match.interface,
+  };
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string; onuId: string }> }
@@ -152,6 +210,8 @@ export async function GET(
     const iface = `gpon-onu_${onu.frame}/${onu.slot}/${onu.port + 1}:${onu.onuId}`;
     const ponIface = `gpon-olt_${onu.frame}/${onu.slot}/${onu.port + 1}`;
     const telnetConfigured = olt.telnetEnabled && olt.username && olt.password;
+    const status = String(onu.status ?? '').toLowerCase();
+    const isRegisteredOnu = status !== 'unregistered' && status !== 'auth_failed';
     const telnetConfig: TelnetConfig | null = telnetConfigured ? {
       host: olt.ipAddress,
       port: olt.telnetPort ?? 23,
@@ -184,45 +244,60 @@ export async function GET(
     };
 
     if (telnetConfig) {
-      const commands = [
-        `show gpon onu detail-info ${iface}`,
-        `show running-config interface ${iface}`,
-      ];
+      if (isRegisteredOnu) {
+        const commands = [
+          `show gpon onu detail-info ${iface}`,
+          `show running-config interface ${iface}`,
+        ];
 
-      if (onu.rxPower === null || onu.distance === null) {
-        commands.push(`show pon power onu-rx ${iface}`);
+        if (onu.rxPower === null || onu.distance === null) {
+          commands.push(`show pon power onu-rx ${iface}`);
+        }
+
+        const transcript = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
+        const transcriptOutput = transcript.output ?? transcript.error ?? '';
+
+        telnet.detail.raw = extractCommandSection(transcriptOutput, 0, commands[0]);
+        telnet.detail.parsed = parseKeyValueOutput(telnet.detail.raw);
+        telnet.config.raw = extractCommandSection(transcriptOutput, 1, commands[1]);
+        telnet.config.parsed = parseKeyValueOutput(telnet.config.raw);
+        telnet.config.summary = parseOnuConfigOutput(telnet.config.raw);
+
+        if (commands.length > 2) {
+          telnet.optical.raw = extractCommandSection(transcriptOutput, 2, commands[2]);
+          telnet.optical.parsed = parseKeyValueOutput(telnet.optical.raw);
+        }
+
+        const serialNumber = telnet.detail.parsed['Serial number'] ?? onu.serialNumber;
+        telnet.detail.summary = {
+          vendor: inferOntVendor(serialNumber),
+          serialPrefix: serialNumber?.slice(0, 4)?.toUpperCase() ?? null,
+          adminState: telnet.detail.parsed['Admin state'] ?? null,
+          authenticationMode: telnet.detail.parsed['Authentication mode'] ?? null,
+          configuredChannel: telnet.detail.parsed['Configured channel'] ?? null,
+          currentChannel: telnet.detail.parsed['Current channel'] ?? null,
+          snBind: telnet.detail.parsed['SN Bind'] ?? null,
+          vportMode: telnet.detail.parsed['Vport mode'] ?? null,
+          dbaMode: telnet.detail.parsed['DBA Mode'] ?? null,
+          omciBwProfile: telnet.detail.parsed['OMCI BW Profile'] ?? null,
+          lineProfile: telnet.detail.parsed['Line Profile'] ?? null,
+          serviceProfile: telnet.detail.parsed['Service Profile'] ?? null,
+          description: telnet.detail.parsed.Description ?? telnet.config.summary.description ?? null,
+        };
+      } else {
+        const command = `show pon onu uncfg ${ponIface}`;
+        const result = await executeMultipleCommands(telnetConfig, [command], { sendEnd: false });
+        const uncfgRaw = extractCommandSection(result.output ?? result.error ?? '', 0, command);
+        const uncfg = parseUnconfiguredOnuLine(uncfgRaw, { onuId: onu.onuId, serialNumber: onu.serialNumber });
+
+        telnet.interface = uncfg?.interface ?? ponIface;
+        telnet.detail.raw = uncfg?.raw ?? uncfgRaw;
+        telnet.detail.parsed = uncfg?.parsed ?? {};
+        telnet.detail.summary = {
+          ...(uncfg?.summary ?? {}),
+          detectedType: uncfg?.parsed?.OnuType ?? null,
+        };
       }
-
-      const transcript = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
-      const transcriptOutput = transcript.output ?? transcript.error ?? '';
-
-      telnet.detail.raw = extractCommandSection(transcriptOutput, 0, commands[0]);
-      telnet.detail.parsed = parseKeyValueOutput(telnet.detail.raw);
-      telnet.config.raw = extractCommandSection(transcriptOutput, 1, commands[1]);
-      telnet.config.parsed = parseKeyValueOutput(telnet.config.raw);
-      telnet.config.summary = parseOnuConfigOutput(telnet.config.raw);
-
-      if (commands.length > 2) {
-        telnet.optical.raw = extractCommandSection(transcriptOutput, 2, commands[2]);
-        telnet.optical.parsed = parseKeyValueOutput(telnet.optical.raw);
-      }
-
-      const serialNumber = telnet.detail.parsed['Serial number'] ?? onu.serialNumber;
-      telnet.detail.summary = {
-        vendor: inferOntVendor(serialNumber),
-        serialPrefix: serialNumber?.slice(0, 4)?.toUpperCase() ?? null,
-        adminState: telnet.detail.parsed['Admin state'] ?? null,
-        authenticationMode: telnet.detail.parsed['Authentication mode'] ?? null,
-        configuredChannel: telnet.detail.parsed['Configured channel'] ?? null,
-        currentChannel: telnet.detail.parsed['Current channel'] ?? null,
-        snBind: telnet.detail.parsed['SN Bind'] ?? null,
-        vportMode: telnet.detail.parsed['Vport mode'] ?? null,
-        dbaMode: telnet.detail.parsed['DBA Mode'] ?? null,
-        omciBwProfile: telnet.detail.parsed['OMCI BW Profile'] ?? null,
-        lineProfile: telnet.detail.parsed['Line Profile'] ?? null,
-        serviceProfile: telnet.detail.parsed['Service Profile'] ?? null,
-        description: telnet.detail.parsed.Description ?? telnet.config.summary.description ?? null,
-      };
     }
 
     return NextResponse.json({

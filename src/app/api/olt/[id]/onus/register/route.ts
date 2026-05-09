@@ -5,6 +5,181 @@ import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
 import { executeMultipleCommands } from '@/lib/olt/telnet';
 
+function parseZteOnuTypes(output: string): string[] {
+  const types = new Set<string>();
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    let match = line.match(/\bonu-type\s+([^\s]+)\s+gpon\b/i);
+    if (match) {
+      types.add(match[1]);
+      continue;
+    }
+
+    match = line.match(/^([^\s]+)\s+gpon(?:\s|$)/i);
+    if (match && !/^(show|onu-type)$/i.test(match[1])) {
+      types.add(match[1]);
+    }
+  }
+  return [...types].sort((a, b) => a.localeCompare(b));
+}
+
+function parseZteTcontProfiles(output: string): string[] {
+  const profiles = new Set<string>();
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    let match = line.match(/^Profile\s+name\s*:\s*(.+)$/i);
+    if (match) {
+      profiles.add(match[1].trim());
+      continue;
+    }
+
+    match = line.match(/\bprofile\s+tcont\s+([^\s]+)/i);
+    if (match) {
+      profiles.add(match[1].trim());
+    }
+  }
+  return [...profiles].sort((a, b) => a.localeCompare(b));
+}
+
+function parseNextZteOnuId(output: string): number | null {
+  const used = new Set<number>();
+  const patterns = [
+    /gpon[_-]onu[_-]?\d+\/\d+\/\d+:(\d+)/gi,
+    /\bonu\s+(\d+)\s+type\b/gi,
+  ];
+
+  for (const pattern of patterns) {
+    const matches = output.matchAll(pattern);
+    for (const match of matches) {
+      const id = Number(match[1]);
+      if (!Number.isNaN(id) && id >= 1 && id <= 128) used.add(id);
+    }
+  }
+
+  for (let onuId = 1; onuId <= 128; onuId++) {
+    if (!used.has(onuId)) return onuId;
+  }
+
+  return null;
+}
+
+function parseDetectedUnconfiguredType(output: string, serialNumber?: string | null, onuId?: number | null) {
+  const lines = output
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line && !/OnuIndex|OnuType|OnuSn|^-+/i.test(line));
+
+  const candidates = lines.map(line => {
+    const parts = line.split(/\s+/);
+    if (parts.length < 3) return null;
+    const idMatch = parts[0].match(/:(\d+)/);
+    return {
+      onuId: idMatch ? Number(idMatch[1]) : null,
+      onuType: parts[1] !== 'N/A' ? parts[1] : null,
+      serialNumber: parts[2] !== 'N/A' ? parts[2] : null,
+    };
+  }).filter((value): value is { onuId: number | null; onuType: string | null; serialNumber: string | null } => Boolean(value));
+
+  return candidates.find(candidate =>
+    (serialNumber && candidate.serialNumber?.toUpperCase() === serialNumber.toUpperCase()) ||
+    (onuId != null && candidate.onuId === onuId)
+  ) ?? null;
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions);
+  if (!session) return unauthorized();
+
+  try {
+    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+
+    const frame = Number(searchParams.get('frame') ?? '1');
+    const slot = Number(searchParams.get('slot'));
+    const port = Number(searchParams.get('port'));
+    const onuId = searchParams.get('onuId') ? Number(searchParams.get('onuId')) : null;
+    const serialNumber = searchParams.get('serialNumber');
+
+    if (!slot || Number.isNaN(slot) || Number.isNaN(port)) {
+      return NextResponse.json({ error: 'Missing required query params: slot, port' }, { status: 400 });
+    }
+
+    const olt = await prisma.networkOLT.findUnique({ where: { id } });
+    if (!olt) return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
+    if (!olt.telnetEnabled || !olt.username || !olt.password) {
+      return NextResponse.json({ error: 'Telnet not configured on this OLT' }, { status: 422 });
+    }
+
+    const vendor = (olt.vendor ?? 'zte').toLowerCase();
+    const ponPort = port + 1;
+    const ponInterface = vendor === 'huawei'
+      ? `${frame}/${slot}/${ponPort}`
+      : `gpon-olt_${frame}/${slot}/${ponPort}`;
+
+    const telnetConfig = {
+      host: olt.ipAddress,
+      port: olt.telnetPort ?? 23,
+      username: olt.username,
+      password: olt.password,
+      timeout: 30,
+    };
+
+    let onuTypes: string[] = [];
+    let tcontProfiles: string[] = [];
+    let suggestedOnuId: number | null = null;
+    let detectedOnuType: string | null = null;
+
+    if (vendor === 'zte') {
+      const commands = [
+        'show run | include onu-type',
+        'show gpon profile tcont',
+        `show gpon onu-info ${ponInterface}`,
+        `show pon onu uncfg ${ponInterface}`,
+      ];
+      const transcript = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
+      const output = transcript.output ?? transcript.error ?? '';
+
+      const typesOutput = output.includes('__COPILOT_CMD_0_START__')
+        ? output.split('__COPILOT_CMD_0_END__')[0]
+        : output;
+      onuTypes = parseZteOnuTypes(typesOutput);
+      tcontProfiles = parseZteTcontProfiles(output);
+
+      const onuInfoSection = output.includes('__COPILOT_CMD_2_START__')
+        ? output.split('__COPILOT_CMD_2_START__')[1]?.split('__COPILOT_CMD_2_END__')[0] ?? ''
+        : '';
+      suggestedOnuId = parseNextZteOnuId(onuInfoSection);
+
+      const uncfgSection = output.includes('__COPILOT_CMD_3_START__')
+        ? output.split('__COPILOT_CMD_3_START__')[1]?.split('__COPILOT_CMD_3_END__')[0] ?? ''
+        : '';
+      detectedOnuType = parseDetectedUnconfiguredType(uncfgSection, serialNumber, onuId)?.onuType ?? null;
+    }
+
+    return NextResponse.json({
+      success: true,
+      vendor,
+      ponInterface,
+      metadata: {
+        onuTypes,
+        tcontProfiles,
+        suggestedOnuId,
+        detectedOnuType,
+      },
+    });
+  } catch (error: any) {
+    console.error('[ONU Register GET]', error);
+    return NextResponse.json({ error: error.message ?? 'Failed to fetch register metadata' }, { status: 500 });
+  }
+}
+
 /**
  * POST /api/olt/[id]/onus/register
  * Register an unregistered ONU via Telnet. Vendor-aware command generation.
@@ -151,19 +326,19 @@ export async function POST(
       commands = [
         'configure terminal',
         `interface ${ponInterface}`,
-        `onu ${onuId} type All sn ${serialNumber}`,
-        ...(description ? [`onu ${onuId} description ${description}`] : []),
+        `onu ${onuId} type ${onuType} sn ${serialNumber}`,
         'exit',
         `interface ${onuInterface}`,
+        ...(description ? [`name ${description}`] : []),
+        ...(description ? [`description ${description}`] : []),
         `tcont 1 profile ${tcontProfile}`,
         'gemport 1 tcont 1',
         `service-port 1 vport 1 user-vlan ${vlan} vlan ${vlan}`,
         'exit',
-        'end',
       ];
     }
 
-    const result = await executeMultipleCommands(telnetConfig, commands);
+    const result = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
 
     if (!result.success) {
       return NextResponse.json(

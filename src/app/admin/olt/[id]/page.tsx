@@ -28,6 +28,7 @@ interface ONU {
   slot: number;
   port: number;
   onuId: number;
+  onuType?: string | null;
   serialNumber: string | null;
   macAddress: string | null;
   status: string;
@@ -619,35 +620,12 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
 // ONU Registration Modal — vendor-aware (ZTE / Huawei / FiberHome)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ZTE_ONU_TYPES = [
-  { value: 'All',       label: 'All (Auto-detect)' },
-  { value: 'ZTE-F609',  label: 'ZTE-F609 (Router ONU)' },
-  { value: 'ZTE-F660',  label: 'ZTE-F660 (Router ONU)' },
-  { value: 'ZTE-F673',  label: 'ZTE-F673 (Router ONU)' },
-  { value: 'ZTE-F600W', label: 'ZTE-F600W (Compact ONU)' },
-  { value: 'ZTE-F612W', label: 'ZTE-F612W (WiFi ONU)' },
-  { value: 'CZTE',      label: 'CZTE (Generic ZTE)' },
-  { value: 'ZTEF680',   label: 'ZTEF680 (Enterprise ONU)' },
-];
-
-const ZTE_TCONT_PROFILES = [
-  { value: '1G',      label: '1 Gbps' },
-  { value: '100M',    label: '100 Mbps' },
-  { value: '50M',     label: '50 Mbps' },
-  { value: '20M',     label: '20 Mbps' },
-  { value: '10M',     label: '10 Mbps' },
-  { value: 'FTTH-1G', label: 'FTTH-1G (if defined)' },
-];
-
-const FIBERHOME_ONU_TYPES = [
-  { value: 'AN5506-04-FA',  label: 'AN5506-04-FA (4-port GPON ONU)' },
-  { value: 'AN5506-04-F',   label: 'AN5506-04-F (4-port GPON ONU)' },
-  { value: 'AN5506-02-B',   label: 'AN5506-02-B (2-port ONU)' },
-  { value: 'AN5506-01-A',   label: 'AN5506-01-A (1-port ONU)' },
-  { value: 'RP2602',        label: 'RP2602 (SFU ONU)' },
-  { value: 'GH3-001',       label: 'GH3-001 (Generic FiberHome)' },
-  { value: 'default',       label: 'Default (Auto-detect)' },
-];
+interface RegisterMetadata {
+  onuTypes: string[];
+  tcontProfiles: string[];
+  suggestedOnuId: number | null;
+  detectedOnuType: string | null;
+}
 
 interface RegisterModalProps {
   oltId: string;
@@ -663,7 +641,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
   const isFiberHome  = v === 'fiberhome';
   const isZTE        = !isHuawei && !isFiberHome;
 
-  const [onuType,       setOnuType]       = useState(isZTE ? 'All' : isFiberHome ? 'default' : '');
+  const [onuType,       setOnuType]       = useState(onu.onuType ?? '');
   const [vlan,          setVlan]          = useState(100);
   const [tcontProfile,  setTcontProfile]  = useState('1G');
   const [description,   setDescription]   = useState('');
@@ -676,8 +654,51 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
 
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [metadataLoading, setMetadataLoading] = useState(true);
+  const [metadata, setMetadata] = useState<RegisterMetadata>({
+    onuTypes: [],
+    tcontProfiles: [],
+    suggestedOnuId: null,
+    detectedOnuType: onu.onuType ?? null,
+  });
 
   const ponPort = onu.port + 1;
+  const effectiveOnuType = onuType || metadata.detectedOnuType || metadata.onuTypes[0] || (isZTE ? 'All' : isFiberHome ? 'default' : '');
+
+  useEffect(() => {
+    let active = true;
+    setMetadataLoading(true);
+
+    fetch(`/api/olt/${oltId}/onus/register?frame=${onu.frame}&slot=${onu.slot}&port=${onu.port}&onuId=${onu.onuId}&serialNumber=${encodeURIComponent(onu.serialNumber ?? '')}`)
+      .then(async res => {
+        const json = await res.json();
+        if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to load register metadata');
+        if (!active) return;
+
+        const nextMetadata: RegisterMetadata = {
+          onuTypes: json.metadata?.onuTypes ?? [],
+          tcontProfiles: json.metadata?.tcontProfiles ?? [],
+          suggestedOnuId: json.metadata?.suggestedOnuId ?? null,
+          detectedOnuType: json.metadata?.detectedOnuType ?? null,
+        };
+
+        setMetadata(nextMetadata);
+        if (nextMetadata.suggestedOnuId) setOnuId(nextMetadata.suggestedOnuId);
+        if (!onuType) setOnuType(nextMetadata.detectedOnuType ?? nextMetadata.onuTypes[0] ?? '');
+        if (isZTE && nextMetadata.tcontProfiles.length > 0) setTcontProfile(nextMetadata.tcontProfiles[0]);
+      })
+      .catch((error: any) => {
+        if (!active) return;
+        setResult({ ok: false, msg: error.message });
+      })
+      .finally(() => {
+        if (active) setMetadataLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [isZTE, oltId, onu.frame, onu.onuId, onu.port, onu.serialNumber, onu.slot]);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -692,7 +713,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           port:  onu.port,
           onuId,
           serialNumber: onu.serialNumber,
-          onuType,
+          onuType: effectiveOnuType,
           vlan,
           description: description || undefined,
           // ZTE
@@ -731,20 +752,21 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
     'enable',
     'config',
     `interface gpon-olt_${onu.frame}/${onu.slot}/${ponPort}`,
-    `  onu add ${onuId} type ${onuType} sn ${onu.serialNumber ?? '???'}`,
+    `  onu add ${onuId} type ${effectiveOnuType || 'TYPE'} sn ${onu.serialNumber ?? '???'}`,
     `  onu ${onuId} profile ${profileName}`,
     `  onu ${onuId} vlan ${vlan} mode translate`,
     ...(description ? [`  onu ${onuId} description ${description}`] : []),
     '  commit',
     'exit',
   ] : [
-    // ZTE C320 V2.1 — reference: zte_command.py → register_onu_stepbystep()
+    // ZTE C320 V2.1 — reference: onu_register_wizard.py
     'configure terminal',
     `interface gpon-olt_${onu.frame}/${onu.slot}/${ponPort}`,
-    `  onu ${onuId} type All sn ${onu.serialNumber ?? '???'}`,
-    ...(description ? [`  onu ${onuId} description ${description}`] : []),
+    `  onu ${onuId} type ${effectiveOnuType || 'All'} sn ${onu.serialNumber ?? '???'}`,
     'exit',
     `interface gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    ...(description ? [`  name ${description}`] : []),
+    ...(description ? [`  description ${description}`] : []),
     `  tcont 1 profile ${tcontProfile}`,
     '  gemport 1 tcont 1',
     `  service-port 1 vport 1 user-vlan ${vlan} vlan ${vlan}`,
@@ -787,6 +809,9 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             <Input type="number" min={1} max={128} value={onuId}
               onChange={e => setOnuId(parseInt(e.target.value) || 1)}
               className="mt-1 font-mono caret-gray-900 dark:caret-white" />
+            {metadata.suggestedOnuId && (
+              <p className="text-xs text-gray-400 mt-1">Suggested from OLT: {metadata.suggestedOnuId}</p>
+            )}
           </div>
 
           {/* VLAN */}
@@ -801,25 +826,34 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           {isZTE && (<>
             <div>
               <Label className="text-xs text-gray-500">ONU Type</Label>
-              <Select value={onuType} onValueChange={setOnuType}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ZTE_ONU_TYPES.map(t => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {metadata.onuTypes.length > 0 ? (
+                <Select value={effectiveOnuType} onValueChange={setOnuType}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {metadata.onuTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={onuType} onChange={e => setOnuType(e.target.value)} placeholder="ONU type from OLT" className="mt-1 font-mono" />
+              )}
+              <p className="text-xs text-gray-400 mt-1">Loaded live from OLT running-config.</p>
             </div>
             <div>
               <Label className="text-xs text-gray-500">TCONT Profile (bandwidth)</Label>
-              <Select value={tcontProfile} onValueChange={setTcontProfile}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ZTE_TCONT_PROFILES.map(p => (
-                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {metadata.tcontProfiles.length > 0 ? (
+                <Select value={tcontProfile} onValueChange={setTcontProfile}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {metadata.tcontProfiles.map(profile => (
+                      <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={tcontProfile} onChange={e => setTcontProfile(e.target.value)} placeholder="TCONT profile" className="mt-1 font-mono" />
+              )}
             </div>
           </>)}
 
@@ -845,14 +879,18 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           {isFiberHome && (<>
             <div>
               <Label className="text-xs text-gray-500">ONU Type</Label>
-              <Select value={onuType} onValueChange={setOnuType}>
-                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {FIBERHOME_ONU_TYPES.map(t => (
-                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {metadata.onuTypes.length > 0 ? (
+                <Select value={effectiveOnuType} onValueChange={setOnuType}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {metadata.onuTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={onuType} onChange={e => setOnuType(e.target.value)} placeholder="ONU type from OLT" className="mt-1 font-mono" />
+              )}
             </div>
             <div>
               <Label className="text-xs text-gray-500">Service Profile Name</Label>
@@ -871,6 +909,11 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
               onChange={e => setDescription(e.target.value)}
               placeholder="e.g. customer-name"
               className="mt-1" />
+          </div>
+
+          <div className="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-3 text-xs text-gray-500 space-y-1">
+            <div>Detected ONU type: <span className="font-mono text-gray-900 dark:text-gray-200">{metadata.detectedOnuType ?? onu.onuType ?? '-'}</span></div>
+            <div>Metadata source: <span className="font-mono text-gray-900 dark:text-gray-200">{metadataLoading ? 'Loading from OLT...' : 'Live OLT query'}</span></div>
           </div>
 
           {/* Command preview */}
@@ -900,7 +943,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
           <Button
             onClick={handleSubmit}
-            disabled={loading || !onu.serialNumber}
+            disabled={loading || metadataLoading || !onu.serialNumber || (isZTE || isFiberHome ? !effectiveOnuType : false)}
             className="bg-green-600 hover:bg-green-700 text-white"
           >
             {loading
