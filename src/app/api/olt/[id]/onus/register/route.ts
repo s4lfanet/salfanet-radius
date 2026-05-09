@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
-import { executeMultipleCommands } from '@/lib/olt/telnet';
+import { executeCommand, executeMultipleCommands, TelnetResult } from '@/lib/olt/telnet';
 
 function parseZteOnuTypes(output: string): string[] {
   const types = new Set<string>();
@@ -11,14 +11,26 @@ function parseZteOnuTypes(output: string): string[] {
     const line = rawLine.trim();
     if (!line) continue;
 
+    // Running-config format: "onu-type ZTEG-F670L gpon ..."
     let match = line.match(/\bonu-type\s+([^\s]+)\s+gpon\b/i);
     if (match) {
       types.add(match[1]);
       continue;
     }
 
+    // Table format from "show gpon onu-type": skip header/separator lines
+    if (/^(Onu-type|ONU.Type|-+|show)/i.test(line)) continue;
+
+    // Legacy running-config: "ZTEG-F670L gpon ..."
     match = line.match(/^([^\s]+)\s+gpon(?:\s|$)/i);
-    if (match && !/^(show|onu-type)$/i.test(match[1])) {
+    if (match && !/^(show|onu-type|description|capability)$/i.test(match[1])) {
+      types.add(match[1]);
+      continue;
+    }
+
+    // Table format: first token is the ONU type name (e.g. "ZTEG-F670L  F670L GPON ONT")
+    match = line.match(/^([A-Za-z0-9_][A-Za-z0-9_.-]*)(?:\s|$)/);
+    if (match && !/^(show|onu-type|description|capability|all)$/i.test(match[1])) {
       types.add(match[1]);
     }
   }
@@ -356,27 +368,25 @@ export async function GET(
     let detectedOnuType: string | null = null;
 
     if (vendor === 'zte') {
-      const commands = [
-        'show run | include onu-type',
-        'show gpon profile tcont',
-        'show gpon profile traffic',
-        `show gpon onu-info ${ponInterface}`,
-        `show pon onu uncfg ${ponInterface}`,
-      ];
-      const transcript = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
-      const output = transcript.output ?? transcript.error ?? '';
+      // Use separate executeCommand calls in parallel — avoids one slow/hanging command
+      // from blocking all metadata (e.g. `show run | include onu-type` dumps full config on C320).
+      const getOut = (r: PromiseSettledResult<TelnetResult>) =>
+        r.status === 'fulfilled' ? (r.value.output ?? '') : '';
 
-      const typesOutput = extractCommandSection(output, 0, commands[0]);
-      const tcontOutput = extractCommandSection(output, 1, commands[1]);
-      const trafficOutput = extractCommandSection(output, 2, commands[2]);
-      const onuInfoSection = extractCommandSection(output, 3, commands[3]);
-      const uncfgSection = extractCommandSection(output, 4, commands[4]);
+      const [typesResult, tcontResult, trafficResult, onuInfoResult, uncfgResult] =
+        await Promise.allSettled([
+          executeCommand(telnetConfig, 'show gpon onu-type'),
+          executeCommand(telnetConfig, 'show gpon profile tcont'),
+          executeCommand(telnetConfig, 'show gpon profile traffic'),
+          executeCommand(telnetConfig, `show gpon onu-info ${ponInterface}`),
+          executeCommand(telnetConfig, `show pon onu uncfg ${ponInterface}`),
+        ]);
 
-      onuTypes = parseZteOnuTypes(typesOutput);
-      tcontProfiles = parseZteTcontProfiles(tcontOutput);
-      trafficProfiles = parseZteTrafficProfiles(trafficOutput);
-      suggestedOnuId = parseNextZteOnuId(onuInfoSection);
-      detectedOnuType = parseDetectedUnconfiguredType(uncfgSection, serialNumber, onuId)?.onuType ?? null;
+      onuTypes = parseZteOnuTypes(getOut(typesResult));
+      tcontProfiles = parseZteTcontProfiles(getOut(tcontResult));
+      trafficProfiles = parseZteTrafficProfiles(getOut(trafficResult));
+      suggestedOnuId = parseNextZteOnuId(getOut(onuInfoResult));
+      detectedOnuType = parseDetectedUnconfiguredType(getOut(uncfgResult), serialNumber, onuId)?.onuType ?? null;
     }
 
     return NextResponse.json({

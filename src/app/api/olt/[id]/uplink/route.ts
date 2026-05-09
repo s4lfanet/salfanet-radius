@@ -584,16 +584,24 @@ export async function POST(
       if (!vlanId) return NextResponse.json({ error: 'vlanId required' }, { status: 400 });
       const vid = parseInt(vlanId);
       if (isNaN(vid) || vid < 1 || vid > 4094) return NextResponse.json({ error: 'Invalid VLAN ID' }, { status: 400 });
-      // Send all possible removal commands in ONE session — OLT silently ignores inapplicable ones
-      commandAttempts = [[
-        'configure terminal',
-        `interface ${port}`,
-        `no switchport vlan ${vid} tag`,
-        'no switchport default vlan',
-        `no switchport vlan ${vid}`,
-        'exit',
-        'end',
-      ]];
+      // Try tagged-VLAN removal first; fall back to access/default-VLAN removal.
+      // Each attempt is a separate Telnet session so CLI errors from one don't poison the other.
+      commandAttempts = [
+        [
+          'configure terminal',
+          `interface ${port}`,
+          `no switchport vlan ${vid} tag`,
+          'exit',
+          'end',
+        ],
+        [
+          'configure terminal',
+          `interface ${port}`,
+          'no switchport default vlan',
+          'exit',
+          'end',
+        ],
+      ];
     } else if (action === 'enable') {
       commandAttempts = [[
         'configure terminal',
