@@ -469,6 +469,25 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.34 — 2026-05-09
+
+### Added
+- **Delete ONU terdaftar + sync OLT** — ONU yang sudah terdaftar sekarang bisa dihapus penuh dari ZTE OLT melalui flow clear config service lalu unregister `no onu`, lalu langsung disinkronkan kembali ke database/frontend.
+- **Manual Sync OLT di halaman detail** — Halaman detail OLT sekarang punya tombol `Sync OLT` untuk memaksa refresh data dari OLT walau monitoring terjadwal tidak aktif.
+
+### Fixed
+- **Assign customer tidak lagi 500** — Response endpoint assign ONU sekarang aman untuk JSON serialization karena field `BigInt` pada status ONU disanitasi sebelum dikirim balik.
+- **Reboot ONU menampilkan error OLT yang lebih nyata** — Route reboot ZTE sekarang mengekstrak output command `reboot` dari transcript Telnet, sehingga kegagalan tidak lagi selalu jatuh ke pesan generik.
+- **Sync OLT membersihkan ONU yang sudah hilang di perangkat** — Poller sekarang menghapus row ONU stale yang tidak lagi ditemukan saat polling, sehingga hasil register/delete lebih konsisten antara OLT dan frontend.
+
+### Files
+- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — Sanitasi response assign ONU agar tidak gagal serialisasi `BigInt`.
+- `src/app/api/olt/[id]/onus/[onuId]/reboot/route.ts` — Perbaiki parsing output reboot Telnet dan error reporting.
+- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Tambah endpoint delete/unregister ONU penuh untuk ZTE + sync setelah aksi.
+- `src/app/api/olt/[id]/sync/route.ts` — Tambah endpoint manual sync OLT per perangkat.
+- `src/lib/olt/poller.ts` — Tambah mode sync manual dan cleanup ONU stale saat polling.
+- `src/app/admin/olt/[id]/page.tsx` — Tambah tombol Sync OLT, Delete ONU, dan refresh otomatis setelah register/reboot.
+
 ### v2.29.33 — 2026-05-09
 
 ### Added
@@ -534,27 +553,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — **NEW** assign customer API.
 - `src/app/admin/network/onus/page.tsx` — **NEW** redirect route untuk link lama.
 - `src/app/admin/olt/[id]/page.tsx` — Detail/Assign modal dan filter dari query string.
-
-### v2.29.29 — 2026-05-13
-
-### Fixed
-- **Unregistered ONU serial N/A** — Parser kini gunakan global `show pon onu uncfg` (satu Telnet call) yang hasilkan format `gpon_olt-1/1/0  N/A  ZTEGDA5918AC  unknown`; fallback per-port juga handle format `gpon-onu_1/1/0:N` (prefix berbeda + ONU ID setelah titik dua)
-- **Chassis diagram card type** — Sebelumnya hardcoded GTGQ; sekarang baca `show card` via Telnet → card type aktual (GTGHG, SMXA-B, MCUD1)
-- **Uplink slot posisi** — Sebelumnya hardcoded slot 15/16 (GICF); sekarang baca slot aktual SMXA dari `show card` (slot 3 & 4 di ZTE C320 ini)
-
-### Added
-- **Uplink Port Modal** — Klik port dot SMXA di chassis diagram untuk lihat detail dengan 4 tab: Status, VLAN, Config (running-config), Optical (DDM)
-- **Uplink Configuration** — Tambah/hapus tagged VLAN dan enable/disable port lewat modal
-- **`/api/olt/[id]/uplink` endpoint** — GET (4 tab) + POST (addVlan, removeVlan, enable, disable, setDescription) dengan validasi input port dan VLAN ID
-
-### Changed
-- **Chassis API** — `/api/olt/[id]/chassis` kini: Telnet `show card` sebagai sumber utama, SNMP+DB sebagai fallback. Response tambah field `uplinkIfaces`, `hardVer`, `softVer`, `cardStatus`, `source`
-
-### Files
-- `src/lib/olt/vendors/zte.ts` — Fix ONU serial: global uncfg pre-fetch + dual-format parser
-- `src/app/api/olt/[id]/chassis/route.ts` — Rewrite: Telnet show card + SNMP fallback
-- `src/app/api/olt/[id]/uplink/route.ts` — **NEW**: Uplink port detail & config API
-- `src/app/admin/olt/[id]/page.tsx` — UplinkPortModal, ZTEChassisView gunakan data dari chassis API
 
 <!-- AUTO-CHANGELOG:END -->
 
