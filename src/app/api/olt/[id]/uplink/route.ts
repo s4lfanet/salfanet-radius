@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
-import { executeCommand, TelnetConfig } from '@/lib/olt/telnet';
+import { executeCommand, executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 
 // ── Telnet helpers ────────────────────────────────────────────────────────────
 
@@ -15,6 +15,69 @@ async function getTelnetConfig(olt: any): Promise<TelnetConfig | null> {
     username: olt.username ?? '',
     password: olt.password ?? '',
     timeout:  20,
+  };
+}
+
+function hasCliError(output: string): boolean {
+  return /%Error|Invalid input detected|Invalid parameter|Incomplete command|Ambiguous command|Failure:/i.test(output);
+}
+
+function splitMultipleCommandOutput(output: string, commandCount: number): string[] {
+  const parts: string[] = [];
+  for (let i = 0; i < commandCount; i++) {
+    const startMarker = `__COPILOT_CMD_${i}_START__`;
+    const endMarker = `__COPILOT_CMD_${i}_END__`;
+    const startIndex = output.indexOf(startMarker);
+    const endIndex = output.indexOf(endMarker);
+    if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
+      parts.push('');
+      continue;
+    }
+    parts.push(output.slice(startIndex + startMarker.length, endIndex).trim());
+  }
+  return parts;
+}
+
+function buildSyntheticConfig(port: string, status: Record<string, string>, vlan: Record<string, string>): string {
+  const lines = [`interface ${port}`];
+
+  if (status.Description) lines.push(` description ${status.Description}`);
+
+  const adminStatus = status['Admin Status'] ?? status.Admin ?? 'Unknown';
+  lines.push(/^up|enable|activate$/i.test(adminStatus) ? ' no shutdown' : ' shutdown');
+
+  const mode = vlan.Mode?.toLowerCase();
+  if (mode) lines.push(` switchport mode ${mode}`);
+
+  const pvid = vlan.Pvid ?? vlan.PVID;
+  if (pvid && pvid !== '0' && pvid !== '—') lines.push(` switchport default vlan ${pvid}`);
+
+  const taggedVlans = (vlan['Tagged Vlan'] ?? vlan['Tagged VLAN'] ?? '')
+    .split(/[\s,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  for (const taggedVlan of taggedVlans) {
+    lines.push(` switchport vlan ${taggedVlan} tag`);
+  }
+
+  if (vlan.TLS) lines.push(` tls ${vlan.TLS.toLowerCase() === 'enable' ? 'enable' : 'disable'}`);
+
+  if (status['Flow Control']) lines.push(` ! flow-control ${status['Flow Control']}`);
+  if (status['Physical Type']) lines.push(` ! physical-type ${status['Physical Type']}`);
+  if (status.Speed) lines.push(` ! speed ${status.Speed}`);
+  if (status.Duplex) lines.push(` ! duplex ${status.Duplex}`);
+
+  return lines.join('\n');
+}
+
+async function runCommandSequence(config: TelnetConfig, commands: string[]) {
+  const result = await executeMultipleCommands(config, commands, { sendEnd: false });
+  const segments = result.output ? splitMultipleCommandOutput(result.output, commands.length) : [];
+  return {
+    result,
+    segments,
+    firstError: segments.findIndex((segment) => hasCliError(segment)),
   };
 }
 
@@ -77,8 +140,20 @@ function parseVlanPort(output: string): Record<string, string> {
   for (const line of output.split('\n')) {
     const m = line.match(/^\s*([^:]+?)\s*:\s*(.+)$/);
     if (m) {
-      const key = m[1].trim();
+      const rawKey = m[1].trim();
       const val = m[2].trim();
+      const normalizedKey = rawKey.toLowerCase().replace(/\s+/g, ' ');
+      const key = normalizedKey === 'port'
+        ? 'Port'
+        : normalizedKey === 'mode'
+          ? 'Mode'
+          : normalizedKey === 'tls'
+            ? 'TLS'
+            : normalizedKey === 'pvid'
+              ? 'Pvid'
+              : normalizedKey === 'tagged vlan'
+                ? 'Tagged Vlan'
+                : rawKey;
       result[key] = val;
     }
   }
@@ -151,28 +226,39 @@ export async function GET(
 
     if (tab === 'status') {
       const result = await executeCommand(telnetConfig, `show interface ${port}`);
+      const output = result.output ?? '';
       data = {
-        raw: result.output ?? '',
-        parsed: result.success ? parseInterfaceStatus(result.output ?? '') : {},
+        raw: output,
+        parsed: result.success && !hasCliError(output) ? parseInterfaceStatus(output) : {},
       };
     } else if (tab === 'vlan') {
       const result = await executeCommand(telnetConfig, `show vlan port ${port}`);
+      const output = result.output ?? '';
       data = {
-        raw: result.output ?? '',
-        parsed: result.success ? parseVlanPort(result.output ?? '') : {},
+        raw: output,
+        parsed: result.success && !hasCliError(output) ? parseVlanPort(output) : {},
       };
     } else if (tab === 'config') {
-      const result = await executeCommand(telnetConfig, `show running-config interface ${port}`);
+      const commands = [
+        `show interface ${port}`,
+        `show vlan port ${port}`,
+      ];
+      const { result, segments } = await runCommandSequence(telnetConfig, commands);
+      const statusOutput = segments[0] ?? '';
+      const vlanOutput = segments[1] ?? '';
+      const parsedStatus = result.success && !hasCliError(statusOutput) ? parseInterfaceStatus(statusOutput) : {};
+      const parsedVlan = result.success && !hasCliError(vlanOutput) ? parseVlanPort(vlanOutput) : {};
+
       data = {
-        raw: result.output ?? '',
-        // Config is returned as raw text lines; also attempt key:val parse
-        parsed: result.success ? parseInterfaceStatus(result.output ?? '') : {},
+        raw: buildSyntheticConfig(port, parsedStatus, parsedVlan),
+        parsed: { ...parsedStatus, ...parsedVlan },
       };
     } else if (tab === 'optical') {
       const result = await executeCommand(telnetConfig, `show ddmi interface ${port}`);
+      const output = result.output ?? '';
       data = {
-        raw: result.output ?? '',
-        parsed: result.success ? parseDdmi(result.output ?? '') : {},
+        raw: output,
+        parsed: result.success && !hasCliError(output) ? parseDdmi(output) : {},
       };
     } else {
       return NextResponse.json({ error: 'Invalid tab' }, { status: 400 });
@@ -221,71 +307,76 @@ export async function POST(
       return NextResponse.json({ error: 'Telnet not configured for this OLT' }, { status: 503 });
     }
 
-    let commands: string[] = [];
+    let commandAttempts: string[][] = [];
 
     if (action === 'addVlan') {
       if (!vlanId) return NextResponse.json({ error: 'vlanId required' }, { status: 400 });
       const vid = parseInt(vlanId);
       if (isNaN(vid) || vid < 1 || vid > 4094) return NextResponse.json({ error: 'Invalid VLAN ID' }, { status: 400 });
       const vlanMode = (mode === 'access') ? `switchport default vlan ${vid}` : `switchport vlan ${vid} tag`;
-      commands = [
+      commandAttempts = [[
         'configure terminal',
         `interface ${port}`,
         vlanMode,
         'exit',
         'end',
-      ];
+      ]];
     } else if (action === 'removeVlan') {
       if (!vlanId) return NextResponse.json({ error: 'vlanId required' }, { status: 400 });
       const vid = parseInt(vlanId);
       if (isNaN(vid) || vid < 1 || vid > 4094) return NextResponse.json({ error: 'Invalid VLAN ID' }, { status: 400 });
-      commands = [
-        'configure terminal',
-        `interface ${port}`,
-        `no switchport vlan ${vid} tag`,
-        'exit',
-        'end',
+      commandAttempts = [
+        ['configure terminal', `interface ${port}`, `no switchport vlan ${vid} tag`, 'exit', 'end'],
+        ['configure terminal', `interface ${port}`, 'no switchport default vlan', 'exit', 'end'],
+        ['configure terminal', `interface ${port}`, `no switchport vlan ${vid}`, 'exit', 'end'],
       ];
     } else if (action === 'enable') {
-      commands = [
+      commandAttempts = [[
         'configure terminal',
         `interface ${port}`,
         'no shutdown',
         'exit',
         'end',
-      ];
+      ]];
     } else if (action === 'disable') {
-      commands = [
+      commandAttempts = [[
         'configure terminal',
         `interface ${port}`,
         'shutdown',
         'exit',
         'end',
-      ];
+      ]];
     } else if (action === 'setDescription') {
       if (!description) return NextResponse.json({ error: 'description required' }, { status: 400 });
       // Sanitize description: only allow printable ASCII, max 64 chars
       const safeDesc = description.replace(/[^\x20-\x7E]/g, '').slice(0, 64);
-      commands = [
+      commandAttempts = [[
         'configure terminal',
         `interface ${port}`,
         `description ${safeDesc}`,
         'exit',
         'end',
-      ];
+      ]];
     } else {
       return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
     }
 
-    // Execute each command sequentially
-    for (const cmd of commands) {
-      const result = await executeCommand(telnetConfig, cmd);
+    let lastDetail = '';
+    for (const commands of commandAttempts) {
+      const { result, segments, firstError } = await runCommandSequence(telnetConfig, commands);
       if (!result.success) {
-        return NextResponse.json({ error: `Command failed: ${cmd}`, detail: result.error }, { status: 500 });
+        lastDetail = result.error ?? 'Command sequence failed';
+        continue;
       }
+      if (firstError !== -1) {
+        lastDetail = segments[firstError] ?? 'CLI command failed';
+        continue;
+      }
+
+      return NextResponse.json({ success: true, port, action });
     }
 
-    return NextResponse.json({ success: true, port, action });
+    return NextResponse.json({ error: 'Uplink action failed', detail: lastDetail }, { status: 500 });
   } catch (error: any) {
     console.error('[OLT Uplink POST]', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
