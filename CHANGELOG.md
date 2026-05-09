@@ -6,6 +6,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.44] — 2026-05-09
+### Fixed
+- **Uplink port STATUS "Admin: Unknown · Port: Unknown"** — `show interface gei_1/x/x` via Telnet kadang gagal (ZTE session limit, SMXA card OFFLINE, atau output format berbeda). Sekarang API menambahkan fallback ke SNMP IF-MIB (ifAdminStatus + ifOperStatus + ifHighSpeed + ifAlias) sehingga status port tetap terbaca meski Telnet tidak responsif.
+- **Uplink STATUS tidak lagi mengembalikan 503 jika Telnet tidak dikonfigurasi** — STATUS tab sekarang bisa jalan via SNMP saja; hanya VLAN/config/optical tab yang membutuhkan Telnet.
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — Import `snmpWalk/snmpGet/SNMPConfig`; tambah `getSnmpConfig` + `getInterfaceStatusSNMP`; STATUS tab try Telnet dulu, fallback ke SNMP IF-MIB jika gagal.
+
 ## [2.29.43] — 2026-05-09
 ### Fixed
 - **ONU unregistered serial tidak terbaca / hanya 1 ONU muncul** — Tiga bug sekaligus di `discoverONUsSNMP` dan `discoverPonV21`:

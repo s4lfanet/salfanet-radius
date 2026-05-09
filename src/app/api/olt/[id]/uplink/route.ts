@@ -4,6 +4,7 @@ import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
 import { executeCommand, executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
+import { snmpWalk, snmpGet, SNMPConfig } from '@/lib/olt/snmp';
 
 // ── Telnet helpers ────────────────────────────────────────────────────────────
 
@@ -189,6 +190,58 @@ function parseDdmi(output: string): Record<string, string> {
   return result;
 }
 
+// ── SNMP helpers ─────────────────────────────────────────────────────────────
+
+function getSnmpConfig(olt: any): SNMPConfig | null {
+  if (!olt.snmpEnabled) return null;
+  return { host: olt.ipAddress, community: olt.snmpCommunity ?? 'public', port: olt.snmpPort ?? 161 };
+}
+
+/**
+ * Read interface admin/oper/speed status from SNMP IF-MIB.
+ * Used as fallback when Telnet `show interface` fails or returns no data.
+ */
+async function getInterfaceStatusSNMP(
+  snmpConfig: SNMPConfig,
+  ifaceName: string
+): Promise<Record<string, string>> {
+  const OID_ifDescr       = '1.3.6.1.2.1.2.2.1.2';
+  const OID_ifAdminStatus = '1.3.6.1.2.1.2.2.1.7';
+  const OID_ifOperStatus  = '1.3.6.1.2.1.2.2.1.8';
+  const OID_ifHighSpeed   = '1.3.6.1.2.1.31.1.1.1.15';
+  const OID_ifAlias       = '1.3.6.1.2.1.31.1.1.1.18';
+  const normalize = (s: string) => s.toLowerCase().replace(/[-_]/g, '_');
+
+  const descrWalk = await snmpWalk(snmpConfig, OID_ifDescr);
+  if (!descrWalk.success || !descrWalk.results) return {};
+
+  let idx: string | undefined;
+  for (const [oid, name] of Object.entries(descrWalk.results)) {
+    if (normalize(name) === normalize(ifaceName)) {
+      idx = oid.split('.').pop();
+      break;
+    }
+  }
+  if (!idx) return {};
+
+  const [adminRes, operRes, speedRes, aliasRes] = await Promise.all([
+    snmpGet(snmpConfig, `${OID_ifAdminStatus}.${idx}`),
+    snmpGet(snmpConfig, `${OID_ifOperStatus}.${idx}`),
+    snmpGet(snmpConfig, `${OID_ifHighSpeed}.${idx}`),
+    snmpGet(snmpConfig, `${OID_ifAlias}.${idx}`),
+  ]);
+
+  const adminVal = parseInt(adminRes.value ?? '2', 10);
+  const operVal  = parseInt(operRes.value  ?? '2', 10);
+  const result: Record<string, string> = {
+    'Admin Status': adminVal === 1 ? 'Up' : 'Down',
+    'Link Status':  operVal  === 1 ? 'Up' : 'Down',
+  };
+  if (speedRes.success && speedRes.value) result['Speed'] = `${speedRes.value}M`;
+  if (aliasRes.success && aliasRes.value) result['Description'] = aliasRes.value;
+  return result;
+}
+
 // ── GET — fetch uplink port data ──────────────────────────────────────────────
 
 /**
@@ -218,19 +271,36 @@ export async function GET(
     if (!olt) return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
 
     const telnetConfig = await getTelnetConfig(olt);
-    if (!telnetConfig) {
+    const snmpConfig   = getSnmpConfig(olt);
+
+    // For non-status tabs, Telnet is required
+    if (!telnetConfig && tab !== 'status') {
       return NextResponse.json({ error: 'Telnet not configured for this OLT' }, { status: 503 });
     }
 
     let data: Record<string, any> = {};
 
     if (tab === 'status') {
-      const result = await executeCommand(telnetConfig, `show interface ${port}`);
-      const output = result.output ?? '';
-      data = {
-        raw: output,
-        parsed: result.success && !hasCliError(output) ? parseInterfaceStatus(output) : {},
-      };
+      let parsed: Record<string, string> = {};
+      let rawOutput = '';
+
+      // 1) Try Telnet `show interface`
+      if (telnetConfig) {
+        const result = await executeCommand(telnetConfig, `show interface ${port}`);
+        rawOutput = result.output ?? '';
+        if (result.success && !hasCliError(rawOutput)) {
+          parsed = parseInterfaceStatus(rawOutput);
+        }
+      }
+
+      // 2) SNMP IF-MIB fallback — used when Telnet fails or returns no Admin/Link Status
+      if ((!parsed['Admin Status'] || !parsed['Link Status']) && snmpConfig) {
+        const snmpParsed = await getInterfaceStatusSNMP(snmpConfig, port).catch(() => ({}));
+        // Merge: Telnet keys take precedence, SNMP fills in missing fields
+        parsed = { ...snmpParsed, ...parsed };
+      }
+
+      data = { raw: rawOutput, parsed };
     } else if (tab === 'vlan') {
       const result = await executeCommand(telnetConfig, `show vlan port ${port}`);
       const output = result.output ?? '';
