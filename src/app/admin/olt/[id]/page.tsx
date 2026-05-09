@@ -625,16 +625,15 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-2 xl:grid-cols-6 border-b border-slate-200 dark:border-slate-800">
+          <div className="grid grid-cols-2 xl:grid-cols-5 border-b border-slate-200 dark:border-slate-800">
             {[
-              { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),                         accent: '#3b82f6', title: undefined },
-              { Icon: Thermometer, label: 'CHASSIS TEMP', value: olt.temperature ? `${olt.temperature}°C` : 'Unknown',  accent: '#22c55e', title: 'ZTE C320 V2.1: temp via SNMP tidak selalu tersedia' },
-              { Icon: Activity,    label: 'AVG CPU',      value: '11%',                                            accent: '#22c55e', title: 'Static placeholder until vendor metrics available' },
-              { Icon: Server,      label: 'AVG MEMORY',   value: '32%',                                            accent: '#a855f7', title: 'Static placeholder until vendor metrics available' },
-              { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),                         accent: '#3b82f6', title: 'Counts service and uplink cards only' },
-              { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : '—',                   accent: '#06b6d4', title: undefined },
+              { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),     accent: '#3b82f6', title: undefined },
+              { Icon: Activity,    label: 'AVG CPU',      value: '11%',                        accent: '#22c55e', title: 'Static placeholder until vendor metrics available' },
+              { Icon: Server,      label: 'AVG MEMORY',   value: '32%',                        accent: '#a855f7', title: 'Static placeholder until vendor metrics available' },
+              { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),     accent: '#3b82f6', title: 'Counts service and uplink cards only' },
+              { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : '—', accent: '#06b6d4', title: undefined },
             ].map(({ Icon, label, value, accent, title }, i) => (
-              <div key={i} className="p-3 bg-slate-50 dark:bg-slate-900" title={title} style={{ borderRight: i < 5 ? '1px solid rgba(148,163,184,0.18)' : 'none', borderLeft: `3px solid ${accent}` }}>
+              <div key={i} className="p-3 bg-slate-50 dark:bg-slate-900" title={title} style={{ borderRight: i < 4 ? '1px solid rgba(148,163,184,0.18)' : 'none', borderLeft: `3px solid ${accent}` }}>
                 <div className="flex items-center gap-1 mb-1">
                   <Icon className="h-3 w-3" style={{ color: accent }} />
                   <span className="text-[8px] font-bold tracking-widest" style={{ color: accent }}>{label}</span>
@@ -2055,7 +2054,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       </div>
 
       {/* Status Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card className={`border-l-4 ${olt.isOnline ? 'border-l-green-500' : 'border-l-red-500'}`}>
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
@@ -2069,19 +2068,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             </div>
           </CardContent>
         </Card>
-        <Card className={`border-l-4 ${olt.temperature !== null && olt.temperature > 60 ? 'border-l-red-500' : 'border-l-amber-500'}`}>
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <Thermometer className="h-3 w-3" /> Temperature
-            </div>
-            <div className={`font-bold text-xl ${olt.temperature !== null && olt.temperature > 60 ? 'text-red-600' : 'text-gray-900 dark:text-white'}`}>
-              {olt.temperature !== null ? `${olt.temperature}°C` : '—'}
-            </div>
-            <div className="text-xs text-gray-400 mt-0.5">
-              {olt.temperature !== null ? (olt.temperature > 60 ? 'Warning: High temp' : 'Normal') : 'Not available (C320)'}
-            </div>
-          </CardContent>
-        </Card>
+
         <Card className="border-l-4 border-l-blue-500">
           <CardContent className="pt-4 pb-4">
             <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">

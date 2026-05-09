@@ -137,6 +137,8 @@ function parseInterfaceStatus(output: string): Record<string, string> {
  */
 function parseVlanPort(output: string): Record<string, string> {
   const result: Record<string, string> = {};
+
+  // Try key:value format (e.g. "Mode : Hybrid" or "Tagged vlan : 100 200")
   for (const line of output.split('\n')) {
     const m = line.match(/^\s*([^:]+?)\s*:\s*(.+)$/);
     if (m) {
@@ -151,12 +153,37 @@ function parseVlanPort(output: string): Record<string, string> {
             ? 'TLS'
             : normalizedKey === 'pvid'
               ? 'Pvid'
-              : normalizedKey === 'tagged vlan'
+              : normalizedKey.startsWith('tagged vlan')
                 ? 'Tagged Vlan'
                 : rawKey;
       result[key] = val;
     }
   }
+
+  // Tabular fallback: "VLAN  Port  Mode  Pvid  TLS"
+  if (!result.Mode && !result.Pvid && !result['Tagged Vlan']) {
+    const taggedVlans: string[] = [];
+    let headerFound = false;
+    for (const line of output.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      if (/vlan\s+port\s+mode/i.test(trimmed)) { headerFound = true; continue; }
+      if (headerFound && /^[-\s]+$/.test(trimmed)) continue;
+      if (headerFound && /^\d+\s+\S+/.test(trimmed)) {
+        const parts = trimmed.split(/\s+/);
+        const vid = parts[0];
+        const mode = parts[2] ?? '';
+        const pvid = parts[3] ?? '';
+        const tls  = parts[4] ?? '';
+        taggedVlans.push(vid);
+        if (!result.Mode && mode) result.Mode = mode;
+        if (!result.Pvid && /^\d+$/.test(pvid)) result.Pvid = pvid;
+        if (!result.TLS && tls) result.TLS = tls;
+      }
+    }
+    if (taggedVlans.length > 0) result['Tagged Vlan'] = taggedVlans.join(' ');
+  }
+
   return result;
 }
 
@@ -195,6 +222,27 @@ function parseRunningConfigInterface(output: string): Record<string, string> {
     match = line.match(/^switchport vlan\s+(.+?)\s+tag$/i);
     if (match) {
       taggedVlans.push(...match[1].split(/\s*,\s*/).map((item) => item.trim()).filter(Boolean));
+      continue;
+    }
+
+    // ZTE C320 non-switchport style: "vlan 100 tag"
+    match = line.match(/^vlan\s+(.+?)\s+tag$/i);
+    if (match) {
+      taggedVlans.push(...match[1].split(/[\s,]+/).map((item) => item.trim()).filter(Boolean));
+      continue;
+    }
+
+    // ZTE C320 "pvid <id>" style
+    match = line.match(/^pvid\s+(\d+)$/i);
+    if (match) {
+      result.Pvid = match[1].trim();
+      continue;
+    }
+
+    // ZTE C320 "mode <hybrid|trunk|access>" without switchport prefix
+    match = line.match(/^mode\s+(\S+)$/i);
+    if (match && !result.Mode) {
+      result.Mode = match[1].trim();
       continue;
     }
 
@@ -445,9 +493,16 @@ export async function GET(
           if (out0 && !hasCliError(out0)) {
             const p = parseVlanPort(out0);
             if (p.Mode || p['Tagged Vlan'] || p.Pvid) { parsed = p; raw = out0; }
+            else if (!raw) raw = out0; // keep raw for debugging even if parse fails
+          } else if (out0) {
+            raw = out0; // show even error output for diagnosis
           }
           if (!parsed.Mode && !parsed['Tagged Vlan'] && !parsed.Pvid && out1 && !hasCliError(out1)) {
-            parsed = parseRunningConfigInterface(out1);
+            const p2 = parseRunningConfigInterface(out1);
+            if (p2.Mode || p2['Tagged Vlan'] || p2.Pvid || p2['Admin Status']) {
+              parsed = p2; raw = out1;
+            } else if (!raw) raw = out1;
+          } else if (!raw && out1) {
             raw = out1;
           }
         }
@@ -457,8 +512,9 @@ export async function GET(
     } else if (tab === 'config') {
       const result = await executeCommand(telnetConfig!, `show running-config interface ${port}`);
       const output = result.output ?? '';
+      // Always return raw so user can see what the OLT actually outputs (useful for diagnosing parse failures)
       data = {
-        raw: result.success && !hasCliError(output) ? output : '',
+        raw: output,
         parsed: result.success && !hasCliError(output) ? parseRunningConfigInterface(output) : {},
       };
     } else if (tab === 'optical') {
