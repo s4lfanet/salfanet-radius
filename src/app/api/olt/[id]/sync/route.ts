@@ -20,23 +20,33 @@ export async function POST(
       return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
     }
 
-    const result = await pollOLTWithOptions(id, { ignoreMonitoringDisabled: true });
-    if (!result.success) {
-      return NextResponse.json({ error: result.error ?? 'Sync failed' }, { status: 500 });
-    }
+    const triggeredBy = (session as any).user?.email ?? 'unknown';
 
+    // Log that sync has been queued
     await prisma.oltMonitoringLog.create({
       data: {
         id: crypto.randomUUID(),
         oltId: id,
         logType: 'poll',
         severity: 'info',
-        message: `Manual sync triggered by ${(session as any).user?.email ?? 'unknown'}`,
-        data: { triggeredBy: (session as any).user?.email ?? 'unknown', mode: 'sync' },
+        message: `Manual sync queued by ${triggeredBy}`,
+        data: { triggeredBy, mode: 'sync' },
       },
     }).catch(() => {});
 
-    return NextResponse.json({ success: true, message: `OLT ${olt.name} synced successfully` });
+    // Run sync in background — do NOT await so Cloudflare doesn't time out (524).
+    // pollOLTWithOptions can take >100s for large OLTs (Telnet per-ONU optical info).
+    Promise.resolve().then(() =>
+      pollOLTWithOptions(id, { ignoreMonitoringDisabled: true }).catch((err) => {
+        console.error('[OLT Sync Background]', err);
+      })
+    );
+
+    return NextResponse.json({
+      success: true,
+      background: true,
+      message: `OLT ${olt.name} sync started — data will refresh in ~30 seconds`,
+    });
   } catch (error: any) {
     console.error('[OLT Sync POST]', error);
     return NextResponse.json({ error: error.message ?? 'Failed to sync OLT' }, { status: 500 });

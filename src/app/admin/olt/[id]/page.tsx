@@ -1784,6 +1784,14 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       const data = await res.json();
       if (!res.ok) {
         if (!silent) alert(`Sync failed: ${data.error ?? 'Unknown error'}`);
+      } else if (data.background) {
+        // Sync is running in background — auto-refresh after 30s
+        if (!silent) alert(data.message ?? 'Sync started — data will refresh automatically');
+        setTimeout(async () => {
+          await fetchOLT();
+          setPolling(false);
+        }, 30_000);
+        return; // don't clear polling yet — keep button disabled during wait
       } else {
         await fetchOLT();
         if (!silent) alert(data.message ?? 'OLT sync completed');
