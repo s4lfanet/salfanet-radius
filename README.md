@@ -469,6 +469,18 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.4 — 2026-05-11
+
+### Fixed
+- **nginx routing: `/api/*` ke Next.js** — Root cause 401 errors: nginx salah routing semua `/api/*` ke Go backend (port 8080), padahal admin panel Next.js menggunakan NextAuth session cookies (bukan JWT Bearer). Semua `/api/*` sekarang diarahkan ke Next.js (port 3000). Go backend tetap berjalan di port 8080 untuk akses langsung / WebSocket OLT.
+- **Cron jobs audit** — Tidak ada cron lama dari billing-radius Next.js. Semua cron (vpn-watchdog, wg-peer-watchdog, salfanet-cleanup) adalah script VPS yang valid.
+### Architecture Note
+- Go backend (port 8080): `GET /ws/olt/:id` WebSocket + direct API access
+- Next.js (port 3000): semua `/api/*` routing via NextAuth session
+- Migrasi frontend ke Go JWT adalah pekerjaan berikutnya (bukan dalam scope ini)
+### Files
+- `nginx-frontend.conf` — hapus `location /api/` → Go; WebSocket `/ws/` tetap ke Go, semua `/` ke Next.js
+
 ### v2.31.3 — 2026-05-10
 
 ### Fixed
@@ -570,14 +582,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `cmd/server/main.go` — new
 - `internal/**/*.go` — new (24 files)
 - `Makefile`, `Dockerfile`, `docker-compose.yml`, `.air.toml` — new
-
-### v2.29.63 — 2026-05-09
-
-### Fixed
-- **Ghost ONU "N/A" unregistered dari SNMP stale seen-table** — Root cause: `ZTE_V21_SEEN_ONU_TABLE` SNMP walk mengembalikan ONU ID yang stale/pernah tersambung sebelumnya (bukan ONU fisik aktif). Code lama menambah SNMP IDs yang tidak ada di `uncfgSerials` Telnet sebagai entri kosong → tampil di UI sebagai ONU Unregistered ke-3 dengan serial "N/A". Fix: track `hadTelnetData` — jika globalUncfgMap sudah dibangun (Telnet global berhasil), jangan tambahkan ID dari SNMP seen-table. Telnet dipercaya sebagai sumber otoritatif. SNMP fallback hanya digunakan saat Telnet benar-benar tidak tersedia.
-- **Per-port Telnet extra call saat globalUncfgMap tersedia** — `else if (globalUncfgMap?.has(portKey))` salah: jika port tidak ada di map (0 ONU uncfg), jatuh ke per-port Telnet call. Fix: cek `globalUncfgMap !== null` dulu.
-### Files
-- `src/lib/olt/vendors/zte.ts` — `discoverPonV21`: tambah `hadTelnetData` flag, fix kondisi globalUncfgMap check
 
 <!-- AUTO-CHANGELOG:END -->
 
