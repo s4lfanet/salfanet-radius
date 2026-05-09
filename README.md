@@ -469,6 +469,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.42 — 2026-05-09
+
+### Fixed
+- **Sync OLT tidak lagi timeout 524** — `pollOLTWithOptions` sekarang dijalankan fire-and-forget (tanpa `await`). API langsung return 202 dengan `background: true`; frontend sudah punya path untuk ini: auto-refresh setelah 30 detik. ZTE C320 SNMP+Telnet discovery bisa memakan waktu >100 detik, sebelumnya menyebabkan Cloudflare/reverse-proxy memutus koneksi dengan status 524, lalu frontend menerima HTML error page dan melempar `SyntaxError: Unexpected token '<'`.
+
+### Files
+- `src/app/api/olt/[id]/sync/route.ts` — Ganti `await pollOLTWithOptions(...)` menjadi fire-and-forget dengan `.catch()` error logging; return 202 `{ success, background: true, message }`.
+
 ### v2.29.41 — 2026-05-09
 
 ### Fixed
@@ -510,16 +518,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/app/api/olt/[id]/chassis/route.ts` — Fix `smxaUplinkPorts` SMXA→3 port/slot, tambah `loadUplinkPortStatesSNMP` (IF-MIB), SNMP primary + Telnet fallback, fix `isOperationalCard` biarkan OFFLINE.
-
-### v2.29.37 — 2026-05-09
-
-### Fixed
-- **Command uplink ZTE dibetulkan** — Tab `Configuration` tidak lagi memakai `show running-config interface gei_1/...` yang invalid untuk uplink GE/XGE ZTE C320. Data konfigurasi sekarang dibentuk dari command yang valid: `show interface` + `show vlan port`.
-- **Aksi VLAN/enable/disable uplink kini benar-benar jalan** — Endpoint POST uplink sebelumnya menjalankan `configure terminal`, `interface`, dan `switchport/shutdown` di sesi Telnet terpisah, sehingga state konfigurasi hilang di tiap langkah. Sekarang satu aksi dijalankan dalam satu sesi Telnet via `executeMultipleCommands`.
-- **Parser VLAN uplink lebih konsisten** — Variasi key ZTE seperti `Tagged VLAN` dan `Tagged Vlan` sekarang dinormalisasi supaya mode, PVID, TLS, dan daftar tagged VLAN tampil stabil di UI.
-
-### Files
-- `src/app/api/olt/[id]/uplink/route.ts` — Deteksi error CLI ZTE, config uplink sintetis dari command valid, dan eksekusi action uplink dalam satu sesi Telnet.
 
 <!-- AUTO-CHANGELOG:END -->
 
