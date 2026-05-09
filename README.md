@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.51 — 2026-05-09
+
+### Fixed
+- **Port Map masih lambat (chassis API)** — Root cause: dua sesi Telnet terpisah (`show card` + `show interface port-status`) masing-masing ~5 detik, ditambah SNMP fallback sequential. Sekarang: satu sesi Telnet tunggal via `executeMultipleCommands` menjalankan kedua command sekaligus, dan seluruh SNMP walk (PON table + 5 IF-MIB walk) dijalankan **paralel** bersama Telnet. Total waktu: dari ~10-15 detik → ~5 detik (50%+ lebih cepat).
+- **SNMP uplink fallback N×4 GET calls** — Sebelumnya, per-interface SNMP fallback melakukan 4 `snmpGet` shell spawn terpisah per interface. Diganti dengan 5 `snmpWalk` paralel (ifDescr, ifAdminStatus, ifOperStatus, ifHighSpeed, ifAlias) + O(1) lookup dari Map.
+- **Triple retry Telnet** — Pola lama: Telnet1 → (gagal) SNMP → (gagal) Telnet2 lagi. Sekarang: satu Telnet multi-cmd + SNMP paralel, tidak ada retry berlebihan.
+
+### Files
+- `src/app/api/olt/[id]/chassis/route.ts` — `executeMultipleCommands` single session; `fetchSNMPChassisData` bulk walks paralel; `buildUplinkStatesFromSNMP` O(1) lookup; hapus `loadUplinkPortStatesSNMP` + `loadUplinkPortStates` lama.
+
 ### v2.29.50 — 2026-05-09
 
 ### Changed
@@ -514,16 +524,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/lib/olt/vendors/zte.ts` — parser ONU unconfigured ZTE sekarang memakai CLI entries aktual dan virtual ID stabil berbasis serial.
 - `src/app/api/olt/[id]/uplink/route.ts` — tambah parser `show running-config interface` dan `show interface optical-module-info`; VLAN/optical fallback diperbaiki.
 - `src/app/admin/olt/[id]/page.tsx` — modal uplink dan rack panel dibuat lebih responsif serta theme-aware.
-
-### v2.29.46 — 2026-05-09
-
-### Fixed
-- **GE uplink port tidak muncul / selalu 400 Invalid port name** — Validasi regex sebelumnya hanya menerima format 3-level (`gei_1/3/1`) padahal ZTE C320 SMXA card gunakan format 2-level untuk GE port: `gei_1/3`. Regex diperbarui ke `(?:gei|xgei)_\d+\/\d+(?:\/\d+)?` yang menerima keduanya. Fix pada GET dan POST endpoint.
-- **Chassis diagram tampilkan 3 port GE palsu per SMXA slot** — SMXA (plain) hanya punya 1 GE port per slot, bukan 3. Port names dikoreksi: `gei_1/{slot}` (2-level, satu GE) + `xgei_1/{slot}/1`, `xgei_1/{slot}/2` (dua XGE). Sesuai output `show interface ?` pada ZTE C320.
-
-### Files
-- `src/app/api/olt/[id]/uplink/route.ts` — Regex validasi port name diperbarui di GET dan POST handler.
-- `src/app/api/olt/[id]/chassis/route.ts` — `smxaUplinkPorts`: SMXA plain → `gei_1/{slot}` + `xgei_1/{slot}/1-2`; fallback default juga diperbarui.
 
 <!-- AUTO-CHANGELOG:END -->
 
