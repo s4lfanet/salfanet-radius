@@ -469,6 +469,13 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.61 — 2026-05-09
+
+### Fixed
+- **ONU Type dropdown salah isi (Telnet artifacts)** — Root cause dua masalah: (1) Command yang dipakai `show gpon onu-type` tidak valid di ZTE C320 V2.1 — command yang benar adalah `show onu-type`. (2) Parser `parseZteOnuTypes` punya catch-all regex `^([A-Za-z0-9_][A-Za-z0-9_.-]*)` yang memungut kata apa saja dari awal baris, termasuk artefak sesi Telnet seperti `Connected`, `Trying`, `Welcome`, `Last`, `spawn`, `ince`, `ZXAN#show`. Fix: (1) Ubah command ke `show onu-type`. (2) Tambah parser untuk format `ONU type name:  <name>` (output `show onu-type`). (3) Hapus catch-all regex, ganti dengan filter eksplisit untuk header/attribute lines.
+### Files
+- `src/app/api/olt/[id]/onus/register/route.ts` — command: `show gpon onu-type` → `show onu-type`; parser: tambah `ONU type name:` pattern, hapus catch-all
+
 ### v2.29.60 — 2026-05-09
 
 ### Fixed
@@ -505,15 +512,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **SSH path dihapus dari optical info fallback** — ZTE C320 V2.1 hanya mendukung Telnet CLI; SSH tidak dikonfigurasi. Path `sshConfig` untuk `getOnuOpticalInfoSSH` dihapus dari `upsertONU` agar tidak terjadi double-attempt.
 ### Files
 - `src/lib/olt/poller.ts` — `upsertONU`: skip Telnet/SSH optical info if `onu.rxPower !== null` (SNMP-sourced)
-
-### v2.29.56 — 2026-05-09
-
-### Fixed
-- **Port Map sync lambat setelah hapus VLAN gagal** — Root cause: uplink POST menggunakan `timeout: 20` untuk sesi Telnet konfigurasi. Dengan 2 attempt (`removeVlan`) yang keduanya gagal, total waktu zombie sessions bisa mencapai 2 × 35 detik = 70 detik. ZTE C320 membatasi concurrent Telnet sessions; chassis sync yang menyusul tidak bisa langsung konek. Fix:
-  1. Timeout Telnet untuk POST action dikurangi ke **8 detik** (perintah config di LAN lokal selesai <3s; 8s cukup buffer).
-  2. Loop `commandAttempts` sekarang **break** jika terjadi connection-level failure (`!result.success`) — tidak ada gunanya mencoba command berbeda jika OLT tidak bisa dikoneksi. Retry (continue) hanya terjadi pada **CLI error** (command ditolak OLT, bukan koneksi gagal).
-### Files
-- `src/app/api/olt/[id]/uplink/route.ts` — POST action: `timeout: 8`, break on connection failure
 
 <!-- AUTO-CHANGELOG:END -->
 
