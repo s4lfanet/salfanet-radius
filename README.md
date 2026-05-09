@@ -469,6 +469,18 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.35 — 2026-05-09
+
+### Fixed
+- **Diagram ZTE C320 dibuat lebih actual** — Rack view di halaman detail OLT sekarang fokus ke slot service/uplink real, mempertahankan nomor slot actual, menampilkan gap slot kosong, dan tidak lagi mencampur layout MCU ke area card operasional.
+- **Status uplink SMXA enable/down dibedakan dengan benar** — Parsing `show interface` kini menangani format real ZTE seperti `is activate, line protocol is up/down`, jadi port admin-up tapi link-down tidak lagi terlihat sebagai disable.
+- **Tooltip dan warna port PON lebih informatif** — Port PON sekarang membedakan online, LOS, dying gasp, dan ONU unconfigured agar kondisi slot lebih mudah dibaca dari diagram.
+
+### Files
+- `src/app/api/olt/[id]/chassis/route.ts` — Tambah parsing state uplink actual per interface dan hanya tandai card operasional yang benar-benar aktif.
+- `src/app/api/olt/[id]/uplink/route.ts` — Perbaiki parser status interface agar membaca format kalimat output ZTE C320.
+- `src/app/admin/olt/[id]/page.tsx` — Redesign diagram rack ZTE C320, refresh chassis, dan tampilkan state uplink/service port yang lebih actual.
+
 ### v2.29.34 — 2026-05-09
 
 ### Added
@@ -529,30 +541,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/lib/olt/telnet.ts` — Handle pager `--More--` dan opsi multi-command tanpa `end` paksa.
 - `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — Multi-command Telnet transcript parser + summary vendor/config ONU.
 - `src/app/admin/olt/[id]/page.tsx` — Tambah kartu technical detail dan service summary di modal ONU.
-
-### v2.29.30 — 2026-05-09
-
-### Fixed
-- **ZTE Telnet login matcher** — Expect script tidak lagi salah menangkap teks `Last login` sebagai prompt `login:`, sehingga command Telnet (`show card`, detail ONU, reboot ONU) benar-benar jalan setelah autentikasi.
-- **SMXA card tidak muncul** — Parser `show card` kini mendukung format real ZTE C320 V2.1: `Rack Shelf Slot CfgType RealType Port HardVer SoftVer Status`, termasuk card `SMXA` dan `GTGHG`.
-- **ONU serial number registered/unregistered** — Mapping port Telnet ZTE C320 diperbaiki: CLI memakai PON 1-based (`gpon-olt_1/1/1`), sementara DB/UI tetap 0-based. Registered ONU yang SNMP-nya kosong kini fallback ke `show gpon onu detail-info` untuk mengambil `Serial number`.
-- **Reboot ONU failed** — Reboot ZTE kini pakai workflow Telnet `configure terminal → pon-onu-mng gpon-onu_... → reboot`, bukan SSH-only command lama.
-- **404 `/admin/network/onus`** — Route redirect ditambahkan agar link statistik ONU dari OLT Management tidak lagi 404.
-
-### Added
-- **ONU Detail Modal** — Tombol Detail pada ONU List menampilkan detail Telnet (`show gpon onu detail-info`, optical power, running-config) dan data customer/ODP terkait.
-- **Assign Customer ONU** — Tombol Assign pada ONU registered untuk menghubungkan ONU ke PPPoE customer (`olt_onu_status.customerId`).
-
-### Files
-- `src/lib/olt/telnet.ts` — Fix matcher login dan multi-command Telnet.
-- `src/lib/olt/vendors/zte.ts` — Fix mapping CLI port, serial fallback dari detail-info, optical command parser.
-- `src/lib/olt/poller.ts` — Simpan serial dari Telnet optical/detail fallback.
-- `src/app/api/olt/[id]/chassis/route.ts` — Parser `show card` format Rack/Shelf/Slot.
-- `src/app/api/olt/[id]/onus/[onuId]/reboot/route.ts` — Reboot ZTE via Telnet `pon-onu-mng`.
-- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — **NEW** detail ONU API.
-- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — **NEW** assign customer API.
-- `src/app/admin/network/onus/page.tsx` — **NEW** redirect route untuk link lama.
-- `src/app/admin/olt/[id]/page.tsx` — Detail/Assign modal dan filter dari query string.
 
 <!-- AUTO-CHANGELOG:END -->
 
