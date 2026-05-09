@@ -469,6 +469,26 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.30.0 — 2026-05-09
+
+### Added
+- **Go backend Phase 1 — OLT Monitoring** — Full Go backend scaffolded alongside the existing Next.js frontend. Compiles to a single binary (`bin/server.exe`), Fiber v3 HTTP framework, GORM (MySQL, shares existing DB), zerolog structured logging.
+  - `cmd/server/main.go` — entrypoint with graceful SIGTERM/SIGINT shutdown
+  - `internal/config/config.go` — godotenv-based config (all env vars from `.env`)
+  - `internal/db/db.go` — GORM connection pool (25 max open, 10 idle, 5min lifetime)
+  - `internal/db/models/` — GORM models mirroring Prisma schema (OLT, ONU, alerts, metrics, customers, invoices, …)
+  - `internal/olt/snmp/` — gosnmp walk/get thin wrapper (thread-safe, per-call session)
+  - `internal/olt/telnet/` — persistent Telnet pool (max 3 sessions/OLT, 30s keepalive)
+  - `internal/olt/vendors/zte/` — ZTE C320 V2.1: concurrent SNMP walk + Telnet authoritative ONU discovery, register/deregister, ONU types, T-CONT profiles
+  - `internal/olt/poller/` — per-OLT polling goroutines, DB upsert, alert detection, WebSocket broadcast
+  - `internal/ws/hub.go` — WebSocket broadcast hub (fasthttp upgrader, OLT-scoped subscriptions)
+  - `internal/api/` — Fiber v3 router, JWT Bearer middleware, auth/admin/OLT handlers
+  - `Makefile`, `Dockerfile`, `docker-compose.yml`, `.air.toml` — build/deploy tooling
+### Files
+- `cmd/server/main.go` — new
+- `internal/**/*.go` — new (24 files)
+- `Makefile`, `Dockerfile`, `docker-compose.yml`, `.air.toml` — new
+
 ### v2.29.63 — 2026-05-09
 
 ### Fixed
@@ -498,20 +518,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/api/network/olts/template/route.ts` — baru: GET → download OLT_Import_Template.xlsx
 - `src/app/api/network/olts/import/route.ts` — baru: POST → import OLT dari Excel
-
-### v2.29.59 — 2026-05-09
-
-### Fixed
-- **OLT Delete 500 — FK constraint `network_otbs.oltId`** — Root cause: `network_otbs` tabel punya kolom `oltId` dengan foreign key ke `networkOLT` tanpa `onDelete: SetNull`. Saat OLT dihapus, MySQL raise FK constraint violation → handler return 500. Fix: (1) Di DELETE handler `/api/network/olts` tambah `prisma.network_otbs.updateMany({ ... data: { oltId: null } })` sebelum `networkOLT.delete`. (2) Schema Prisma diperbarui: tambah `onDelete: SetNull` ke `network_otbs.olt` relation.
-- **TSC — `ZteServiceTemplate` & `RegisterMetadata` tidak terdefinisi** — Kedua tipe digunakan di `ONURegisterModal` component di `src/app/admin/olt/[id]/page.tsx` tapi tidak pernah dideklarasikan. Fix: tambah `type ZteServiceTemplate = 'basic' | 'zte_full' | 'huawei_full' | 'fiberhome_veip'` dan `interface RegisterMetadata { onuTypes, tcontProfiles, trafficProfiles, suggestedOnuId, detectedOnuType }` sebelum component. Efek domino: ini juga memperbaiki 4 error "Parameter 'type'/'profile' implicitly has an 'any' type" di map callbacks (karena sebelumnya `metadata` bertipe `any`).
-- **TSC — `assign/route.ts` customer.customerId type mismatch** — `serializeOnuAssignment` function mendeclare `customer.customerId: string` tapi Prisma query include menghasilkan `customerId: string | null`. Fix: ubah ke `customerId: string | null`.
-- **TSC — `detail/route.ts` type predicate state mismatch** — `.filter()` predicate mendeclare `state: string | null` tapi TypeScript meng-infer `state: string` dari `parts[3] ?? null` (tanpa `noUncheckedIndexedAccess`, `string[]` index akses menghasilkan `string`, bukan `string | undefined`). Fix: ubah predicate ke `state: string`. Ini sekaligus memperbaiki error "candidate is possibly null" di `.find()` callbacks (karena sebelumnya TS tidak bisa narrow array type akibat predicate yang broken).
-### Files
-- `src/app/api/network/olts/route.ts` — DELETE handler: unlink `network_otbs` sebelum delete OLT
-- `prisma/schema.prisma` — `network_otbs.olt`: tambah `onDelete: SetNull`
-- `src/app/admin/olt/[id]/page.tsx` — tambah `ZteServiceTemplate` type dan `RegisterMetadata` interface
-- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — `serializeOnuAssignment`: `customerId: string | null`
-- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — filter predicate: `state: string`
 
 <!-- AUTO-CHANGELOG:END -->
 
