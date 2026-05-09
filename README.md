@@ -469,6 +469,19 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.33 — 2026-05-09
+
+### Added
+- **Template config di modal register ONU** — Register ONU ZTE sekarang punya pilihan flow `Basic register`, `ZTE Full`, `Huawei Full`, dan `Fiberhome VEIP` langsung di modal, mengikuti struktur wizard referensi `oltc320_v2.1.1_linux`.
+- **Traffic profile live dari OLT** — Modal register kini memuat daftar `traffic profile` dari OLT lewat `show gpon profile traffic`, jadi template full tidak lagi bergantung pada input dummy.
+
+### Changed
+- **Flow register ZTE selaras ke wizard CLI** — Endpoint register sekarang bisa menerapkan rangkaian command template untuk dual VLAN, VEIP, service-port, WAN DHCP, TR-069, dan ACS sesuai template yang dipilih saat register ONU.
+
+### Files
+- `src/app/api/olt/[id]/onus/register/route.ts` — Tambah metadata `trafficProfiles` dan eksekusi template `zte_full`, `huawei_full`, `fiberhome_veip`.
+- `src/app/admin/olt/[id]/page.tsx` — Tambah pilihan template config, field template-specific, dan preview command sesuai flow register.
+
 ### v2.29.32 — 2026-05-09
 
 ### Fixed
@@ -542,29 +555,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/chassis/route.ts` — Rewrite: Telnet show card + SNMP fallback
 - `src/app/api/olt/[id]/uplink/route.ts` — **NEW**: Uplink port detail & config API
 - `src/app/admin/olt/[id]/page.tsx` — UplinkPortModal, ZTEChassisView gunakan data dari chassis API
-
-### v2.29.28 — 2026-05-09
-
-### Fixed
-- **Unregistered ONU serial number** — Serial number ONU yang belum terdaftar (status `auth_failed`) kini tampil di UI. Fix 2 bug di `zte.ts`:
-  1. Port 0-based vs 1-based: command Telnet `show pon onu uncfg gpon-olt_1/{board}/{pon-1}` — sebelumnya salah kirim `pon` (SNMP 1-based), sekarang benar kirim `pon-1` (CLI 0-based)
-  2. Regex parser salah format: sebelumnya cari `gpon-onu_` (format ONU terdaftar), kini parse format aktual ZTE C320 — `gpon_olt-1/1/0  N/A  ZTEGDA5918AC  unknown` (field[2] = serial)
-- **CPU/Memory/Temp display** — Panel ZTE Chassis kini menampilkan `—` (dash) alih-alih `N/A` untuk metrik yang tidak didukung hardware ZTE C320 V2.1, dengan tooltip penjelasan. Status card Temperature juga menampilkan `—` dan sub-label "Not available (C320)"
-
-### Changed
-- **OLT Detail page redesign** — Halaman `/admin/olt/[id]` diperbarui:
-  - Status cards (4 kartu): tambah `border-l-4` dengan warna aksen per tipe (hijau/merah untuk status, amber untuk temp, biru untuk uptime, teal untuk ONU). Setiap kartu kini punya sub-label informatif (waktu polling terakhir, vendor, model, jumlah offline)
-  - Header: tampilkan vendor badge, model, firmware version di subtitle IP address
-  - Tabel ONU: status kini ditampilkan sebagai **pill badge** berwarna (hijau/kuning/merah/abu). Row hover fix dark mode (`dark:hover:bg-gray-800/50`). Header tabel punya `bg-gray-50 dark:bg-gray-900/60`. Padding semua cell konsisten (`py-2.5`). Kolom Actions rapi dengan `rounded-md` dan `transition-colors`
-  - Cancel button di confirm-reboot kini support dark mode: `dark:bg-gray-700 dark:text-gray-300`
-  - Tabel dibungkus `rounded-lg border border-gray-200 dark:border-gray-800`
-- **Command preview block** — Terminal preview di modal Register ONU kini: background `bg-gray-950 dark:bg-black`, border `border-gray-800`, label uppercase tracking, fake blinking block cursor di akhir
-- **Input caret color** — Field ONU ID dan VLAN di modal Register ONU kini explicit `caret-gray-900 dark:caret-white` agar cursor terlihat di semua tema
-
-### Files
-- `src/lib/olt/vendors/zte.ts` — Fix unregistered ONU serial: port 0-based + regex parser format ZTE C320
-- `src/app/admin/olt/[id]/page.tsx` — Redesign status cards, header, ONU table, command preview, cursor color
-- `package.json` — Bump ke 2.29.28
 
 <!-- AUTO-CHANGELOG:END -->
 
