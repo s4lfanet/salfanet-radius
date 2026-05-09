@@ -331,9 +331,6 @@ async function discoverPonV21(
   const registeredIds = new Set<number>();
 
   if (regWalk.success && regWalk.results) {
-    // Collect ONUs needing Telnet serial lookup (SNMP hex-parse failed)
-    const needsTelnetSerial: Array<{ onuId: number; onuSlot: number }> = [];
-
     for (const [oid, regVal] of Object.entries(regWalk.results)) {
       const parts = oid.split('.');
       const onuId   = parseInt(parts[parts.length - 1], 10);
@@ -361,9 +358,12 @@ async function discoverPonV21(
       const distRaw = parseInt(distMap.get(slotIdKey) ?? '0', 10);
       if (!isNaN(distRaw) && distRaw > 0 && distRaw < 100000) distance = distRaw;
 
-      // Serial (hex bytes → ASCII)
-      let serialNumber = normalizeSerialNumber(hexBytesToSerial(serialMap.get(idKey) ?? ''));
-      if (!serialNumber) needsTelnetSerial.push({ onuId, onuSlot });
+      // Serial (hex bytes → ASCII). If SNMP hex can't be parsed, leave null.
+      // Do NOT fallback to per-ONU Telnet `show gpon onu detail-info` during polling —
+      // that would spawn N concurrent Telnet sessions (one per ONU with bad serial),
+      // which saturates the OLT's concurrent session limit and is the root cause of
+      // slow polling. Serial can be null; DB still tracks ONU status via onuId.
+      const serialNumber = normalizeSerialNumber(hexBytesToSerial(serialMap.get(idKey) ?? ''));
 
       onus.push({
         frame: 1, slot: board,
@@ -377,29 +377,6 @@ async function discoverPonV21(
         rxPower,
         distance,
       });
-    }
-
-    // Batch Telnet lookups for ONUs missing serial numbers (usually 0 or very few)
-    if (needsTelnetSerial.length > 0 && telnetConfig) {
-      const telnetSerials = await Promise.all(
-        needsTelnetSerial.map(async ({ onuId }) => {
-          try {
-            const detail = await executeCommand(
-              telnetConfig,
-              `show gpon onu detail-info gpon-onu_1/${board}/${pon}:${onuId}`,
-            );
-            if (detail.success && detail.output) return { onuId, serial: parseSerialFromDetail(detail.output) };
-          } catch { /* keep null */ }
-          return { onuId, serial: '' };
-        })
-      );
-      // Patch onus with Telnet-resolved serials
-      const serialByOnuId = new Map(telnetSerials.map(r => [r.onuId, r.serial]));
-      for (const onu of onus) {
-        if (!onu.serialNumber && serialByOnuId.has(onu.onuId)) {
-          onu.serialNumber = serialByOnuId.get(onu.onuId) || null;
-        }
-      }
     }
   }
 
