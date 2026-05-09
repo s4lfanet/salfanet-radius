@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.50 — 2026-05-09
+
+### Changed
+- **OLT Monitoring — redesign terbaik** — Monitoring page dirancang ulang dengan: ONU progress bar per OLT dengan persentase warna adaptif (hijau/kuning/merah), countdown auto-refresh 30d dengan indikator visual, tombol "Poll Semua" parallel, sort by status/name/alerts/offline-ONU, timestamp relative ("2m lalu"), animasi ping pada OLT online, badge alert mengarah ke halaman alerts, suhu color-coded (hijau < 50°C, kuning 50–65°C, merah ≥ 65°C), styling card berlapis dengan border aksen sesuai kondisi.
+- **OLT Alerts — redesign terbaik** — Alerts page dirancang ulang dengan: border-left accent berwarna per severity (merah/amber/biru/abu), tombol "Selesaikan Semua" batch resolve, relative timestamp dengan tooltip tanggal penuh, back-button ke monitoring, stat card adaptif warna jika ada critical/warning, link OLT name menuju halaman detail OLT, resolved alerts tampil transparan (opacity-60).
+
+### Files
+- `src/app/admin/olt/monitoring/page.tsx` — Redesign monitoring: progress bar, countdown, poll-all, sort, relative time
+- `src/app/admin/olt/alerts/page.tsx` — Redesign alerts: border accent, resolve-all, relative time, back nav
+
 ### v2.29.49 — 2026-05-09
 
 ### Fixed
@@ -514,15 +524,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/api/olt/[id]/uplink/route.ts` — Regex validasi port name diperbarui di GET dan POST handler.
 - `src/app/api/olt/[id]/chassis/route.ts` — `smxaUplinkPorts`: SMXA plain → `gei_1/{slot}` + `xgei_1/{slot}/1-2`; fallback default juga diperbarui.
-
-### v2.29.45 — 2026-05-09
-
-### Fixed
-- **Uplink STATUS tab data tidak tampil** — Command sebelumnya `show interface gei_1/x/x` menghasilkan output key-value yang tidak konsisten di ZTE C320. Diganti ke `show interface port-status gei_1/x/x` yang menghasilkan output tabular dengan kolom eksplisit: hybrid Status, Native VLAN, Negotiation, Speed (Mbps), Duplex, Flow-Ctrl, Admin Status, Link. Fallback ke `show interface` (key-value) + SNMP IF-MIB tetap dipertahankan jika tabular gagal.
-- **Uplink CONFIG tab menampilkan config sintetis** — Sebelumnya config dibuat dari hasil parse `show interface` + `show vlan port` secara manual. Sekarang menggunakan `show running-config interface gei_1/x/x` yang menghasilkan config asli dari OLT (termasuk switchport mode, VLAN list, phy-attribute, dll).
-
-### Files
-- `src/app/api/olt/[id]/uplink/route.ts` — Tambah `parseInterfacePortStatus` (parser tabular); STATUS tab pakai `show interface port-status` dulu lalu fallback; CONFIG tab pakai `show running-config interface` langsung.
 
 <!-- AUTO-CHANGELOG:END -->
 
