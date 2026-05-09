@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.56 — 2026-05-09
+
+### Fixed
+- **Port Map sync lambat setelah hapus VLAN gagal** — Root cause: uplink POST menggunakan `timeout: 20` untuk sesi Telnet konfigurasi. Dengan 2 attempt (`removeVlan`) yang keduanya gagal, total waktu zombie sessions bisa mencapai 2 × 35 detik = 70 detik. ZTE C320 membatasi concurrent Telnet sessions; chassis sync yang menyusul tidak bisa langsung konek. Fix:
+  1. Timeout Telnet untuk POST action dikurangi ke **8 detik** (perintah config di LAN lokal selesai <3s; 8s cukup buffer).
+  2. Loop `commandAttempts` sekarang **break** jika terjadi connection-level failure (`!result.success`) — tidak ada gunanya mencoba command berbeda jika OLT tidak bisa dikoneksi. Retry (continue) hanya terjadi pada **CLI error** (command ditolak OLT, bukan koneksi gagal).
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — POST action: `timeout: 8`, break on connection failure
+
 ### v2.29.55 — 2026-05-09
 
 ### Fixed
@@ -517,16 +526,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/uplink/route.ts` — `executeMultipleCommands` per tab; 5 parallel walks SNMP; `removeVlan` single session; `setPvid`/`removePvid` actions baru
 - `src/lib/olt/vendors/zte.ts` — `discoverPonV21` rewrite: 7 parallel bulk walks → O(1) Map lookup; batch Telnet serial fallback
 - `src/app/admin/olt/[id]/page.tsx` — PVID remove button; "Set as PVID" dropdown; improved VLAN remove UX
-
-### v2.29.51 — 2026-05-09
-
-### Fixed
-- **Port Map masih lambat (chassis API)** — Root cause: dua sesi Telnet terpisah (`show card` + `show interface port-status`) masing-masing ~5 detik, ditambah SNMP fallback sequential. Sekarang: satu sesi Telnet tunggal via `executeMultipleCommands` menjalankan kedua command sekaligus, dan seluruh SNMP walk (PON table + 5 IF-MIB walk) dijalankan **paralel** bersama Telnet. Total waktu: dari ~10-15 detik → ~5 detik (50%+ lebih cepat).
-- **SNMP uplink fallback N×4 GET calls** — Sebelumnya, per-interface SNMP fallback melakukan 4 `snmpGet` shell spawn terpisah per interface. Diganti dengan 5 `snmpWalk` paralel (ifDescr, ifAdminStatus, ifOperStatus, ifHighSpeed, ifAlias) + O(1) lookup dari Map.
-- **Triple retry Telnet** — Pola lama: Telnet1 → (gagal) SNMP → (gagal) Telnet2 lagi. Sekarang: satu Telnet multi-cmd + SNMP paralel, tidak ada retry berlebihan.
-
-### Files
-- `src/app/api/olt/[id]/chassis/route.ts` — `executeMultipleCommands` single session; `fetchSNMPChassisData` bulk walks paralel; `buildUplinkStatesFromSNMP` O(1) lookup; hapus `loadUplinkPortStatesSNMP` + `loadUplinkPortStates` lama.
 
 <!-- AUTO-CHANGELOG:END -->
 
