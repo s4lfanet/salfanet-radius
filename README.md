@@ -469,6 +469,17 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.1 — 2026-05-10
+
+### Fixed
+- **CustomerAuthMiddleware** — Replace placeholder with real DB-backed session validation (`customer_sessions` table, token lookup, expiry check)
+- **Customer OTP send** — Plug in `notify.SendOTP` in `CustomerLogin` handler (was TODO)
+### Files
+- `internal/api/middleware/auth.go` — `NewCustomerAuthMiddleware(db)` factory, real session DB lookup
+- `internal/api/handlers/auth.go` — Import `notify` package, call `SendOTP` on customer login
+- `internal/api/router.go` — Pass DB to `NewCustomerAuthMiddleware`
+- `vps-install/wa-package.json` — Valid package.json for wa-service npm install on VPS
+
 ### v2.31.0 — 2026-05-10
 
 ### Added
@@ -558,14 +569,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **ONU Type dropdown salah isi (Telnet artifacts)** — Root cause dua masalah: (1) Command yang dipakai `show gpon onu-type` tidak valid di ZTE C320 V2.1 — command yang benar adalah `show onu-type`. (2) Parser `parseZteOnuTypes` punya catch-all regex `^([A-Za-z0-9_][A-Za-z0-9_.-]*)` yang memungut kata apa saja dari awal baris, termasuk artefak sesi Telnet seperti `Connected`, `Trying`, `Welcome`, `Last`, `spawn`, `ince`, `ZXAN#show`. Fix: (1) Ubah command ke `show onu-type`. (2) Tambah parser untuk format `ONU type name:  <name>` (output `show onu-type`). (3) Hapus catch-all regex, ganti dengan filter eksplisit untuk header/attribute lines.
 ### Files
 - `src/app/api/olt/[id]/onus/register/route.ts` — command: `show gpon onu-type` → `show onu-type`; parser: tambah `ONU type name:` pattern, hapus catch-all
-
-### v2.29.60 — 2026-05-09
-
-### Fixed
-- **OLT Import Template 404** — `GET /api/network/olts/template` dan `POST /api/network/olts/import` tidak ada (route files belum dibuat). Tombol "Download Template Excel" dan upload import Excel di halaman `/admin/network/olts` selalu 404/error. Fix: buat kedua route. Template menghasilkan file `.xlsx` dengan contoh 2 baris (kolom: name, ipAddress, latitude, longitude, vendor, model, snmpCommunity, snmpPort, telnetPort, username, password, pollingInterval). Import route mem-parse Excel, validasi IP + vendor, skip duplicate IP, dan insert via Prisma.
-### Files
-- `src/app/api/network/olts/template/route.ts` — baru: GET → download OLT_Import_Template.xlsx
-- `src/app/api/network/olts/import/route.ts` — baru: POST → import OLT dari Excel
 
 <!-- AUTO-CHANGELOG:END -->
 
