@@ -30,23 +30,25 @@ export async function POST(
         logType: 'poll',
         severity: 'info',
         message: `Manual sync started by ${triggeredBy}`,
-        data: { triggeredBy, mode: 'sync' },
+        data: { triggeredBy, mode: 'background' },
       },
     }).catch(() => {});
 
-    const result = await pollOLTWithOptions(id, {
+    // Fire-and-forget — do NOT await; ZTE SNMP+Telnet discovery can take >100s
+    // and Cloudflare/reverse-proxy will kill the request with a 524 timeout.
+    // The frontend handles `background: true` by auto-refreshing after 30s.
+    pollOLTWithOptions(id, {
       ignoreMonitoringDisabled: true,
       skipOpticalInfo: true,
+    }).catch((err) => {
+      console.error(`[OLT Sync background] oltId=${id}`, err);
     });
-
-    if (!result.success) {
-      return NextResponse.json({ error: result.error ?? 'Sync failed' }, { status: 500 });
-    }
 
     return NextResponse.json({
       success: true,
-      message: `OLT ${olt.name} synced successfully`,
-    });
+      background: true,
+      message: `Sync OLT ${olt.name} berjalan di background. Data akan diperbarui otomatis dalam ~30 detik.`,
+    }, { status: 202 });
   } catch (error: any) {
     console.error('[OLT Sync POST]', error);
     return NextResponse.json({ error: error.message ?? 'Failed to sync OLT' }, { status: 500 });

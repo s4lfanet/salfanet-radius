@@ -6,6 +6,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.42] — 2026-05-09
+### Fixed
+- **Sync OLT tidak lagi timeout 524** — `pollOLTWithOptions` sekarang dijalankan fire-and-forget (tanpa `await`). API langsung return 202 dengan `background: true`; frontend sudah punya path untuk ini: auto-refresh setelah 30 detik. ZTE C320 SNMP+Telnet discovery bisa memakan waktu >100 detik, sebelumnya menyebabkan Cloudflare/reverse-proxy memutus koneksi dengan status 524, lalu frontend menerima HTML error page dan melempar `SyntaxError: Unexpected token '<'`.
+
+### Files
+- `src/app/api/olt/[id]/sync/route.ts` — Ganti `await pollOLTWithOptions(...)` menjadi fire-and-forget dengan `.catch()` error logging; return 202 `{ success, background: true, message }`.
+
 ## [2.29.41] — 2026-05-09
 ### Fixed
 - **ONU yang dihapus/unregistered tidak lagi hilang setelah sync** — Akar masalah pertama: `pruneMissingOnus` menghapus baris `auth_failed` (unregistered) saat SNMP discovery tidak mengembalikannya dalam satu siklus (timing ZTE SEEN_ONU_TABLE). Sekarang baris `auth_failed` tidak pernah dipruning oleh poller; baris tersebut tetap terlihat di daftar Unregistered sampai operator mendaftar ulang ONU atau menghapus entri secara manual.
