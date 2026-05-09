@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.45 — 2026-05-09
+
+### Fixed
+- **Uplink STATUS tab data tidak tampil** — Command sebelumnya `show interface gei_1/x/x` menghasilkan output key-value yang tidak konsisten di ZTE C320. Diganti ke `show interface port-status gei_1/x/x` yang menghasilkan output tabular dengan kolom eksplisit: hybrid Status, Native VLAN, Negotiation, Speed (Mbps), Duplex, Flow-Ctrl, Admin Status, Link. Fallback ke `show interface` (key-value) + SNMP IF-MIB tetap dipertahankan jika tabular gagal.
+- **Uplink CONFIG tab menampilkan config sintetis** — Sebelumnya config dibuat dari hasil parse `show interface` + `show vlan port` secara manual. Sekarang menggunakan `show running-config interface gei_1/x/x` yang menghasilkan config asli dari OLT (termasuk switchport mode, VLAN list, phy-attribute, dll).
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — Tambah `parseInterfacePortStatus` (parser tabular); STATUS tab pakai `show interface port-status` dulu lalu fallback; CONFIG tab pakai `show running-config interface` langsung.
+
 ### v2.29.44 — 2026-05-09
 
 ### Fixed
@@ -508,18 +517,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/lib/olt/poller.ts` — `pruneMissingOnus` sekarang membaca kolom `status` dan melewati baris `auth_failed`.
 - `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Hapus `pollOLTWithOptions` dari delete flow; hanya update DB dan return success.
-
-### v2.29.40 — 2026-05-09
-
-### Fixed
-- **Sync OLT kembali benar-benar menjalankan poller** — Endpoint sync tidak lagi melepas `pollOLTWithOptions` secara fire-and-forget. Sekarang request menunggu poll selesai, tetapi memakai mode ringan `skipOpticalInfo` supaya tetap cukup cepat untuk manual refresh dan delete follow-up.
-- **ONU yang dihapus tetap muncul di daftar register/unconfigured** — Delete ONU tidak lagi langsung menghapus row `oltOnuStatus` dari database sebelum refresh selesai. Row kini sementara diubah ke status `auth_failed` dan `customerId` dibersihkan, sehingga ONU tetap terlihat sebagai unregistered sampai hasil poll berikutnya mengonfirmasi state live dari OLT.
-- **Manual sync/delete lebih ringan** — Poller manual kini bisa melewati query optical-info per ONU agar sync tidak terasa macet dan lebih andal dipakai untuk refresh setelah aksi operasional.
-
-### Files
-- `src/lib/olt/poller.ts` — Tambah opsi `skipOpticalInfo` untuk poll ringan pada manual sync/delete.
-- `src/app/api/olt/[id]/sync/route.ts` — Kembalikan sync ke mode awaited dengan poll ringan, bukan background fire-and-forget.
-- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Ubah delete flow agar status ONU dipertahankan sebagai unregistered sampai sync selesai.
 
 <!-- AUTO-CHANGELOG:END -->
 
