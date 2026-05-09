@@ -469,6 +469,21 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.2 — 2026-05-10
+
+### Added
+- **Next.js frontend deployed on VPS** — Full stack running at `http://103.151.140.110`: Go API backend (port 8080) + Next.js frontend (port 3000) behind nginx reverse proxy
+- **Database schema migrated** — `prisma db push` applied all 100+ tables to MariaDB `salfanet_radius`; custom SQL migrations confirmed already included in schema
+- **PM2 process management** — `salfanet-frontend` and `wa-service` managed by PM2, auto-start on boot via `pm2-root.service` systemd unit
+- **nginx proxy updated** — `/api/*` → `:8080` (Go), `/ws/*` → `:8080` (Go), `/*` → `:3000` (Next.js)
+- **Company seed data** — Initial company record seeded via `npm run db:seed:company`
+### Files
+- `nginx-frontend.conf` — nginx config template with frontend proxy
+### Notes
+- Admin login: `http://103.151.140.110/admin/login`
+- Customer portal: `http://103.151.140.110/customer/login`
+- API health: `http://103.151.140.110/api/system/health`
+
 ### v2.31.1 — 2026-05-10
 
 ### Fixed
@@ -562,13 +577,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **Register ONU 422 — false positive dari MOTD login OLT** — Root cause: error detection di POST register menggunakan `errorKeywords = ['failure', ...]` dengan `lowerOutput.includes('failure')`. OLT ZTE C320 selalu menampilkan MOTD setelah login: `"0 authentication failures happened"` → keyword `failure` match → handler return 422 meski registrasi berhasil. Fix: ganti broad keyword matching dengan deteksi yang spesifik terhadap pola CLI error: (1) baris diawali `%` (ZTE/Huawei CLI error prefix), (2) `invalid input`, (3) `invalid command`, (4) `already exist`, (5) `command not found`. MOTD/banner teks tidak akan ter-trigger.
 ### Files
 - `src/app/api/olt/[id]/onus/register/route.ts` — POST: replace broad `errorKeywords.includes()` dengan line-by-line CLI error pattern matching
-
-### v2.29.61 — 2026-05-09
-
-### Fixed
-- **ONU Type dropdown salah isi (Telnet artifacts)** — Root cause dua masalah: (1) Command yang dipakai `show gpon onu-type` tidak valid di ZTE C320 V2.1 — command yang benar adalah `show onu-type`. (2) Parser `parseZteOnuTypes` punya catch-all regex `^([A-Za-z0-9_][A-Za-z0-9_.-]*)` yang memungut kata apa saja dari awal baris, termasuk artefak sesi Telnet seperti `Connected`, `Trying`, `Welcome`, `Last`, `spawn`, `ince`, `ZXAN#show`. Fix: (1) Ubah command ke `show onu-type`. (2) Tambah parser untuk format `ONU type name:  <name>` (output `show onu-type`). (3) Hapus catch-all regex, ganti dengan filter eksplisit untuk header/attribute lines.
-### Files
-- `src/app/api/olt/[id]/onus/register/route.ts` — command: `show gpon onu-type` → `show onu-type`; parser: tambah `ONU type name:` pattern, hapus catch-all
 
 <!-- AUTO-CHANGELOG:END -->
 
