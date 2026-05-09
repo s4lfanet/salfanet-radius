@@ -469,6 +469,21 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.32 — 2026-05-09
+
+### Fixed
+- **Detail ONU unregistered salah command** — ONU yang belum terdaftar tidak lagi dipaksa memakai `show gpon onu detail-info gpon-onu_...`, karena command itu memang invalid untuk ONU unconfigured. Detail kini memakai `show pon onu uncfg gpon-olt_...` dan menampilkan type/SN/state yang valid dari OLT.
+- **Register ZTE masih hardcode `type All`** — Flow register ZTE kini mengikuti wizard referensi `oltc320_v2.1.1_linux`: type ONU yang dipilih dari daftar live OLT dipakai langsung pada command `onu {id} type {onuType} sn {sn}`.
+
+### Added
+- **Register metadata live dari OLT** — Modal register sekarang mengambil `ONU Type`, `TCONT profile`, dan suggested ONU ID langsung dari OLT via Telnet, bukan dari array dummy di frontend.
+- **Detected ONU type untuk unconfigured ONU** — Modal register/detail menampilkan type ONU hasil baca `show pon onu uncfg`, sehingga admin bisa lihat type aktual sebelum register.
+
+### Files
+- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — Branch detail khusus ONU unregistered pakai `show pon onu uncfg`.
+- `src/app/api/olt/[id]/onus/register/route.ts` — Tambah GET metadata live dari OLT dan ubah register ZTE agar pakai actual ONU type.
+- `src/app/admin/olt/[id]/page.tsx` — Modal register pakai data live OLT untuk ONU type/TCONT/suggested ID.
+
 ### v2.29.31 — 2026-05-09
 
 ### Fixed
@@ -550,24 +565,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/lib/olt/vendors/zte.ts` — Fix unregistered ONU serial: port 0-based + regex parser format ZTE C320
 - `src/app/admin/olt/[id]/page.tsx` — Redesign status cards, header, ONU table, command preview, cursor color
 - `package.json` — Bump ke 2.29.28
-
-### v2.29.27 — 2026-05-08
-
-### Added
-- **Vendor-aware ONU Registration Modal** — Modal Register ONU di halaman OLT Detail kini otomatis menyesuaikan field dan preview command berdasarkan vendor OLT:
-  - **ZTE C320** — ONU Type (All/ZTE-F6xx) + TCONT Profile (1G/100M/…) + Telnet CLI `configure terminal → interface gpon-olt → onu N type All sn SN → tcont/gemport/service-port → end`
-  - **Huawei MA5608T/MA5800** — Line Profile ID + Service Profile ID + Telnet CLI `enable → config → interface gpon → ont add → service-port → quit`
-  - **FiberHome AN5516/AN6010** — ONU Type (AN5506-04-FA/…) + Service Profile Name + Telnet CLI `enable → config → interface gpon-olt → onu add → onu profile → onu vlan → commit → exit`
-- **Vendor-aware Register API** — `POST /api/olt/[id]/onus/register` kini membangun urutan command yang berbeda per vendor berdasarkan referensi `zte_command.py → register_onu_stepbystep()` dari oltc320_v2.1.1_linux
-- **ZTE Telnet System Metrics (best-effort)** — Tambah `getSystemMetricsTelnet()` di `zte.ts` yang mencoba `show card` dan `show environment` via Telnet untuk parse CPU/Memory/Temp. Pada ZTE C320 V2.1 akan selalu return null (hardware tidak support), tapi tersedia untuk model ZTE lain (C600/C300)
-
-### Notes
-- ZTE C320 V2.1 CPU/Memory/Temp via Telnet tetap tidak tersedia — dikonfirmasi oleh oltc320_v2.1.1_linux CHANGELOG: "Removed unsupported CPU/memory/temperature monitoring". UI menampilkan N/A, perilaku ini sudah benar.
-
-### Files
-- `src/app/admin/olt/[id]/page.tsx` — ONURegisterModal rewritten: vendor-aware fields + preview; prop `vendor` ditambahkan ke render call
-- `src/app/api/olt/[id]/onus/register/route.ts` — Full rewrite: vendor detection + per-vendor CLI command sequence
-- `src/lib/olt/vendors/zte.ts` — Tambah `getSystemMetricsTelnet()` best-effort function
 
 <!-- AUTO-CHANGELOG:END -->
 
