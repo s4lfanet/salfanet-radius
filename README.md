@@ -469,6 +469,13 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.62 — 2026-05-09
+
+### Fixed
+- **Register ONU 422 — false positive dari MOTD login OLT** — Root cause: error detection di POST register menggunakan `errorKeywords = ['failure', ...]` dengan `lowerOutput.includes('failure')`. OLT ZTE C320 selalu menampilkan MOTD setelah login: `"0 authentication failures happened"` → keyword `failure` match → handler return 422 meski registrasi berhasil. Fix: ganti broad keyword matching dengan deteksi yang spesifik terhadap pola CLI error: (1) baris diawali `%` (ZTE/Huawei CLI error prefix), (2) `invalid input`, (3) `invalid command`, (4) `already exist`, (5) `command not found`. MOTD/banner teks tidak akan ter-trigger.
+### Files
+- `src/app/api/olt/[id]/onus/register/route.ts` — POST: replace broad `errorKeywords.includes()` dengan line-by-line CLI error pattern matching
+
 ### v2.29.61 — 2026-05-09
 
 ### Fixed
@@ -504,14 +511,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **Poller fully SNMP — hapus per-ONU Telnet serial fallback dari `discoverPonV21`** — Root cause: `discoverPonV21` menampung ONU yang gagal di-parse serial-nya dari SNMP hex ke dalam array `needsTelnetSerial`, lalu memanggil `show gpon onu detail-info gpon-onu_1/B/P:ID` via Telnet secara paralel (N `Promise.all` sessions) untuk setiap ONU dengan serial null. Jika ada banyak ONU dengan format serial non-standar (misalnya byte non-ASCII), ini bisa spawn banyak Telnet sessions secara serentak, yang saturates OLT concurrent session limit. Fix: hapus `needsTelnetSerial` array dan `Promise.all` Telnet block. Jika SNMP hex tidak bisa di-parse, `serialNumber` tetap `null` di DB — ONU masih ter-track via `onuId`. Serial bisa diisi on-demand saat user buka detail ONU (endpoint individual yang masih boleh Telnet). Polling cycle sekarang pure SNMP untuk registered ONUs.
 ### Files
 - `src/lib/olt/vendors/zte.ts` — `discoverPonV21`: hapus `needsTelnetSerial` array + `Promise.all` Telnet serial lookup block
-
-### v2.29.57 — 2026-05-09
-
-### Fixed
-- **Poller lambat — per-ONU Telnet optical info calls dihapus** — Root cause: `upsertONU` di poller memanggil `vendor.getOnuOpticalInfo(telnetConfig, ...)` untuk setiap ONU satu-per-satu, meski `discoverPonV21` sudah mengambil `rxPower` dan `distance` via 7 SNMP walks paralel. Dengan 400+ ONU aktif, ini berarti 400+ sesi Telnet sequential per polling cycle (~8–35s masing-masing = potensi ratusan detik). Fix: skip Telnet optical info call jika `onu.rxPower !== null` (artinya SNMP sudah menyediakan data). Telnet optical info tetap digunakan sebagai fallback hanya jika SNMP tidak menghasilkan rxPower.
-- **SSH path dihapus dari optical info fallback** — ZTE C320 V2.1 hanya mendukung Telnet CLI; SSH tidak dikonfigurasi. Path `sshConfig` untuk `getOnuOpticalInfoSSH` dihapus dari `upsertONU` agar tidak terjadi double-attempt.
-### Files
-- `src/lib/olt/poller.ts` — `upsertONU`: skip Telnet/SSH optical info if `onu.rxPower !== null` (SNMP-sourced)
 
 <!-- AUTO-CHANGELOG:END -->
 
