@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.35] — 2026-05-09
+### Fixed
+- **Diagram ZTE C320 dibuat lebih actual** — Rack view di halaman detail OLT sekarang fokus ke slot service/uplink real, mempertahankan nomor slot actual, menampilkan gap slot kosong, dan tidak lagi mencampur layout MCU ke area card operasional.
+- **Status uplink SMXA enable/down dibedakan dengan benar** — Parsing `show interface` kini menangani format real ZTE seperti `is activate, line protocol is up/down`, jadi port admin-up tapi link-down tidak lagi terlihat sebagai disable.
+- **Tooltip dan warna port PON lebih informatif** — Port PON sekarang membedakan online, LOS, dying gasp, dan ONU unconfigured agar kondisi slot lebih mudah dibaca dari diagram.
+
+### Files
+- `src/app/api/olt/[id]/chassis/route.ts` — Tambah parsing state uplink actual per interface dan hanya tandai card operasional yang benar-benar aktif.
+- `src/app/api/olt/[id]/uplink/route.ts` — Perbaiki parser status interface agar membaca format kalimat output ZTE C320.
+- `src/app/admin/olt/[id]/page.tsx` — Redesign diagram rack ZTE C320, refresh chassis, dan tampilkan state uplink/service port yang lebih actual.
+
 ## [2.29.34] — 2026-05-09
 ### Added
 - **Delete ONU terdaftar + sync OLT** — ONU yang sudah terdaftar sekarang bisa dihapus penuh dari ZTE OLT melalui flow clear config service lalu unregister `no onu`, lalu langsung disinkronkan kembali ke database/frontend.

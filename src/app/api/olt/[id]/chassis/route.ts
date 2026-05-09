@@ -29,11 +29,27 @@ interface CardInfo {
   portCount?: number;
 }
 
+interface UplinkPortState {
+  iface: string;
+  adminStatus: string;
+  linkStatus: string;
+  speed?: string;
+  physicalType?: string;
+  description?: string;
+  isEnabled: boolean;
+  isLinked: boolean;
+}
+
 function classifyCard(cardType: string): SlotType {
   const ctUpper = cardType.toUpperCase();
   if (ctUpper.startsWith('MCUD') || ctUpper.startsWith('MCUA') || ctUpper === 'MCU') return 'mcud';
   if (ctUpper.startsWith('SMXA') || ctUpper.startsWith('GICF') || ctUpper.startsWith('GISF') || ctUpper.startsWith('UPLINK')) return 'uplink';
   return 'service';
+}
+
+function isOperationalCard(status?: string): boolean {
+  if (!status) return true;
+  return !/(?:offline|not\s*install|not\s*present|absent|empty)/i.test(status);
 }
 
 /**
@@ -133,6 +149,67 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
   return [`gei_1/${slot}/1`, `gei_1/${slot}/2`];
 }
 
+function parseUplinkInterfaceStatus(output: string, fallbackIface: string): UplinkPortState {
+  const parsed: Record<string, string> = {};
+
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const kvMatch = line.match(/^\s*([^:]+?)\s*:\s*(.+)$/);
+    if (kvMatch) {
+      parsed[kvMatch[1].trim()] = kvMatch[2].trim();
+      continue;
+    }
+
+    const stateMatch = line.match(/^(\S+)\s+is\s+(activate|deactivate)\s*,\s*line protocol is\s+(up|down)\.?$/i);
+    if (stateMatch) {
+      parsed.Interface = stateMatch[1].trim();
+      parsed['Admin Status'] = stateMatch[2].toLowerCase() === 'activate' ? 'Up' : 'Down';
+      parsed['Link Status'] = stateMatch[3].toLowerCase() === 'up' ? 'Up' : 'Down';
+      continue;
+    }
+
+    const descriptionMatch = line.match(/^Description is\s+(.+?)\.?$/i);
+    if (descriptionMatch) {
+      parsed.Description = descriptionMatch[1].trim();
+    }
+  }
+
+  const adminStatus = parsed['Admin Status'] ?? parsed.Admin ?? 'Unknown';
+  const linkStatus = parsed['Link Status'] ?? parsed.Link ?? 'Unknown';
+
+  return {
+    iface: parsed.Interface ?? fallbackIface,
+    adminStatus,
+    linkStatus,
+    speed: parsed.Speed,
+    physicalType: parsed['Physical Type'],
+    description: parsed.Description,
+    isEnabled: /^up|enable|activate$/i.test(adminStatus),
+    isLinked: /^up|online$/i.test(linkStatus),
+  };
+}
+
+async function loadUplinkPortStates(
+  telnetConfig: TelnetConfig,
+  ifaces: string[]
+): Promise<Map<string, UplinkPortState>> {
+  const stateMap = new Map<string, UplinkPortState>();
+
+  await Promise.all(ifaces.map(async (iface) => {
+    try {
+      const result = await executeCommand(telnetConfig, `show interface ${iface}`);
+      if (!result.success || !result.output) return;
+      stateMap.set(iface, parseUplinkInterfaceStatus(result.output, iface));
+    } catch {
+      // Ignore per-port failures so other interfaces still render.
+    }
+  }));
+
+  return stateMap;
+}
+
 /**
  * Map ponIndex back to (board, pon) for ZTE C320 V2.1
  */
@@ -177,6 +254,7 @@ export async function GET(
     // ── Step 1: Try Telnet "show card" for real card topology ─────────────────
     let telnetCards: CardInfo[] | null = null;
     let uplinkIfacesBySlot: Map<number, string[]> = new Map();
+    let uplinkStatesByIface: Map<string, UplinkPortState> = new Map();
 
     if (olt.telnetEnabled || olt.sshEnabled) {
       const telnetConfig: TelnetConfig = {
@@ -195,6 +273,11 @@ export async function GET(
             if (card.slotType === 'uplink') {
               uplinkIfacesBySlot.set(card.slot, smxaUplinkPorts(card.slot, card.cardType));
             }
+          }
+
+          const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
+          if (allUplinkIfaces.length > 0) {
+            uplinkStatesByIface = await loadUplinkPortStates(telnetConfig, allUplinkIfaces);
           }
         }
       } catch { /* Telnet unavailable — use SNMP fallback */ }
@@ -270,12 +353,19 @@ export async function GET(
         const card = cardMap.get(i);
         const dbData = slotData[i];
         const isMcuSlot = (i === 0 || i === 17);
-        const slotType: SlotType = card ? card.slotType : isMcuSlot ? 'mcud' : dbData ? 'service' : 'empty';
+        const cardOperational = isOperationalCard(card?.status);
+        const slotType: SlotType = card && cardOperational
+          ? card.slotType
+          : isMcuSlot
+            ? 'mcud'
+            : dbData
+              ? 'service'
+              : 'empty';
 
         let portCount = 0;
         let ports: any[] = [];
-        let cardType = card?.cardType ?? (isMcuSlot ? 'MCUD1' : 'empty');
-        const present = !!card;
+        let cardType = card && cardOperational ? card.cardType : (isMcuSlot ? 'MCUD1' : 'empty');
+        const present = !!card && cardOperational;
 
         if (slotType === 'service' && dbData) {
           portCount = Math.max(dbData.portCount, 16);
@@ -288,7 +378,23 @@ export async function GET(
         } else if (slotType === 'uplink') {
           const ifaces = uplinkIfacesBySlot.get(i) ?? smxaUplinkPorts(i, cardType);
           portCount = ifaces.length;
-          ports = ifaces.map((iface, pi) => ({ port: pi, iface, onuCount: 0, onlineCount: 0, hasOnus: false }));
+          ports = ifaces.map((iface, pi) => {
+            const ifaceState = uplinkStatesByIface.get(iface);
+            return {
+              port: pi,
+              iface,
+              onuCount: 0,
+              onlineCount: 0,
+              hasOnus: false,
+              adminStatus: ifaceState?.adminStatus ?? 'Unknown',
+              linkStatus: ifaceState?.linkStatus ?? 'Unknown',
+              speed: ifaceState?.speed,
+              physicalType: ifaceState?.physicalType,
+              description: ifaceState?.description,
+              isEnabled: ifaceState?.isEnabled ?? false,
+              isLinked: ifaceState?.isLinked ?? false,
+            };
+          });
         }
 
         chassis.push({

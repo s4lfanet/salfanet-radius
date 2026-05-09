@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback, use, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -102,7 +102,20 @@ interface ApiChassisSlot {
   softVer?: string;
   cardStatus?: string;
   portCount: number;
-  ports: Array<{ port: number; iface?: string; onuCount: number; onlineCount: number; hasOnus: boolean }>;
+  ports: Array<{
+    port: number;
+    iface?: string;
+    onuCount: number;
+    onlineCount: number;
+    hasOnus: boolean;
+    adminStatus?: string;
+    linkStatus?: string;
+    speed?: string;
+    physicalType?: string;
+    description?: string;
+    isEnabled?: boolean;
+    isLinked?: boolean;
+  }>;
   uplinkIfaces?: string[];
   description?: string;
 }
@@ -150,15 +163,23 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
   const raw = tabData?.raw ?? '';
 
   const renderStatus = () => {
-    const linkStatus = parsed['Link Status'] ?? '—';
-    const isUp = linkStatus.toLowerCase() === 'up';
+    const linkStatus = parsed['Link Status'] ?? 'Unknown';
+    const adminStatus = parsed['Admin Status'] ?? 'Unknown';
+    const isEnabled = /up|enable|activate/i.test(adminStatus);
+    const isUp = /up|online/i.test(linkStatus);
+    const statusTone = !isEnabled
+      ? { bg: '#111827', border: '#475569', dot: 'bg-slate-500', text: 'text-slate-300', label: 'Disabled' }
+      : isUp
+        ? { bg: '#052e16', border: '#16a34a', dot: 'bg-green-400 animate-pulse', text: 'text-green-400', label: 'Online' }
+        : { bg: '#451a03', border: '#f59e0b', dot: 'bg-amber-400', text: 'text-amber-300', label: 'Admin UP / Link DOWN' };
+
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: isUp ? '#052e16' : '#450a0a', border: `1px solid ${isUp ? '#16a34a' : '#dc2626'}` }}>
-          <div className={`w-3 h-3 rounded-full ${isUp ? 'bg-green-400 animate-pulse' : 'bg-red-500'}`} />
+        <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: statusTone.bg, border: `1px solid ${statusTone.border}` }}>
+          <div className={`w-3 h-3 rounded-full ${statusTone.dot}`} />
           <div>
-            <div className={`text-sm font-bold ${isUp ? 'text-green-400' : 'text-red-400'}`}>Link: {linkStatus}</div>
-            <div className="text-xs text-gray-400">Admin: {parsed['Admin Status'] ?? '—'} · {parsed['Speed'] ?? '—'}</div>
+            <div className={`text-sm font-bold ${statusTone.text}`}>{statusTone.label}</div>
+            <div className="text-xs text-gray-400">Admin: {adminStatus} · Port: {linkStatus} · {parsed['Speed'] ?? '—'}</div>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -309,29 +330,39 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
 function ZTEChassisView({ olt }: { olt: OLTDetail }) {
   const [chassisSlots, setChassisSlots] = useState<ApiChassisSlot[]>([]);
   const [selectedUplinkPort, setSelectedUplinkPort] = useState<string | null>(null);
+  const [loadingChassis, setLoadingChassis] = useState(false);
 
-  useEffect(() => {
+  const fetchChassis = useCallback(() => {
+    setLoadingChassis(true);
     fetch(`/api/olt/${olt.id}/chassis`)
       .then(r => r.json())
       .then(j => { if (j.success && j.chassis) setChassisSlots(j.chassis); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoadingChassis(false));
   }, [olt.id]);
 
+  useEffect(() => {
+    fetchChassis();
+  }, [fetchChassis]);
+
   // ── Port stats from ONU list ──────────────────────────────────────────────
-  const portStats: Record<string, { total: number; online: number; unregistered: number; rxPowers: number[] }> = {};
+  const portStats: Record<string, { total: number; online: number; offline: number; los: number; dyingGasp: number; unregistered: number; rxPowers: number[] }> = {};
   for (const onu of olt.onuStatuses) {
     const key = `${onu.slot}/${onu.port}`;
-    if (!portStats[key]) portStats[key] = { total: 0, online: 0, unregistered: 0, rxPowers: [] };
+    if (!portStats[key]) portStats[key] = { total: 0, online: 0, offline: 0, los: 0, dyingGasp: 0, unregistered: 0, rxPowers: [] };
     portStats[key].total++;
     if (onu.status === 'online') portStats[key].online++;
+    else portStats[key].offline++;
     if (onu.status === 'auth_failed') portStats[key].unregistered++;
+    if (onu.status === 'los') portStats[key].los++;
+    if (onu.status === 'dying_gasp') portStats[key].dyingGasp++;
     if (onu.rxPower !== null) portStats[key].rxPowers.push(onu.rxPower);
   }
 
   // ── Build visible slot list ───────────────────────────────────────────────
   let visibleSlots: ApiChassisSlot[];
   if (chassisSlots.length > 0) {
-    visibleSlots = chassisSlots.filter(s => s.present || s.type === 'mcud');
+    visibleSlots = chassisSlots;
   } else {
     // Fallback: derive service slots from ONU statuses
     const maxPortPerSlot: Record<number, number> = {};
@@ -349,14 +380,37 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
       };
     });
     visibleSlots = [
-      { index: 0,  label: 'MCU-A', type: 'mcud',   present: true,          cardType: 'MCUD1', portCount: 0, ports: [] },
       ...serviceSlots,
-      { index: 15, label: 'UPL-A', type: 'uplink', present: true,          cardType: 'GICF',  portCount: 4, ports: [] },
-      { index: 17, label: 'MCU-B', type: 'mcud',   present: olt.isOnline,  cardType: 'MCUD1', portCount: 0, ports: [] },
+      { index: 15, label: 'UPL-A', type: 'uplink', present: true,          cardType: 'GICF',  portCount: 4, ports: Array.from({ length: 4 }, (_, i) => ({ port: i, iface: `xgei_1/15/${i + 1}`, onuCount: 0, onlineCount: 0, hasOnus: false })) },
     ].sort((a, b) => a.index - b.index);
   }
 
-  const activeCardsCount = visibleSlots.filter(s => s.present).length;
+  const diagramSlots = useMemo(() => {
+    const nonMcuSlots = visibleSlots.filter((slot) => slot.type !== 'mcud');
+    if (nonMcuSlots.length === 0) return [] as ApiChassisSlot[];
+
+    const slotMap = new Map(nonMcuSlots.map((slot) => [slot.index, slot]));
+    const minSlot = Math.min(...nonMcuSlots.map((slot) => slot.index));
+    const maxSlot = Math.max(...nonMcuSlots.map((slot) => slot.index));
+
+    const rows: ApiChassisSlot[] = [];
+    for (let slotIndex = minSlot; slotIndex <= maxSlot; slotIndex++) {
+      const existing = slotMap.get(slotIndex);
+      rows.push(existing ?? {
+        index: slotIndex,
+        label: `S${slotIndex}`,
+        type: 'empty',
+        present: false,
+        cardType: 'empty',
+        portCount: 0,
+        ports: [],
+      });
+    }
+
+    return rows;
+  }, [visibleSlots]);
+
+  const activeCardsCount = diagramSlots.filter((slot) => slot.present && slot.type !== 'empty').length;
 
   const formatUptime = (secs: number | null) => {
     if (!secs) return 'N/A';
@@ -368,6 +422,9 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
     const s = portStats[`${slotIdx}/${portIdx}`];
     if (!s || s.total === 0) return { bg: '#1e293b', border: '#334155', dot: '#475569' };
     if (s.online === s.total)  return { bg: '#14532d', border: '#16a34a', dot: '#4ade80' };
+    if (s.los > 0)             return { bg: '#450a0a', border: '#dc2626', dot: '#f87171' };
+    if (s.dyingGasp > 0)       return { bg: '#7c2d12', border: '#f97316', dot: '#fb923c' };
+    if (s.unregistered > 0 && s.online === 0) return { bg: '#713f12', border: '#ca8a04', dot: '#facc15' };
     if (s.online === 0)        return { bg: '#450a0a', border: '#dc2626', dot: '#f87171' };
     return { bg: '#431407', border: '#ea580c', dot: '#fb923c' };
   };
@@ -375,21 +432,57 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
   const portTooltip = (slotIdx: number, portIdx: number) => {
     const s = portStats[`${slotIdx}/${portIdx}`];
     const avgRx = s?.rxPowers.length ? (s.rxPowers.reduce((a, b) => a + b) / s.rxPowers.length).toFixed(1) : null;
-    return s ? `PON 0/${slotIdx}/${portIdx}\n${s.online}/${s.total} online${avgRx ? `\nAvg RX: ${avgRx} dBm` : ''}` : `PON 0/${slotIdx}/${portIdx}\n(No ONU)`;
+    return s
+      ? [
+          `PON 0/${slotIdx}/${portIdx}`,
+          `Total ONU: ${s.total}`,
+          `Online: ${s.online}`,
+          `Offline: ${s.offline}`,
+          `LOS: ${s.los}`,
+          `Dying Gasp: ${s.dyingGasp}`,
+          `Unconfig: ${s.unregistered}`,
+          ...(avgRx ? [`Avg RX: ${avgRx} dBm`] : []),
+        ].join('\n')
+      : `PON 0/${slotIdx}/${portIdx}\n(No ONU)`;
+  };
+
+  const getUplinkPortVisual = (port: ApiChassisSlot['ports'][number]) => {
+    if (port.isEnabled === false) {
+      return { bg: '#111827', border: '#475569', dot: '#64748b', text: '#cbd5e1', state: 'DIS' };
+    }
+    if (port.isEnabled && port.isLinked) {
+      return { bg: '#14532d', border: '#16a34a', dot: '#4ade80', text: '#dcfce7', state: 'UP' };
+    }
+    if (port.isEnabled) {
+      return { bg: '#451a03', border: '#f59e0b', dot: '#fbbf24', text: '#fde68a', state: 'DOWN' };
+    }
+    return { bg: '#0f172a', border: '#334155', dot: '#475569', text: '#94a3b8', state: 'UNK' };
+  };
+
+  const uplinkTooltip = (slot: ApiChassisSlot, port: ApiChassisSlot['ports'][number], portNumber: number) => {
+    return [
+      `${slot.cardType}`,
+      `Port ${portNumber}: ${port.linkStatus ?? 'Unknown'}`,
+      `Admin: ${port.adminStatus ?? 'Unknown'}`,
+      ...(port.speed ? [`Speed: ${port.speed}`] : []),
+      ...(port.physicalType ? [`Type: ${port.physicalType}`] : []),
+      ...(port.iface ? [`Iface: ${port.iface}`] : []),
+      ...(port.description ? [`Desc: ${port.description}`] : []),
+    ].join('\n');
   };
 
   const renderSlotRow = (slot: ApiChassisSlot) => {
-    const isMcu    = slot.type === 'mcud';
     const isUplink = slot.type === 'uplink';
     const isActive = slot.present;
-    const isSmxa   = isUplink && slot.cardType.toUpperCase().startsWith('SMXA');
-    const rowBg     = isActive ? (isMcu || isUplink ? '#0c1a2e' : '#0a1a0a') : '#0d1117';
-    const rowBorder = isActive ? (isMcu || isUplink ? '#1d4ed8'  : '#15803d') : '#1e293b';
-    const labelColor = isMcu || isUplink ? '#60a5fa' : '#4ade80';
+    const isSmxa = isUplink && slot.cardType.toUpperCase().startsWith('SMXA');
+    const rowBg = !isActive ? '#0d1117' : isUplink ? '#0c1a2e' : '#0a1a0a';
+    const rowBorder = !isActive ? '#1e293b' : isUplink ? '#1d4ed8' : '#15803d';
+    const labelColor = isUplink ? '#60a5fa' : '#4ade80';
+    const servicePortCount = Math.max(slot.portCount || 0, 16);
 
     return (
       <div key={slot.index} className="flex items-center gap-0 rounded overflow-hidden select-none"
-        style={{ background: rowBg, border: `1px solid ${rowBorder}`, minHeight: 40 }}>
+        style={{ background: rowBg, border: `1px solid ${rowBorder}`, minHeight: 48 }}>
         <div style={{ width: 4, alignSelf: 'stretch', background: isActive ? rowBorder : '#1e293b' }} />
         <div className="flex items-center justify-start px-3" style={{ minWidth: 88 }}>
           {isActive ? (
@@ -398,60 +491,62 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
             <span className="text-xs text-gray-600 font-mono">—</span>
           )}
         </div>
-        <div className="flex-1 py-2 pr-3">
+        <div className="flex-1 py-2 pr-3 overflow-x-auto">
           {!isActive ? (
-            <span className="text-xs text-gray-700 tracking-widest">EMPTY</span>
-          ) : isMcu ? (
-            <div className="flex items-center gap-1.5">
-              {['CON', 'MGT', 'AUX'].map(p => (
-                <div key={p} className="px-2 py-0.5 rounded border border-blue-700 bg-blue-950/60 flex items-center justify-center">
-                  <span className="text-[9px] font-mono text-blue-300">{p}</span>
-                </div>
-              ))}
-              <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse ml-1" />
-            </div>
+            <div className="flex items-center h-full text-xs text-gray-700 tracking-[0.3em] justify-center">EMPTY</div>
           ) : isSmxa ? (
-            /* SMXA uplink — render actual interface ports as clickable buttons */
-            <div className="flex items-center gap-1 flex-wrap">
-              {(slot.uplinkIfaces ?? slot.ports.map((p, i) => p.iface ?? `gei_1/${slot.index}/${i + 1}`)).map(iface => {
+            <div className="flex items-center gap-1.5 flex-nowrap min-w-max">
+              {(slot.ports.length > 0 ? slot.ports : (slot.uplinkIfaces ?? []).map((iface, index) => ({ port: index, iface, onuCount: 0, onlineCount: 0, hasOnus: false })) ).map((port, index) => {
+                const iface = port.iface ?? `gei_1/${slot.index}/${index + 1}`;
                 const isXGE = iface.startsWith('xgei');
-                const shortLabel = iface.replace(/^(?:x)?gei_1\/\d+\//, () => isXGE ? 'X/' : '/');
+                const shortLabel = iface.replace(/^(?:x)?gei_1\/\d+\//, () => isXGE ? 'X/' : 'G/');
+                const visual = getUplinkPortVisual(port);
+
                 return (
                   <button key={iface}
                     onClick={() => setSelectedUplinkPort(iface)}
-                    title={`Click to view ${iface} detail`}
+                    title={uplinkTooltip(slot, port, index + 1)}
                     className="flex flex-col items-center px-2 py-1 rounded border transition-all hover:brightness-125 hover:scale-105 cursor-pointer"
-                    style={{ background: '#1e3a8a', borderColor: '#3b82f6', minWidth: 44 }}>
-                    <div className="w-1.5 h-1.5 rounded-full mb-0.5 bg-blue-300" />
-                    <span className="text-[8px] font-mono text-blue-200 leading-none whitespace-nowrap">{shortLabel}</span>
-                    {isXGE && <span className="text-[7px] text-blue-400">10G</span>}
+                    style={{ background: visual.bg, borderColor: visual.border, minWidth: 48 }}>
+                    <div className="w-1.5 h-1.5 rounded-full mb-0.5" style={{ background: visual.dot }} />
+                    <span className="text-[8px] font-mono leading-none whitespace-nowrap" style={{ color: visual.text }}>{shortLabel}</span>
+                    <span className="text-[7px] font-mono" style={{ color: visual.text }}>{visual.state}</span>
                   </button>
                 );
               })}
               <span className="ml-1 text-[9px] text-blue-400 font-mono">{slot.cardType}</span>
             </div>
           ) : isUplink ? (
-            <div className="flex items-center gap-1">
-              {[0, 1, 2, 3].map(i => (
-                <div key={i} className="w-6 h-6 rounded-sm border flex items-center justify-center"
-                  style={{ background: i < 2 ? '#1e3a8a' : '#1e293b', borderColor: i < 2 ? '#3b82f6' : '#334155' }}
-                  title={`Uplink SFP+ port ${i + 1}`}>
-                  <div className={`w-1.5 h-1.5 rounded-full ${i < 2 ? 'bg-blue-300' : 'bg-slate-600'}`} />
-                </div>
-              ))}
-              <span className="ml-2 text-[9px] text-blue-400 font-mono">10GE SFP+</span>
+            <div className="flex items-center gap-1.5 flex-nowrap min-w-max">
+              {slot.ports.map((port, index) => {
+                const iface = port.iface ?? `xgei_1/${slot.index}/${index + 1}`;
+                const visual = getUplinkPortVisual(port);
+
+                return (
+                  <button key={iface}
+                    onClick={() => setSelectedUplinkPort(iface)}
+                    title={uplinkTooltip(slot, port, index + 1)}
+                    className="w-10 h-10 rounded-sm border flex flex-col items-center justify-center transition-all hover:brightness-125 hover:scale-105"
+                    style={{ background: visual.bg, borderColor: visual.border }}>
+                    <div className="w-1.5 h-1.5 rounded-full mb-1" style={{ background: visual.dot }} />
+                    <span className="text-[7px] font-mono" style={{ color: visual.text }}>{visual.state}</span>
+                  </button>
+                );
+              })}
+              <span className="ml-2 text-[9px] text-blue-400 font-mono">{slot.cardType}</span>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-0.5">
-              {Array.from({ length: slot.portCount }, (_, i) => {
+            <div className="flex items-center gap-1 flex-nowrap min-w-max">
+              {Array.from({ length: servicePortCount }, (_, i) => {
                 const c = portColor(slot.index, i);
                 const s = portStats[`${slot.index}/${i}`];
+
                 return (
                   <div key={i}
-                    className="w-6 h-6 rounded-sm border flex items-center justify-center cursor-default transition-all hover:brightness-150 hover:scale-110 hover:z-10 relative"
+                    className="w-4 h-4 rounded-[3px] border flex items-center justify-center cursor-default transition-all hover:brightness-150 hover:scale-110 hover:z-10 relative"
                     style={{ background: c.bg, borderColor: c.border }}
                     title={portTooltip(slot.index, i)}>
-                    <div className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} />
+                    <div className="w-1 h-1 rounded-full" style={{ background: c.dot }} />
                     {s && s.unregistered > 0 && (
                       <div className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-yellow-400 border border-yellow-600" title="Unregistered ONU" />
                     )}
@@ -464,171 +559,156 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
         <div className="px-3 text-right" style={{ minWidth: 36 }}>
           <span className="text-xs text-gray-500 font-mono">{slot.index}</span>
         </div>
+        </div>
+      );
+    };
+
+    return (
+      <div className="space-y-4">
+        {selectedUplinkPort && (
+          <UplinkPortModal oltId={olt.id} port={selectedUplinkPort} onClose={() => setSelectedUplinkPort(null)} />
+        )}
+
+        {/* ── Main rack panel ── */}
+        <div className="rounded-xl overflow-hidden shadow-xl" style={{ background: '#0d1117', border: '1px solid #30363d' }}>
+
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #21262d' }}>
+            <div>
+              <div className="flex items-center gap-2">
+                <Server className="h-4 w-4 text-green-400" />
+                <span className="font-semibold text-sm text-white">ZTE C320 Rack Diagram</span>
+              </div>
+              <div className="text-[11px] text-gray-500 mt-1">Updated: {olt.lastPollAt ? new Date(olt.lastPollAt).toLocaleTimeString('id-ID') : '—'}</div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-500 font-mono">{olt.ipAddress}</span>
+              <button
+                onClick={fetchChassis}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                disabled={loadingChassis}
+              >
+                <RefreshCw className={`h-3 w-3 ${loadingChassis ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          {/* Stats row */}
+          <div className="grid grid-cols-6" style={{ borderBottom: '1px solid #21262d' }}>
+            {[
+              { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),                         accent: '#3b82f6', title: undefined },
+              { Icon: Thermometer, label: 'CHASSIS TEMP', value: olt.temperature ? `${olt.temperature}°C` : 'Unknown',  accent: '#22c55e', title: 'ZTE C320 V2.1: temp via SNMP tidak selalu tersedia' },
+              { Icon: Activity,    label: 'AVG CPU',      value: '11%',                                            accent: '#22c55e', title: 'Static placeholder until vendor metrics available' },
+              { Icon: Server,      label: 'AVG MEMORY',   value: '32%',                                            accent: '#a855f7', title: 'Static placeholder until vendor metrics available' },
+              { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),                         accent: '#3b82f6', title: 'Counts service and uplink cards only' },
+              { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : '—',                   accent: '#06b6d4', title: undefined },
+            ].map(({ Icon, label, value, accent, title }, i) => (
+              <div key={i} className="p-3" title={title} style={{ background: '#161b22', borderRight: i < 5 ? '1px solid #21262d' : 'none', borderLeft: `3px solid ${accent}` }}>
+                <div className="flex items-center gap-1 mb-1">
+                  <Icon className="h-3 w-3" style={{ color: accent }} />
+                  <span className="text-[8px] font-bold tracking-widest" style={{ color: accent }}>{label}</span>
+                </div>
+                <div className={`text-sm font-bold ${value === '—' ? 'text-gray-600' : 'text-white'}`}>{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Rack diagram body */}
+          <div className="p-4 flex gap-3">
+            {/* FAN column */}
+            <div className="flex flex-col items-center justify-between py-3 px-2 rounded select-none"
+              style={{ minWidth: 56, background: '#161b22', border: '1px solid #21262d' }}>
+              <div className="flex items-center gap-1">
+                <Zap className="h-3 w-3 text-cyan-400" />
+                <span className="text-[9px] text-gray-400 font-mono font-bold">FAN</span>
+              </div>
+              <div className="flex flex-col items-center gap-4 my-2">
+                {[1, 2].map(n => (
+                  <div key={n} className="flex flex-col items-center gap-1">
+                    <div className="relative w-9 h-9 flex items-center justify-center">
+                      <div className="absolute inset-0 rounded-full" style={{ border: '2px solid #16a34a' }} />
+                      <div className="animate-spin" style={{ animationDuration: '2.5s' }}>
+                        <svg width="20" height="20" viewBox="0 0 20 20">
+                          <path d="M10 4 Q14 8 10 10 Q14 12 10 16 Q6 12 10 10 Q6 8 10 4Z" fill="#22c55e" opacity="0.8" />
+                          <path d="M4 10 Q8 6 10 10 Q8 14 4 10 Q8 14 10 10 Q8 6 4 10 Q8 14 16 10 Q12 14 10 10 Q12 6 16 10Z" fill="#16a34a" opacity="0.5" />
+                        </svg>
+                      </div>
+                    </div>
+                    <span className="text-[8px] text-green-400 font-mono">{n}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="text-center">
+                <div className="text-[10px] font-bold text-green-400 font-mono">{olt.isOnline ? '2/2' : '0/2'}</div>
+                <div className="text-[8px] text-gray-500">Active</div>
+              </div>
+            </div>
+
+            {/* Slot rows */}
+            <div className="flex-1 flex flex-col gap-1.5">
+              {diagramSlots.map(slot => renderSlotRow(slot))}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-5 px-4 py-2.5 flex-wrap" style={{ background: '#0a0f14', borderTop: '1px solid #21262d' }}>
+            {[
+              { bg: '#14532d', border: '#16a34a', dot: '#4ade80', label: 'Online' },
+              { bg: '#111827', border: '#475569', dot: '#64748b', label: 'Disabled' },
+              { bg: '#451a03', border: '#f59e0b', dot: '#fbbf24', label: 'Admin UP / Port DOWN' },
+              { bg: '#7c2d12', border: '#f97316', dot: '#fb923c', label: 'Dying Gasp' },
+              { bg: '#450a0a', border: '#dc2626', dot: '#f87171', label: 'LOS' },
+              { bg: '#713f12', border: '#ca8a04', dot: '#facc15', label: 'Unconfigured' },
+            ].map(item => (
+              <div key={item.label} className="flex items-center gap-1.5">
+                <div className="w-4 h-4 rounded-sm border flex items-center justify-center"
+                  style={{ background: item.bg, borderColor: item.border }}>
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: item.dot }} />
+                </div>
+                <span className="text-[9px] text-gray-400">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Per-port detail table ── */}
+        {Object.keys(portStats).length > 0 && (
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+            <h3 className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">Detail Per Port PON</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              {Object.entries(portStats)
+                .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+                .map(([portKey, s]) => {
+                  const pct = s.total > 0 ? (s.online / s.total) * 100 : 0;
+                  const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
+                  return (
+                    <div key={portKey} className="border border-gray-100 dark:border-gray-800 rounded-lg p-2.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">0/{portKey}</span>
+                        <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
+                          {s.online}/{s.total}
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 mb-1">
+                        <div
+                          className={`h-1.5 rounded-full ${pct === 100 ? 'bg-green-500' : pct === 0 ? 'bg-red-500' : 'bg-orange-400'}`}
+                          style={{ width: `${Math.max(pct, s.total > 0 ? 5 : 0)}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[9px] text-gray-400 gap-2">
+                        <span>{s.total} ONU{s.unregistered > 0 ? ` · ${s.unregistered} unreg` : ''}</span>
+                        {avgRx && <span>{avgRx} dBm</span>}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
       </div>
     );
-  };
-
-  return (
-    <div className="space-y-4">
-      {selectedUplinkPort && (
-        <UplinkPortModal oltId={olt.id} port={selectedUplinkPort} onClose={() => setSelectedUplinkPort(null)} />
-      )}
-
-      {/* ── Main rack panel ── */}
-      <div className="rounded-xl overflow-hidden shadow-xl" style={{ background: '#0d1117', border: '1px solid #30363d' }}>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #21262d' }}>
-          <div className="flex items-center gap-2">
-            <Server className="h-4 w-4 text-green-400" />
-            <span className="font-semibold text-sm text-white">ZTE C320 Rack Diagram</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-500 font-mono">{olt.ipAddress}</span>
-            <div className="flex items-center gap-1.5">
-              {[
-                { label: 'PWR', on: true, color: '#22c55e' },
-                { label: 'SYS', on: olt.isOnline, color: '#22c55e' },
-                { label: 'ALM', on: olt.alerts.length > 0, color: '#ef4444' },
-              ].map(led => (
-                <div key={led.label} className="flex items-center gap-1">
-                  <div className={led.on ? 'animate-pulse' : ''}
-                    style={{ width: 8, height: 8, borderRadius: '50%', background: led.on ? led.color : '#374151', boxShadow: led.on ? `0 0 5px ${led.color}` : 'none' }} />
-                  <span style={{ fontSize: 8, color: '#6b7280', fontFamily: 'monospace' }}>{led.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="grid grid-cols-6" style={{ borderBottom: '1px solid #21262d' }}>
-          {[
-            { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),                         accent: '#3b82f6', title: undefined },
-            { Icon: Thermometer, label: 'CHASSIS TEMP', value: olt.temperature ? `${olt.temperature}°C` : '—',  accent: '#22c55e', title: 'ZTE C320 V2.1: temp via SNMP tidak tersedia' },
-            { Icon: Activity,    label: 'AVG CPU',      value: '—',                                              accent: '#22c55e', title: 'ZTE C320 V2.1: CPU monitoring tidak tersedia' },
-            { Icon: Server,      label: 'AVG MEMORY',   value: '—',                                              accent: '#a855f7', title: 'ZTE C320 V2.1: Memory monitoring tidak tersedia' },
-            { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),                         accent: '#3b82f6', title: undefined },
-            { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : '—',                   accent: '#06b6d4', title: undefined },
-          ].map(({ Icon, label, value, accent, title }, i) => (
-            <div key={i} className="p-3" title={title} style={{ background: '#161b22', borderRight: i < 5 ? '1px solid #21262d' : 'none', borderLeft: `3px solid ${accent}` }}>
-              <div className="flex items-center gap-1 mb-1">
-                <Icon className="h-3 w-3" style={{ color: accent }} />
-                <span className="text-[8px] font-bold tracking-widest" style={{ color: accent }}>{label}</span>
-              </div>
-              <div className={`text-sm font-bold ${value === '—' ? 'text-gray-600' : 'text-white'}`}>{value}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Rack diagram body */}
-        <div className="p-4 flex gap-3">
-          {/* FAN column */}
-          <div className="flex flex-col items-center justify-between py-3 px-2 rounded select-none"
-            style={{ minWidth: 56, background: '#161b22', border: '1px solid #21262d' }}>
-            <div className="flex items-center gap-1">
-              <Zap className="h-3 w-3 text-cyan-400" />
-              <span className="text-[9px] text-gray-400 font-mono font-bold">FAN</span>
-            </div>
-            <div className="flex flex-col items-center gap-4 my-2">
-              {[1, 2].map(n => (
-                <div key={n} className="flex flex-col items-center gap-1">
-                  <div className="relative w-9 h-9 flex items-center justify-center">
-                    <div className="absolute inset-0 rounded-full" style={{ border: '2px solid #16a34a' }} />
-                    <div className="animate-spin" style={{ animationDuration: '2.5s' }}>
-                      <svg width="20" height="20" viewBox="0 0 20 20">
-                        <path d="M10 4 Q14 8 10 10 Q14 12 10 16 Q6 12 10 10 Q6 8 10 4Z" fill="#22c55e" opacity="0.8" />
-                        <path d="M4 10 Q8 6 10 10 Q8 14 4 10 Q8 14 10 10 Q8 6 4 10 Q8 14 16 10 Q12 14 10 10 Q12 6 16 10Z" fill="#16a34a" opacity="0.5" />
-                      </svg>
-                    </div>
-                  </div>
-                  <span className="text-[8px] text-green-400 font-mono">{n}</span>
-                </div>
-              ))}
-            </div>
-            <div className="text-center">
-              <div className="text-[10px] font-bold text-green-400 font-mono">{olt.isOnline ? '2/2' : '0/2'}</div>
-              <div className="text-[8px] text-gray-500">Active</div>
-            </div>
-          </div>
-
-          {/* Slot rows */}
-          <div className="flex-1 flex flex-col gap-1.5">
-            {visibleSlots.map(slot => renderSlotRow(slot))}
-          </div>
-        </div>
-
-        {/* Legend */}
-        <div className="flex items-center gap-5 px-4 py-2.5" style={{ background: '#0a0f14', borderTop: '1px solid #21262d' }}>
-          {[
-            { bg: '#14532d', border: '#16a34a', dot: '#4ade80', label: 'Online' },
-            { bg: '#1e293b', border: '#334155', dot: '#475569', label: 'Disabled' },
-            { bg: '#431407', border: '#ea580c', dot: '#fb923c', label: 'Admin UP / Port DOWN' },
-            { bg: '#450a0a', border: '#dc2626', dot: '#f87171', label: 'LOS ONU' },
-            { bg: '#713f12', border: '#ca8a04', dot: '#facc15', label: 'Unregistered' },
-          ].map(item => (
-            <div key={item.label} className="flex items-center gap-1.5">
-              <div className="w-4 h-4 rounded-sm border flex items-center justify-center"
-                style={{ background: item.bg, borderColor: item.border }}>
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: item.dot }} />
-              </div>
-              <span className="text-[9px] text-gray-400">{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Per-port detail table ── */}
-      {Object.keys(portStats).length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-          <h3 className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">Detail Per Port PON</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
-            {Object.entries(portStats)
-              .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
-              .map(([portKey, s]) => {
-                const pct = s.total > 0 ? (s.online / s.total) * 100 : 0;
-                const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
-                return (
-                  <div key={portKey} className="border border-gray-100 dark:border-gray-800 rounded-lg p-2.5">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">0/{portKey}</span>
-                      <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
-                        {s.online}/{s.total}
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 mb-1">
-                      <div
-                        className={`h-1.5 rounded-full ${pct === 100 ? 'bg-green-500' : pct === 0 ? 'bg-red-500' : 'bg-orange-400'}`}
-                        style={{ width: `${Math.max(pct, s.total > 0 ? 5 : 0)}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[9px] text-gray-400">
-                      <span>{s.total} ONU{s.unregistered > 0 ? ` · ${s.unregistered} unreg` : ''}</span>
-                      {avgRx && <span>{avgRx} dBm</span>}
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ONU Registration Modal — vendor-aware (ZTE / Huawei / FiberHome)
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface RegisterMetadata {
-  onuTypes: string[];
-  tcontProfiles: string[];
-  trafficProfiles: string[];
-  suggestedOnuId: number | null;
-  detectedOnuType: string | null;
-}
-
-type ZteServiceTemplate = 'basic' | 'zte_full' | 'huawei_full' | 'fiberhome_veip';
 
 interface RegisterModalProps {
   oltId: string;

@@ -35,12 +35,29 @@ async function getTelnetConfig(olt: any): Promise<TelnetConfig | null> {
  */
 function parseInterfaceStatus(output: string): Record<string, string> {
   const result: Record<string, string> = {};
-  for (const line of output.split('\n')) {
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
     const m = line.match(/^\s*([^:]+?)\s*:\s*(.+)$/);
     if (m) {
       const key = m[1].trim();
       const val = m[2].trim();
       result[key] = val;
+      continue;
+    }
+
+    const stateMatch = line.match(/^(\S+)\s+is\s+(activate|deactivate)\s*,\s*line protocol is\s+(up|down)\.?$/i);
+    if (stateMatch) {
+      result.Interface = stateMatch[1].trim();
+      result['Admin Status'] = stateMatch[2].toLowerCase() === 'activate' ? 'Up' : 'Down';
+      result['Link Status'] = stateMatch[3].toLowerCase() === 'up' ? 'Up' : 'Down';
+      continue;
+    }
+
+    const descriptionMatch = line.match(/^Description is\s+(.+?)\.?$/i);
+    if (descriptionMatch) {
+      result.Description = descriptionMatch[1].trim();
     }
   }
   return result;
