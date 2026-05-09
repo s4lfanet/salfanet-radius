@@ -6,6 +6,25 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.30.0] — 2026-05-09
+### Added
+- **Go backend Phase 1 — OLT Monitoring** — Full Go backend scaffolded alongside the existing Next.js frontend. Compiles to a single binary (`bin/server.exe`), Fiber v3 HTTP framework, GORM (MySQL, shares existing DB), zerolog structured logging.
+  - `cmd/server/main.go` — entrypoint with graceful SIGTERM/SIGINT shutdown
+  - `internal/config/config.go` — godotenv-based config (all env vars from `.env`)
+  - `internal/db/db.go` — GORM connection pool (25 max open, 10 idle, 5min lifetime)
+  - `internal/db/models/` — GORM models mirroring Prisma schema (OLT, ONU, alerts, metrics, customers, invoices, …)
+  - `internal/olt/snmp/` — gosnmp walk/get thin wrapper (thread-safe, per-call session)
+  - `internal/olt/telnet/` — persistent Telnet pool (max 3 sessions/OLT, 30s keepalive)
+  - `internal/olt/vendors/zte/` — ZTE C320 V2.1: concurrent SNMP walk + Telnet authoritative ONU discovery, register/deregister, ONU types, T-CONT profiles
+  - `internal/olt/poller/` — per-OLT polling goroutines, DB upsert, alert detection, WebSocket broadcast
+  - `internal/ws/hub.go` — WebSocket broadcast hub (fasthttp upgrader, OLT-scoped subscriptions)
+  - `internal/api/` — Fiber v3 router, JWT Bearer middleware, auth/admin/OLT handlers
+  - `Makefile`, `Dockerfile`, `docker-compose.yml`, `.air.toml` — build/deploy tooling
+### Files
+- `cmd/server/main.go` — new
+- `internal/**/*.go` — new (24 files)
+- `Makefile`, `Dockerfile`, `docker-compose.yml`, `.air.toml` — new
+
 ## [2.29.63] — 2026-05-09
 ### Fixed
 - **Ghost ONU "N/A" unregistered dari SNMP stale seen-table** — Root cause: `ZTE_V21_SEEN_ONU_TABLE` SNMP walk mengembalikan ONU ID yang stale/pernah tersambung sebelumnya (bukan ONU fisik aktif). Code lama menambah SNMP IDs yang tidak ada di `uncfgSerials` Telnet sebagai entri kosong → tampil di UI sebagai ONU Unregistered ke-3 dengan serial "N/A". Fix: track `hadTelnetData` — jika globalUncfgMap sudah dibangun (Telnet global berhasil), jangan tambahkan ID dari SNMP seen-table. Telnet dipercaya sebagai sumber otoritatif. SNMP fallback hanya digunakan saat Telnet benar-benar tidak tersedia.
