@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.37 — 2026-05-09
+
+### Fixed
+- **Command uplink ZTE dibetulkan** — Tab `Configuration` tidak lagi memakai `show running-config interface gei_1/...` yang invalid untuk uplink GE/XGE ZTE C320. Data konfigurasi sekarang dibentuk dari command yang valid: `show interface` + `show vlan port`.
+- **Aksi VLAN/enable/disable uplink kini benar-benar jalan** — Endpoint POST uplink sebelumnya menjalankan `configure terminal`, `interface`, dan `switchport/shutdown` di sesi Telnet terpisah, sehingga state konfigurasi hilang di tiap langkah. Sekarang satu aksi dijalankan dalam satu sesi Telnet via `executeMultipleCommands`.
+- **Parser VLAN uplink lebih konsisten** — Variasi key ZTE seperti `Tagged VLAN` dan `Tagged Vlan` sekarang dinormalisasi supaya mode, PVID, TLS, dan daftar tagged VLAN tampil stabil di UI.
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — Deteksi error CLI ZTE, config uplink sintetis dari command valid, dan eksekusi action uplink dalam satu sesi Telnet.
+
 ### v2.29.36 — 2026-05-09
 
 ### Fixed
@@ -521,21 +531,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/api/olt/[id]/onus/register/route.ts` — Tambah metadata `trafficProfiles` dan eksekusi template `zte_full`, `huawei_full`, `fiberhome_veip`.
 - `src/app/admin/olt/[id]/page.tsx` — Tambah pilihan template config, field template-specific, dan preview command sesuai flow register.
-
-### v2.29.32 — 2026-05-09
-
-### Fixed
-- **Detail ONU unregistered salah command** — ONU yang belum terdaftar tidak lagi dipaksa memakai `show gpon onu detail-info gpon-onu_...`, karena command itu memang invalid untuk ONU unconfigured. Detail kini memakai `show pon onu uncfg gpon-olt_...` dan menampilkan type/SN/state yang valid dari OLT.
-- **Register ZTE masih hardcode `type All`** — Flow register ZTE kini mengikuti wizard referensi `oltc320_v2.1.1_linux`: type ONU yang dipilih dari daftar live OLT dipakai langsung pada command `onu {id} type {onuType} sn {sn}`.
-
-### Added
-- **Register metadata live dari OLT** — Modal register sekarang mengambil `ONU Type`, `TCONT profile`, dan suggested ONU ID langsung dari OLT via Telnet, bukan dari array dummy di frontend.
-- **Detected ONU type untuk unconfigured ONU** — Modal register/detail menampilkan type ONU hasil baca `show pon onu uncfg`, sehingga admin bisa lihat type aktual sebelum register.
-
-### Files
-- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — Branch detail khusus ONU unregistered pakai `show pon onu uncfg`.
-- `src/app/api/olt/[id]/onus/register/route.ts` — Tambah GET metadata live dari OLT dan ubah register ZTE agar pakai actual ONU type.
-- `src/app/admin/olt/[id]/page.tsx` — Modal register pakai data live OLT untuk ONU type/TCONT/suggested ID.
 
 <!-- AUTO-CHANGELOG:END -->
 
