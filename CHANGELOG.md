@@ -6,6 +6,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.57] — 2026-05-09
+### Fixed
+- **Poller lambat — per-ONU Telnet optical info calls dihapus** — Root cause: `upsertONU` di poller memanggil `vendor.getOnuOpticalInfo(telnetConfig, ...)` untuk setiap ONU satu-per-satu, meski `discoverPonV21` sudah mengambil `rxPower` dan `distance` via 7 SNMP walks paralel. Dengan 400+ ONU aktif, ini berarti 400+ sesi Telnet sequential per polling cycle (~8–35s masing-masing = potensi ratusan detik). Fix: skip Telnet optical info call jika `onu.rxPower !== null` (artinya SNMP sudah menyediakan data). Telnet optical info tetap digunakan sebagai fallback hanya jika SNMP tidak menghasilkan rxPower.
+- **SSH path dihapus dari optical info fallback** — ZTE C320 V2.1 hanya mendukung Telnet CLI; SSH tidak dikonfigurasi. Path `sshConfig` untuk `getOnuOpticalInfoSSH` dihapus dari `upsertONU` agar tidak terjadi double-attempt.
+### Files
+- `src/lib/olt/poller.ts` — `upsertONU`: skip Telnet/SSH optical info if `onu.rxPower !== null` (SNMP-sourced)
+
 ## [2.29.56] — 2026-05-09
 ### Fixed
 - **Port Map sync lambat setelah hapus VLAN gagal** — Root cause: uplink POST menggunakan `timeout: 20` untuk sesi Telnet konfigurasi. Dengan 2 attempt (`removeVlan`) yang keduanya gagal, total waktu zombie sessions bisa mencapai 2 × 35 detik = 70 detik. ZTE C320 membatasi concurrent Telnet sessions; chassis sync yang menyusul tidak bisa langsung konek. Fix:

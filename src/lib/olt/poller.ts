@@ -269,10 +269,13 @@ async function upsertONU(
     let opticalInfo: any = null;
 
     // Manual sync/delete refresh should stay lightweight so the request can finish.
-    if (!options.skipOpticalInfo) {
-      if (sshConfig) {
-        opticalInfo = await vendor.getOnuOpticalInfoSSH(sshConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
-      } else if (telnetConfig) {
+    // If SNMP discovery already provided rxPower (e.g. ZTE V2.1 via discoverONUsSNMP/discoverPonV21),
+    // skip the per-ONU Telnet/SSH optical info call entirely — it's redundant and causes N×Telnet sessions per cycle.
+    const snmpHasOptical = onu.rxPower !== null && onu.rxPower !== undefined;
+    if (!options.skipOpticalInfo && !snmpHasOptical) {
+      // Only fallback to Telnet optical info when SNMP could not supply rxPower.
+      // Do NOT use SSH path for ZTE C320 (only Telnet CLI is supported).
+      if (telnetConfig) {
         opticalInfo = await vendor.getOnuOpticalInfo(telnetConfig, onu.frame, onu.slot, onu.port, onu.onuId).catch(() => null);
       }
     }
