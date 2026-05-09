@@ -469,6 +469,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.60 — 2026-05-09
+
+### Fixed
+- **OLT Import Template 404** — `GET /api/network/olts/template` dan `POST /api/network/olts/import` tidak ada (route files belum dibuat). Tombol "Download Template Excel" dan upload import Excel di halaman `/admin/network/olts` selalu 404/error. Fix: buat kedua route. Template menghasilkan file `.xlsx` dengan contoh 2 baris (kolom: name, ipAddress, latitude, longitude, vendor, model, snmpCommunity, snmpPort, telnetPort, username, password, pollingInterval). Import route mem-parse Excel, validasi IP + vendor, skip duplicate IP, dan insert via Prisma.
+### Files
+- `src/app/api/network/olts/template/route.ts` — baru: GET → download OLT_Import_Template.xlsx
+- `src/app/api/network/olts/import/route.ts` — baru: POST → import OLT dari Excel
+
 ### v2.29.59 — 2026-05-09
 
 ### Fixed
@@ -506,16 +514,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
   2. Loop `commandAttempts` sekarang **break** jika terjadi connection-level failure (`!result.success`) — tidak ada gunanya mencoba command berbeda jika OLT tidak bisa dikoneksi. Retry (continue) hanya terjadi pada **CLI error** (command ditolak OLT, bukan koneksi gagal).
 ### Files
 - `src/app/api/olt/[id]/uplink/route.ts` — POST action: `timeout: 8`, break on connection failure
-
-### v2.29.55 — 2026-05-09
-
-### Fixed
-- **removeVlan di uplink tag → 500** — Root cause: satu sesi Telnet mengirim `no switchport vlan X tag`, `no switchport default vlan`, `no switchport vlan X` sekaligus; perintah fallback yang tidak berlaku di ZTE C320 mengembalikan `%Error`, `firstError` menjadi true → 500. Fix: pisahkan menjadi dua `commandAttempts` terpisah — percobaan pertama hanya `no switchport vlan ${vid} tag`, fallback percobaan kedua `no switchport default vlan`. Setiap percobaan adalah sesi Telnet independen sehingga error dari satu tidak mengontaminasi yang lain.
-- **ONU Type tidak terbaca di Register ONU** — Root cause: `show run | include onu-type` pada ZTE C320 V2.1 tidak mendukung pipe filter sehingga menghasilkan seluruh running-config atau timeout, menyebabkan sesi `executeMultipleCommands` 5-command gagal dan semua data (onuTypes, tcontProfiles, trafficProfiles, suggestedOnuId, detectedOnuType) kembali kosong. Fix: ganti ke 5 panggilan `executeCommand` paralel (`Promise.allSettled`) — satu command per sesi Telnet, kegagalan satu tidak mempengaruhi lainnya. Command ONU types diganti ke `show gpon onu-type`.
-- **parseZteOnuTypes** — Diperbarui untuk menangani output format tabel dari `show gpon onu-type` (`ZTEG-F670L  F670L GPON ONT`) selain format running-config lama (`onu-type ZTEG-F670L gpon ...`). Header line (`Onu-type`, `---`) dan kata kunci umum di-skip.
-### Files
-- `src/app/api/olt/[id]/uplink/route.ts` — removeVlan: pisah jadi 2 commandAttempts terpisah
-- `src/app/api/olt/[id]/onus/register/route.ts` — ONU type GET: `Promise.allSettled(5x executeCommand)` + `show gpon onu-type` + parser update
 
 <!-- AUTO-CHANGELOG:END -->
 
