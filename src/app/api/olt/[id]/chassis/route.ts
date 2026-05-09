@@ -49,8 +49,9 @@ function classifyCard(cardType: string): SlotType {
 
 function isOperationalCard(status?: string): boolean {
   if (!status) return true;
-  return !/(?:offline|not\s*install|not\s*present|absent|empty)/i.test(status);
+  return !/(?:not\s*install|not\s*present|absent|empty)/i.test(status);
 }
+
 
 /**
  * Parse ZTE C320 "show card" output.
@@ -144,11 +145,10 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
     ];
   }
   if (ct === 'SMXA') {
-    // ZTE C320 SMXA card spans two slot addresses: ports 1-3 on slot N, ports 1-3 on slot N+1
-    return [
-      `gei_1/${slot}/1`, `gei_1/${slot}/2`, `gei_1/${slot}/3`,
-      `gei_1/${slot + 1}/1`, `gei_1/${slot + 1}/2`, `gei_1/${slot + 1}/3`,
-    ];
+    // ZTE C320: each SMXA card has 3 GE ports on its own slot.
+    // Two physical SMXA cards occupy separate slots (e.g. 3 and 4).
+    // Each card contributes 3 ports independently.
+    return [`gei_1/${slot}/1`, `gei_1/${slot}/2`, `gei_1/${slot}/3`];
   }
   return [`gei_1/${slot}/1`, `gei_1/${slot}/2`];
 }
@@ -193,6 +193,73 @@ function parseUplinkInterfaceStatus(output: string, fallbackIface: string): Upli
     isEnabled: /^up|enable|activate$/i.test(adminStatus),
     isLinked: /^up|online$/i.test(linkStatus),
   };
+}
+
+/**
+ * Load uplink port status via SNMP IF-MIB (RFC 2863).
+ * Walks ifDescr to build a name→ifIndex map, then reads
+ * ifAdminStatus + ifOperStatus + ifHighSpeed for each uplink interface.
+ */
+async function loadUplinkPortStatesSNMP(
+  snmpConfig: SNMPConfig,
+  ifaces: string[]
+): Promise<Map<string, UplinkPortState>> {
+  const stateMap = new Map<string, UplinkPortState>();
+  if (ifaces.length === 0) return stateMap;
+
+  // IF-MIB base OIDs
+  const OID_ifDescr       = '1.3.6.1.2.1.2.2.1.2';
+  const OID_ifAdminStatus = '1.3.6.1.2.1.2.2.1.7';
+  const OID_ifOperStatus  = '1.3.6.1.2.1.2.2.1.8';
+  const OID_ifHighSpeed   = '1.3.6.1.2.1.31.1.1.1.15';
+  const OID_ifAlias       = '1.3.6.1.2.1.31.1.1.1.18';
+
+  // Normalize interface name for comparison (gei_1/3/1 ↔ gei-1/3/1)
+  const normalizeIface = (s: string) => s.toLowerCase().replace(/[-_]/g, '_');
+
+  const descrWalk = await snmpWalk(snmpConfig, OID_ifDescr);
+  if (!descrWalk.success || !descrWalk.results) return stateMap;
+
+  // Build map: normalizedName → ifIndex
+  const nameToIdx = new Map<string, string>();
+  for (const [oid, name] of Object.entries(descrWalk.results)) {
+    const idx = oid.split('.').pop() ?? '';
+    nameToIdx.set(normalizeIface(name), idx);
+  }
+
+  // For each requested interface, look up status
+  for (const iface of ifaces) {
+    const idx = nameToIdx.get(normalizeIface(iface));
+    if (!idx) continue;
+
+    const [adminRes, operRes, speedRes, aliasRes] = await Promise.all([
+      snmpGet(snmpConfig, `${OID_ifAdminStatus}.${idx}`),
+      snmpGet(snmpConfig, `${OID_ifOperStatus}.${idx}`),
+      snmpGet(snmpConfig, `${OID_ifHighSpeed}.${idx}`),
+      snmpGet(snmpConfig, `${OID_ifAlias}.${idx}`),
+    ]);
+
+    // ifAdminStatus: 1=up, 2=down, 3=testing
+    const adminVal = parseInt(adminRes.value ?? '2', 10);
+    const operVal  = parseInt(operRes.value  ?? '2', 10);
+    const adminStatus = adminVal === 1 ? 'Up' : 'Down';
+    const linkStatus  = operVal  === 1 ? 'Up' : 'Down';
+    const speedMbps   = speedRes.success ? speedRes.value : undefined;
+    const description = aliasRes.success && aliasRes.value ? aliasRes.value : undefined;
+
+    stateMap.set(iface, {
+      iface,
+      adminStatus,
+      linkStatus,
+      speed: speedMbps ? `${speedMbps}M` : undefined,
+      physicalType: undefined,
+      description,
+      isEnabled: adminVal === 1,
+      isLinked:  operVal  === 1,
+    });
+  }
+
+  return stateMap;
 }
 
 async function loadUplinkPortStates(
@@ -273,8 +340,9 @@ export async function GET(
     let uplinkIfacesBySlot: Map<number, string[]> = new Map();
     let uplinkStatesByIface: Map<string, UplinkPortState> = new Map();
 
+    let telnetConfig: TelnetConfig | null = null;
     if (olt.telnetEnabled || olt.sshEnabled) {
-      const telnetConfig: TelnetConfig = {
+      telnetConfig = {
         host:     olt.ipAddress,
         port:     olt.telnetPort ?? 23,
         username: olt.username ?? '',
@@ -285,16 +353,11 @@ export async function GET(
         const result = await executeCommand(telnetConfig, 'show card');
         if (result.success && result.output && result.output.length > 20) {
           telnetCards = parseShowCard(result.output);
-          // Pre-compute uplink interfaces per SMXA slot
+          // Pre-compute uplink interfaces per SMXA/GICF slot
           for (const card of telnetCards) {
             if (card.slotType === 'uplink') {
               uplinkIfacesBySlot.set(card.slot, smxaUplinkPorts(card.slot, card.cardType));
             }
-          }
-
-          const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
-          if (allUplinkIfaces.length > 0) {
-            uplinkStatesByIface = await loadUplinkPortStates(telnetConfig, allUplinkIfaces);
           }
         }
       } catch { /* Telnet unavailable — use SNMP fallback */ }
@@ -330,10 +393,10 @@ export async function GET(
       else                           data.cardType = 'GTGQ';
     }
 
-    // ── Step 3: Try SNMP for board presence ───────────────────────────────────
+    // ── Step 3: Try SNMP for board presence + uplink port status ─────────────
     let snmpBoardSlots: Set<number> = new Set();
     if (olt.snmpEnabled) {
-      const snmpConfig: SNMPConfig = { host: olt.ipAddress, community: olt.snmpCommunity, port: olt.snmpPort };
+      const snmpConfig: SNMPConfig = { host: olt.ipAddress, community: olt.snmpCommunity ?? 'public', port: olt.snmpPort ?? 161 };
       try {
         const ponWalk = await snmpWalk(snmpConfig, ZTE_PON_TABLE);
         if (ponWalk.success && ponWalk.results) {
@@ -347,7 +410,23 @@ export async function GET(
             }
           }
         }
+
+        // Use SNMP IF-MIB to get uplink port status (more reliable than Telnet multi-cmd)
+        const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
+        if (allUplinkIfaces.length > 0) {
+          uplinkStatesByIface = await loadUplinkPortStatesSNMP(snmpConfig, allUplinkIfaces);
+        }
       } catch { /* SNMP unavailable */ }
+    }
+
+    // If SNMP didn't return uplink states, try Telnet multi-command fallback
+    if (uplinkStatesByIface.size === 0 && telnetConfig) {
+      const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
+      if (allUplinkIfaces.length > 0) {
+        try {
+          uplinkStatesByIface = await loadUplinkPortStates(telnetConfig, allUplinkIfaces);
+        } catch { /* Telnet unavailable */ }
+      }
     }
 
     // ── Step 4: Build chassis output ─────────────────────────────────────────
