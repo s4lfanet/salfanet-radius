@@ -469,6 +469,20 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.31 — 2026-05-09
+
+### Fixed
+- **ONU detail loading lebih cepat** — Endpoint detail ONU ZTE tidak lagi membuka 3 sesi Telnet terpisah. Detail dan running-config kini diambil dalam satu sesi multi-command, dan optical command hanya dipanggil bila data power/jarak belum ada di DB.
+- **Pager `--More--` ZTE merusak output detail** — Script Expect sekarang otomatis menekan spasi saat output Telnet dipaginasi, sehingga modal detail tidak lagi menampilkan output terpotong/aneh seperti `ZXAN#xit`.
+
+### Added
+- **Detail vendor ONT & service summary** — Modal detail ONU kini menampilkan vendor ONT dari prefix serial, auth mode, SN bind, admin/channel state, DBA/vport/profile, VLAN service, TCONT profile, dan service-port mapping.
+
+### Files
+- `src/lib/olt/telnet.ts` — Handle pager `--More--` dan opsi multi-command tanpa `end` paksa.
+- `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — Multi-command Telnet transcript parser + summary vendor/config ONU.
+- `src/app/admin/olt/[id]/page.tsx` — Tambah kartu technical detail dan service summary di modal ONU.
+
 ### v2.29.30 — 2026-05-09
 
 ### Fixed
@@ -554,21 +568,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/admin/olt/[id]/page.tsx` — ONURegisterModal rewritten: vendor-aware fields + preview; prop `vendor` ditambahkan ke render call
 - `src/app/api/olt/[id]/onus/register/route.ts` — Full rewrite: vendor detection + per-vendor CLI command sequence
 - `src/lib/olt/vendors/zte.ts` — Tambah `getSystemMetricsTelnet()` best-effort function
-
-### v2.29.26 — 2026-05-08
-
-### Fixed
-- **OLT Management ONU count** — Halaman OLT Management (network/olts) sebelumnya selalu menampilkan "0 ONUs" karena API `GET /api/network/olts` tidak menyertakan `_count.onuStatuses`. Kini field `olt_onu_status` (jumlah ONU) dan `onu_stats` (online/offline) disertakan dari field `totalOnu` & `onlineOnu` yang sudah tersimpan di DB setelah polling
-- **Password OLT tidak muncul** — Halaman Settings di OLT Detail (`/admin/olt/[id]`) selalu me-reset field password ke kosong saat halaman di-refresh. Kini password diambil dari API response dan ditampilkan. PUT handler juga diubah agar tidak menghapus password yang tersimpan jika field dikirim kosong (hanya update jika ada isi)
-- **updater.sh clean build** — Tambah `rm -rf .next` sebelum `npm run build` di updater agar tidak ada artifact build lama yang menyebabkan update tidak efektif / lock file conflict
-- **package.json version sync** — Versi di `package.json` kini diselaraskan dengan versi CHANGELOG (sebelumnya masih `2.29.20`)
-
-### Files
-- `vps-install/updater.sh` — Tambah `rm -rf .next` sebelum build
-- `package.json` — Bump version ke `2.29.26`
-- `src/app/api/network/olts/route.ts` — Tambah `_count.onuStatuses` + mapping `olt_onu_status` + `onu_stats`
-- `src/app/admin/olt/[id]/page.tsx` — Load `password` dari API response di `fetchOLT`
-- `src/app/api/olt/[id]/route.ts` — PUT: skip update password jika kosong
 
 <!-- AUTO-CHANGELOG:END -->
 
