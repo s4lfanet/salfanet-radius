@@ -469,6 +469,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.63 — 2026-05-09
+
+### Fixed
+- **Ghost ONU "N/A" unregistered dari SNMP stale seen-table** — Root cause: `ZTE_V21_SEEN_ONU_TABLE` SNMP walk mengembalikan ONU ID yang stale/pernah tersambung sebelumnya (bukan ONU fisik aktif). Code lama menambah SNMP IDs yang tidak ada di `uncfgSerials` Telnet sebagai entri kosong → tampil di UI sebagai ONU Unregistered ke-3 dengan serial "N/A". Fix: track `hadTelnetData` — jika globalUncfgMap sudah dibangun (Telnet global berhasil), jangan tambahkan ID dari SNMP seen-table. Telnet dipercaya sebagai sumber otoritatif. SNMP fallback hanya digunakan saat Telnet benar-benar tidak tersedia.
+- **Per-port Telnet extra call saat globalUncfgMap tersedia** — `else if (globalUncfgMap?.has(portKey))` salah: jika port tidak ada di map (0 ONU uncfg), jatuh ke per-port Telnet call. Fix: cek `globalUncfgMap !== null` dulu.
+### Files
+- `src/lib/olt/vendors/zte.ts` — `discoverPonV21`: tambah `hadTelnetData` flag, fix kondisi globalUncfgMap check
+
 ### v2.29.62 — 2026-05-09
 
 ### Fixed
@@ -504,13 +512,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/admin/olt/[id]/page.tsx` — tambah `ZteServiceTemplate` type dan `RegisterMetadata` interface
 - `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — `serializeOnuAssignment`: `customerId: string | null`
 - `src/app/api/olt/[id]/onus/[onuId]/detail/route.ts` — filter predicate: `state: string`
-
-### v2.29.58 — 2026-05-09
-
-### Fixed
-- **Poller fully SNMP — hapus per-ONU Telnet serial fallback dari `discoverPonV21`** — Root cause: `discoverPonV21` menampung ONU yang gagal di-parse serial-nya dari SNMP hex ke dalam array `needsTelnetSerial`, lalu memanggil `show gpon onu detail-info gpon-onu_1/B/P:ID` via Telnet secara paralel (N `Promise.all` sessions) untuk setiap ONU dengan serial null. Jika ada banyak ONU dengan format serial non-standar (misalnya byte non-ASCII), ini bisa spawn banyak Telnet sessions secara serentak, yang saturates OLT concurrent session limit. Fix: hapus `needsTelnetSerial` array dan `Promise.all` Telnet block. Jika SNMP hex tidak bisa di-parse, `serialNumber` tetap `null` di DB — ONU masih ter-track via `onuId`. Serial bisa diisi on-demand saat user buka detail ONU (endpoint individual yang masih boleh Telnet). Polling cycle sekarang pure SNMP untuk registered ONUs.
-### Files
-- `src/lib/olt/vendors/zte.ts` — `discoverPonV21`: hapus `needsTelnetSerial` array + `Promise.all` Telnet serial lookup block
 
 <!-- AUTO-CHANGELOG:END -->
 
