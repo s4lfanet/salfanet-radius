@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.43] — 2026-05-09
+### Fixed
+- **ONU unregistered serial tidak terbaca / hanya 1 ONU muncul** — Tiga bug sekaligus di `discoverONUsSNMP` dan `discoverPonV21`:
+  1. **Command salah**: kode menggunakan `show pon onu uncfg` tapi ZTE C320 V2.1 hanya mengenali `show gpon onu uncfg`. Karena command gagal, global uncfg map selalu kosong.
+  2. **Regex port tidak cocok**: regex `gpon[_-]olt[_-]` tidak mencocokkan format output asli `gpon-onu_1/1/1:1`. Akibatnya tidak ada entri yang dimasukkan ke map meskipun command benar.
+  3. **Kolom serial salah**: output `show gpon onu uncfg` punya 3 kolom (`OnuIndex Sn State`), serial ada di `parts[1]`. Kode lama membaca `parts[2]` yang isinya `State` ("unknown"), bukan serial number.
+- **Per-port fallback** — command `show pon onu uncfg gpon-olt_...` juga diubah ke `show gpon onu uncfg gpon-olt_...`; Format A (3-col `gpon-onu_` output) sekarang membaca serial dari `parts[1]`, format 4-col tetap dari `parts[2]`.
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Perbaikan global uncfg command, regex port, dan indeks kolom serial.
+
 ## [2.29.42] — 2026-05-09
 ### Fixed
 - **Sync OLT tidak lagi timeout 524** — `pollOLTWithOptions` sekarang dijalankan fire-and-forget (tanpa `await`). API langsung return 202 dengan `background: true`; frontend sudah punya path untuk ini: auto-refresh setelah 30 detik. ZTE C320 SNMP+Telnet discovery bisa memakan waktu >100 detik, sebelumnya menyebabkan Cloudflare/reverse-proxy memutus koneksi dengan status 524, lalu frontend menerima HTML error page dan melempar `SyntaxError: Unexpected token '<'`.

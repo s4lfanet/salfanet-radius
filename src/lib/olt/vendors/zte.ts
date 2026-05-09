@@ -416,31 +416,34 @@ async function discoverPonV21(
         }
       } else if (telnetConfig) {
         // Method 2: Fallback — per-port Telnet command
-        // Handles format: "gpon-onu_1/1/0:2  N/A  ZTEGDA5918AC  unknown"
+        // ZTE C320 V2.1: "show gpon onu uncfg gpon-olt_1/S/P"
+        // Output format A (3-col): "gpon-onu_1/1/1:N  SN  STATE"
+        // Output format B (4-col): "gpon-olt_1/1/1   TYPE  SN  STATE"
         try {
           const result = await executeCommand(
             telnetConfig,
-            `show pon onu uncfg gpon-olt_1/${board}/${cliPon}`,
+            `show gpon onu uncfg gpon-olt_1/${board}/${cliPon}`,
           );
           if (result.success && result.output) {
-            const serialList: string[] = []; // for positional fallback
+            const serialList: string[] = []; // for positional fallback (format B)
             for (const line of result.output.split('\n')) {
               const trimmed = line.trim();
               if (!trimmed || /OnuIndex|OnuType|^-/.test(trimmed)) continue;
               const parts = trimmed.split(/\s+/);
-              if (parts.length >= 3) {
-                // Format A: "gpon-onu_1/1/1:N  TYPE  SN  STATE" — ONU ID in :N suffix
+              if (parts.length >= 2) {
+                // Format A: "gpon-onu_1/1/1:N  SN  STATE" or "gpon-onu_1/1/1:N  TYPE  SN  STATE"
                 const onuMatch = parts[0].match(/gpon-onu_\d+\/\d+\/\d+:(\d+)/i);
                 if (onuMatch) {
                   const id = parseInt(onuMatch[1]);
-                  const sn = parts[2];
+                  // 3-col: SN at parts[1]; 4-col (Type SN State): SN at parts[2]
+                  const sn = parts.length >= 4 ? parts[2] : parts[1];
                   if (id > 0 && id <= 128 && sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) {
                     uncfgSerials.set(id, sn.toUpperCase());
                   }
                   continue;
                 }
                 // Format B: "gpon-olt_1/1/1  TYPE  SN  STATE" — no ONU ID, map positionally
-                if (/gpon[_-]olt/i.test(parts[0])) {
+                if (/gpon[_-]olt/i.test(parts[0]) && parts.length >= 3) {
                   const sn = parts[2];
                   if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) {
                     serialList.push(sn.toUpperCase());
@@ -536,21 +539,29 @@ export async function discoverONUsSNMP(
     let globalUncfgMap: Map<string, string[]> | null = null;
     if (telnetConfig) {
       try {
-        const result = await executeCommand(telnetConfig, 'show pon onu uncfg');
+        // ZTE C320 V2.1 uses "show gpon onu uncfg".
+        // Output format: "gpon-onu_F/S/P:ID  SN  State"
+        // (3 columns: OnuIndex Sn State — SN is at index 1, NOT 2)
+        const result = await executeCommand(telnetConfig, 'show gpon onu uncfg');
         if (result.success && result.output) {
           globalUncfgMap = new Map();
           for (const line of result.output.split('\n')) {
             const trimmed = line.trim();
             if (!trimmed || /OnuIndex|OnuType|^-/.test(trimmed)) continue;
             const parts = trimmed.split(/\s+/);
-            if (parts.length >= 3) {
-              // "gpon_olt-1/1/1" or "gpon-olt_1/1/1" — extract board/CLI PON port
-              const portMatch = parts[0].match(/gpon[_-]olt[_-](\d+)\/(\d+)\/(\d+)/i);
+            if (parts.length >= 2) {
+              // Matches both:
+              //   "gpon-onu_1/1/1:2" (V2.1 show gpon onu uncfg)
+              //   "gpon-olt_1/1/1"   (older per-port format)
+              const portMatch = parts[0].match(/gpon[_-](?:olt|onu)[_-](\d+)\/(\d+)\/(\d+)(?::(\d+))?/i);
               if (portMatch) {
                 const b = parseInt(portMatch[2]);
-                const cliPort = parseInt(portMatch[3]); // ZTE C320 CLI is normally 1-based
-                const sn = parts[2];
+                const cliPort = parseInt(portMatch[3]);
                 const displayPort = cliPort > 0 ? cliPort - 1 : cliPort;
+                // gpon-onu_ format: "Index  SN  State" → SN at parts[1]
+                // gpon-olt_ format: "Index  Type  SN  State" → SN at parts[2]
+                const isOnuFmt = /gpon[_-]onu[_-]/i.test(parts[0]);
+                const sn = isOnuFmt ? parts[1] : parts[2];
                 if (sn && sn !== 'N/A' && /^[A-Z0-9]{8,16}$/i.test(sn)) {
                   const key = `${b}/${displayPort}`;
                   if (!globalUncfgMap.has(key)) globalUncfgMap.set(key, []);
