@@ -117,7 +117,7 @@ export default function OLTAlertsPage() {
         </div>
         <button
           onClick={fetchAlerts}
-          className="inline-flex items-center px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-gray-300"
+          className="inline-flex items-center px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300"
         >
           <RefreshCw className="h-3 w-3 mr-1" />
           Refresh
@@ -126,33 +126,33 @@ export default function OLTAlertsPage() {
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <p className="text-[10px] text-gray-500 uppercase font-medium">Total Alert</p>
           <p className="text-xl font-bold text-gray-800 dark:text-gray-200">{alerts.length}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <p className="text-[10px] text-gray-500 uppercase font-medium">Critical</p>
           <p className="text-xl font-bold text-red-600">{criticalCount}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <p className="text-[10px] text-gray-500 uppercase font-medium">Warning</p>
           <p className="text-xl font-bold text-yellow-600">
             {alerts.filter((a) => a.severity === 'warning' && !a.isResolved).length}
           </p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <p className="text-[10px] text-gray-500 uppercase font-medium">Resolved</p>
           <p className="text-xl font-bold text-green-600">{alerts.filter((a) => a.isResolved).length}</p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
         <div className="flex flex-wrap gap-2">
           <select
             value={resolvedFilter}
             onChange={(e) => setResolvedFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="all">Semua Alert</option>
             <option value="false">Belum Selesai</option>
@@ -161,7 +161,7 @@ export default function OLTAlertsPage() {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="all">Semua Severity</option>
             <option value="critical">Critical</option>
@@ -171,7 +171,7 @@ export default function OLTAlertsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-gray-200 dark:border-gray-700 rounded dark:bg-gray-800 dark:text-gray-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="all">Semua Tipe</option>
             <option value="olt_offline">OLT Offline</option>
@@ -187,7 +187,7 @@ export default function OLTAlertsPage() {
       {/* Alert List */}
       <div className="space-y-2">
         {alerts.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-12 text-center">
+          <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-12 text-center">
             <CheckCircle className="h-12 w-12 text-green-400 mx-auto mb-3" />
             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Tidak ada alert</p>
             <p className="text-xs text-gray-400 dark:text-gray-500">Semua sistem berjalan normal</p>
@@ -196,10 +196,10 @@ export default function OLTAlertsPage() {
           alerts.map((alert) => (
             <div
               key={alert.id}
-              className={`bg-white dark:bg-gray-900 rounded-lg border p-3 ${
+              className={`bg-white dark:bg-slate-900 rounded-lg border p-3 ${
                 alert.severity === 'critical' && !alert.isResolved
                   ? 'border-red-300 dark:border-red-800'
-                  : 'border-gray-200 dark:border-gray-800'
+                  : 'border-slate-200 dark:border-slate-800'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -259,7 +259,7 @@ export default function OLTAlertsPage() {
                   <button
                     onClick={() => handleResolve(alert.id)}
                     disabled={resolving === alert.id}
-                    className="inline-flex items-center px-2 py-1 text-[10px] border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 rounded text-gray-700 dark:text-gray-300 disabled:opacity-50 flex-shrink-0"
+                    className="inline-flex items-center px-2 py-1 text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300 disabled:opacity-50 flex-shrink-0"
                   >
                     {resolving === alert.id
                       ? <RefreshCw className="h-3 w-3 animate-spin" />

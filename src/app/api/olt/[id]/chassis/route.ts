@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
-import { executeCommand, executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
+import { executeCommand, TelnetConfig } from '@/lib/olt/telnet';
 import { snmpWalk, SNMPConfig } from '@/lib/olt/snmp';
 
 // ── ZTE C320 Board/Shelf MIB OIDs ─────────────────────────────────────────────
@@ -157,46 +157,37 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
   return [`gei_1/${slot}`, `xgei_1/${slot}/1`, `xgei_1/${slot}/2`];
 }
 
-function parseUplinkInterfaceStatus(output: string, fallbackIface: string): UplinkPortState {
-  const parsed: Record<string, string> = {};
+function parseUplinkPortStatusTable(output: string, ifaces: string[]): Map<string, UplinkPortState> {
+  const stateMap = new Map<string, UplinkPortState>();
+  const wanted = new Set(ifaces.map((iface) => iface.toLowerCase()));
 
   for (const rawLine of output.split('\n')) {
     const line = rawLine.trim();
-    if (!line) continue;
+    if (!line || /^-+$/.test(line) || /^Port\s+/i.test(line) || /^Status\s+/i.test(line)) continue;
 
-    const kvMatch = line.match(/^\s*([^:]+?)\s*:\s*(.+)$/);
-    if (kvMatch) {
-      parsed[kvMatch[1].trim()] = kvMatch[2].trim();
-      continue;
-    }
+    const parts = line.split(/\s+/);
+    if (parts.length < 8) continue;
 
-    const stateMatch = line.match(/^(\S+)\s+is\s+(activate|deactivate)\s*,\s*line protocol is\s+(up|down)\.?$/i);
-    if (stateMatch) {
-      parsed.Interface = stateMatch[1].trim();
-      parsed['Admin Status'] = stateMatch[2].toLowerCase() === 'activate' ? 'Up' : 'Down';
-      parsed['Link Status'] = stateMatch[3].toLowerCase() === 'up' ? 'Up' : 'Down';
-      continue;
-    }
+    const iface = parts[0];
+    if (!wanted.has(iface.toLowerCase())) continue;
 
-    const descriptionMatch = line.match(/^Description is\s+(.+?)\.?$/i);
-    if (descriptionMatch) {
-      parsed.Description = descriptionMatch[1].trim();
-    }
+    const adminRaw = parts[7] ?? 'unknown';
+    const linkRaw = parts[8] ?? 'unknown';
+    const adminStatus = /^activate$/i.test(adminRaw) ? 'Up' : /^deactivate$/i.test(adminRaw) ? 'Down' : adminRaw;
+    const linkStatus = /^up$/i.test(linkRaw) ? 'Up' : /^down$/i.test(linkRaw) ? 'Down' : linkRaw;
+
+    stateMap.set(iface, {
+      iface,
+      adminStatus,
+      linkStatus,
+      speed: parts[4] && parts[4] !== 'N/A' ? `${parts[4]}M` : undefined,
+      physicalType: parts[1],
+      isEnabled: /^up|enable|activate$/i.test(adminStatus),
+      isLinked: /^up|online$/i.test(linkStatus),
+    });
   }
 
-  const adminStatus = parsed['Admin Status'] ?? parsed.Admin ?? 'Unknown';
-  const linkStatus = parsed['Link Status'] ?? parsed.Link ?? 'Unknown';
-
-  return {
-    iface: parsed.Interface ?? fallbackIface,
-    adminStatus,
-    linkStatus,
-    speed: parsed.Speed,
-    physicalType: parsed['Physical Type'],
-    description: parsed.Description,
-    isEnabled: /^up|enable|activate$/i.test(adminStatus),
-    isLinked: /^up|online$/i.test(linkStatus),
-  };
+  return stateMap;
 }
 
 /**
@@ -276,20 +267,11 @@ async function loadUplinkPortStates(
   // Run all show-interface commands in ONE Telnet session to avoid multiple
   // parallel connections that the OLT may reject or throttle.
   try {
-    const commands = ifaces.map(iface => `show interface ${iface}`);
-    const result = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
-    if (!result.success || !result.output) return stateMap;
 
-    for (let i = 0; i < ifaces.length; i++) {
-      const startMarker = `__COPILOT_CMD_${i}_START__`;
-      const endMarker   = `__COPILOT_CMD_${i}_END__`;
-      const startIdx = result.output.indexOf(startMarker);
-      const endIdx   = result.output.indexOf(endMarker);
-      if (startIdx === -1 || endIdx === -1) continue;
-      const cmdOutput = result.output.slice(startIdx + startMarker.length, endIdx).trim();
-      if (cmdOutput) {
-        stateMap.set(ifaces[i], parseUplinkInterfaceStatus(cmdOutput, ifaces[i]));
-      }
+    const result = await executeCommand(telnetConfig, 'show interface port-status');
+    if (result.success && result.output) {
+      const parsed = parseUplinkPortStatusTable(result.output, ifaces);
+      if (parsed.size > 0) return parsed;
     }
   } catch {
     // Telnet unavailable — return empty map, ports will show as unknown.
@@ -363,6 +345,11 @@ export async function GET(
               uplinkIfacesBySlot.set(card.slot, smxaUplinkPorts(card.slot, card.cardType));
             }
           }
+
+          const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
+          if (allUplinkIfaces.length > 0) {
+            uplinkStatesByIface = await loadUplinkPortStates(telnetConfig, allUplinkIfaces);
+          }
         }
       } catch { /* Telnet unavailable — use SNMP fallback */ }
     }
@@ -415,9 +402,9 @@ export async function GET(
           }
         }
 
-        // Use SNMP IF-MIB to get uplink port status (more reliable than Telnet multi-cmd)
+        // SNMP IF-MIB fallback for uplink port status if fast Telnet port-status did not return data.
         const allUplinkIfaces = [...uplinkIfacesBySlot.values()].flat();
-        if (allUplinkIfaces.length > 0) {
+        if (uplinkStatesByIface.size === 0 && allUplinkIfaces.length > 0) {
           uplinkStatesByIface = await loadUplinkPortStatesSNMP(snmpConfig, allUplinkIfaces);
         }
       } catch { /* SNMP unavailable */ }

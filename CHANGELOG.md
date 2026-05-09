@@ -6,6 +6,19 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.49] — 2026-05-09
+### Fixed
+- **ONU unconfigured tetap hanya 1 setelah sync** — Discovery ZTE C320 sekarang menjadikan output CLI `show gpon onu uncfg` sebagai sumber utama untuk ONU unconfigured. Data CLI global tidak lagi diproses hanya jika SNMP seen-table punya entry; port yang hanya muncul dari CLI global juga ditambahkan ke daftar PON yang dipoll.
+- **Port Map lambat saat membaca uplink** — Status uplink GE/XGE di chassis sekarang memakai satu command cepat `show interface port-status`, lalu SNMP IF-MIB hanya sebagai fallback. Ini menghindari multi-command/per-interface Telnet untuk port map.
+- **Komposisi warna OLT Monitoring dan Alerts** — Card, filter, dan action surface di halaman OLT Monitoring/Alerts diperhalus memakai slate surface yang konsisten untuk light/dark mode.
+
+### Files
+- `package.json` — bump versi aplikasi ke `2.29.49`.
+- `src/lib/olt/vendors/zte.ts` — CLI global uncfg authoritative; merge port PON dari CLI uncfg ke discovery; unregistered IDs tidak lagi bergantung pada seen-table SNMP.
+- `src/app/api/olt/[id]/chassis/route.ts` — port map uplink memakai parser `show interface port-status` satu kali, SNMP status jadi fallback.
+- `src/app/admin/olt/monitoring/page.tsx` — perbaikan palette light/dark pada card/filter/control.
+- `src/app/admin/olt/alerts/page.tsx` — perbaikan palette light/dark pada card/filter/control.
+
 ## [2.29.48] — 2026-05-09
 ### Fixed
 - **ONU unconfigured kedua masih hilang meski versi 2.29.47 sudah terpasang** — Parser ZTE sebelumnya masih bisa membuang serial fallback jika satu ONU unconfigured sudah lebih dulu terpetakan ke `onuId` nyata. Sekarang serial fallback selalu digabung ke hasil akhir dengan virtual ID stabil, sehingga kombinasi `1 ONU ada ID + 1 ONU hanya serial` tidak lagi berakhir jadi satu baris.
