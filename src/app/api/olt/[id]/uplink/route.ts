@@ -85,7 +85,39 @@ async function runCommandSequence(config: TelnetConfig, commands: string[]) {
 // ── Parsers ───────────────────────────────────────────────────────────────────
 
 /**
- * Parse "show interface {iface}" output.
+ * Parse "show interface port-status {iface}" tabular output.
+ * ZTE C320 sample:
+ *   Port      hybrid    Native   Negotiation    Speed       Duplex Flow-   Admin      Link
+ *             Status    VLAN          auto       (Mbps)        Ctrl  Status
+ *   xgei_1/3/2  optical  1   disable  10000  full  disable  activate  up
+ */
+function parseInterfacePortStatus(output: string, portName: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const escaped = portName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const dataLineRe = new RegExp(`^\\s*${escaped}\\s+`, 'i');
+  for (const line of output.split('\n')) {
+    if (!dataLineRe.test(line)) continue;
+    const parts = line.trim().split(/\s+/);
+    // parts[0]=Port parts[1]=hybridStatus parts[2]=NativeVLAN parts[3]=Negotiation
+    // parts[4]=Speed(Mbps) parts[5]=Duplex parts[6]=FlowCtrl parts[7]=AdminStatus parts[8]=Link
+    if (parts.length >= 8) {
+      result['Physical Type'] = parts[1];  // optical / copper / ...
+      result['Native VLAN']   = parts[2];
+      result['Negotiation']   = parts[3];
+      if (parts[4] && parts[4] !== 'N/A') result['Speed'] = `${parts[4]} Mbps`;
+      result['Duplex']        = parts[5];
+      result['Flow Control']  = parts[6];
+      const adminVal = parts[7];
+      result['Admin Status']  = /^activate$/i.test(adminVal) ? 'Up' : /^deactivate$/i.test(adminVal) ? 'Down' : adminVal;
+      if (parts[8]) result['Link Status'] = /^up$/i.test(parts[8]) ? 'Up' : 'Down';
+    }
+    break;
+  }
+  return result;
+}
+
+/**
+ * Parse "show interface {iface}" output (key:value format, fallback).
  * ZTE C320 sample:
  *   Interface: xgei_1/3/2
  *   Admin Status: Up
@@ -284,12 +316,21 @@ export async function GET(
       let parsed: Record<string, string> = {};
       let rawOutput = '';
 
-      // 1) Try Telnet `show interface`
+      // 1) Try Telnet `show interface port-status` (tabular ZTE C320 format)
       if (telnetConfig) {
-        const result = await executeCommand(telnetConfig, `show interface ${port}`);
+        const result = await executeCommand(telnetConfig, `show interface port-status ${port}`);
         rawOutput = result.output ?? '';
         if (result.success && !hasCliError(rawOutput)) {
-          parsed = parseInterfaceStatus(rawOutput);
+          parsed = parseInterfacePortStatus(rawOutput, port);
+        }
+        // Fallback: try `show interface` (key-value format) if tabular parse found nothing
+        if (!parsed['Admin Status']) {
+          const r2 = await executeCommand(telnetConfig, `show interface ${port}`);
+          const out2 = r2.output ?? '';
+          if (r2.success && !hasCliError(out2)) {
+            parsed = parseInterfaceStatus(out2);
+            if (rawOutput) rawOutput = out2; else rawOutput = out2;
+          }
         }
       }
 
@@ -309,19 +350,12 @@ export async function GET(
         parsed: result.success && !hasCliError(output) ? parseVlanPort(output) : {},
       };
     } else if (tab === 'config') {
-      const commands = [
-        `show interface ${port}`,
-        `show vlan port ${port}`,
-      ];
-      const { result, segments } = await runCommandSequence(telnetConfig, commands);
-      const statusOutput = segments[0] ?? '';
-      const vlanOutput = segments[1] ?? '';
-      const parsedStatus = result.success && !hasCliError(statusOutput) ? parseInterfaceStatus(statusOutput) : {};
-      const parsedVlan = result.success && !hasCliError(vlanOutput) ? parseVlanPort(vlanOutput) : {};
-
+      // Use `show running-config interface` for real config (includes VLAN switchport settings)
+      const result = await executeCommand(telnetConfig!, `show running-config interface ${port}`);
+      const output = result.output ?? '';
       data = {
-        raw: buildSyntheticConfig(port, parsedStatus, parsedVlan),
-        parsed: { ...parsedStatus, ...parsedVlan },
+        raw: result.success && !hasCliError(output) ? output : '',
+        parsed: {},
       };
     } else if (tab === 'optical') {
       const result = await executeCommand(telnetConfig, `show ddmi interface ${port}`);

@@ -6,6 +6,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.45] — 2026-05-09
+### Fixed
+- **Uplink STATUS tab data tidak tampil** — Command sebelumnya `show interface gei_1/x/x` menghasilkan output key-value yang tidak konsisten di ZTE C320. Diganti ke `show interface port-status gei_1/x/x` yang menghasilkan output tabular dengan kolom eksplisit: hybrid Status, Native VLAN, Negotiation, Speed (Mbps), Duplex, Flow-Ctrl, Admin Status, Link. Fallback ke `show interface` (key-value) + SNMP IF-MIB tetap dipertahankan jika tabular gagal.
+- **Uplink CONFIG tab menampilkan config sintetis** — Sebelumnya config dibuat dari hasil parse `show interface` + `show vlan port` secara manual. Sekarang menggunakan `show running-config interface gei_1/x/x` yang menghasilkan config asli dari OLT (termasuk switchport mode, VLAN list, phy-attribute, dll).
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — Tambah `parseInterfacePortStatus` (parser tabular); STATUS tab pakai `show interface port-status` dulu lalu fallback; CONFIG tab pakai `show running-config interface` langsung.
+
 ## [2.29.44] — 2026-05-09
 ### Fixed
 - **Uplink port STATUS "Admin: Unknown · Port: Unknown"** — `show interface gei_1/x/x` via Telnet kadang gagal (ZTE session limit, SMXA card OFFLINE, atau output format berbeda). Sekarang API menambahkan fallback ke SNMP IF-MIB (ifAdminStatus + ifOperStatus + ifHighSpeed + ifAlias) sehingga status port tetap terbaca meski Telnet tidak responsif.
