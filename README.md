@@ -469,6 +469,18 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.40 — 2026-05-09
+
+### Fixed
+- **Sync OLT kembali benar-benar menjalankan poller** — Endpoint sync tidak lagi melepas `pollOLTWithOptions` secara fire-and-forget. Sekarang request menunggu poll selesai, tetapi memakai mode ringan `skipOpticalInfo` supaya tetap cukup cepat untuk manual refresh dan delete follow-up.
+- **ONU yang dihapus tetap muncul di daftar register/unconfigured** — Delete ONU tidak lagi langsung menghapus row `oltOnuStatus` dari database sebelum refresh selesai. Row kini sementara diubah ke status `auth_failed` dan `customerId` dibersihkan, sehingga ONU tetap terlihat sebagai unregistered sampai hasil poll berikutnya mengonfirmasi state live dari OLT.
+- **Manual sync/delete lebih ringan** — Poller manual kini bisa melewati query optical-info per ONU agar sync tidak terasa macet dan lebih andal dipakai untuk refresh setelah aksi operasional.
+
+### Files
+- `src/lib/olt/poller.ts` — Tambah opsi `skipOpticalInfo` untuk poll ringan pada manual sync/delete.
+- `src/app/api/olt/[id]/sync/route.ts` — Kembalikan sync ke mode awaited dengan poll ringan, bukan background fire-and-forget.
+- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Ubah delete flow agar status ONU dipertahankan sebagai unregistered sampai sync selesai.
+
 ### v2.29.39 — 2026-05-09
 
 ### Fixed
@@ -506,18 +518,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/app/api/olt/[id]/chassis/route.ts` — `smxaUplinkPorts`: SMXA plain → 6 port; `loadUplinkPortStates`: satu sesi Telnet untuk semua `show interface`.
-
-### v2.29.35 — 2026-05-09
-
-### Fixed
-- **Diagram ZTE C320 dibuat lebih actual** — Rack view di halaman detail OLT sekarang fokus ke slot service/uplink real, mempertahankan nomor slot actual, menampilkan gap slot kosong, dan tidak lagi mencampur layout MCU ke area card operasional.
-- **Status uplink SMXA enable/down dibedakan dengan benar** — Parsing `show interface` kini menangani format real ZTE seperti `is activate, line protocol is up/down`, jadi port admin-up tapi link-down tidak lagi terlihat sebagai disable.
-- **Tooltip dan warna port PON lebih informatif** — Port PON sekarang membedakan online, LOS, dying gasp, dan ONU unconfigured agar kondisi slot lebih mudah dibaca dari diagram.
-
-### Files
-- `src/app/api/olt/[id]/chassis/route.ts` — Tambah parsing state uplink actual per interface dan hanya tandai card operasional yang benar-benar aktif.
-- `src/app/api/olt/[id]/uplink/route.ts` — Perbaiki parser status interface agar membaca format kalimat output ZTE C320.
-- `src/app/admin/olt/[id]/page.tsx` — Redesign diagram rack ZTE C320, refresh chassis, dan tampilkan state uplink/service port yang lebih actual.
 
 <!-- AUTO-CHANGELOG:END -->
 
