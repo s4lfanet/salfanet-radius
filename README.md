@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.39 — 2026-05-09
+
+### Fixed
+- **Sync OLT tidak lagi error 524 (Cloudflare timeout)** — `pollOLTWithOptions` sebelumnya berjalan sinkron di dalam API handler; untuk OLT dengan banyak ONU, proses bisa >100 detik sehingga Cloudflare membalas HTML error (524) bukan JSON. Sekarang sync dijalankan di background (fire-and-forget), endpoint langsung merespon `202` JSON. Frontend otomatis refresh setelah 30 detik.
+
+### Files
+- `src/app/api/olt/[id]/sync/route.ts` — Background sync, return 202 langsung tanpa tunggu poll selesai.
+- `src/app/admin/olt/[id]/page.tsx` — Handle response `background:true`, auto-refresh setelah 30 detik.
+
 ### v2.29.38 — 2026-05-09
 
 ### Fixed
@@ -509,25 +518,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/chassis/route.ts` — Tambah parsing state uplink actual per interface dan hanya tandai card operasional yang benar-benar aktif.
 - `src/app/api/olt/[id]/uplink/route.ts` — Perbaiki parser status interface agar membaca format kalimat output ZTE C320.
 - `src/app/admin/olt/[id]/page.tsx` — Redesign diagram rack ZTE C320, refresh chassis, dan tampilkan state uplink/service port yang lebih actual.
-
-### v2.29.34 — 2026-05-09
-
-### Added
-- **Delete ONU terdaftar + sync OLT** — ONU yang sudah terdaftar sekarang bisa dihapus penuh dari ZTE OLT melalui flow clear config service lalu unregister `no onu`, lalu langsung disinkronkan kembali ke database/frontend.
-- **Manual Sync OLT di halaman detail** — Halaman detail OLT sekarang punya tombol `Sync OLT` untuk memaksa refresh data dari OLT walau monitoring terjadwal tidak aktif.
-
-### Fixed
-- **Assign customer tidak lagi 500** — Response endpoint assign ONU sekarang aman untuk JSON serialization karena field `BigInt` pada status ONU disanitasi sebelum dikirim balik.
-- **Reboot ONU menampilkan error OLT yang lebih nyata** — Route reboot ZTE sekarang mengekstrak output command `reboot` dari transcript Telnet, sehingga kegagalan tidak lagi selalu jatuh ke pesan generik.
-- **Sync OLT membersihkan ONU yang sudah hilang di perangkat** — Poller sekarang menghapus row ONU stale yang tidak lagi ditemukan saat polling, sehingga hasil register/delete lebih konsisten antara OLT dan frontend.
-
-### Files
-- `src/app/api/olt/[id]/onus/[onuId]/assign/route.ts` — Sanitasi response assign ONU agar tidak gagal serialisasi `BigInt`.
-- `src/app/api/olt/[id]/onus/[onuId]/reboot/route.ts` — Perbaiki parsing output reboot Telnet dan error reporting.
-- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Tambah endpoint delete/unregister ONU penuh untuk ZTE + sync setelah aksi.
-- `src/app/api/olt/[id]/sync/route.ts` — Tambah endpoint manual sync OLT per perangkat.
-- `src/lib/olt/poller.ts` — Tambah mode sync manual dan cleanup ONU stale saat polling.
-- `src/app/admin/olt/[id]/page.tsx` — Tambah tombol Sync OLT, Delete ONU, dan refresh otomatis setelah register/reboot.
 
 <!-- AUTO-CHANGELOG:END -->
 
