@@ -4,7 +4,6 @@ import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { unauthorized } from '@/lib/api-response';
 import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
-import { pollOLTWithOptions } from '@/lib/olt/poller';
 
 function normalizeTelnetOutput(output: string): string {
   return output
@@ -124,9 +123,13 @@ export async function DELETE(
       }, { status: 500 });
     }
 
-    // Keep the ONU row visible as unregistered until the poll refresh confirms
-    // its new live state. Deleting the row first makes the ONU disappear from the
-    // register list when sync is slow or fails.
+    // Keep the ONU row visible as unregistered so the operator can re-register it.
+    // We do NOT call pollOLTWithOptions here because:
+    //   • The ZTE OLT needs ~10–30 seconds to process the deletion and report the
+    //     ONU as unregistered in its SEEN_ONU_TABLE (zxAnGponOnuDiscoveredInfoTable).
+    //   • If we poll immediately, the poller won't find it in the uncfg list, and
+    //     pruneMissingOnus (even with auth_failed guard) could still be confused.
+    //   • The scheduled poller will pick up the new state within its next cycle.
     await prisma.oltOnuStatus.update({
       where: { id: onu.id },
       data: {
@@ -136,11 +139,6 @@ export async function DELETE(
         lastOfflineAt: new Date(),
       },
     }).catch(() => {});
-
-    const syncResult = await pollOLTWithOptions(oltId, {
-      ignoreMonitoringDisabled: true,
-      skipOpticalInfo: true,
-    });
 
     await prisma.oltMonitoringLog.create({
       data: {
@@ -152,15 +150,13 @@ export async function DELETE(
         data: {
           serialNumber: onu.serialNumber,
           location: `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`,
-          syncSuccess: syncResult.success,
         },
       },
     }).catch(() => {});
 
     return NextResponse.json({
       success: true,
-      message: syncResult.success ? 'ONU deleted and synced successfully' : 'ONU deleted, but sync failed',
-      sync: syncResult,
+      message: 'ONU deleted successfully. It will appear in the unregistered list after the next sync.',
     });
   } catch (error: any) {
     console.error('[ONU Delete DELETE]', error);

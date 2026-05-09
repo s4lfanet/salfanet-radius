@@ -232,11 +232,19 @@ function buildOnuKey(onu: { frame?: number | null; slot?: number | null; port: n
 async function pruneMissingOnus(oltId: string, discoveredKeys: Set<string>): Promise<void> {
   const currentOnus = await prisma.oltOnuStatus.findMany({
     where: { oltId },
-    select: { id: true, frame: true, slot: true, port: true, onuId: true },
+    select: { id: true, frame: true, slot: true, port: true, onuId: true, status: true },
   });
 
   const staleIds = currentOnus
-    .filter((onu) => !discoveredKeys.has(buildOnuKey(onu)))
+    .filter((onu) => {
+      if (discoveredKeys.has(buildOnuKey(onu))) return false; // still visible — keep
+      // auth_failed = unregistered ONU (explicitly deleted or never configured).
+      // Do NOT prune these: the OLT SEEN_ONU_TABLE may not reflect the ONU yet
+      // right after deletion, and operators need to see it to re-register it.
+      // Stale unregistered entries can be cleaned up manually via the UI.
+      if (onu.status === 'auth_failed') return false;
+      return true;
+    })
     .map((onu) => onu.id);
 
   if (staleIds.length === 0) return;
