@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.46 — 2026-05-09
+
+### Fixed
+- **GE uplink port tidak muncul / selalu 400 Invalid port name** — Validasi regex sebelumnya hanya menerima format 3-level (`gei_1/3/1`) padahal ZTE C320 SMXA card gunakan format 2-level untuk GE port: `gei_1/3`. Regex diperbarui ke `(?:gei|xgei)_\d+\/\d+(?:\/\d+)?` yang menerima keduanya. Fix pada GET dan POST endpoint.
+- **Chassis diagram tampilkan 3 port GE palsu per SMXA slot** — SMXA (plain) hanya punya 1 GE port per slot, bukan 3. Port names dikoreksi: `gei_1/{slot}` (2-level, satu GE) + `xgei_1/{slot}/1`, `xgei_1/{slot}/2` (dua XGE). Sesuai output `show interface ?` pada ZTE C320.
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — Regex validasi port name diperbarui di GET dan POST handler.
+- `src/app/api/olt/[id]/chassis/route.ts` — `smxaUplinkPorts`: SMXA plain → `gei_1/{slot}` + `xgei_1/{slot}/1-2`; fallback default juga diperbarui.
+
 ### v2.29.45 — 2026-05-09
 
 ### Fixed
@@ -506,17 +516,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### Files
 - `src/app/api/olt/[id]/sync/route.ts` — Ganti `await pollOLTWithOptions(...)` menjadi fire-and-forget dengan `.catch()` error logging; return 202 `{ success, background: true, message }`.
-
-### v2.29.41 — 2026-05-09
-
-### Fixed
-- **ONU yang dihapus/unregistered tidak lagi hilang setelah sync** — Akar masalah pertama: `pruneMissingOnus` menghapus baris `auth_failed` (unregistered) saat SNMP discovery tidak mengembalikannya dalam satu siklus (timing ZTE SEEN_ONU_TABLE). Sekarang baris `auth_failed` tidak pernah dipruning oleh poller; baris tersebut tetap terlihat di daftar Unregistered sampai operator mendaftar ulang ONU atau menghapus entri secara manual.
-- **Delete ONU tidak lagi memicu poll langsung** — Akar masalah kedua: setelah ONU dihapus dari OLT, ZTE membutuhkan ~10–30 detik sebelum ONU muncul kembali di `SEEN_ONU_TABLE` sebagai unregistered. Poll yang dijalankan segera setelah delete tidak menemukan ONU itu, dan pruner (2.29.40) menghapus baris `auth_failed` yang baru dibuat. Sekarang delete route hanya menandai row sebagai `auth_failed` lalu langsung return — scheduled poller yang akan memperbarui statusnya pada siklus berikutnya.
-- **Pengurangan tekanan koneksi Telnet** — Menghilangkan `pollOLTWithOptions` dari delete route mengurangi concurrent Telnet session. Sebelumnya delete + sync + chassis API bisa membuka 3+ sesi bersamaan dan menghabiskan session pool ZTE C320, menyebabkan `show card` gagal dan rack diagram menampilkan fallback SNMP tanpa kartu SMXA.
-
-### Files
-- `src/lib/olt/poller.ts` — `pruneMissingOnus` sekarang membaca kolom `status` dan melewati baris `auth_failed`.
-- `src/app/api/olt/[id]/onus/[onuId]/delete/route.ts` — Hapus `pollOLTWithOptions` dari delete flow; hanya update DB dan return success.
 
 <!-- AUTO-CHANGELOG:END -->
 
