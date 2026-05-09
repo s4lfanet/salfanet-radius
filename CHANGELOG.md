@@ -6,6 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.52] — 2026-05-10
+### Fixed
+- **Uplink tab lambat (status/vlan/optical)** — Setiap tab dulu membuka 2 sesi Telnet terpisah (primary + fallback) masing-masing ~5 detik → total ~10 detik per tab. Sekarang: satu `executeMultipleCommands` session mengirim primary + fallback command sekaligus. Total: ~5 detik → **2× lebih cepat**.
+- **SNMP fallback getInterfaceStatusSNMP lambat** — Dulu: `snmpWalk(ifDescr)` sequential, lalu baru `Promise.all([4 snmpGet])`. Sekarang: 5 `snmpWalk` berjalan **paralel** (ifDescr, ifAdmin, ifOper, ifHighSpeed, ifAlias) + O(1) Map lookup per index.
+- **removeVlan 3 sesi Telnet** — `removeVlan` POST dulu loop 3 `commandAttempts` masing-masing sesi Telnet terpisah (~15 detik worst-case). Sekarang: satu sesi tunggal dengan ketiga `no switchport` command dikirim sekaligus — OLT mengabaikan command yang tidak berlaku.
+- **OLT sync lambat (`discoverPonV21`)** — Dulu: per-ONU `Promise.all([5 snmpGet])` secara sequential antar ONU = N × 5 subprocess spawns. Sekarang: **7 `snmpWalk` paralel** untuk seluruh PON port sekaligus (regStatus, operState, serial, rxPower, description, distance, seenTable), lalu build Map + lookup O(1) per ONU. Telnet serial lookup yang gagal SNMP di-batch via `Promise.all` tanpa blokir ONU lain.
+### Added
+- **PVID Management di VLAN tab** — Sebelumnya PVID hanya tampil read-only. Sekarang: tombol **Remove** di samping PVID aktif, dropdown berubah antara "Tagged (Trunk)" dan "Set as PVID", tombol berubah label antara "Add VLAN" dan "Set PVID". Backend: actions `setPvid` dan `removePvid` baru di POST `/api/olt/[id]/uplink`.
+- **Remove VLAN button lebih jelas** — Badge VLAN tagged kini punya tombol `×` yang lebih terlihat dengan hover merah dan border animasi.
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — `executeMultipleCommands` per tab; 5 parallel walks SNMP; `removeVlan` single session; `setPvid`/`removePvid` actions baru
+- `src/lib/olt/vendors/zte.ts` — `discoverPonV21` rewrite: 7 parallel bulk walks → O(1) Map lookup; batch Telnet serial fallback
+- `src/app/admin/olt/[id]/page.tsx` — PVID remove button; "Set as PVID" dropdown; improved VLAN remove UX
+
 ## [2.29.51] — 2026-05-09
 ### Fixed
 - **Port Map masih lambat (chassis API)** — Root cause: dua sesi Telnet terpisah (`show card` + `show interface port-status`) masing-masing ~5 detik, ditambah SNMP fallback sequential. Sekarang: satu sesi Telnet tunggal via `executeMultipleCommands` menjalankan kedua command sekaligus, dan seluruh SNMP walk (PON table + 5 IF-MIB walk) dijalankan **paralel** bersama Telnet. Total waktu: dari ~10-15 detik → ~5 detik (50%+ lebih cepat).
