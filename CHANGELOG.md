@@ -6,6 +6,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.3] — 2026-05-10
+### Fixed
+- **Postbuild: copy `.next/static` to standalone** — Static assets (CSS, JS, fonts) were returning 404/wrong MIME type because postbuild script did not copy `.next/static` into `.next/standalone/.next/static`; all browser console errors resolved
+### Files
+- `package.json` — postbuild now copies `.next/static` to `.next/standalone/.next/static`
+- `baileys_whatsapp_patch/package.json` — same fix
+
+---
+
 ## [2.31.2] — 2026-05-10
 ### Added
 - **Next.js frontend deployed on VPS** — Full stack running at `http://103.151.140.110`: Go API backend (port 8080) + Next.js frontend (port 3000) behind nginx reverse proxy
