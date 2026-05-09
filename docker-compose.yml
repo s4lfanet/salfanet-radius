@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    env_file: .env
+    restart: unless-stopped
+    networks:
+      - salfanet
+
+  wa-service:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./wa-service.js:/app/wa-service.js
+    command: node wa-service.js
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+    networks:
+      - salfanet
+
+  # MySQL is on the host VPS — not containerized
+  # Connect via host.docker.internal or the VPS IP
+
+networks:
+  salfanet:
+    driver: bridge

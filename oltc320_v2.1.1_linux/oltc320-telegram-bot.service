@@ -1,0 +1,54 @@
+# ============================================
+# Systemd Service for OLTC320 Telegram Bot
+# ============================================
+#
+# Installation:
+# 1. Edit path dibawah sesuai lokasi instalasi Anda
+# 2. Copy file ini ke: /etc/systemd/system/
+#    sudo cp oltc320-telegram-bot.service /etc/systemd/system/
+# 3. Reload systemd:
+#    sudo systemctl daemon-reload
+# 4. Enable auto-start on boot:
+#    sudo systemctl enable oltc320-telegram-bot
+# 5. Start service:
+#    sudo systemctl start oltc320-telegram-bot
+#
+# Commands:
+#   sudo systemctl start oltc320-telegram-bot    # Start bot
+#   sudo systemctl stop oltc320-telegram-bot     # Stop bot
+#   sudo systemctl restart oltc320-telegram-bot  # Restart bot
+#   sudo systemctl status oltc320-telegram-bot   # Check status
+#   sudo journalctl -u oltc320-telegram-bot -f   # View logs
+#
+
+[Unit]
+Description=OLTC320 Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# GANTI PATH DIBAWAH INI SESUAI LOKASI INSTALASI ANDA
+WorkingDirectory=/root/oltc320_v2.1.1_linux
+# GANTI PATH PYTHON SESUAI VIRTUAL ENVIRONMENT ANDA
+ExecStart=/root/oltc320_v2.1.1_linux/.venv/bin/python telegram_bot.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+
+# Environment (jika tidak menggunakan .env file)
+# Environment="TELEGRAM_BOT_TOKEN=your_token_here"
+# Environment="TELEGRAM_ADMIN_USERS=123456789"
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=oltc320-bot
+
+# Security (optional, recommended)
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,36 @@
+========================================================================
+  ZTE C320 OLT Management Tool v2.1.1 - Linux Edition
+  CLI + Telegram Bot
+========================================================================
+
+QUICK START:
+
+1. Run: ./install.sh
+   - Installs Python and dependencies automatically
+
+2. Configure OLT:
+   - Edit config/olt_profiles.json
+   - Add your OLT IP, username, password
+
+3. Run CLI:
+   - ./run.sh (interactive CLI menu)
+
+4. Run Telegram Bot:
+   Foreground mode (current terminal):
+   - ./start_telegram_bot.sh
+   
+   Background mode (persistent):
+   - ./start_telegram_bot_background.sh
+   - ./stop_telegram_bot.sh (to stop)
+   - See docs/TELEGRAM_BOT_BACKGROUND.md for systemd setup
+   
+   See GET_TELEGRAM_TOKEN.md for bot setup guide
+
+DOCUMENTATION:
+   - README.md - Full documentation
+   - GET_TELEGRAM_TOKEN.md - Telegram bot setup
+   - docs/TELEGRAM_BOT_BACKGROUND.md - Background mode guide
+   - docs/GETTING_STARTED.md - Setup guide
+   - docs/QUICK_REFERENCE.md - Command reference
+
+========================================================================
