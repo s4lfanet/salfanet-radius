@@ -6,6 +6,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.63] — 2026-05-09
+### Fixed
+- **Ghost ONU "N/A" unregistered dari SNMP stale seen-table** — Root cause: `ZTE_V21_SEEN_ONU_TABLE` SNMP walk mengembalikan ONU ID yang stale/pernah tersambung sebelumnya (bukan ONU fisik aktif). Code lama menambah SNMP IDs yang tidak ada di `uncfgSerials` Telnet sebagai entri kosong → tampil di UI sebagai ONU Unregistered ke-3 dengan serial "N/A". Fix: track `hadTelnetData` — jika globalUncfgMap sudah dibangun (Telnet global berhasil), jangan tambahkan ID dari SNMP seen-table. Telnet dipercaya sebagai sumber otoritatif. SNMP fallback hanya digunakan saat Telnet benar-benar tidak tersedia.
+- **Per-port Telnet extra call saat globalUncfgMap tersedia** — `else if (globalUncfgMap?.has(portKey))` salah: jika port tidak ada di map (0 ONU uncfg), jatuh ke per-port Telnet call. Fix: cek `globalUncfgMap !== null` dulu.
+### Files
+- `src/lib/olt/vendors/zte.ts` — `discoverPonV21`: tambah `hadTelnetData` flag, fix kondisi globalUncfgMap check
+
 ## [2.29.62] — 2026-05-09
 ### Fixed
 - **Register ONU 422 — false positive dari MOTD login OLT** — Root cause: error detection di POST register menggunakan `errorKeywords = ['failure', ...]` dengan `lowerOutput.includes('failure')`. OLT ZTE C320 selalu menampilkan MOTD setelah login: `"0 authentication failures happened"` → keyword `failure` match → handler return 422 meski registrasi berhasil. Fix: ganti broad keyword matching dengan deteksi yang spesifik terhadap pola CLI error: (1) baris diawali `%` (ZTE/Huawei CLI error prefix), (2) `invalid input`, (3) `invalid command`, (4) `already exist`, (5) `command not found`. MOTD/banner teks tidak akan ter-trigger.
