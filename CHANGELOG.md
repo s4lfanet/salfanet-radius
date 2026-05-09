@@ -6,6 +6,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.51] — 2026-05-09
+### Fixed
+- **Port Map masih lambat (chassis API)** — Root cause: dua sesi Telnet terpisah (`show card` + `show interface port-status`) masing-masing ~5 detik, ditambah SNMP fallback sequential. Sekarang: satu sesi Telnet tunggal via `executeMultipleCommands` menjalankan kedua command sekaligus, dan seluruh SNMP walk (PON table + 5 IF-MIB walk) dijalankan **paralel** bersama Telnet. Total waktu: dari ~10-15 detik → ~5 detik (50%+ lebih cepat).
+- **SNMP uplink fallback N×4 GET calls** — Sebelumnya, per-interface SNMP fallback melakukan 4 `snmpGet` shell spawn terpisah per interface. Diganti dengan 5 `snmpWalk` paralel (ifDescr, ifAdminStatus, ifOperStatus, ifHighSpeed, ifAlias) + O(1) lookup dari Map.
+- **Triple retry Telnet** — Pola lama: Telnet1 → (gagal) SNMP → (gagal) Telnet2 lagi. Sekarang: satu Telnet multi-cmd + SNMP paralel, tidak ada retry berlebihan.
+
+### Files
+- `src/app/api/olt/[id]/chassis/route.ts` — `executeMultipleCommands` single session; `fetchSNMPChassisData` bulk walks paralel; `buildUplinkStatesFromSNMP` O(1) lookup; hapus `loadUplinkPortStatesSNMP` + `loadUplinkPortStates` lama.
+
 ## [2.29.50] — 2026-05-09
 ### Changed
 - **OLT Monitoring — redesign terbaik** — Monitoring page dirancang ulang dengan: ONU progress bar per OLT dengan persentase warna adaptif (hijau/kuning/merah), countdown auto-refresh 30d dengan indikator visual, tombol "Poll Semua" parallel, sort by status/name/alerts/offline-ONU, timestamp relative ("2m lalu"), animasi ping pada OLT online, badge alert mengarah ke halaman alerts, suhu color-coded (hijau < 50°C, kuning 50–65°C, merah ≥ 65°C), styling card berlapis dengan border aksen sesuai kondisi.
