@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.54] — 2026-05-09
+### Fixed
+- **VLAN tab masih kosong (Mode/TLS/Tagged VLANs —)** — Root cause: `executeMultipleCommands(['show vlan port …', 'show running-config interface …'])` kadang gagal/hang karena `show vlan port xgei_1/3/2` tidak valid atau menyebabkan sesi Telnet terganggu. Fix: VLAN tab sekarang hanya menggunakan satu `executeCommand('show running-config interface …')` yang sudah terbukti bekerja. `parseRunningConfigInterface` mengekstrak `Mode`, `TLS`, `Tagged Vlan` (dari `switchport vlan 1,30,69,100,151 tag` — comma-separated), `Description`, `Speed`, `Duplex`, `Flow Control`, `Physical Type`.
+### Changed
+- **Chassis stats row dihapus dari Port Map** — Baris stat (UPTIME, AVG CPU, AVG MEMORY, ACTIVE CARDS, FAN STATUS) di dalam panel "ZTE C320 Rack Diagram" dihapus. AVG CPU (11%) dan AVG MEMORY (32%) adalah static placeholder yang menyesatkan; FAN STATUS dan ACTIVE CARDS belum real-time. Tampilan chassis sekarang langsung ke rack diagram.
+- **Tab Metrics dihapus** — Tab "Metrics" dihapus dari halaman OLT detail (ONU List | Port Map | Alerts | Settings | Logs). State `metrics`, `metricsHours`, `metricsLoading`, callback `fetchMetrics`, dan `useEffect`-nya juga dibersihkan.
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — VLAN tab: ganti multi-command ke single `executeCommand('show running-config interface')`
+- `src/app/admin/olt/[id]/page.tsx` — hapus chassis stats row; hapus Metrics TabsTrigger + TabsContent + state vars
+
 ## [2.29.53] — 2026-05-10
 ### Fixed
 - **Temperature card dihapus dari top stat** — Kartu "Temperature" di baris 4 stat card atas selalu "Not available (C320)" karena ZTE C320 tidak melaporkan suhu via SNMP. Dihapus → layout sekarang 3 kolom (Status, Uptime, ONUs). Grid berubah dari `md:grid-cols-4` → `md:grid-cols-3`.
