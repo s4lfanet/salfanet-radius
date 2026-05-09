@@ -179,18 +179,18 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
           <div className={`w-3 h-3 rounded-full ${statusTone.dot}`} />
           <div>
             <div className={`text-sm font-bold ${statusTone.text}`}>{statusTone.label}</div>
-            <div className="text-xs text-gray-400">Admin: {adminStatus} · Port: {linkStatus} · {parsed['Speed'] ?? '—'}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">Admin: {adminStatus} · Port: {linkStatus} · {parsed['Speed'] ?? '—'}</div>
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {(['Speed','Duplex','Flow Control','Physical Type','MTU','MAC'] as const).map(k => parsed[k] ? (
-            <div key={k} className="p-2 rounded-lg bg-gray-900 border border-gray-700">
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider">{k}</div>
-              <div className="text-xs font-mono text-white mt-0.5">{parsed[k]}</div>
+            <div key={k} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{k}</div>
+              <div className="text-xs font-mono text-slate-900 dark:text-white mt-0.5 break-all">{parsed[k]}</div>
             </div>
           ) : null)}
         </div>
-        <div className="flex gap-2 pt-2 border-t border-gray-800">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
           <button onClick={() => doAction('enable')} disabled={actionLoading} className="px-3 py-1.5 text-xs rounded bg-green-800 hover:bg-green-700 text-white disabled:opacity-50">Enable</button>
           <button onClick={() => doAction('disable')} disabled={actionLoading} className="px-3 py-1.5 text-xs rounded bg-red-900 hover:bg-red-800 text-white disabled:opacity-50">Disable</button>
         </div>
@@ -199,19 +199,19 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
   };
 
   const renderVlan = () => {
-    const taggedVlans = (parsed['Tagged Vlan'] ?? '').split(/\s+/).filter(Boolean);
+    const taggedVlans = (parsed['Tagged Vlan'] ?? '').split(/[\s,]+/).filter(Boolean);
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {([['Mode', parsed['Mode'] ?? '—'], ['PVID', parsed['Pvid'] ?? '—'], ['TLS', parsed['TLS'] ?? '—']] as [string,string][]).map(([label, val]) => (
-            <div key={label} className="p-2 rounded-lg bg-gray-900 border border-gray-700 text-center">
-              <div className="text-[10px] text-gray-400 uppercase">{label}</div>
-              <div className="text-sm font-bold text-white mt-0.5">{val}</div>
+            <div key={label} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">{label}</div>
+              <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 break-all">{val}</div>
             </div>
           ))}
         </div>
         <div>
-          <div className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Tagged VLANs</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">Tagged VLANs</div>
           <div className="flex flex-wrap gap-1.5 min-h-8">
             {taggedVlans.length > 0 ? taggedVlans.map(v => (
               <div key={v} className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-950 border border-blue-700 text-xs font-mono text-blue-300">
@@ -221,11 +221,11 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
             )) : <span className="text-xs text-gray-600 italic">No tagged VLANs configured</span>}
           </div>
         </div>
-        <div className="flex gap-2 items-center pt-3 border-t border-gray-800">
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center pt-3 border-t border-slate-200 dark:border-slate-800">
           <input value={newVlanId} onChange={e => setNewVlanId(e.target.value.replace(/\D/g, ''))} placeholder="VLAN ID" maxLength={4}
-            className="w-20 px-2 py-1 text-xs rounded bg-gray-800 border border-gray-600 text-white" />
+            className="w-full sm:w-20 px-2 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white" />
           <select value={vlanMode} onChange={e => setVlanMode(e.target.value as 'tag' | 'access')}
-            className="px-2 py-1 text-xs rounded bg-gray-800 border border-gray-600 text-white">
+            className="w-full sm:w-auto px-2 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white">
             <option value="tag">Tagged (Trunk)</option>
             <option value="access">Access (PVID)</option>
           </select>
@@ -238,7 +238,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
   };
 
   const renderConfig = () => (
-    <pre className="text-[11px] font-mono text-green-300 bg-gray-950 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap border border-gray-800">
+    <pre className="text-[11px] font-mono text-emerald-700 dark:text-emerald-300 bg-slate-50 dark:bg-slate-950 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap border border-slate-200 dark:border-slate-800">
       {raw || '(No configuration data)'}
     </pre>
   );
@@ -252,7 +252,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
       ['TX Bias Current', parsed['TX Bias Current'] ?? '—', '#06b6d4'],
     ];
     const specs: [string, string][] = [
-      ['Vendor', parsed['Manufacturer Name'] ?? '—'],
+      ['Vendor', parsed['Vendor'] ?? parsed['Manufacturer Name'] ?? '—'],
       ['Part No.', parsed['Part Number'] ?? '—'],
       ['Serial No.', parsed['Serial Number'] ?? '—'],
       ['Wavelength (nm)', parsed['Wavelength'] ?? '—'],
@@ -261,21 +261,21 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
     ];
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {metrics.map(([label, val, accent]) => (
-            <div key={label} className="p-2.5 rounded-lg bg-gray-900 border border-gray-700" style={{ borderLeft: `3px solid ${accent}` }}>
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider">{label}</div>
-              <div className="text-base font-bold font-mono text-white mt-0.5">{val}</div>
+            <div key={label} className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700" style={{ borderLeft: `3px solid ${accent}` }}>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</div>
+              <div className="text-base font-bold font-mono text-slate-900 dark:text-white mt-0.5 break-all">{val}</div>
             </div>
           ))}
         </div>
-        <div className="border-t border-gray-800 pt-3">
-          <div className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Module Specifications</div>
-          <div className="grid grid-cols-3 gap-2">
+        <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">Module Specifications</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {specs.map(([label, val]) => (
-              <div key={label} className="p-1.5 rounded bg-gray-950 border border-gray-800">
-                <div className="text-[9px] text-gray-500 uppercase">{label}</div>
-                <div className="text-xs font-mono text-gray-200 mt-0.5 truncate">{val}</div>
+              <div key={label} className="p-1.5 rounded bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                <div className="text-[9px] text-slate-500 uppercase">{label}</div>
+                <div className="text-xs font-mono text-slate-800 dark:text-slate-200 mt-0.5 break-all">{val}</div>
               </div>
             ))}
           </div>
@@ -286,27 +286,27 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
 
   const TABS = ['status', 'vlan', 'config', 'optical'] as const;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.75)' }}>
-      <div className="w-full max-w-lg rounded-xl shadow-2xl" style={{ background: '#0d1117', border: '1px solid #30363d' }}>
-        <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: '1px solid #21262d' }}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4" style={{ background: 'rgba(2,6,23,0.72)' }}>
+      <div className="w-full max-w-2xl rounded-xl shadow-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 max-h-[92vh] overflow-hidden">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-            <span className="text-sm font-bold text-white font-mono">{port}</span>
-            <span className="text-xs text-gray-500">Uplink Port</span>
+            <span className="text-sm font-bold text-slate-900 dark:text-white font-mono break-all">{port}</span>
+            <span className="text-xs text-slate-500">Uplink Port</span>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-white text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-xl leading-none">×</button>
         </div>
-        <div className="flex border-b border-gray-800">
+        <div className="grid grid-cols-4 border-b border-slate-200 dark:border-slate-800">
           {TABS.map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
-              className={`flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider transition-colors ${activeTab === t ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-950/20' : 'text-gray-500 hover:text-gray-300'}`}>
+              className={`py-2.5 text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-colors ${activeTab === t ? 'text-blue-500 border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-950/20' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>
               {t}
             </button>
           ))}
         </div>
-        <div className="p-5">
-          {loading && <div className="text-center py-8 text-gray-500 text-sm">Loading...</div>}
-          {error && <div className="text-red-400 text-sm p-3 bg-red-950/30 rounded-lg border border-red-900">{error}</div>}
+        <div className="p-4 sm:p-5 overflow-y-auto max-h-[calc(92vh-7rem)]">
+          {loading && <div className="text-center py-8 text-slate-500 text-sm">Loading...</div>}
+          {error && <div className="text-red-500 dark:text-red-400 text-sm p-3 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900">{error}</div>}
           {!loading && !error && tabData && (
             <>
               {activeTab === 'status'  && renderStatus()}
@@ -497,9 +497,11 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
           ) : isSmxa ? (
             <div className="flex items-center gap-1.5 flex-nowrap min-w-max">
               {(slot.ports.length > 0 ? slot.ports : (slot.uplinkIfaces ?? []).map((iface, index) => ({ port: index, iface, onuCount: 0, onlineCount: 0, hasOnus: false })) ).map((port, index) => {
-                const iface = port.iface ?? `gei_1/${slot.index}/${index + 1}`;
+                const iface = port.iface ?? (index === 0 ? `gei_1/${slot.index}` : `xgei_1/${slot.index}/${index}`);
                 const isXGE = iface.startsWith('xgei');
-                const shortLabel = iface.replace(/^(?:x)?gei_1\/\d+\//, () => isXGE ? 'X/' : 'G/');
+                const shortLabel = isXGE
+                  ? iface.replace(/^xgei_1\/\d+\//, 'X/')
+                  : iface.replace(/^gei_1\//, 'G/');
                 const visual = getUplinkPortVisual(port);
 
                 return (
@@ -570,22 +572,22 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
         )}
 
         {/* ── Main rack panel ── */}
-        <div className="rounded-xl overflow-hidden shadow-xl" style={{ background: '#0d1117', border: '1px solid #30363d' }}>
+        <div className="rounded-xl overflow-hidden shadow-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
 
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #21262d' }}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="flex items-center gap-2">
                 <Server className="h-4 w-4 text-green-400" />
-                <span className="font-semibold text-sm text-white">ZTE C320 Rack Diagram</span>
+                <span className="font-semibold text-sm text-slate-900 dark:text-white">ZTE C320 Rack Diagram</span>
               </div>
-              <div className="text-[11px] text-gray-500 mt-1">Updated: {olt.lastPollAt ? new Date(olt.lastPollAt).toLocaleTimeString('id-ID') : '—'}</div>
+              <div className="text-[11px] text-slate-500 mt-1">Updated: {olt.lastPollAt ? new Date(olt.lastPollAt).toLocaleTimeString('id-ID') : '—'}</div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500 font-mono">{olt.ipAddress}</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <span className="text-xs text-slate-500 font-mono">{olt.ipAddress}</span>
               <button
                 onClick={fetchChassis}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border border-gray-700 text-gray-300 hover:bg-gray-800"
+                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                 disabled={loadingChassis}
               >
                 <RefreshCw className={`h-3 w-3 ${loadingChassis ? 'animate-spin' : ''}`} />
@@ -595,7 +597,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
           </div>
 
           {/* Stats row */}
-          <div className="grid grid-cols-6" style={{ borderBottom: '1px solid #21262d' }}>
+          <div className="grid grid-cols-2 xl:grid-cols-6 border-b border-slate-200 dark:border-slate-800">
             {[
               { Icon: Clock,       label: 'UPTIME',       value: formatUptime(olt.uptime),                         accent: '#3b82f6', title: undefined },
               { Icon: Thermometer, label: 'CHASSIS TEMP', value: olt.temperature ? `${olt.temperature}°C` : 'Unknown',  accent: '#22c55e', title: 'ZTE C320 V2.1: temp via SNMP tidak selalu tersedia' },
@@ -604,18 +606,18 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
               { Icon: Cpu,         label: 'ACTIVE CARDS', value: String(activeCardsCount),                         accent: '#3b82f6', title: 'Counts service and uplink cards only' },
               { Icon: Zap,         label: 'FAN STATUS',   value: olt.isOnline ? '2/2 OK' : '—',                   accent: '#06b6d4', title: undefined },
             ].map(({ Icon, label, value, accent, title }, i) => (
-              <div key={i} className="p-3" title={title} style={{ background: '#161b22', borderRight: i < 5 ? '1px solid #21262d' : 'none', borderLeft: `3px solid ${accent}` }}>
+              <div key={i} className="p-3 bg-slate-50 dark:bg-slate-900" title={title} style={{ borderRight: i < 5 ? '1px solid rgba(148,163,184,0.18)' : 'none', borderLeft: `3px solid ${accent}` }}>
                 <div className="flex items-center gap-1 mb-1">
                   <Icon className="h-3 w-3" style={{ color: accent }} />
                   <span className="text-[8px] font-bold tracking-widest" style={{ color: accent }}>{label}</span>
                 </div>
-                <div className={`text-sm font-bold ${value === '—' ? 'text-gray-600' : 'text-white'}`}>{value}</div>
+                <div className={`text-sm font-bold ${value === '—' ? 'text-slate-400 dark:text-slate-600' : 'text-slate-900 dark:text-white'}`}>{value}</div>
               </div>
             ))}
           </div>
 
           {/* Rack diagram body */}
-          <div className="p-4 flex gap-3">
+          <div className="p-3 sm:p-4 flex flex-col lg:flex-row gap-3 overflow-x-auto">
             {/* FAN column */}
             <div className="flex flex-col items-center justify-between py-3 px-2 rounded select-none"
               style={{ minWidth: 56, background: '#161b22', border: '1px solid #21262d' }}>
@@ -652,7 +654,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
           </div>
 
           {/* Legend */}
-          <div className="flex items-center gap-5 px-4 py-2.5 flex-wrap" style={{ background: '#0a0f14', borderTop: '1px solid #21262d' }}>
+          <div className="flex items-center gap-5 px-4 py-2.5 flex-wrap bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
             {[
               { bg: '#14532d', border: '#16a34a', dot: '#4ade80', label: 'Online' },
               { bg: '#111827', border: '#475569', dot: '#64748b', label: 'Disabled' },

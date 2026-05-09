@@ -39,39 +39,6 @@ function splitMultipleCommandOutput(output: string, commandCount: number): strin
   return parts;
 }
 
-function buildSyntheticConfig(port: string, status: Record<string, string>, vlan: Record<string, string>): string {
-  const lines = [`interface ${port}`];
-
-  if (status.Description) lines.push(` description ${status.Description}`);
-
-  const adminStatus = status['Admin Status'] ?? status.Admin ?? 'Unknown';
-  lines.push(/^up|enable|activate$/i.test(adminStatus) ? ' no shutdown' : ' shutdown');
-
-  const mode = vlan.Mode?.toLowerCase();
-  if (mode) lines.push(` switchport mode ${mode}`);
-
-  const pvid = vlan.Pvid ?? vlan.PVID;
-  if (pvid && pvid !== '0' && pvid !== '—') lines.push(` switchport default vlan ${pvid}`);
-
-  const taggedVlans = (vlan['Tagged Vlan'] ?? vlan['Tagged VLAN'] ?? '')
-    .split(/[\s,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  for (const taggedVlan of taggedVlans) {
-    lines.push(` switchport vlan ${taggedVlan} tag`);
-  }
-
-  if (vlan.TLS) lines.push(` tls ${vlan.TLS.toLowerCase() === 'enable' ? 'enable' : 'disable'}`);
-
-  if (status['Flow Control']) lines.push(` ! flow-control ${status['Flow Control']}`);
-  if (status['Physical Type']) lines.push(` ! physical-type ${status['Physical Type']}`);
-  if (status.Speed) lines.push(` ! speed ${status.Speed}`);
-  if (status.Duplex) lines.push(` ! duplex ${status.Duplex}`);
-
-  return lines.join('\n');
-}
-
 async function runCommandSequence(config: TelnetConfig, commands: string[]) {
   const result = await executeMultipleCommands(config, commands, { sendEnd: false });
   const segments = result.output ? splitMultipleCommandOutput(result.output, commands.length) : [];
@@ -193,6 +160,84 @@ function parseVlanPort(output: string): Record<string, string> {
   return result;
 }
 
+function parseRunningConfigInterface(output: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const taggedVlans: string[] = [];
+
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || /^Building configuration|^interface\s+|^!$|^end$/i.test(line)) continue;
+
+    let match = line.match(/^description\s+(.+)$/i);
+    if (match) {
+      result.Description = match[1].trim();
+      continue;
+    }
+
+    match = line.match(/^switchport mode\s+(\S+)$/i);
+    if (match) {
+      result.Mode = match[1].trim();
+      continue;
+    }
+
+    match = line.match(/^switchport tls\s+(\S+)$/i);
+    if (match) {
+      result.TLS = match[1].trim();
+      continue;
+    }
+
+    match = line.match(/^switchport default vlan\s+(\d+)$/i) || line.match(/^switchport vlan\s+(\d+)\s+untag$/i);
+    if (match) {
+      result.Pvid = match[1].trim();
+      continue;
+    }
+
+    match = line.match(/^switchport vlan\s+(.+?)\s+tag$/i);
+    if (match) {
+      taggedVlans.push(...match[1].split(/\s*,\s*/).map((item) => item.trim()).filter(Boolean));
+      continue;
+    }
+
+    if (/^no shutdown$/i.test(line)) {
+      result['Admin Status'] = 'Up';
+      continue;
+    }
+    if (/^shutdown$/i.test(line)) {
+      result['Admin Status'] = 'Down';
+      continue;
+    }
+
+    match = line.match(/^speed\s+(.+)$/i);
+    if (match) {
+      result.Speed = match[1].trim();
+      continue;
+    }
+
+    match = line.match(/^duplex\s+(.+)$/i);
+    if (match) {
+      result.Duplex = match[1].trim();
+      continue;
+    }
+
+    match = line.match(/^flowcontrol\s+(.+)$/i);
+    if (match) {
+      result['Flow Control'] = match[1].trim();
+      continue;
+    }
+
+    match = line.match(/^hybrid-attribute\s+(.+)$/i);
+    if (match) {
+      result['Physical Type'] = match[1].trim();
+    }
+  }
+
+  if (taggedVlans.length > 0) {
+    result['Tagged Vlan'] = [...new Set(taggedVlans)].join(' ');
+  }
+
+  return result;
+}
+
 /**
  * Parse "show ddmi interface {iface}" output.
  * ZTE C320 sample:
@@ -219,6 +264,38 @@ function parseDdmi(output: string): Record<string, string> {
       if (key && val && !/^\s*$/.test(val)) result[key] = val;
     }
   }
+  return result;
+}
+
+function parseOpticalModuleInfo(output: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const keyMap: Record<string, string> = {
+    'vendor-name': 'Vendor',
+    'vendor-pn': 'Part Number',
+    'vendor-sn': 'Serial Number',
+    'wavelength': 'Wavelength',
+    'fiber-type': 'Fiber Type',
+    'connector': 'Connector Type',
+    'rxpower': 'RX Power',
+    'txpower': 'TX Power',
+    'txbias-current': 'TX Bias Current',
+    'temperature': 'Temperature',
+    'supply-vol': 'Supply Voltage',
+  };
+
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line || !line.includes(':')) continue;
+    const matches = line.matchAll(/([A-Za-z][A-Za-z0-9- ]+?)\s*:\s*(.+?)(?=\s{2,}[A-Za-z][A-Za-z0-9- ]+\s*:|$)/g);
+    for (const match of matches) {
+      const rawKey = match[1].trim();
+      const rawValue = match[2].replace(/\s+/g, ' ').trim();
+      const normalizedKey = rawKey.toLowerCase();
+      const mappedKey = keyMap[normalizedKey] ?? rawKey;
+      if (rawValue) result[mappedKey] = rawValue;
+    }
+  }
+
   return result;
 }
 
@@ -347,9 +424,21 @@ export async function GET(
     } else if (tab === 'vlan') {
       const result = await executeCommand(telnetConfig, `show vlan port ${port}`);
       const output = result.output ?? '';
+      let parsed = result.success && !hasCliError(output) ? parseVlanPort(output) : {};
+      let raw = output;
+
+      if (!parsed.Mode && !parsed['Tagged Vlan'] && !parsed.Pvid) {
+        const configResult = await executeCommand(telnetConfig, `show running-config interface ${port}`);
+        const configOutput = configResult.output ?? '';
+        if (configResult.success && !hasCliError(configOutput)) {
+          parsed = parseRunningConfigInterface(configOutput);
+          raw = configOutput;
+        }
+      }
+
       data = {
-        raw: output,
-        parsed: result.success && !hasCliError(output) ? parseVlanPort(output) : {},
+        raw,
+        parsed,
       };
     } else if (tab === 'config') {
       // Use `show running-config interface` for real config (includes VLAN switchport settings)
@@ -357,14 +446,22 @@ export async function GET(
       const output = result.output ?? '';
       data = {
         raw: result.success && !hasCliError(output) ? output : '',
-        parsed: {},
+        parsed: result.success && !hasCliError(output) ? parseRunningConfigInterface(output) : {},
       };
     } else if (tab === 'optical') {
-      const result = await executeCommand(telnetConfig, `show ddmi interface ${port}`);
-      const output = result.output ?? '';
+      let result = await executeCommand(telnetConfig, `show interface optical-module-info ${port}`);
+      let output = result.output ?? '';
+      let parsed = result.success && !hasCliError(output) ? parseOpticalModuleInfo(output) : {};
+
+      if (Object.keys(parsed).length === 0) {
+        result = await executeCommand(telnetConfig, `show ddmi interface ${port}`);
+        output = result.output ?? '';
+        parsed = result.success && !hasCliError(output) ? { ...parseOpticalModuleInfo(output), ...parseDdmi(output) } : {};
+      }
+
       data = {
         raw: output,
-        parsed: result.success && !hasCliError(output) ? parseDdmi(output) : {},
+        parsed,
       };
     } else {
       return NextResponse.json({ error: 'Invalid tab' }, { status: 400 });
