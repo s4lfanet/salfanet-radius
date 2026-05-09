@@ -651,17 +651,27 @@ export async function POST(
       );
     }
 
-    // Check output for common OLT error patterns
+    // Check output for common OLT error patterns.
+    // IMPORTANT: be specific — the OLT login banner (MOTD) often contains words like
+    // "failure" ("0 authentication failures happened") or "error" ("Last login...").
+    // Only treat output as an error when the pattern clearly comes from the CLI engine:
+    //   %ERR-... / %Error ... / invalid input / already exists
+    // Do NOT match standalone "failure" or "error" as those appear in MOTD text.
     const output = result.output ?? '';
-    const lowerOutput = output.toLowerCase();
-    const errorKeywords = ['%error', 'invalid input', 'already exist', 'failure', 'invalid command'];
-    if (errorKeywords.some(k => lowerOutput.includes(k))) {
-      const errorLine = output.split('\n').find(l =>
-        l.includes('%') || l.toLowerCase().includes('invalid') ||
-        l.toLowerCase().includes('already') || l.toLowerCase().includes('failure')
-      );
+    const lines = output.split('\n');
+    const cliErrorLine = lines.find(l => {
+      const t = l.trim();
+      if (!t) return false;
+      // ZTE/Huawei CLI errors always start with '%' or contain these exact phrases
+      return /^%/.test(t) ||
+        /invalid\s+input/i.test(t) ||
+        /invalid\s+command/i.test(t) ||
+        /already\s+exist/i.test(t) ||
+        /\bcommand\s+not\s+found\b/i.test(t);
+    });
+    if (cliErrorLine) {
       return NextResponse.json(
-        { error: `OLT rejected registration: ${errorLine ?? output.slice(0, 200)}` },
+        { error: `OLT rejected registration: ${cliErrorLine.trim()}` },
         { status: 422 }
       );
     }

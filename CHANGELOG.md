@@ -6,6 +6,12 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.62] — 2026-05-09
+### Fixed
+- **Register ONU 422 — false positive dari MOTD login OLT** — Root cause: error detection di POST register menggunakan `errorKeywords = ['failure', ...]` dengan `lowerOutput.includes('failure')`. OLT ZTE C320 selalu menampilkan MOTD setelah login: `"0 authentication failures happened"` → keyword `failure` match → handler return 422 meski registrasi berhasil. Fix: ganti broad keyword matching dengan deteksi yang spesifik terhadap pola CLI error: (1) baris diawali `%` (ZTE/Huawei CLI error prefix), (2) `invalid input`, (3) `invalid command`, (4) `already exist`, (5) `command not found`. MOTD/banner teks tidak akan ter-trigger.
+### Files
+- `src/app/api/olt/[id]/onus/register/route.ts` — POST: replace broad `errorKeywords.includes()` dengan line-by-line CLI error pattern matching
+
 ## [2.29.61] — 2026-05-09
 ### Fixed
 - **ONU Type dropdown salah isi (Telnet artifacts)** — Root cause dua masalah: (1) Command yang dipakai `show gpon onu-type` tidak valid di ZTE C320 V2.1 — command yang benar adalah `show onu-type`. (2) Parser `parseZteOnuTypes` punya catch-all regex `^([A-Za-z0-9_][A-Za-z0-9_.-]*)` yang memungut kata apa saja dari awal baris, termasuk artefak sesi Telnet seperti `Connected`, `Trying`, `Welcome`, `Last`, `spawn`, `ince`, `ZXAN#show`. Fix: (1) Ubah command ke `show onu-type`. (2) Tambah parser untuk format `ONU type name:  <name>` (output `show onu-type`). (3) Hapus catch-all regex, ganti dengan filter eksplisit untuk header/attribute lines.
