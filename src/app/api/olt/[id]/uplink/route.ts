@@ -561,10 +561,13 @@ export async function POST(
     const olt = await prisma.networkOLT.findUnique({ where: { id } });
     if (!olt) return NextResponse.json({ error: 'OLT not found' }, { status: 404 });
 
-    const telnetConfig = await getTelnetConfig(olt);
-    if (!telnetConfig) {
+    const baseTelnetConfig = await getTelnetConfig(olt);
+    if (!baseTelnetConfig) {
       return NextResponse.json({ error: 'Telnet not configured for this OLT' }, { status: 503 });
     }
+    // Use a short timeout for config-mode commands — they should complete in <5s on LAN.
+    // This prevents zombie Telnet sessions from blocking subsequent chassis/port-map syncs.
+    const telnetConfig = { ...baseTelnetConfig, timeout: 8 };
 
     let commandAttempts: string[][] = [];
 
@@ -656,10 +659,13 @@ export async function POST(
     for (const commands of commandAttempts) {
       const { result, segments, firstError } = await runCommandSequence(telnetConfig, commands);
       if (!result.success) {
+        // Connection-level failure (Telnet unreachable / auth failed / timeout).
+        // No point trying the next attempt with a different command set.
         lastDetail = result.error ?? 'Command sequence failed';
-        continue;
+        break;
       }
       if (firstError !== -1) {
+        // CLI error — OLT rejected this command variant. Try next attempt (different command).
         lastDetail = segments[firstError] ?? 'CLI command failed';
         continue;
       }
