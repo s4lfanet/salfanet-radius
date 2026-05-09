@@ -469,6 +469,18 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.43 — 2026-05-09
+
+### Fixed
+- **ONU unregistered serial tidak terbaca / hanya 1 ONU muncul** — Tiga bug sekaligus di `discoverONUsSNMP` dan `discoverPonV21`:
+  1. **Command salah**: kode menggunakan `show pon onu uncfg` tapi ZTE C320 V2.1 hanya mengenali `show gpon onu uncfg`. Karena command gagal, global uncfg map selalu kosong.
+  2. **Regex port tidak cocok**: regex `gpon[_-]olt[_-]` tidak mencocokkan format output asli `gpon-onu_1/1/1:1`. Akibatnya tidak ada entri yang dimasukkan ke map meskipun command benar.
+  3. **Kolom serial salah**: output `show gpon onu uncfg` punya 3 kolom (`OnuIndex Sn State`), serial ada di `parts[1]`. Kode lama membaca `parts[2]` yang isinya `State` ("unknown"), bukan serial number.
+- **Per-port fallback** — command `show pon onu uncfg gpon-olt_...` juga diubah ke `show gpon onu uncfg gpon-olt_...`; Format A (3-col `gpon-onu_` output) sekarang membaca serial dari `parts[1]`, format 4-col tetap dari `parts[2]`.
+
+### Files
+- `src/lib/olt/vendors/zte.ts` — Perbaikan global uncfg command, regex port, dan indeks kolom serial.
+
 ### v2.29.42 — 2026-05-09
 
 ### Fixed
@@ -508,16 +520,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/api/olt/[id]/sync/route.ts` — Background sync, return 202 langsung tanpa tunggu poll selesai.
 - `src/app/admin/olt/[id]/page.tsx` — Handle response `background:true`, auto-refresh setelah 30 detik.
-
-### v2.29.38 — 2026-05-09
-
-### Fixed
-- **Status uplink tidak lagi semua DIS** — Root cause: `smxaUplinkPorts(slot, 'SMXA')` sebelumnya menghasilkan 6 interface per slot (slot+1), sehingga dua SMXA card berbeda (slot 3 dan 4) menghasilkan interface `gei_1/5/X` yang tidak ada. Semua `show interface` gagal → semua port DIS. Sekarang tiap SMXA card menghasilkan 3 port sesuai slotnya sendiri; dua card = 6 port total dari dua row terpisah.
-- **SNMP IF-MIB sebagai primary source status uplink** — Ditambahkan `loadUplinkPortStatesSNMP` yang memakai `ifDescr`/`ifAdminStatus`/`ifOperStatus`/`ifHighSpeed`/`ifAlias` dari IF-MIB standard. SNMP dipakai duluan jika OLT `snmpEnabled`; Telnet multi-command hanya sebagai fallback.
-- **SMXA OFFLINE tidak lagi disembunyikan** — `isOperationalCard` kini tidak memfilter status `OFFLINE`. Pada ZTE C320, SMXA dengan status OFFLINE di `show card` tetap memiliki port fisik aktif yang harus ditampilkan di rack diagram.
-
-### Files
-- `src/app/api/olt/[id]/chassis/route.ts` — Fix `smxaUplinkPorts` SMXA→3 port/slot, tambah `loadUplinkPortStatesSNMP` (IF-MIB), SNMP primary + Telnet fallback, fix `isOperationalCard` biarkan OFFLINE.
 
 <!-- AUTO-CHANGELOG:END -->
 
