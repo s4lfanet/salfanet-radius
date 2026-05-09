@@ -931,12 +931,15 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
   }, [oltId, onu.id]);
 
   const parsed = detail?.telnet?.detail?.parsed ?? {};
+  const detailSummary = detail?.telnet?.detail?.summary ?? {};
+  const configSummary = detail?.telnet?.config?.summary ?? {};
   const customer = detail?.onu?.customer;
   const detailItems = [
     ['Interface', detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`],
     ['Serial Number', parsed['Serial number'] ?? onu.serialNumber ?? 'N/A'],
     ['Name', parsed.Name ?? onu.description ?? 'N/A'],
     ['Type', parsed.Type ?? 'N/A'],
+    ['ONT Vendor', detailSummary.vendor ?? 'N/A'],
     ['State', parsed.State ?? onu.status],
     ['Phase', parsed['Phase state'] ?? 'N/A'],
     ['Config', parsed['Config state'] ?? 'N/A'],
@@ -944,6 +947,29 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
     ['Online Duration', parsed['Online Duration'] ?? 'N/A'],
     ['RX Power', onu.rxPower !== null ? `${onu.rxPower.toFixed(2)} dBm` : 'N/A'],
   ];
+  const technicalItems = [
+    ['Auth Mode', detailSummary.authenticationMode ?? 'N/A'],
+    ['SN Bind', detailSummary.snBind ?? 'N/A'],
+    ['Admin State', detailSummary.adminState ?? 'N/A'],
+    ['Current Channel', detailSummary.currentChannel ?? 'N/A'],
+    ['Configured Channel', detailSummary.configuredChannel ?? 'N/A'],
+    ['DBA Mode', detailSummary.dbaMode ?? 'N/A'],
+    ['Vport Mode', detailSummary.vportMode ?? 'N/A'],
+    ['Line Profile', detailSummary.lineProfile ?? 'N/A'],
+    ['Service Profile', detailSummary.serviceProfile ?? 'N/A'],
+    ['OMCI BW Profile', detailSummary.omciBwProfile ?? 'N/A'],
+    ['Description', detailSummary.description ?? 'N/A'],
+    ['Serial Prefix', detailSummary.serialPrefix ?? 'N/A'],
+  ];
+  const serviceVlans = Array.isArray(configSummary.serviceVlans) && configSummary.serviceVlans.length > 0
+    ? configSummary.serviceVlans.join(', ')
+    : 'N/A';
+  const tcontProfiles = Array.isArray(configSummary.tcontProfiles) && configSummary.tcontProfiles.length > 0
+    ? configSummary.tcontProfiles.join(', ')
+    : 'N/A';
+  const downstreamProfiles = Array.isArray(configSummary.downstreamProfiles) && configSummary.downstreamProfiles.length > 0
+    ? configSummary.downstreamProfiles.join(', ')
+    : 'N/A';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -969,6 +995,57 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
                     <div className="text-sm font-medium text-gray-900 dark:text-white mt-1 break-words">{value}</div>
                   </div>
                 ))}
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {technicalItems.map(([label, value]) => (
+                  <div key={label} className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white mt-1 break-words">{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3 space-y-3">
+                <div className="text-xs font-semibold text-gray-500 uppercase">ONT Service Summary</div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500">Service VLANs</div>
+                    <div className="mt-1 font-medium text-gray-900 dark:text-white break-words">{serviceVlans}</div>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500">TCONT Profiles</div>
+                    <div className="mt-1 font-medium text-gray-900 dark:text-white break-words">{tcontProfiles}</div>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3">
+                    <div className="text-[10px] uppercase tracking-wide text-gray-500">Downstream Profiles</div>
+                    <div className="mt-1 font-medium text-gray-900 dark:text-white break-words">{downstreamProfiles}</div>
+                  </div>
+                </div>
+                {Array.isArray(configSummary.servicePorts) && configSummary.servicePorts.length > 0 && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm border-separate border-spacing-y-1">
+                      <thead>
+                        <tr className="text-left text-[10px] uppercase tracking-wide text-gray-500">
+                          <th className="px-2 py-1">Service Port</th>
+                          <th className="px-2 py-1">VPort</th>
+                          <th className="px-2 py-1">User VLAN</th>
+                          <th className="px-2 py-1">VLAN</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {configSummary.servicePorts.map((servicePort: any) => (
+                          <tr key={`${servicePort.servicePort}-${servicePort.vport}`} className="bg-gray-50 dark:bg-gray-950">
+                            <td className="px-2 py-2 rounded-l border-y border-l border-gray-200 dark:border-gray-800 font-mono">{servicePort.servicePort}</td>
+                            <td className="px-2 py-2 border-y border-gray-200 dark:border-gray-800 font-mono">{servicePort.vport}</td>
+                            <td className="px-2 py-2 border-y border-gray-200 dark:border-gray-800 font-mono">{servicePort.userVlan}</td>
+                            <td className="px-2 py-2 rounded-r border-y border-r border-gray-200 dark:border-gray-800 font-mono">{servicePort.vlan}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
 
               <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">

@@ -24,11 +24,25 @@ export interface TelnetResult {
   error?: string;
 }
 
+interface ExecuteMultipleCommandsOptions {
+  sendEnd?: boolean;
+}
+
+function escapeExpectString(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\$/g, '\\$')
+    .replace(/\[/g, '\\[')
+    .replace(/\]/g, '\\]');
+}
+
 /**
  * Execute command via Telnet using expect script
  */
 export async function executeCommand(config: TelnetConfig, command: string): Promise<TelnetResult> {
   const scriptPath = join('/tmp', `telnet-${Date.now()}-${Math.random().toString(36).slice(2)}.exp`);
+  const escapedCommand = escapeExpectString(command);
 
   try {
     const expectScript = `#!/usr/bin/expect -f
@@ -49,12 +63,13 @@ expect {
 }
 
 expect {
-  "#" { send "${command}\\r" }
-  ">" { send "${command}\\r" }
+  "#" { send "${escapedCommand}\\r" }
+  ">" { send "${escapedCommand}\\r" }
   timeout { exit 1 }
 }
 
 expect {
+  -re {--More--} { send " "; exp_continue }
   "#" { send "exit\\r" }
   ">" { send "exit\\r" }
   timeout { send "exit\\r" }
@@ -87,14 +102,24 @@ expect eof
  */
 export async function executeMultipleCommands(
   config: TelnetConfig,
-  commands: string[]
+  commands: string[],
+  options: ExecuteMultipleCommandsOptions = {}
 ): Promise<TelnetResult> {
   const scriptPath = join('/tmp', `telnet-multi-${Date.now()}-${Math.random().toString(36).slice(2)}.exp`);
+  const sendEnd = options.sendEnd ?? true;
 
   // Build the commands section of the expect script
-  const cmdLines = commands.map(cmd => {
-    const escaped = cmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\$/g, '\\$');
-    return `\nsend "${escaped}\\r"\nexpect -re {[>#]} { }`;
+  const cmdLines = commands.map((cmd, index) => {
+    const escaped = escapeExpectString(cmd);
+    return `
+send_user "\\n__COPILOT_CMD_${index}_START__\\n"
+send "${escaped}\\r"
+expect {
+  -re {--More--} { send " "; exp_continue }
+  -re {[>#]} { send_user "\\n__COPILOT_CMD_${index}_END__\\n" }
+  timeout { exit 1 }
+  eof { exit 1 }
+}`;
   }).join('\n');
 
   try {
@@ -123,8 +148,7 @@ expect {
 
 ${cmdLines}
 
-send "end\\r"
-expect -re {[>#]} { }
+${sendEnd ? 'send "end\\r"\nexpect {\n  -re {--More--} { send " "; exp_continue }\n  -re {[>#]} { }\n  timeout { exit 1 }\n  eof { exit 1 }\n}\n' : ''}
 send "exit\\r"
 expect eof
 `;
