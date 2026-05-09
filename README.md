@@ -469,6 +469,18 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.29.53 — 2026-05-10
+
+### Fixed
+- **Temperature card dihapus dari top stat** — Kartu "Temperature" di baris 4 stat card atas selalu "Not available (C320)" karena ZTE C320 tidak melaporkan suhu via SNMP. Dihapus → layout sekarang 3 kolom (Status, Uptime, ONUs). Grid berubah dari `md:grid-cols-4` → `md:grid-cols-3`.
+- **CHASSIS TEMP dihapus dari chassis stats row** — Kolom "CHASSIS TEMP" di stats row chassis diagram juga dihapus (selalu "Unknown"). Grid chassis stats: dari `xl:grid-cols-6` → `xl:grid-cols-5`, border logic diperbarui.
+- **VLAN tab kosong (Mode/TLS/PVID semua —)** — `parseVlanPort` hanya menangani format key:value, tapi ZTE C320 bisa mengembalikan format tabular (`VLAN Port Mode Pvid TLS`). Ditambahkan tabular fallback parser. `parseRunningConfigInterface` juga diperluas untuk menangani ZTE non-switchport style (`vlan N tag`, `pvid N`, `mode hybrid` tanpa prefix `switchport`). VLAN tab sekarang selalu return raw output untuk diagnosis bahkan jika parsing gagal.
+- **CONFIG tab kosong (No configuration data)** — Config tab tidak menampilkan apa pun jika `hasCliError` triggered pada output. Diubah: raw output selalu dikembalikan ke UI, user bisa melihat output asli OLT meski ada error-string di output.
+- **`parseVlanPort` "Tagged vlan(s)" tidak dikenali** — Normalisasi key sebelumnya hanya mencocokkan `'tagged vlan'` (exact). Sekarang menggunakan `startsWith('tagged vlan')` sehingga varian `tagged vlan(s)` juga ditangkap.
+### Files
+- `src/app/admin/olt/[id]/page.tsx` — hapus Temperature card top stats; hapus CHASSIS TEMP dari chassis stats row
+- `src/app/api/olt/[id]/uplink/route.ts` — tabular fallback di `parseVlanPort`; ZTE non-switchport variants di `parseRunningConfigInterface`; VLAN tab & CONFIG tab selalu return raw
+
 ### v2.29.52 — 2026-05-10
 
 ### Fixed
@@ -518,15 +530,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/api/olt/[id]/chassis/route.ts` — port map uplink memakai parser `show interface port-status` satu kali, SNMP status jadi fallback.
 - `src/app/admin/olt/monitoring/page.tsx` — perbaikan palette light/dark pada card/filter/control.
 - `src/app/admin/olt/alerts/page.tsx` — perbaikan palette light/dark pada card/filter/control.
-
-### v2.29.48 — 2026-05-09
-
-### Fixed
-- **ONU unconfigured kedua masih hilang meski versi 2.29.47 sudah terpasang** — Parser ZTE sebelumnya masih bisa membuang serial fallback jika satu ONU unconfigured sudah lebih dulu terpetakan ke `onuId` nyata. Sekarang serial fallback selalu digabung ke hasil akhir dengan virtual ID stabil, sehingga kombinasi `1 ONU ada ID + 1 ONU hanya serial` tidak lagi berakhir jadi satu baris.
-
-### Files
-- `package.json` — bump versi aplikasi ke `2.29.48`.
-- `src/lib/olt/vendors/zte.ts` — merge fallback serial list ke `uncfgSerials` meski sebagian ONU unconfigured sudah punya ID nyata.
 
 <!-- AUTO-CHANGELOG:END -->
 
