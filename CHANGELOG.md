@@ -6,6 +6,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.56] — 2026-05-09
+### Fixed
+- **Port Map sync lambat setelah hapus VLAN gagal** — Root cause: uplink POST menggunakan `timeout: 20` untuk sesi Telnet konfigurasi. Dengan 2 attempt (`removeVlan`) yang keduanya gagal, total waktu zombie sessions bisa mencapai 2 × 35 detik = 70 detik. ZTE C320 membatasi concurrent Telnet sessions; chassis sync yang menyusul tidak bisa langsung konek. Fix:
+  1. Timeout Telnet untuk POST action dikurangi ke **8 detik** (perintah config di LAN lokal selesai <3s; 8s cukup buffer).
+  2. Loop `commandAttempts` sekarang **break** jika terjadi connection-level failure (`!result.success`) — tidak ada gunanya mencoba command berbeda jika OLT tidak bisa dikoneksi. Retry (continue) hanya terjadi pada **CLI error** (command ditolak OLT, bukan koneksi gagal).
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — POST action: `timeout: 8`, break on connection failure
+
 ## [2.29.55] — 2026-05-09
 ### Fixed
 - **removeVlan di uplink tag → 500** — Root cause: satu sesi Telnet mengirim `no switchport vlan X tag`, `no switchport default vlan`, `no switchport vlan X` sekaligus; perintah fallback yang tidak berlaku di ZTE C320 mengembalikan `%Error`, `firstError` menjadi true → 500. Fix: pisahkan menjadi dua `commandAttempts` terpisah — percobaan pertama hanya `no switchport vlan ${vid} tag`, fallback percobaan kedua `no switchport default vlan`. Setiap percobaan adalah sesi Telnet independen sehingga error dari satu tidak mengontaminasi yang lain.
