@@ -294,8 +294,10 @@ export async function GET(
 
     if (!port) return NextResponse.json({ error: 'port parameter required' }, { status: 400 });
 
-    // Basic validation — allow only valid ZTE interface names
-    if (!/^(?:gei|xgei)_\d+\/\d+\/\d+$/i.test(port)) {
+    // Basic validation — allow valid ZTE interface names:
+    // 2-level: gei_1/3 (SMXA plain GE — only 1 GE port per slot, no /port suffix)
+    // 3-level: xgei_1/3/2 (SMXA XGE — up to 2 ports per slot)
+    if (!/^(?:gei|xgei)_\d+\/\d+(?:\/\d+)?$/i.test(port)) {
       return NextResponse.json({ error: 'Invalid port name' }, { status: 400 });
     }
 
@@ -398,8 +400,8 @@ export async function POST(
       return NextResponse.json({ error: 'port and action required' }, { status: 400 });
     }
 
-    // Validate port name
-    if (!/^(?:gei|xgei)_\d+\/\d+\/\d+$/i.test(port)) {
+    // Validate port name — accept 2-level (gei_1/3) and 3-level (xgei_1/3/2)
+    if (!/^(?:gei|xgei)_\d+\/\d+(?:\/\d+)?$/i.test(port)) {
       return NextResponse.json({ error: 'Invalid port name' }, { status: 400 });
     }
 

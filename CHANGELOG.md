@@ -6,6 +6,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.29.46] — 2026-05-09
+### Fixed
+- **GE uplink port tidak muncul / selalu 400 Invalid port name** — Validasi regex sebelumnya hanya menerima format 3-level (`gei_1/3/1`) padahal ZTE C320 SMXA card gunakan format 2-level untuk GE port: `gei_1/3`. Regex diperbarui ke `(?:gei|xgei)_\d+\/\d+(?:\/\d+)?` yang menerima keduanya. Fix pada GET dan POST endpoint.
+- **Chassis diagram tampilkan 3 port GE palsu per SMXA slot** — SMXA (plain) hanya punya 1 GE port per slot, bukan 3. Port names dikoreksi: `gei_1/{slot}` (2-level, satu GE) + `xgei_1/{slot}/1`, `xgei_1/{slot}/2` (dua XGE). Sesuai output `show interface ?` pada ZTE C320.
+
+### Files
+- `src/app/api/olt/[id]/uplink/route.ts` — Regex validasi port name diperbarui di GET dan POST handler.
+- `src/app/api/olt/[id]/chassis/route.ts` — `smxaUplinkPorts`: SMXA plain → `gei_1/{slot}` + `xgei_1/{slot}/1-2`; fallback default juga diperbarui.
+
 ## [2.29.45] — 2026-05-09
 ### Fixed
 - **Uplink STATUS tab data tidak tampil** — Command sebelumnya `show interface gei_1/x/x` menghasilkan output key-value yang tidak konsisten di ZTE C320. Diganti ke `show interface port-status gei_1/x/x` yang menghasilkan output tabular dengan kolom eksplisit: hybrid Status, Native VLAN, Negotiation, Speed (Mbps), Duplex, Flow-Ctrl, Admin Status, Link. Fallback ke `show interface` (key-value) + SNMP IF-MIB tetap dipertahankan jika tabular gagal.

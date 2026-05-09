@@ -124,8 +124,12 @@ function parseShowCard(output: string): CardInfo[] {
 
 /**
  * Derive uplink interface names for an SMXA slot.
- * SMXA-B has: gei_1/{slot}/1..N + xgei_1/{slot}/1..M
- * Default for ZTE C320 SMXA-B: 3x GE + 2x 10GE per slot.
+ *
+ * ZTE C320 SMXA (plain): 1 GE port + 2 XGE ports per slot.
+ *   GE interface name: gei_1/{slot}       (no port suffix — only 1 GE per card)
+ *   XGE interface names: xgei_1/{slot}/1, xgei_1/{slot}/2
+ *
+ * SMXA-B: 3 GE + 2 XGE per slot (uses /port suffix for all).
  */
 function smxaUplinkPorts(slot: number, cardType: string): string[] {
   const ct = cardType.toUpperCase();
@@ -145,12 +149,12 @@ function smxaUplinkPorts(slot: number, cardType: string): string[] {
     ];
   }
   if (ct === 'SMXA') {
-    // ZTE C320: each SMXA card has 3 GE ports on its own slot.
-    // Two physical SMXA cards occupy separate slots (e.g. 3 and 4).
-    // Each card contributes 3 ports independently.
-    return [`gei_1/${slot}/1`, `gei_1/${slot}/2`, `gei_1/${slot}/3`];
+    // ZTE C320: SMXA has exactly 1 GE port (no /port suffix) + 2 XGE ports.
+    // Verified from `show interface ?` output: gei_1/3, xgei_1/3 etc.
+    return [`gei_1/${slot}`, `xgei_1/${slot}/1`, `xgei_1/${slot}/2`];
   }
-  return [`gei_1/${slot}/1`, `gei_1/${slot}/2`];
+  // Generic fallback
+  return [`gei_1/${slot}`, `xgei_1/${slot}/1`, `xgei_1/${slot}/2`];
 }
 
 function parseUplinkInterfaceStatus(output: string, fallbackIface: string): UplinkPortState {
