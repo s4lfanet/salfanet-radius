@@ -45,6 +45,224 @@ function parseZteTcontProfiles(output: string): string[] {
   return [...profiles].sort((a, b) => a.localeCompare(b));
 }
 
+function parseZteTrafficProfiles(output: string): string[] {
+  const profiles = new Set<string>();
+  for (const rawLine of output.split('\n')) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    let match = line.match(/^Profile\s+name\s*:\s*(.+)$/i);
+    if (match) {
+      profiles.add(match[1].trim());
+      continue;
+    }
+
+    match = line.match(/\bprofile\s+traffic\s+([^\s]+)/i);
+    if (match) {
+      profiles.add(match[1].trim());
+    }
+  }
+  return [...profiles].sort((a, b) => a.localeCompare(b));
+}
+
+function extractCommandSection(output: string, index: number, command: string): string {
+  const startToken = `__COPILOT_CMD_${index}_START__`;
+  const endToken = `__COPILOT_CMD_${index}_END__`;
+  const start = output.indexOf(startToken);
+  if (start === -1) return '';
+
+  const from = start + startToken.length;
+  const end = output.indexOf(endToken, from);
+  const section = end === -1 ? output.slice(from) : output.slice(from, end);
+  const lines = section
+    .replace(/\r/g, '')
+    .split('\n')
+    .map(line => line.trimEnd())
+    .filter(Boolean);
+
+  while (lines.length && lines[0].trim() === command.trim()) lines.shift();
+  while (lines.length && /^[A-Za-z0-9_.-]+[>#]/.test(lines[lines.length - 1].trim())) lines.pop();
+
+  return lines.join('\n').trim();
+}
+
+function buildZteBasicCommands(options: {
+  interfaceName: string;
+  description?: string;
+  tcontProfile: string;
+  vlan: number;
+}): string[] {
+  return [
+    `interface ${options.interfaceName}`,
+    ...(options.description ? [`name ${options.description}`, `description ${options.description}`] : []),
+    `tcont 1 profile ${options.tcontProfile}`,
+    'gemport 1 tcont 1',
+    `service-port 1 vport 1 user-vlan ${options.vlan} vlan ${options.vlan}`,
+    'exit',
+  ];
+}
+
+function buildZteFullCommands(options: {
+  interfaceName: string;
+  tcontProfile: string;
+  description?: string;
+  primaryVlan: number;
+  secondaryVlan: number;
+  trafficProfile?: string;
+  pppoeUsername?: string;
+  pppoePassword?: string;
+  enableDualSsid: boolean;
+  ssid1Name?: string;
+  ssid1Password?: string;
+  ssid1Auth: string;
+  ssid2Name?: string;
+  ssid2Password?: string;
+  ssid2Auth: string;
+  enableTr069: boolean;
+  acsUrl: string;
+  acsUsername: string;
+  acsPassword: string;
+  enableFirewall: boolean;
+  firewallLevel: string;
+  enableSecurityMgmt: boolean;
+}): string[] {
+  const primaryServiceName = `VLAN${String(options.primaryVlan).padStart(4, '0')}`;
+  const secondaryServiceName = `VLAN${options.secondaryVlan}`;
+  const commands = [
+    `interface ${options.interfaceName}`,
+    ...(options.description ? [`name ${options.description}`, `description ${options.description}`] : []),
+    `tcont 1 name ${primaryServiceName} profile ${options.tcontProfile}`,
+    `tcont 2 name ${secondaryServiceName} profile ${options.tcontProfile}`,
+    'gemport 1 tcont 1',
+    ...(options.trafficProfile ? [`gemport 1 traffic-limit downstream ${options.trafficProfile}`] : []),
+    'gemport 2 tcont 2',
+    ...(options.trafficProfile ? [`gemport 2 traffic-limit downstream ${options.trafficProfile}`] : []),
+    `service-port 1 vport 1 user-vlan ${options.primaryVlan} vlan ${options.primaryVlan}`,
+    `service-port 2 vport 2 user-vlan ${options.secondaryVlan} vlan ${options.secondaryVlan}`,
+    'exit',
+    `pon-onu-mng ${options.interfaceName}`,
+    `service ${primaryServiceName} gemport 1 iphost 1 vlan ${options.primaryVlan}`,
+    `service ${secondaryServiceName} gemport 2 vlan ${options.secondaryVlan}`,
+    'vlan port veip_1 mode hybrid',
+    'vlan port veip_1 vlan 1',
+    ...(options.pppoeUsername && options.pppoePassword
+      ? [`pppoe 1 nat enable user ${options.pppoeUsername} password ${options.pppoePassword}`]
+      : []),
+    `vlan port eth_0/1 mode tag vlan ${options.primaryVlan}`,
+    `vlan port eth_0/2 mode tag vlan ${options.primaryVlan}`,
+    `vlan port eth_0/3 mode tag vlan ${options.primaryVlan}`,
+    `vlan port eth_0/4 mode tag vlan ${options.primaryVlan}`,
+    `vlan port wifi_0/1 mode tag vlan ${options.primaryVlan}`,
+    ...(options.enableDualSsid ? [`vlan port wifi_0/2 mode tag vlan ${options.secondaryVlan}`] : []),
+  ];
+
+  if (options.ssid1Name) {
+    commands.push(
+      `wifi ssid 1 name ${options.ssid1Name}`,
+      `wifi ssid 1 auth ${options.ssid1Auth === 'wpa' ? 'wpa-psk' : 'wpa2-psk'}`,
+      ...(options.ssid1Password ? [`wifi ssid 1 wpakey ${options.ssid1Password}`] : []),
+      `wifi ssid 1 bindvlan ${options.primaryVlan}`,
+      'wifi ssid 1 enable',
+    );
+  }
+
+  if (options.enableDualSsid && options.ssid2Name) {
+    commands.push(`wifi ssid 2 name ${options.ssid2Name}`);
+    if (options.ssid2Auth === 'open') {
+      commands.push('wifi ssid 2 auth open');
+    } else {
+      commands.push(`wifi ssid 2 auth ${options.ssid2Auth === 'wpa' ? 'wpa-psk' : 'wpa2-psk'}`);
+      if (options.ssid2Password) commands.push(`wifi ssid 2 wpakey ${options.ssid2Password}`);
+    }
+    commands.push(`wifi ssid 2 bindvlan ${options.secondaryVlan}`, 'wifi ssid 2 enable');
+  }
+
+  if (options.enableFirewall) {
+    commands.push(`firewall enable level ${options.firewallLevel} anti-hack disable`);
+  }
+
+  if (options.enableTr069) {
+    commands.push(
+      'tr069-mgmt 1 state unlock',
+      `tr069-mgmt 1 acs ${options.acsUrl} validate basic username ${options.acsUsername} password ${options.acsPassword}`,
+    );
+  }
+
+  if (options.enableSecurityMgmt) {
+    commands.push('security-mgmt 1 state enable mode forward');
+  }
+
+  commands.push('wan 1 service internet host 1', 'exit');
+  return commands;
+}
+
+function buildHuaweiFullCommands(options: {
+  interfaceName: string;
+  tcontProfile: string;
+  description?: string;
+  mgmtVlan: number;
+  internetVlan: number;
+  voipVlan: number;
+  vlanProfile: string;
+  trafficProfile?: string;
+}): string[] {
+  return [
+    `interface ${options.interfaceName}`,
+    ...(options.description ? [`name ${options.description}`, `description ${options.description}`] : []),
+    `tcont 1 profile ${options.tcontProfile}`,
+    'gemport 1 tcont 1',
+    ...(options.trafficProfile ? [`gemport 1 traffic-limit downstream ${options.trafficProfile}`] : []),
+    `service-port 1 vport 1 user-vlan ${options.mgmtVlan} vlan ${options.mgmtVlan}`,
+    `service-port 2 vport 1 user-vlan ${options.internetVlan} vlan ${options.internetVlan}`,
+    `service-port 3 vport 1 user-vlan ${options.voipVlan} vlan ${options.voipVlan}`,
+    'exit',
+    `pon-onu-mng ${options.interfaceName}`,
+    'service ServiceONU1 gemport 1',
+    `wan-ip 1 mode dhcp vlan-profile ${options.vlanProfile} host 1`,
+    'exit',
+  ];
+}
+
+function buildFiberhomeVeipCommands(options: {
+  interfaceName: string;
+  tcontProfile: string;
+  description?: string;
+  tr069Vlan: number;
+  internetVlan: number;
+  voipVlan: number;
+  acsUrl: string;
+  acsUsername: string;
+  acsPassword: string;
+}): string[] {
+  return [
+    `interface ${options.interfaceName}`,
+    ...(options.description ? [`name ${options.description}`, `description ${options.description}`] : []),
+    `tcont 1 profile ${options.tcontProfile}`,
+    `tcont 2 profile ${options.tcontProfile}`,
+    `tcont 3 profile ${options.tcontProfile}`,
+    'gemport 1 tcont 1',
+    'gemport 2 tcont 2',
+    'gemport 3 tcont 3',
+    `service-port 1 vport 1 user-vlan ${options.tr069Vlan} vlan ${options.tr069Vlan}`,
+    `service-port 2 vport 2 user-vlan ${options.internetVlan} vlan ${options.internetVlan}`,
+    `service-port 3 vport 3 user-vlan ${options.voipVlan} vlan ${options.voipVlan}`,
+    'exit',
+    `pon-onu-mng ${options.interfaceName}`,
+    `service 1 gemport 1 vlan ${options.tr069Vlan}`,
+    `service 2 gemport 2 vlan ${options.internetVlan}`,
+    `service 3 gemport 3 vlan ${options.voipVlan}`,
+    'vlan port veip_1 mode hybrid',
+    'tr069-mgmt 1 state unlock',
+    `tr069-mgmt 1 acs ${options.acsUrl} validate basic username ${options.acsUsername} password ${options.acsPassword}`,
+    `vlan port wifi_0/1 mode tag vlan ${options.internetVlan}`,
+    `vlan port eth_0/1 mode tag vlan ${options.internetVlan}`,
+    `vlan port eth_0/2 mode tag vlan ${options.internetVlan}`,
+    `vlan port eth_0/3 mode tag vlan ${options.internetVlan}`,
+    `vlan port eth_0/4 mode tag vlan ${options.internetVlan}`,
+    'exit',
+  ];
+}
+
 function parseNextZteOnuId(output: string): number | null {
   const used = new Set<number>();
   const patterns = [
@@ -133,6 +351,7 @@ export async function GET(
 
     let onuTypes: string[] = [];
     let tcontProfiles: string[] = [];
+    let trafficProfiles: string[] = [];
     let suggestedOnuId: number | null = null;
     let detectedOnuType: string | null = null;
 
@@ -140,26 +359,23 @@ export async function GET(
       const commands = [
         'show run | include onu-type',
         'show gpon profile tcont',
+        'show gpon profile traffic',
         `show gpon onu-info ${ponInterface}`,
         `show pon onu uncfg ${ponInterface}`,
       ];
       const transcript = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
       const output = transcript.output ?? transcript.error ?? '';
 
-      const typesOutput = output.includes('__COPILOT_CMD_0_START__')
-        ? output.split('__COPILOT_CMD_0_END__')[0]
-        : output;
+      const typesOutput = extractCommandSection(output, 0, commands[0]);
+      const tcontOutput = extractCommandSection(output, 1, commands[1]);
+      const trafficOutput = extractCommandSection(output, 2, commands[2]);
+      const onuInfoSection = extractCommandSection(output, 3, commands[3]);
+      const uncfgSection = extractCommandSection(output, 4, commands[4]);
+
       onuTypes = parseZteOnuTypes(typesOutput);
-      tcontProfiles = parseZteTcontProfiles(output);
-
-      const onuInfoSection = output.includes('__COPILOT_CMD_2_START__')
-        ? output.split('__COPILOT_CMD_2_START__')[1]?.split('__COPILOT_CMD_2_END__')[0] ?? ''
-        : '';
+      tcontProfiles = parseZteTcontProfiles(tcontOutput);
+      trafficProfiles = parseZteTrafficProfiles(trafficOutput);
       suggestedOnuId = parseNextZteOnuId(onuInfoSection);
-
-      const uncfgSection = output.includes('__COPILOT_CMD_3_START__')
-        ? output.split('__COPILOT_CMD_3_START__')[1]?.split('__COPILOT_CMD_3_END__')[0] ?? ''
-        : '';
       detectedOnuType = parseDetectedUnconfiguredType(uncfgSection, serialNumber, onuId)?.onuType ?? null;
     }
 
@@ -170,6 +386,7 @@ export async function GET(
       metadata: {
         onuTypes,
         tcontProfiles,
+        trafficProfiles,
         suggestedOnuId,
         detectedOnuType,
       },
@@ -224,8 +441,33 @@ export async function POST(
       onuType = 'All',
       vlan = 100,
       description,
+      serviceTemplate = 'basic',
       // ZTE-specific
       tcontProfile = '1G',
+      trafficProfile = '',
+      primaryVlan = 30,
+      secondaryVlan = 151,
+      mgmtVlan = 1010,
+      internetVlan = 30,
+      voipVlan = 151,
+      vlanProfile = 'genieacs',
+      pppoeUsername = '',
+      pppoePassword = '',
+      enableDualSsid = true,
+      ssid1Name = '',
+      ssid1Password = '12345678',
+      ssid1Auth = 'wpa2',
+      ssid2Name = '',
+      ssid2Password = '',
+      ssid2Auth = 'open',
+      enableTr069 = true,
+      tr069Vlan = 100,
+      acsUrl = 'http://192.168.54.254:7547',
+      acsUsername = 'acs',
+      acsPassword = 'acs',
+      enableFirewall = true,
+      firewallLevel = 'low',
+      enableSecurityMgmt = true,
       // Huawei-specific
       lineProfileId = 1,
       srvProfileId = 1,
@@ -328,15 +570,64 @@ export async function POST(
         `interface ${ponInterface}`,
         `onu ${onuId} type ${onuType} sn ${serialNumber}`,
         'exit',
-        `interface ${onuInterface}`,
-        ...(description ? [`name ${description}`] : []),
-        ...(description ? [`description ${description}`] : []),
-        `tcont 1 profile ${tcontProfile}`,
-        'gemport 1 tcont 1',
-        `service-port 1 vport 1 user-vlan ${vlan} vlan ${vlan}`,
-        'exit',
+        ...(serviceTemplate === 'zte_full'
+          ? buildZteFullCommands({
+              interfaceName: onuInterface,
+              tcontProfile,
+              description,
+              primaryVlan,
+              secondaryVlan,
+              trafficProfile,
+              pppoeUsername,
+              pppoePassword,
+              enableDualSsid,
+              ssid1Name,
+              ssid1Password,
+              ssid1Auth,
+              ssid2Name,
+              ssid2Password,
+              ssid2Auth,
+              enableTr069,
+              acsUrl,
+              acsUsername,
+              acsPassword,
+              enableFirewall,
+              firewallLevel,
+              enableSecurityMgmt,
+            })
+          : serviceTemplate === 'huawei_full'
+            ? buildHuaweiFullCommands({
+                interfaceName: onuInterface,
+                tcontProfile,
+                description,
+                mgmtVlan,
+                internetVlan,
+                voipVlan,
+                vlanProfile,
+                trafficProfile,
+              })
+            : serviceTemplate === 'fiberhome_veip'
+              ? buildFiberhomeVeipCommands({
+                  interfaceName: onuInterface,
+                  tcontProfile,
+                  description,
+                  tr069Vlan,
+                  internetVlan,
+                  voipVlan,
+                  acsUrl,
+                  acsUsername,
+                  acsPassword,
+                })
+              : buildZteBasicCommands({
+                  interfaceName: onuInterface,
+                  description,
+                  tcontProfile,
+                  vlan,
+                })),
       ];
     }
+
+    commands.push('end');
 
     const result = await executeMultipleCommands(telnetConfig, commands, { sendEnd: false });
 

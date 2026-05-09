@@ -623,9 +623,12 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
 interface RegisterMetadata {
   onuTypes: string[];
   tcontProfiles: string[];
+  trafficProfiles: string[];
   suggestedOnuId: number | null;
   detectedOnuType: string | null;
 }
+
+type ZteServiceTemplate = 'basic' | 'zte_full' | 'huawei_full' | 'fiberhome_veip';
 
 interface RegisterModalProps {
   oltId: string;
@@ -643,9 +646,34 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
 
   const [onuType,       setOnuType]       = useState(onu.onuType ?? '');
   const [vlan,          setVlan]          = useState(100);
+  const [serviceTemplate, setServiceTemplate] = useState<ZteServiceTemplate>('basic');
   const [tcontProfile,  setTcontProfile]  = useState('1G');
+  const [trafficProfile, setTrafficProfile] = useState('');
   const [description,   setDescription]   = useState('');
   const [onuId,         setOnuId]         = useState(onu.onuId ?? 1);
+  const [primaryVlan, setPrimaryVlan] = useState(30);
+  const [secondaryVlan, setSecondaryVlan] = useState(151);
+  const [mgmtVlan, setMgmtVlan] = useState(1010);
+  const [internetVlan, setInternetVlan] = useState(30);
+  const [voipVlan, setVoipVlan] = useState(151);
+  const [vlanProfile, setVlanProfile] = useState('genieacs');
+  const [pppoeUsername, setPppoeUsername] = useState('');
+  const [pppoePassword, setPppoePassword] = useState('');
+  const [enableDualSsid, setEnableDualSsid] = useState(true);
+  const [ssid1Name, setSsid1Name] = useState('');
+  const [ssid1Password, setSsid1Password] = useState('12345678');
+  const [ssid1Auth, setSsid1Auth] = useState('wpa2');
+  const [ssid2Name, setSsid2Name] = useState('');
+  const [ssid2Password, setSsid2Password] = useState('');
+  const [ssid2Auth, setSsid2Auth] = useState('open');
+  const [enableTr069, setEnableTr069] = useState(true);
+  const [tr069Vlan, setTr069Vlan] = useState(100);
+  const [acsUrl, setAcsUrl] = useState('http://192.168.54.254:7547');
+  const [acsUsername, setAcsUsername] = useState('acs');
+  const [acsPassword, setAcsPassword] = useState('acs');
+  const [enableFirewall, setEnableFirewall] = useState(true);
+  const [firewallLevel, setFirewallLevel] = useState('low');
+  const [enableSecurityMgmt, setEnableSecurityMgmt] = useState(true);
   // Huawei-specific
   const [lineProfileId, setLineProfileId] = useState(1);
   const [srvProfileId,  setSrvProfileId]  = useState(1);
@@ -658,12 +686,14 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
   const [metadata, setMetadata] = useState<RegisterMetadata>({
     onuTypes: [],
     tcontProfiles: [],
+    trafficProfiles: [],
     suggestedOnuId: null,
     detectedOnuType: onu.onuType ?? null,
   });
 
   const ponPort = onu.port + 1;
   const effectiveOnuType = onuType || metadata.detectedOnuType || metadata.onuTypes[0] || (isZTE ? 'All' : isFiberHome ? 'default' : '');
+  const effectiveTrafficProfile = trafficProfile || metadata.trafficProfiles[0] || '';
 
   useEffect(() => {
     let active = true;
@@ -678,6 +708,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
         const nextMetadata: RegisterMetadata = {
           onuTypes: json.metadata?.onuTypes ?? [],
           tcontProfiles: json.metadata?.tcontProfiles ?? [],
+          trafficProfiles: json.metadata?.trafficProfiles ?? [],
           suggestedOnuId: json.metadata?.suggestedOnuId ?? null,
           detectedOnuType: json.metadata?.detectedOnuType ?? null,
         };
@@ -686,6 +717,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
         if (nextMetadata.suggestedOnuId) setOnuId(nextMetadata.suggestedOnuId);
         if (!onuType) setOnuType(nextMetadata.detectedOnuType ?? nextMetadata.onuTypes[0] ?? '');
         if (isZTE && nextMetadata.tcontProfiles.length > 0) setTcontProfile(nextMetadata.tcontProfiles[0]);
+        if (isZTE && nextMetadata.trafficProfiles.length > 0) setTrafficProfile(nextMetadata.trafficProfiles[0]);
       })
       .catch((error: any) => {
         if (!active) return;
@@ -716,8 +748,33 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           onuType: effectiveOnuType,
           vlan,
           description: description || undefined,
+          serviceTemplate,
           // ZTE
           tcontProfile,
+          trafficProfile: effectiveTrafficProfile || undefined,
+          primaryVlan,
+          secondaryVlan,
+          mgmtVlan,
+          internetVlan,
+          voipVlan,
+          vlanProfile,
+          pppoeUsername,
+          pppoePassword,
+          enableDualSsid,
+          ssid1Name,
+          ssid1Password,
+          ssid1Auth,
+          ssid2Name,
+          ssid2Password,
+          ssid2Auth,
+          enableTr069,
+          tr069Vlan,
+          acsUrl,
+          acsUsername,
+          acsPassword,
+          enableFirewall,
+          firewallLevel,
+          enableSecurityMgmt,
           // Huawei
           lineProfileId,
           srvProfileId,
@@ -740,6 +797,86 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
   };
 
   // Build command preview per vendor
+  const zteTemplatePreview = serviceTemplate === 'zte_full' ? [
+    `interface gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    ...(description ? [`  name ${description}`, `  description ${description}`] : []),
+    `  tcont 1 name VLAN${String(primaryVlan).padStart(4, '0')} profile ${tcontProfile}`,
+    `  tcont 2 name VLAN${secondaryVlan} profile ${tcontProfile}`,
+    '  gemport 1 tcont 1',
+    ...(effectiveTrafficProfile ? [`  gemport 1 traffic-limit downstream ${effectiveTrafficProfile}`] : []),
+    '  gemport 2 tcont 2',
+    ...(effectiveTrafficProfile ? [`  gemport 2 traffic-limit downstream ${effectiveTrafficProfile}`] : []),
+    `  service-port 1 vport 1 user-vlan ${primaryVlan} vlan ${primaryVlan}`,
+    `  service-port 2 vport 2 user-vlan ${secondaryVlan} vlan ${secondaryVlan}`,
+    'exit',
+    `pon-onu-mng gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    `  service VLAN${String(primaryVlan).padStart(4, '0')} gemport 1 iphost 1 vlan ${primaryVlan}`,
+    `  service VLAN${secondaryVlan} gemport 2 vlan ${secondaryVlan}`,
+    '  vlan port veip_1 mode hybrid',
+    '  vlan port veip_1 vlan 1',
+    ...(pppoeUsername && pppoePassword ? [`  pppoe 1 nat enable user ${pppoeUsername} password ${pppoePassword}`] : []),
+    `  vlan port eth_0/1 mode tag vlan ${primaryVlan}`,
+    `  vlan port eth_0/2 mode tag vlan ${primaryVlan}`,
+    `  vlan port eth_0/3 mode tag vlan ${primaryVlan}`,
+    `  vlan port eth_0/4 mode tag vlan ${primaryVlan}`,
+    `  vlan port wifi_0/1 mode tag vlan ${primaryVlan}`,
+    ...(enableDualSsid ? [`  vlan port wifi_0/2 mode tag vlan ${secondaryVlan}`] : []),
+    ...(ssid1Name ? [`  wifi ssid 1 name ${ssid1Name}`, `  wifi ssid 1 auth ${ssid1Auth === 'wpa' ? 'wpa-psk' : 'wpa2-psk'}`, ...(ssid1Password ? [`  wifi ssid 1 wpakey ${ssid1Password}`] : []), `  wifi ssid 1 bindvlan ${primaryVlan}`, '  wifi ssid 1 enable'] : []),
+    ...(enableDualSsid && ssid2Name ? [`  wifi ssid 2 name ${ssid2Name}`, ...(ssid2Auth === 'open' ? ['  wifi ssid 2 auth open'] : [`  wifi ssid 2 auth ${ssid2Auth === 'wpa' ? 'wpa-psk' : 'wpa2-psk'}`]), ...(ssid2Auth !== 'open' && ssid2Password ? [`  wifi ssid 2 wpakey ${ssid2Password}`] : []), `  wifi ssid 2 bindvlan ${secondaryVlan}`, '  wifi ssid 2 enable'] : []),
+    ...(enableFirewall ? [`  firewall enable level ${firewallLevel} anti-hack disable`] : []),
+    ...(enableTr069 ? ['  tr069-mgmt 1 state unlock', `  tr069-mgmt 1 acs ${acsUrl} validate basic username ${acsUsername} password ${acsPassword}`] : []),
+    ...(enableSecurityMgmt ? ['  security-mgmt 1 state enable mode forward'] : []),
+    '  wan 1 service internet host 1',
+    'exit',
+  ] : serviceTemplate === 'huawei_full' ? [
+    `interface gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    ...(description ? [`  name ${description}`, `  description ${description}`] : []),
+    `  tcont 1 profile ${tcontProfile}`,
+    '  gemport 1 tcont 1',
+    ...(effectiveTrafficProfile ? [`  gemport 1 traffic-limit downstream ${effectiveTrafficProfile}`] : []),
+    `  service-port 1 vport 1 user-vlan ${mgmtVlan} vlan ${mgmtVlan}`,
+    `  service-port 2 vport 1 user-vlan ${internetVlan} vlan ${internetVlan}`,
+    `  service-port 3 vport 1 user-vlan ${voipVlan} vlan ${voipVlan}`,
+    'exit',
+    `pon-onu-mng gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    '  service ServiceONU1 gemport 1',
+    `  wan-ip 1 mode dhcp vlan-profile ${vlanProfile} host 1`,
+    'exit',
+  ] : serviceTemplate === 'fiberhome_veip' ? [
+    `interface gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    ...(description ? [`  name ${description}`, `  description ${description}`] : []),
+    `  tcont 1 profile ${tcontProfile}`,
+    `  tcont 2 profile ${tcontProfile}`,
+    `  tcont 3 profile ${tcontProfile}`,
+    '  gemport 1 tcont 1',
+    '  gemport 2 tcont 2',
+    '  gemport 3 tcont 3',
+    `  service-port 1 vport 1 user-vlan ${tr069Vlan} vlan ${tr069Vlan}`,
+    `  service-port 2 vport 2 user-vlan ${internetVlan} vlan ${internetVlan}`,
+    `  service-port 3 vport 3 user-vlan ${voipVlan} vlan ${voipVlan}`,
+    'exit',
+    `pon-onu-mng gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    `  service 1 gemport 1 vlan ${tr069Vlan}`,
+    `  service 2 gemport 2 vlan ${internetVlan}`,
+    `  service 3 gemport 3 vlan ${voipVlan}`,
+    '  vlan port veip_1 mode hybrid',
+    '  tr069-mgmt 1 state unlock',
+    `  tr069-mgmt 1 acs ${acsUrl} validate basic username ${acsUsername} password ${acsPassword}`,
+    `  vlan port wifi_0/1 mode tag vlan ${internetVlan}`,
+    `  vlan port eth_0/1 mode tag vlan ${internetVlan}`,
+    `  vlan port eth_0/2 mode tag vlan ${internetVlan}`,
+    `  vlan port eth_0/3 mode tag vlan ${internetVlan}`,
+    `  vlan port eth_0/4 mode tag vlan ${internetVlan}`,
+    'exit',
+  ] : [
+    `interface gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
+    ...(description ? [`  name ${description}`, `  description ${description}`] : []),
+    `  tcont 1 profile ${tcontProfile}`,
+    '  gemport 1 tcont 1',
+    `  service-port 1 vport 1 user-vlan ${vlan} vlan ${vlan}`,
+    'exit',
+  ];
+
   const cmdPreview = isHuawei ? [
     'enable',
     'config',
@@ -759,18 +896,11 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
     '  commit',
     'exit',
   ] : [
-    // ZTE C320 V2.1 — reference: onu_register_wizard.py
     'configure terminal',
     `interface gpon-olt_${onu.frame}/${onu.slot}/${ponPort}`,
     `  onu ${onuId} type ${effectiveOnuType || 'All'} sn ${onu.serialNumber ?? '???'}`,
     'exit',
-    `interface gpon-onu_${onu.frame}/${onu.slot}/${ponPort}:${onuId}`,
-    ...(description ? [`  name ${description}`] : []),
-    ...(description ? [`  description ${description}`] : []),
-    `  tcont 1 profile ${tcontProfile}`,
-    '  gemport 1 tcont 1',
-    `  service-port 1 vport 1 user-vlan ${vlan} vlan ${vlan}`,
-    'exit',
+    ...zteTemplatePreview,
     'end',
   ];
 
@@ -814,16 +944,21 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             )}
           </div>
 
-          {/* VLAN */}
-          <div>
-            <Label className="text-xs text-gray-500">Service VLAN</Label>
-            <Input type="number" min={1} max={4094} value={vlan}
-              onChange={e => setVlan(parseInt(e.target.value) || 100)}
-              className="mt-1 font-mono caret-gray-900 dark:caret-white" />
-          </div>
-
           {/* ── ZTE-only fields ── */}
           {isZTE && (<>
+            <div>
+              <Label className="text-xs text-gray-500">Config Template</Label>
+              <Select value={serviceTemplate} onValueChange={(value) => setServiceTemplate(value as ZteServiceTemplate)}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="basic">Basic register</SelectItem>
+                  <SelectItem value="zte_full">ZTE Full</SelectItem>
+                  <SelectItem value="huawei_full">Huawei Full</SelectItem>
+                  <SelectItem value="fiberhome_veip">Fiberhome VEIP</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-gray-400 mt-1">Flow diambil dari onu_register_wizard.py pada OLT C320 V2.1.1.</p>
+            </div>
             <div>
               <Label className="text-xs text-gray-500">ONU Type</Label>
               {metadata.onuTypes.length > 0 ? (
@@ -855,7 +990,227 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
                 <Input value={tcontProfile} onChange={e => setTcontProfile(e.target.value)} placeholder="TCONT profile" className="mt-1 font-mono" />
               )}
             </div>
+
+            {serviceTemplate === 'basic' && (
+              <div>
+                <Label className="text-xs text-gray-500">Service VLAN</Label>
+                <Input type="number" min={1} max={4094} value={vlan}
+                  onChange={e => setVlan(parseInt(e.target.value) || 100)}
+                  className="mt-1 font-mono caret-gray-900 dark:caret-white" />
+              </div>
+            )}
+
+            {(serviceTemplate === 'zte_full' || serviceTemplate === 'huawei_full') && (
+              <div>
+                <Label className="text-xs text-gray-500">Traffic Profile</Label>
+                {metadata.trafficProfiles.length > 0 ? (
+                  <Select value={effectiveTrafficProfile} onValueChange={setTrafficProfile}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {metadata.trafficProfiles.map(profile => (
+                        <SelectItem key={profile} value={profile}>{profile}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={trafficProfile} onChange={e => setTrafficProfile(e.target.value)} placeholder="Traffic profile" className="mt-1 font-mono" />
+                )}
+              </div>
+            )}
+
+            {serviceTemplate === 'zte_full' && (
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+                <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">ZTE Full Template</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-500">Primary VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={primaryVlan} onChange={e => setPrimaryVlan(parseInt(e.target.value) || 30)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Secondary VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={secondaryVlan} onChange={e => setSecondaryVlan(parseInt(e.target.value) || 151)} className="mt-1 font-mono" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-500">PPPoE Username</Label>
+                    <Input value={pppoeUsername} onChange={e => setPppoeUsername(e.target.value)} className="mt-1 font-mono" placeholder="optional" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">PPPoE Password</Label>
+                    <Input value={pppoePassword} onChange={e => setPppoePassword(e.target.value)} className="mt-1 font-mono" placeholder="optional" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-md bg-gray-50 dark:bg-gray-950 px-3 py-2">
+                  <div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">Dual SSID</div>
+                    <div className="text-xs text-gray-500">Aktifkan SSID kedua di VLAN sekunder.</div>
+                  </div>
+                  <Switch checked={enableDualSsid} onCheckedChange={setEnableDualSsid} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-500">SSID 1 Name</Label>
+                    <Input value={ssid1Name} onChange={e => setSsid1Name(e.target.value)} className="mt-1 font-mono" placeholder="optional" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">SSID 1 Password</Label>
+                    <Input value={ssid1Password} onChange={e => setSsid1Password(e.target.value)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">SSID 1 Auth</Label>
+                    <Select value={ssid1Auth} onValueChange={setSsid1Auth}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="wpa2">WPA2-PSK</SelectItem>
+                        <SelectItem value="wpa">WPA-PSK</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                {enableDualSsid && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs text-gray-500">SSID 2 Name</Label>
+                      <Input value={ssid2Name} onChange={e => setSsid2Name(e.target.value)} className="mt-1 font-mono" placeholder="optional" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">SSID 2 Password</Label>
+                      <Input value={ssid2Password} onChange={e => setSsid2Password(e.target.value)} className="mt-1 font-mono" placeholder="only for WPA/WPA2" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">SSID 2 Auth</Label>
+                      <Select value={ssid2Auth} onValueChange={setSsid2Auth}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="wpa2">WPA2-PSK</SelectItem>
+                          <SelectItem value="wpa">WPA-PSK</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between rounded-md bg-gray-50 dark:bg-gray-950 px-3 py-2">
+                  <div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">TR-069</div>
+                    <div className="text-xs text-gray-500">Tambahkan ACS provisioning seperti wizard reference.</div>
+                  </div>
+                  <Switch checked={enableTr069} onCheckedChange={setEnableTr069} />
+                </div>
+                {enableTr069 && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <Label className="text-xs text-gray-500">ACS URL</Label>
+                      <Input value={acsUrl} onChange={e => setAcsUrl(e.target.value)} className="mt-1 font-mono" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">ACS Username</Label>
+                      <Input value={acsUsername} onChange={e => setAcsUsername(e.target.value)} className="mt-1 font-mono" />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500">ACS Password</Label>
+                      <Input value={acsPassword} onChange={e => setAcsPassword(e.target.value)} className="mt-1 font-mono" />
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center justify-between rounded-md bg-gray-50 dark:bg-gray-950 px-3 py-2">
+                  <div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">Firewall</div>
+                    <div className="text-xs text-gray-500">Tambahkan firewall enable level ... anti-hack disable.</div>
+                  </div>
+                  <Switch checked={enableFirewall} onCheckedChange={setEnableFirewall} />
+                </div>
+                {enableFirewall && (
+                  <div>
+                    <Label className="text-xs text-gray-500">Firewall Level</Label>
+                    <Select value={firewallLevel} onValueChange={setFirewallLevel}>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="low">low</SelectItem>
+                        <SelectItem value="medium">medium</SelectItem>
+                        <SelectItem value="high">high</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <div className="flex items-center justify-between rounded-md bg-gray-50 dark:bg-gray-950 px-3 py-2">
+                  <div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">Security Management</div>
+                    <div className="text-xs text-gray-500">Tambahkan security-mgmt forward mode.</div>
+                  </div>
+                  <Switch checked={enableSecurityMgmt} onCheckedChange={setEnableSecurityMgmt} />
+                </div>
+              </div>
+            )}
+
+            {serviceTemplate === 'huawei_full' && (
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+                <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Huawei Full Template</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-500">Mgmt VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={mgmtVlan} onChange={e => setMgmtVlan(parseInt(e.target.value) || 1010)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Internet VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={internetVlan} onChange={e => setInternetVlan(parseInt(e.target.value) || 30)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">VoIP VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={voipVlan} onChange={e => setVoipVlan(parseInt(e.target.value) || 151)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">VLAN Profile</Label>
+                    <Input value={vlanProfile} onChange={e => setVlanProfile(e.target.value || 'genieacs')} className="mt-1 font-mono" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {serviceTemplate === 'fiberhome_veip' && (
+              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+                <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Fiberhome VEIP Template</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-gray-500">TR-069 VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={tr069Vlan} onChange={e => setTr069Vlan(parseInt(e.target.value) || 100)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">Internet VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={internetVlan} onChange={e => setInternetVlan(parseInt(e.target.value) || 30)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">VoIP VLAN</Label>
+                    <Input type="number" min={1} max={4094} value={voipVlan} onChange={e => setVoipVlan(parseInt(e.target.value) || 151)} className="mt-1 font-mono" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <Label className="text-xs text-gray-500">ACS URL</Label>
+                    <Input value={acsUrl} onChange={e => setAcsUrl(e.target.value)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">ACS Username</Label>
+                    <Input value={acsUsername} onChange={e => setAcsUsername(e.target.value)} className="mt-1 font-mono" />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-gray-500">ACS Password</Label>
+                    <Input value={acsPassword} onChange={e => setAcsPassword(e.target.value)} className="mt-1 font-mono" />
+                  </div>
+                </div>
+              </div>
+            )}
           </>)}
+
+          {(!isZTE || serviceTemplate === 'basic') && (
+            <div>
+              <Label className="text-xs text-gray-500">Service VLAN</Label>
+              <Input type="number" min={1} max={4094} value={vlan}
+                onChange={e => setVlan(parseInt(e.target.value) || 100)}
+                className="mt-1 font-mono caret-gray-900 dark:caret-white" />
+            </div>
+          )}
 
           {/* ── Huawei-only fields ── */}
           {isHuawei && (<>
@@ -913,6 +1268,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
 
           <div className="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-3 text-xs text-gray-500 space-y-1">
             <div>Detected ONU type: <span className="font-mono text-gray-900 dark:text-gray-200">{metadata.detectedOnuType ?? onu.onuType ?? '-'}</span></div>
+            {isZTE && <div>Template: <span className="font-mono text-gray-900 dark:text-gray-200">{serviceTemplate}</span></div>}
             <div>Metadata source: <span className="font-mono text-gray-900 dark:text-gray-200">{metadataLoading ? 'Loading from OLT...' : 'Live OLT query'}</span></div>
           </div>
 
