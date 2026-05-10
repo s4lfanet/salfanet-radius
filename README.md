@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.7 — 2026-05-10
+
+### Changed
+- **Domain pointing** — Aplikasi sekarang berjalan di `https://radius.hotspotapp.net` (Cloudflare Flexible SSL)
+- **nginx config** — server_name diubah ke `radius.hotspotapp.net`; tambah Cloudflare Real IP headers (`set_real_ip_from`, `real_ip_header CF-Connecting-IP`); `X-Forwarded-Proto: https` agar NextAuth generate URL yang benar
+- **ENV VPS** — `NEXTAUTH_URL` dan `NEXT_PUBLIC_APP_URL` diperbarui ke `https://radius.hotspotapp.net`
+### Files
+- `nginx-frontend.conf` — domain + Cloudflare real IP + X-Forwarded-Proto https
+- `.env` (VPS only) — NEXTAUTH_URL + NEXT_PUBLIC_APP_URL = https://radius.hotspotapp.net
+
 ### v2.31.6 — 2026-05-10
 
 ### Fixed
@@ -505,21 +515,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `package.json` — postbuild now copies `.next/static` to `.next/standalone/.next/static`
 - `baileys_whatsapp_patch/package.json` — same fix
-
-### v2.31.2 — 2026-05-10
-
-### Added
-- **Next.js frontend deployed on VPS** — Full stack running at `http://103.151.140.110`: Go API backend (port 8080) + Next.js frontend (port 3000) behind nginx reverse proxy
-- **Database schema migrated** — `prisma db push` applied all 100+ tables to MariaDB `salfanet_radius`; custom SQL migrations confirmed already included in schema
-- **PM2 process management** — `salfanet-frontend` and `wa-service` managed by PM2, auto-start on boot via `pm2-root.service` systemd unit
-- **nginx proxy updated** — `/api/*` → `:8080` (Go), `/ws/*` → `:8080` (Go), `/*` → `:3000` (Next.js)
-- **Company seed data** — Initial company record seeded via `npm run db:seed:company`
-### Files
-- `nginx-frontend.conf` — nginx config template with frontend proxy
-### Notes
-- Admin login: `http://103.151.140.110/admin/login`
-- Customer portal: `http://103.151.140.110/customer/login`
-- API health: `http://103.151.140.110/api/system/health`
 
 <!-- AUTO-CHANGELOG:END -->
 
