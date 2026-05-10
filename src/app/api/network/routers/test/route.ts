@@ -33,7 +33,7 @@ export async function POST(request: Request) {
       username,
       password,
       port: primaryPort,
-      timeout: 10000,
+      timeout: 8000,
       tls: false,
     })
     const result = await mtik.testConnection()
@@ -42,26 +42,38 @@ export async function POST(request: Request) {
       return NextResponse.json({ ...result, usedPort: primaryPort, usedTls: false })
     }
 
-    // --- Fallback: try SSL port (API-SSL) ---
+    // --- Fallback: try SSL port (API-SSL) only if port is different ---
     const primaryError = result.message
-    const mtikSsl = new MikroTikConnection({
-      host: ipAddress,
-      username,
-      password,
-      port: sslPort,
-      timeout: 10000,
-      tls: true,
-    })
-    const sslResult = await mtikSsl.testConnection()
+    let sslError = ''
+    if (sslPort !== primaryPort) {
+      const mtikSsl = new MikroTikConnection({
+        host: ipAddress,
+        username,
+        password,
+        port: sslPort,
+        timeout: 8000,
+        tls: true,
+      })
+      const sslResult = await mtikSsl.testConnection()
 
-    if (sslResult.success) {
-      return NextResponse.json({ ...sslResult, usedPort: sslPort, usedTls: true })
+      if (sslResult.success) {
+        return NextResponse.json({ ...sslResult, usedPort: sslPort, usedTls: true })
+      }
+      sslError = sslResult.message
     }
 
-    // Both failed — return combined error with port details
+    // Both failed — return combined error with diagnosis
+    const sslPart = sslPort !== primaryPort ? ` | Port ${sslPort} (SSL): ${sslError}` : ''
     return NextResponse.json({
       success: false,
-      message: `Port ${primaryPort}: ${primaryError} | Port ${sslPort} (SSL): ${sslResult.message}`,
+      message: `Port ${primaryPort}: ${primaryError}${sslPart}`,
+      diagnosis: primaryError.includes('timed out') || primaryError.includes('firewall')
+        ? 'firewall_block'
+        : primaryError.includes('ECONNREFUSED')
+        ? 'port_refused'
+        : primaryError.includes('wrong password') || primaryError.includes('cannot log in')
+        ? 'auth_failed'
+        : 'unknown',
     })
 
   } catch (error: any) {

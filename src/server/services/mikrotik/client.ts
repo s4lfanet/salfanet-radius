@@ -53,7 +53,7 @@ export class MikroTikConnection {
       // the TCP connection phase — an unreachable host can hang for minutes.
       const connectPromise = this.conn.connect()
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error(`Connection timed out after ${timeoutMs / 1000}s — host may be unreachable`)), timeoutMs)
+        setTimeout(() => reject(new Error(`Connection timed out after ${timeoutMs / 1000}s — host unreachable or firewall blocking`)), timeoutMs)
       )
       await Promise.race([connectPromise, timeoutPromise])
       console.log('MikroTik connection successful!')
@@ -63,7 +63,18 @@ export class MikroTikConnection {
       const c = this.conn
       this.conn = null
       try { c?.close() } catch { /* ignore close errors on failed connection */ }
-      throw new Error(`Failed to connect to MikroTik: ${error instanceof Error ? error.message : error}`)
+      // node-routeros may throw strings, plain objects, or Errors — serialize safely
+      let msg: string
+      if (error instanceof Error) {
+        msg = error.message
+      } else if (typeof error === 'string') {
+        msg = error
+      } else if (error && typeof error === 'object') {
+        msg = (error as any).message || (error as any).code || JSON.stringify(error)
+      } else {
+        msg = String(error)
+      }
+      throw new Error(`Failed to connect to MikroTik (${this.config.host}:${this.config.port}): ${msg}`)
     }
   }
 

@@ -232,13 +232,22 @@ export default function RouterPage() {
         const portInfo = result.usedTls ? ` (port ${result.usedPort} SSL)` : ` (port ${result.usedPort})`
         showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', result.identity) + portInfo)
       } else if (formData.vpnClientId) {
-        // VPN client: ping sudah berhasil, API gagal = MikroTik firewall belum diizinkan
-        // Tetap tandai success agar router bisa disimpan
+        // VPN client: ping sudah berhasil, API gagal = MikroTik firewall memblokir
+        const apiPort = parseInt(formData.port) || 8728
+        const apiSslPort = parseInt(formData.apiPort) || 8729
+        const firewallCmd = `/ip firewall filter add chain=input src-address=172.16.212.1 protocol=tcp dst-port=${apiPort},${apiSslPort} action=accept place-before=0 comment="Allow VPS API"`
         setTestResult({ success: true, message: result.message, identity: 'VPN (ping OK, API pending)' })
-        showSuccess(`VPN dapat dijangkau. API port belum bisa diakses — pastikan MikroTik mengizinkan koneksi API dari IP VPS di /ip/firewall/filter dan aktifkan /ip/service api.`)
+        showSuccess(`VPN terhubung ✓\n\nAPI port ${apiPort} diblokir firewall MikroTik. Jalankan perintah ini di terminal MikroTik:\n\n${firewallCmd}`)
       } else {
         setTestResult(result)
-        showError(result.message)
+        const diagMsg = result.diagnosis === 'port_refused'
+          ? `${result.message}\n\nPort ditolak (ECONNREFUSED) — pastikan /ip service api sudah enabled dan port benar.`
+          : result.diagnosis === 'auth_failed'
+          ? `${result.message}\n\nUsername/password salah — cek credentials di /ip service.`
+          : result.diagnosis === 'firewall_block'
+          ? `${result.message}\n\nKoneksi timeout — firewall memblokir port ini.`
+          : result.message
+        showError(diagMsg)
       }
     } catch (error: any) {
       showError(error.message || t('network.failedTestConnection'))
