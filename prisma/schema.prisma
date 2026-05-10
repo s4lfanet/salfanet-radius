@@ -949,6 +949,16 @@ model cronHistory {
   @@map("cron_history")
 }
 
+model cronScheduleConfig {
+  jobType   String   @id
+  schedule  String   // cron expression, e.g. "0 7 * * *"
+  enabled   Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("cron_schedule_config")
+}
+
 enum hotspot_vouchers_status {
   WAITING
   ACTIVE

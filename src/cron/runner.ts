@@ -86,31 +86,58 @@ setTimeout(async () => {
 
 // ==================== CRON SCHEDULES ====================
 
-// Hanya schedule jobs yang punya fixed cron pattern (bukan 'dynamic')
-const schedulableJobs = CRON_JOBS.filter(j => j.enabled && j.schedule !== 'dynamic');
+// Load schedule overrides from DB, then start all scheduled jobs
+async function initSchedules() {
+  const { prisma } = await import('@/server/db/client');
 
-for (const job of schedulableJobs) {
-  cron.schedule(job.schedule, () => runJob(job.type, job.name));
-}
-
-// Telegram backup/health — schedule diambil dari DB settings saat startup
-setTimeout(async () => {
+  // Load DB overrides (cron_schedule_config table)
+  let overrideMap: Record<string, { schedule: string; enabled: boolean }> = {};
   try {
-    const { startBackupCron, startHealthCron } = await import('@/server/jobs/telegram-cron');
-    await startBackupCron();
-    await startHealthCron();
-    console.log('[CRON] Telegram backup & health crons initialized from DB settings');
+    const overrides = await prisma.cronScheduleConfig.findMany();
+    overrideMap = Object.fromEntries(overrides.map(o => [o.jobType, { schedule: o.schedule, enabled: o.enabled }]));
+    if (Object.keys(overrideMap).length > 0) {
+      console.log(`[CRON RUNNER] Loaded ${Object.keys(overrideMap).length} schedule override(s) from DB`);
+    }
   } catch (err: any) {
-    console.warn('[CRON] Telegram cron init skipped:', err?.message);
+    console.warn('[CRON RUNNER] Could not load schedule overrides from DB (table may not exist yet):', err?.message);
   }
-}, 8_000);
+
+  // Apply overrides: use DB schedule if available, else default from jobs.config.ts
+  const schedulableJobs = CRON_JOBS.filter(j => {
+    const override = overrideMap[j.type];
+    const enabled = override?.enabled ?? j.enabled;
+    const schedule = override?.schedule ?? j.schedule;
+    return enabled && schedule !== 'dynamic';
+  });
+
+  for (const job of schedulableJobs) {
+    const override = overrideMap[job.type];
+    const schedule = override?.schedule ?? job.schedule;
+    const label = override ? `${schedule} (override)` : job.scheduleLabel;
+    cron.schedule(schedule, () => runJob(job.type, job.name));
+    console.log(`  ${label.padEnd(30)} → ${job.name}`);
+  }
+
+  // Telegram backup/health — schedule diambil dari DB settings saat startup
+  setTimeout(async () => {
+    try {
+      const { startBackupCron, startHealthCron } = await import('@/server/jobs/telegram-cron');
+      await startBackupCron();
+      await startHealthCron();
+      console.log('[CRON] Telegram backup & health crons initialized from DB settings');
+    } catch (err: any) {
+      console.warn('[CRON] Telegram cron init skipped:', err?.message);
+    }
+  }, 8_000);
+
+  console.log(`[CRON RUNNER] ${schedulableJobs.length} scheduled jobs active. Waiting for schedules...`);
+}
 
 console.log('[CRON RUNNER] Starting...');
-console.log(`[CRON RUNNER] Loaded ${schedulableJobs.length} scheduled jobs:`);
-for (const job of schedulableJobs) {
-  console.log(`  ${job.scheduleLabel.padEnd(20)} → ${job.name}`);
-}
-console.log('[CRON RUNNER] All jobs initialized. Waiting for schedules...');
+initSchedules().catch(err => {
+  console.error('[CRON RUNNER] Fatal: failed to initialize schedules:', err);
+  process.exit(1);
+});
 
 // Keep process alive
 process.on('SIGTERM', () => {
