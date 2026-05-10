@@ -469,6 +469,13 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.32.1 — 2026-05-11
+
+### Fixed
+- **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
+### Files
+- `src/server/jobs/pppoe-session-sync.ts` — clamp TIMESTAMPDIFF ke INT range, tambah filter `acctstarttime > '2000-01-01'` pada update aktif
+
 ### v2.32.0 — 2026-05-11
 
 ### Added
@@ -520,15 +527,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/server/services/mikrotik/client.ts` — tambah field `tls` di `MikroTikConfig`, pass `{ rejectUnauthorized: false }` ke RouterOSAPI untuk self-signed cert
 - `src/app/api/network/routers/test/route.ts` — coba primary port dulu, fallback ke SSL port; return `usedPort` dan `usedTls` dalam response
 - `src/app/admin/network/routers/page.tsx` — kirim kedua port (`port` dan `apiPort`) ke test endpoint; auto-update form jika port yang berhasil berbeda
-
-### v2.31.9 — 2026-05-11
-
-### Fixed
-- **Mobile scroll semua halaman admin** — 60+ halaman admin tidak bisa di-scroll di iOS/Android; penyebab: `overflow-hidden` pada root div `bg-background relative overflow-hidden`; dihapus dari semua halaman (background blur effects sudah punya `overflow-hidden` pada `absolute inset-0` child mereka sendiri)
-- **Customer offline page** — halaman offline customer portal tidak bisa di-scroll; `overflow-hidden` pada root dipindah ke background div
-### Files
-- `src/app/admin/**/*.tsx` — hapus `overflow-hidden` dari root div pada 60+ halaman admin
-- `src/app/customer/offline/page.tsx` — hapus `overflow-hidden` dari root, pindah ke background div
 
 <!-- AUTO-CHANGELOG:END -->
 
