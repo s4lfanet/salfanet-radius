@@ -187,6 +187,23 @@ export default function RouterPage() {
         return
       }
 
+      // Jika menggunakan VPN client, lakukan ping test terlebih dahulu
+      // API test mungkin gagal jika MikroTik belum mengizinkan koneksi API dari VPN
+      if (formData.vpnClientId) {
+        const pingRes = await fetch('/api/network/routers/test-gateway', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ipAddress: formData.ipAddress }),
+        })
+        const pingResult = await pingRes.json()
+        if (!pingResult.success) {
+          setTestResult({ success: false, message: `VPN tidak terhubung: ${pingResult.message}` })
+          showError(`VPN tidak terhubung ke ${formData.ipAddress}`)
+          return
+        }
+        // Ping berhasil — lanjut test API, tapi error API tidak memblokir simpan
+      }
+
       const response = await fetch('/api/network/routers/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -199,11 +216,17 @@ export default function RouterPage() {
       })
 
       const result = await response.json()
-      setTestResult(result)
 
       if (result.success) {
+        setTestResult(result)
         showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', result.identity))
+      } else if (formData.vpnClientId) {
+        // VPN client: ping sudah berhasil, API gagal = MikroTik firewall belum diizinkan
+        // Tetap tandai success agar router bisa disimpan
+        setTestResult({ success: true, message: result.message, identity: 'VPN (ping OK, API pending)' })
+        showSuccess(`VPN dapat dijangkau. API port belum bisa diakses — pastikan MikroTik mengizinkan koneksi API dari IP VPS (172.16.212.1) di /ip/firewall/filter dan /ip/service.`)
       } else {
+        setTestResult(result)
         showError(result.message)
       }
     } catch (error: any) {

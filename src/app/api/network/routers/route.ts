@@ -150,8 +150,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Test connection to MikroTik (skip for gateway type)
-    if (!isGateway) {
+    // Test connection to MikroTik (skip for gateway type AND skip when vpnClientId is set)
+    // When vpnClientId is set, the IP is a VPN tunnel address managed by the system.
+    // The API connection is still valid but MikroTik firewall may need manual configuration.
+    // This is consistent with the PUT handler which also skips test when vpnClientId is set.
+    if (!isGateway && !vpnClientId) {
       try {
         const conn = new RouterOSAPI({
           host: ipAddress,
