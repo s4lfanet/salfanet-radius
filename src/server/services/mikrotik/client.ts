@@ -7,6 +7,7 @@ export interface MikroTikConfig {
   password: string
   port?: number
   timeout?: number
+  tls?: boolean
 }
 
 export class MikroTikConnection {
@@ -18,18 +19,23 @@ export class MikroTikConnection {
       ...config,
       port: config.port || 8728,
       timeout: config.timeout || 10000,
+      tls: config.tls ?? false,
     }
   }
 
   async connect(): Promise<void> {
     const timeoutMs = this.config.timeout || 10000
-    const connectionConfig = {
+    const connectionConfig: any = {
       host: this.config.host,
       user: this.config.username,
       password: this.config.password,
       port: this.config.port,
       // node-routeros expects timeout in SECONDS (not ms); our config is in ms ? divide by 1000
       timeout: Math.round(timeoutMs / 1000),
+    }
+    // Enable TLS for API-SSL (port 8729). MikroTik uses self-signed certs by default.
+    if (this.config.tls) {
+      connectionConfig.tls = { rejectUnauthorized: false }
     }
     
     console.log('Connecting to MikroTik with config:', {

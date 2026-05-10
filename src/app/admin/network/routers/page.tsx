@@ -212,19 +212,30 @@ export default function RouterPage() {
           username: formData.username,
           password: formData.password,
           port: parseInt(formData.port) || 8728,
+          apiPort: parseInt(formData.apiPort) || 8729,
         }),
       })
 
       const result = await response.json()
 
       if (result.success) {
+        // Jika berhasil pakai port berbeda dari yang diset (misalnya fallback ke SSL 8729),
+        // otomatis update form port ke port yang berhasil
+        if (result.usedPort && result.usedPort !== parseInt(formData.port)) {
+          setFormData(prev => ({
+            ...prev,
+            port: result.usedTls ? prev.apiPort : result.usedPort.toString(),
+            apiPort: result.usedTls ? result.usedPort.toString() : prev.apiPort,
+          }))
+        }
         setTestResult(result)
-        showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', result.identity))
+        const portInfo = result.usedTls ? ` (port ${result.usedPort} SSL)` : ` (port ${result.usedPort})`
+        showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', result.identity) + portInfo)
       } else if (formData.vpnClientId) {
         // VPN client: ping sudah berhasil, API gagal = MikroTik firewall belum diizinkan
         // Tetap tandai success agar router bisa disimpan
         setTestResult({ success: true, message: result.message, identity: 'VPN (ping OK, API pending)' })
-        showSuccess(`VPN dapat dijangkau. API port belum bisa diakses — pastikan MikroTik mengizinkan koneksi API dari IP VPS (172.16.212.1) di /ip/firewall/filter dan /ip/service.`)
+        showSuccess(`VPN dapat dijangkau. API port belum bisa diakses — pastikan MikroTik mengizinkan koneksi API dari IP VPS di /ip/firewall/filter dan aktifkan /ip/service api.`)
       } else {
         setTestResult(result)
         showError(result.message)
