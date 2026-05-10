@@ -30,8 +30,9 @@ export class MikroTikConnection {
       user: this.config.username,
       password: this.config.password,
       port: this.config.port,
-      // node-routeros expects timeout in SECONDS (not ms); our config is in ms ? divide by 1000
-      timeout: Math.round(timeoutMs / 1000),
+      // Do NOT set timeout here — node-routeros throws an empty string on its own timeout.
+      // We use Promise.race below to enforce our own timeout with a proper error message.
+      timeout: 9999,
     }
     // Enable TLS for API-SSL (port 8729). MikroTik uses self-signed certs by default.
     if (this.config.tls) {
@@ -73,6 +74,10 @@ export class MikroTikConnection {
         msg = (error as any).message || (error as any).code || JSON.stringify(error)
       } else {
         msg = String(error)
+      }
+      // node-routeros may throw empty string — provide meaningful fallback
+      if (!msg || msg === '{}') {
+        msg = `connection timed out or port unreachable (check MikroTik firewall: /ip firewall filter print)`
       }
       throw new Error(`Failed to connect to MikroTik (${this.config.host}:${this.config.port}): ${msg}`)
     }
