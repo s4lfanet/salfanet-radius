@@ -6,6 +6,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.32.1] — 2026-05-11
+### Fixed
+- **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
+### Files
+- `src/server/jobs/pppoe-session-sync.ts` — clamp TIMESTAMPDIFF ke INT range, tambah filter `acctstarttime > '2000-01-01'` pada update aktif
+
+---
+
 ## [2.32.0] — 2026-05-11
 ### Added
 - **Centralized Cron Schedule Management** — jadwal semua cron job kini bisa diatur dari satu halaman Admin → Settings → Cron tab "Jadwal Cron"; perubahan disimpan ke DB `cron_schedule_config`, aktif setelah `pm2 restart salfanet-cron`
