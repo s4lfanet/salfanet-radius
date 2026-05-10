@@ -329,7 +329,7 @@ export default function SessionsPage() {
       </div>,
       document.body
     )}
-    <div className="bg-background relative overflow-hidden">
+    <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>

@@ -8,8 +8,8 @@ export default function CustomerOfflinePage() {
   const { t } = useTranslation();
 
   return (
-    <div className="relative min-h-[calc(100vh-8rem)] overflow-hidden px-6 py-12">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.24),transparent_42%),linear-gradient(180deg,#020912_0%,#03131d_100%)]" />
+    <div className="relative min-h-[calc(100vh-8rem)] px-6 py-12">
+      <div className="absolute inset-0 overflow-hidden pointer-events-none bg-[radial-gradient(circle_at_top,rgba(14,165,233,0.24),transparent_42%),linear-gradient(180deg,#020912_0%,#03131d_100%)]" />
       <div className="relative mx-auto flex max-w-3xl flex-col items-center rounded-[32px] border border-cyan-400/20 bg-slate-950/80 px-8 py-12 text-center shadow-[0_30px_100px_rgba(6,182,212,0.14)] backdrop-blur-xl">
         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/10">
           <CloudOff className="h-10 w-10 text-cyan-300" />

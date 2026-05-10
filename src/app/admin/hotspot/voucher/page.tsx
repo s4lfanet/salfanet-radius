@@ -521,7 +521,7 @@ export default function HotspotVoucherPage() {
   // Stats are now loaded from API
 
   return (
-    <div className="bg-background relative overflow-hidden">
+    <div className="bg-background relative">
       {/* ─── Delete Progress Overlay ─── */}
       {deleteOverlay.open && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm">

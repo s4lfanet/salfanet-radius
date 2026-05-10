@@ -833,7 +833,7 @@ export default function VpnServerPage() {
         </div>,
         document.body
       )}
-      <main className="bg-background relative overflow-hidden">
+      <main className="bg-background relative">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none dark:block hidden">
           <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#bc13fe]/15 rounded-full blur-[120px] animate-pulse"></div>

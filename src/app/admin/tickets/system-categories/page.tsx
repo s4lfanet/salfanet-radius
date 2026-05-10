@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { Tag, Info, Clock, AlertCircle, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
@@ -39,7 +39,7 @@ export default function SystemTicketCategoriesPage() {
   };
 
   return (
-    <div className="bg-background relative overflow-hidden">
+    <div className="bg-background relative">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
