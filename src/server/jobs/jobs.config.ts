@@ -1,4 +1,5 @@
-import 'server-only'
+// Note: 'server-only' guard removed to allow standalone tsx cron runner (src/cron/runner.ts)
+// Server-side safety is guaranteed by Prisma/Node.js imports that can't run in browser bundles
 export interface CronJobConfig {
   type: string;
   name: string;
