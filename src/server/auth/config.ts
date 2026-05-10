@@ -189,8 +189,8 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
-    maxAge: 2 * 60 * 60, // 2 hours - session expires after 2 hours
-    updateAge: 15 * 60, // Update session setiap 15 menit
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 60 * 60, // Update session every hour
   },
   secret: NEXTAUTH_SECRET,
 };

@@ -6,6 +6,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.5] — 2026-05-10
+### Fixed
+- **Session expiry** — NextAuth session maxAge diubah dari 2 jam menjadi 30 hari; updateAge dari 15 menit menjadi 1 jam
+### Files
+- `src/server/auth/config.ts` — session maxAge: 30 days, updateAge: 1 hour
+- `package.json` — bump version to 2.31.5
+
+---
+
 ## [2.31.4] — 2026-05-11
 ### Fixed
 - **nginx routing: `/api/*` ke Next.js** — Root cause 401 errors: nginx salah routing semua `/api/*` ke Go backend (port 8080), padahal admin panel Next.js menggunakan NextAuth session cookies (bukan JWT Bearer). Semua `/api/*` sekarang diarahkan ke Next.js (port 3000). Go backend tetap berjalan di port 8080 untuk akses langsung / WebSocket OLT.
