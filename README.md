@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.6 — 2026-05-10
+
+### Fixed
+- **Health endpoint version** — `/api/health` selalu return `"unknown"` karena `npm_package_version` tidak tersedia di Next.js standalone; diganti dengan build-time env `APP_VERSION` dari `next.config.ts`
+- **PM2 startup** — `pm2 save` + systemd `pm2-root.service` verified enabled agar services auto-restart setelah reboot VPS
+### Files
+- `next.config.ts` — inject `APP_VERSION = pkg.version` as build-time env
+- `src/app/api/health/route.ts` — fallback `process.env.APP_VERSION`
+
 ### v2.31.5 — 2026-05-10
 
 ### Fixed
@@ -511,17 +520,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - Admin login: `http://103.151.140.110/admin/login`
 - Customer portal: `http://103.151.140.110/customer/login`
 - API health: `http://103.151.140.110/api/system/health`
-
-### v2.31.1 — 2026-05-10
-
-### Fixed
-- **CustomerAuthMiddleware** — Replace placeholder with real DB-backed session validation (`customer_sessions` table, token lookup, expiry check)
-- **Customer OTP send** — Plug in `notify.SendOTP` in `CustomerLogin` handler (was TODO)
-### Files
-- `internal/api/middleware/auth.go` — `NewCustomerAuthMiddleware(db)` factory, real session DB lookup
-- `internal/api/handlers/auth.go` — Import `notify` package, call `SendOTP` on customer login
-- `internal/api/router.go` — Pass DB to `NewCustomerAuthMiddleware`
-- `vps-install/wa-package.json` — Valid package.json for wa-service npm install on VPS
 
 <!-- AUTO-CHANGELOG:END -->
 
