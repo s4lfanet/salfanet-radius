@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.10] — 2026-05-11
+### Fixed
+- **MikroTik API port auto-detect** — koneksi API gagal jika port berbeda dari default; sekarang test connection mencoba `port` (8728, non-SSL) terlebih dahulu, lalu fallback ke `apiPort` (8729, SSL/TLS) jika gagal; jika berhasil di port berbeda, form otomatis di-update ke port yang benar
+- **MikroTik TLS/SSL support** — tambah opsi `tls: true` di `MikroTikConnection` untuk support API-SSL (port 8729) dengan self-signed certificate
+### Files
+- `src/server/services/mikrotik/client.ts` — tambah field `tls` di `MikroTikConfig`, pass `{ rejectUnauthorized: false }` ke RouterOSAPI untuk self-signed cert
+- `src/app/api/network/routers/test/route.ts` — coba primary port dulu, fallback ke SSL port; return `usedPort` dan `usedTls` dalam response
+- `src/app/admin/network/routers/page.tsx` — kirim kedua port (`port` dan `apiPort`) ke test endpoint; auto-update form jika port yang berhasil berbeda
+
+---
+
 ## [2.31.9] — 2026-05-11
 ### Fixed
 - **Mobile scroll semua halaman admin** — 60+ halaman admin tidak bisa di-scroll di iOS/Android; penyebab: `overflow-hidden` pada root div `bg-background relative overflow-hidden`; dihapus dari semua halaman (background blur effects sudah punya `overflow-hidden` pada `absolute inset-0` child mereka sendiri)
