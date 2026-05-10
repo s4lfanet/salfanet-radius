@@ -469,6 +469,29 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.32.0 — 2026-05-11
+
+### Added
+- **Centralized Cron Schedule Management** — jadwal semua cron job kini bisa diatur dari satu halaman Admin → Settings → Cron tab "Jadwal Cron"; perubahan disimpan ke DB `cron_schedule_config`, aktif setelah `pm2 restart salfanet-cron`
+- **Schedule Editor modal** — 17 preset waktu (Every minute, Every 5 min, dll.) + custom cron expression; menampilkan default schedule sebagai referensi
+- **3-tab layout cron page** — Tab: Status & Trigger, Jadwal Cron, Riwayat Eksekusi
+- **API `/api/cron/schedules`** — GET/PUT/DELETE untuk manajemen schedule override per job (SUPERADMIN only)
+- **DB table `cron_schedule_config`** — menyimpan override schedule per jobType
+### Changed
+- **`runner.ts`** — load schedule overrides dari DB saat startup; fallback ke default jika tidak ada override atau tabel belum ada; support `preload.cjs` mock untuk `server-only`
+- **`jobs.config.ts`** — hapus `import 'server-only'` guard (redundant; diganti comment penjelasan)
+### Fixed
+- **Duplicate `CronSettingsPage` declaration** — page.tsx memiliki dua `export default function CronSettingsPage()` yang menyebabkan build error Turbopack; baris duplikat dihapus
+- **`server-only` module block tsx cron runner** — `src/cron/preload.cjs` mocking module `server-only` sebelum tsx load file apapun agar standalone cron runner bisa berjalan
+### Files
+- `src/app/admin/settings/cron/page.tsx` — rewrite lengkap dengan 3-tab layout + ScheduleEditor modal
+- `src/app/api/cron/schedules/route.ts` — NEW: CRUD API untuk schedule override
+- `src/cron/runner.ts` — load schedule overrides dari DB via `initSchedules()`
+- `src/cron/preload.cjs` — NEW: mock `server-only` agar tsx bisa load server files
+- `src/cron/runner-wrapper.cjs` — NEW: CJS wrapper entry point (opsional)
+- `src/server/jobs/jobs.config.ts` — hapus `import 'server-only'`
+- `prisma/schema.prisma` — tambah model `cronScheduleConfig`
+
 ### v2.31.12 — 2026-05-11
 
 ### Fixed
@@ -506,21 +529,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/admin/**/*.tsx` — hapus `overflow-hidden` dari root div pada 60+ halaman admin
 - `src/app/customer/offline/page.tsx` — hapus `overflow-hidden` dari root, pindah ke background div
-
-### v2.31.8 — 2026-05-10
-
-### Fixed
-- **Mobile scroll blocked** — halaman admin/customer/technician tidak bisa di-scroll di iOS/Android; penyebab: `overflow-hidden` pada root `min-h-screen` div di semua portal layout; dipindah ke background `fixed inset-0` div agar tidak clipping konten
-- **Touch overlay block scroll** — notifikasi bell dropdown admin & customer memblokir touch scroll di halaman; ditambah `touch-none` pada `fixed inset-0 z-40` overlay
-- **PPPoE tambah pelanggan** — form terpotong di viewport mobile karena `h-full max-h-screen`; diganti `min-h-screen`
-- **Halaman publik scroll** — `daftar/page.tsx` dan `pay/[token]/page.tsx` pakai `overflow-hidden` pada root; dihapus agar konten bisa di-scroll
-### Files
-- `src/app/admin/AdminClientLayout.tsx` — hapus `overflow-hidden` dari root div, pindah ke background div
-- `src/app/customer/CustomerClientLayout.tsx` — sama + `touch-none` pada bell overlay
-- `src/app/technician/TechnicianPortalLayout.tsx` — `touch-none` pada notif overlay
-- `src/app/admin/pppoe/users/new/page.tsx` — `h-full max-h-screen` → `min-h-screen`
-- `src/app/daftar/page.tsx` — hapus `overflow-hidden` dari root
-- `src/app/pay/[token]/page.tsx` — hapus `overflow-hidden` dari root
 
 <!-- AUTO-CHANGELOG:END -->
 
