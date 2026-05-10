@@ -469,6 +469,25 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.12 — 2026-05-11
+
+### Fixed
+- **MikroTik timeout empty error message** — `node-routeros` melempar empty string `""` saat timeout (bukan `Error` object); sekarang ada fallback message yang jelas jika error kosong atau `{}`
+- **Library timeout conflict** — `node-routeros` internal timeout diset ke 9999s agar tidak interferensi dengan `Promise.race` timeout kita yang memberikan pesan error yang lebih informatif
+### Files
+- `src/server/services/mikrotik/client.ts` — set library timeout ke 9999s, tambah fallback untuk empty error message
+
+### v2.31.11 — 2026-05-11
+
+### Fixed
+- **MikroTik API error diagnosis** — error message kosong setelah "Failed to connect to MikroTik:" karena `node-routeros` melempar non-Error object; diperbaiki dengan serialisasi yang robust (handle `string`, plain object, `Error`)
+- **MikroTik firewall hint di UI** — saat VPN ping OK tapi API gagal timeout, UI menampilkan perintah `/ip firewall filter add` yang persis harus dijalankan di MikroTik terminal
+- **Port fallback skip jika sama** — jika `port == apiPort`, tidak perlu coba SSL fallback (menghindari koneksi redundan)
+### Files
+- `src/server/services/mikrotik/client.ts` — fix error serialization, update timeout message
+- `src/app/api/network/routers/test/route.ts` — tambah field `diagnosis`, skip SSL fallback jika port sama
+- `src/app/admin/network/routers/page.tsx` — tampilkan perintah MikroTik firewall saat VPN OK tapi API blocked
+
 ### v2.31.10 — 2026-05-11
 
 ### Fixed
@@ -502,22 +521,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/admin/pppoe/users/new/page.tsx` — `h-full max-h-screen` → `min-h-screen`
 - `src/app/daftar/page.tsx` — hapus `overflow-hidden` dari root
 - `src/app/pay/[token]/page.tsx` — hapus `overflow-hidden` dari root
-
-### v2.31.7 — 2026-05-10
-
-### Fixed
-- **HTTPS domain radius.hotspotapp.net** — Install SSL certificate via Let's Encrypt certbot; nginx dikonfigurasi port 443 SSL + redirect HTTP→HTTPS; Cloudflare SSL mode Full sudah support
-### Files
-- `nginx-frontend.conf` — tambah SSL certificate, port 443, HTTP redirect; ganti IP ke domain `radius.hotspotapp.net`
-
-### v2.31.6 — 2026-05-10
-
-### Fixed
-- **Health endpoint version** — `/api/health` selalu return `"unknown"` karena `npm_package_version` tidak tersedia di Next.js standalone; diganti dengan build-time env `APP_VERSION` dari `next.config.ts`
-- **PM2 startup** — `pm2 save` + systemd `pm2-root.service` verified enabled agar services auto-restart setelah reboot VPS
-### Files
-- `next.config.ts` — inject `APP_VERSION = pkg.version` as build-time env
-- `src/app/api/health/route.ts` — fallback `process.env.APP_VERSION`
 
 <!-- AUTO-CHANGELOG:END -->
 
