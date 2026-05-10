@@ -7,13 +7,10 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ---
 
 ## [2.31.7] — 2026-05-10
-### Changed
-- **Domain pointing** — Aplikasi sekarang berjalan di `https://radius.hotspotapp.net` (Cloudflare Flexible SSL)
-- **nginx config** — server_name diubah ke `radius.hotspotapp.net`; tambah Cloudflare Real IP headers (`set_real_ip_from`, `real_ip_header CF-Connecting-IP`); `X-Forwarded-Proto: https` agar NextAuth generate URL yang benar
-- **ENV VPS** — `NEXTAUTH_URL` dan `NEXT_PUBLIC_APP_URL` diperbarui ke `https://radius.hotspotapp.net`
+### Fixed
+- **HTTPS domain radius.hotspotapp.net** — Install SSL certificate via Let's Encrypt certbot; nginx dikonfigurasi port 443 SSL + redirect HTTP→HTTPS; Cloudflare SSL mode Full sudah support
 ### Files
-- `nginx-frontend.conf` — domain + Cloudflare real IP + X-Forwarded-Proto https
-- `.env` (VPS only) — NEXTAUTH_URL + NEXT_PUBLIC_APP_URL = https://radius.hotspotapp.net
+- `nginx-frontend.conf` — tambah SSL certificate, port 443, HTTP redirect; ganti IP ke domain `radius.hotspotapp.net`
 
 ---
 
