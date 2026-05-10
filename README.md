@@ -469,6 +469,21 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.8 — 2026-05-10
+
+### Fixed
+- **Mobile scroll blocked** — halaman admin/customer/technician tidak bisa di-scroll di iOS/Android; penyebab: `overflow-hidden` pada root `min-h-screen` div di semua portal layout; dipindah ke background `fixed inset-0` div agar tidak clipping konten
+- **Touch overlay block scroll** — notifikasi bell dropdown admin & customer memblokir touch scroll di halaman; ditambah `touch-none` pada `fixed inset-0 z-40` overlay
+- **PPPoE tambah pelanggan** — form terpotong di viewport mobile karena `h-full max-h-screen`; diganti `min-h-screen`
+- **Halaman publik scroll** — `daftar/page.tsx` dan `pay/[token]/page.tsx` pakai `overflow-hidden` pada root; dihapus agar konten bisa di-scroll
+### Files
+- `src/app/admin/AdminClientLayout.tsx` — hapus `overflow-hidden` dari root div, pindah ke background div
+- `src/app/customer/CustomerClientLayout.tsx` — sama + `touch-none` pada bell overlay
+- `src/app/technician/TechnicianPortalLayout.tsx` — `touch-none` pada notif overlay
+- `src/app/admin/pppoe/users/new/page.tsx` — `h-full max-h-screen` → `min-h-screen`
+- `src/app/daftar/page.tsx` — hapus `overflow-hidden` dari root
+- `src/app/pay/[token]/page.tsx` — hapus `overflow-hidden` dari root
+
 ### v2.31.7 — 2026-05-10
 
 ### Fixed
@@ -504,14 +519,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - Migrasi frontend ke Go JWT adalah pekerjaan berikutnya (bukan dalam scope ini)
 ### Files
 - `nginx-frontend.conf` — hapus `location /api/` → Go; WebSocket `/ws/` tetap ke Go, semua `/` ke Next.js
-
-### v2.31.3 — 2026-05-10
-
-### Fixed
-- **Postbuild: copy `.next/static` to standalone** — Static assets (CSS, JS, fonts) were returning 404/wrong MIME type because postbuild script did not copy `.next/static` into `.next/standalone/.next/static`; all browser console errors resolved
-### Files
-- `package.json` — postbuild now copies `.next/static` to `.next/standalone/.next/static`
-- `baileys_whatsapp_patch/package.json` — same fix
 
 <!-- AUTO-CHANGELOG:END -->
 
