@@ -62,7 +62,7 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
       UPDATE radacct
       SET acctstoptime = NOW(),
           acctterminatecause = 'Lost-Carrier',
-          acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, NOW())
+          acctsessiontime = GREATEST(0, LEAST(TIMESTAMPDIFF(SECOND, acctstarttime, NOW()), 2147483647))
       WHERE acctstoptime IS NULL
         AND acctupdatetime IS NOT NULL
         AND acctupdatetime < DATE_SUB(NOW(), INTERVAL 90 MINUTE)
@@ -79,7 +79,7 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
       INNER JOIN pppoe_users pu ON pu.username = ra.username
       SET ra.acctstoptime = NOW(),
           ra.acctterminatecause = 'Admin-Reset',
-          ra.acctsessiontime = TIMESTAMPDIFF(SECOND, ra.acctstarttime, NOW())
+          ra.acctsessiontime = GREATEST(0, LEAST(TIMESTAMPDIFF(SECOND, ra.acctstarttime, NOW()), 2147483647))
       WHERE ra.acctstoptime IS NULL
         AND pu.status IN ('blocked', 'stop')
     `;
@@ -177,7 +177,7 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
       LEFT JOIN hotspot_vouchers hv ON hv.code = ra.username
       SET ra.acctstoptime = NOW(),
           ra.acctterminatecause = 'Lost-Carrier',
-          ra.acctsessiontime = TIMESTAMPDIFF(SECOND, ra.acctstarttime, NOW())
+          ra.acctsessiontime = GREATEST(0, LEAST(TIMESTAMPDIFF(SECOND, ra.acctstarttime, NOW()), 2147483647))
       WHERE ra.acctstoptime IS NULL
         AND pu.id IS NULL
         AND hv.id IS NULL
@@ -191,9 +191,10 @@ export async function syncPPPoESessions(): Promise<SyncResult> {
     // 4. Update acctsessiontime for all active sessions (keep it accurate)
     await prisma.$executeRaw`
       UPDATE radacct
-      SET acctsessiontime = TIMESTAMPDIFF(SECOND, acctstarttime, NOW())
+      SET acctsessiontime = GREATEST(0, LEAST(TIMESTAMPDIFF(SECOND, acctstarttime, NOW()), 2147483647))
       WHERE acctstoptime IS NULL
         AND acctstarttime IS NOT NULL
+        AND acctstarttime > '2000-01-01'
     `;
 
     // 6. Count active NAS for reporting
