@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.7] — 2026-05-10
+### Changed
+- **Domain pointing** — Aplikasi sekarang berjalan di `https://radius.hotspotapp.net` (Cloudflare Flexible SSL)
+- **nginx config** — server_name diubah ke `radius.hotspotapp.net`; tambah Cloudflare Real IP headers (`set_real_ip_from`, `real_ip_header CF-Connecting-IP`); `X-Forwarded-Proto: https` agar NextAuth generate URL yang benar
+- **ENV VPS** — `NEXTAUTH_URL` dan `NEXT_PUBLIC_APP_URL` diperbarui ke `https://radius.hotspotapp.net`
+### Files
+- `nginx-frontend.conf` — domain + Cloudflare real IP + X-Forwarded-Proto https
+- `.env` (VPS only) — NEXTAUTH_URL + NEXT_PUBLIC_APP_URL = https://radius.hotspotapp.net
+
+---
+
 ## [2.31.6] — 2026-05-10
 ### Fixed
 - **Health endpoint version** — `/api/health` selalu return `"unknown"` karena `npm_package_version` tidak tersedia di Next.js standalone; diganti dengan build-time env `APP_VERSION` dari `next.config.ts`
