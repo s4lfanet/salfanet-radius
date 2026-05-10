@@ -230,9 +230,9 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden">
+    <div className="min-h-screen bg-background relative">
       {/* Background Effects */}
-      <div className="fixed inset-0 pointer-events-none z-0" style={{ willChange: 'transform' }}>
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" style={{ willChange: 'transform' }}>
         <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[80px]" style={{ transform: 'translateZ(0)' }} />
         <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] bg-blue-500/10 rounded-full blur-[80px]" style={{ transform: 'translateZ(0)' }} />
         <div className="absolute top-[50%] left-[50%] translate-x-[-50%] translate-y-[-50%] w-[50%] h-[50%] bg-sky-400/10 rounded-full blur-[100px]" />
@@ -364,7 +364,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               </button>
               {bellOpen && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
+                  <div className="fixed inset-0 z-40 touch-none" onClick={() => setBellOpen(false)} />
                   <div className="absolute right-0 top-full mt-2 w-80 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                     <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                       <span className="text-xs font-bold text-primary uppercase tracking-wider">Notifikasi</span>
@@ -474,7 +474,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 </button>
                 {bellOpen && (
                   <>
-                    <div className="fixed inset-0 z-40" onClick={() => setBellOpen(false)} />
+                    <div className="fixed inset-0 z-40 touch-none" onClick={() => setBellOpen(false)} />
                     <div className="absolute right-0 top-full mt-2 w-72 bg-card/95 backdrop-blur-xl border border-border rounded-2xl shadow-lg z-50 overflow-hidden">
                       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                         <span className="text-xs font-bold text-primary uppercase tracking-wider">Notifikasi</span>

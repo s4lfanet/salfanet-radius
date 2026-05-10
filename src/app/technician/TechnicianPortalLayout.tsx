@@ -367,7 +367,7 @@ function NotificationBell() {
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-40 touch-none" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-12 w-80 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-brand-500/30 rounded-xl shadow-xl z-50 overflow-hidden">
             <div className="px-3 py-2 border-b border-slate-200 dark:border-brand-500/20 flex items-center justify-between">
               <p className="text-xs font-bold text-slate-900 dark:text-white">Notifikasi</p>

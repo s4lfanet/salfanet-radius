@@ -174,7 +174,7 @@ export default function NewPppoeUserPage() {
   }, [formData.subscriptionType, formData.profileId, formData.billingDay, formData.registeredAt, profiles]);
 
   return (
-    <div className="flex flex-col h-full max-h-screen p-4 max-w-2xl mx-auto gap-3">
+    <div className="flex flex-col min-h-screen p-4 max-w-2xl mx-auto gap-3">
       {/* Header */}
       <div className="flex items-center gap-3 flex-shrink-0">
         <button onClick={() => router.push('/admin/pppoe/users')}
