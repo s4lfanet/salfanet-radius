@@ -469,6 +469,15 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.9 — 2026-05-11
+
+### Fixed
+- **Mobile scroll semua halaman admin** — 60+ halaman admin tidak bisa di-scroll di iOS/Android; penyebab: `overflow-hidden` pada root div `bg-background relative overflow-hidden`; dihapus dari semua halaman (background blur effects sudah punya `overflow-hidden` pada `absolute inset-0` child mereka sendiri)
+- **Customer offline page** — halaman offline customer portal tidak bisa di-scroll; `overflow-hidden` pada root dipindah ke background div
+### Files
+- `src/app/admin/**/*.tsx` — hapus `overflow-hidden` dari root div pada 60+ halaman admin
+- `src/app/customer/offline/page.tsx` — hapus `overflow-hidden` dari root, pindah ke background div
+
 ### v2.31.8 — 2026-05-10
 
 ### Fixed
@@ -507,18 +516,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/server/auth/config.ts` — session maxAge: 30 days, updateAge: 1 hour
 - `package.json` — bump version to 2.31.5
-
-### v2.31.4 — 2026-05-11
-
-### Fixed
-- **nginx routing: `/api/*` ke Next.js** — Root cause 401 errors: nginx salah routing semua `/api/*` ke Go backend (port 8080), padahal admin panel Next.js menggunakan NextAuth session cookies (bukan JWT Bearer). Semua `/api/*` sekarang diarahkan ke Next.js (port 3000). Go backend tetap berjalan di port 8080 untuk akses langsung / WebSocket OLT.
-- **Cron jobs audit** — Tidak ada cron lama dari billing-radius Next.js. Semua cron (vpn-watchdog, wg-peer-watchdog, salfanet-cleanup) adalah script VPS yang valid.
-### Architecture Note
-- Go backend (port 8080): `GET /ws/olt/:id` WebSocket + direct API access
-- Next.js (port 3000): semua `/api/*` routing via NextAuth session
-- Migrasi frontend ke Go JWT adalah pekerjaan berikutnya (bukan dalam scope ini)
-### Files
-- `nginx-frontend.conf` — hapus `location /api/` → Go; WebSocket `/ws/` tetap ke Go, semua `/` ke Next.js
 
 <!-- AUTO-CHANGELOG:END -->
 
