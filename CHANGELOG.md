@@ -6,6 +6,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.6] — 2026-05-10
+### Fixed
+- **Health endpoint version** — `/api/health` selalu return `"unknown"` karena `npm_package_version` tidak tersedia di Next.js standalone; diganti dengan build-time env `APP_VERSION` dari `next.config.ts`
+- **PM2 startup** — `pm2 save` + systemd `pm2-root.service` verified enabled agar services auto-restart setelah reboot VPS
+### Files
+- `next.config.ts` — inject `APP_VERSION = pkg.version` as build-time env
+- `src/app/api/health/route.ts` — fallback `process.env.APP_VERSION`
+
+---
+
 ## [2.31.5] — 2026-05-10
 ### Fixed
 - **Session expiry** — NextAuth session maxAge diubah dari 2 jam menjadi 30 hari; updateAge dari 15 menit menjadi 1 jam

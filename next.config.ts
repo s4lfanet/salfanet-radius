@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 import path from "path";
+import pkg from "./package.json";
 
 const nextConfig: NextConfig = {
+  env: {
+    APP_VERSION: pkg.version,
+  },
   /* config options here */
   reactCompiler: true,
   typescript: {
