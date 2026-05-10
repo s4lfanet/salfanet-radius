@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.31.8] — 2026-05-10
+### Fixed
+- **Mobile scroll blocked** — halaman admin/customer/technician tidak bisa di-scroll di iOS/Android; penyebab: `overflow-hidden` pada root `min-h-screen` div di semua portal layout; dipindah ke background `fixed inset-0` div agar tidak clipping konten
+- **Touch overlay block scroll** — notifikasi bell dropdown admin & customer memblokir touch scroll di halaman; ditambah `touch-none` pada `fixed inset-0 z-40` overlay
+- **PPPoE tambah pelanggan** — form terpotong di viewport mobile karena `h-full max-h-screen`; diganti `min-h-screen`
+- **Halaman publik scroll** — `daftar/page.tsx` dan `pay/[token]/page.tsx` pakai `overflow-hidden` pada root; dihapus agar konten bisa di-scroll
+### Files
+- `src/app/admin/AdminClientLayout.tsx` — hapus `overflow-hidden` dari root div, pindah ke background div
+- `src/app/customer/CustomerClientLayout.tsx` — sama + `touch-none` pada bell overlay
+- `src/app/technician/TechnicianPortalLayout.tsx` — `touch-none` pada notif overlay
+- `src/app/admin/pppoe/users/new/page.tsx` — `h-full max-h-screen` → `min-h-screen`
+- `src/app/daftar/page.tsx` — hapus `overflow-hidden` dari root
+- `src/app/pay/[token]/page.tsx` — hapus `overflow-hidden` dari root
+
+---
+
 ## [2.31.7] — 2026-05-10
 ### Fixed
 - **HTTPS domain radius.hotspotapp.net** — Install SSL certificate via Let's Encrypt certbot; nginx dikonfigurasi port 443 SSL + redirect HTTP→HTTPS; Cloudflare SSL mode Full sudah support
