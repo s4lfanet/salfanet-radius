@@ -6,6 +6,30 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.32.0] — 2026-05-11
+### Added
+- **Centralized Cron Schedule Management** — jadwal semua cron job kini bisa diatur dari satu halaman Admin → Settings → Cron tab "Jadwal Cron"; perubahan disimpan ke DB `cron_schedule_config`, aktif setelah `pm2 restart salfanet-cron`
+- **Schedule Editor modal** — 17 preset waktu (Every minute, Every 5 min, dll.) + custom cron expression; menampilkan default schedule sebagai referensi
+- **3-tab layout cron page** — Tab: Status & Trigger, Jadwal Cron, Riwayat Eksekusi
+- **API `/api/cron/schedules`** — GET/PUT/DELETE untuk manajemen schedule override per job (SUPERADMIN only)
+- **DB table `cron_schedule_config`** — menyimpan override schedule per jobType
+### Changed
+- **`runner.ts`** — load schedule overrides dari DB saat startup; fallback ke default jika tidak ada override atau tabel belum ada; support `preload.cjs` mock untuk `server-only`
+- **`jobs.config.ts`** — hapus `import 'server-only'` guard (redundant; diganti comment penjelasan)
+### Fixed
+- **Duplicate `CronSettingsPage` declaration** — page.tsx memiliki dua `export default function CronSettingsPage()` yang menyebabkan build error Turbopack; baris duplikat dihapus
+- **`server-only` module block tsx cron runner** — `src/cron/preload.cjs` mocking module `server-only` sebelum tsx load file apapun agar standalone cron runner bisa berjalan
+### Files
+- `src/app/admin/settings/cron/page.tsx` — rewrite lengkap dengan 3-tab layout + ScheduleEditor modal
+- `src/app/api/cron/schedules/route.ts` — NEW: CRUD API untuk schedule override
+- `src/cron/runner.ts` — load schedule overrides dari DB via `initSchedules()`
+- `src/cron/preload.cjs` — NEW: mock `server-only` agar tsx bisa load server files
+- `src/cron/runner-wrapper.cjs` — NEW: CJS wrapper entry point (opsional)
+- `src/server/jobs/jobs.config.ts` — hapus `import 'server-only'`
+- `prisma/schema.prisma` — tambah model `cronScheduleConfig`
+
+---
+
 ## [2.31.12] — 2026-05-11
 ### Fixed
 - **MikroTik timeout empty error message** — `node-routeros` melempar empty string `""` saat timeout (bukan `Error` object); sekarang ada fallback message yang jelas jika error kosong atau `{}`
