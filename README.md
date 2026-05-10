@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.31.10 — 2026-05-11
+
+### Fixed
+- **MikroTik API port auto-detect** — koneksi API gagal jika port berbeda dari default; sekarang test connection mencoba `port` (8728, non-SSL) terlebih dahulu, lalu fallback ke `apiPort` (8729, SSL/TLS) jika gagal; jika berhasil di port berbeda, form otomatis di-update ke port yang benar
+- **MikroTik TLS/SSL support** — tambah opsi `tls: true` di `MikroTikConnection` untuk support API-SSL (port 8729) dengan self-signed certificate
+### Files
+- `src/server/services/mikrotik/client.ts` — tambah field `tls` di `MikroTikConfig`, pass `{ rejectUnauthorized: false }` ke RouterOSAPI untuk self-signed cert
+- `src/app/api/network/routers/test/route.ts` — coba primary port dulu, fallback ke SSL port; return `usedPort` dan `usedTls` dalam response
+- `src/app/admin/network/routers/page.tsx` — kirim kedua port (`port` dan `apiPort`) ke test endpoint; auto-update form jika port yang berhasil berbeda
+
 ### v2.31.9 — 2026-05-11
 
 ### Fixed
@@ -508,14 +518,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `next.config.ts` — inject `APP_VERSION = pkg.version` as build-time env
 - `src/app/api/health/route.ts` — fallback `process.env.APP_VERSION`
-
-### v2.31.5 — 2026-05-10
-
-### Fixed
-- **Session expiry** — NextAuth session maxAge diubah dari 2 jam menjadi 30 hari; updateAge dari 15 menit menjadi 1 jam
-### Files
-- `src/server/auth/config.ts` — session maxAge: 30 days, updateAge: 1 hour
-- `package.json` — bump version to 2.31.5
 
 <!-- AUTO-CHANGELOG:END -->
 
