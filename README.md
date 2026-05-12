@@ -469,6 +469,13 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.32.2 — 2026-05-13
+
+### Fixed
+- **System Info API: silent git errors** — Semua `execSync` git di `/api/admin/system/info` kini pakai `stdio: 'pipe'` sehingga stderr tidak bocor ke PM2 log; `getAppDir()` kini mencari `/var/www/salfanet-frontend` lebih dulu (direktori dengan `.git`) sebelum fallback ke path lain
+### Files
+- `src/app/api/admin/system/info/route.ts` — tambah `stdio: 'pipe'` pada `execSync`/`execFileSync`, perbarui urutan kandidat `getAppDir()`
+
 ### v2.32.1 — 2026-05-11
 
 ### Fixed
@@ -517,16 +524,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/server/services/mikrotik/client.ts` — fix error serialization, update timeout message
 - `src/app/api/network/routers/test/route.ts` — tambah field `diagnosis`, skip SSL fallback jika port sama
 - `src/app/admin/network/routers/page.tsx` — tampilkan perintah MikroTik firewall saat VPN OK tapi API blocked
-
-### v2.31.10 — 2026-05-11
-
-### Fixed
-- **MikroTik API port auto-detect** — koneksi API gagal jika port berbeda dari default; sekarang test connection mencoba `port` (8728, non-SSL) terlebih dahulu, lalu fallback ke `apiPort` (8729, SSL/TLS) jika gagal; jika berhasil di port berbeda, form otomatis di-update ke port yang benar
-- **MikroTik TLS/SSL support** — tambah opsi `tls: true` di `MikroTikConnection` untuk support API-SSL (port 8729) dengan self-signed certificate
-### Files
-- `src/server/services/mikrotik/client.ts` — tambah field `tls` di `MikroTikConfig`, pass `{ rejectUnauthorized: false }` ke RouterOSAPI untuk self-signed cert
-- `src/app/api/network/routers/test/route.ts` — coba primary port dulu, fallback ke SSL port; return `usedPort` dan `usedTls` dalam response
-- `src/app/admin/network/routers/page.tsx` — kirim kedua port (`port` dan `apiPort`) ke test endpoint; auto-update form jika port yang berhasil berbeda
 
 <!-- AUTO-CHANGELOG:END -->
 
