@@ -6,6 +6,25 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.33.1] — 2026-05-13
+### Added
+- **Go: Sessions Handler** — `GET /api/sessions` (list active PPPoE/hotspot sessions dengan user info, pagination, filter), `POST /api/sessions/disconnect`, `POST /api/sessions/sync` (cleanup stale), `GET /api/sessions/export` (CSV)
+- **Go: Admin Isolated Users** — `GET /api/admin/isolated-users` dengan unpaid invoice summary
+- **Go: Admin Topup Requests** — `GET/POST(approve/reject) /api/admin/topup-requests/:id`
+- **Go: Admin Suspend Requests** — `GET/POST(approve/reject) /api/admin/suspend-requests/:id`
+- **Go: Registrations CRUD** — `GET/PUT/DELETE /api/registrations/:id` + alias dari `/api/pppoe/registrations`
+- **Go: Dashboard alias** — `/api/dashboard/stats` dan `/api/dashboard/revenue-chart` alias ke admin stats
+### Fixed
+- **Go OLT Poller** — `monitoringEnabled` (camelCase) diperbaiki dari `monitoring_enabled` yang salah menyebabkan error `Unknown column`
+### Files
+- `internal/api/handlers/sessions.go` — file baru; 4 endpoints + stale session cleanup
+- `internal/api/handlers/admin.go` — tambah IsolatedUsers, TopupRequests, ApproveTopup, RejectTopup, SuspendRequests, ApproveSuspend, RejectSuspend
+- `internal/api/handlers/pppoe.go` — tambah GetRegistration, UpdateRegistration, DeleteRegistration; ListRegistrations kini support filter by status
+- `internal/api/router.go` — daftarkan semua routes baru + alias
+- `internal/olt/poller/poller.go` — fix column name `monitoringEnabled`
+
+---
+
 ## [2.33.0] — 2026-05-14
 ### Added
 - **Go Cron: PPPoE Session Sync** — port penuh dari `pppoe-session-sync.ts`; sync radacct ↔ radcheck/radreply dengan GREATEST/LEAST safeguard untuk mencegah int overflow di MariaDB; mutex lock agar tidak overlap jika satu run lambat
