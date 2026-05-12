@@ -30,20 +30,38 @@ func New(db *gorm.DB, rad *radius.Service) *Scheduler {
 
 // Start registers all cron jobs and starts the scheduler.
 func (s *Scheduler) Start() {
+	// ── Core billing ──────────────────────────────────────────────────────────
 	// Invoice generator — daily 00:01 WIB
 	s.cron.AddFunc("0 1 0 * * *", s.jobGenerateInvoices)
 
 	// Invoice reminder — every hour WIB
 	s.cron.AddFunc("0 0 * * * *", s.jobSendReminders)
 
-	// Auto isolasi — daily 00:05 WIB
+	// Invoice catch-up (isolated users with no pending invoice) — daily 00:10 WIB
+	s.cron.AddFunc("0 10 0 * * *", s.jobInvoiceCatchup)
+
+	// ── PPPoE / RADIUS ────────────────────────────────────────────────────────
+	// PPPoE Session Sync — every minute (critical: maintains radacct health)
+	s.cron.AddFunc("0 * * * * *", s.jobPPPoESessionSync)
+
+	// Session security monitor — every 5 minutes (close isolated users' sessions)
+	s.cron.AddFunc("0 */5 * * * *", s.jobSessionMonitor)
+
+	// Auto isolate expired users — daily 00:05 WIB
 	s.cron.AddFunc("0 5 0 * * *", s.jobAutoIsolate)
 
+	// FreeRADIUS health check + NAS sync — every 5 minutes
+	s.cron.AddFunc("30 */5 * * * *", s.jobFreeRADIUSHealth)
+
+	// ── Hotspot / Agents ──────────────────────────────────────────────────────
 	// Voucher expiry sync — every 5 minutes
 	s.cron.AddFunc("0 */5 * * * *", s.jobSyncVoucherExpiry)
 
+	// Agent sales recording — every hour
+	s.cron.AddFunc("0 0 * * * *", s.jobAgentSalesRecording)
+
 	s.cron.Start()
-	log.Info().Msg("cron: scheduler started")
+	log.Info().Msg("cron: scheduler started (9 jobs registered)")
 }
 
 func (s *Scheduler) Stop() {
@@ -57,10 +75,20 @@ func (s *Scheduler) TriggerJob(job string) error {
 		go s.jobGenerateInvoices()
 	case "invoice_reminder":
 		go s.jobSendReminders()
+	case "invoice_catchup":
+		go s.jobInvoiceCatchup()
 	case "isolate_expired":
 		go s.jobAutoIsolate()
+	case "pppoe_session_sync":
+		go s.jobPPPoESessionSync()
+	case "session_monitor":
+		go s.jobSessionMonitor()
+	case "freeradius_health":
+		go s.jobFreeRADIUSHealth()
 	case "voucher_sync":
 		go s.jobSyncVoucherExpiry()
+	case "agent_sales_recording":
+		go s.jobAgentSalesRecording()
 	default:
 		return fmt.Errorf("unknown job: %s", job)
 	}
