@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 function getAppDir(): string {
   const candidates = [
     process.env.SALFANET_APP_DIR,
+    '/var/www/salfanet-frontend',
     '/var/www/salfanet-radius',
     path.resolve(process.cwd(), '../..'),
     process.cwd(),
@@ -26,7 +27,7 @@ function getAppDir(): string {
 
 function git(cmd: string, appDir: string): string {
   try {
-    return execSync(cmd, { cwd: appDir, timeout: 5000 }).toString().trim();
+    return execSync(cmd, { cwd: appDir, timeout: 5000, stdio: 'pipe' }).toString().trim();
   } catch {
     return 'unknown';
   }
@@ -60,7 +61,7 @@ export async function GET() {
   let remoteCommit = 'unknown';
   let hasUpdate    = false;
   try {
-    execSync('git fetch origin master --quiet', { cwd: appDir, timeout: 10000 });
+    execSync('git fetch origin master --quiet', { cwd: appDir, timeout: 10000, stdio: 'pipe' });
     remoteCommit = git('git rev-parse origin/master', appDir);
     hasUpdate    = localCommit !== 'unknown' && remoteCommit !== 'unknown' && localCommit !== remoteCommit;
   } catch { /* network unavailable */ }
@@ -72,7 +73,7 @@ export async function GET() {
     try {
       const pid = parseInt(readFileSync('/tmp/salfanet-update.pid', 'utf-8').trim());
       if (Number.isInteger(pid) && pid > 0) {
-        execFileSync('kill', ['-0', pid.toString()], { timeout: 2000 });
+        execFileSync('kill', ['-0', pid.toString()], { timeout: 2000, stdio: 'pipe' });
         updateRunning = true;
       } else {
         updateRunning = false;
