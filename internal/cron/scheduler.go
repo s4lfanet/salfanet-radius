@@ -139,7 +139,7 @@ func (s *Scheduler) jobGenerateInvoices() {
 	log.Info().Int("count", count).Msg("cron: invoice_generate done")
 }
 
-func (s *Scheduler) generateMonthlyInvoice(u *models.PppoeUser, company *models.Company) error {
+func (s *Scheduler) generateMonthlyInvoice(u *models.PppoeUser, _ *models.Company) error {
 	amount := u.Profile.Price
 
 	now := time.Now()

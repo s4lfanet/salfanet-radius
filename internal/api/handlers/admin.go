@@ -112,17 +112,17 @@ func (h *AdminHandler) Activity(c fiber.Ctx) error {
 // GET /api/admin/isolated-users
 func (h *AdminHandler) IsolatedUsers(c fiber.Ctx) error {
 	type isolatedRow struct {
-		ID         string     `json:"id"`
-		Username   string     `json:"username"`
-		Name       string     `json:"name"`
-		Phone      *string    `json:"phone"`
-		Status     string     `json:"status"`
-		ExpiredAt  *time.Time `json:"expiredAt"`
-		AreaName   *string    `json:"areaName"`
-		Profile    *string    `json:"profileName"`
-		Price      *int64     `json:"profilePrice"`
-		UnpaidAmt  *int64     `json:"unpaidAmount"`
-		UnpaidCnt  int        `json:"unpaidCount"`
+		ID        string     `json:"id"`
+		Username  string     `json:"username"`
+		Name      string     `json:"name"`
+		Phone     *string    `json:"phone"`
+		Status    string     `json:"status"`
+		ExpiredAt *time.Time `json:"expiredAt"`
+		AreaName  *string    `json:"areaName"`
+		Profile   *string    `json:"profileName"`
+		Price     *int64     `json:"profilePrice"`
+		UnpaidAmt *int64     `json:"unpaidAmount"`
+		UnpaidCnt int        `json:"unpaidCount"`
 	}
 
 	var rows []isolatedRow

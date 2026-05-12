@@ -190,26 +190,26 @@ func (h *SessionsHandler) ListSessions(c fiber.Ctx) error {
 
 	// 6. Build response
 	type sessionItem struct {
-		ID               string      `json:"id"`
-		Username         string      `json:"username"`
-		SessionID        string      `json:"sessionId"`
-		Type             string      `json:"type"`
-		NasIPAddress     string      `json:"nasIpAddress"`
-		FramedIPAddress  string      `json:"framedIpAddress"`
-		MACAddress       string      `json:"macAddress"`
-		CalledStationID  string      `json:"calledStationId"`
-		StartTime        interface{} `json:"startTime"`
-		LastUpdate       interface{} `json:"lastUpdate"`
-		Duration         int64       `json:"duration"`
-		DurationFormatted string     `json:"durationFormatted"`
-		UploadBytes      int64       `json:"uploadBytes"`
-		DownloadBytes    int64       `json:"downloadBytes"`
-		TotalBytes       int64       `json:"totalBytes"`
-		UploadFormatted  string      `json:"uploadFormatted"`
-		DownloadFormatted string     `json:"downloadFormatted"`
-		TotalFormatted   string      `json:"totalFormatted"`
-		Router           interface{} `json:"router"`
-		User             interface{} `json:"user"`
+		ID                string      `json:"id"`
+		Username          string      `json:"username"`
+		SessionID         string      `json:"sessionId"`
+		Type              string      `json:"type"`
+		NasIPAddress      string      `json:"nasIpAddress"`
+		FramedIPAddress   string      `json:"framedIpAddress"`
+		MACAddress        string      `json:"macAddress"`
+		CalledStationID   string      `json:"calledStationId"`
+		StartTime         interface{} `json:"startTime"`
+		LastUpdate        interface{} `json:"lastUpdate"`
+		Duration          int64       `json:"duration"`
+		DurationFormatted string      `json:"durationFormatted"`
+		UploadBytes       int64       `json:"uploadBytes"`
+		DownloadBytes     int64       `json:"downloadBytes"`
+		TotalBytes        int64       `json:"totalBytes"`
+		UploadFormatted   string      `json:"uploadFormatted"`
+		DownloadFormatted string      `json:"downloadFormatted"`
+		TotalFormatted    string      `json:"totalFormatted"`
+		Router            interface{} `json:"router"`
+		User              interface{} `json:"user"`
 	}
 
 	now := time.Now()
@@ -316,9 +316,9 @@ func (h *SessionsHandler) DisconnectSession(c fiber.Ctx) error {
 	q := h.db.Model(&models.Radacct{}).
 		Where("username = ? AND acctstoptime IS NULL", body.Username).
 		Updates(map[string]interface{}{
-			"acctstoptime":        time.Now(),
-			"acctterminatecause":  "Admin-Reset",
-			"acctsessiontime":     gorm.Expr("GREATEST(0, LEAST(TIMESTAMPDIFF(SECOND, acctstarttime, NOW()), 2147483647))"),
+			"acctstoptime":       time.Now(),
+			"acctterminatecause": "Admin-Reset",
+			"acctsessiontime":    gorm.Expr("GREATEST(0, LEAST(TIMESTAMPDIFF(SECOND, acctstarttime, NOW()), 2147483647))"),
 		})
 	if body.SessionID != "" {
 		_ = q // discard default query
