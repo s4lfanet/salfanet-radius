@@ -6,6 +6,14 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.32.2] — 2026-05-13
+### Fixed
+- **System Info API: silent git errors** — Semua `execSync` git di `/api/admin/system/info` kini pakai `stdio: 'pipe'` sehingga stderr tidak bocor ke PM2 log; `getAppDir()` kini mencari `/var/www/salfanet-frontend` lebih dulu (direktori dengan `.git`) sebelum fallback ke path lain
+### Files
+- `src/app/api/admin/system/info/route.ts` — tambah `stdio: 'pipe'` pada `execSync`/`execFileSync`, perbarui urutan kandidat `getAppDir()`
+
+---
+
 ## [2.32.1] — 2026-05-11
 ### Fixed
 - **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
