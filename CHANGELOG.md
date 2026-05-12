@@ -6,6 +6,20 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.33.0] — 2026-05-14
+### Added
+- **Go Cron: PPPoE Session Sync** — port penuh dari `pppoe-session-sync.ts`; sync radacct ↔ radcheck/radreply dengan GREATEST/LEAST safeguard untuk mencegah int overflow di MariaDB; mutex lock agar tidak overlap jika satu run lambat
+- **Go Cron: FreeRADIUS Health Check** — sinkronisasi tabel `nas` otomatis dari `routers`, ganti/tambah entri NAS jika ada router baru atau secret berubah
+- **Go Cron: Session Security Monitor** — tutup sesi aktif untuk user yang sedang di-isolasi agar RADIUS memutus koneksi mereka
+- **Go Cron: Invoice Catch-up** — generate invoice yang hilang untuk user `isolated`/`stopped` yang belum punya invoice bulan ini
+- **Go Cron: Agent Sales Recording** — catat transaksi penjualan agen setiap jam; hitung dan kredit komisi berdasarkan `agent.commission` (%)
+- **Scheduler** — diperluas dari 4 menjadi 9 registered jobs; `TriggerJob()` support 9 named jobs
+### Files
+- `internal/cron/pppoe_session_sync.go` — file baru; 5 fungsi cron + helper `importOrphan`, `createOrphanUser`, `syncNASClients`, `isDuplicateKey`
+- `internal/cron/scheduler.go` — tambah 5 job registrations + perbarui `TriggerJob()` switch
+
+---
+
 ## [2.32.2] — 2026-05-13
 ### Fixed
 - **System Info API: silent git errors** — Semua `execSync` git di `/api/admin/system/info` kini pakai `stdio: 'pipe'` sehingga stderr tidak bocor ke PM2 log; `getAppDir()` kini mencari `/var/www/salfanet-frontend` lebih dulu (direktori dengan `.git`) sebelum fallback ke path lain

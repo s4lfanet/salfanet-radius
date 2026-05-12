@@ -382,5 +382,3 @@ func (s *Scheduler) jobAgentSalesRecording() {
 
 	s.finishHistory(h, fmt.Sprintf("Recorded %d agent sales", count))
 }
-
-
