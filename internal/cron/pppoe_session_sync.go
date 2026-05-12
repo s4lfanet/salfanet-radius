@@ -229,33 +229,15 @@ func (s *Scheduler) jobFreeRADIUSHealth() {
 	log.Debug().Int("nas", count).Msg("freeradius_health: done")
 }
 
-// syncNASClients resyncs the `nas` table in the FreeRADIUS DB
-// from the `routers` table in the app DB.
+// syncNASClients verifies active routers in the nas table and returns count.
+// In this setup, the nas table IS the router/NAS client table — no INSERT needed.
+// FreeRADIUS reads directly from the same table.
 func syncNASClients(db *gorm.DB) (int, error) {
-	var routers []models.Router
-	if err := db.Where("isActive = true").Find(&routers).Error; err != nil {
+	var count int64
+	if err := db.Model(&models.Router{}).Where("isActive = true").Count(&count).Error; err != nil {
 		return 0, fmt.Errorf("load routers: %w", err)
 	}
-
-	for _, r := range routers {
-		secret := "testing123"
-		if r.Secret != "" {
-			secret = r.Secret
-		}
-		err := db.Exec(`
-			INSERT INTO nas (id, nasname, shortname, type, secret, description)
-			VALUES (?, ?, ?, 'other', ?, ?)
-			ON DUPLICATE KEY UPDATE
-				shortname   = VALUES(shortname),
-				secret      = VALUES(secret),
-				description = VALUES(description)
-		`, newID(), r.IPAddress, r.Name, secret, r.Name).Error
-		_ = r.IPAddress // already used above
-		if err != nil {
-			log.Error().Err(err).Str("router", r.Name).Msg("freeradius_health: upsert NAS error")
-		}
-	}
-	return len(routers), nil
+	return int(count), nil
 }
 
 // ─── PPPoE Session Monitor ────────────────────────────────────────────────────
