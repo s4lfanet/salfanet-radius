@@ -243,13 +243,13 @@ func syncNASClients(db *gorm.DB) (int, error) {
 			secret = r.Secret
 		}
 		err := db.Exec(`
-			INSERT INTO nas (nasname, shortname, type, secret, description)
-			VALUES (?, ?, 'other', ?, ?)
+			INSERT INTO nas (id, nasname, shortname, type, secret, description)
+			VALUES (?, ?, ?, 'other', ?, ?)
 			ON DUPLICATE KEY UPDATE
 				shortname   = VALUES(shortname),
 				secret      = VALUES(secret),
 				description = VALUES(description)
-		`, r.IPAddress, r.Name, secret, r.Name).Error
+		`, newID(), r.IPAddress, r.Name, secret, r.Name).Error
 		_ = r.IPAddress // already used above
 		if err != nil {
 			log.Error().Err(err).Str("router", r.Name).Msg("freeradius_health: upsert NAS error")
