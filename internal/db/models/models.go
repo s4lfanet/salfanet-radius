@@ -247,13 +247,13 @@ func (Company) TableName() string { return "companies" }
 
 type CronHistory struct {
 	ID          string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
-	JobType     string     `gorm:"index" json:"jobType"`
-	Status      string     `gorm:"index" json:"status"`
-	StartedAt   time.Time  `gorm:"autoCreateTime;index" json:"startedAt"`
-	CompletedAt *time.Time `json:"completedAt"`
-	Duration    *int       `json:"duration"`
-	Result      *string    `gorm:"type:text" json:"result"`
-	Error       *string    `gorm:"type:text" json:"error"`
+	JobType     string     `gorm:"column:jobType;index" json:"jobType"`
+	Status      string     `gorm:"column:status;index" json:"status"`
+	StartedAt   time.Time  `gorm:"column:startedAt;autoCreateTime;index" json:"startedAt"`
+	CompletedAt *time.Time `gorm:"column:completedAt" json:"completedAt"`
+	Duration    *int       `gorm:"column:duration" json:"duration"`
+	Result      *string    `gorm:"column:result;type:text" json:"result"`
+	Error       *string    `gorm:"column:error;type:text" json:"error"`
 }
 
 func (CronHistory) TableName() string { return "cron_history" }

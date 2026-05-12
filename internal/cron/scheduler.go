@@ -165,7 +165,7 @@ func (s *Scheduler) jobSendReminders() {
 	defer func() { s.completeHistory(h, recover()) }()
 
 	var settings []models.WhatsappReminderSetting
-	s.db.Where("is_active = true").Find(&settings)
+	s.db.Where("enabled = true").Find(&settings)
 
 	if len(settings) == 0 {
 		s.finishHistory(h, "no active reminder settings")

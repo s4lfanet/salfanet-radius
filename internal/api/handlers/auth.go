@@ -250,7 +250,7 @@ func (h *AuthHandler) AgentLogin(c fiber.Ctx) error {
 	}
 
 	var agent models.Agent
-	if err := h.db.Where("phone = ? AND is_active = true", body.Phone).First(&agent).Error; err != nil {
+	if err := h.db.Where("phone = ? AND isActive = true", body.Phone).First(&agent).Error; err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{"error": "invalid credentials"})
 	}
 

@@ -90,7 +90,7 @@ func (s *Scheduler) jobPPPoESessionSync() {
 	if len(orphans) > 0 {
 		// Find default profile (fallback)
 		var defaultProfile models.PppoeProfile
-		s.db.Where("is_active = true").Order("created_at ASC").First(&defaultProfile)
+		s.db.Where("isActive = true").Order("createdAt ASC").First(&defaultProfile)
 
 		for _, o := range orphans {
 			profileID := importOrphan(s.db, o.Username, defaultProfile.ID)
@@ -159,7 +159,7 @@ func importOrphan(db *gorm.DB, username, defaultProfileID string) string {
 	var rug models.Radusergroup
 	if err := db.Where("username = ?", username).First(&rug).Error; err == nil && rug.Groupname != "" {
 		var profile models.PppoeProfile
-		if err2 := db.Where("group_name = ? AND is_active = true", rug.Groupname).First(&profile).Error; err2 == nil {
+		if err2 := db.Where("groupName = ? AND isActive = true", rug.Groupname).First(&profile).Error; err2 == nil {
 			return profile.ID
 		}
 	}
@@ -233,7 +233,7 @@ func (s *Scheduler) jobFreeRADIUSHealth() {
 // from the `routers` table in the app DB.
 func syncNASClients(db *gorm.DB) (int, error) {
 	var routers []models.Router
-	if err := db.Where("is_active = true").Find(&routers).Error; err != nil {
+	if err := db.Where("isActive = true").Find(&routers).Error; err != nil {
 		return 0, fmt.Errorf("load routers: %w", err)
 	}
 

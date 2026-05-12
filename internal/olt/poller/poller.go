@@ -197,11 +197,11 @@ func (p *Poller) poll(ctx context.Context, olt *models.NetworkOLT, pool *telnet.
 	if len(onuStatuses) > 0 {
 		err := p.db.Clauses(clause.OnConflict{
 			Columns: []clause.Column{
-				{Name: "olt_id"}, {Name: "frame"}, {Name: "slot"}, {Name: "port"}, {Name: "onu_id"},
+				{Name: "oltId"}, {Name: "frame"}, {Name: "slot"}, {Name: "port"}, {Name: "onuId"},
 			},
 			DoUpdates: clause.AssignmentColumns([]string{
-				"serial_number", "description", "status", "rx_power",
-				"distance", "last_seen_at", "updated_at",
+				"serialNumber", "description", "status", "rxPower",
+				"distance", "lastSeenAt", "updatedAt",
 			}),
 		}).CreateInBatches(onuStatuses, 100).Error
 		if err != nil {
@@ -213,11 +213,11 @@ func (p *Poller) poll(ctx context.Context, olt *models.NetworkOLT, pool *telnet.
 	totalONU := len(onuStatuses)
 	pollTime := now
 	p.db.Model(olt).Updates(map[string]interface{}{
-		"last_poll_at": pollTime,
-		"total_onu":    totalONU,
-		"online_onu":   onlineCount,
-		"offline_onu":  offlineCount,
-		"is_online":    true,
+		"lastPollAt": pollTime,
+		"totalOnu":   totalONU,
+		"onlineOnu":  onlineCount,
+		"offlineOnu": offlineCount,
+		"isOnline":   true,
 	})
 
 	// Generate alerts for newly offline ONUs
