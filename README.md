@@ -469,6 +469,42 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.33.2 — 2026-05-13
+
+### Fixed
+- **Go: Prisma-style NamingStrategy** — tambah custom GORM NamingStrategy yang convert PascalCase → camelCase secara global, mengatasi semua error `Unknown column` (updated_at, is_active, expired_at, job_type, dll)
+- **Go: CronHistory column tags** — tambah explicit `column:` tag untuk `jobType`, `startedAt`, `completedAt`
+- **Go: Cron queries** — fix semua snake_case query di scheduler.go dan pppoe_session_sync.go (`expiresAt`, `expiredAt`, `dueDate`, `subscriptionType`, `isActive`, `autoIsolationEnabled`, `groupName`)
+- **Go: syncNASClients** — simplify ke count-only karena `nas` table sudah adalah tabel router app, tidak perlu INSERT ke FreeRADIUS
+- **Go: OLT poller update map** — fix key names ke camelCase (`lastPollAt`, `totalOnu`, `onlineOnu`, `isOnline`)
+- **Go: ONU upsert columns** — fix `serialNumber`, `rxPower`, `lastSeenAt`, `updatedAt`, `oltId`, `onuId`
+- **Auth: agent login** — fix `isActive` column name (was `is_active`)
+### Files
+- `internal/db/db.go` — tambah `prismaStyleNamer` custom NamingStrategy
+- `internal/db/models/models.go` — CronHistory column tags
+- `internal/cron/scheduler.go` — fix camelCase column queries
+- `internal/cron/pppoe_session_sync.go` — fix column queries + simplify syncNASClients
+- `internal/olt/poller/poller.go` — fix update map keys + ONU upsert columns
+- `internal/api/handlers/auth.go` — fix isActive query
+
+### v2.33.1 — 2026-05-13
+
+### Added
+- **Go: Sessions Handler** — `GET /api/sessions` (list active PPPoE/hotspot sessions dengan user info, pagination, filter), `POST /api/sessions/disconnect`, `POST /api/sessions/sync` (cleanup stale), `GET /api/sessions/export` (CSV)
+- **Go: Admin Isolated Users** — `GET /api/admin/isolated-users` dengan unpaid invoice summary
+- **Go: Admin Topup Requests** — `GET/POST(approve/reject) /api/admin/topup-requests/:id`
+- **Go: Admin Suspend Requests** — `GET/POST(approve/reject) /api/admin/suspend-requests/:id`
+- **Go: Registrations CRUD** — `GET/PUT/DELETE /api/registrations/:id` + alias dari `/api/pppoe/registrations`
+- **Go: Dashboard alias** — `/api/dashboard/stats` dan `/api/dashboard/revenue-chart` alias ke admin stats
+### Fixed
+- **Go OLT Poller** — `monitoringEnabled` (camelCase) diperbaiki dari `monitoring_enabled` yang salah menyebabkan error `Unknown column`
+### Files
+- `internal/api/handlers/sessions.go` — file baru; 4 endpoints + stale session cleanup
+- `internal/api/handlers/admin.go` — tambah IsolatedUsers, TopupRequests, ApproveTopup, RejectTopup, SuspendRequests, ApproveSuspend, RejectSuspend
+- `internal/api/handlers/pppoe.go` — tambah GetRegistration, UpdateRegistration, DeleteRegistration; ListRegistrations kini support filter by status
+- `internal/api/router.go` — daftarkan semua routes baru + alias
+- `internal/olt/poller/poller.go` — fix column name `monitoringEnabled`
+
 ### v2.33.0 — 2026-05-14
 
 ### Added
@@ -495,37 +531,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
 ### Files
 - `src/server/jobs/pppoe-session-sync.ts` — clamp TIMESTAMPDIFF ke INT range, tambah filter `acctstarttime > '2000-01-01'` pada update aktif
-
-### v2.32.0 — 2026-05-11
-
-### Added
-- **Centralized Cron Schedule Management** — jadwal semua cron job kini bisa diatur dari satu halaman Admin → Settings → Cron tab "Jadwal Cron"; perubahan disimpan ke DB `cron_schedule_config`, aktif setelah `pm2 restart salfanet-cron`
-- **Schedule Editor modal** — 17 preset waktu (Every minute, Every 5 min, dll.) + custom cron expression; menampilkan default schedule sebagai referensi
-- **3-tab layout cron page** — Tab: Status & Trigger, Jadwal Cron, Riwayat Eksekusi
-- **API `/api/cron/schedules`** — GET/PUT/DELETE untuk manajemen schedule override per job (SUPERADMIN only)
-- **DB table `cron_schedule_config`** — menyimpan override schedule per jobType
-### Changed
-- **`runner.ts`** — load schedule overrides dari DB saat startup; fallback ke default jika tidak ada override atau tabel belum ada; support `preload.cjs` mock untuk `server-only`
-- **`jobs.config.ts`** — hapus `import 'server-only'` guard (redundant; diganti comment penjelasan)
-### Fixed
-- **Duplicate `CronSettingsPage` declaration** — page.tsx memiliki dua `export default function CronSettingsPage()` yang menyebabkan build error Turbopack; baris duplikat dihapus
-- **`server-only` module block tsx cron runner** — `src/cron/preload.cjs` mocking module `server-only` sebelum tsx load file apapun agar standalone cron runner bisa berjalan
-### Files
-- `src/app/admin/settings/cron/page.tsx` — rewrite lengkap dengan 3-tab layout + ScheduleEditor modal
-- `src/app/api/cron/schedules/route.ts` — NEW: CRUD API untuk schedule override
-- `src/cron/runner.ts` — load schedule overrides dari DB via `initSchedules()`
-- `src/cron/preload.cjs` — NEW: mock `server-only` agar tsx bisa load server files
-- `src/cron/runner-wrapper.cjs` — NEW: CJS wrapper entry point (opsional)
-- `src/server/jobs/jobs.config.ts` — hapus `import 'server-only'`
-- `prisma/schema.prisma` — tambah model `cronScheduleConfig`
-
-### v2.31.12 — 2026-05-11
-
-### Fixed
-- **MikroTik timeout empty error message** — `node-routeros` melempar empty string `""` saat timeout (bukan `Error` object); sekarang ada fallback message yang jelas jika error kosong atau `{}`
-- **Library timeout conflict** — `node-routeros` internal timeout diset ke 9999s agar tidak interferensi dengan `Promise.race` timeout kita yang memberikan pesan error yang lebih informatif
-### Files
-- `src/server/services/mikrotik/client.ts` — set library timeout ke 9999s, tambah fallback untuk empty error message
 
 <!-- AUTO-CHANGELOG:END -->
 
