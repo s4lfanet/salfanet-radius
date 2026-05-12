@@ -118,7 +118,7 @@ func (p *Poller) StopAll() {
 // StartAll loads all enabled OLTs from the DB and starts their pollers.
 func (p *Poller) StartAll() {
 	var olts []models.NetworkOLT
-	if err := p.db.Where("monitoring_enabled = ?", true).Find(&olts).Error; err != nil {
+	if err := p.db.Where("monitoringEnabled = ?", true).Find(&olts).Error; err != nil {
 		log.Error().Err(err).Msg("poller: failed to load OLTs")
 		return
 	}

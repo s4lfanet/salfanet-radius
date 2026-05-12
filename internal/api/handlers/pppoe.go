@@ -308,9 +308,49 @@ func (h *PPPoEHandler) SyncToRadius(c fiber.Ctx) error {
 // ─── Registration Requests ────────────────────────────────────────────────────
 
 func (h *PPPoEHandler) ListRegistrations(c fiber.Ctx) error {
+	status := c.Query("status")
+	q := h.db.Preload("Area").Preload("Profile").Order("created_at DESC")
+	if status != "" && status != "all" {
+		q = q.Where("status = ?", status)
+	}
 	var reqs []models.RegistrationRequest
-	h.db.Preload("Area").Preload("Profile").Order("created_at DESC").Find(&reqs)
-	return c.JSON(reqs)
+	q.Find(&reqs)
+	return c.JSON(fiber.Map{"data": reqs, "total": len(reqs)})
+}
+
+func (h *PPPoEHandler) GetRegistration(c fiber.Ctx) error {
+	var req models.RegistrationRequest
+	if err := h.db.Preload("Area").Preload("Profile").First(&req, "id = ?", c.Params("id")).Error; err != nil {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
+	}
+	return c.JSON(req)
+}
+
+func (h *PPPoEHandler) UpdateRegistration(c fiber.Ctx) error {
+	id := c.Params("id")
+	var body map[string]interface{}
+	if err := c.Bind().JSON(&body); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	// Only allow safe fields to update
+	allowed := map[string]bool{"notes": true, "address": true, "areaId": true, "profileId": true}
+	update := map[string]interface{}{}
+	for k, v := range body {
+		if allowed[k] {
+			update[k] = v
+		}
+	}
+	if err := h.db.Model(&models.RegistrationRequest{}).Where("id = ?", id).Updates(update).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.JSON(fiber.Map{"message": "updated"})
+}
+
+func (h *PPPoEHandler) DeleteRegistration(c fiber.Ctx) error {
+	if err := h.db.Delete(&models.RegistrationRequest{}, "id = ?", c.Params("id")).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
+	}
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 func (h *PPPoEHandler) ApproveRegistration(c fiber.Ctx) error {

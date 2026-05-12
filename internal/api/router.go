@@ -55,6 +55,7 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	companyH := handlers.NewCompanyHandler(db)
 	cronH := handlers.NewCronHandler(db, sched)
 	customerH := handlers.NewCustomerPortalHandler(db)
+	sessionsH := handlers.NewSessionsHandler(db)
 
 	// ─── Public routes ───────────────────────────────────────────────────────
 	app.Get("/api/system/health", func(c fiber.Ctx) error {
@@ -91,6 +92,17 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	admin.Get("/stats", adminH.Stats)
 	admin.Get("/revenue-chart", adminH.RevenueChart)
 	admin.Get("/activity", adminH.Activity)
+	admin.Get("/isolated-users", adminH.IsolatedUsers)
+	admin.Get("/topup-requests", adminH.TopupRequests)
+	admin.Post("/topup-requests/:id/approve", adminH.ApproveTopup)
+	admin.Post("/topup-requests/:id/reject", adminH.RejectTopup)
+	admin.Get("/suspend-requests", adminH.SuspendRequests)
+	admin.Post("/suspend-requests/:id/approve", adminH.ApproveSuspend)
+	admin.Post("/suspend-requests/:id/reject", adminH.RejectSuspend)
+
+	// Dashboard alias (same stats, different path)
+	api.Get("/dashboard/stats", adminH.Stats)
+	api.Get("/dashboard/revenue-chart", adminH.RevenueChart)
 
 	// OLT management
 	olt := api.Group("/olt")
@@ -143,6 +155,15 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	pppoe.Get("/registrations", pppoeH.ListRegistrations)
 	pppoe.Post("/registrations/:id/approve", pppoeH.ApproveRegistration)
 	pppoe.Post("/registrations/:id/reject", pppoeH.RejectRegistration)
+
+	// Registrations (root-level alias — matches TypeScript path /api/registrations)
+	regs := api.Group("/registrations")
+	regs.Get("/", pppoeH.ListRegistrations)
+	regs.Get("/:id", pppoeH.GetRegistration)
+	regs.Put("/:id", pppoeH.UpdateRegistration)
+	regs.Delete("/:id", pppoeH.DeleteRegistration)
+	regs.Post("/:id/approve", pppoeH.ApproveRegistration)
+	regs.Post("/:id/reject", pppoeH.RejectRegistration)
 
 	// Billing
 	billing := api.Group("/billing")
@@ -227,6 +248,13 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	tickets.Put("/:id", ticketH.UpdateTicket)
 	tickets.Post("/:id/reply", ticketH.ReplyTicket)
 	tickets.Post("/:id/close", ticketH.CloseTicket)
+
+	// Sessions
+	sessions := api.Group("/sessions")
+	sessions.Get("/", sessionsH.ListSessions)
+	sessions.Post("/disconnect", sessionsH.DisconnectSession)
+	sessions.Post("/sync", sessionsH.SyncSessions)
+	sessions.Get("/export", sessionsH.ExportSessions)
 
 	// Company
 	api.Get("/company", companyH.GetCompany)
