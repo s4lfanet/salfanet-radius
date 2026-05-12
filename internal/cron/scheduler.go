@@ -117,11 +117,11 @@ func (s *Scheduler) jobGenerateInvoices() {
 	cutoff := time.Now().AddDate(0, 0, generateDays)
 
 	var users []models.PppoeUser
-	s.db.Where(`subscription_type = 'POSTPAID' AND status IN ('active','isolated') 
-		AND expired_at IS NOT NULL AND expired_at <= ?
+	s.db.Where(`subscriptionType = 'POSTPAID' AND status IN ('active','isolated') 
+		AND expiredAt IS NOT NULL AND expiredAt <= ?
 		AND id NOT IN (
-			SELECT user_id FROM invoices 
-			WHERE status = 'PENDING' AND invoice_type = 'MONTHLY'
+			SELECT userId FROM invoices 
+			WHERE status = 'PENDING' AND invoiceType = 'MONTHLY'
 		)`, cutoff).
 		Preload("Profile").
 		Find(&users)
@@ -180,7 +180,7 @@ func (s *Scheduler) jobSendReminders() {
 		dateEnd := dateStart.Add(24 * time.Hour)
 
 		var invoices []models.Invoice
-		s.db.Where("status = 'PENDING' AND due_date >= ? AND due_date < ?", dateStart, dateEnd).
+		s.db.Where("status = 'PENDING' AND dueDate >= ? AND dueDate < ?", dateStart, dateEnd).
 			Limit(setting.BatchSize).
 			Find(&invoices)
 
@@ -225,9 +225,9 @@ func (s *Scheduler) jobAutoIsolate() {
 	cutoff := time.Now().AddDate(0, 0, -grace)
 
 	var users []models.PppoeUser
-	s.db.Where(`subscription_type = 'POSTPAID' AND status = 'active' 
-		AND auto_isolation_enabled = true
-		AND expired_at IS NOT NULL AND expired_at < ?`, cutoff).
+	s.db.Where(`subscriptionType = 'POSTPAID' AND status = 'active' 
+		AND autoIsolationEnabled = true
+		AND expiredAt IS NOT NULL AND expiredAt < ?`, cutoff).
 		Find(&users)
 
 	count := 0
@@ -253,7 +253,7 @@ func (s *Scheduler) jobAutoIsolate() {
 func (s *Scheduler) jobSyncVoucherExpiry() {
 	now := time.Now()
 	result := s.db.Model(&models.HotspotVoucher{}).
-		Where("status = 'ACTIVE' AND expires_at IS NOT NULL AND expires_at < ?", now).
+		Where("status = 'ACTIVE' AND expiresAt IS NOT NULL AND expiresAt < ?", now).
 		Update("status", "EXPIRED")
 	if result.Error != nil {
 		log.Error().Err(result.Error).Msg("cron: voucher sync error")
