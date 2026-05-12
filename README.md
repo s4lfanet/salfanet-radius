@@ -469,6 +469,19 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.33.0 — 2026-05-14
+
+### Added
+- **Go Cron: PPPoE Session Sync** — port penuh dari `pppoe-session-sync.ts`; sync radacct ↔ radcheck/radreply dengan GREATEST/LEAST safeguard untuk mencegah int overflow di MariaDB; mutex lock agar tidak overlap jika satu run lambat
+- **Go Cron: FreeRADIUS Health Check** — sinkronisasi tabel `nas` otomatis dari `routers`, ganti/tambah entri NAS jika ada router baru atau secret berubah
+- **Go Cron: Session Security Monitor** — tutup sesi aktif untuk user yang sedang di-isolasi agar RADIUS memutus koneksi mereka
+- **Go Cron: Invoice Catch-up** — generate invoice yang hilang untuk user `isolated`/`stopped` yang belum punya invoice bulan ini
+- **Go Cron: Agent Sales Recording** — catat transaksi penjualan agen setiap jam; hitung dan kredit komisi berdasarkan `agent.commission` (%)
+- **Scheduler** — diperluas dari 4 menjadi 9 registered jobs; `TriggerJob()` support 9 named jobs
+### Files
+- `internal/cron/pppoe_session_sync.go` — file baru; 5 fungsi cron + helper `importOrphan`, `createOrphanUser`, `syncNASClients`, `isDuplicateKey`
+- `internal/cron/scheduler.go` — tambah 5 job registrations + perbarui `TriggerJob()` switch
+
 ### v2.32.2 — 2026-05-13
 
 ### Fixed
@@ -513,17 +526,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **Library timeout conflict** — `node-routeros` internal timeout diset ke 9999s agar tidak interferensi dengan `Promise.race` timeout kita yang memberikan pesan error yang lebih informatif
 ### Files
 - `src/server/services/mikrotik/client.ts` — set library timeout ke 9999s, tambah fallback untuk empty error message
-
-### v2.31.11 — 2026-05-11
-
-### Fixed
-- **MikroTik API error diagnosis** — error message kosong setelah "Failed to connect to MikroTik:" karena `node-routeros` melempar non-Error object; diperbaiki dengan serialisasi yang robust (handle `string`, plain object, `Error`)
-- **MikroTik firewall hint di UI** — saat VPN ping OK tapi API gagal timeout, UI menampilkan perintah `/ip firewall filter add` yang persis harus dijalankan di MikroTik terminal
-- **Port fallback skip jika sama** — jika `port == apiPort`, tidak perlu coba SSL fallback (menghindari koneksi redundan)
-### Files
-- `src/server/services/mikrotik/client.ts` — fix error serialization, update timeout message
-- `src/app/api/network/routers/test/route.ts` — tambah field `diagnosis`, skip SSL fallback jika port sama
-- `src/app/admin/network/routers/page.tsx` — tampilkan perintah MikroTik firewall saat VPN OK tapi API blocked
 
 <!-- AUTO-CHANGELOG:END -->
 
