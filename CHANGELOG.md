@@ -6,6 +6,25 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.33.2] — 2026-05-13
+### Fixed
+- **Go: Prisma-style NamingStrategy** — tambah custom GORM NamingStrategy yang convert PascalCase → camelCase secara global, mengatasi semua error `Unknown column` (updated_at, is_active, expired_at, job_type, dll)
+- **Go: CronHistory column tags** — tambah explicit `column:` tag untuk `jobType`, `startedAt`, `completedAt`
+- **Go: Cron queries** — fix semua snake_case query di scheduler.go dan pppoe_session_sync.go (`expiresAt`, `expiredAt`, `dueDate`, `subscriptionType`, `isActive`, `autoIsolationEnabled`, `groupName`)
+- **Go: syncNASClients** — simplify ke count-only karena `nas` table sudah adalah tabel router app, tidak perlu INSERT ke FreeRADIUS
+- **Go: OLT poller update map** — fix key names ke camelCase (`lastPollAt`, `totalOnu`, `onlineOnu`, `isOnline`)
+- **Go: ONU upsert columns** — fix `serialNumber`, `rxPower`, `lastSeenAt`, `updatedAt`, `oltId`, `onuId`
+- **Auth: agent login** — fix `isActive` column name (was `is_active`)
+### Files
+- `internal/db/db.go` — tambah `prismaStyleNamer` custom NamingStrategy
+- `internal/db/models/models.go` — CronHistory column tags
+- `internal/cron/scheduler.go` — fix camelCase column queries
+- `internal/cron/pppoe_session_sync.go` — fix column queries + simplify syncNASClients
+- `internal/olt/poller/poller.go` — fix update map keys + ONU upsert columns
+- `internal/api/handlers/auth.go` — fix isActive query
+
+---
+
 ## [2.33.1] — 2026-05-13
 ### Added
 - **Go: Sessions Handler** — `GET /api/sessions` (list active PPPoE/hotspot sessions dengan user info, pagination, filter), `POST /api/sessions/disconnect`, `POST /api/sessions/sync` (cleanup stale), `GET /api/sessions/export` (CSV)
