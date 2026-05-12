@@ -2,14 +2,43 @@ package db
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"gorm.io/gorm/schema"
 )
 
 var DB *gorm.DB
+
+// prismaStyleNamer converts GORM's default snake_case column names to Prisma-style camelCase.
+// GORM converts Go PascalCase to snake_case (e.g. UpdatedAt → updated_at),
+// but Prisma stores columns in camelCase (e.g. updatedAt).
+// This namer wraps GORM's default and converts snake_case → camelCase as the last step.
+type prismaStyleNamer struct {
+	schema.NamingStrategy
+}
+
+func (n prismaStyleNamer) ColumnName(table, column string) string {
+	snake := n.NamingStrategy.ColumnName(table, column)
+	return snakeToCamel(snake)
+}
+
+func snakeToCamel(s string) string {
+	parts := strings.Split(s, "_")
+	if len(parts) == 1 {
+		return s
+	}
+	result := parts[0]
+	for _, p := range parts[1:] {
+		if len(p) > 0 {
+			result += strings.ToUpper(p[:1]) + p[1:]
+		}
+	}
+	return result
+}
 
 // Init connects to MySQL using the given DSN and configures a connection pool.
 // The DSN should be in the format: user:pass@tcp(host:port)/dbname?parseTime=True&loc=Local
@@ -23,7 +52,8 @@ func Init(databaseURL string) (*gorm.DB, error) {
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		Logger:          logger.Default.LogMode(logger.Warn),
+		NamingStrategy:  prismaStyleNamer{},
 		NowFunc: func() time.Time {
 			return time.Now()
 		},
