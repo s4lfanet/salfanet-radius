@@ -94,6 +94,20 @@ fresh-test.txt
 test-result-output.txt
 test3-result.txt
 
+# Go compiled binaries — jangan di-push ke GitHub
+bin/
+*.zip
+
+# Temp/utility scripts yang tidak perlu di-repo
+audit_routing.sh
+check_admin.py
+check_config.py
+deploy-restart.sh
+test_login.sh
+test_otp.py
+verify_session.py
+vps_audit.py
+
 # Vercel
 .vercel
 
