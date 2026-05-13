@@ -60,6 +60,8 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	permsH := handlers.NewPermissionsHandler(db)
 	inventoryH := handlers.NewInventoryHandler(db)
 	keuanganH := handlers.NewKeuanganHandler(db)
+	manualPayH := handlers.NewManualPaymentHandler(db)
+	jobH := handlers.NewJobHandler(db)
 
 	// ─── Public routes ───────────────────────────────────────────────────────
 	app.Get("/api/system/health", func(c fiber.Ctx) error {
@@ -306,6 +308,27 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	keu.Get("/categories", keuanganH.ListCategories)
 	keu.Post("/categories", keuanganH.CreateCategory)
 	keu.Get("/export", keuanganH.Export)
+
+	// Manual Payments
+	manPay := api.Group("/manual-payments")
+	manPay.Get("", manualPayH.List)
+	manPay.Post("", manualPayH.Create)
+	manPay.Put("/:id", manualPayH.Review)
+	manPay.Delete("/:id", manualPayH.Delete)
+
+	// Jobs (Admin)
+	jobs := api.Group("/admin/jobs")
+	jobs.Get("", jobH.List)
+	jobs.Get("/stats", jobH.Stats)
+	jobs.Post("", jobH.Create)
+	jobs.Get("/:id", jobH.Get)
+	jobs.Patch("/:id/status", jobH.UpdateStatus)
+
+	// Employees (for job assignment dropdown)
+	api.Get("/admin/employees", jobH.ListEmployees)
+
+	// Users list (with ODP/ODC filters)
+	api.Get("/users/list", pppoeH.ListUsersForSelect)
 
 	// Cron
 	cronGrp := api.Group("/cron")

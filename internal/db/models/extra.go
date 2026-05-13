@@ -137,6 +137,9 @@ type NetworkODP struct {
 	Capacity  int     `gorm:"default:8" json:"capacity"`
 	Notes     *string `gorm:"type:text" json:"notes"`
 	ODCID     *string `gorm:"index" json:"odcId"`
+	Status    string  `gorm:"default:active" json:"status"`
+
+	ODC *NetworkODC `gorm:"foreignKey:ODCID" json:"odc,omitempty"`
 }
 
 func (NetworkODP) TableName() string { return "network_odps" }
@@ -376,22 +379,22 @@ type InventorySupplier struct {
 func (InventorySupplier) TableName() string { return "inventory_suppliers" }
 
 type InventoryItem struct {
-	ID           string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
-	Sku          string    `gorm:"uniqueIndex" json:"sku"`
-	Name         string    `json:"name"`
-	Description  *string   `gorm:"type:text" json:"description"`
-	CategoryID   *string   `gorm:"index" json:"categoryId"`
-	SupplierID   *string   `gorm:"index" json:"supplierId"`
-	Unit         string    `gorm:"default:pcs" json:"unit"`
-	MinimumStock int       `gorm:"default:0" json:"minimumStock"`
-	CurrentStock int       `gorm:"default:0" json:"currentStock"`
-	PurchasePrice int      `gorm:"default:0" json:"purchasePrice"`
-	SellingPrice int       `gorm:"default:0" json:"sellingPrice"`
-	Location     *string   `json:"location"`
-	Notes        *string   `gorm:"type:text" json:"notes"`
-	IsActive     bool      `gorm:"default:true" json:"isActive"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	ID            string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Sku           string    `gorm:"uniqueIndex" json:"sku"`
+	Name          string    `json:"name"`
+	Description   *string   `gorm:"type:text" json:"description"`
+	CategoryID    *string   `gorm:"index" json:"categoryId"`
+	SupplierID    *string   `gorm:"index" json:"supplierId"`
+	Unit          string    `gorm:"default:pcs" json:"unit"`
+	MinimumStock  int       `gorm:"default:0" json:"minimumStock"`
+	CurrentStock  int       `gorm:"default:0" json:"currentStock"`
+	PurchasePrice int       `gorm:"default:0" json:"purchasePrice"`
+	SellingPrice  int       `gorm:"default:0" json:"sellingPrice"`
+	Location      *string   `json:"location"`
+	Notes         *string   `gorm:"type:text" json:"notes"`
+	IsActive      bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
 
 	Category *InventoryCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 	Supplier *InventorySupplier `gorm:"foreignKey:SupplierID" json:"supplier,omitempty"`
@@ -416,3 +419,75 @@ type InventoryMovement struct {
 }
 
 func (InventoryMovement) TableName() string { return "inventory_movements" }
+
+// ─── OdpCustomerAssignment ────────────────────────────────────────────────────
+
+type OdpCustomerAssignment struct {
+	ID         string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	CustomerID string    `gorm:"uniqueIndex" json:"customerId"`
+	OdpID      string    `gorm:"index" json:"odpId"`
+	PortNumber int       `json:"portNumber"`
+	Distance   *float64  `json:"distance"`
+	Notes      *string   `gorm:"type:text" json:"notes"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+
+	ODP *NetworkODP `gorm:"foreignKey:OdpID" json:"odp,omitempty"`
+}
+
+func (OdpCustomerAssignment) TableName() string { return "odp_customer_assignments" }
+
+// ─── Employee ─────────────────────────────────────────────────────────────────
+
+type Employee struct {
+	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Name        string    `json:"name"`
+	PhoneNumber string    `gorm:"uniqueIndex" json:"phoneNumber"`
+	Email       *string   `json:"email"`
+	Address     *string   `gorm:"type:text" json:"address"`
+	Roles       string    `gorm:"type:json" json:"roles"`
+	IsActive    bool      `gorm:"default:true" json:"isActive"`
+	EmployeeID  *string   `gorm:"uniqueIndex" json:"employeeId"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+func (Employee) TableName() string { return "employees" }
+
+// ─── JobAssignment ────────────────────────────────────────────────────────────
+
+type JobAssignment struct {
+	ID               string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	JobType          string     `gorm:"index" json:"jobType"`
+	JobCategory      *string    `json:"jobCategory"`
+	Priority         string     `gorm:"default:MEDIUM;index" json:"priority"`
+	Status           string     `gorm:"default:ASSIGNED;index" json:"status"`
+	ScheduledDate    *time.Time `gorm:"index" json:"scheduledDate"`
+	CompletedDate    *time.Time `json:"completedDate"`
+	CustomerName     string     `json:"customerName"`
+	CustomerPhone    string     `json:"customerPhone"`
+	CustomerAddress  string     `gorm:"type:text" json:"customerAddress"`
+	Latitude         *float64   `json:"latitude"`
+	Longitude        *float64   `json:"longitude"`
+	Description      *string    `gorm:"type:text" json:"description"`
+	TechnicianNotes  *string    `gorm:"type:text" json:"technicianNotes"`
+	AssignedTo       *string    `gorm:"index" json:"assignedTo"`
+	AssignedBy       *string    `gorm:"index" json:"assignedBy"`
+	CheckInTime      *time.Time `json:"checkInTime"`
+	CheckOutTime     *time.Time `json:"checkOutTime"`
+	RegistrationID   *string    `gorm:"index" json:"registrationId"`
+	TicketID         *string    `gorm:"index" json:"ticketId"`
+	RequiresApproval bool       `gorm:"default:false" json:"requiresApproval"`
+	ApprovalStatus   *string    `json:"approvalStatus"`
+	ApprovedBy       *string    `json:"approvedBy"`
+	ApprovedAt       *time.Time `json:"approvedAt"`
+	EstimatedCost    *float64   `gorm:"type:decimal(15,2)" json:"estimatedCost"`
+	PhotoCount       int        `gorm:"default:0" json:"photoCount"`
+	CreatedAt        time.Time  `gorm:"index" json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+
+	AssignedToEmployee *Employee `gorm:"foreignKey:AssignedTo" json:"assignedToEmployee,omitempty"`
+	AssignedByEmployee *Employee `gorm:"foreignKey:AssignedBy" json:"assignedByEmployee,omitempty"`
+}
+
+func (JobAssignment) TableName() string { return "job_assignments" }

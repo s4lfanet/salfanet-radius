@@ -110,14 +110,22 @@ func (h *BillingHandler) PayInvoice(c fiber.Ctx) error {
 
 	// Record manual payment
 	notes := body.Notes
+	pppoeUserID := ""
+	if inv.UserID != nil {
+		pppoeUserID = *inv.UserID
+	}
 	mp := models.ManualPayment{
-		ID:        uuid.New().String(),
-		InvoiceID: inv.ID,
-		UserID:    inv.UserID,
-		Amount:    inv.Amount,
-		Method:    body.Method,
-		Notes:     &notes,
-		PaidAt:    now,
+		ID:           uuid.New().String(),
+		InvoiceID:    inv.ID,
+		PppoeUserID:  pppoeUserID,
+		Amount:       float64(inv.Amount),
+		BankName:     body.Method,
+		AccountName:  "-",
+		TransferDate: now,
+		Notes:        &notes,
+		Status:       "APPROVED",
+		CreatedAt:    now,
+		UpdatedAt:    now,
 	}
 	h.db.Create(&mp)
 

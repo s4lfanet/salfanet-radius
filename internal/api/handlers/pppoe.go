@@ -288,6 +288,92 @@ func (h *PPPoEHandler) GetUserInvoices(c fiber.Ctx) error {
 	return c.JSON(invoices)
 }
 
+// ListUsersForSelect — GET /api/users/list
+// Returns all PPPoE users with their network location, for use in dropdowns/filters.
+func (h *PPPoEHandler) ListUsersForSelect(c fiber.Ctx) error {
+	query := h.db.Model(&models.PppoeUser{}).
+		Preload("Profile").
+		Preload("Router").
+		Preload("ODPAssignment").
+		Preload("ODPAssignment.ODP").
+		Preload("ODPAssignment.ODP.ODC")
+
+	if status := c.Query("status"); status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if profileID := c.Query("profileId"); profileID != "" {
+		query = query.Where("profileId = ?", profileID)
+	}
+	if routerID := c.Query("routerId"); routerID != "" {
+		query = query.Where("routerId = ?", routerID)
+	}
+	if search := c.Query("search"); search != "" {
+		like := "%" + search + "%"
+		query = query.Where("name LIKE ? OR username LIKE ? OR phone LIKE ? OR email LIKE ? OR address LIKE ?",
+			like, like, like, like, like)
+	}
+	if odpIDs := c.Query("odpIds"); odpIDs != "" {
+		// Filter users that have ODP assignment in the given ODP IDs
+		query = query.Joins("JOIN odp_customer_assignments oca ON oca.customerId = pppoe_users.id").
+			Where("oca.odpId IN ?", splitCSV(odpIDs))
+	} else if odcID := c.Query("odcId"); odcID != "" {
+		query = query.Joins("JOIN odp_customer_assignments oca ON oca.customerId = pppoe_users.id").
+			Joins("JOIN network_odps nodp ON nodp.id = oca.odpId").
+			Where("nodp.odcId = ?", odcID)
+	}
+
+	var users []models.PppoeUser
+	query.Order("name ASC").Find(&users)
+
+	// Filter options
+	var profiles []models.PppoeProfile
+	h.db.Where("isActive = ?", true).Select("id, name").Order("name").Find(&profiles)
+
+	var routers []models.Router
+	h.db.Where("isActive = ?", true).Select("id, name").Order("name").Find(&routers)
+
+	var odcs []models.NetworkODC
+	h.db.Select("id, name").Order("name").Find(&odcs)
+
+	var odps []models.NetworkODP
+	h.db.Select("id, name, odcId").Order("name").Find(&odps)
+
+	return c.JSON(fiber.Map{
+		"success": true,
+		"users":   users,
+		"filters": fiber.Map{
+			"profiles": profiles,
+			"routers":  routers,
+			"odcs":     odcs,
+			"odps":     odps,
+		},
+	})
+}
+
+// splitCSV splits a comma-separated string into a slice of strings.
+func splitCSV(s string) []string {
+	var out []string
+	for _, part := range splitString(s, ",") {
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
+func splitString(s, sep string) []string {
+	var result []string
+	start := 0
+	for i := 0; i < len(s); i++ {
+		if string(s[i]) == sep {
+			result = append(result, s[start:i])
+			start = i + 1
+		}
+	}
+	result = append(result, s[start:])
+	return result
+}
+
 func (h *PPPoEHandler) SyncToRadius(c fiber.Ctx) error {
 	id := c.Params("id")
 	var user models.PppoeUser

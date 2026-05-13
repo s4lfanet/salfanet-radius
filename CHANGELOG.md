@@ -6,6 +6,29 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.2] — 2026-05-13
+### Added
+- **Go: Manual Payments handler** — `GET/POST /api/manual-payments`, `PUT /api/manual-payments/:id` (approve/reject dengan extend expiry + buat transaction), `DELETE /api/manual-payments/:id`
+- **Go: Jobs handler** — `GET/POST /api/admin/jobs`, `GET /api/admin/jobs/stats`, `GET /api/admin/jobs/:id`, `PATCH /api/admin/jobs/:id/status`
+- **Go: Employees list** — `GET /api/admin/employees` (for job assignment dropdown)
+- **Go: Users list with ODP/ODC filter** — `GET /api/users/list`
+- **Go: Employee, JobAssignment, OdpCustomerAssignment models**
+### Changed
+- **Go: ManualPayment model** — updated sesuai schema actual (bankName, accountName, transferDate, reviewedBy, dll)
+- **Go: PppoeUser model** — tambah Router + ODPAssignment relations
+- **Go: NetworkODP model** — tambah Status field + ODC relation
+### Fixed
+- **Go: billing.go** — fix ManualPayment struct creation sesuai model baru
+### Files
+- `internal/api/handlers/manual_payments.go` — baru
+- `internal/api/handlers/jobs.go` — baru
+- `internal/api/handlers/pppoe.go` — tambah ListUsersForSelect
+- `internal/db/models/models.go` — ManualPayment + PppoeUser update
+- `internal/db/models/extra.go` — Employee, JobAssignment, OdpCustomerAssignment, NetworkODP update
+- `internal/api/router.go` — manual-payments, jobs, employees, users/list routes
+
+---
+
 ## [2.34.1] — 2026-05-13
 ### Added
 - **Go: Inventory handler** — `GET/POST/PUT/DELETE /api/inventory/categories`, `/suppliers`, `/items`; `GET/POST /api/inventory/movements` dengan stock transaction

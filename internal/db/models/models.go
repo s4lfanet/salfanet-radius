@@ -158,9 +158,11 @@ type PppoeUser struct {
 	ReferredByID         *string          `gorm:"column:referred_by_id" json:"referredById"`
 	SyncedToRadius       bool             `gorm:"default:false" json:"syncedToRadius"`
 
-	Profile  PppoeProfile `gorm:"foreignKey:ProfileID" json:"profile,omitempty"`
-	Area     *PppoeArea   `gorm:"foreignKey:AreaID" json:"area,omitempty"`
-	Invoices []Invoice    `gorm:"foreignKey:UserID" json:"invoices,omitempty"`
+	Profile       PppoeProfile           `gorm:"foreignKey:ProfileID" json:"profile,omitempty"`
+	Area          *PppoeArea             `gorm:"foreignKey:AreaID" json:"area,omitempty"`
+	Router        *Router                `gorm:"foreignKey:RouterID" json:"router,omitempty"`
+	ODPAssignment *OdpCustomerAssignment `gorm:"foreignKey:CustomerID;references:ID" json:"odpAssignment,omitempty"`
+	Invoices      []Invoice              `gorm:"foreignKey:UserID" json:"invoices,omitempty"`
 }
 
 func (PppoeUser) TableName() string { return "pppoe_users" }
@@ -377,14 +379,24 @@ func (WhatsappTemplate) TableName() string { return "whatsapp_templates" }
 // ─── ManualPayment ────────────────────────────────────────────────────────────
 
 type ManualPayment struct {
-	ID        string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
-	InvoiceID string    `gorm:"index" json:"invoiceId"`
-	UserID    *string   `gorm:"index" json:"userId"`
-	Amount    int       `json:"amount"`
-	Method    string    `json:"method"`
-	Notes     *string   `gorm:"type:text" json:"notes"`
-	PaidAt    time.Time `json:"paidAt"`
-	CreatedAt time.Time `json:"createdAt"`
+	ID           string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	InvoiceID    string     `gorm:"index" json:"invoiceId"`
+	PppoeUserID  string     `gorm:"index" json:"pppoeUserId"`
+	Amount       float64    `json:"amount"`
+	BankName     string     `json:"bankName"`
+	AccountName  string     `json:"accountName"`
+	TransferDate time.Time  `json:"transferDate"`
+	ProofImage   *string    `json:"proofImage"`
+	Notes        *string    `gorm:"type:text" json:"notes"`
+	Status       string     `gorm:"default:PENDING;index" json:"status"`
+	ReviewedBy   *string    `json:"reviewedBy"`
+	ReviewedAt   *time.Time `json:"reviewedAt"`
+	ReviewNotes  *string    `gorm:"type:text" json:"reviewNotes"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
+
+	Invoice   *Invoice   `gorm:"foreignKey:InvoiceID" json:"invoice,omitempty"`
+	PppoeUser *PppoeUser `gorm:"foreignKey:PppoeUserID" json:"pppoeUser,omitempty"`
 }
 
 func (ManualPayment) TableName() string { return "manual_payments" }
