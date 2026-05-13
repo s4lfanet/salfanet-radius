@@ -469,7 +469,22 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
-### v2.34.3 — 2026-05-13
+### v2.34.4 — 2026-05-14
+
+### Added
+- **Sidebar: Permintaan Top-Up & Suspend** — tambah `nav.topupRequests` (`/admin/topup-requests`) dan `nav.suspendRequests` (`/admin/suspend-requests`) sebagai child PPPoE
+- **Sidebar: ODC, ODP, Peta Jaringan** — tambah 3 item ke Topology: Network Map, ODC, ODP
+- **Sidebar: Fiber ODC & Fiber ODP** — tambah ke seksi Manajemen Fiber
+- **Sidebar: GenieACS Files** — tambah child `nav.files` ke seksi GenieACS
+- **Sidebar: Kelola Teknisi** — tambah item standalone di catManagement
+- **Sidebar: Log Aktivitas** — tambah item standalone di catManagement
+- **Sidebar: Pengaturan Keamanan** — tambah child `/admin/settings/security` ke settingsMenu
+- **Sidebar: WhatsApp jadi submenu** — ubah dari single link ke children (Settings, Riwayat, Template, Kirim, Notifikasi, Providers)
+- **i18n: tambah nav keys** — `topupRequests`, `suspendRequests`, `activityLogs`, `security`, `fiberOdcs`, `fiberOdps`
+### Files
+- `src/app/admin/AdminClientLayout.tsx` — tambah menu items, WhatsApp jadi submenu, import UserCog
+- `src/locales/id.json` — tambah 6 nav translation keys
+
 
 ### Added
 - **Go: GenieACS proxy handler** — `POST /api/genieacs/devices/:deviceId/wifi` (TR-069 setParameterValues), `POST /api/genieacs/devices/:deviceId/connection-request`, `GET /api/genieacs/tasks`, `DELETE /api/genieacs/tasks/:taskId`
