@@ -469,6 +469,52 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.5 — 2026-05-17
+
+### Added
+- **Go: 17 new handler files** — notifications, public, freeradius, invoices_ext, referrals, admin_users, technician_admin, activity_log, hotspot_ext, voucher_templates, ticket_ext, analytics, settings_ext, backup_handler, telegram_handler, push_handler, olt_ext
+- **Go: Notification routes** — `GET/PUT /api/notifications`, `DELETE /api/notifications/:id`
+- **Go: Public routes (no auth)** — `GET /api/public/company|areas|profiles|stats|payment-gateways`, `POST /api/public/upload-registration`
+- **Go: FreeRADIUS management** — `GET /api/freeradius/status|logs|radcheck|config/list|config/read`, `POST /api/freeradius/start|stop|restart|radtest|config/save`
+- **Go: Root-level invoice routes** — `GET/POST/DELETE /api/invoices`, counts, generate, export, send-reminder, send-reminders-bulk, by-token, PDF
+- **Go: Referral routes** — `GET/PUT/DELETE /api/admin/referrals`, `GET/PUT /api/admin/referrals/config`
+- **Go: Admin User CRUD** — `GET/POST/PUT/DELETE /api/admin/users/:id`, `GET/PUT /api/admin/users/:id/permissions`
+- **Go: Technician Admin CRUD** — `GET/POST/PUT/DELETE /api/admin/technicians/:id`
+- **Go: Activity Log** — `GET /api/admin/activity-logs`
+- **Go: Hotspot extensions** — bulk generate/delete, export, resync, validate, send-whatsapp, delete-expired, rekap-voucher, agent balance/history
+- **Go: Voucher Templates CRUD** — `GET/POST/PUT/DELETE /api/voucher-templates/:id`
+- **Go: Ticket extensions** — categories CRUD, stats, messages, dispatch
+- **Go: Analytics** — `GET /api/admin/analytics`, `GET /api/dashboard/analytics|traffic`
+- **Go: Settings extensions** — email templates, test email, timezone, map settings, email history
+- **Go: Backup** — history, create (mysqldump+gzip), delete, download, restore, telegram settings
+- **Go: Telegram & Push notification routes**
+- **Go: OLT alert management** — list, get, resolve; monitoring, metrics
+- **Go: Health endpoint** — `GET /api/health`
+- **Go: `generateID()` helper** — shared UUID generator in handlers package
+### Fixed
+- **ticket_ext.go** — `Preload("Customer")` (was `Preload("User")`), `assigned_to_id` column
+- **invoices_ext.go** — `user.Profile.Price` direct access (Profile is not a pointer)
+### Files
+- `internal/api/handlers/helpers.go` — added `generateID()` helper
+- `internal/api/handlers/notifications.go` — new
+- `internal/api/handlers/public.go` — new
+- `internal/api/handlers/freeradius.go` — new
+- `internal/api/handlers/invoices_ext.go` — new
+- `internal/api/handlers/referrals.go` — new
+- `internal/api/handlers/admin_users.go` — new
+- `internal/api/handlers/technician_admin.go` — new
+- `internal/api/handlers/activity_log.go` — new
+- `internal/api/handlers/hotspot_ext.go` — new
+- `internal/api/handlers/voucher_templates.go` — new
+- `internal/api/handlers/ticket_ext.go` — new
+- `internal/api/handlers/analytics.go` — new
+- `internal/api/handlers/settings_ext.go` — new
+- `internal/api/handlers/backup_handler.go` — new
+- `internal/api/handlers/telegram_handler.go` — new
+- `internal/api/handlers/push_handler.go` — new
+- `internal/api/handlers/olt_ext.go` — new
+- `internal/api/router.go` — registered all 17 new handlers (~140 new routes)
+
 ### v2.34.4 — 2026-05-14
 
 ### Added
@@ -556,24 +602,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `internal/db/models/models.go` — Company + Ticket struct update
 - `internal/db/models/extra.go` — SuspendRequest update + 5 new models
 - `internal/api/router.go` — settings + permissions + customer portal routes
-
-### v2.33.2 — 2026-05-13
-
-### Fixed
-- **Go: Prisma-style NamingStrategy** — tambah custom GORM NamingStrategy yang convert PascalCase → camelCase secara global, mengatasi semua error `Unknown column` (updated_at, is_active, expired_at, job_type, dll)
-- **Go: CronHistory column tags** — tambah explicit `column:` tag untuk `jobType`, `startedAt`, `completedAt`
-- **Go: Cron queries** — fix semua snake_case query di scheduler.go dan pppoe_session_sync.go (`expiresAt`, `expiredAt`, `dueDate`, `subscriptionType`, `isActive`, `autoIsolationEnabled`, `groupName`)
-- **Go: syncNASClients** — simplify ke count-only karena `nas` table sudah adalah tabel router app, tidak perlu INSERT ke FreeRADIUS
-- **Go: OLT poller update map** — fix key names ke camelCase (`lastPollAt`, `totalOnu`, `onlineOnu`, `isOnline`)
-- **Go: ONU upsert columns** — fix `serialNumber`, `rxPower`, `lastSeenAt`, `updatedAt`, `oltId`, `onuId`
-- **Auth: agent login** — fix `isActive` column name (was `is_active`)
-### Files
-- `internal/db/db.go` — tambah `prismaStyleNamer` custom NamingStrategy
-- `internal/db/models/models.go` — CronHistory column tags
-- `internal/cron/scheduler.go` — fix camelCase column queries
-- `internal/cron/pppoe_session_sync.go` — fix column queries + simplify syncNASClients
-- `internal/olt/poller/poller.go` — fix update map keys + ONU upsert columns
-- `internal/api/handlers/auth.go` — fix isActive query
 
 <!-- AUTO-CHANGELOG:END -->
 
