@@ -6,6 +6,23 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.7] — 2026-05-18
+### Added
+- **Go: CustomerExtHandler** — customer portal extended: `auth/send-otp`, cash-payment, manual-payment, products, profile OTP, renewal, sessions, extend, ONT, wifi update, diagnostics (ping/speedtest/traceroute)
+- **Go: WhatsappCrudHandler** — full CRUD for providers, history, templates, reminder-settings, send endpoint
+- **Go: NetworkHandler extensions (network_ext.go)** — router CRUD (`get/update/delete/:id`), router test-connection/detect-public-ip/interfaces/isolation-settings/ping-olt/setup-isolir/uplinks/status/import, OLT list/import/template, OLT-routers, ODC/ODP/OTB import+template, OTB stats+get, fiber paths CRUD+trace, joint closures CRUD+import, nodes CRUD, servers, paths, detect-NAS, assign customer to ODP, customers with GPS location
+- **Go: AdminJobsHandler** — admin registrations workflow (list/get/approve/reject/mark-installed/request-info/tech-survey), customer-registrations CRUD, admin jobs approvals/stats/escalate/submit-approval/materials/approval-history/recurring, technician jobs (list/get/complete/customer-data/generate-credentials), team jobs
+- **Go: MiscHandler** — health/db, health/radius, RADIUS protocol stubs (authorize/post-auth/coa), PPPoE search+upload-photo+traffic+bulk+check-isolation+batch-status+send-notification+sync-mikrotik, coordinator auth portal (OTP/verify/logout/session/stats/tasks), public homepage, company info, NAS list, email broadcast, notification helpers, pay-by-token, payment gateway config, inventory variance+reorder
+### Files
+- `internal/api/handlers/customer_ext.go` — created
+- `internal/api/handlers/whatsapp_crud.go` — created
+- `internal/api/handlers/network_ext.go` — created (extends network.go)
+- `internal/api/handlers/admin_jobs.go` — created
+- `internal/api/handlers/misc_handler.go` — created
+- `internal/api/router.go` — registered ~130 new batch 7 routes
+
+---
+
 ## [2.34.6] — 2026-05-18
 ### Added
 - **Go: PPPoE extended handler** — `user-status`, `export-users`, `bulk-create`, `bulk-status`, `check-isolation`, `send-notification`, `sync-mikrotik`, `user-activity`, `extend`, `mark-paid`, `export-customers`, `bulk-create-customers`, `sync-profiles-mikrotik`, `sync-profiles-radius`, `sync-radius`, `list-with-filters`
