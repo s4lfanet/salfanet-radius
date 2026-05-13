@@ -85,6 +85,7 @@ prisma/*.db-journal
 
 # Reference folder — not part of production
 billing-radius/
+oltc320_v2.1.1_linux/
 
 # Manual debug artifacts
 capture-result.txt
