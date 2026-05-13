@@ -96,16 +96,19 @@ type TransactionCategory struct {
 func (TransactionCategory) TableName() string { return "transaction_categories" }
 
 type Transaction struct {
-	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
-	Date        time.Time `gorm:"index" json:"date"`
-	Type        string    `gorm:"index" json:"type"` // INCOME / EXPENSE
-	CategoryID  *string   `gorm:"index" json:"categoryId"`
-	Description string    `gorm:"type:text" json:"description"`
-	Amount      int       `json:"amount"`
-	Notes       *string   `gorm:"type:text" json:"notes"`
-	InvoiceID   *string   `gorm:"index" json:"invoiceId"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID             string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Date           time.Time `gorm:"index" json:"date"`
+	Type           string    `gorm:"index" json:"type"` // INCOME / EXPENSE
+	CategoryID     string    `gorm:"index" json:"categoryId"`
+	Description    string    `gorm:"type:text" json:"description"`
+	Amount         int       `json:"amount"`
+	Reference      *string   `json:"reference"`
+	Notes          *string   `gorm:"type:text" json:"notes"`
+	CreatedBy      *string   `json:"createdBy"`
+	JournalEntryID *string   `json:"journalEntryId"`
+	InvoiceID      *string   `gorm:"index" json:"invoiceId"`
+	CreatedAt      time.Time `json:"createdAt"`
+	UpdatedAt      time.Time `json:"updatedAt"`
 
 	Category *TransactionCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 }
@@ -342,3 +345,74 @@ type TicketReply struct {
 }
 
 func (TicketReply) TableName() string { return "ticket_replies" }
+
+// ─── Inventory ────────────────────────────────────────────────────────────────
+
+type InventoryCategory struct {
+	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Name        string    `gorm:"uniqueIndex" json:"name"`
+	Description *string   `gorm:"type:text" json:"description"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+
+	Items []InventoryItem `gorm:"foreignKey:CategoryID" json:"items,omitempty"`
+}
+
+func (InventoryCategory) TableName() string { return "inventory_categories" }
+
+type InventorySupplier struct {
+	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Name        string    `gorm:"uniqueIndex" json:"name"`
+	ContactName *string   `json:"contactName"`
+	Phone       *string   `json:"phone"`
+	Email       *string   `json:"email"`
+	Address     *string   `gorm:"type:text" json:"address"`
+	Notes       *string   `gorm:"type:text" json:"notes"`
+	IsActive    bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+func (InventorySupplier) TableName() string { return "inventory_suppliers" }
+
+type InventoryItem struct {
+	ID           string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Sku          string    `gorm:"uniqueIndex" json:"sku"`
+	Name         string    `json:"name"`
+	Description  *string   `gorm:"type:text" json:"description"`
+	CategoryID   *string   `gorm:"index" json:"categoryId"`
+	SupplierID   *string   `gorm:"index" json:"supplierId"`
+	Unit         string    `gorm:"default:pcs" json:"unit"`
+	MinimumStock int       `gorm:"default:0" json:"minimumStock"`
+	CurrentStock int       `gorm:"default:0" json:"currentStock"`
+	PurchasePrice int      `gorm:"default:0" json:"purchasePrice"`
+	SellingPrice int       `gorm:"default:0" json:"sellingPrice"`
+	Location     *string   `json:"location"`
+	Notes        *string   `gorm:"type:text" json:"notes"`
+	IsActive     bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+
+	Category *InventoryCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
+	Supplier *InventorySupplier `gorm:"foreignKey:SupplierID" json:"supplier,omitempty"`
+}
+
+func (InventoryItem) TableName() string { return "inventory_items" }
+
+type InventoryMovement struct {
+	ID            string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	ItemID        string    `gorm:"index" json:"itemId"`
+	MovementType  string    `gorm:"index" json:"movementType"` // IN / OUT / ADJUSTMENT
+	Quantity      int       `json:"quantity"`
+	PreviousStock int       `json:"previousStock"`
+	NewStock      int       `json:"newStock"`
+	ReferenceNo   *string   `json:"referenceNo"`
+	Notes         *string   `gorm:"type:text" json:"notes"`
+	UserID        *string   `json:"userId"`
+	UserName      *string   `json:"userName"`
+	CreatedAt     time.Time `gorm:"index" json:"createdAt"`
+
+	Item *InventoryItem `gorm:"foreignKey:ItemID" json:"item,omitempty"`
+}
+
+func (InventoryMovement) TableName() string { return "inventory_movements" }

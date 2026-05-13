@@ -6,6 +6,21 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.1] — 2026-05-13
+### Added
+- **Go: Inventory handler** — `GET/POST/PUT/DELETE /api/inventory/categories`, `/suppliers`, `/items`; `GET/POST /api/inventory/movements` dengan stock transaction
+- **Go: Keuangan handler** — `GET/POST/DELETE /api/keuangan/transactions` (dengan stats totalIncome/Expense/balance), `GET/POST /api/keuangan/categories`, `GET /api/keuangan/export`
+- **Go: InventoryCategory, InventoryItem, InventorySupplier, InventoryMovement models**
+### Changed
+- **Go: Transaction model** — tambah field `Reference`, `CreatedBy`, `JournalEntryID`; `CategoryID` jadi non-nullable string
+### Files
+- `internal/api/handlers/inventory.go` — baru
+- `internal/api/handlers/keuangan.go` — baru
+- `internal/db/models/extra.go` — inventory models + Transaction update
+- `internal/api/router.go` — inventory + keuangan routes
+
+---
+
 ## [2.34.0] — 2026-05-13
 ### Added
 - **Go: Settings handler** — `GET/POST /api/settings/email`, `GET/PUT /api/settings/isolation`, `GET/PUT /api/settings/company` alias

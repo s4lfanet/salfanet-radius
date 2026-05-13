@@ -58,6 +58,8 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	sessionsH := handlers.NewSessionsHandler(db)
 	settingsH := handlers.NewSettingsHandler(db)
 	permsH := handlers.NewPermissionsHandler(db)
+	inventoryH := handlers.NewInventoryHandler(db)
+	keuanganH := handlers.NewKeuanganHandler(db)
 
 	// ─── Public routes ───────────────────────────────────────────────────────
 	app.Get("/api/system/health", func(c fiber.Ctx) error {
@@ -278,6 +280,32 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	perms.Get("/role-templates", permsH.GetRoleTemplates)
 	perms.Get("/role/:role", permsH.GetRolePermissions)
 	perms.Put("/role/:role", permsH.UpdateRolePermissions)
+
+	// Inventory
+	inv := api.Group("/inventory")
+	inv.Get("/categories", inventoryH.ListCategories)
+	inv.Post("/categories", inventoryH.CreateCategory)
+	inv.Put("/categories/:id", inventoryH.UpdateCategory)
+	inv.Delete("/categories/:id", inventoryH.DeleteCategory)
+	inv.Get("/suppliers", inventoryH.ListSuppliers)
+	inv.Post("/suppliers", inventoryH.CreateSupplier)
+	inv.Put("/suppliers/:id", inventoryH.UpdateSupplier)
+	inv.Delete("/suppliers/:id", inventoryH.DeleteSupplier)
+	inv.Get("/items", inventoryH.ListItems)
+	inv.Post("/items", inventoryH.CreateItem)
+	inv.Put("/items/:id", inventoryH.UpdateItem)
+	inv.Delete("/items/:id", inventoryH.DeleteItem)
+	inv.Get("/movements", inventoryH.ListMovements)
+	inv.Post("/movements", inventoryH.CreateMovement)
+
+	// Keuangan
+	keu := api.Group("/keuangan")
+	keu.Get("/transactions", keuanganH.ListTransactions)
+	keu.Post("/transactions", keuanganH.CreateTransaction)
+	keu.Delete("/transactions/:id", keuanganH.DeleteTransaction)
+	keu.Get("/categories", keuanganH.ListCategories)
+	keu.Post("/categories", keuanganH.CreateCategory)
+	keu.Get("/export", keuanganH.Export)
 
 	// Cron
 	cronGrp := api.Group("/cron")

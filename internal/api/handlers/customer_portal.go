@@ -369,7 +369,7 @@ func (h *CustomerPortalHandler) CreateTopupRequest(c fiber.Ctx) error {
 		ID:          fmt.Sprintf("txn-%d", now.UnixMilli()),
 		Date:        now,
 		Type:        "INCOME",
-		CategoryID:  &cat.ID,
+		CategoryID:  cat.ID,
 		Description: fmt.Sprintf("Topup request - %s (Rp %d)", user.Username, body.Amount),
 		Amount:      body.Amount,
 		Notes:       &notes,
