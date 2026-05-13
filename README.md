@@ -469,91 +469,7 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
-### v2.34.7 — 2026-05-18
-
-### Added
-- **Go: CustomerExtHandler** — customer portal extended: `auth/send-otp`, cash-payment, manual-payment, products, profile OTP, renewal, sessions, extend, ONT, wifi update, diagnostics (ping/speedtest/traceroute)
-- **Go: WhatsappCrudHandler** — full CRUD for providers, history, templates, reminder-settings, send endpoint
-- **Go: NetworkHandler extensions (network_ext.go)** — router CRUD (`get/update/delete/:id`), router test-connection/detect-public-ip/interfaces/isolation-settings/ping-olt/setup-isolir/uplinks/status/import, OLT list/import/template, OLT-routers, ODC/ODP/OTB import+template, OTB stats+get, fiber paths CRUD+trace, joint closures CRUD+import, nodes CRUD, servers, paths, detect-NAS, assign customer to ODP, customers with GPS location
-- **Go: AdminJobsHandler** — admin registrations workflow (list/get/approve/reject/mark-installed/request-info/tech-survey), customer-registrations CRUD, admin jobs approvals/stats/escalate/submit-approval/materials/approval-history/recurring, technician jobs (list/get/complete/customer-data/generate-credentials), team jobs
-- **Go: MiscHandler** — health/db, health/radius, RADIUS protocol stubs (authorize/post-auth/coa), PPPoE search+upload-photo+traffic+bulk+check-isolation+batch-status+send-notification+sync-mikrotik, coordinator auth portal (OTP/verify/logout/session/stats/tasks), public homepage, company info, NAS list, email broadcast, notification helpers, pay-by-token, payment gateway config, inventory variance+reorder
-### Files
-- `internal/api/handlers/customer_ext.go` — created
-- `internal/api/handlers/whatsapp_crud.go` — created
-- `internal/api/handlers/network_ext.go` — created (extends network.go)
-- `internal/api/handlers/admin_jobs.go` — created
-- `internal/api/handlers/misc_handler.go` — created
-- `internal/api/router.go` — registered ~130 new batch 7 routes
-
-### v2.34.6 — 2026-05-18
-
-### Added
-- **Go: PPPoE extended handler** — `user-status`, `export-users`, `bulk-create`, `bulk-status`, `check-isolation`, `send-notification`, `sync-mikrotik`, `user-activity`, `extend`, `mark-paid`, `export-customers`, `bulk-create-customers`, `sync-profiles-mikrotik`, `sync-profiles-radius`, `sync-radius`, `list-with-filters`
-- **Go: Technician portal handler** — full mobile app auth (OTP, verify, login, logout, session), profile, work-orders, tasks, customers CRUD, form-data, isolated/offline users, sessions, tickets, monitor, GenieACS proxy, file upload
-- **Go: Upload handler** — `POST /api/upload/logo|payment-proof|pppoe-customer`, `GET /api/uploads/logos/:filename`, `GET /api/pwa/icon`
-- **Go: WhatsApp extended handler** — broadcast, broadcast-invoice, provider status/QR/restart/test, public webhook
-- **Go: Push extended handler** — agent-subscribe/unsubscribe, technician-subscribe/unsubscribe
-- **Go: Settings GenieACS handler** — devices list/detail/parameters/reboot/refresh, tasks, test, parameter-display, virtual-parameters, isolation templates CRUD, restart-services, realtime-sessions, system-radius, SSE voucher-updates
-- **Go: TelegramHandler.SendHealth** — `POST /api/telegram/send-health`
-- **Go: 6 new models** — `TelegramBackupSettings`, `WorkOrder`, `TechnicianOtp`, `PushBroadcast`, `AgentPushSubscription`, `TechnicianPushSubscription`
-### Files
-- `internal/api/handlers/pppoe_ext.go` — created
-- `internal/api/handlers/technician_portal.go` — created
-- `internal/api/handlers/upload.go` — created
-- `internal/api/handlers/whatsapp_ext.go` — created
-- `internal/api/handlers/push_ext.go` — created
-- `internal/api/handlers/settings_genieacs.go` — created
-- `internal/api/handlers/telegram_handler.go` — added `SendHealth`
-- `internal/api/router.go` — registered all new routes (~80 new routes)
-- `internal/db/models/extra.go` — added 6 new GORM models
-
-### v2.34.5 — 2026-05-17
-
-### Added
-- **Go: 17 new handler files** — notifications, public, freeradius, invoices_ext, referrals, admin_users, technician_admin, activity_log, hotspot_ext, voucher_templates, ticket_ext, analytics, settings_ext, backup_handler, telegram_handler, push_handler, olt_ext
-- **Go: Notification routes** — `GET/PUT /api/notifications`, `DELETE /api/notifications/:id`
-- **Go: Public routes (no auth)** — `GET /api/public/company|areas|profiles|stats|payment-gateways`, `POST /api/public/upload-registration`
-- **Go: FreeRADIUS management** — `GET /api/freeradius/status|logs|radcheck|config/list|config/read`, `POST /api/freeradius/start|stop|restart|radtest|config/save`
-- **Go: Root-level invoice routes** — `GET/POST/DELETE /api/invoices`, counts, generate, export, send-reminder, send-reminders-bulk, by-token, PDF
-- **Go: Referral routes** — `GET/PUT/DELETE /api/admin/referrals`, `GET/PUT /api/admin/referrals/config`
-- **Go: Admin User CRUD** — `GET/POST/PUT/DELETE /api/admin/users/:id`, `GET/PUT /api/admin/users/:id/permissions`
-- **Go: Technician Admin CRUD** — `GET/POST/PUT/DELETE /api/admin/technicians/:id`
-- **Go: Activity Log** — `GET /api/admin/activity-logs`
-- **Go: Hotspot extensions** — bulk generate/delete, export, resync, validate, send-whatsapp, delete-expired, rekap-voucher, agent balance/history
-- **Go: Voucher Templates CRUD** — `GET/POST/PUT/DELETE /api/voucher-templates/:id`
-- **Go: Ticket extensions** — categories CRUD, stats, messages, dispatch
-- **Go: Analytics** — `GET /api/admin/analytics`, `GET /api/dashboard/analytics|traffic`
-- **Go: Settings extensions** — email templates, test email, timezone, map settings, email history
-- **Go: Backup** — history, create (mysqldump+gzip), delete, download, restore, telegram settings
-- **Go: Telegram & Push notification routes**
-- **Go: OLT alert management** — list, get, resolve; monitoring, metrics
-- **Go: Health endpoint** — `GET /api/health`
-- **Go: `generateID()` helper** — shared UUID generator in handlers package
-### Fixed
-- **ticket_ext.go** — `Preload("Customer")` (was `Preload("User")`), `assigned_to_id` column
-- **invoices_ext.go** — `user.Profile.Price` direct access (Profile is not a pointer)
-### Files
-- `internal/api/handlers/helpers.go` — added `generateID()` helper
-- `internal/api/handlers/notifications.go` — new
-- `internal/api/handlers/public.go` — new
-- `internal/api/handlers/freeradius.go` — new
-- `internal/api/handlers/invoices_ext.go` — new
-- `internal/api/handlers/referrals.go` — new
-- `internal/api/handlers/admin_users.go` — new
-- `internal/api/handlers/technician_admin.go` — new
-- `internal/api/handlers/activity_log.go` — new
-- `internal/api/handlers/hotspot_ext.go` — new
-- `internal/api/handlers/voucher_templates.go` — new
-- `internal/api/handlers/ticket_ext.go` — new
-- `internal/api/handlers/analytics.go` — new
-- `internal/api/handlers/settings_ext.go` — new
-- `internal/api/handlers/backup_handler.go` — new
-- `internal/api/handlers/telegram_handler.go` — new
-- `internal/api/handlers/push_handler.go` — new
-- `internal/api/handlers/olt_ext.go` — new
-- `internal/api/router.go` — registered all 17 new handlers (~140 new routes)
-
-### v2.34.4 — 2026-05-14
+### v2.34.4 — 2026-05-13
 
 ### Added
 - **Sidebar: Permintaan Top-Up & Suspend** — tambah `nav.topupRequests` (`/admin/topup-requests`) dan `nav.suspendRequests` (`/admin/suspend-requests`) sebagai child PPPoE
@@ -569,41 +485,50 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/app/admin/AdminClientLayout.tsx` — tambah menu items, WhatsApp jadi submenu, import UserCog
 - `src/locales/id.json` — tambah 6 nav translation keys
 
+### v2.32.2 — 2026-05-13
 
-### Added
-- **Go: GenieACS proxy handler** — `POST /api/genieacs/devices/:deviceId/wifi` (TR-069 setParameterValues), `POST /api/genieacs/devices/:deviceId/connection-request`, `GET /api/genieacs/tasks`, `DELETE /api/genieacs/tasks/:taskId`
-- **Go: GenieACS settings** — `GET/POST /api/settings/genieacs` (simpan host/username/password ke DB)
-- **Go: Admin Employees full CRUD** — `GET /api/admin/employees` (enhanced: stats byRole, pagination, filters), `POST /api/admin/employees`, `PUT /api/admin/employees/:id`, `DELETE /api/admin/employees/:id`
-- **Go: Job Assignments routes** — `GET /api/admin/job-assignments` (alias untuk jobH.List), `DELETE /api/admin/job-assignments/:id`
-- **Go: GenieacsSettings model** — `genieacs_settings` table
-### Files
-- `internal/api/handlers/genieacs.go` — baru
-- `internal/api/handlers/employees_admin.go` — baru
-- `internal/api/handlers/jobs.go` — tambah DeleteJob
-- `internal/db/models/extra.go` — tambah GenieacsSettings model
-- `internal/api/router.go` — tambah semua routes batch 4
-
-### v2.34.2 — 2026-05-13
-
-### Added
-- **Go: Manual Payments handler** — `GET/POST /api/manual-payments`, `PUT /api/manual-payments/:id` (approve/reject dengan extend expiry + buat transaction), `DELETE /api/manual-payments/:id`
-- **Go: Jobs handler** — `GET/POST /api/admin/jobs`, `GET /api/admin/jobs/stats`, `GET /api/admin/jobs/:id`, `PATCH /api/admin/jobs/:id/status`
-- **Go: Employees list** — `GET /api/admin/employees` (for job assignment dropdown)
-- **Go: Users list with ODP/ODC filter** — `GET /api/users/list`
-- **Go: Employee, JobAssignment, OdpCustomerAssignment models**
-### Changed
-- **Go: ManualPayment model** — updated sesuai schema actual (bankName, accountName, transferDate, reviewedBy, dll)
-- **Go: PppoeUser model** — tambah Router + ODPAssignment relations
-- **Go: NetworkODP model** — tambah Status field + ODC relation
 ### Fixed
-- **Go: billing.go** — fix ManualPayment struct creation sesuai model baru
+- **System Info API: silent git errors** — Semua `execSync` git di `/api/admin/system/info` kini pakai `stdio: 'pipe'` sehingga stderr tidak bocor ke PM2 log; `getAppDir()` kini mencari `/var/www/salfanet-frontend` lebih dulu (direktori dengan `.git`) sebelum fallback ke path lain
 ### Files
-- `internal/api/handlers/manual_payments.go` — baru
-- `internal/api/handlers/jobs.go` — baru
-- `internal/api/handlers/pppoe.go` — tambah ListUsersForSelect
-- `internal/db/models/models.go` — ManualPayment + PppoeUser update
-- `internal/db/models/extra.go` — Employee, JobAssignment, OdpCustomerAssignment, NetworkODP update
-- `internal/api/router.go` — manual-payments, jobs, employees, users/list routes
+- `src/app/api/admin/system/info/route.ts` — tambah `stdio: 'pipe'` pada `execSync`/`execFileSync`, perbarui urutan kandidat `getAppDir()`
+
+### v2.32.1 — 2026-05-11
+
+### Fixed
+- **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
+### Files
+- `src/server/jobs/pppoe-session-sync.ts` — clamp TIMESTAMPDIFF ke INT range, tambah filter `acctstarttime > '2000-01-01'` pada update aktif
+
+### v2.32.0 — 2026-05-11
+
+### Added
+- **Centralized Cron Schedule Management** — jadwal semua cron job kini bisa diatur dari satu halaman Admin → Settings → Cron tab "Jadwal Cron"; perubahan disimpan ke DB `cron_schedule_config`, aktif setelah `pm2 restart salfanet-cron`
+- **Schedule Editor modal** — 17 preset waktu (Every minute, Every 5 min, dll.) + custom cron expression; menampilkan default schedule sebagai referensi
+- **3-tab layout cron page** — Tab: Status & Trigger, Jadwal Cron, Riwayat Eksekusi
+- **API `/api/cron/schedules`** — GET/PUT/DELETE untuk manajemen schedule override per job (SUPERADMIN only)
+- **DB table `cron_schedule_config`** — menyimpan override schedule per jobType
+### Changed
+- **`runner.ts`** — load schedule overrides dari DB saat startup; fallback ke default jika tidak ada override atau tabel belum ada; support `preload.cjs` mock untuk `server-only`
+- **`jobs.config.ts`** — hapus `import 'server-only'` guard (redundant; diganti comment penjelasan)
+### Fixed
+- **Duplicate `CronSettingsPage` declaration** — page.tsx memiliki dua `export default function CronSettingsPage()` yang menyebabkan build error Turbopack; baris duplikat dihapus
+- **`server-only` module block tsx cron runner** — `src/cron/preload.cjs` mocking module `server-only` sebelum tsx load file apapun agar standalone cron runner bisa berjalan
+### Files
+- `src/app/admin/settings/cron/page.tsx` — rewrite lengkap dengan 3-tab layout + ScheduleEditor modal
+- `src/app/api/cron/schedules/route.ts` — NEW: CRUD API untuk schedule override
+- `src/cron/runner.ts` — load schedule overrides dari DB via `initSchedules()`
+- `src/cron/preload.cjs` — NEW: mock `server-only` agar tsx bisa load server files
+- `src/cron/runner-wrapper.cjs` — NEW: CJS wrapper entry point (opsional)
+- `src/server/jobs/jobs.config.ts` — hapus `import 'server-only'`
+- `prisma/schema.prisma` — tambah model `cronScheduleConfig`
+
+### v2.31.12 — 2026-05-11
+
+### Fixed
+- **MikroTik timeout empty error message** — `node-routeros` melempar empty string `""` saat timeout (bukan `Error` object); sekarang ada fallback message yang jelas jika error kosong atau `{}`
+- **Library timeout conflict** — `node-routeros` internal timeout diset ke 9999s agar tidak interferensi dengan `Promise.race` timeout kita yang memberikan pesan error yang lebih informatif
+### Files
+- `src/server/services/mikrotik/client.ts` — set library timeout ke 9999s, tambah fallback untuk empty error message
 
 <!-- AUTO-CHANGELOG:END -->
 
