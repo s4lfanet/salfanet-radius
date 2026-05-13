@@ -777,4 +777,3 @@ type TechnicianPushSubscription struct {
 }
 
 func (TechnicianPushSubscription) TableName() string { return "technician_push_subscriptions" }
-
