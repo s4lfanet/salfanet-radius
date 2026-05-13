@@ -1,8 +1,0 @@
-v2.1.1
-Build Date: 2026-01-24
-Features:
-- ZTE Full mode (Dual SSID, Dual VLAN, TR069, Firewall)
-- Huawei Full mode (Multi VLAN, WAN DHCP)
-- Auto Python installer for Windows & Linux
-- Enhanced CLI menu system
-- Complete service configuration options
