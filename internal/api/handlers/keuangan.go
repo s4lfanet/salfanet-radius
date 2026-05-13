@@ -79,9 +79,10 @@ func (h *KeuanganHandler) ListTransactions(c fiber.Ctx) error {
 
 	totalIncome, totalExpense := int64(0), int64(0)
 	for _, s := range stats {
-		if s.Type == "INCOME" {
+		switch s.Type {
+		case "INCOME":
 			totalIncome = s.Total
-		} else if s.Type == "EXPENSE" {
+		case "EXPENSE":
 			totalExpense = s.Total
 		}
 	}

@@ -491,3 +491,17 @@ type JobAssignment struct {
 }
 
 func (JobAssignment) TableName() string { return "job_assignments" }
+
+// ─── GenieACS Settings ────────────────────────────────────────────────────────
+
+type GenieacsSettings struct {
+	ID        string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Host      string    `json:"host"`
+	Username  string    `json:"username"`
+	Password  string    `json:"-"`
+	IsActive  bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func (GenieacsSettings) TableName() string { return "genieacs_settings" }

@@ -243,3 +243,16 @@ func (h *JobHandler) ListEmployees(c fiber.Ctx) error {
 	query.Order("name ASC").Find(&employees)
 	return c.JSON(fiber.Map{"success": true, "data": employees})
 }
+
+// DELETE /api/admin/job-assignments/:id — delete a job assignment
+func (h *JobHandler) DeleteJob(c fiber.Ctx) error {
+	id := c.Params("id")
+	var job models.JobAssignment
+	if err := h.db.Where("id = ?", id).First(&job).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Job assignment not found"})
+	}
+	if err := h.db.Delete(&job).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to delete job assignment"})
+	}
+	return c.JSON(fiber.Map{"success": true, "message": "Job assignment deleted"})
+}

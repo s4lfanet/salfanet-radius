@@ -62,6 +62,8 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	keuanganH := handlers.NewKeuanganHandler(db)
 	manualPayH := handlers.NewManualPaymentHandler(db)
 	jobH := handlers.NewJobHandler(db)
+	empAdminH := handlers.NewEmployeeAdminHandler(db)
+	genieacsH := handlers.NewGenieacsHandler(db)
 
 	// ─── Public routes ───────────────────────────────────────────────────────
 	app.Get("/api/system/health", func(c fiber.Ctx) error {
@@ -275,6 +277,9 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	// settings/company → alias to company endpoint
 	settings.Get("/company", companyH.GetCompany)
 	settings.Put("/company", companyH.UpdateCompany)
+	// GenieACS settings
+	settings.Get("/genieacs", genieacsH.GetSettings)
+	settings.Post("/genieacs", genieacsH.SaveSettings)
 
 	// Permissions (RBAC)
 	perms := api.Group("/permissions")
@@ -326,6 +331,21 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 
 	// Employees (for job assignment dropdown)
 	api.Get("/admin/employees", jobH.ListEmployees)
+
+	// Admin Employees full CRUD
+	api.Post("/admin/employees", empAdminH.Create)
+	api.Put("/admin/employees/:id", empAdminH.Update)
+	api.Delete("/admin/employees/:id", empAdminH.Delete)
+
+	// Job Assignments (alias for jobs with dedicated delete path)
+	api.Get("/admin/job-assignments", jobH.List)
+	api.Delete("/admin/job-assignments/:id", jobH.DeleteJob)
+
+	// GenieACS proxy
+	api.Post("/genieacs/devices/:deviceId/wifi", genieacsH.UpdateWifi)
+	api.Post("/genieacs/devices/:deviceId/connection-request", genieacsH.ConnectionRequest)
+	api.Get("/genieacs/tasks", genieacsH.ListTasks)
+	api.Delete("/genieacs/tasks/:taskId", genieacsH.DeleteTask)
 
 	// Users list (with ODP/ODC filters)
 	api.Get("/users/list", pppoeH.ListUsersForSelect)

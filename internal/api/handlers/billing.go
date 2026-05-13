@@ -309,5 +309,3 @@ func (h *BillingHandler) markInvoicePaidByToken(token string) {
 		_ = notify.SendPaymentSuccess(*inv.CustomerPhone, *inv.CustomerName, inv.InvoiceNumber, inv.Amount)
 	}
 }
-
-
