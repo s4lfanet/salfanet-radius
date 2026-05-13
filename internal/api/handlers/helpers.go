@@ -4,7 +4,13 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 )
+
+// generateID returns a new random UUID string used as primary key.
+func generateID() string {
+	return uuid.New().String()
+}
 
 // pageParams extracts page and pageSize from query params.
 // This helper is shared across all handlers in the same package.

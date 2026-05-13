@@ -397,5 +397,171 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 		})
 	})
 
+	// ─── NEW HANDLERS (Batch 5) ──────────────────────────────────────────────
+
+	// Notifications
+	notifH := handlers.NewNotificationHandler(db)
+	api.Get("/notifications", notifH.List)
+	api.Put("/notifications", notifH.MarkRead)
+	api.Delete("/notifications/:id", notifH.Delete)
+
+	// Public (no auth required)
+	pubH := handlers.NewPublicHandler(db)
+	app.Get("/api/public/company", pubH.GetCompany)
+	app.Get("/api/public/areas", pubH.GetAreas)
+	app.Get("/api/public/profiles", pubH.GetProfiles)
+	app.Get("/api/public/stats", pubH.GetStats)
+	app.Get("/api/public/payment-gateways", pubH.GetPaymentGateways)
+	app.Post("/api/public/upload-registration", pubH.UploadRegistration)
+
+	// FreeRADIUS management
+	frH := handlers.NewFreeradiusHandler(db)
+	freeradius := api.Group("/freeradius")
+	freeradius.Get("/status", frH.GetStatus)
+	freeradius.Post("/start", frH.Start)
+	freeradius.Post("/stop", frH.Stop)
+	freeradius.Post("/restart", frH.Restart)
+	freeradius.Get("/logs", frH.GetLogs)
+	freeradius.Get("/radcheck", frH.GetRadcheck)
+	freeradius.Post("/radtest", frH.RunRadtest)
+	freeradius.Get("/config/list", frH.ListConfigs)
+	freeradius.Get("/config/read", frH.ReadConfig)
+	freeradius.Post("/config/save", frH.SaveConfig)
+
+	// Root-level invoices (separate from /billing/invoices)
+	invExtH := handlers.NewInvoiceExtHandler(db)
+	invoicesGrp := api.Group("/invoices")
+	invoicesGrp.Get("/export", invExtH.Export)
+	invoicesGrp.Get("/counts", invExtH.Counts)
+	invoicesGrp.Post("/generate", invExtH.Generate)
+	invoicesGrp.Post("/send-reminder", invExtH.SendReminder)
+	invoicesGrp.Post("/send-reminders-bulk", invExtH.SendRemindersBulk)
+	invoicesGrp.Get("/by-token/:token", invExtH.GetByToken)
+	invoicesGrp.Get("/:id/pdf", invExtH.GetPDF)
+	invoicesGrp.Get("/", invExtH.List)
+	invoicesGrp.Post("/", invExtH.Create)
+	invoicesGrp.Delete("/", invExtH.Delete)
+
+	// Referrals
+	refH := handlers.NewReferralHandler(db)
+	api.Get("/admin/referrals/config", refH.GetConfig)
+	api.Put("/admin/referrals/config", refH.UpdateConfig)
+	api.Get("/admin/referrals", refH.List)
+	api.Put("/admin/referrals/:id", refH.UpdateStatus)
+	api.Delete("/admin/referrals/:id", refH.Delete)
+
+	// Admin Users
+	adminUserH := handlers.NewAdminUserHandler(db)
+	api.Get("/admin/users", adminUserH.List)
+	api.Post("/admin/users", adminUserH.Create)
+	api.Get("/admin/users/:id/permissions", adminUserH.GetPermissions)
+	api.Put("/admin/users/:id/permissions", adminUserH.SetPermissions)
+	api.Get("/admin/users/:id", adminUserH.Get)
+	api.Put("/admin/users/:id", adminUserH.Update)
+	api.Delete("/admin/users/:id", adminUserH.Delete)
+
+	// Admin Technicians
+	techAdminH := handlers.NewTechnicianAdminHandler(db)
+	api.Get("/admin/technicians", techAdminH.List)
+	api.Post("/admin/technicians", techAdminH.Create)
+	api.Get("/admin/technicians/:id", techAdminH.Get)
+	api.Put("/admin/technicians/:id", techAdminH.Update)
+	api.Delete("/admin/technicians/:id", techAdminH.Delete)
+
+	// Activity Log
+	actH := handlers.NewActivityLogHandler(db)
+	api.Get("/admin/activity-logs", actH.List)
+
+	// Hotspot extensions (singular /voucher for individual ops)
+	hotspotExtH := handlers.NewHotspotExtHandler(db)
+	hotspot.Get("/voucher/export", hotspotExtH.Export)
+	hotspot.Post("/voucher/bulk", hotspotExtH.BulkGenerate)
+	hotspot.Post("/voucher/bulk-delete", hotspotExtH.BulkDelete)
+	hotspot.Post("/voucher/resync", hotspotExtH.Resync)
+	hotspot.Post("/voucher/send-whatsapp", hotspotExtH.SendWhatsapp)
+	hotspot.Delete("/voucher/delete-expired", hotspotExtH.DeleteExpired)
+	hotspot.Get("/vouchers/validate", hotspotExtH.ValidateVoucher)
+	hotspot.Get("/voucher/:id", hotspotExtH.GetVoucher)
+	hotspot.Delete("/voucher/:id", hotspotExtH.DeleteVoucher)
+	hotspot.Get("/rekap-voucher/export", hotspotExtH.ExportRekap)
+	hotspot.Get("/rekap-voucher", hotspotExtH.RekapVoucher)
+	hotspot.Get("/agents/balance", hotspotExtH.AgentBalance)
+	hotspot.Get("/agents/:id/history", hotspotExtH.AgentHistory)
+	hotspot.Get("/agents", hotspotExtH.ListAgents)
+
+	// Voucher Templates
+	voucherTplH := handlers.NewVoucherTemplateHandler(db)
+	api.Get("/voucher-templates", voucherTplH.List)
+	api.Post("/voucher-templates", voucherTplH.Create)
+	api.Get("/voucher-templates/:id", voucherTplH.Get)
+	api.Put("/voucher-templates/:id", voucherTplH.Update)
+	api.Delete("/voucher-templates/:id", voucherTplH.Delete)
+
+	// Ticket extensions
+	ticketExtH := handlers.NewTicketExtHandler(db)
+	api.Get("/tickets/categories", ticketExtH.ListCategories)
+	api.Post("/tickets/categories", ticketExtH.CreateCategory)
+	api.Get("/tickets/stats", ticketExtH.Stats)
+	api.Get("/tickets/messages", ticketExtH.ListMessages)
+	api.Get("/tickets/dispatch", ticketExtH.ListDispatch)
+	api.Post("/tickets/dispatch", ticketExtH.Dispatch)
+
+	// Analytics
+	analyticsH := handlers.NewAnalyticsHandler(db)
+	api.Get("/admin/analytics", analyticsH.GetAnalytics)
+	api.Get("/dashboard/analytics", analyticsH.GetAnalytics)
+	api.Get("/dashboard/traffic", analyticsH.GetTraffic)
+
+	// Settings extensions
+	settingsExtH := handlers.NewSettingsExtHandler(db)
+	api.Get("/settings/email/templates", settingsExtH.ListEmailTemplates)
+	api.Put("/settings/email/templates/:type", settingsExtH.UpdateEmailTemplate)
+	api.Post("/settings/email/test", settingsExtH.TestEmail)
+	api.Get("/settings/timezone", settingsExtH.GetTimezone)
+	api.Get("/settings/map", settingsExtH.GetMapSettings)
+	api.Put("/settings/map", settingsExtH.UpdateMapSettings)
+	api.Get("/email/history", settingsExtH.EmailHistory)
+
+	// Backup
+	backupH := handlers.NewBackupHandler(db)
+	api.Get("/backup/history", backupH.History)
+	api.Post("/backup/create", backupH.Create)
+	api.Get("/backup/download/:id", backupH.Download)
+	api.Post("/backup/restore", backupH.Restore)
+	api.Get("/backup/telegram/settings", backupH.GetTelegramSettings)
+	api.Put("/backup/telegram/settings", backupH.UpdateTelegramSettings)
+	api.Delete("/backup/:id", backupH.Delete)
+
+	// Telegram
+	telegramH := handlers.NewTelegramHandler(db)
+	api.Get("/telegram/settings", telegramH.GetSettings)
+	api.Put("/telegram/settings", telegramH.UpdateSettings)
+	api.Post("/telegram/test", telegramH.Test)
+	api.Post("/telegram/send-backup", telegramH.SendBackup)
+	api.Post("/telegram/test-backup", telegramH.TestBackup)
+
+	// Push Notifications
+	pushH := handlers.NewPushHandler(db)
+	api.Get("/admin/push-notifications", pushH.ListBroadcasts)
+	api.Post("/push/send", pushH.Send)
+	api.Post("/push/subscribe", pushH.Subscribe)
+	api.Delete("/push/unsubscribe", pushH.Unsubscribe)
+	api.Get("/push/vapid-public-key", pushH.GetVapidKey)
+
+	// OLT extensions (alert management, monitoring, metrics)
+	oltExtH := handlers.NewOltExtHandler(db)
+	api.Get("/olt/alerts", oltExtH.ListAlerts)
+	api.Get("/olt/monitoring", oltExtH.Monitoring)
+	api.Get("/olt/metrics", oltExtH.Metrics)
+	api.Get("/olt/alerts/:id", oltExtH.GetAlert)
+	api.Put("/olt/alerts/:id/resolve", oltExtH.ResolveAlert)
+
+	// Health alias
+	app.Get("/api/health", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok", "engine": "go"})
+	})
+
+	// ─────────────────────────────────────────────────────────────────────────
+
 	return app
 }

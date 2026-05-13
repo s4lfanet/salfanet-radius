@@ -505,3 +505,172 @@ type GenieacsSettings struct {
 }
 
 func (GenieacsSettings) TableName() string { return "genieacs_settings" }
+
+// ─── AdminUser ────────────────────────────────────────────────────────────────
+
+type AdminUser struct {
+	ID               string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Username         string     `gorm:"uniqueIndex" json:"username"`
+	Email            *string    `gorm:"uniqueIndex" json:"email"`
+	Password         string     `json:"-"`
+	Name             string     `json:"name"`
+	Role             string     `gorm:"default:CUSTOMER_SERVICE;index" json:"role"`
+	IsActive         bool       `gorm:"default:true" json:"isActive"`
+	Phone            *string    `json:"phone"`
+	CreatedAt        time.Time  `json:"createdAt"`
+	UpdatedAt        time.Time  `json:"updatedAt"`
+	LastLogin        *time.Time `json:"lastLogin"`
+	TwoFactorEnabled bool       `gorm:"default:false" json:"twoFactorEnabled"`
+}
+
+func (AdminUser) TableName() string { return "admin_users" }
+
+// ─── UserPermission ───────────────────────────────────────────────────────────
+
+type UserPermission struct {
+	ID           string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	UserID       string    `gorm:"index" json:"userId"`
+	PermissionID string    `gorm:"index" json:"permissionId"`
+	CreatedAt    time.Time `json:"createdAt"`
+
+	Permission *Permission `gorm:"foreignKey:PermissionID" json:"permission,omitempty"`
+}
+
+func (UserPermission) TableName() string { return "user_permissions" }
+
+// ─── Technician ───────────────────────────────────────────────────────────────
+
+type Technician struct {
+	ID          string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Name        string     `json:"name"`
+	PhoneNumber string     `gorm:"uniqueIndex" json:"phoneNumber"`
+	Email       *string    `json:"email"`
+	IsActive    bool       `gorm:"default:true" json:"isActive"`
+	RequireOtp  bool       `gorm:"default:true" json:"requireOtp"`
+	CreatedAt   time.Time  `json:"createdAt"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
+	LastLoginAt *time.Time `json:"lastLoginAt"`
+}
+
+func (Technician) TableName() string { return "technicians" }
+
+// ─── ReferralReward ───────────────────────────────────────────────────────────
+
+type ReferralReward struct {
+	ID         string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	ReferrerID string     `gorm:"index" json:"referrerId"`
+	ReferredID string     `gorm:"index" json:"referredId"`
+	Amount     int        `json:"amount"`
+	Status     string     `gorm:"default:PENDING;index" json:"status"`
+	Type       string     `gorm:"default:FIRST_PAYMENT" json:"type"`
+	CreditedAt *time.Time `json:"creditedAt"`
+	CreatedAt  time.Time  `gorm:"index" json:"createdAt"`
+	UpdatedAt  time.Time  `json:"updatedAt"`
+
+	Referrer *PppoeUser `gorm:"foreignKey:ReferrerID" json:"referrer,omitempty"`
+	Referred *PppoeUser `gorm:"foreignKey:ReferredID" json:"referred,omitempty"`
+}
+
+func (ReferralReward) TableName() string { return "referral_rewards" }
+
+// ─── ActivityLog ──────────────────────────────────────────────────────────────
+
+type ActivityLog struct {
+	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	UserID      *string   `gorm:"index" json:"userId"`
+	Username    string    `json:"username"`
+	UserRole    *string   `json:"userRole"`
+	Action      string    `json:"action"`
+	Description string    `gorm:"type:text" json:"description"`
+	Module      string    `gorm:"index" json:"module"`
+	Status      string    `gorm:"default:success;index" json:"status"`
+	IPAddress   *string   `json:"ipAddress"`
+	Metadata    *string   `gorm:"type:text" json:"metadata"`
+	CreatedAt   time.Time `gorm:"index" json:"createdAt"`
+}
+
+func (ActivityLog) TableName() string { return "activity_logs" }
+
+// ─── VoucherTemplate ─────────────────────────────────────────────────────────
+
+type VoucherTemplate struct {
+	ID           string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Name         string    `json:"name"`
+	HtmlTemplate string    `gorm:"type:text" json:"htmlTemplate"`
+	IsDefault    bool      `gorm:"default:false" json:"isDefault"`
+	IsActive     bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt    time.Time `json:"createdAt"`
+	UpdatedAt    time.Time `json:"updatedAt"`
+}
+
+func (VoucherTemplate) TableName() string { return "voucher_templates" }
+
+// ─── VoucherOrder ─────────────────────────────────────────────────────────────
+
+type VoucherOrder struct {
+	ID            string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	OrderNumber   string     `gorm:"uniqueIndex" json:"orderNumber"`
+	ProfileID     string     `gorm:"index" json:"profileId"`
+	Quantity      int        `gorm:"default:1" json:"quantity"`
+	CustomerName  string     `json:"customerName"`
+	CustomerPhone string     `json:"customerPhone"`
+	CustomerEmail *string    `json:"customerEmail"`
+	TotalAmount   int        `json:"totalAmount"`
+	Status        string     `gorm:"default:PENDING;index" json:"status"`
+	PaymentToken  *string    `gorm:"uniqueIndex" json:"paymentToken"`
+	PaymentLink   *string    `json:"paymentLink"`
+	PaidAt        *time.Time `json:"paidAt"`
+	CreatedAt     time.Time  `json:"createdAt"`
+	UpdatedAt     time.Time  `json:"updatedAt"`
+
+	Profile *HotspotProfile `gorm:"foreignKey:ProfileID" json:"profile,omitempty"`
+}
+
+func (VoucherOrder) TableName() string { return "voucher_orders" }
+
+// ─── EmailHistory ─────────────────────────────────────────────────────────────
+
+type EmailHistory struct {
+	ID      string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	ToEmail string    `gorm:"index" json:"toEmail"`
+	ToName  *string   `json:"toName"`
+	Subject string    `json:"subject"`
+	Body    string    `gorm:"type:text" json:"body"`
+	Status  string    `gorm:"index" json:"status"`
+	Error   *string   `gorm:"type:text" json:"error"`
+	SentAt  time.Time `gorm:"index" json:"sentAt"`
+}
+
+func (EmailHistory) TableName() string { return "email_history" }
+
+// ─── BackupHistory ────────────────────────────────────────────────────────────
+
+type BackupHistory struct {
+	ID        string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Filename  string    `json:"filename"`
+	Filepath  *string   `json:"filepath"`
+	Filesize  int64     `json:"filesize"`
+	Type      string    `gorm:"index" json:"type"`
+	Status    string    `gorm:"index" json:"status"`
+	Method    string    `gorm:"default:local" json:"method"`
+	Error     *string   `gorm:"type:text" json:"error"`
+	CreatedAt time.Time `gorm:"index" json:"createdAt"`
+}
+
+func (BackupHistory) TableName() string { return "backup_history" }
+
+// ─── IsolationTemplate ────────────────────────────────────────────────────────
+
+type IsolationTemplate struct {
+	ID        string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Type      string    `gorm:"index" json:"type"`
+	Name      string    `json:"name"`
+	Subject   *string   `json:"subject"`
+	Message   string    `gorm:"type:text" json:"message"`
+	Variables *string   `gorm:"type:json" json:"variables"`
+	IsActive  bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func (IsolationTemplate) TableName() string { return "isolation_templates" }
