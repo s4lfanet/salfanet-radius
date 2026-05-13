@@ -469,6 +469,28 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.6 — 2026-05-18
+
+### Added
+- **Go: PPPoE extended handler** — `user-status`, `export-users`, `bulk-create`, `bulk-status`, `check-isolation`, `send-notification`, `sync-mikrotik`, `user-activity`, `extend`, `mark-paid`, `export-customers`, `bulk-create-customers`, `sync-profiles-mikrotik`, `sync-profiles-radius`, `sync-radius`, `list-with-filters`
+- **Go: Technician portal handler** — full mobile app auth (OTP, verify, login, logout, session), profile, work-orders, tasks, customers CRUD, form-data, isolated/offline users, sessions, tickets, monitor, GenieACS proxy, file upload
+- **Go: Upload handler** — `POST /api/upload/logo|payment-proof|pppoe-customer`, `GET /api/uploads/logos/:filename`, `GET /api/pwa/icon`
+- **Go: WhatsApp extended handler** — broadcast, broadcast-invoice, provider status/QR/restart/test, public webhook
+- **Go: Push extended handler** — agent-subscribe/unsubscribe, technician-subscribe/unsubscribe
+- **Go: Settings GenieACS handler** — devices list/detail/parameters/reboot/refresh, tasks, test, parameter-display, virtual-parameters, isolation templates CRUD, restart-services, realtime-sessions, system-radius, SSE voucher-updates
+- **Go: TelegramHandler.SendHealth** — `POST /api/telegram/send-health`
+- **Go: 6 new models** — `TelegramBackupSettings`, `WorkOrder`, `TechnicianOtp`, `PushBroadcast`, `AgentPushSubscription`, `TechnicianPushSubscription`
+### Files
+- `internal/api/handlers/pppoe_ext.go` — created
+- `internal/api/handlers/technician_portal.go` — created
+- `internal/api/handlers/upload.go` — created
+- `internal/api/handlers/whatsapp_ext.go` — created
+- `internal/api/handlers/push_ext.go` — created
+- `internal/api/handlers/settings_genieacs.go` — created
+- `internal/api/handlers/telegram_handler.go` — added `SendHealth`
+- `internal/api/router.go` — registered all new routes (~80 new routes)
+- `internal/db/models/extra.go` — added 6 new GORM models
+
 ### v2.34.5 — 2026-05-17
 
 ### Added
@@ -580,28 +602,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `internal/api/handlers/keuangan.go` — baru
 - `internal/db/models/extra.go` — inventory models + Transaction update
 - `internal/api/router.go` — inventory + keuangan routes
-
-### v2.34.0 — 2026-05-13
-
-### Added
-- **Go: Settings handler** — `GET/POST /api/settings/email`, `GET/PUT /api/settings/isolation`, `GET/PUT /api/settings/company` alias
-- **Go: Permissions handler** — `GET /api/permissions`, `GET/PUT /api/permissions/role/:role`, `GET /api/permissions/role-templates`
-- **Go: Customer portal extended** — 14 new endpoints: `/me`, `/dashboard`, `/packages`, `/auto-renewal`, `/notifications`, `/payment-history`, `/usage`, `/topup-request`, `/suspend-request` (GET/POST/DELETE), `/tickets` (GET/POST)
-### Changed
-- **Go: Ticket model** — update schema sesuai DB (`ticketNumber`, `customerId`, `customerName`, `description`, `categoryId`, dll); fix `CloseTicket` ke status `CLOSED`
-- **Go: Company model** — tambah isolation fields (`isolationIpPool`, `isolationServerIp`, `isolationRateLimit`, dll) dan `bankAccounts`
-- **Go: SuspendRequest model** — tambah `startDate`, `endDate`, `adminNotes`, `approvedAt`, `approvedBy`
-- **Go: Customer portal** — fix `GetInvoices` query dari `user_id/created_at` ke `userId/createdAt`
-### Added (models)
-- `EmailSetting`, `Permission`, `RolePermission`, `Notification`, `TicketCategory` models
-### Files
-- `internal/api/handlers/settings.go` — baru
-- `internal/api/handlers/permissions.go` — baru
-- `internal/api/handlers/customer_portal.go` — extended (14 new methods)
-- `internal/api/handlers/ticket.go` — fix Preload, status casing
-- `internal/db/models/models.go` — Company + Ticket struct update
-- `internal/db/models/extra.go` — SuspendRequest update + 5 new models
-- `internal/api/router.go` — settings + permissions + customer portal routes
 
 <!-- AUTO-CHANGELOG:END -->
 
