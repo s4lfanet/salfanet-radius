@@ -6,6 +6,29 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.6] — 2026-05-18
+### Added
+- **Go: PPPoE extended handler** — `user-status`, `export-users`, `bulk-create`, `bulk-status`, `check-isolation`, `send-notification`, `sync-mikrotik`, `user-activity`, `extend`, `mark-paid`, `export-customers`, `bulk-create-customers`, `sync-profiles-mikrotik`, `sync-profiles-radius`, `sync-radius`, `list-with-filters`
+- **Go: Technician portal handler** — full mobile app auth (OTP, verify, login, logout, session), profile, work-orders, tasks, customers CRUD, form-data, isolated/offline users, sessions, tickets, monitor, GenieACS proxy, file upload
+- **Go: Upload handler** — `POST /api/upload/logo|payment-proof|pppoe-customer`, `GET /api/uploads/logos/:filename`, `GET /api/pwa/icon`
+- **Go: WhatsApp extended handler** — broadcast, broadcast-invoice, provider status/QR/restart/test, public webhook
+- **Go: Push extended handler** — agent-subscribe/unsubscribe, technician-subscribe/unsubscribe
+- **Go: Settings GenieACS handler** — devices list/detail/parameters/reboot/refresh, tasks, test, parameter-display, virtual-parameters, isolation templates CRUD, restart-services, realtime-sessions, system-radius, SSE voucher-updates
+- **Go: TelegramHandler.SendHealth** — `POST /api/telegram/send-health`
+- **Go: 6 new models** — `TelegramBackupSettings`, `WorkOrder`, `TechnicianOtp`, `PushBroadcast`, `AgentPushSubscription`, `TechnicianPushSubscription`
+### Files
+- `internal/api/handlers/pppoe_ext.go` — created
+- `internal/api/handlers/technician_portal.go` — created
+- `internal/api/handlers/upload.go` — created
+- `internal/api/handlers/whatsapp_ext.go` — created
+- `internal/api/handlers/push_ext.go` — created
+- `internal/api/handlers/settings_genieacs.go` — created
+- `internal/api/handlers/telegram_handler.go` — added `SendHealth`
+- `internal/api/router.go` — registered all new routes (~80 new routes)
+- `internal/db/models/extra.go` — added 6 new GORM models
+
+---
+
 ## [2.34.5] — 2026-05-17
 ### Added
 - **Go: 17 new handler files** — notifications, public, freeradius, invoices_ext, referrals, admin_users, technician_admin, activity_log, hotspot_ext, voucher_templates, ticket_ext, analytics, settings_ext, backup_handler, telegram_handler, push_handler, olt_ext
