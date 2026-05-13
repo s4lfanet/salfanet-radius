@@ -17,11 +17,11 @@ func NewTicketHandler(db *gorm.DB) *TicketHandler { return &TicketHandler{db: db
 
 func (h *TicketHandler) ListTickets(c fiber.Ctx) error {
 	var tickets []models.Ticket
-	query := h.db.Preload("User")
+	query := h.db.Preload("Customer").Preload("Category")
 	if status := c.Query("status"); status != "" {
 		query = query.Where("status = ?", status)
 	}
-	query.Order("created_at DESC").Limit(200).Find(&tickets)
+	query.Order("createdAt DESC").Limit(200).Find(&tickets)
 	return c.JSON(tickets)
 }
 
@@ -31,6 +31,15 @@ func (h *TicketHandler) CreateTicket(c fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
 	}
 	body.ID = uuid.New().String()
+	if body.TicketNumber == "" {
+		body.TicketNumber = uuid.New().String()[:12]
+	}
+	if body.Priority == "" {
+		body.Priority = "MEDIUM"
+	}
+	if body.Status == "" {
+		body.Status = "OPEN"
+	}
 	if err := h.db.Create(&body).Error; err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": err.Error()})
 	}
@@ -40,11 +49,11 @@ func (h *TicketHandler) CreateTicket(c fiber.Ctx) error {
 func (h *TicketHandler) GetTicket(c fiber.Ctx) error {
 	id := c.Params("id")
 	var ticket models.Ticket
-	if err := h.db.Preload("User").First(&ticket, "id = ?", id).Error; err != nil {
+	if err := h.db.Preload("Customer").Preload("Category").First(&ticket, "id = ?", id).Error; err != nil {
 		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": "not found"})
 	}
 	var replies []models.TicketReply
-	h.db.Where("ticket_id = ?", id).Order("created_at ASC").Find(&replies)
+	h.db.Where("ticketId = ?", id).Order("createdAt ASC").Find(&replies)
 	return c.JSON(fiber.Map{"ticket": ticket, "replies": replies})
 }
 
@@ -82,6 +91,6 @@ func (h *TicketHandler) ReplyTicket(c fiber.Ctx) error {
 
 func (h *TicketHandler) CloseTicket(c fiber.Ctx) error {
 	id := c.Params("id")
-	h.db.Model(&models.Ticket{}).Where("id = ?", id).Update("status", "closed")
+	h.db.Model(&models.Ticket{}).Where("id = ?", id).Update("status", "CLOSED")
 	return c.JSON(fiber.Map{"message": "closed"})
 }

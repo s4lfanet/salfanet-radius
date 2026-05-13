@@ -56,6 +56,8 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	cronH := handlers.NewCronHandler(db, sched)
 	customerH := handlers.NewCustomerPortalHandler(db)
 	sessionsH := handlers.NewSessionsHandler(db)
+	settingsH := handlers.NewSettingsHandler(db)
+	permsH := handlers.NewPermissionsHandler(db)
 
 	// ─── Public routes ───────────────────────────────────────────────────────
 	app.Get("/api/system/health", func(c fiber.Ctx) error {
@@ -260,6 +262,23 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Get("/company", companyH.GetCompany)
 	api.Put("/company", companyH.UpdateCompany)
 
+	// Settings
+	settings := api.Group("/settings")
+	settings.Get("/email", settingsH.GetEmailSettings)
+	settings.Post("/email", settingsH.UpdateEmailSettings)
+	settings.Get("/isolation", settingsH.GetIsolationSettings)
+	settings.Put("/isolation", settingsH.UpdateIsolationSettings)
+	// settings/company → alias to company endpoint
+	settings.Get("/company", companyH.GetCompany)
+	settings.Put("/company", companyH.UpdateCompany)
+
+	// Permissions (RBAC)
+	perms := api.Group("/permissions")
+	perms.Get("/", permsH.GetPermissions)
+	perms.Get("/role-templates", permsH.GetRoleTemplates)
+	perms.Get("/role/:role", permsH.GetRolePermissions)
+	perms.Put("/role/:role", permsH.UpdateRolePermissions)
+
 	// Cron
 	cronGrp := api.Group("/cron")
 	cronGrp.Get("/history", cronH.ListHistory)
@@ -268,8 +287,21 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	// Customer Portal (JWT-less, uses customer session token validated against DB)
 	customer := app.Group("/api/customer", middleware.NewCustomerAuthMiddleware(db))
 	customer.Get("/profile", customerH.GetProfile)
+	customer.Get("/me", customerH.GetMe)
+	customer.Get("/dashboard", customerH.GetDashboard)
+	customer.Get("/packages", customerH.GetPackages)
+	customer.Post("/auto-renewal", customerH.ToggleAutoRenewal)
+	customer.Get("/notifications", customerH.GetNotifications)
+	customer.Get("/payment-history", customerH.GetPaymentHistory)
 	customer.Get("/invoices", customerH.GetInvoices)
 	customer.Post("/invoices/:id/pay", customerH.PayInvoice)
+	customer.Get("/usage", customerH.GetUsage)
+	customer.Post("/topup-request", customerH.CreateTopupRequest)
+	customer.Get("/suspend-request", customerH.GetSuspendRequest)
+	customer.Post("/suspend-request", customerH.CreateSuspendRequest)
+	customer.Delete("/suspend-request", customerH.CancelSuspendRequest)
+	customer.Get("/tickets", customerH.GetCustomerTickets)
+	customer.Post("/tickets", customerH.CreateCustomerTicket)
 	customer.Post("/push-subscribe", customerH.PushSubscribe)
 
 	// ─── WebSocket ────────────────────────────────────────────────────────────

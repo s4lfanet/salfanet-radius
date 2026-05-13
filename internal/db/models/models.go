@@ -221,24 +221,34 @@ func (Router) TableName() string { return "nas" }
 // ─── Company ─────────────────────────────────────────────────────────────────
 
 type Company struct {
-	ID                   string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
-	Name                 string    `json:"name"`
-	Address              *string   `json:"address"`
-	Phone                *string   `json:"phone"`
-	Email                *string   `json:"email"`
-	Logo                 *string   `json:"logo"`
-	AdminPhone           *string   `json:"adminPhone"`
-	BaseURL              *string   `gorm:"default:http://localhost:3000" json:"baseUrl"`
-	Timezone             *string   `gorm:"default:Asia/Jakarta" json:"timezone"`
-	PoweredBy            *string   `gorm:"default:SALFANET RADIUS" json:"poweredBy"`
-	CustomerIDPrefix     *string   `gorm:"type:varchar(10)" json:"customerIdPrefix"`
-	InvoiceGenerateDays  *int      `gorm:"default:7" json:"invoiceGenerateDays"`
-	GracePeriodDays      *int      `gorm:"default:0" json:"gracePeriodDays"`
-	IsolationEnabled     *bool     `gorm:"default:true" json:"isolationEnabled"`
-	ReferralEnabled      *bool     `gorm:"default:false" json:"referralEnabled"`
-	ReferralRewardAmount *int      `gorm:"default:10000" json:"referralRewardAmount"`
-	CreatedAt            time.Time `json:"createdAt"`
-	UpdatedAt            time.Time `json:"updatedAt"`
+	ID                      string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Name                    string    `json:"name"`
+	Address                 *string   `json:"address"`
+	Phone                   *string   `json:"phone"`
+	Email                   *string   `json:"email"`
+	Logo                    *string   `json:"logo"`
+	AdminPhone              *string   `json:"adminPhone"`
+	BaseURL                 *string   `gorm:"default:http://localhost:3000" json:"baseUrl"`
+	Timezone                *string   `gorm:"default:Asia/Jakarta" json:"timezone"`
+	PoweredBy               *string   `gorm:"default:SALFANET RADIUS" json:"poweredBy"`
+	CustomerIDPrefix        *string   `gorm:"type:varchar(10)" json:"customerIdPrefix"`
+	InvoiceGenerateDays     *int      `gorm:"default:7" json:"invoiceGenerateDays"`
+	GracePeriodDays         *int      `gorm:"default:0" json:"gracePeriodDays"`
+	IsolationEnabled        *bool     `gorm:"default:true" json:"isolationEnabled"`
+	IsolationIpPool         *string   `json:"isolationIpPool"`
+	IsolationServerIp       *string   `json:"isolationServerIp"`
+	IsolationRateLimit      *string   `json:"isolationRateLimit"`
+	IsolationRedirectUrl    *string   `json:"isolationRedirectUrl"`
+	IsolationMessage        *string   `gorm:"type:text" json:"isolationMessage"`
+	IsolationAllowDns       *bool     `gorm:"default:true" json:"isolationAllowDns"`
+	IsolationAllowPayment   *bool     `gorm:"default:true" json:"isolationAllowPayment"`
+	IsolationNotifyWhatsapp *bool     `gorm:"default:false" json:"isolationNotifyWhatsapp"`
+	IsolationNotifyEmail    *bool     `gorm:"default:false" json:"isolationNotifyEmail"`
+	BankAccounts            *string   `gorm:"type:text" json:"bankAccounts"`
+	ReferralEnabled         *bool     `gorm:"default:false" json:"referralEnabled"`
+	ReferralRewardAmount    *int      `gorm:"default:10000" json:"referralRewardAmount"`
+	CreatedAt               time.Time `json:"createdAt"`
+	UpdatedAt               time.Time `json:"updatedAt"`
 }
 
 func (Company) TableName() string { return "companies" }
@@ -382,15 +392,26 @@ func (ManualPayment) TableName() string { return "manual_payments" }
 // ─── Ticket ───────────────────────────────────────────────────────────────────
 
 type Ticket struct {
-	ID        string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
-	UserID    string    `gorm:"index" json:"userId"`
-	Subject   string    `json:"subject"`
-	Status    string    `gorm:"default:open;index" json:"status"`
-	Priority  string    `gorm:"default:normal" json:"priority"`
-	CreatedAt time.Time `json:"createdAt"`
-	UpdatedAt time.Time `json:"updatedAt"`
+	ID             string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	TicketNumber   string     `gorm:"uniqueIndex" json:"ticketNumber"`
+	CustomerID     *string    `gorm:"index" json:"customerId"`
+	CustomerName   string     `json:"customerName"`
+	CustomerEmail  *string    `json:"customerEmail"`
+	CustomerPhone  string     `json:"customerPhone"`
+	Subject        string     `json:"subject"`
+	Description    string     `gorm:"type:text" json:"description"`
+	CategoryID     *string    `gorm:"index" json:"categoryId"`
+	Priority       string     `gorm:"default:MEDIUM" json:"priority"`
+	Status         string     `gorm:"default:OPEN;index" json:"status"`
+	AssignedToID   *string    `json:"assignedToId"`
+	AssignedToType *string    `json:"assignedToType"`
+	CreatedAt      time.Time  `json:"createdAt"`
+	UpdatedAt      time.Time  `json:"updatedAt"`
+	ClosedAt       *time.Time `json:"closedAt"`
+	ResolvedAt     *time.Time `json:"resolvedAt"`
 
-	User *PppoeUser `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	Customer *PppoeUser      `gorm:"foreignKey:CustomerID" json:"customer,omitempty"`
+	Category *TicketCategory `gorm:"foreignKey:CategoryID" json:"category,omitempty"`
 }
 
 func (Ticket) TableName() string { return "tickets" }

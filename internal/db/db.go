@@ -52,8 +52,8 @@ func Init(databaseURL string) (*gorm.DB, error) {
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
-		Logger:          logger.Default.LogMode(logger.Warn),
-		NamingStrategy:  prismaStyleNamer{},
+		Logger:         logger.Default.LogMode(logger.Warn),
+		NamingStrategy: prismaStyleNamer{},
 		NowFunc: func() time.Time {
 			return time.Now()
 		},

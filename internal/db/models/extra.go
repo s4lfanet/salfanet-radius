@@ -194,15 +194,100 @@ func (RegistrationRequest) TableName() string { return "registration_requests" }
 type SuspendRequest struct {
 	ID          string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
 	UserID      string     `gorm:"index" json:"userId"`
-	Reason      *string    `gorm:"type:text" json:"reason"`
 	Status      string     `gorm:"default:PENDING;index" json:"status"`
+	Reason      *string    `gorm:"type:text" json:"reason"`
+	StartDate   time.Time  `json:"startDate"`
+	EndDate     time.Time  `json:"endDate"`
+	AdminNotes  *string    `gorm:"type:text" json:"adminNotes"`
 	RequestedAt time.Time  `json:"requestedAt"`
-	ProcessedAt *time.Time `json:"processedAt"`
+	ApprovedAt  *time.Time `json:"approvedAt"`
+	ApprovedBy  *string    `json:"approvedBy"`
+	UpdatedAt   time.Time  `json:"updatedAt"`
 
 	User *PppoeUser `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }
 
 func (SuspendRequest) TableName() string { return "suspend_requests" }
+
+// ─── TicketCategory ─────────────────────────────────────────────────────────────────────────
+
+type TicketCategory struct {
+	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Name        string    `json:"name"`
+	Description *string   `gorm:"type:text" json:"description"`
+	Color       *string   `json:"color"`
+	IsActive    bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt   time.Time `json:"createdAt"`
+}
+
+func (TicketCategory) TableName() string { return "ticket_categories" }
+
+// ─── EmailSetting ────────────────────────────────────────────────────────────────────────────
+
+type EmailSetting struct {
+	ID              string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Enabled         bool      `gorm:"default:false" json:"enabled"`
+	SmtpHost        string    `gorm:"default:smtp.gmail.com" json:"smtpHost"`
+	SmtpPort        int       `gorm:"default:587" json:"smtpPort"`
+	SmtpSecure      bool      `gorm:"default:false" json:"smtpSecure"`
+	SmtpUser        string    `json:"smtpUser"`
+	SmtpPassword    string    `json:"-"`
+	FromEmail       string    `json:"fromEmail"`
+	FromName        string    `gorm:"default:RADIUS Notification" json:"fromName"`
+	NotifyNewUser   bool      `gorm:"default:true" json:"notifyNewUser"`
+	NotifyExpired   bool      `gorm:"default:true" json:"notifyExpired"`
+	NotifyInvoice   bool      `gorm:"default:true" json:"notifyInvoice"`
+	NotifyPayment   bool      `gorm:"default:true" json:"notifyPayment"`
+	ReminderEnabled bool      `gorm:"default:true" json:"reminderEnabled"`
+	ReminderTime    string    `gorm:"default:09:00" json:"reminderTime"`
+	ReminderDays    string    `gorm:"default:7,3,1" json:"reminderDays"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
+}
+
+func (EmailSetting) TableName() string { return "email_settings" }
+
+// ─── Permission ─────────────────────────────────────────────────────────────────────────────────
+
+type Permission struct {
+	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Key         string    `gorm:"uniqueIndex" json:"key"`
+	Name        string    `json:"name"`
+	Description *string   `gorm:"type:text" json:"description"`
+	Category    string    `gorm:"index" json:"category"`
+	IsActive    bool      `gorm:"default:true" json:"isActive"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
+}
+
+func (Permission) TableName() string { return "permissions" }
+
+// ─── RolePermission ─────────────────────────────────────────────────────────────────────────
+
+type RolePermission struct {
+	ID           string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Role         string    `gorm:"index" json:"role"`
+	PermissionID string    `gorm:"index" json:"permissionId"`
+	CreatedAt    time.Time `json:"createdAt"`
+
+	Permission *Permission `gorm:"foreignKey:PermissionID" json:"permission,omitempty"`
+}
+
+func (RolePermission) TableName() string { return "role_permissions" }
+
+// ─── Notification ───────────────────────────────────────────────────────────────────────────
+
+type Notification struct {
+	ID        string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Type      string    `gorm:"index" json:"type"`
+	Title     string    `json:"title"`
+	Message   string    `gorm:"type:text" json:"message"`
+	Link      *string   `json:"link"`
+	IsRead    bool      `gorm:"default:false" json:"isRead"`
+	CreatedAt time.Time `gorm:"index" json:"createdAt"`
+}
+
+func (Notification) TableName() string { return "notifications" }
 
 // ─── Push Subscription ────────────────────────────────────────────────────────
 

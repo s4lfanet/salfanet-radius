@@ -6,6 +6,29 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.0] — 2026-05-13
+### Added
+- **Go: Settings handler** — `GET/POST /api/settings/email`, `GET/PUT /api/settings/isolation`, `GET/PUT /api/settings/company` alias
+- **Go: Permissions handler** — `GET /api/permissions`, `GET/PUT /api/permissions/role/:role`, `GET /api/permissions/role-templates`
+- **Go: Customer portal extended** — 14 new endpoints: `/me`, `/dashboard`, `/packages`, `/auto-renewal`, `/notifications`, `/payment-history`, `/usage`, `/topup-request`, `/suspend-request` (GET/POST/DELETE), `/tickets` (GET/POST)
+### Changed
+- **Go: Ticket model** — update schema sesuai DB (`ticketNumber`, `customerId`, `customerName`, `description`, `categoryId`, dll); fix `CloseTicket` ke status `CLOSED`
+- **Go: Company model** — tambah isolation fields (`isolationIpPool`, `isolationServerIp`, `isolationRateLimit`, dll) dan `bankAccounts`
+- **Go: SuspendRequest model** — tambah `startDate`, `endDate`, `adminNotes`, `approvedAt`, `approvedBy`
+- **Go: Customer portal** — fix `GetInvoices` query dari `user_id/created_at` ke `userId/createdAt`
+### Added (models)
+- `EmailSetting`, `Permission`, `RolePermission`, `Notification`, `TicketCategory` models
+### Files
+- `internal/api/handlers/settings.go` — baru
+- `internal/api/handlers/permissions.go` — baru
+- `internal/api/handlers/customer_portal.go` — extended (14 new methods)
+- `internal/api/handlers/ticket.go` — fix Preload, status casing
+- `internal/db/models/models.go` — Company + Ticket struct update
+- `internal/db/models/extra.go` — SuspendRequest update + 5 new models
+- `internal/api/router.go` — settings + permissions + customer portal routes
+
+---
+
 ## [2.33.2] — 2026-05-13
 ### Fixed
 - **Go: Prisma-style NamingStrategy** — tambah custom GORM NamingStrategy yang convert PascalCase → camelCase secara global, mengatasi semua error `Unknown column` (updated_at, is_active, expired_at, job_type, dll)
