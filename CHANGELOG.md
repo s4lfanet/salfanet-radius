@@ -6,6 +6,22 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.3] — 2026-05-13
+### Added
+- **Go: GenieACS proxy handler** — `POST /api/genieacs/devices/:deviceId/wifi` (TR-069 setParameterValues), `POST /api/genieacs/devices/:deviceId/connection-request`, `GET /api/genieacs/tasks`, `DELETE /api/genieacs/tasks/:taskId`
+- **Go: GenieACS settings** — `GET/POST /api/settings/genieacs` (simpan host/username/password ke DB)
+- **Go: Admin Employees full CRUD** — `GET /api/admin/employees` (enhanced: stats byRole, pagination, filters), `POST /api/admin/employees`, `PUT /api/admin/employees/:id`, `DELETE /api/admin/employees/:id`
+- **Go: Job Assignments routes** — `GET /api/admin/job-assignments` (alias untuk jobH.List), `DELETE /api/admin/job-assignments/:id`
+- **Go: GenieacsSettings model** — `genieacs_settings` table
+### Files
+- `internal/api/handlers/genieacs.go` — baru
+- `internal/api/handlers/employees_admin.go` — baru
+- `internal/api/handlers/jobs.go` — tambah DeleteJob
+- `internal/db/models/extra.go` — tambah GenieacsSettings model
+- `internal/api/router.go` — tambah semua routes batch 4
+
+---
+
 ## [2.34.2] — 2026-05-13
 ### Added
 - **Go: Manual Payments handler** — `GET/POST /api/manual-payments`, `PUT /api/manual-payments/:id` (approve/reject dengan extend expiry + buat transaction), `DELETE /api/manual-payments/:id`
