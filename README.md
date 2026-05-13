@@ -469,6 +469,21 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.3 — 2026-05-13
+
+### Added
+- **Go: GenieACS proxy handler** — `POST /api/genieacs/devices/:deviceId/wifi` (TR-069 setParameterValues), `POST /api/genieacs/devices/:deviceId/connection-request`, `GET /api/genieacs/tasks`, `DELETE /api/genieacs/tasks/:taskId`
+- **Go: GenieACS settings** — `GET/POST /api/settings/genieacs` (simpan host/username/password ke DB)
+- **Go: Admin Employees full CRUD** — `GET /api/admin/employees` (enhanced: stats byRole, pagination, filters), `POST /api/admin/employees`, `PUT /api/admin/employees/:id`, `DELETE /api/admin/employees/:id`
+- **Go: Job Assignments routes** — `GET /api/admin/job-assignments` (alias untuk jobH.List), `DELETE /api/admin/job-assignments/:id`
+- **Go: GenieacsSettings model** — `genieacs_settings` table
+### Files
+- `internal/api/handlers/genieacs.go` — baru
+- `internal/api/handlers/employees_admin.go` — baru
+- `internal/api/handlers/jobs.go` — tambah DeleteJob
+- `internal/db/models/extra.go` — tambah GenieacsSettings model
+- `internal/api/router.go` — tambah semua routes batch 4
+
 ### v2.34.2 — 2026-05-13
 
 ### Added
@@ -544,24 +559,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `internal/cron/pppoe_session_sync.go` — fix column queries + simplify syncNASClients
 - `internal/olt/poller/poller.go` — fix update map keys + ONU upsert columns
 - `internal/api/handlers/auth.go` — fix isActive query
-
-### v2.33.1 — 2026-05-13
-
-### Added
-- **Go: Sessions Handler** — `GET /api/sessions` (list active PPPoE/hotspot sessions dengan user info, pagination, filter), `POST /api/sessions/disconnect`, `POST /api/sessions/sync` (cleanup stale), `GET /api/sessions/export` (CSV)
-- **Go: Admin Isolated Users** — `GET /api/admin/isolated-users` dengan unpaid invoice summary
-- **Go: Admin Topup Requests** — `GET/POST(approve/reject) /api/admin/topup-requests/:id`
-- **Go: Admin Suspend Requests** — `GET/POST(approve/reject) /api/admin/suspend-requests/:id`
-- **Go: Registrations CRUD** — `GET/PUT/DELETE /api/registrations/:id` + alias dari `/api/pppoe/registrations`
-- **Go: Dashboard alias** — `/api/dashboard/stats` dan `/api/dashboard/revenue-chart` alias ke admin stats
-### Fixed
-- **Go OLT Poller** — `monitoringEnabled` (camelCase) diperbaiki dari `monitoring_enabled` yang salah menyebabkan error `Unknown column`
-### Files
-- `internal/api/handlers/sessions.go` — file baru; 4 endpoints + stale session cleanup
-- `internal/api/handlers/admin.go` — tambah IsolatedUsers, TopupRequests, ApproveTopup, RejectTopup, SuspendRequests, ApproveSuspend, RejectSuspend
-- `internal/api/handlers/pppoe.go` — tambah GetRegistration, UpdateRegistration, DeleteRegistration; ListRegistrations kini support filter by status
-- `internal/api/router.go` — daftarkan semua routes baru + alias
-- `internal/olt/poller/poller.go` — fix column name `monitoringEnabled`
 
 <!-- AUTO-CHANGELOG:END -->
 
