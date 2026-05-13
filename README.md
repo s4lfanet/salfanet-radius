@@ -469,6 +469,42 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.1 — 2026-05-13
+
+### Added
+- **Go: Inventory handler** — `GET/POST/PUT/DELETE /api/inventory/categories`, `/suppliers`, `/items`; `GET/POST /api/inventory/movements` dengan stock transaction
+- **Go: Keuangan handler** — `GET/POST/DELETE /api/keuangan/transactions` (dengan stats totalIncome/Expense/balance), `GET/POST /api/keuangan/categories`, `GET /api/keuangan/export`
+- **Go: InventoryCategory, InventoryItem, InventorySupplier, InventoryMovement models**
+### Changed
+- **Go: Transaction model** — tambah field `Reference`, `CreatedBy`, `JournalEntryID`; `CategoryID` jadi non-nullable string
+### Files
+- `internal/api/handlers/inventory.go` — baru
+- `internal/api/handlers/keuangan.go` — baru
+- `internal/db/models/extra.go` — inventory models + Transaction update
+- `internal/api/router.go` — inventory + keuangan routes
+
+### v2.34.0 — 2026-05-13
+
+### Added
+- **Go: Settings handler** — `GET/POST /api/settings/email`, `GET/PUT /api/settings/isolation`, `GET/PUT /api/settings/company` alias
+- **Go: Permissions handler** — `GET /api/permissions`, `GET/PUT /api/permissions/role/:role`, `GET /api/permissions/role-templates`
+- **Go: Customer portal extended** — 14 new endpoints: `/me`, `/dashboard`, `/packages`, `/auto-renewal`, `/notifications`, `/payment-history`, `/usage`, `/topup-request`, `/suspend-request` (GET/POST/DELETE), `/tickets` (GET/POST)
+### Changed
+- **Go: Ticket model** — update schema sesuai DB (`ticketNumber`, `customerId`, `customerName`, `description`, `categoryId`, dll); fix `CloseTicket` ke status `CLOSED`
+- **Go: Company model** — tambah isolation fields (`isolationIpPool`, `isolationServerIp`, `isolationRateLimit`, dll) dan `bankAccounts`
+- **Go: SuspendRequest model** — tambah `startDate`, `endDate`, `adminNotes`, `approvedAt`, `approvedBy`
+- **Go: Customer portal** — fix `GetInvoices` query dari `user_id/created_at` ke `userId/createdAt`
+### Added (models)
+- `EmailSetting`, `Permission`, `RolePermission`, `Notification`, `TicketCategory` models
+### Files
+- `internal/api/handlers/settings.go` — baru
+- `internal/api/handlers/permissions.go` — baru
+- `internal/api/handlers/customer_portal.go` — extended (14 new methods)
+- `internal/api/handlers/ticket.go` — fix Preload, status casing
+- `internal/db/models/models.go` — Company + Ticket struct update
+- `internal/db/models/extra.go` — SuspendRequest update + 5 new models
+- `internal/api/router.go` — settings + permissions + customer portal routes
+
 ### v2.33.2 — 2026-05-13
 
 ### Fixed
@@ -517,20 +553,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `internal/cron/pppoe_session_sync.go` — file baru; 5 fungsi cron + helper `importOrphan`, `createOrphanUser`, `syncNASClients`, `isDuplicateKey`
 - `internal/cron/scheduler.go` — tambah 5 job registrations + perbarui `TriggerJob()` switch
-
-### v2.32.2 — 2026-05-13
-
-### Fixed
-- **System Info API: silent git errors** — Semua `execSync` git di `/api/admin/system/info` kini pakai `stdio: 'pipe'` sehingga stderr tidak bocor ke PM2 log; `getAppDir()` kini mencari `/var/www/salfanet-frontend` lebih dulu (direktori dengan `.git`) sebelum fallback ke path lain
-### Files
-- `src/app/api/admin/system/info/route.ts` — tambah `stdio: 'pipe'` pada `execSync`/`execFileSync`, perbarui urutan kandidat `getAppDir()`
-
-### v2.32.1 — 2026-05-11
-
-### Fixed
-- **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
-### Files
-- `src/server/jobs/pppoe-session-sync.ts` — clamp TIMESTAMPDIFF ke INT range, tambah filter `acctstarttime > '2000-01-01'` pada update aktif
 
 <!-- AUTO-CHANGELOG:END -->
 
