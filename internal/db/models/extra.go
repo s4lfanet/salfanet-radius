@@ -674,3 +674,107 @@ type IsolationTemplate struct {
 }
 
 func (IsolationTemplate) TableName() string { return "isolation_templates" }
+
+// ─── TelegramBackupSettings ───────────────────────────────────────────────────
+
+type TelegramBackupSettings struct {
+	ID            string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Enabled       bool      `gorm:"default:false" json:"enabled"`
+	BotToken      string    `json:"botToken"`
+	ChatID        string    `json:"chatId"`
+	BackupTopicID *string   `json:"backupTopicId"`
+	HealthTopicID *string   `json:"healthTopicId"`
+	Schedule      string    `gorm:"default:daily" json:"schedule"`
+	ScheduleTime  string    `gorm:"default:02:00" json:"scheduleTime"`
+	KeepLastN     int       `gorm:"default:7" json:"keepLastN"`
+	CreatedAt     time.Time `json:"createdAt"`
+	UpdatedAt     time.Time `json:"updatedAt"`
+}
+
+func (TelegramBackupSettings) TableName() string { return "telegram_backup_settings" }
+
+// ─── WorkOrder ────────────────────────────────────────────────────────────────
+
+type WorkOrder struct {
+	ID              string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	TechnicianID    *string    `gorm:"index" json:"technicianId"`
+	CustomerName    string     `json:"customerName"`
+	CustomerPhone   string     `json:"customerPhone"`
+	CustomerAddress string     `gorm:"type:text" json:"customerAddress"`
+	IssueType       string     `json:"issueType"`
+	Description     string     `gorm:"type:text" json:"description"`
+	Priority        string     `gorm:"default:MEDIUM;index" json:"priority"`
+	Status          string     `gorm:"default:OPEN;index" json:"status"`
+	ScheduledDate   *time.Time `json:"scheduledDate"`
+	EstimatedHours  *float64   `json:"estimatedHours"`
+	Notes           *string    `gorm:"type:text" json:"notes"`
+	TechnicianNotes *string    `gorm:"type:text" json:"technicianNotes"`
+	CompletedAt     *time.Time `json:"completedAt"`
+	AssignedAt      *time.Time `json:"assignedAt"`
+	CreatedAt       time.Time  `gorm:"index" json:"createdAt"`
+	UpdatedAt       time.Time  `json:"updatedAt"`
+
+	Technician *Technician `gorm:"foreignKey:TechnicianID" json:"technician,omitempty"`
+}
+
+func (WorkOrder) TableName() string { return "work_orders" }
+
+// ─── TechnicianOtp ────────────────────────────────────────────────────────────
+
+type TechnicianOtp struct {
+	ID           string     `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	TechnicianID string     `gorm:"index" json:"technicianId"`
+	Token        string     `gorm:"uniqueIndex;type:varchar(10)" json:"token"`
+	ExpiresAt    time.Time  `json:"expiresAt"`
+	UsedAt       *time.Time `json:"usedAt"`
+	CreatedAt    time.Time  `json:"createdAt"`
+
+	Technician *Technician `gorm:"foreignKey:TechnicianID" json:"technician,omitempty"`
+}
+
+func (TechnicianOtp) TableName() string { return "technician_otp" }
+
+// ─── PushBroadcast ────────────────────────────────────────────────────────────
+
+type PushBroadcast struct {
+	ID          string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Title       string    `json:"title"`
+	Body        string    `gorm:"type:text" json:"body"`
+	Type        string    `gorm:"default:broadcast;index" json:"type"`
+	TargetType  string    `gorm:"default:all" json:"targetType"`
+	TargetIDs   *string   `gorm:"type:text" json:"targetIds"`
+	SentCount   int       `gorm:"default:0" json:"sentCount"`
+	FailedCount int       `gorm:"default:0" json:"failedCount"`
+	SentBy      *string   `json:"sentBy"`
+	Data        *string   `gorm:"type:text" json:"data"`
+	CreatedAt   time.Time `gorm:"index" json:"createdAt"`
+}
+
+func (PushBroadcast) TableName() string { return "push_broadcasts" }
+
+// ─── AgentPushSubscription ────────────────────────────────────────────────────
+
+type AgentPushSubscription struct {
+	ID        string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	AgentID   string    `gorm:"index" json:"agentId"`
+	Endpoint  string    `gorm:"type:text" json:"endpoint"`
+	P256dh    string    `gorm:"type:text" json:"p256dh"`
+	Auth      string    `json:"auth"`
+	CreatedAt time.Time `json:"createdAt"`
+}
+
+func (AgentPushSubscription) TableName() string { return "agent_push_subscriptions" }
+
+// ─── TechnicianPushSubscription ───────────────────────────────────────────────
+
+type TechnicianPushSubscription struct {
+	ID           string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	TechnicianID string    `gorm:"index" json:"technicianId"`
+	Endpoint     string    `gorm:"type:text" json:"endpoint"`
+	P256dh       string    `gorm:"type:text" json:"p256dh"`
+	Auth         string    `json:"auth"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+func (TechnicianPushSubscription) TableName() string { return "technician_push_subscriptions" }
+

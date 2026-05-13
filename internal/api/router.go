@@ -65,13 +65,66 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	empAdminH := handlers.NewEmployeeAdminHandler(db)
 	genieacsH := handlers.NewGenieacsHandler(db)
 
-	// ─── Public routes ───────────────────────────────────────────────────────
+	// New handlers (instantiated early so public routes can be registered before auth group)
+	pubH := handlers.NewPublicHandler(db)
+	notifH := handlers.NewNotificationHandler(db)
+	frH := handlers.NewFreeradiusHandler(db)
+	invExtH := handlers.NewInvoiceExtHandler(db)
+	refH := handlers.NewReferralHandler(db)
+	adminUserH := handlers.NewAdminUserHandler(db)
+	techAdminH := handlers.NewTechnicianAdminHandler(db)
+	actH := handlers.NewActivityLogHandler(db)
+	hotspotExtH := handlers.NewHotspotExtHandler(db)
+	voucherTplH := handlers.NewVoucherTemplateHandler(db)
+	ticketExtH := handlers.NewTicketExtHandler(db)
+	analyticsH := handlers.NewAnalyticsHandler(db)
+	settingsExtH := handlers.NewSettingsExtHandler(db)
+	backupH := handlers.NewBackupHandler(db)
+	telegramH := handlers.NewTelegramHandler(db)
+	pushH := handlers.NewPushHandler(db)
+	oltExtH := handlers.NewOltExtHandler(db)
+	pppoeExtH := handlers.NewPppoeExtHandler(db)
+	techPortalH := handlers.NewTechnicianPortalHandler(db)
+	uploadH := handlers.NewUploadHandler(db)
+	waExtH := handlers.NewWhatsappExtHandler(db)
+	pushExtH := handlers.NewPushExtHandler(db)
+	settingsGnH := handlers.NewSettingsGenieacsHandler(db)
+
+	// ─── Public routes (NO auth — must be before the api group) ──────────────
 	app.Get("/api/system/health", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"status": "ok"})
 	})
 	app.Get("/api/system/version", func(c fiber.Ctx) error {
 		return c.JSON(fiber.Map{"version": "2.0.0-go", "engine": "Go"})
 	})
+	app.Get("/api/health", func(c fiber.Ctx) error {
+		return c.JSON(fiber.Map{"status": "ok", "engine": "go"})
+	})
+
+	// Public API (registration portal, etc.)
+	app.Get("/api/public/company", pubH.GetCompany)
+	app.Get("/api/public/areas", pubH.GetAreas)
+	app.Get("/api/public/profiles", pubH.GetProfiles)
+	app.Get("/api/public/stats", pubH.GetStats)
+	app.Get("/api/public/payment-gateways", pubH.GetPaymentGateways)
+	app.Post("/api/public/upload-registration", pubH.UploadRegistration)
+
+	// Technician auth (public — uses its own JWT, not admin JWT)
+	techAuth := app.Group("/api/technician/auth")
+	techAuth.Post("/request-otp", techPortalH.RequestOTP)
+	techAuth.Post("/verify-otp", techPortalH.VerifyOTP)
+	techAuth.Post("/login", techPortalH.Login)
+	techAuth.Post("/logout", techPortalH.Logout)
+	techAuth.Get("/session", techPortalH.Session)
+
+	// WhatsApp webhook (public — verified by WA service)
+	app.Post("/api/whatsapp/webhook", waExtH.Webhook)
+
+	// PWA
+	app.Get("/api/pwa/icon", handlers.PwaIcon)
+
+	// Static uploads
+	app.Get("/api/uploads/logos/:filename", uploadH.ServeLogoFile)
 
 	// Auth (public)
 	auth := app.Group("/api/auth")
@@ -398,24 +451,14 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	})
 
 	// ─── NEW HANDLERS (Batch 5) ──────────────────────────────────────────────
+	// (handlers instantiated earlier, before auth group)
 
 	// Notifications
-	notifH := handlers.NewNotificationHandler(db)
 	api.Get("/notifications", notifH.List)
 	api.Put("/notifications", notifH.MarkRead)
 	api.Delete("/notifications/:id", notifH.Delete)
 
-	// Public (no auth required)
-	pubH := handlers.NewPublicHandler(db)
-	app.Get("/api/public/company", pubH.GetCompany)
-	app.Get("/api/public/areas", pubH.GetAreas)
-	app.Get("/api/public/profiles", pubH.GetProfiles)
-	app.Get("/api/public/stats", pubH.GetStats)
-	app.Get("/api/public/payment-gateways", pubH.GetPaymentGateways)
-	app.Post("/api/public/upload-registration", pubH.UploadRegistration)
-
 	// FreeRADIUS management
-	frH := handlers.NewFreeradiusHandler(db)
 	freeradius := api.Group("/freeradius")
 	freeradius.Get("/status", frH.GetStatus)
 	freeradius.Post("/start", frH.Start)
@@ -429,7 +472,6 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	freeradius.Post("/config/save", frH.SaveConfig)
 
 	// Root-level invoices (separate from /billing/invoices)
-	invExtH := handlers.NewInvoiceExtHandler(db)
 	invoicesGrp := api.Group("/invoices")
 	invoicesGrp.Get("/export", invExtH.Export)
 	invoicesGrp.Get("/counts", invExtH.Counts)
@@ -443,7 +485,6 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	invoicesGrp.Delete("/", invExtH.Delete)
 
 	// Referrals
-	refH := handlers.NewReferralHandler(db)
 	api.Get("/admin/referrals/config", refH.GetConfig)
 	api.Put("/admin/referrals/config", refH.UpdateConfig)
 	api.Get("/admin/referrals", refH.List)
@@ -451,7 +492,6 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Delete("/admin/referrals/:id", refH.Delete)
 
 	// Admin Users
-	adminUserH := handlers.NewAdminUserHandler(db)
 	api.Get("/admin/users", adminUserH.List)
 	api.Post("/admin/users", adminUserH.Create)
 	api.Get("/admin/users/:id/permissions", adminUserH.GetPermissions)
@@ -461,7 +501,6 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Delete("/admin/users/:id", adminUserH.Delete)
 
 	// Admin Technicians
-	techAdminH := handlers.NewTechnicianAdminHandler(db)
 	api.Get("/admin/technicians", techAdminH.List)
 	api.Post("/admin/technicians", techAdminH.Create)
 	api.Get("/admin/technicians/:id", techAdminH.Get)
@@ -469,11 +508,9 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Delete("/admin/technicians/:id", techAdminH.Delete)
 
 	// Activity Log
-	actH := handlers.NewActivityLogHandler(db)
 	api.Get("/admin/activity-logs", actH.List)
 
 	// Hotspot extensions (singular /voucher for individual ops)
-	hotspotExtH := handlers.NewHotspotExtHandler(db)
 	hotspot.Get("/voucher/export", hotspotExtH.Export)
 	hotspot.Post("/voucher/bulk", hotspotExtH.BulkGenerate)
 	hotspot.Post("/voucher/bulk-delete", hotspotExtH.BulkDelete)
@@ -490,7 +527,6 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	hotspot.Get("/agents", hotspotExtH.ListAgents)
 
 	// Voucher Templates
-	voucherTplH := handlers.NewVoucherTemplateHandler(db)
 	api.Get("/voucher-templates", voucherTplH.List)
 	api.Post("/voucher-templates", voucherTplH.Create)
 	api.Get("/voucher-templates/:id", voucherTplH.Get)
@@ -498,7 +534,6 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Delete("/voucher-templates/:id", voucherTplH.Delete)
 
 	// Ticket extensions
-	ticketExtH := handlers.NewTicketExtHandler(db)
 	api.Get("/tickets/categories", ticketExtH.ListCategories)
 	api.Post("/tickets/categories", ticketExtH.CreateCategory)
 	api.Get("/tickets/stats", ticketExtH.Stats)
@@ -507,13 +542,11 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Post("/tickets/dispatch", ticketExtH.Dispatch)
 
 	// Analytics
-	analyticsH := handlers.NewAnalyticsHandler(db)
 	api.Get("/admin/analytics", analyticsH.GetAnalytics)
 	api.Get("/dashboard/analytics", analyticsH.GetAnalytics)
 	api.Get("/dashboard/traffic", analyticsH.GetTraffic)
 
 	// Settings extensions
-	settingsExtH := handlers.NewSettingsExtHandler(db)
 	api.Get("/settings/email/templates", settingsExtH.ListEmailTemplates)
 	api.Put("/settings/email/templates/:type", settingsExtH.UpdateEmailTemplate)
 	api.Post("/settings/email/test", settingsExtH.TestEmail)
@@ -523,7 +556,6 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Get("/email/history", settingsExtH.EmailHistory)
 
 	// Backup
-	backupH := handlers.NewBackupHandler(db)
 	api.Get("/backup/history", backupH.History)
 	api.Post("/backup/create", backupH.Create)
 	api.Get("/backup/download/:id", backupH.Download)
@@ -533,33 +565,107 @@ func New(db *gorm.DB, p *poller.Poller, hub *ws.Hub, rad *radius.Service, sched 
 	api.Delete("/backup/:id", backupH.Delete)
 
 	// Telegram
-	telegramH := handlers.NewTelegramHandler(db)
 	api.Get("/telegram/settings", telegramH.GetSettings)
 	api.Put("/telegram/settings", telegramH.UpdateSettings)
 	api.Post("/telegram/test", telegramH.Test)
 	api.Post("/telegram/send-backup", telegramH.SendBackup)
 	api.Post("/telegram/test-backup", telegramH.TestBackup)
+	api.Post("/telegram/send-health", telegramH.SendHealth)
 
 	// Push Notifications
-	pushH := handlers.NewPushHandler(db)
 	api.Get("/admin/push-notifications", pushH.ListBroadcasts)
 	api.Post("/push/send", pushH.Send)
 	api.Post("/push/subscribe", pushH.Subscribe)
 	api.Delete("/push/unsubscribe", pushH.Unsubscribe)
 	api.Get("/push/vapid-public-key", pushH.GetVapidKey)
 
+	// Push extended (agent & technician subscriptions)
+	api.Post("/push/agent-subscribe", pushExtH.AgentSubscribe)
+	api.Delete("/push/agent-unsubscribe", pushExtH.AgentUnsubscribe)
+	api.Post("/push/technician-subscribe", pushExtH.TechnicianSubscribe)
+	api.Delete("/push/technician-unsubscribe", pushExtH.TechnicianUnsubscribe)
+
 	// OLT extensions (alert management, monitoring, metrics)
-	oltExtH := handlers.NewOltExtHandler(db)
 	api.Get("/olt/alerts", oltExtH.ListAlerts)
 	api.Get("/olt/monitoring", oltExtH.Monitoring)
 	api.Get("/olt/metrics", oltExtH.Metrics)
 	api.Get("/olt/alerts/:id", oltExtH.GetAlert)
 	api.Put("/olt/alerts/:id/resolve", oltExtH.ResolveAlert)
 
-	// Health alias
-	app.Get("/api/health", func(c fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok", "engine": "go"})
-	})
+	// PPPoE extended routes
+	api.Get("/pppoe/users/:id/status", pppoeExtH.UserStatus)
+	api.Get("/pppoe/users/export", pppoeExtH.ExportUsers)
+	api.Post("/pppoe/users/bulk-create", pppoeExtH.BulkCreateUsers)
+	api.Get("/pppoe/users/bulk-status", pppoeExtH.BulkStatus)
+	api.Get("/pppoe/users/:id/check-isolation", pppoeExtH.CheckIsolation)
+	api.Post("/pppoe/users/:id/send-notification", pppoeExtH.SendNotification)
+	api.Post("/pppoe/users/:id/sync-mikrotik", pppoeExtH.SyncMikrotik)
+	api.Get("/pppoe/users/:id/activity", pppoeExtH.UserActivity)
+	api.Post("/pppoe/users/:id/extend", pppoeExtH.ExtendUser)
+	api.Post("/pppoe/users/:id/mark-paid", pppoeExtH.MarkPaid)
+	api.Get("/pppoe/customers/export", pppoeExtH.ExportCustomers)
+	api.Post("/pppoe/customers/bulk-create", pppoeExtH.BulkCreateCustomers)
+	api.Post("/pppoe/profiles/sync-mikrotik", pppoeExtH.SyncProfilesMikrotik)
+	api.Post("/pppoe/profiles/sync-radius", pppoeExtH.SyncProfilesRadius)
+	api.Post("/pppoe/users/:id/sync-radius", pppoeExtH.SyncUserRadius)
+	api.Get("/pppoe/users", pppoeExtH.ListUsersWithFilters)
+
+	// Technician portal — protected routes with own JWT check (techFromHeader)
+	tech := app.Group("/api/technician")
+	tech.Get("/profile", techPortalH.GetProfile)
+	tech.Get("/work-orders", techPortalH.ListWorkOrders)
+	tech.Get("/tasks", techPortalH.ListTasks)
+	tech.Get("/customers", techPortalH.ListCustomers)
+	tech.Post("/customers/create", techPortalH.CreateCustomer)
+	tech.Get("/form-data", techPortalH.FormData)
+	tech.Get("/isolated", techPortalH.IsolatedUsers)
+	tech.Get("/offline", techPortalH.OfflineUsers)
+	tech.Get("/sessions", techPortalH.Sessions)
+	tech.Get("/tickets", techPortalH.ListTickets)
+	tech.Get("/monitor", techPortalH.Monitor)
+	tech.Get("/genieacs", techPortalH.GenieacsSummary)
+	tech.Get("/genieacs/devices", techPortalH.GenieacsDevices)
+	tech.Get("/genieacs/devices/:deviceId", techPortalH.GenieacsDevice)
+	tech.Post("/upload", techPortalH.Upload)
+
+	// Upload endpoints
+	api.Post("/upload/logo", uploadH.UploadLogo)
+	api.Post("/upload/payment-proof", uploadH.UploadPaymentProof)
+	api.Post("/upload/pppoe-customer", uploadH.UploadCustomerPhoto)
+
+	// WhatsApp extended (broadcast, provider actions)
+	api.Post("/whatsapp/broadcast", waExtH.Broadcast)
+	api.Post("/whatsapp/broadcast-invoice", waExtH.BroadcastInvoice)
+	api.Get("/whatsapp/providers/:id/status", waExtH.ProviderStatus)
+	api.Get("/whatsapp/providers/:id/qr", waExtH.ProviderQR)
+	api.Post("/whatsapp/providers/:id/restart", waExtH.ProviderRestart)
+	api.Post("/whatsapp/providers/:id/test", waExtH.ProviderTest)
+
+	// GenieACS settings
+	api.Get("/settings/genieacs/devices", settingsGnH.ListDevices)
+	api.Get("/settings/genieacs/devices/:deviceId", settingsGnH.GetDevice)
+	api.Get("/settings/genieacs/devices/:deviceId/detail", settingsGnH.DeviceDetail)
+	api.Get("/settings/genieacs/devices/:deviceId/parameters", settingsGnH.DeviceParameters)
+	api.Post("/settings/genieacs/devices/:deviceId/reboot", settingsGnH.RebootDevice)
+	api.Post("/settings/genieacs/devices/:deviceId/refresh", settingsGnH.RefreshDevice)
+	api.Get("/settings/genieacs/tasks", settingsGnH.ListTasks)
+	api.Post("/settings/genieacs/test", settingsGnH.TestConnection)
+	api.Get("/settings/genieacs/parameter-display", settingsGnH.ListParameterDisplay)
+	api.Put("/settings/genieacs/parameter-display/:id", settingsGnH.UpdateParameterDisplay)
+	api.Post("/settings/genieacs/parameter-display/reset", settingsGnH.ResetParameterDisplay)
+	api.Get("/settings/genieacs/virtual-parameters", settingsGnH.ListVirtualParameters)
+	api.Get("/settings/genieacs/virtual-parameters/:id", settingsGnH.GetVirtualParameter)
+
+	// Isolation templates
+	api.Get("/settings/isolation/templates", settingsGnH.ListIsolationTemplates)
+	api.Get("/settings/isolation/templates/:id", settingsGnH.GetIsolationTemplate)
+	api.Put("/settings/isolation/templates/:id", settingsGnH.UpdateIsolationTemplate)
+
+	// System & services
+	api.Post("/settings/restart-services", settingsGnH.RestartServices)
+	api.Get("/sessions/realtime", settingsGnH.RealtimeSessions)
+	api.Get("/system/radius", settingsGnH.SystemRadius)
+	api.Get("/sse/voucher-updates", settingsGnH.SSEVoucherUpdates)
 
 	// ─────────────────────────────────────────────────────────────────────────
 

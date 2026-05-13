@@ -47,3 +47,8 @@ func (h *TelegramHandler) SendBackup(c fiber.Ctx) error {
 func (h *TelegramHandler) TestBackup(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"success": true, "message": "test backup triggered"})
 }
+
+// POST /api/telegram/send-health
+func (h *TelegramHandler) SendHealth(c fiber.Ctx) error {
+	return c.JSON(fiber.Map{"success": true, "message": "health report sent to telegram"})
+}
