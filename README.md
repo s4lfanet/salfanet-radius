@@ -469,6 +469,28 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.2 — 2026-05-13
+
+### Added
+- **Go: Manual Payments handler** — `GET/POST /api/manual-payments`, `PUT /api/manual-payments/:id` (approve/reject dengan extend expiry + buat transaction), `DELETE /api/manual-payments/:id`
+- **Go: Jobs handler** — `GET/POST /api/admin/jobs`, `GET /api/admin/jobs/stats`, `GET /api/admin/jobs/:id`, `PATCH /api/admin/jobs/:id/status`
+- **Go: Employees list** — `GET /api/admin/employees` (for job assignment dropdown)
+- **Go: Users list with ODP/ODC filter** — `GET /api/users/list`
+- **Go: Employee, JobAssignment, OdpCustomerAssignment models**
+### Changed
+- **Go: ManualPayment model** — updated sesuai schema actual (bankName, accountName, transferDate, reviewedBy, dll)
+- **Go: PppoeUser model** — tambah Router + ODPAssignment relations
+- **Go: NetworkODP model** — tambah Status field + ODC relation
+### Fixed
+- **Go: billing.go** — fix ManualPayment struct creation sesuai model baru
+### Files
+- `internal/api/handlers/manual_payments.go` — baru
+- `internal/api/handlers/jobs.go` — baru
+- `internal/api/handlers/pppoe.go` — tambah ListUsersForSelect
+- `internal/db/models/models.go` — ManualPayment + PppoeUser update
+- `internal/db/models/extra.go` — Employee, JobAssignment, OdpCustomerAssignment, NetworkODP update
+- `internal/api/router.go` — manual-payments, jobs, employees, users/list routes
+
 ### v2.34.1 — 2026-05-13
 
 ### Added
@@ -540,19 +562,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `internal/api/handlers/pppoe.go` — tambah GetRegistration, UpdateRegistration, DeleteRegistration; ListRegistrations kini support filter by status
 - `internal/api/router.go` — daftarkan semua routes baru + alias
 - `internal/olt/poller/poller.go` — fix column name `monitoringEnabled`
-
-### v2.33.0 — 2026-05-14
-
-### Added
-- **Go Cron: PPPoE Session Sync** — port penuh dari `pppoe-session-sync.ts`; sync radacct ↔ radcheck/radreply dengan GREATEST/LEAST safeguard untuk mencegah int overflow di MariaDB; mutex lock agar tidak overlap jika satu run lambat
-- **Go Cron: FreeRADIUS Health Check** — sinkronisasi tabel `nas` otomatis dari `routers`, ganti/tambah entri NAS jika ada router baru atau secret berubah
-- **Go Cron: Session Security Monitor** — tutup sesi aktif untuk user yang sedang di-isolasi agar RADIUS memutus koneksi mereka
-- **Go Cron: Invoice Catch-up** — generate invoice yang hilang untuk user `isolated`/`stopped` yang belum punya invoice bulan ini
-- **Go Cron: Agent Sales Recording** — catat transaksi penjualan agen setiap jam; hitung dan kredit komisi berdasarkan `agent.commission` (%)
-- **Scheduler** — diperluas dari 4 menjadi 9 registered jobs; `TriggerJob()` support 9 named jobs
-### Files
-- `internal/cron/pppoe_session_sync.go` — file baru; 5 fungsi cron + helper `importOrphan`, `createOrphanUser`, `syncNASClients`, `isDuplicateKey`
-- `internal/cron/scheduler.go` — tambah 5 job registrations + perbarui `TriggerJob()` switch
 
 <!-- AUTO-CHANGELOG:END -->
 
