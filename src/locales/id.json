@@ -439,7 +439,13 @@
     "laporan": "Laporan & Analitik",
     "laporanData": "Export Data",
     "laporanAnalitik": "Statistik & Grafik",
-    "backToDashboard": "Kembali ke Dashboard"
+    "backToDashboard": "Kembali ke Dashboard",
+    "topupRequests": "Permintaan Top-Up",
+    "suspendRequests": "Permintaan Suspend",
+    "activityLogs": "Log Aktivitas",
+    "security": "Keamanan",
+    "fiberOdcs": "Fiber ODC",
+    "fiberOdps": "Fiber ODP"
   },
   "dashboard": {
     "title": "Dashboard",

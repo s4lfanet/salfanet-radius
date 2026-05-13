@@ -44,6 +44,7 @@ import {
   Send,
   Smartphone,
   Cloud,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/store';
@@ -91,6 +92,8 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.manageAreas', href: '/admin/pppoe/areas', requiredPermission: 'customers.view' },
           { titleKey: 'nav.stopSubscription', href: '/admin/pppoe/stopped', requiredPermission: 'customers.view' },
           { titleKey: 'nav.registrations', href: '/admin/pppoe/registrations', badge: 'pending', requiredPermission: 'registrations.view' },
+          { titleKey: 'nav.topupRequests', href: '/admin/topup-requests', requiredPermission: 'invoices.view' },
+          { titleKey: 'nav.suspendRequests', href: '/admin/suspend-requests', requiredPermission: 'customers.view' },
         ],
       },
       {
@@ -217,6 +220,7 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.faults', href: '/admin/genieacs/faults', requiredPermission: 'settings.genieacs' },
           { titleKey: 'nav.config', href: '/admin/genieacs/config', requiredPermission: 'settings.genieacs' },
           { titleKey: 'nav.autoProvision', href: '/admin/genieacs/auto-provision', requiredPermission: 'settings.genieacs' },
+          { titleKey: 'nav.files', href: '/admin/genieacs/files', requiredPermission: 'settings.genieacs' },
         ],
       },
       {
@@ -246,6 +250,9 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.infrastructure', href: '/admin/network/infrastruktur', requiredPermission: 'network.view' },
           { titleKey: 'nav.splitterDiagrams', href: '/admin/network/diagrams', requiredPermission: 'network.view' },
           { titleKey: 'nav.networkTrace', href: '/admin/network/trace', requiredPermission: 'network.view' },
+          { titleKey: 'nav.networkMap', href: '/admin/network/map', requiredPermission: 'network.view' },
+          { titleKey: 'nav.odc', href: '/admin/network/odcs', requiredPermission: 'network.view' },
+          { titleKey: 'nav.odp', href: '/admin/network/odps', requiredPermission: 'network.view' },
         ],
       },
       {
@@ -257,6 +264,8 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.fiberCores', href: '/admin/network/fiber-cores', requiredPermission: 'network.view' },
           { titleKey: 'nav.splicePoints', href: '/admin/network/splice-points', requiredPermission: 'network.view' },
           { titleKey: 'nav.jointClosures', href: '/admin/network/fiber-joint-closures', requiredPermission: 'network.view' },
+          { titleKey: 'nav.fiberOdcs', href: '/admin/network/fiber-odcs', requiredPermission: 'network.view' },
+          { titleKey: 'nav.fiberOdps', href: '/admin/network/fiber-odps', requiredPermission: 'network.view' },
         ],
       },
     ],
@@ -299,6 +308,18 @@ const menuGroups: MenuGroup[] = [
         ],
       },
       {
+        titleKey: 'nav.manageTechnicians',
+        icon: <UserCog className="w-4 h-4" />,
+        href: '/admin/technicians',
+        requiredPermission: 'users.view',
+      },
+      {
+        titleKey: 'nav.activityLogs',
+        icon: <Activity className="w-4 h-4" />,
+        href: '/admin/logs/activity',
+        requiredPermission: 'settings.view',
+      },
+      {
         titleKey: 'nav.management',
         icon: <Shield className="w-4 h-4" />,
         href: '/admin/management',
@@ -312,6 +333,7 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.company', href: '/admin/settings/company', requiredPermission: 'settings.company' },
           { titleKey: 'nav.footerSettings', href: '/admin/settings/footer', requiredPermission: 'settings.company' },
           { titleKey: 'nav.database', href: '/admin/settings/database', requiredPermission: 'settings.view' },
+          { titleKey: 'nav.security', href: '/admin/settings/security', requiredPermission: 'settings.view' },
           { titleKey: 'nav.cronJobs', href: '/admin/settings/cron', requiredPermission: 'settings.cron' },
           { titleKey: 'nav.genieacs', href: '/admin/settings/genieacs', requiredPermission: 'settings.genieacs' },
           { titleKey: 'nav.systemUpdate', href: '/admin/system', requiredPermission: 'settings.view' },
@@ -341,8 +363,15 @@ const menuGroups: MenuGroup[] = [
       {
         titleKey: 'nav.whatsapp',
         icon: <MessageCircle className="w-4 h-4" />,
-        href: '/admin/settings/whatsapp',
         requiredPermission: 'whatsapp.view',
+        children: [
+          { titleKey: 'nav.settings', href: '/admin/settings/whatsapp', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.history', href: '/admin/whatsapp/history', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.templates', href: '/admin/whatsapp/templates', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.send', href: '/admin/whatsapp/send', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.notifications', href: '/admin/whatsapp/notifications', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.providers', href: '/admin/whatsapp/providers', requiredPermission: 'whatsapp.view' },
+        ],
       },
       {
         titleKey: 'nav.email',
