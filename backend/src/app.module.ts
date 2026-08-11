@@ -6,32 +6,33 @@ import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
-import { AdminGuard } from './common/guards/admin.guard';
+import { CompanyModule } from './modules/company/company.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { PermissionsModule } from './modules/permissions/permissions.module';
+import { ActivityLogModule } from './modules/activity-log/activity-log.module';
 
 @Module({
   imports: [
-    // Global config — loads .env files
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
-    // Cron job scheduling
     ScheduleModule.forRoot(),
-    // Rate limiting — default 100 req/min per IP
     ThrottlerModule.forRoot([
       {
         ttl: 60000,
         limit: 100,
       },
     ]),
-    // Prisma ORM
     PrismaModule,
-    // Feature modules
     AuthModule,
+    ActivityLogModule,
     HealthModule,
+    CompanyModule,
+    DashboardModule,
+    PermissionsModule,
   ],
   providers: [
-    // Global rate limiting guard
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
