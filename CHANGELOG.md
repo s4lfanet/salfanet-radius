@@ -6,6 +6,78 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [3.0.0] — 2026-08-12 — NestJS Migration
+
+### Architecture Migration — Next.js → Next.js + NestJS Monorepo
+
+Full migration from single Next.js monolith to pnpm monorepo with
+Next.js frontend + NestJS backend. All 8 phases complete.
+
+#### Phase 1: Setup Monorepo (`8eaab66`)
+- Created pnpm workspace structure: `frontend/`, `backend/`, `packages/`, `deploy/`
+- Shared types package: `@salfanet/shared-types`
+- Prisma schema shared from `frontend/prisma/`
+
+#### Phase 2: Backend Auth Module (`92a81e5`)
+- NestJS 11 with JWT auth, guards, decorators
+- AdminGuard, AgentGuard, CustomerGuard, TechnicianGuard
+- PermissionsService with 53 permissions
+- Global ResponseTransformInterceptor + GlobalExceptionFilter
+
+#### Phase 3: Port API Modules — 13 Batches (`0a98b07` → `529a1f1`)
+- 46 NestJS modules covering 399 API routes
+- All endpoints under `/api/v1/*`
+- Modules: auth, users, pppoe, hotspot, invoices, sessions, network,
+  mikrotik, freeradius, genieacs, olt, vpn, whatsapp, email, push,
+  telegram, cron, payment-gateway, dashboard, tickets, export, etc.
+
+#### Phase 4: Port Cron Jobs (`0b3ec1e`)
+- 17 cron jobs ported to `@nestjs/schedule` with `@Cron()` decorator
+- Real implementations: hotspot_sync, invoice_reminder, disconnect_sessions,
+  pppoe_session_sync, freeradius_health, olt_poll
+- WhatsApp + Email wired into invoice reminders
+- MikroTik API wired into session disconnect + PPPoE sync
+- runWithLock() prevents concurrent execution
+
+#### Phase 5: Frontend Cleanup (`a981dbc`)
+- 5 layout files decoupled from Prisma (use `getCompanyInfo()` API call)
+- Centralized API client: `frontend/src/lib/api-client.ts`
+- `NEXT_PUBLIC_API_URL` env var for backend URL
+- Legacy routes kept as fallback (safe strategy)
+
+#### Phase 6: Independent Build & Deploy (`d29846b`)
+- PM2 ecosystem.config.js (4 processes: frontend, backend, cron, wa)
+- Nginx reverse proxy: `/api/v1/*` → backend, `/` → frontend
+- deploy.sh script (full / --backend / --frontend)
+- Backend .env.example with all required vars
+
+#### Phase 7: Regression Test (`8757606`)
+- 46 e2e tests (auth + smoke tests), all passing
+- Mock PrismaService for testing without real DB
+- Bug fixes: AuthModule → @Global(), SessionSyncModule exports
+- Manual regression test checklist (18 sections)
+
+#### Phase 8: Cleanup & Documentation
+- Updated README.md for monorepo architecture
+- Created ARCHITECTURE.md — full system architecture diagram
+- Created DEVELOPMENT.md — dev setup, workflow, testing guide
+
+### Key Decisions
+- Backend framework: NestJS 11 (enterprise-grade, DI, decorators)
+- Repo structure: pnpm monorepo (shared types, atomic commits)
+- API versioning: `/api/v1/*` (new) + `/api/*` (legacy, fallback)
+- Cron: `@nestjs/schedule` in backend process
+- Deploy: PM2 4 processes + Nginx reverse proxy
+- Migration strategy: dual-stack (legacy kept until VPS verified)
+
+### Breaking Changes
+- PM2 process names changed: `salfanet-radius` → `salfanet-frontend` + `salfanet-backend`
+- Nginx config: `/api/v1/*` now routes to NestJS backend
+- Frontend env: `NEXT_PUBLIC_API_URL` required for backend calls
+- Backend env: separate `.env` file in `backend/`
+
+---
+
 ## [2.34.9] — 2026-08-11
 ### Fixed
 - **Admin sidebar "Log Aktivitas" menu returned 404** — The sidebar linked to `/admin/logs/activity` (and the notification dispatcher used the same URL for deep-links), but the page was never created. Clicking the menu or opening a notification link produced `Failed to load resource: 404 (Not Found)` in the browser console. The API `/api/admin/activity-logs` existed and worked; only the UI page was missing.
