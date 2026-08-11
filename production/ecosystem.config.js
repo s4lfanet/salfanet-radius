@@ -48,10 +48,18 @@ module.exports = {
 
     // ─────────────────────────────────────────────────────────────────────
     // 2. Background Cron Service (billing, expiry, notifications)
+    //    Runs jobs directly via src/server/jobs/* (no HTTP round-trip to
+    //    Next.js, no /api/cron auth dependency). See src/cron/runner.ts.
     // ─────────────────────────────────────────────────────────────────────
     {
       name: 'salfanet-cron',
-      script: './cron-service.js',
+      // Use the tsx CLI binary directly (not runner-wrapper.cjs's `require('tsx/cjs')`
+      // hook) — the CJS require-hook does NOT apply tsconfig `paths` aliases (@/*),
+      // causing ERR_MODULE_NOT_FOUND for every @/server/* import. The tsx CLI itself
+      // resolves aliases correctly. preload.cjs still mocks 'server-only' for Next.js
+      // server-only guards.
+      script: 'node_modules/.bin/tsx',
+      args: ['-r', './src/cron/preload.cjs', 'src/cron/runner.ts'],
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
@@ -65,7 +73,6 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         NODE_OPTIONS: '--max-old-space-size=120',
-        API_URL: 'http://localhost:3000',
         TZ: 'Asia/Jakarta',
       },
       error_file: './logs/cron-error.log',

@@ -6,6 +6,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.6] — 2026-08-11
+### Fixed
+- **Fresh install: `salfanet-cron` HTTP 401 loop on every job** — Fresh installs via `vps-installer.sh` deployed `production/ecosystem.config.js` pointing `salfanet-cron` at the deprecated `cron-service.js` (HTTP polling to `/api/cron`). That route requires an `x-cron-secret` header matching `CRON_SECRET`, which `cron-service.js` never sends and which the installer never generates — every job failed with `HTTP 401: Unauthorized`, 3 retries each cycle, forever.
+- **Root cause found by full uninstall/reinstall test on a clean LXC VPS.**
+- **Fix attempt 1 (reverted)**: pointed `salfanet-cron` at `src/cron/runner-wrapper.cjs` (the documented "correct" migration target used by `updater.sh`/`cleanup-refactor.sh`). This crash-looped instead: `require('tsx/cjs')` inside the wrapper does NOT apply `tsconfig.json` `paths` aliases (`@/*`), causing `ERR_MODULE_NOT_FOUND: Cannot find package '@/server'` on every job import.
+- **Fix (final)**: `salfanet-cron` now runs the `tsx` CLI binary directly (`node_modules/.bin/tsx -r ./src/cron/preload.cjs src/cron/runner.ts`) instead of `runner-wrapper.cjs`. The tsx CLI resolves `@/*` aliases correctly; `preload.cjs` still mocks the `server-only` guard so Next.js server modules can be imported outside Next.js. Verified: all 15 scheduled jobs run directly via `src/server/jobs/*` with zero HTTP round-trip, zero 401s, zero crash restarts (`↺ 0`) after the fix.
+### Files
+- `production/ecosystem.config.js` — `salfanet-cron` `script`/`args` changed to tsx CLI + preload; removed unused `API_URL` env var
+- `vps-install/install-pm2.sh` — fallback ecosystem generator + `start_cron_service()` existence check updated to match
+
+---
+
 ## [2.34.5] — 2026-08-11
 ### Removed
 - **Go backend cleanup — full revert to pure Next.js** — Menghapus seluruh sisa eksperimen migrasi backend ke Go yang sudah tidak terpakai di production. Konfirmasi: `production/ecosystem.config.js` hanya menjalankan 3 proses PM2 (`salfanet-radius`, `salfanet-cron`, `salfanet-wa`) — tidak ada proses Go. `production/nginx-salfanet-radius.conf` mengarahkan seluruh trafik termasuk `/api/*` ke Next.js port 3000. `vps-installer.sh` tidak pernah memanggil `install-go.sh`. Next.js tetap memiliki seluruh 399 API route (`src/app/api/**/route.ts`) sebagai satu-satunya backend aktif.

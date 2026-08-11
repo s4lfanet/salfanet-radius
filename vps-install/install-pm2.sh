@@ -263,14 +263,17 @@ module.exports = {
     },
     {
       name: 'salfanet-cron',
-      script: './cron-service.js',
+      // tsx CLI binary directly -- runner-wrapper.cjs's require('tsx/cjs') hook does
+      // NOT apply tsconfig path aliases (@/*), causing ERR_MODULE_NOT_FOUND.
+      script: 'node_modules/.bin/tsx',
+      args: ['-r', './src/cron/preload.cjs', 'src/cron/runner.ts'],
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
       watch: false,
       max_memory_restart: '150M',
       node_args: ['--max-old-space-size=120','--max-semi-space-size=4','--optimize-for-size'],
-      env: { NODE_ENV: 'production', NODE_OPTIONS: '--max-old-space-size=120', API_URL: 'http://localhost:3000', TZ: 'Asia/Jakarta' },
+      env: { NODE_ENV: 'production', NODE_OPTIONS: '--max-old-space-size=120', TZ: 'Asia/Jakarta' },
       error_file: './logs/cron-error.log',
       out_file: './logs/cron-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
@@ -521,13 +524,13 @@ start_pm2_app() {
 start_cron_service() {
     print_info "Cron service will be started via ecosystem.config.js"
     
-    # Check if cron-service.js exists
-    if [ ! -f "${APP_DIR}/cron-service.js" ]; then
-        print_warning "cron-service.js not found (cron service will be skipped)"
+    # Check if the tsx cron runner exists
+    if [ ! -f "${APP_DIR}/src/cron/runner.ts" ]; then
+        print_warning "src/cron/runner.ts not found (cron service will be skipped)"
         return 0
     fi
     
-    print_success "Cron service configured in ecosystem.config.js"
+    print_success "Cron service configured in ecosystem.config.js (tsx runner)"
 }
 
 run_post_install_fixes() {
