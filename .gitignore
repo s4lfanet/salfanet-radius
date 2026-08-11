@@ -95,8 +95,6 @@ fresh-test.txt
 test-result-output.txt
 test3-result.txt
 
-# Go compiled binaries — jangan di-push ke GitHub
-bin/
 *.zip
 
 # Temp/utility scripts yang tidak perlu di-repo
