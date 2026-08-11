@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `pending` (B7) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -196,7 +196,7 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 4 | payment, network, radius, sessions | 24 | ✅ Complete | `fbe4837` |
 | 5 | payment-gateway, mikrotik, freeradius, session-sync | 12 | ✅ Complete | `253a1b5` |
 | 6 | manual-payments, registrations, voucher-templates, customer-portal, agent-portal | 46 | ✅ Complete | `70b9df6` |
-| 7 | technician-portal, tickets, evoucher, inventory, upload | 55 | ✅ Complete | `pending` |
+| 7 | technician-portal, tickets, evoucher, inventory, upload | 55 | ✅ Complete | `75b48c4` |
 | 8 | OLT/ONU, VPN, whatsapp, telegram, push, backup, public, pwa, sse, system | ~216 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
@@ -459,7 +459,7 @@ Deferred to Batch 8+:
 
 ### Batch 7 Detail ✅
 
-**Commit**: `pending`
+**Commit**: `75b48c4`
 
 | Module | Endpoints | Source |
 |--------|-----------|--------|
