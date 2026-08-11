@@ -6,14 +6,14 @@ node_modules/
 .pnp
 .pnp.js
 
+# npm lock files (use pnpm-lock.yaml at root only)
+**/package-lock.json
+
 # Next.js / build outputs
 .next/
 out/
 build/
 dist/
-
-# Exception: APK build API route (not a build artifact)
-!frontend/src/app/api/admin/apk/build/
 
 # Testing outputs
 coverage/
@@ -40,6 +40,9 @@ data/uploads/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Binaries
+frontend/bin/
 
 # IDE / editor
 .vscode/
