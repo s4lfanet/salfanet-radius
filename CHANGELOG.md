@@ -6,6 +6,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.8] — 2026-08-11
+### Fixed
+- **Fresh install: `/api/company/info` returns HTTP 404 ("Company not found")** — The comprehensive seeder `prisma/seeds/seed-all.ts` (run by `vps-install/install-app.sh` as `npm run db:seed`) never created a row in the `Company` table. It only *read* `prisma.company.findFirst()` to derive the isolir rate limit (falling back to a hardcoded default when null). The standalone `prisma/seeds/seed-company.ts` existed but was never invoked by the installer. As a result, on a fresh install the `Company` table was empty and the public `/api/company/info` route (used by login/customer/agent layouts for branding) returned 404 by design.
+- **Fix**: `seed-all.ts` now creates a default `Company` row (id, name `SALFANET RADIUS`, timezone `Asia/Jakarta`, default isolation settings, empty `bankAccounts`) when none exists, before the isolir-group step reads `company.isolationRateLimit`. Existing installs are left untouched (idempotent `findFirst` guard).
+### Files
+- `prisma/seeds/seed-all.ts` — new step 4.5 "Seed Company" between Hotspot Profiles and WhatsApp Templates
+
+---
+
 ## [2.34.7] — 2026-08-11
 ### Fixed
 - **LXC install: app unreachable from browser even though everything looked healthy** — On a fresh LXC install, `http://VPS_IP/` timed out from any real external client even though Nginx was listening correctly on `0.0.0.0:80`/`:443`, PM2/MySQL/FreeRADIUS were all active, and `/api/health` responded fine when curled *from inside* the VPS. Root cause: the installer's `SKIP_UFW=true` logic for `--env lxc` unconditionally skips ALL UFW rule changes (assuming firewalling is handled at the Proxmox host and that UFW/iptables don't work in unprivileged LXC). But UFW was already **active** on this container (from the base image) with a restrictive default (`deny incoming`, only `22/tcp` allowed) — so port 80/443/1812/1813/3799 were silently blocked for genuine external traffic. Self-curl from the VPS to its own IP appeared to work fine because that traffic hairpins through `lo`, which UFW's default rules exempt — masking the problem during internal testing.

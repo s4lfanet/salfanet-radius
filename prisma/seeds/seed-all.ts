@@ -178,6 +178,39 @@ export async function seedAll(forceTemplates = false) {
   // 4. Hotspot Profiles — not seeded; created by admin via UI
   console.log('📶 Hotspot Profiles: skipped (create via admin panel)\n');
 
+  // 4.5 Seed Company (default row required by /api/company/info and isolir setup)
+  console.log('🏢 Seeding Company...');
+  const existingCompany = await prisma.company.findFirst();
+  if (existingCompany) {
+    console.log(`   ⊙ Company already exists: ${existingCompany.name}\n`);
+  } else {
+    await prisma.company.create({
+      data: {
+        id: crypto.randomUUID(),
+        name: 'SALFANET RADIUS',
+        address: '',
+        phone: '',
+        email: '',
+        timezone: 'Asia/Jakarta',
+        baseUrl: process.env.NEXT_PUBLIC_APP_URL || '',
+        poweredBy: 'SALFANET RADIUS',
+        invoiceGenerateDays: 7,
+        gracePeriodDays: 0,
+        isolationEnabled: true,
+        isolationIpPool: '192.168.200.0/24',
+        isolationRateLimit: '64k/64k',
+        isolationRedirectUrl: null,
+        isolationMessage: null,
+        isolationAllowDns: true,
+        isolationAllowPayment: true,
+        isolationNotifyWhatsapp: true,
+        isolationNotifyEmail: false,
+        bankAccounts: [],
+      },
+    });
+    console.log('   ✅ Default company created\n');
+  }
+
   // 5. Seed WhatsApp Templates (Using imported function)
   console.log('💬 Seeding WhatsApp Templates...');
   try {
