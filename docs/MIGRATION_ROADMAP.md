@@ -187,7 +187,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 9:         60   ✅ (olt, vpn, network-infra, customer/agent portal extras)
   - Batch 10:        80   ✅ (genieacs, admin-extras, email, cron)
   - Batch 11:        49   ✅ (network-extras, extras: PPPoE/Hotspot/Invoice/FreeRADIUS/Ticket/Customer/Payment)
-  - Batch 12+:       ~10  ⏳ (external integration wiring)
+  - Batch 12:        ~15  ✅ (nodemailer, MikroTik API, FreeRADIUS filesystem/service, PDF/Excel exports, payment delegation)
+  - Batch 13+:       ~5   ⏳ (remaining: GenieACS ONT, WhatsApp, push, SSE, PWA static)
 ```
 
 ### Batches
@@ -205,7 +206,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 9 | OLT/ONU, VPN, network trace, cables, splices, fiber-paths, customer/agent portal extras | 60 | ✅ Complete | `431adcb` |
 | 10 | GenieACS, admin-extras, email, cron | 80 | ✅ Complete | `cba6e57` |
 | 11 | network-extras, extras (PPPoE/Hotspot/Invoice/FreeRADIUS/Ticket/Customer/Payment) | 49 | ✅ Complete | `f54b2c8` |
-| 12+ | External integration wiring (MikroTik, SSH, filesystem, payment gateways, PDF/Excel) | ~10 | ⏳ Pending | — |
+| 12 | External integration wiring (nodemailer, MikroTik API, FreeRADIUS fs/service, PDF/Excel, payment delegation) | ~15 | ✅ Complete | `a1f52cd` |
+| 13+ | Remaining (GenieACS ONT, WhatsApp, push, SSE, PWA static) | ~5 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -738,6 +740,38 @@ Deferred integrations:
 - PWA static file serving
 
 Backend module count: 44 → 46
+Build verified with `pnpm build`.
+
+### Batch 12 Detail ✅
+
+**Commit**: `a1f52cd`
+
+| Area | Changes | Source |
+|------|---------|--------|
+| Email | `sendEmail()` + `testEmail()` now send real email via nodemailer SMTP transporter built from emailSettings; logs to emailHistory as 'sent' or 'failed' | `frontend/.../api/email/*` |
+| NetworkExtras (MikroTik) | `getRouterStatus()` fetches identity+uptime via API; `testRouter()` tries API then TCP; `testGateway()` ICMP ping; `detectPublicIp()` via cloud/PPPoE/route; `getRouterInterfaces()` via /interface/print; `getRouterUplinks()` DB CRUD; `pingOlt()` via /ping; `setupIsolir()` address-list+filter; `setupRadius()` RADIUS entry+AAA; `setupVpnServer()` pool+profile+L2TP/SSTP/PPTP+NAT; `l2tpControl/pptpControl/sstpControl()` enable/disable; `getVpnRouting()` ip route show | `frontend/.../api/network/routers/*`, `frontend/.../api/network/vpn-*` |
+| Extras (FreeRADIUS) | `freeradiusConfigList/Read/Save()` with path-traversal protection + backup + syntax check (radiusd -C); `freeradiusLogs()` tail; `freeradiusRadtest()` via radclient; `freeradiusStatus/Start/Stop/Restart()` via systemctl/service + DB session counts | `frontend/.../api/freeradius/*` |
+| Export (new module) | `generateInvoicePdf()` via pdfkit (company header, customer, items, total); `exportInvoicesExcel()`, `exportPppoeUsersExcel()`, `exportHotspotVouchersExcel()`, `exportHotspotRekapExcel()` via exceljs; ExportController serves as file downloads | `frontend/.../api/invoices/*`, `frontend/.../api/pppoe/users/export`, `frontend/.../api/hotspot/*` |
+| Payment delegation | `extras.paymentCreate()` → `PaymentCreateService.createPayment()` (Midtrans/Xendit/Duitku/Tripay); `extras.paymentWebhook()` → `PaymentWebhookService.processWebhook()` (signature verification); `extras.paymentDuitkuMethods()` → new `DuitkuPayment.getPaymentMethods()` API; `paymentCheckOrder()` checks webhookLog | `frontend/.../api/payment/*` |
+
+New module:
+- `ExportModule` — PDF (pdfkit) + Excel (exceljs) generation for invoices,
+  PPPoE users, hotspot vouchers, and rekap
+
+Key behaviors preserved:
+- Email: SMTP transporter from emailSettings (smtpHost/Port/User/Password/Secure)
+- MikroTik: node-routeros with 10s timeout, Promise.race for connect
+- FreeRADIUS: filesystem ops with path.basename() traversal protection,
+  config backup before save, radiusd -C syntax check
+- PDF: A4 with company info, bill-to, items table, total
+- Excel: exceljs with bold header row, formatted columns
+- Payment: full gateway SDK support via existing PaymentCreateService
+
+Added dependencies:
+- pdfkit ^0.19.1
+- @types/pdfkit ^0.17.6
+
+Backend module count: 46 → 47
 Build verified with `pnpm build`.
 
 ### Per-batch workflow
