@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `pending` (B6) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -181,7 +181,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 3:         19   ✅ (pppoe, hotspot, invoices, keuangan)
   - Batch 4:         24   ✅ (payment, network, radius, sessions)
   - Batch 5:         12   ✅ (payment-gateway, mikrotik, freeradius, session-sync)
-  - Batch 6+:       317   ⏳
+  - Batch 6:         46   ✅ (manual-payments, registrations, voucher-templates, customer-portal, agent-portal)
+  - Batch 7+:       271   ⏳
 ```
 
 ### Batches
@@ -193,7 +194,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 3 | pppoe, hotspot, invoices, keuangan | 19 | ✅ Complete | `411bf3` |
 | 4 | payment, network, radius, sessions | 24 | ✅ Complete | `fbe4837` |
 | 5 | payment-gateway, mikrotik, freeradius, session-sync | 12 | ✅ Complete | `253a1b5` |
-| 6 | OLT/ONU, VPN, customer, agent, whatsapp, telegram, push, upload, backup | ~305 | ⏳ Pending | — |
+| 6 | manual-payments, registrations, voucher-templates, customer-portal, agent-portal | 46 | ✅ Complete | `pending` |
+| 7 | OLT/ONU, VPN, whatsapp, telegram, push, upload, backup, technician, tickets | ~271 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -372,8 +374,89 @@ Deferred to Batch 6+:
 - VPN management routes (vpn-server, vpn-client, vpn-routing)
 - Network trace, cables, splices, joint-closures, fiber-paths, auto-connect
 - OLT chassis/ONU management, ONU register/reboot/delete
-- Customer portal routes, agent portal routes
 - WhatsApp, Telegram, push notification, upload, backup routes
+
+### Batch 6 Detail ✅
+
+**Commit**: `pending`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| ManualPayments | `GET/POST /api/v1/manual-payments`, `GET/PATCH/DELETE /api/v1/manual-payments/:id` | `frontend/.../api/manual-payments` |
+| Registrations | `POST /api/v1/registrations` (public), `GET /api/v1/registrations` (admin) | `frontend/.../api/registrations` |
+| VoucherTemplates | `GET/POST /api/v1/voucher-templates`, `GET/PUT/DELETE /api/v1/voucher-templates/:id` | `frontend/.../api/voucher-templates` |
+| CustomerPortal | `POST /api/v1/customer/auth/{login,send-otp,verify-otp}`, `GET /api/v1/customer/{dashboard,me,profile,invoices,payments,packages,usage,notifications,referral,suspend-request}`, `PATCH /api/v1/customer/profile`, `POST /api/v1/customer/{referral,auto-renewal,suspend-request}`, `DELETE /api/v1/customer/suspend-request` | `frontend/.../api/customer/*` |
+| AgentPortal | `POST /api/v1/agent/login`, `GET /api/v1/agent/{dashboard,notifications,sessions}`, `POST /api/v1/agent/deposit/create`, `GET /api/v1/agent/deposit/check`, `PUT /api/v1/agent/notifications/read`, `DELETE /api/v1/agent/notifications` | `frontend/.../api/agent/*` |
+
+New modules created:
+- `ManualPaymentsModule` — manual payment submission + admin approval/rejection
+  - List with filters (userId, status, month), single fetch
+  - Submit (public — customer portal): invoice validation, pending-check,
+    admin notification creation
+  - Approve: atomic transaction (manualPayment + invoice + pppoeUser + payment),
+    package-change detection from invoice additionalFees metadata,
+    RADIUS radcheck/radusergroup/radreply restoration, expiry extension
+  - Reject: status update + admin notification
+  - Delete (admin only)
+- `RegistrationsModule` — public registration request
+  - Phone uniqueness check, profile validation, referral code validation
+  - Creates PENDING registrationRequest
+  - Admin list with pagination
+- `VoucherTemplatesModule` — CRUD for voucher print templates
+  - isDefault toggle (unsets others), isActive flag
+- `CustomerPortalModule` — customer self-service portal
+  - Auth: phone or 8-digit customerId login, OTP (rate-limited 3/15min),
+    session token (64-char hex, 7-day expiry)
+  - Dashboard: active RADIUS session, monthly usage aggregation,
+    unpaid invoice summary
+  - Profile: get/update with phone normalization (08→62)
+  - Invoices: paginated list with payment source detection
+    (gateway/manual/admin), status filter
+  - Payments: paid invoice history with method detection
+  - Packages: current package only (no browsing)
+  - Usage: monthly upload/download/total from radacct
+  - Notifications: paid invoices + rejected payments event feed
+  - Referral: code stats, generate unique 8-char code (no I/O/0/1),
+    company referral config
+  - Auto-renewal: boolean toggle
+  - Suspend-request: create (max 90 days, date validation),
+    cancel (PENDING only), get latest
+- `AgentPortalModule` — agent/reseller portal
+  - Auth: phone login, JWT via AuthService.signAgentToken (7-day expiry)
+  - Dashboard: paginated voucher listing with filters (status/search/profileId),
+    stats (currentMonth/allTime/today income + counts, generated/waiting/sold/used),
+    profiles with agentAccess, recent deposits, active payment gateways,
+    voucher stock count
+  - Deposit create: gateway validation, payment token generation,
+    PENDING deposit record (payment URL deferred to payment-gateway integration)
+  - Deposit check: public status lookup by token or orderId
+  - Notifications: list with unread count, mark-read (all or specific),
+    delete (ownership verified)
+  - Sessions: active hotspot vouchers cross-referenced with radacct,
+    synthetic sessions for ACTIVE vouchers without radacct,
+    router name mapping
+
+Key behaviors preserved:
+- Customer auth: phone normalization (08xxx→62xxx), OTP rate limiting,
+  customerSession table with verified flag
+- Manual payment approval: atomic transaction, package change detection,
+  RADIUS restoration, expiry extension by validity unit
+- Agent dashboard: WIB timezone stats, voucher stock, profile agentAccess filter
+- Referral code: 8-char alphanumeric (excludes I/O/0/1), 10 retry attempts
+
+Deferred to Batch 7+:
+- WhatsApp/Email/Push notifications (currently logged only)
+- Customer portal: invoice payment creation, topup-direct, upgrade-package,
+  renewal, tickets, wifi/ONT management
+- Agent portal: generate-voucher, record-sales, manual-deposit-request,
+  payment-methods, deposit webhook, tickets
+- Technician portal (20 routes): auth, customers, form-data, genieacs,
+  isolated, monitor, offline, profile, sessions, tasks, tickets, upload,
+  work-orders
+- OLT/ONU management (15 routes), GenieACS (27 routes)
+- VPN management, network trace, cables, splices, fiber-paths
+- WhatsApp (14), Telegram (5), Push (8), Upload (3), Backup (9)
+- Tickets (6), Evoucher (3), Inventory (4), PWA (1), SSE (1), Public (6)
 
 ### Per-batch workflow
 
