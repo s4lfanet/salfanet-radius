@@ -29,9 +29,9 @@ const nextConfig: NextConfig = {
   // This prevents static analysis of conditional require('source-map-support') in node-routeros
   // ssh2 uses native crypto and cpu-features that can't be bundled by webpack
   serverExternalPackages: ['node-routeros', 'source-map-support', 'ssh2', 'cpu-features', 'sshcrypto'],
-  // Fix workspace root detection issue
+  // Fix workspace root detection issue in pnpm monorepo
   turbopack: {
-    root: path.resolve(__dirname),
+    root: path.resolve(__dirname, '..'),
   },
   // Security & Performance
   productionBrowserSourceMaps: false, // Protect code & save memory
@@ -45,12 +45,12 @@ const nextConfig: NextConfig = {
       "default-src 'self'",
       // Scripts: allow self + inline (Next.js hydration) + Cloudflare analytics
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com",
-      // Styles: allow self + inline (Tailwind utility classes)
-      "style-src 'self' 'unsafe-inline'",
+      // Styles: allow self + inline (Tailwind) + Google Fonts
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       // Images: allow self, data URIs (inline), blob (PDF export), CDN maps
       "img-src 'self' data: blob: https: http:",
-      // Fonts: self + data URIs
-      "font-src 'self' data:",
+      // Fonts: self + data URIs + Google Fonts
+      "font-src 'self' data: https://fonts.gstatic.com",
       // Connections: self + Cloudflare analytics beacon + payment gateways
       "connect-src 'self' https://cloudflareinsights.com https://api.midtrans.com https://api.xendit.co https://sandbox.duitku.com https://passport.duitku.com https://sandbox.tripay.co.id https://tripay.co.id",
       // Frames: hanya self (bukan 'none' agar SweetAlert2 modal bisa inline)
