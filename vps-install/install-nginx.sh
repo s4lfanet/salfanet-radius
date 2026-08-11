@@ -601,8 +601,17 @@ restart_nginx() {
 
 configure_firewall_nginx() {
     if [ "${SKIP_UFW:-false}" = "true" ]; then
-        print_info "UFW firewall dilewati (${DEPLOY_ENV_LABEL:-LXC/Container})"
-        print_info "Buka port 80 dan 443 di Proxmox Datacenter Firewall"
+        # Jika UFW ternyata sudah aktif di container ini (base image, dsb), tetap
+        # tambahkan rules — kalau tidak, Nginx bisa listen normal tapi tidak bisa
+        # diakses dari luar sama sekali (port 80/443 terkunci UFW default-deny).
+        if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+            print_warning "UFW aktif meski environment=${DEPLOY_ENV_LABEL:-LXC/Container} — menambahkan rules HTTP/HTTPS"
+            ufw allow 80/tcp comment 'HTTP' 2>/dev/null || true
+            ufw allow 443/tcp comment 'HTTPS' 2>/dev/null || true
+        else
+            print_info "UFW firewall dilewati (${DEPLOY_ENV_LABEL:-LXC/Container})"
+            print_info "Buka port 80 dan 443 di Proxmox Datacenter Firewall"
+        fi
         return 0
     fi
 

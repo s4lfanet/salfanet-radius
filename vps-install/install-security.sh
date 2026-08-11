@@ -96,9 +96,27 @@ JAILCONF
 # ============================================================================
 
 configure_ufw() {
-    # LXC container: skip UFW (firewall diatur di Proxmox host)
+    # LXC container: UFW/iptables biasanya tidak didukung di container unprivileged,
+    # jadi secara default kita skip dan asumsikan firewall diatur di Proxmox host.
+    # NAMUN: beberapa LXC (privileged, atau unprivileged dengan capability yang cukup)
+    # tetap punya UFW aktif dari base image. Jika itu terjadi dan kita skip total,
+    # admin bisa terkunci — port 80/443 tidak pernah dibuka meski Nginx sudah jalan.
+    # Jadi: kalau UFW sudah aktif, tetap tambahkan rules (best-effort), tapi jangan
+    # coba enable/ubah default policy (itu yang paling mungkin gagal di container).
     if [ "${IS_CONTAINER:-false}" = "true" ] || [ "${SKIP_UFW:-false}" = "true" ]; then
-        print_info "Skipping UFW (LXC container mode — gunakan Proxmox host firewall)"
+        if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+            print_warning "UFW terdeteksi AKTIF di container ini meski environment=LXC — menambahkan rules agar tidak terkunci"
+            ufw allow 22/tcp   comment 'SSH'                    2>/dev/null || true
+            ufw allow 80/tcp   comment 'HTTP'                   2>/dev/null || true
+            ufw allow 443/tcp  comment 'HTTPS'                  2>/dev/null || true
+            ufw allow 1812/udp comment 'RADIUS Authentication'  2>/dev/null || true
+            ufw allow 1813/udp comment 'RADIUS Accounting'      2>/dev/null || true
+            ufw allow 3799/udp comment 'RADIUS CoA'             2>/dev/null || true
+            print_success "UFW rules ditambahkan (UFW sudah aktif sebelumnya)"
+            ufw status | head -10
+        else
+            print_info "Skipping UFW (LXC container mode — gunakan Proxmox host firewall)"
+        fi
         return 0
     fi
 

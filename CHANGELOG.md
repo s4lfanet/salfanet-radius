@@ -6,6 +6,17 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.7] — 2026-08-11
+### Fixed
+- **LXC install: app unreachable from browser even though everything looked healthy** — On a fresh LXC install, `http://VPS_IP/` timed out from any real external client even though Nginx was listening correctly on `0.0.0.0:80`/`:443`, PM2/MySQL/FreeRADIUS were all active, and `/api/health` responded fine when curled *from inside* the VPS. Root cause: the installer's `SKIP_UFW=true` logic for `--env lxc` unconditionally skips ALL UFW rule changes (assuming firewalling is handled at the Proxmox host and that UFW/iptables don't work in unprivileged LXC). But UFW was already **active** on this container (from the base image) with a restrictive default (`deny incoming`, only `22/tcp` allowed) — so port 80/443/1812/1813/3799 were silently blocked for genuine external traffic. Self-curl from the VPS to its own IP appeared to work fine because that traffic hairpins through `lo`, which UFW's default rules exempt — masking the problem during internal testing.
+- **Fix**: `configure_ufw()` (install-security.sh), `configure_firewall_nginx()` (install-nginx.sh), and `configure_firewall()` (install-freeradius.sh) now check `ufw status` even when `SKIP_UFW=true`. If UFW is already active, the required `allow` rules (80/tcp, 443/tcp, 1812/udp, 1813/udp, 3799/udp, 500/udp, 4500/udp, 1701/udp) are still added (best-effort, non-fatal) instead of being skipped outright. UFW is never *enabled* for LXC (that stays skipped, since forcing `ufw enable` in an unsupported container could break networking) — only rules are added to an already-active UFW.
+### Files
+- `vps-install/install-security.sh` — `configure_ufw()`
+- `vps-install/install-nginx.sh` — `configure_firewall_nginx()`
+- `vps-install/install-freeradius.sh` — `configure_firewall()`
+
+---
+
 ## [2.34.6] — 2026-08-11
 ### Fixed
 - **Fresh install: `salfanet-cron` HTTP 401 loop on every job** — Fresh installs via `vps-installer.sh` deployed `production/ecosystem.config.js` pointing `salfanet-cron` at the deprecated `cron-service.js` (HTTP polling to `/api/cron`). That route requires an `x-cron-secret` header matching `CRON_SECRET`, which `cron-service.js` never sends and which the installer never generates — every job failed with `HTTP 401: Unauthorized`, 3 retries each cycle, forever.
