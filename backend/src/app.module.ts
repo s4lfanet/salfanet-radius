@@ -48,6 +48,8 @@ import { GenieacsModule } from './modules/genieacs/genieacs.module';
 import { AdminExtrasModule } from './modules/admin-extras/admin-extras.module';
 import { EmailModule } from './modules/email/email.module';
 import { CronModule } from './modules/cron/cron.module';
+import { NetworkExtrasModule } from './modules/network-extras/network-extras.module';
+import { ExtrasModule } from './modules/extras/extras.module';
 
 @Module({
   imports: [
@@ -107,6 +109,8 @@ import { CronModule } from './modules/cron/cron.module';
     AdminExtrasModule,
     EmailModule,
     CronModule,
+    NetworkExtrasModule,
+    ExtrasModule,
   ],
   providers: [
     {
