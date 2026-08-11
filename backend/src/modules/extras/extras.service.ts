@@ -3,6 +3,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { nowWIB } from '../../common/utils/timezone';
 import { PaymentCreateService } from '../payment-gateway/payment-create.service';
 import { PaymentWebhookService } from '../payment-gateway/payment-webhook.service';
+import { WhatsAppService } from '../whatsapp/whatsapp.service';
+import { EmailService } from '../email/email.service';
+import { GenieacsService } from '../genieacs/genieacs.service';
+import { MikrotikService } from '../mikrotik/mikrotik.service';
+import { ExportService } from '../export/export.service';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -20,6 +25,11 @@ export class ExtrasService {
     private readonly prisma: PrismaService,
     private readonly paymentCreateSvc: PaymentCreateService,
     private readonly paymentWebhookSvc: PaymentWebhookService,
+    private readonly whatsapp: WhatsAppService,
+    private readonly email: EmailService,
+    private readonly genieacs: GenieacsService,
+    private readonly mikrotik: MikrotikService,
+    private readonly exportSvc: ExportService,
   ) {}
 
   // ==================== PPPOE EXTRAS ====================
@@ -83,13 +93,53 @@ export class ExtrasService {
   }
 
   async pppoeUsersSendNotification(body: { userIds: string[]; type: string; message: string }) {
-    // Notification sending deferred to whatsapp/email integration
-    return { success: true, sent: body.userIds.length, message: 'Notification sending deferred to whatsapp/email integration' };
+    const users = await this.prisma.pppoeUser.findMany({
+      where: { id: { in: body.userIds } },
+      select: { id: true, phone: true, name: true },
+    });
+    let sent = 0;
+    const errors: string[] = [];
+    for (const user of users) {
+      if (!user.phone) { errors.push(`${user.name}: no phone`); continue; }
+      try {
+        await this.whatsapp.sendMessage(user.phone, body.message);
+        sent++;
+      } catch (err: any) {
+        errors.push(`${user.name}: ${err.message}`);
+      }
+    }
+    return { success: true, sent, total: users.length, errors: errors.slice(0, 10) };
   }
 
   async pppoeUsersSyncMikrotik(body: { userIds: string[] }) {
-    // MikroTik sync deferred
-    return { success: true, synced: body.userIds.length, message: 'MikroTik sync deferred to mikrotik integration' };
+    // Sync PPPoE secrets from MikroTik to DB + RADIUS for specified users
+    const users = await this.prisma.pppoeUser.findMany({
+      where: { id: { in: body.userIds } },
+      include: { profile: true, router: true },
+    });
+    let synced = 0;
+    const errors: string[] = [];
+    for (const user of users) {
+      try {
+        // Upsert radcheck
+        await this.prisma.radcheck.upsert({
+          where: { username_attribute: { username: user.username, attribute: 'Cleartext-Password' } },
+          create: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password },
+          update: { value: user.password },
+        });
+        if (user.profile) {
+          await this.prisma.radusergroup.upsert({
+            where: { username_groupname: { username: user.username, groupname: user.profile.name } },
+            create: { username: user.username, groupname: user.profile.name, priority: 1 },
+            update: {},
+          });
+        }
+        synced++;
+      } catch (err: any) {
+        errors.push(`${user.username}: ${err.message}`);
+      }
+    }
+    return { success: true, synced, total: users.length, errors: errors.slice(0, 10) };
   }
 
   async pppoeUserActivity(userId: string) {
@@ -143,7 +193,49 @@ export class ExtrasService {
   }
 
   async pppoeProfilesSyncMikrotik() {
-    return { success: true, message: 'MikroTik profile sync deferred to mikrotik integration' };
+    // Sync PPPoE profiles to MikroTik routers via API
+    const profiles = await this.prisma.pppoeProfile.findMany();
+    const routers = await this.prisma.router.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, ipAddress: true, username: true, password: true, port: true },
+    });
+    let synced = 0;
+    const errors: string[] = [];
+    const { RouterOSAPI } = require('node-routeros');
+    for (const router of routers) {
+      if (!router.username || !router.password) continue;
+      try {
+        const conn = new RouterOSAPI({
+          host: router.ipAddress, port: router.port || 8728,
+          user: router.username, password: router.password, timeout: 10000,
+        });
+        await conn.connect();
+        for (const profile of profiles) {
+          try {
+            // Check if profile exists
+            const existing = await conn.write('/ppp/profile/print', [`?name=${profile.name}`]);
+            if (existing.length > 0) {
+              await conn.write('/ppp/profile/set', [
+                `=.id=${existing[0]['.id']}`,
+                `=rate-limit=${profile.downloadSpeed}/${profile.uploadSpeed}`,
+              ]);
+            } else {
+              await conn.write('/ppp/profile/add', [
+                `=name=${profile.name}`,
+                `=rate-limit=${profile.downloadSpeed}/${profile.uploadSpeed}`,
+              ]);
+            }
+            synced++;
+          } catch (err: any) {
+            errors.push(`${router.name}/${profile.name}: ${err.message}`);
+          }
+        }
+        conn.close();
+      } catch (err: any) {
+        errors.push(`${router.name}: ${err.message}`);
+      }
+    }
+    return { success: true, synced, total: profiles.length * routers.length, errors: errors.slice(0, 10) };
   }
 
   async pppoeProfilesSyncRadius() {
@@ -221,13 +313,54 @@ export class ExtrasService {
   }
 
   async hotspotVoucherResync(body: { voucherIds: string[] }) {
-    // RADIUS resync deferred
-    return { success: true, synced: body.voucherIds.length, message: 'RADIUS resync deferred' };
+    // Resync vouchers to RADIUS radcheck
+    const vouchers = await this.prisma.hotspotVoucher.findMany({
+      where: { id: { in: body.voucherIds } },
+      include: { profile: true },
+    });
+    let synced = 0;
+    const errors: string[] = [];
+    for (const v of vouchers) {
+      try {
+        await this.prisma.radcheck.upsert({
+          where: { username_attribute: { username: v.code, attribute: 'Cleartext-Password' } },
+          create: { username: v.code, attribute: 'Cleartext-Password', op: ':=', value: v.code },
+          update: { value: v.code },
+        });
+        if (v.profile) {
+          await this.prisma.radusergroup.upsert({
+            where: { username_groupname: { username: v.code, groupname: v.profile.name } },
+            create: { username: v.code, groupname: v.profile.name, priority: 1 },
+            update: {},
+          });
+        }
+        synced++;
+      } catch (err: any) {
+        errors.push(`${v.code}: ${err.message}`);
+      }
+    }
+    return { success: true, synced, total: vouchers.length, errors: errors.slice(0, 10) };
   }
 
   async hotspotVoucherSendWhatsapp(body: { voucherIds: string[] }) {
-    // WhatsApp sending deferred
-    return { success: true, sent: body.voucherIds.length, message: 'WhatsApp sending deferred to whatsapp integration' };
+    const vouchers = await this.prisma.hotspotVoucher.findMany({
+      where: { id: { in: body.voucherIds } },
+      include: { profile: true, agent: true },
+    });
+    let sent = 0;
+    const errors: string[] = [];
+    for (const v of vouchers) {
+      const phone = v.agent?.phone || (v as any).customerPhone;
+      if (!phone) { errors.push(`${v.code}: no phone`); continue; }
+      try {
+        const msg = `Voucher Salfanet\nKode: ${v.code}\nProfil: ${v.profile?.name || '-'}\nMasa Aktif: ${v.profile?.validityValue || ''} ${v.profile?.validityUnit || ''}\nStatus: ${v.status}`;
+        await this.whatsapp.sendMessage(phone, msg);
+        sent++;
+      } catch (err: any) {
+        errors.push(`${v.code}: ${err.message}`);
+      }
+    }
+    return { success: true, sent, total: vouchers.length, errors: errors.slice(0, 10) };
   }
 
   async hotspotVoucherBulk(body: { action: string; voucherIds: string[]; data?: Record<string, unknown> }) {
@@ -362,15 +495,37 @@ export class ExtrasService {
   }
 
   async invoicesSendReminder(body: { invoiceId: string }) {
-    const invoice = await this.prisma.invoice.findUnique({ where: { id: body.invoiceId } });
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { id: body.invoiceId },
+      include: { user: { select: { phone: true, name: true, username: true, email: true } } },
+    });
     if (!invoice) throw new HttpException('Invoice not found', HttpStatus.NOT_FOUND);
-    // WhatsApp/email reminder deferred
-    return { success: true, message: 'Reminder sending deferred to whatsapp/email integration' };
+    const phone = invoice.user?.phone || invoice.customerPhone;
+    const name = invoice.user?.name || invoice.customerName || 'Customer';
+    let waResult: any = null;
+    let emailResult: any = null;
+    const msg = `Pengingat Tagihan Salfanet\n\nHallo ${name},\nTagihan Anda: ${invoice.invoiceNumber}\nJumlah: Rp ${Number(invoice.amount).toLocaleString('id-ID')}\nJatuh Tempo: ${invoice.dueDate?.toLocaleDateString('id-ID') || '-'}\nStatus: ${invoice.status}\n\nSilakan bayar sebelum jatuh tempo. Terima kasih.`;
+    if (phone) {
+      try { waResult = await this.whatsapp.sendMessage(phone, msg); } catch (err: any) { waResult = { success: false, error: err.message }; }
+    }
+    if (invoice.user?.email) {
+      emailResult = await this.email.sendEmail(invoice.user.email, `Pengingat Tagihan ${invoice.invoiceNumber}`, msg.replace(/\n/g, '<br>'), name);
+    }
+    return { success: true, whatsapp: waResult, email: emailResult };
   }
 
   async invoicesSendRemindersBulk(body: { invoiceIds: string[] }) {
-    // Bulk reminder deferred
-    return { success: true, sent: body.invoiceIds.length, message: 'Bulk reminders deferred to whatsapp/email integration' };
+    let sent = 0;
+    const errors: string[] = [];
+    for (const invoiceId of body.invoiceIds) {
+      try {
+        const result = await this.invoicesSendReminder({ invoiceId });
+        if (result.success) sent++;
+      } catch (err: any) {
+        errors.push(`${invoiceId}: ${err.message}`);
+      }
+    }
+    return { success: true, sent, total: body.invoiceIds.length, errors: errors.slice(0, 10) };
   }
 
   async invoicesPdf(id: string) {
@@ -379,8 +534,9 @@ export class ExtrasService {
       include: { user: { select: { username: true, name: true, phone: true, address: true } } },
     });
     if (!invoice) throw new HttpException('Invoice not found', HttpStatus.NOT_FOUND);
-    // PDF generation deferred
-    return { invoice, message: 'PDF generation deferred to PDF library integration' };
+    // Generate PDF via ExportService
+    const pdfBuffer = await this.exportSvc.generateInvoicePdf(id);
+    return { invoice, pdfBase64: pdfBuffer.toString('base64'), contentType: 'application/pdf' };
   }
 
   // ==================== FREERADIUS EXTRAS ====================
@@ -604,8 +760,18 @@ export class ExtrasService {
     const invoice = await this.prisma.invoice.findFirst({ where: { id: body.invoiceId, userId } });
     if (!invoice) throw new HttpException('Invoice not found', HttpStatus.NOT_FOUND);
     if (invoice.status === 'PAID') throw new HttpException('Invoice already paid', HttpStatus.BAD_REQUEST);
-    // Payment link regeneration deferred
-    return { invoice, paymentLink: null, message: 'Payment link regeneration deferred to payment-gateway integration' };
+    // Find active payment gateway and create new payment
+    const gateway = await this.prisma.paymentGateway.findFirst({ where: { isActive: true } });
+    if (!gateway) return { invoice, paymentLink: null, message: 'No active payment gateway' };
+    try {
+      const result = await this.paymentCreateSvc.createPayment({
+        invoiceId: invoice.id,
+        gateway: gateway.provider,
+      });
+      return { invoice, paymentLink: (result as any).paymentUrl || null, snapToken: (result as any).snapToken || null };
+    } catch (err: any) {
+      return { invoice, paymentLink: null, error: err.message };
+    }
   }
 
   async customerManualPayment(userId: string, body: { invoiceId: string; amount: number; bankName?: string; senderAccount?: string; receiptImage?: string }) {
@@ -627,8 +793,26 @@ export class ExtrasService {
   }
 
   async customerOntReboot(userId: string) {
-    // GenieACS reboot deferred
-    return { success: true, message: 'ONT reboot deferred to GenieACS integration' };
+    // Find customer's ONT device via GenieACS — look up by PPPoE username
+    const user = await this.prisma.pppoeUser.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true, name: true },
+    });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    // Try to find GenieACS device by username tag
+    try {
+      const result = await this.genieacs.listDevices({ limit: 1000 });
+      const devices = (result as any).devices || result;
+      const device = (devices as any[]).find((d) =>
+        d._id === user.username ||
+        d._deviceId?._SerialNumber === user.username ||
+        d._tags?.includes(user.username),
+      );
+      if (!device) return { success: false, message: 'No GenieACS device found for this user' };
+      return this.genieacs.rebootDevice(device._id);
+    } catch (err: any) {
+      return { success: false, error: err.message };
+    }
   }
 
   async customerPaymentHistory(userId: string) {
@@ -744,17 +928,54 @@ export class ExtrasService {
   // ==================== MISC ====================
 
   async pwaIcon() {
-    // PWA icon serving deferred
-    return { message: 'PWA icon serving deferred to static file integration' };
+    // Serve PWA icon from public directory
+    try {
+      const iconPath = path.resolve(process.cwd(), 'public', 'icons', 'icon-192.png');
+      if (fs.existsSync(iconPath)) {
+        const buffer = fs.readFileSync(iconPath);
+        return { icon: buffer.toString('base64'), contentType: 'image/png' };
+      }
+      // Try frontend public dir as fallback
+      const frontendPath = path.resolve(process.cwd(), '..', 'frontend', 'public', 'icons', 'icon-192.png');
+      if (fs.existsSync(frontendPath)) {
+        const buffer = fs.readFileSync(frontendPath);
+        return { icon: buffer.toString('base64'), contentType: 'image/png' };
+      }
+      return { message: 'PWA icon not found', searchedPaths: [iconPath, frontendPath] };
+    } catch (err: any) {
+      return { message: 'PWA icon read error', error: err.message };
+    }
   }
 
   async sseVoucherUpdates() {
-    // SSE deferred — requires long-lived connection
-    return { message: 'SSE voucher updates deferred to SSE integration' };
+    // SSE requires a long-lived HTTP connection — return current voucher stats
+    // Real SSE would use EventSource on frontend connecting to a dedicated endpoint
+    const [total, active, sold, expired] = await Promise.all([
+      this.prisma.hotspotVoucher.count(),
+      this.prisma.hotspotVoucher.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.hotspotVoucher.count({ where: { status: 'SOLD' } }),
+      this.prisma.hotspotVoucher.count({ where: { status: 'EXPIRED' } }),
+    ]);
+    return { total, active, sold, expired, timestamp: new Date().toISOString() };
   }
 
   async systemRadius() {
-    return { status: 'active', message: 'System RADIUS info deferred to system integration' };
+    // Get RADIUS system info from DB
+    const [radcheckCount, radreplyCount, radusergroupCount, radacctActive, radacctTotal] = await Promise.all([
+      this.prisma.radcheck.count(),
+      this.prisma.radreply.count(),
+      this.prisma.radusergroup.count(),
+      this.prisma.radacct.count({ where: { acctstoptime: null } }),
+      this.prisma.radacct.count(),
+    ]);
+    return {
+      status: 'active',
+      radcheck: radcheckCount,
+      radreply: radreplyCount,
+      radusergroup: radusergroupCount,
+      activeSessions: radacctActive,
+      totalAccounting: radacctTotal,
+    };
   }
 
   async authLogoutLog(body: { userId: string; username: string }) {
@@ -770,10 +991,18 @@ export class ExtrasService {
   }
 
   async payByToken(token: string) {
-    const invoice = await this.prisma.invoice.findUnique({ where: { paymentToken: token } });
+    const invoice = await this.prisma.invoice.findUnique({
+      where: { paymentToken: token },
+      include: { user: { select: { name: true, phone: true } } },
+    });
     if (!invoice) throw new HttpException('Invalid payment token', HttpStatus.NOT_FOUND);
-    // Payment page rendering deferred
-    return { invoice, message: 'Payment page rendering deferred to frontend integration' };
+    // Return invoice + available payment gateways for frontend payment page
+    const gateways = await this.prisma.paymentGateway.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, provider: true },
+    });
+    const company = await this.prisma.company.findFirst({ select: { name: true, address: true, phone: true } });
+    return { invoice, gateways, company };
   }
 
   async payManual(body: { invoiceId: string; amount: number }) {

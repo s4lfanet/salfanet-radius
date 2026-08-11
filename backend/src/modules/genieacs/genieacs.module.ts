@@ -7,5 +7,6 @@ import { AuthModule } from '../auth/auth.module';
   imports: [AuthModule],
   controllers: [GenieacsController],
   providers: [GenieacsService],
+  exports: [GenieacsService],
 })
 export class GenieacsModule {}
