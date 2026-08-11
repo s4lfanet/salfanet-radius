@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.5 — 2026-08-11
+
+### Removed
+- **Go backend cleanup — full revert to pure Next.js** — Menghapus seluruh sisa eksperimen migrasi backend ke Go yang sudah tidak terpakai di production. Konfirmasi: `production/ecosystem.config.js` hanya menjalankan 3 proses PM2 (`salfanet-radius`, `salfanet-cron`, `salfanet-wa`) — tidak ada proses Go. `production/nginx-salfanet-radius.conf` mengarahkan seluruh trafik termasuk `/api/*` ke Next.js port 3000. `vps-installer.sh` tidak pernah memanggil `install-go.sh`. Next.js tetap memiliki seluruh 399 API route (`src/app/api/**/route.ts`) sebagai satu-satunya backend aktif.
+### Files
+- Dihapus: `internal/` (69 file Go handler/service), `cmd/server/main.go`
+- Dihapus: `go.mod`, `go.sum`, `Dockerfile`, `Makefile`, `.air.toml`, `docker-compose.yml`
+- Dihapus: `vps-install/install-go.sh`, `nginx-frontend.conf` (config nginx orphan yang mengarah ke Go `:8080`)
+- Dihapus: `docs/GO_MIGRATION_PROMPT.md`
+
 ### v2.34.4 — 2026-05-13
 
 ### Added
@@ -521,14 +531,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - `src/cron/runner-wrapper.cjs` — NEW: CJS wrapper entry point (opsional)
 - `src/server/jobs/jobs.config.ts` — hapus `import 'server-only'`
 - `prisma/schema.prisma` — tambah model `cronScheduleConfig`
-
-### v2.31.12 — 2026-05-11
-
-### Fixed
-- **MikroTik timeout empty error message** — `node-routeros` melempar empty string `""` saat timeout (bukan `Error` object); sekarang ada fallback message yang jelas jika error kosong atau `{}`
-- **Library timeout conflict** — `node-routeros` internal timeout diset ke 9999s agar tidak interferensi dengan `Promise.race` timeout kita yang memberikan pesan error yang lebih informatif
-### Files
-- `src/server/services/mikrotik/client.ts` — set library timeout ke 9999s, tambah fallback untuk empty error message
 
 <!-- AUTO-CHANGELOG:END -->
 
