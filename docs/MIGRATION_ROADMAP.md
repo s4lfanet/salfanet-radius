@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-3 ✅)
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-4 ✅)
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -171,13 +171,15 @@ yang akan digunakan saat API routes mulai dipindah di Phase 3.
 
 ```text
 Total API routes:  399
-Ported:             46   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2
+Ported:             70   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2
                           + settings 7 + users 1 + admin-users 5 + notifications 5
-                          + pppoe 11 + hotspot 8 + invoices 5 + keuangan 8)
+                          + pppoe 11 + hotspot 8 + invoices 5 + keuangan 8
+                          + payment 2 + network 16 + radius 4 + sessions 4)
   - Batch 1:          8   ✅ (health, company, dashboard, permissions)
   - Batch 2:         14   ✅ (settings, users, admin-users, notifications)
   - Batch 3:         19   ✅ (pppoe, hotspot, invoices, keuangan)
-  - Batch 4+:       353   ⏳
+  - Batch 4:         24   ✅ (payment, network, radius, sessions)
+  - Batch 5+:       329   ⏳
 ```
 
 ### Batches
@@ -187,8 +189,8 @@ Ported:             46   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 1 | health, company, dashboard, permissions | 8 | ✅ Complete | `0a98b07` |
 | 2 | settings, users, admin-users, notifications | 14 | ✅ Complete | `6c461b` |
 | 3 | pppoe, hotspot, invoices, keuangan | 19 | ✅ Complete | `411bf3` |
-| 4 | payment, network, olt, genieacs, freeradius, radius, sessions | ~99 | ⏳ Pending | — |
-| 5 | customer, agent, technician | ~49 | ⏳ Pending | — |
+| 4 | payment, network, radius, sessions | 24 | ✅ Complete | `fbe4837` |
+| 5 | payment webhooks, MikroTik integration, OLT/ONU, VPN, customer, agent | ~120 | ⏳ Pending | — |
 | 6 | whatsapp, telegram, push, upload, backup, dll | ~168 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
@@ -251,6 +253,51 @@ Deferred to Batch 4:
 - PPPoE user sync-mikrotik, bulk operations, send-notification, export
 - Hotspot voucher resync, send-whatsapp, rekap-voucher, agents
 - Invoice generate, send-reminder, export, by-token, pdf
+
+### Batch 4 Detail ✅
+
+**Commit**: `fbe4837`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| Payment | `GET /api/v1/payment/check-order`, `GET /api/v1/payment/duitku-methods` | `frontend/.../api/payment/{check-order,duitku-methods}` |
+| Network | `GET/POST/PUT/DELETE /api/v1/network/{routers,olts,odps,odcs,servers}`, `GET/POST /api/v1/network/otbs`, `GET /api/v1/network/nodes` | `frontend/.../api/network/{routers,olts,odps,odcs,otbs,nodes,servers}` |
+| Radius | `POST /api/v1/radius/{authorize,post-auth,accounting,coa}` | `frontend/.../api/radius/{authorize,post-auth,accounting,coa}` |
+| Sessions | `GET /api/v1/sessions`, `GET /api/v1/sessions/{realtime,export}`, `POST /api/v1/sessions/sync` | `frontend/.../api/sessions/{route,realtime,export,sync}` |
+
+Key behaviors preserved:
+- Payment check-order: agent deposit lookup, invoice number parsing (strip timestamp suffix),
+  TOPUP-TEMP backward compat, webhook log fallback
+- Payment duitku-methods: md5 signature, sandbox/production URLs, fallback defaults filtered by amount
+- Network routers: VPN client NAS secret resolution, RADIUS server IP auto-detection,
+  activity logging, duplicate nasname+port+secret check
+- Network OLTs: BigInt uptime serialization, router assignments with priority,
+  ONU stats (online/offline/los/dying_gasp/unconfig)
+- Network ODPs: parent ODP hierarchy, blocks delete if has children
+- Network ODCs: OLT validation, blocks delete if has ODPs
+- Network OTBs: feeder cable validation, auto-sync to network_nodes (unified map)
+- Network nodes: unified map with type/status/search filters
+- Radius authorize: voucher/PPPoE status checks, expiry rejection, isolated user allow,
+  radpostauth rejection logging, Cleartext-Password for vouchers
+- Radius post-auth: firstLoginAt + expiresAt calculation by validity unit,
+  Keuangan income sync (sellingPrice), agent commission expense sync (resellerFee)
+- Radius accounting: logging only (radacct handled by FreeRADIUS SQL module)
+- Sessions list: stale session cleanup (8h idle, clock-skew-safe),
+  radacct active sessions with PPPoE/hotspot type detection,
+  synthetic hotspot sessions for orphaned ACTIVE vouchers,
+  duration calculation (DB-based, NAS-clock-skew-corrected),
+  historical MAC fallback, stats + all-time radacct aggregates
+
+Deferred to Batch 5 (integration batch):
+- Payment create + webhook (Midtrans/Xendit/Duitku/Tripay, 1472+522 lines)
+- MikroTik API integration (node-routeros): router connection test,
+  realtime sessions, CoA execution, live traffic overlay
+- FreeRADIUS reload service
+- Session sync jobs (syncPPPoESessions, syncHotspotWithRadius)
+- Excel/PDF export generation (exceljs/pdfkit)
+- VPN management routes (vpn-server, vpn-client, vpn-routing, l2tp/pptp/sstp control)
+- Network trace, cables, splices, joint-closures, fiber-paths, auto-connect
+- OLT chassis/ONU management, ONU register/reboot/delete
 
 ### Per-batch workflow
 
