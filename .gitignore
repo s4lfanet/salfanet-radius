@@ -19,8 +19,8 @@ dist/
 coverage/
 test-results/
 
-# Logs
-logs/
+# Logs (root-level only — do NOT ignore src/app/admin/logs/)
+/logs/
 *.log
 build-error.log
 npm-debug.log*
