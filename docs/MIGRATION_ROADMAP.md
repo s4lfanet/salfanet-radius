@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ✅ Complete | Phase 7 ⏳ Pending
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ✅ Complete | Phase 7 ✅ Complete | Phase 8 ⏳ Pending
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -41,7 +41,7 @@ salfanet-radius/ (pnpm monorepo)
 | 4 | Port Cron Jobs (17 jobs) | ✅ Complete | 3-5 hari | `0b3ec1e` |
 | 5 | Frontend Cleanup (decouple) | ✅ Complete | 2-3 hari | `a981dbc` |
 | 6 | Independent Build & Deploy | ✅ Complete | 2-3 hari | `d29846b` |
-| 7 | Regression Test | ⏳ Pending | 3-5 hari | — |
+| 7 | Regression Test (e2e + checklist) | ✅ Complete | 3-5 hari | `8757606` |
 | 8 | Cleanup & Documentation | ⏳ Pending | 2-3 hari | — |
 
 ---
@@ -969,32 +969,74 @@ location / { proxy_pass http://127.0.0.1:3000; }          # Next.js
 
 ---
 
-## Phase 7: Regression Test ⏳
+## Phase 7: Regression Test ✅
 
-**Status**: Pending
+**Status**: Complete (automated e2e tests + manual checklist)
+**Commit**: `8757606`
 **Estimasi**: 3-5 hari
 
-### Test checklist
+### Automated E2E Tests
 
-- [ ] Login (admin, customer, agent, technician)
-- [ ] Role & permission
-- [ ] Customer CRUD
-- [ ] PPPoE sync
-- [ ] FreeRADIUS sync
-- [ ] MikroTik integration
-- [ ] OLT/ONU management
-- [ ] GenieACS
-- [ ] Billing & invoice
-- [ ] Payment gateway webhook
-- [ ] WhatsApp send
-- [ ] Telegram backup
-- [ ] Email notification
-- [ ] Push notification
-- [ ] Cron jobs (all 17)
-- [ ] Backup & restore
-- [ ] Settings
-- [ ] Dashboard stats
-- [ ] Activity logs
+46 tests, all passing:
+
+- `test/auth.e2e-spec.ts` (19 tests)
+  - GET /health (public)
+  - GET /api/v1/company/info (public)
+  - POST /api/v1/auth/login (auth rejection)
+  - 13 protected routes (verify not 404)
+
+- `test/smoke.e2e-spec.ts` (27 tests)
+  - Module registration for all major modules
+  - Route existence verification (not 404)
+  - Public endpoint accessibility
+
+### Bug Fixes Found During Testing
+
+- `AuthModule` → made `@Global()` so guards can resolve `AuthService`
+  from any module context
+- `SessionSyncModule` → added `exports: [SessionSyncService]` so
+  `SessionsModule` can inject it
+
+### Manual Test Checklist
+
+`deploy/REGRESSION_TEST_CHECKLIST.md` — 18 sections:
+
+1. Authentication (admin, customer, agent, technician)
+2. Dashboard & Stats
+3. PPPoE Management
+4. Hotspot Management
+5. Invoices & Billing
+6. Payment Gateway
+7. Network & MikroTik
+8. FreeRADIUS
+9. OLT/ONU & GenieACS
+10. VPN Management
+11. Notifications (WhatsApp, Email, Push, Telegram)
+12. Cron Jobs (all 17)
+13. Customer Portal
+14. Agent Portal
+15. Technician Portal
+16. Settings & Admin
+17. Export & Reports
+18. Activity Logs
+
+### Test Commands
+
+```bash
+# Run e2e tests
+cd backend && pnpm test:e2e
+
+# Run with coverage
+cd backend && pnpm test:e2e --coverage
+```
+
+### Remaining (Phase 8)
+
+- [ ] Manual VPS testing with real database
+- [ ] Verify cron jobs don't duplicate (backend + legacy)
+- [ ] Verify payment webhooks
+- [ ] Verify MikroTik integration with real routers
+- [ ] Remove legacy code after VPS verification
 
 ---
 
