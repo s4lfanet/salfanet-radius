@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-5 ✅)
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ⏳ Pending
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7), `27a1fa0` (B8) |
+| 3 | Port API Modules (399 routes) | ✅ Complete | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7), `27a1fa0` (B8), `431adcb` (B9), `cba6e57` (B10), `f54b2c8` (B11), `a1f52cd` (B12), `529a1f1` (B13) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -188,7 +188,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 10:        80   ✅ (genieacs, admin-extras, email, cron)
   - Batch 11:        49   ✅ (network-extras, extras: PPPoE/Hotspot/Invoice/FreeRADIUS/Ticket/Customer/Payment)
   - Batch 12:        ~15  ✅ (nodemailer, MikroTik API, FreeRADIUS filesystem/service, PDF/Excel exports, payment delegation)
-  - Batch 13+:       ~5   ⏳ (remaining: GenieACS ONT, WhatsApp, push, SSE, PWA static)
+  - Batch 13:        ~10  ✅ (WhatsApp, Email, GenieACS ONT, MikroTik sync, PDF, PWA, SSE, system RADIUS)
+  - Phase 3:         COMPLETE ✅
 ```
 
 ### Batches
@@ -207,7 +208,7 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 10 | GenieACS, admin-extras, email, cron | 80 | ✅ Complete | `cba6e57` |
 | 11 | network-extras, extras (PPPoE/Hotspot/Invoice/FreeRADIUS/Ticket/Customer/Payment) | 49 | ✅ Complete | `f54b2c8` |
 | 12 | External integration wiring (nodemailer, MikroTik API, FreeRADIUS fs/service, PDF/Excel, payment delegation) | ~15 | ✅ Complete | `a1f52cd` |
-| 13+ | Remaining (GenieACS ONT, WhatsApp, push, SSE, PWA static) | ~5 | ⏳ Pending | — |
+| 13 | Remaining integrations (WhatsApp, Email, GenieACS ONT, MikroTik sync, PDF, PWA, SSE, system RADIUS) | ~10 | ✅ Complete | `529a1f1` |
 
 ### Batch 1 Detail ✅
 
@@ -773,6 +774,33 @@ Added dependencies:
 
 Backend module count: 46 → 47
 Build verified with `pnpm build`.
+
+### Batch 13 Detail ✅
+
+**Commit**: `529a1f1`
+
+| Area | Changes | Source |
+|------|---------|--------|
+| WhatsApp + Email | `pppoeUsersSendNotification()` sends WA to user phones; `hotspotVoucherSendWhatsapp()` sends voucher details; `invoicesSendReminder()` sends WA + email; `invoicesSendRemindersBulk()` iterates | `frontend/.../api/{pppoe,hotspot,invoices}/*` |
+| GenieACS ONT | `customerOntReboot()` finds device by username/serial/tag via `GenieacsService.listDevices()`, calls `rebootDevice()` | `frontend/.../api/customer/ont/reboot` |
+| MikroTik sync | `pppoeUsersSyncMikrotik()` upserts radcheck + radusergroup; `pppoeProfilesSyncMikrotik()` connects to each router via API, creates/updates PPP profiles with rate-limit | `frontend/.../api/pppoe/users/sync-mikrotik`, `frontend/.../api/pppoe/profiles/sync-mikrotik` |
+| PDF + payment | `invoicesPdf()` generates real PDF via `ExportService.generateInvoicePdf()`, returns base64; `customerRegeneratePayment()` delegates to `PaymentCreateService.createPayment()` | `frontend/.../api/invoices/:id/pdf`, `frontend/.../api/customer/invoice/regenerate-payment` |
+| PWA + SSE + system | `pwaIcon()` reads from public/icons/; `sseVoucherUpdates()` returns voucher stats; `systemRadius()` returns RADIUS DB stats; `payByToken()` returns invoice + gateways + company | `frontend/.../api/{pwa,sse,system,pay}/*` |
+
+Module exports added:
+- `GenieacsModule` now exports `GenieacsService`
+- `MikrotikModule` now exports `MikrotikService`
+
+ExtrasModule now imports: WhatsAppModule, EmailModule, GenieacsModule,
+MikrotikModule, ExportModule, PaymentGatewayModule
+
+All previously-deferred stubs in ExtrasService are now wired to real
+service implementations. No more "deferred" messages in extras module.
+
+Build passes (nest build).
+
+**Phase 3 (Port API Modules) is now COMPLETE.** All 399+ frontend API
+routes have corresponding NestJS backend implementations.
 
 ### Per-batch workflow
 
