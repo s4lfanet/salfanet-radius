@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from 'next';
-import { prisma } from '@/server/db/client';
+import { getCompanyInfo } from '@/lib/api-client';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const company = await prisma.company.findFirst({ select: { name: true } });
+  const company = await getCompanyInfo();
   return {
     title: `Portal Teknisi - ${company?.name || 'SALFANET RADIUS'}`,
     description: 'Portal Teknisi untuk manajemen tiket dan pelanggan',

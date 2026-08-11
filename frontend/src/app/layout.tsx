@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/components/client-providers";
-import { prisma } from "@/server/db/client";
+import { getCompanyInfo } from "@/lib/api-client";
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ const outfit = Outfit({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const company = await prisma.company.findFirst({ select: { name: true } });
+  const company = await getCompanyInfo();
   const name = company?.name || 'SALFANET RADIUS';
   return {
     title: name,
