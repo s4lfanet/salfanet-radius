@@ -31,6 +31,11 @@ import { RegistrationsModule } from './modules/registrations/registrations.modul
 import { VoucherTemplatesModule } from './modules/voucher-templates/voucher-templates.module';
 import { CustomerPortalModule } from './modules/customer-portal/customer-portal.module';
 import { AgentPortalModule } from './modules/agent-portal/agent-portal.module';
+import { TechnicianPortalModule } from './modules/technician-portal/technician-portal.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
+import { EvoucherModule } from './modules/evoucher/evoucher.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -73,6 +78,11 @@ import { AgentPortalModule } from './modules/agent-portal/agent-portal.module';
     VoucherTemplatesModule,
     CustomerPortalModule,
     AgentPortalModule,
+    TechnicianPortalModule,
+    TicketsModule,
+    EvoucherModule,
+    InventoryModule,
+    UploadModule,
   ],
   providers: [
     {
