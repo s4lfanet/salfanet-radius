@@ -50,6 +50,7 @@ import { EmailModule } from './modules/email/email.module';
 import { CronModule } from './modules/cron/cron.module';
 import { NetworkExtrasModule } from './modules/network-extras/network-extras.module';
 import { ExtrasModule } from './modules/extras/extras.module';
+import { ExportModule } from './modules/export/export.module';
 
 @Module({
   imports: [
@@ -111,6 +112,7 @@ import { ExtrasModule } from './modules/extras/extras.module';
     CronModule,
     NetworkExtrasModule,
     ExtrasModule,
+    ExportModule,
   ],
   providers: [
     {

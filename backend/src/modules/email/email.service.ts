@@ -1,11 +1,25 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
 
   constructor(private readonly prisma: PrismaService) {}
+
+  private async buildTransporter(): Promise<nodemailer.Transporter> {
+    const settings = await this.prisma.emailSettings.findFirst();
+    if (!settings || !settings.enabled) throw new HttpException('Email not configured or disabled', HttpStatus.BAD_REQUEST);
+    if (!settings.smtpHost || !settings.smtpPort) throw new HttpException('SMTP host/port not configured', HttpStatus.BAD_REQUEST);
+
+    return nodemailer.createTransport({
+      host: settings.smtpHost,
+      port: settings.smtpPort,
+      secure: settings.smtpSecure || settings.smtpPort === 465,
+      auth: { user: settings.smtpUser, pass: settings.smtpPassword },
+    });
+  }
 
   // ==================== SETTINGS ====================
 
@@ -29,9 +43,20 @@ export class EmailService {
     const settings = await this.prisma.emailSettings.findFirst();
     if (!settings || !settings.enabled) throw new HttpException('Email not configured or disabled', HttpStatus.BAD_REQUEST);
 
-    // Nodemailer integration deferred
-    this.logger.log(`Test email to ${body.toEmail} deferred (nodemailer integration pending)`);
-    return { success: true, message: 'Test email sending deferred to nodemailer integration.', to: body.toEmail };
+    try {
+      const transporter = await this.buildTransporter();
+      const info = await transporter.sendMail({
+        from: settings.fromEmail || settings.smtpUser || 'no-reply@salfanet.id',
+        to: body.toEmail,
+        subject: 'Salfanet Test Email',
+        html: '<h1>Salfanet Test Email</h1><p>This is a test email from Salfanet Radius.</p>',
+      });
+      this.logger.log(`Test email sent to ${body.toEmail}: ${info.messageId}`);
+      return { success: true, messageId: info.messageId, to: body.toEmail };
+    } catch (err: any) {
+      this.logger.error(`Test email failed: ${err.message}`);
+      throw new HttpException({ error: 'Failed to send test email', details: err.message }, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   // ==================== TEMPLATES ====================
@@ -106,14 +131,28 @@ export class EmailService {
       return { success: false, reason: 'not_configured' };
     }
 
-    // Nodemailer integration deferred — log to history as 'failed'
     try {
-      await this.prisma.emailHistory.create({
-        data: { toEmail: to, toName: toName || null, subject, body: htmlBody, status: 'failed', error: 'Nodemailer integration pending' },
+      const transporter = await this.buildTransporter();
+      const info = await transporter.sendMail({
+        from: settings.fromEmail || settings.smtpUser || 'no-reply@salfanet.id',
+        to: toName ? `${toName} <${to}>` : to,
+        subject,
+        html: htmlBody,
       });
-      return { success: false, reason: 'nodemailer_not_integrated' };
+      await this.prisma.emailHistory.create({
+        data: { toEmail: to, toName: toName || null, subject, body: htmlBody, status: 'sent', sentAt: new Date() },
+      });
+      this.logger.log(`Email sent to ${to}: ${info.messageId}`);
+      return { success: true, messageId: info.messageId };
     } catch (err: any) {
-      this.logger.error(`Failed to log email: ${err.message}`);
+      this.logger.error(`Failed to send email to ${to}: ${err.message}`);
+      try {
+        await this.prisma.emailHistory.create({
+          data: { toEmail: to, toName: toName || null, subject, body: htmlBody, status: 'failed', error: err.message },
+        });
+      } catch (logErr) {
+        this.logger.error(`Failed to log email error: ${logErr}`);
+      }
       return { success: false, error: err.message };
     }
   }

@@ -8,5 +8,6 @@ import { ActivityLogModule } from '../activity-log/activity-log.module';
   imports: [ActivityLogModule],
   controllers: [PaymentGatewayController],
   providers: [PaymentCreateService, PaymentWebhookService],
+  exports: [PaymentCreateService, PaymentWebhookService],
 })
 export class PaymentGatewayModule {}
