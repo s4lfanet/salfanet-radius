@@ -5,11 +5,15 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { ActivityLogModule } from './modules/activity-log/activity-log.module';
 import { HealthModule } from './modules/health/health.module';
 import { CompanyModule } from './modules/company/company.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
-import { ActivityLogModule } from './modules/activity-log/activity-log.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { UsersModule } from './modules/users/users.module';
+import { AdminUsersModule } from './modules/admin-users/admin-users.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -31,6 +35,10 @@ import { ActivityLogModule } from './modules/activity-log/activity-log.module';
     CompanyModule,
     DashboardModule,
     PermissionsModule,
+    SettingsModule,
+    UsersModule,
+    AdminUsersModule,
+    NotificationsModule,
   ],
   providers: [
     {
