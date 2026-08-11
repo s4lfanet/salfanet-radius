@@ -101,6 +101,26 @@ export class DuitkuPayment {
     });
     return response.json();
   }
+
+  async getPaymentMethods(amount: number): Promise<any[]> {
+    const datetime = new Date().toISOString().replace(/[:T.-]/g, '').slice(0, 14);
+    const signature = crypto.createHash('sha256').update(`${this.config.merchantCode}${amount}${datetime}${this.config.apiKey}`).digest('hex');
+    const response = await fetch(`${this.baseUrl}/v2/paymentmethod`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({
+        merchantCode: this.config.merchantCode,
+        amount,
+        datetime,
+        signature,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok || data.statusCode !== '00') {
+      throw new Error(`Duitku payment methods error: ${data.statusMessage || JSON.stringify(data)}`);
+    }
+    return data.paymentMethod || [];
+  }
 }
 
 export function createDuitkuClient(merchantCode: string, apiKey: string, callbackUrl: string, returnUrl: string, sandbox = false): DuitkuPayment {

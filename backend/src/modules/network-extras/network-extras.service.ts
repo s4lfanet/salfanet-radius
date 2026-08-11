@@ -1,6 +1,34 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 
+// node-routeros is a CommonJS module — use require to avoid ESM issues
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { RouterOSAPI } = require('node-routeros');
+
+function makeRouterApi(router: { ipAddress: string; username: string; password: string; port: number }) {
+  return new RouterOSAPI({
+    host: router.ipAddress,
+    port: router.port || 8728,
+    user: router.username,
+    password: router.password,
+    timeout: 10000,
+  });
+}
+
+async function withMikrotik<T>(
+  router: { ipAddress: string; username: string; password: string; port: number },
+  fn: (conn: any) => Promise<T>,
+): Promise<T> {
+  const conn = makeRouterApi(router);
+  try {
+    await conn.connect();
+    const result = await fn(conn);
+    return result;
+  } finally {
+    try { conn.close(); } catch { /* ignore */ }
+  }
+}
+
 @Injectable()
 export class NetworkExtrasService {
   private readonly logger = new Logger(NetworkExtrasService.name);
@@ -63,72 +91,266 @@ export class NetworkExtrasService {
   }
 
   async getRouterStatus() {
-    const routers = await this.prisma.router.findMany({ select: { id: true, name: true, nasname: true, isActive: true } });
-    // TCP ping deferred
-    return routers.map((r) => ({ ...r, online: r.isActive, latency: null }));
+    const routers = await this.prisma.router.findMany({
+      select: { id: true, name: true, nasname: true, ipAddress: true, username: true, password: true, port: true, isActive: true },
+    });
+    const results: any[] = [];
+    for (const r of routers) {
+      if (!r.isActive || !r.username || !r.password) {
+        results.push({ ...r, online: false, identity: null, uptime: null, error: 'inactive or no credentials' });
+        continue;
+      }
+      try {
+        const identity = await withMikrotik(r, async (conn) => {
+          const id = await conn.write('/system/identity/print');
+          const res = await conn.write('/system/resource/print');
+          return { identity: id?.[0]?.name || null, uptime: res?.[0]?.uptime || null };
+        });
+        results.push({ ...r, online: true, ...identity });
+      } catch (err: any) {
+        results.push({ ...r, online: false, identity: null, uptime: null, error: err.message });
+      }
+    }
+    return results;
   }
 
   async testRouter(body: { host: string; port?: number }) {
+    // Try MikroTik API first (most useful), fall back to TCP socket test
+    const port = body.port || 8728;
     try {
-      const { Socket } = await import('net');
-      const port = body.port || 8728;
-      return new Promise((resolve) => {
-        const socket = new Socket();
-        socket.setTimeout(5000);
-        socket.on('connect', () => { socket.destroy(); resolve({ success: true, host: body.host, port, latency: 0 }); });
-        socket.on('timeout', () => { socket.destroy(); resolve({ success: false, host: body.host, port, error: 'Timeout' }); });
-        socket.on('error', (err) => { resolve({ success: false, host: body.host, port, error: err.message }); });
-        socket.connect(port, body.host);
-      });
-    } catch (err: any) {
-      return { success: false, error: err.message };
+      const conn = new RouterOSAPI({ host: body.host, port, user: 'admin', password: '', timeout: 5000 });
+      await conn.connect();
+      conn.close();
+      return { success: true, host: body.host, port, message: 'MikroTik API port reachable' };
+    } catch {
+      // Fall back to raw TCP test
+      try {
+        const { Socket } = await import('net');
+        return new Promise((resolve) => {
+          const socket = new Socket();
+          socket.setTimeout(5000);
+          socket.on('connect', () => { socket.destroy(); resolve({ success: true, host: body.host, port, latency: 0 }); });
+          socket.on('timeout', () => { socket.destroy(); resolve({ success: false, host: body.host, port, error: 'Timeout' }); });
+          socket.on('error', (err) => { resolve({ success: false, host: body.host, port, error: err.message }); });
+          socket.connect(port, body.host);
+        });
+      } catch (err: any) {
+        return { success: false, error: err.message };
+      }
     }
   }
 
   async testGateway(body: { host: string }) {
-    // Gateway test deferred — would use MikroTik API
-    return { success: true, host: body.host, message: 'Gateway test deferred to MikroTik API integration' };
+    // ICMP ping via child_process
+    try {
+      const { execSync } = await import('child_process');
+      const cmd = process.platform === 'win32' ? `ping -n 4 ${body.host}` : `ping -c 4 ${body.host}`;
+      const output = execSync(cmd, { timeout: 15000, encoding: 'utf8' });
+      const alive = !/100% (packet )?loss/i.test(output);
+      const match = output.match(/(?:min|Minimum)[^\d]*(\d+)/);
+      return { success: alive, host: body.host, alive, latency: match ? parseInt(match[1]) : null, output };
+    } catch (err: any) {
+      return { success: false, host: body.host, error: err.message };
+    }
   }
 
   async detectPublicIp(id: string) {
-    const router = await this.prisma.router.findUnique({ where: { id }, select: { id: true, name: true, nasname: true } });
+    const router = await this.prisma.router.findUnique({
+      where: { id },
+      select: { id: true, name: true, nasname: true, ipAddress: true, username: true, password: true, port: true },
+    });
     if (!router) throw new HttpException('Router not found', HttpStatus.NOT_FOUND);
-    // MikroTik API call deferred
-    return { routerId: id, publicIp: null, message: 'Public IP detection deferred to MikroTik API integration' };
+    if (!router.username || !router.password) throw new HttpException('Router has no API credentials', HttpStatus.BAD_REQUEST);
+
+    try {
+      const publicIp = await withMikrotik(router, async (conn) => {
+        // Try /ip/cloud/print first (MikroTik DDNS public IP)
+        try {
+          const cloud = await conn.write('/ip/cloud/print');
+          if (cloud?.[0]?.['public-address']) return cloud[0]['public-address'].split('/')[0];
+        } catch { /* cloud not available */ }
+        // Try PPPoE client interface
+        try {
+          const pppoe = await conn.write('/interface/pppoe-client/print');
+          if (pppoe?.[0]?.['ip-address']) return pppoe[0]['ip-address'];
+        } catch { /* no pppoe */ }
+        // Try default route gateway
+        try {
+          const routes = await conn.write('/ip/route/print', ['?dst-address=0.0.0.0/0']);
+          if (routes?.[0]?.['gateway-address']) return routes[0]['gateway-address'];
+        } catch { /* no route */ }
+        return null;
+      });
+      return { routerId: id, publicIp };
+    } catch (err: any) {
+      return { routerId: id, publicIp: null, error: err.message };
+    }
   }
 
   async getRouterInterfaces(id: string) {
-    const router = await this.prisma.router.findUnique({ where: { id } });
+    const router = await this.prisma.router.findUnique({
+      where: { id },
+      select: { id: true, name: true, ipAddress: true, username: true, password: true, port: true, isActive: true },
+    });
     if (!router) throw new HttpException('Router not found', HttpStatus.NOT_FOUND);
-    // MikroTik API call deferred
-    return { routerId: id, interfaces: [], message: 'Interface list deferred to MikroTik API integration' };
+    if (!router.isActive) throw new HttpException('Router is not active', HttpStatus.BAD_REQUEST);
+    if (!router.username || !router.password) throw new HttpException('Router has no API credentials', HttpStatus.BAD_REQUEST);
+
+    try {
+      const interfaces = await withMikrotik(router, async (conn) => {
+        return await conn.write('/interface/print');
+      });
+      const result = interfaces.map((iface: any) => ({
+        name: iface.name || '',
+        type: iface.type || '',
+        mtu: iface.mtu || iface['actual-mtu'] || '',
+        macAddress: iface['mac-address'] || '',
+        running: iface.running === 'true' || iface.running === true,
+        disabled: iface.disabled === 'true' || iface.disabled === true,
+        comment: iface.comment || '',
+      }));
+      const relevantTypes = ['ether', 'sfp', 'sfp-sfpplus', 'vlan', 'bridge', 'bonding', 'combo'];
+      const filtered = result.filter((iface: any) =>
+        relevantTypes.some((t) => iface.type.toLowerCase().includes(t)) ||
+        iface.name.toLowerCase().startsWith('ether') ||
+        iface.name.toLowerCase().startsWith('sfp') ||
+        iface.name.toLowerCase().startsWith('combo'),
+      );
+      return { routerId: id, interfaces: filtered, allInterfaces: result };
+    } catch (err: any) {
+      throw new HttpException({ error: 'Failed to get interfaces', details: err.message }, HttpStatus.SERVICE_UNAVAILABLE);
+    }
   }
 
   async getRouterUplinks(id: string) {
     const router = await this.prisma.router.findUnique({ where: { id } });
     if (!router) throw new HttpException('Router not found', HttpStatus.NOT_FOUND);
-    return { routerId: id, uplinks: [], message: 'Uplink info deferred to MikroTik API integration' };
+    // Uplinks are DB-stored via networkOLTRouter
+    const connections = await this.prisma.networkOLTRouter.findMany({
+      where: { routerId: id },
+      include: { olt: true },
+      orderBy: { priority: 'asc' },
+    });
+    return {
+      routerId: id,
+      uplinks: connections.map((c) => ({
+        id: c.id,
+        oltId: c.oltId,
+        oltName: c.olt.name,
+        oltIp: c.olt.ipAddress,
+        oltLatitude: c.olt.latitude,
+        oltLongitude: c.olt.longitude,
+        uplinkPort: c.uplinkPort,
+        priority: c.priority,
+        isActive: c.isActive,
+        createdAt: c.createdAt,
+      })),
+    };
   }
 
   async pingOlt(id: string, body: { oltIp: string }) {
-    const router = await this.prisma.router.findUnique({ where: { id } });
+    const router = await this.prisma.router.findUnique({
+      where: { id },
+      select: { id: true, name: true, ipAddress: true, username: true, password: true, port: true },
+    });
     if (!router) throw new HttpException('Router not found', HttpStatus.NOT_FOUND);
-    // MikroTik ping deferred
-    return { routerId: id, oltIp: body.oltIp, alive: null, message: 'Ping deferred to MikroTik API integration' };
+    if (!router.username || !router.password) throw new HttpException('Router has no API credentials', HttpStatus.BAD_REQUEST);
+
+    try {
+      const result = await withMikrotik(router, async (conn) => {
+        return await conn.write('/ping', [`=address=${body.oltIp}`, '=count=4']);
+      });
+      const alive = result.some((r: any) => r.received > 0);
+      const latency = result.find((r: any) => r['time-avg'])?.['time-avg'] || null;
+      return { routerId: id, oltIp: body.oltIp, alive, latency, raw: result };
+    } catch (err: any) {
+      return { routerId: id, oltIp: body.oltIp, alive: false, error: err.message };
+    }
   }
 
   async setupIsolir(id: string) {
-    const router = await this.prisma.router.findUnique({ where: { id } });
+    const router = await this.prisma.router.findUnique({
+      where: { id },
+      include: { vpnClient: { include: { vpnServer: true } } },
+    });
     if (!router) throw new HttpException('Router not found', HttpStatus.NOT_FOUND);
-    // MikroTik isolation setup deferred
-    return { routerId: id, success: true, message: 'Isolation setup deferred to MikroTik API integration' };
+    if (!router.username || !router.password) throw new HttpException('Router has no API credentials', HttpStatus.BAD_REQUEST);
+
+    // Build isolation script — RADIUS profile-based isolation via address-list
+    const vpnIp = router.vpnClient?.vpnIp || router.ipAddress;
+    const script = [
+      '/ip firewall address-list',
+      `add list=ISOLIR address=0.0.0.0/0 comment="Salfanet Isolir"`,
+      '/ip firewall filter',
+      `add chain=forward src-address-list=ISOLIR action=reject comment="Block isolated users"`,
+    ].join('\n');
+
+    try {
+      await withMikrotik(router, async (conn) => {
+        // Create address-list for isolated users if not exists
+        try {
+          const existing = await conn.write('/ip/firewall/address-list/print', ['?list=ISOLIR']);
+          if (existing.length === 0) {
+            await conn.write('/ip/firewall/address-list/add', ['=list=ISOLIR', '=address=0.0.0.0/0', '=comment=Salfanet Isolir']);
+          }
+        } catch { /* ignore */ }
+        // Create filter rule if not exists
+        try {
+          const existingFilter = await conn.write('/ip/firewall/filter/print', ['?comment=Salfanet Isolir Block']);
+          if (existingFilter.length === 0) {
+            await conn.write('/ip/firewall/filter/add', [
+              '=chain=forward', '=src-address-list=ISOLIR', '=action=reject', '=comment=Salfanet Isolir Block',
+            ]);
+          }
+        } catch { /* ignore */ }
+      });
+      return { routerId: id, success: true, vpnIp, script };
+    } catch (err: any) {
+      return { routerId: id, success: false, error: err.message, script };
+    }
   }
 
   async setupRadius(id: string) {
-    const router = await this.prisma.router.findUnique({ where: { id } });
+    const router = await this.prisma.router.findUnique({
+      where: { id },
+      include: { vpnClient: { include: { vpnServer: true } } },
+    });
     if (!router) throw new HttpException('Router not found', HttpStatus.NOT_FOUND);
-    // MikroTik RADIUS setup deferred
-    return { routerId: id, success: true, message: 'RADIUS setup deferred to MikroTik API integration' };
+    if (!router.username || !router.password) throw new HttpException('Router has no API credentials', HttpStatus.BAD_REQUEST);
+
+    const vpnIp = router.vpnClient?.vpnIp || router.ipAddress;
+    // RADIUS server is typically the VPS running FreeRADIUS via VPN
+    const radiusServer = router.vpnClient?.vpnServer?.host || vpnIp;
+    const radiusSecret = router.secret || 'secret123';
+
+    try {
+      await withMikrotik(router, async (conn) => {
+        // Add RADIUS server entry
+        try {
+          const existing = await conn.write('/radius/print', [`?address=${radiusServer}`]);
+          if (existing.length === 0) {
+            await conn.write('/radius/add', [
+              `=address=${radiusServer}`,
+              `=secret=${radiusSecret}`,
+              '=service=ppp,login,hotspot,wireless,ipsec',
+              `=authentication-port=${router.ports || 1812}`,
+              `=accounting-port=${(router.ports || 1812) + 1}`,
+            ]);
+          }
+        } catch { /* ignore */ }
+        // Enable RADIUS for PPPoE
+        try {
+          await conn.write('/ppp/aaa/set', ['=use-radius=yes', '=accounting=yes']);
+        } catch { /* ignore */ }
+        // Enable RADIUS for Hotspot
+        try {
+          await conn.write('/ip/hotspot/profile/set', ['=use-radius=yes']);
+        } catch { /* ignore */ }
+      });
+      return { routerId: id, success: true, radiusServer, radiusSecret };
+    } catch (err: any) {
+      return { routerId: id, success: false, error: err.message };
+    }
   }
 
   // ==================== NETWORK NODES ====================
@@ -420,8 +642,19 @@ export class NetworkExtrasService {
   // ==================== VPN ROUTING ====================
 
   async getVpnRouting() {
-    // VPN routing info deferred
-    return { routes: [], message: 'VPN routing info deferred to MikroTik API integration' };
+    // VPN routing via SSH to VPS — requires sshpass or key-based auth
+    // Returns current routing table from VPS
+    try {
+      const { execSync } = await import('child_process');
+      const output = execSync('ip route show', { timeout: 10000, encoding: 'utf8' });
+      const routes = output.split('\n').filter(Boolean).map((line) => {
+        const parts = line.split(/\s+/);
+        return { destination: parts[0], via: parts[2] || null, dev: parts[4] || null, raw: line };
+      });
+      return { routes };
+    } catch (err: any) {
+      return { routes: [], error: err.message, message: 'ip route command failed (may require VPS context)' };
+    }
   }
 
   // ==================== VPN SERVER EXTRAS ====================
@@ -429,7 +662,44 @@ export class NetworkExtrasService {
   async setupVpnServer(id: string) {
     const server = await this.prisma.vpnServer.findUnique({ where: { id } });
     if (!server) throw new HttpException('VPN server not found', HttpStatus.NOT_FOUND);
-    return { serverId: id, success: true, message: 'VPN server setup deferred to MikroTik API integration' };
+    if (!server.username || !server.password) throw new HttpException('VPN server has no API credentials', HttpStatus.BAD_REQUEST);
+
+    const router = { ipAddress: server.host, username: server.username, password: server.password, port: server.apiPort || 8728 };
+    try {
+      await withMikrotik(router, async (conn) => {
+        // Create IP pool
+        const subnet = server.subnet || '10.0.0.0/24';
+        const [network] = subnet.split('/');
+        const parts = network.split('.');
+        const base = `${parts[0]}.${parts[1]}.${parts[2]}`;
+        try {
+          await conn.write('/ip/pool/add', ['=name=vpn-pool', `=ranges=${base}.10-${base}.254`]);
+        } catch { /* exists */ }
+        // Create PPP profile
+        try {
+          await conn.write('/ppp/profile/add', [
+            '=name=vpn-profile', `=local-address=${base}.1`, '=remote-address=vpn-pool',
+            '=dns-server=8.8.8.8,8.8.4.4',
+          ]);
+        } catch { /* exists */ }
+        // Enable L2TP, SSTP, PPTP servers
+        await conn.write('/interface/l2tp-server/server/set', [
+          '=enabled=yes', '=default-profile=vpn-profile', '=authentication=mschap2', '=use-ipsec=yes', '=ipsec-secret=salfanet-vpn-secret',
+        ]);
+        await conn.write('/interface/sstp-server/server/set', ['=enabled=yes', '=default-profile=vpn-profile', '=authentication=mschap2']);
+        await conn.write('/interface/pptp-server/server/set', ['=enabled=yes', '=default-profile=vpn-profile', '=authentication=mschap2']);
+        // NAT masquerade
+        try {
+          const nat = await conn.write('/ip/firewall/nat/print', ['?comment=VPN NAT']);
+          if (nat.length === 0) {
+            await conn.write('/ip/firewall/nat/add', ['=chain=srcnat', '=action=masquerade', '=comment=VPN NAT']);
+          }
+        } catch { /* ignore */ }
+      });
+      return { serverId: id, success: true, message: 'VPN server setup complete (L2TP/SSTP/PPTP + NAT)' };
+    } catch (err: any) {
+      return { serverId: id, success: false, error: err.message };
+    }
   }
 
   async testVpnServer(id: string) {
@@ -441,19 +711,46 @@ export class NetworkExtrasService {
   async l2tpControl(id: string, body: { action: 'enable' | 'disable' }) {
     const server = await this.prisma.vpnServer.findUnique({ where: { id } });
     if (!server) throw new HttpException('VPN server not found', HttpStatus.NOT_FOUND);
-    return { serverId: id, action: body.action, success: true, message: 'L2TP control deferred to MikroTik API integration' };
+    if (!server.username || !server.password) throw new HttpException('VPN server has no API credentials', HttpStatus.BAD_REQUEST);
+    const router = { ipAddress: server.host, username: server.username, password: server.password, port: server.apiPort || 8728 };
+    try {
+      await withMikrotik(router, async (conn) => {
+        await conn.write('/interface/l2tp-server/server/set', [`=enabled=${body.action === 'enable' ? 'yes' : 'no'}`]);
+      });
+      return { serverId: id, action: body.action, success: true };
+    } catch (err: any) {
+      return { serverId: id, action: body.action, success: false, error: err.message };
+    }
   }
 
   async pptpControl(id: string, body: { action: 'enable' | 'disable' }) {
     const server = await this.prisma.vpnServer.findUnique({ where: { id } });
     if (!server) throw new HttpException('VPN server not found', HttpStatus.NOT_FOUND);
-    return { serverId: id, action: body.action, success: true, message: 'PPTP control deferred to MikroTik API integration' };
+    if (!server.username || !server.password) throw new HttpException('VPN server has no API credentials', HttpStatus.BAD_REQUEST);
+    const router = { ipAddress: server.host, username: server.username, password: server.password, port: server.apiPort || 8728 };
+    try {
+      await withMikrotik(router, async (conn) => {
+        await conn.write('/interface/pptp-server/server/set', [`=enabled=${body.action === 'enable' ? 'yes' : 'no'}`]);
+      });
+      return { serverId: id, action: body.action, success: true };
+    } catch (err: any) {
+      return { serverId: id, action: body.action, success: false, error: err.message };
+    }
   }
 
   async sstpControl(id: string, body: { action: 'enable' | 'disable' }) {
     const server = await this.prisma.vpnServer.findUnique({ where: { id } });
     if (!server) throw new HttpException('VPN server not found', HttpStatus.NOT_FOUND);
-    return { serverId: id, action: body.action, success: true, message: 'SSTP control deferred to MikroTik API integration' };
+    if (!server.username || !server.password) throw new HttpException('VPN server has no API credentials', HttpStatus.BAD_REQUEST);
+    const router = { ipAddress: server.host, username: server.username, password: server.password, port: server.apiPort || 8728 };
+    try {
+      await withMikrotik(router, async (conn) => {
+        await conn.write('/interface/sstp-server/server/set', [`=enabled=${body.action === 'enable' ? 'yes' : 'no'}`]);
+      });
+      return { serverId: id, action: body.action, success: true };
+    } catch (err: any) {
+      return { serverId: id, action: body.action, success: false, error: err.message };
+    }
   }
 
   // ==================== VPS INFO ====================

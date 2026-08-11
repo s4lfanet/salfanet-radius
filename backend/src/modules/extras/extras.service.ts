@@ -1,13 +1,26 @@
 import { Injectable, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { nowWIB } from '../../common/utils/timezone';
+import { PaymentCreateService } from '../payment-gateway/payment-create.service';
+import { PaymentWebhookService } from '../payment-gateway/payment-webhook.service';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+import { execSync } from 'child_process';
+
+const FREERADIUS_CONFIG_DIR = process.env.FREERADIUS_CONFIG_DIR || '/etc/freeradius/3.0';
+const FREERADIUS_LOG_FILE = process.env.FREERADIUS_LOG_FILE || '/var/log/freeradius/radius.log';
+const FREERADIUS_SERVICE = process.env.FREERADIUS_SERVICE || 'freeradius';
 
 @Injectable()
 export class ExtrasService {
   private readonly logger = new Logger(ExtrasService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paymentCreateSvc: PaymentCreateService,
+    private readonly paymentWebhookSvc: PaymentWebhookService,
+  ) {}
 
   // ==================== PPPOE EXTRAS ====================
 
@@ -373,20 +386,90 @@ export class ExtrasService {
   // ==================== FREERADIUS EXTRAS ====================
 
   async freeradiusConfigList() {
-    // Config list deferred — would read from filesystem
-    return { configs: [], message: 'FreeRADIUS config list deferred to filesystem integration' };
+    try {
+      if (!fs.existsSync(FREERADIUS_CONFIG_DIR)) {
+        return { configs: [], message: `FreeRADIUS config dir not found: ${FREERADIUS_CONFIG_DIR}` };
+      }
+      const entries = fs.readdirSync(FREERADIUS_CONFIG_DIR, { withFileTypes: true });
+      const configs = entries
+        .filter((e) => e.isFile() || e.isDirectory())
+        .map((e) => {
+          const fullPath = path.join(FREERADIUS_CONFIG_DIR, e.name);
+          const stat = fs.statSync(fullPath);
+          return {
+            name: e.name,
+            type: e.isDirectory() ? 'directory' : 'file',
+            size: stat.size,
+            modified: stat.mtime,
+            path: fullPath,
+          };
+        });
+      return { configs };
+    } catch (err: any) {
+      return { configs: [], error: err.message };
+    }
   }
 
   async freeradiusConfigRead(body: { filename: string }) {
-    return { filename: body.filename, content: null, message: 'Config read deferred to filesystem integration' };
+    try {
+      // Prevent path traversal
+      const safeName = path.basename(body.filename);
+      const fullPath = path.join(FREERADIUS_CONFIG_DIR, safeName);
+      if (!fullPath.startsWith(FREERADIUS_CONFIG_DIR)) {
+        throw new HttpException('Invalid filename', HttpStatus.BAD_REQUEST);
+      }
+      if (!fs.existsSync(fullPath)) {
+        throw new HttpException('Config file not found', HttpStatus.NOT_FOUND);
+      }
+      const content = fs.readFileSync(fullPath, 'utf8');
+      return { filename: safeName, content };
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      return { filename: body.filename, content: null, error: err.message };
+    }
   }
 
   async freeradiusConfigSave(body: { filename: string; content: string }) {
-    return { success: true, filename: body.filename, message: 'Config save deferred to filesystem integration' };
+    try {
+      const safeName = path.basename(body.filename);
+      const fullPath = path.join(FREERADIUS_CONFIG_DIR, safeName);
+      if (!fullPath.startsWith(FREERADIUS_CONFIG_DIR)) {
+        throw new HttpException('Invalid filename', HttpStatus.BAD_REQUEST);
+      }
+      // Backup existing file
+      if (fs.existsSync(fullPath)) {
+        const backupPath = `${fullPath}.bak.${Date.now()}`;
+        fs.copyFileSync(fullPath, backupPath);
+      }
+      fs.writeFileSync(fullPath, body.content, 'utf8');
+      // Try syntax check (radiusd -C)
+      let syntaxOk = true;
+      let syntaxError = '';
+      try {
+        execSync(`radiusd -C -d ${FREERADIUS_CONFIG_DIR}`, { timeout: 15000, encoding: 'utf8', stdio: 'pipe' });
+      } catch (err: any) {
+        syntaxOk = false;
+        syntaxError = err.stderr || err.stdout || err.message;
+      }
+      return { success: true, filename: safeName, syntaxOk, syntaxError };
+    } catch (err: any) {
+      if (err instanceof HttpException) throw err;
+      return { success: false, filename: body.filename, error: err.message };
+    }
   }
 
   async freeradiusLogs(params: { lines?: number }) {
-    return { logs: [], message: 'FreeRADIUS logs deferred to filesystem integration' };
+    try {
+      if (!fs.existsSync(FREERADIUS_LOG_FILE)) {
+        return { logs: [], message: `Log file not found: ${FREERADIUS_LOG_FILE}` };
+      }
+      const content = fs.readFileSync(FREERADIUS_LOG_FILE, 'utf8');
+      const lines = content.split('\n').filter(Boolean);
+      const tail = params.lines ? lines.slice(-params.lines) : lines.slice(-200);
+      return { logs: tail, totalLines: lines.length };
+    } catch (err: any) {
+      return { logs: [], error: err.message };
+    }
   }
 
   async freeradiusRadcheck(params: { username?: string }) {
@@ -396,17 +479,70 @@ export class ExtrasService {
   }
 
   async freeradiusRadtest(body: { username: string; password: string; nasIp: string; secret: string }) {
-    // RADIUS test deferred — requires radclient
-    return { success: true, message: 'RADIUS test deferred to radclient integration', ...body };
+    try {
+      // radclient command: echo "User-Name=user,User-Password=pass" | radclient nasIp:1812 auth secret
+      const attrs = `User-Name=${body.username},User-Password=${body.password}`;
+      const cmd = `echo "${attrs}" | radclient ${body.nasIp}:1812 auth ${body.secret}`;
+      const output = execSync(cmd, { timeout: 15000, encoding: 'utf8', stdio: 'pipe' });
+      const accepted = /Accept-Accept/i.test(output);
+      return { success: true, accepted, raw: output };
+    } catch (err: any) {
+      const output = err.stderr || err.stdout || err.message;
+      const rejected = /Access-Reject/i.test(output);
+      if (rejected) return { success: true, accepted: false, raw: output };
+      return { success: false, accepted: false, error: output };
+    }
   }
 
   async freeradiusStatus() {
-    return { running: true, message: 'FreeRADIUS status deferred to system integration' };
+    try {
+      const output = execSync(`systemctl is-active ${FREERADIUS_SERVICE} 2>&1 || service ${FREERADIUS_SERVICE} status 2>&1`, {
+        timeout: 10000, encoding: 'utf8', stdio: 'pipe',
+      });
+      const running = /active|running/i.test(output);
+      // Get session counts from DB
+      const [activeSessions, totalAcct] = await Promise.all([
+        this.prisma.radacct.count({ where: { acctstoptime: null } }),
+        this.prisma.radacct.count(),
+      ]);
+      return { running, raw: output.trim(), activeSessions, totalAcct };
+    } catch (err: any) {
+      return { running: false, error: err.message };
+    }
   }
 
-  async freeradiusStart() { return { success: true, message: 'FreeRADIUS start deferred to system integration' }; }
-  async freeradiusStop() { return { success: true, message: 'FreeRADIUS stop deferred to system integration' }; }
-  async freeradiusRestart() { return { success: true, message: 'FreeRADIUS restart deferred to system integration' }; }
+  async freeradiusStart() {
+    try {
+      const output = execSync(`systemctl start ${FREERADIUS_SERVICE} || service ${FREERADIUS_SERVICE} start`, {
+        timeout: 15000, encoding: 'utf8', stdio: 'pipe',
+      });
+      return { success: true, output: output.trim() };
+    } catch (err: any) {
+      return { success: false, error: err.stderr || err.message };
+    }
+  }
+
+  async freeradiusStop() {
+    try {
+      const output = execSync(`systemctl stop ${FREERADIUS_SERVICE} || service ${FREERADIUS_SERVICE} stop`, {
+        timeout: 15000, encoding: 'utf8', stdio: 'pipe',
+      });
+      return { success: true, output: output.trim() };
+    } catch (err: any) {
+      return { success: false, error: err.stderr || err.message };
+    }
+  }
+
+  async freeradiusRestart() {
+    try {
+      const output = execSync(`systemctl restart ${FREERADIUS_SERVICE} || service ${FREERADIUS_SERVICE} restart`, {
+        timeout: 15000, encoding: 'utf8', stdio: 'pipe',
+      });
+      return { success: true, output: output.trim() };
+    } catch (err: any) {
+      return { success: false, error: err.stderr || err.message };
+    }
+  }
 
   // ==================== TICKETS EXTRAS ====================
 
@@ -662,27 +798,54 @@ export class ExtrasService {
       if (invoice) return { status: invoice.status, invoice };
     }
     if (body.orderId) {
-      // Check payment gateway order — deferred
-      return { orderId: body.orderId, status: 'unknown', message: 'Order check deferred to payment-gateway integration' };
+      // Check webhook log for order status
+      const log = await this.prisma.webhookLog.findFirst({
+        where: { orderId: body.orderId },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (log) return { orderId: body.orderId, status: log.status, transactionId: log.transactionId };
+      return { orderId: body.orderId, status: 'unknown', message: 'No webhook log found for this order' };
     }
     throw new HttpException('Order ID or token required', HttpStatus.BAD_REQUEST);
   }
 
   async paymentCreate(body: { invoiceId: string; gateway: string; paymentMethod?: string }) {
-    const invoice = await this.prisma.invoice.findUnique({ where: { id: body.invoiceId } });
-    if (!invoice) throw new HttpException('Invoice not found', HttpStatus.NOT_FOUND);
-    // Payment creation deferred to payment-gateway integration
-    return { invoice, paymentUrl: null, message: 'Payment creation deferred to payment-gateway integration' };
+    // Delegate to existing PaymentCreateService (full Midtrans/Xendit/Duitku/Tripay support)
+    return this.paymentCreateSvc.createPayment({
+      invoiceId: body.invoiceId,
+      gateway: body.gateway,
+      paymentMethod: body.paymentMethod,
+    });
   }
 
   async paymentDuitkuMethods(body: { amount: number }) {
-    // Duitku methods deferred
-    return { methods: [], message: 'Duitku methods deferred to payment-gateway integration' };
+    // Fetch Duitku payment methods via Duitku API
+    try {
+      const gateway = await this.prisma.paymentGateway.findUnique({ where: { provider: 'duitku' } });
+      if (!gateway || !gateway.isActive) {
+        return { methods: [], message: 'Duitku gateway not active' };
+      }
+      const { createDuitkuClient } = await import('../payment-gateway/gateway-clients');
+      const company = await this.prisma.company.findFirst({ select: { baseUrl: true } });
+      const baseUrl = company?.baseUrl || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      const duitku = createDuitkuClient(
+        gateway.duitkuMerchantCode || '',
+        gateway.duitkuApiKey || '',
+        `${baseUrl}/api/v1/payment/webhook`,
+        `${baseUrl}/pay`,
+        gateway.duitkuEnvironment === 'sandbox',
+      );
+      const methods = await duitku.getPaymentMethods(body.amount);
+      return { methods };
+    } catch (err: any) {
+      return { methods: [], error: err.message };
+    }
   }
 
   async paymentWebhook(body: any) {
-    // Payment webhook deferred to payment-gateway integration
-    this.logger.log(`Payment webhook received: ${JSON.stringify(body).slice(0, 200)}`);
-    return { success: true, message: 'Payment webhook deferred to payment-gateway integration' };
+    // Delegate to existing PaymentWebhookService (full signature verification + dispatch)
+    const rawBody = typeof body === 'string' ? body : JSON.stringify(body);
+    const result = await this.paymentWebhookSvc.processWebhook(rawBody, 'application/json', {});
+    return result;
   }
 }
