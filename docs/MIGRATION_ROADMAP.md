@@ -1087,17 +1087,39 @@ All 8 phases of the Next.js → NestJS migration are complete.
 | PM2 processes | 4 |
 | Documentation files | 7 |
 
-### Remaining (Post-Migration)
+### VPS Verification — DONE ✅
 
-After VPS verification with real database:
-- [ ] Stop legacy cron runner (`pm2 stop salfanet-cron`)
-- [ ] Remove `frontend/src/app/api/` (legacy routes)
-- [ ] Remove `frontend/src/server/` (legacy services)
-- [ ] Remove `frontend/src/cron/` (legacy cron runner)
+Deployed to VPS `192.168.54.129` on 2026-08-12:
+- Backend NestJS running on port 3001 (Prisma connected, 17 cron jobs running)
+- Frontend Next.js running on port 3000 (monorepo build)
+- Nginx proxy: `/api/v1/*` → backend, `/api/*` → frontend legacy, `/` → frontend
+- Swagger docs accessible at `/api/docs`
+- Login tested (superadmin) — JWT auth working
+- Dashboard, users, PPPoE, cron status, settings endpoints all returning 200
+- PM2 saved with 3 processes (salfanet-frontend, salfanet-backend, salfanet-wa)
+
+### Cleanup Completed
+
+- [x] Stop legacy cron runner (`pm2 stop salfanet-cron`)
+- [x] Remove `frontend/src/cron/` (legacy cron runner — 3 files)
+- [x] Remove `frontend/cron-service.js` (PM2 cron entry point)
+- [x] Remove `frontend/src/server/jobs/` (13 cron job implementations)
+- [x] Remove `salfanet-cron` from `deploy/ecosystem.config.js`
+- [x] Remove `cron` script from `frontend/package.json`
+- [x] Frontend `package.json` — updated for monorepo (`@salfanet/frontend`, `workspace:*`)
+
+### Remaining (Future Cleanup — Major Refactor)
+
+These require refactoring 375 pages/components that import `@/server` + 131 pages that fetch `/api/*`:
+- [ ] Remove `frontend/src/app/api/` (399 legacy API routes)
+- [ ] Remove `frontend/src/server/` (57 legacy service files — auth, prisma, services)
+- [ ] Refactor 375 files: replace `@/server` imports with `@/lib/api-client` calls
+- [ ] Refactor 131 files: replace `fetch('/api/...')` with `fetch('/api/v1/...')`
 - [ ] Move `frontend/prisma/` to `backend/prisma/` or shared
-- [ ] Remove `salfanet-cron` from PM2 config
 - [ ] Update `vps-install/` scripts for monorepo
-- [ ] Frontend `package.json` — remove server-only deps
+- [ ] Frontend `package.json` — remove server-only deps (prisma, next-auth, etc.)
+
+> **Note**: This is a major refactor (~500 files) and should be done gradually per-module to avoid breaking the frontend. Each module should be refactored, tested, and committed independently.
 
 ---
 
