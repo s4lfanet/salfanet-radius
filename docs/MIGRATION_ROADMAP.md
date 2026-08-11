@@ -186,7 +186,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 8:         39   ✅ (whatsapp, telegram, push, backup, public)
   - Batch 9:         60   ✅ (olt, vpn, network-infra, customer/agent portal extras)
   - Batch 10:        80   ✅ (genieacs, admin-extras, email, cron)
-  - Batch 11+:       37   ⏳
+  - Batch 11:        49   ✅ (network-extras, extras: PPPoE/Hotspot/Invoice/FreeRADIUS/Ticket/Customer/Payment)
+  - Batch 12+:       ~10  ⏳ (external integration wiring)
 ```
 
 ### Batches
@@ -203,7 +204,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 8 | whatsapp, telegram, push, backup, public | 39 | ✅ Complete | `27a1fa0` |
 | 9 | OLT/ONU, VPN, network trace, cables, splices, fiber-paths, customer/agent portal extras | 60 | ✅ Complete | `431adcb` |
 | 10 | GenieACS, admin-extras, email, cron | 80 | ✅ Complete | `cba6e57` |
-| 11+ | Remaining routes | ~37 | ⏳ Pending | — |
+| 11 | network-extras, extras (PPPoE/Hotspot/Invoice/FreeRADIUS/Ticket/Customer/Payment) | 49 | ✅ Complete | `f54b2c8` |
+| 12+ | External integration wiring (MikroTik, SSH, filesystem, payment gateways, PDF/Excel) | ~10 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -681,6 +683,61 @@ Deferred integrations:
 - RADIUS CoA for disconnect sessions (deferred)
 
 Backend module count: 40 → 44
+Build verified with `pnpm build`.
+
+### Batch 11 Detail ✅
+
+**Commit**: `f54b2c8`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| NetworkExtras | `GET/POST/PUT/DELETE /network/routers`, `GET /network/routers/status`, `POST /network/routers/test`, `POST /network/routers/test-gateway`, `POST /network/routers/:id/{detect-public-ip,setup-isolir,setup-radius,ping-olt}`, `GET /network/routers/:id/{interfaces,uplinks}`, `GET/POST/PUT/DELETE /network/nodes`, `GET/POST /network/odcs`, `GET/POST /network/odps`, `POST /network/customers/assign`, `GET/POST/PUT/DELETE /network/otbs`, `GET /network/otbs/stats`, `GET /network/otbs/:id/{feeder-cables,segments}`, `GET/POST /network/servers`, `GET /network/connections`, `GET /network/cores`, `GET /network/olts`, `GET /network/olts/status`, `POST /network/olts/import`, `GET /network/olts/template`, `POST /network/joint-closures/import`, `GET /network/joint-closures/template`, `GET /network/vpn-routing`, `POST /network/vpn-server/:id/{setup,test,l2tp-control,pptp-control,sstp-control}`, `GET /network/{vps-info,vps-l2tp-info,vps-l2tp-peer,vps-wg-peer}` | `frontend/.../api/network/routers/*`, `frontend/.../api/network/{nodes,odcs,odps,otbs,servers,connections,cores,olts}/*`, `frontend/.../api/network/vpn-*` |
+| Extras | `POST /pppoe/users/{bulk,bulk-status,check-isolation,send-notification,sync-mikrotik}`, `GET /pppoe/users/{export,status}`, `GET /pppoe/users/:id/activity`, `POST /pppoe/users/:id/{extend,mark-paid,sync-radius}`, `POST /pppoe/profiles/{sync-mikrotik,sync-radius}`, `GET /hotspot/{agents,agents/balance,agents/:id/history,rekap-voucher,rekap-voucher/export,voucher/export}`, `POST /hotspot/voucher/{resync,send-whatsapp,bulk,bulk-delete,delete-multiple,delete-expired}`, `POST /hotspot/vouchers/validate`, `POST /invoices/{generate,check,send-reminder,send-reminders-bulk}`, `GET /invoices/{export,by-token/:token,:id/pdf}`, `GET /freeradius/{config/list,logs,radcheck,status}`, `POST /freeradius/{config/read,config/save,radtest,start,stop,restart}`, `POST /tickets/dispatch`, `GET /tickets/{dispatch-data,stats}`, `POST /customer/auth/bypass-login`, `POST /customer/login`, `POST /customer/{ont/reboot,invoice/regenerate-payment,invoices/:id/manual-payment,topup-request,upgrade-package,payments/:id/proof,notifications/:id/read}`, `GET /customer/{payment-history,payment-methods,referral/rewards}`, `GET/POST /agent/tickets`, `GET /agent/tickets/:id`, `GET /pwa/icon`, `GET /sse/voucher-updates`, `GET /system/radius`, `POST /auth/logout-log`, `GET /pay/:token`, `POST /pay/manual`, `GET /payment/{check-order,duitku-methods}`, `POST /payment/{create,webhook}` | `frontend/.../api/{pppoe,hotspot,invoices,freeradius,tickets,customer,agent,pwa,sse,system,auth,pay,payment}/*` |
+
+New modules created:
+- `NetworkExtrasModule` — router utilities (CRUD, status, TCP test, gateway
+  test, public IP detection, interfaces, uplinks, ping OLT, setup isolir/radius),
+  network nodes/ODCs/ODPs/OTBs CRUD, network servers, connections, fiber cores,
+  OLTs list/status/import/template, joint closures import/template, ODP customer
+  assignment, VPN routing/server setup/L2TP-PPTP-SSTP control, VPS info
+- `ExtrasModule` — PPPoE bulk/export/status/isolation/notification/sync/activity/
+  extend/mark-paid/sync-radius, hotspot agents/rekap-voucher/voucher bulk ops,
+  invoice generate/by-token/check/export/reminder/PDF, FreeRADIUS config/logs/
+  radcheck/radtest/status/start/stop/restart, ticket dispatch/stats, customer
+  bypass-login/mobile-login/regenerate-payment/manual-payment/ONT-reboot/payment-
+  history/payment-methods/payment-proof/topup-request/upgrade-package/referral/
+  notification-read, agent tickets, PWA icon, SSE, system RADIUS, auth logout log,
+  public pay routes, payment gateway routes
+
+Key behaviors preserved:
+- PPPoE bulk: delete/update with single query, status batch update
+- PPPoE sync-radius: upsert radcheck (Cleartext-Password) + radusergroup
+- PPPoE profile sync-radius: findFirst + create/update radgroupreply
+  (no compound unique on radgroupreply)
+- Hotspot rekap: voucher sales summary with revenue calculation
+- Invoice generate: monthly invoices for auto-renewal users (dedup by month)
+- Invoice by-token: public lookup via paymentToken
+- Customer bypass-login: creates verified customerSession with token
+- Customer manual-payment: creates manualPayment with required fields
+  (userId, paymentDate, bankName, accountName)
+- Activity log: uses schema fields (username, module, status, description)
+- Payment webhook: logs received payload (gateway validation deferred)
+
+Deferred integrations:
+- MikroTik API (node-routeros) for router interfaces/uplinks/ping/setup
+- SSH/sshpass for VPN routing script execution
+- Filesystem access for FreeRADIUS config/log files
+- systemctl/service for FreeRADIUS start/stop/restart
+- radclient for RADIUS test
+- GenieACS API for customer ONT reboot
+- PDF/Excel generation for invoices and exports
+- Payment gateway SDKs (Midtrans, Xendit, Duitku, Tripay)
+- WhatsApp/email for notifications and reminders
+- Push notification service
+- SSE long-lived connections
+- PWA static file serving
+
+Backend module count: 44 → 46
 Build verified with `pnpm build`.
 
 ### Per-batch workflow
