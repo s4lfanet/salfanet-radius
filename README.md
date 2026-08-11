@@ -2,7 +2,8 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Latest:** v2.25.2 — Native Baileys WhatsApp gateway built-in di VPS, QR modal auto-retry, auto-reconnect setelah device disconnect (Apr 26, 2026)
+> **Architecture:** pnpm monorepo — Next.js (frontend) + NestJS (backend API + cron) + Baileys WhatsApp service
+> **Migration:** Phase 1-7 complete, Phase 8 (cleanup & docs) in progress. See [docs/MIGRATION_ROADMAP.md](docs/MIGRATION_ROADMAP.md)
 
 ---
 
@@ -67,9 +68,10 @@ pm2 logs salfanet-wa --lines 20
 
 | Process | Mode | Port | Purpose |
 |---------|------|------|---------|
-| `salfanet-radius` | cluster | 3000 | Next.js app |
+| `salfanet-frontend` | cluster | 3000 | Next.js standalone (UI only) |
+| `salfanet-backend` | fork | 3001 | NestJS API + cron jobs |
+| `salfanet-cron` | fork | — | Legacy cron runner (fallback) |
 | `salfanet-wa` | fork | 4000 (internal) | Baileys WA service |
-| `salfanet-cron` | fork | — | Background jobs |
 
 ### Auth Session
 
@@ -81,42 +83,57 @@ Session WhatsApp tersimpan di `/var/data/salfanet/baileys_auth/` dan persist mes
 
 | Component | Technology |
 |-----------|------------|
-| Framework | Next.js 16 (App Router, standalone output) |
-| Language | TypeScript |
+| Frontend | Next.js 16 (App Router, standalone output) |
+| Backend | NestJS 11 (TypeScript, @nestjs/schedule for cron) |
+| Language | TypeScript (shared types via @salfanet/shared-types) |
 | Styling | Tailwind CSS |
 | Database | MySQL 8.0 + Prisma ORM |
 | RADIUS | FreeRADIUS 3.0.26 |
-| Process Manager | PM2 (cluster × 2) |
+| Process Manager | PM2 (4 processes) |
+| Reverse Proxy | Nginx (/api/v1/* → backend, / → frontend) |
 | Session Tracking | FreeRADIUS radacct (real-time) |
 | Maps | Leaflet / OpenStreetMap |
+| Package Manager | pnpm (monorepo workspaces) |
 
 ---
 
 ## 📁 Project Structure
 
 ```
-salfanet-radius/
-├── src/
-│   ├── app/
-│   │   ├── admin/          # Admin panel
-│   │   ├── agent/          # Agent/reseller portal
-│   │   ├── api/            # API route handlers
-│   │   ├── customer/       # Customer self-service portal
-│   │   └── technician/     # Technician portal
-│   ├── server/             # DB, services, jobs, cache, auth
-│   ├── features/           # Vertical slices (queries, schemas, types)
-│   ├── components/         # Shared React components
-│   ├── locales/            # i18n translations (id, en)
-│   └── types/              # Shared TypeScript types
-├── prisma/
-│   ├── schema.prisma       # Database schema (~45 models)
-│   └── seeds/              # Seed scripts
-├── freeradius-config/      # FreeRADIUS config (deployed by installer)
-├── vps-install/            # One-command VPS installer scripts
-├── production/             # PM2 & Nginx config templates
-├── mobile-app/             # Flutter customer app
-├── scripts/                # Utility & tuning scripts
-└── docs/                   # Documentation & AI memory
+salfanet-radius/                  # pnpm monorepo root
+├── frontend/                     # Next.js — UI only (no Prisma in layouts)
+│   ├── src/
+│   │   ├── app/                  # Admin, agent, customer, technician portals
+│   │   ├── components/           # Shared React components
+│   │   ├── features/             # Vertical slices (queries, schemas)
+│   │   ├── lib/api-client.ts     # Centralized API client (NEXT_PUBLIC_API_URL)
+│   │   ├── locales/              # i18n (id, en)
+│   │   └── server/               # Legacy services (kept during migration)
+│   ├── prisma/                   # Prisma schema (shared with backend)
+│   └── package.json
+├── backend/                      # NestJS — API + business logic + cron
+│   ├── src/
+│   │   ├── modules/              # 46 feature modules (auth, pppoe, hotspot, etc.)
+│   │   ├── common/               # Guards, decorators, interceptors, filters
+│   │   ├── prisma/               # PrismaService
+│   │   └── main.ts               # Bootstrap (port 3001, /api/v1 prefix)
+│   ├── test/                     # E2E tests (jest + supertest)
+│   └── package.json
+├── packages/                     # Shared TypeScript types
+│   └── shared-types/
+├── deploy/                       # Deployment configuration
+│   ├── ecosystem.config.js       # PM2 config (4 processes)
+│   ├── nginx-salfanet.conf       # Nginx reverse proxy
+│   ├── deploy.sh                 # Build + deploy script
+│   ├── REGRESSION_TEST_CHECKLIST.md
+│   └── README.md
+├── docs/                         # Documentation
+│   ├── MIGRATION_ROADMAP.md      # Migration progress tracker
+│   └── AI_PROJECT_MEMORY.md      # Full architecture reference
+├── freeradius-config/            # FreeRADIUS config templates
+├── vps-install/                  # VPS installer scripts
+├── mobile-app/                   # Flutter customer app
+└── pnpm-workspace.yaml
 ```
 
 ---
