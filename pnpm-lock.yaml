@@ -40,6 +40,9 @@ importers:
       '@salfanet/shared-types':
         specifier: workspace:*
         version: link:../packages/shared-types
+      '@types/multer':
+        specifier: ^2.2.0
+        version: 2.2.0
       bcryptjs:
         specifier: ^3.0.2
         version: 3.0.3
@@ -67,6 +70,9 @@ importers:
       midtrans-client:
         specifier: ^1.4.3
         version: 1.4.3(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
+      multer:
+        specifier: ^2.2.0
+        version: 2.2.0
       nanoid:
         specifier: ^5.1.16
         version: 5.1.16
@@ -3105,6 +3111,9 @@ packages:
 
   '@types/ms@2.1.0':
     resolution: {integrity: sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==}
+
+  '@types/multer@2.2.0':
+    resolution: {integrity: sha512-3U1troeqGV8Ntp7Q3klwf4zr23VEoqYVocYXaswm9+8z3O9UHDYAqLxjJ/h550iRADTjKdOdhhasXw6gD6kYtg==}
 
   '@types/node@14.18.63':
     resolution: {integrity: sha512-fAtCfv4jJg+ExtXhvCkCqUKZ+4ok/JQk01qDKhL5BDDoS3AxKXhV5/MAVUZyQnSEd2GT92fkgZl0pz0Q0AzcIQ==}
@@ -10417,6 +10426,10 @@ snapshots:
   '@types/methods@1.1.4': {}
 
   '@types/ms@2.1.0': {}
+
+  '@types/multer@2.2.0':
+    dependencies:
+      '@types/express': 5.0.6
 
   '@types/node@14.18.63': {}
 
