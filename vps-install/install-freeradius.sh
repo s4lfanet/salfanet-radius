@@ -472,14 +472,27 @@ configure_pppoe_support() {
 
 configure_firewall() {
     if [ "${SKIP_UFW:-false}" = "true" ]; then
-        print_info "UFW firewall dilewati (${DEPLOY_ENV_LABEL:-LXC/Container})"
-        print_info "Buka port berikut di Proxmox Datacenter Firewall:"
-        print_info "  1812/udp - RADIUS Authentication"
-        print_info "  1813/udp - RADIUS Accounting"
-        print_info "  3799/udp - RADIUS CoA (Change of Authorization)"
-        print_info "  500/udp  - IPSec IKE (L2TP/IPSec VPN)"
-        print_info "  4500/udp - IPSec NAT-T (L2TP/IPSec VPN)"
-        print_info "  1701/udp - L2TP Tunnel (L2TP/IPSec VPN)"
+        # Best-effort: kalau UFW ternyata sudah aktif di container ini, tambahkan
+        # rules supaya RADIUS/L2TP tidak diam-diam terkunci. Kalau UFW memang tidak
+        # aktif/tidak ada (unprivileged LXC tanpa UFW), skip seperti biasa.
+        if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+            print_warning "UFW aktif meski environment=${DEPLOY_ENV_LABEL:-LXC/Container} — menambahkan rules RADIUS/L2TP"
+            ufw allow 1812/udp comment 'RADIUS Authentication' 2>/dev/null || true
+            ufw allow 1813/udp comment 'RADIUS Accounting' 2>/dev/null || true
+            ufw allow 3799/udp comment 'RADIUS CoA' 2>/dev/null || true
+            ufw allow 500/udp  comment 'IPSec IKE' 2>/dev/null || true
+            ufw allow 4500/udp comment 'IPSec NAT-T' 2>/dev/null || true
+            ufw allow 1701/udp comment 'L2TP Tunnel' 2>/dev/null || true
+        else
+            print_info "UFW firewall dilewati (${DEPLOY_ENV_LABEL:-LXC/Container})"
+            print_info "Buka port berikut di Proxmox Datacenter Firewall:"
+            print_info "  1812/udp - RADIUS Authentication"
+            print_info "  1813/udp - RADIUS Accounting"
+            print_info "  3799/udp - RADIUS CoA (Change of Authorization)"
+            print_info "  500/udp  - IPSec IKE (L2TP/IPSec VPN)"
+            print_info "  4500/udp - IPSec NAT-T (L2TP/IPSec VPN)"
+            print_info "  1701/udp - L2TP Tunnel (L2TP/IPSec VPN)"
+        fi
         return 0
     fi
 
