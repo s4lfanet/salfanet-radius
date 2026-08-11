@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `8a3a942` (B5) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -192,7 +192,7 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 2 | settings, users, admin-users, notifications | 14 | ✅ Complete | `6c461b` |
 | 3 | pppoe, hotspot, invoices, keuangan | 19 | ✅ Complete | `411bf3` |
 | 4 | payment, network, radius, sessions | 24 | ✅ Complete | `fbe4837` |
-| 5 | payment-gateway, mikrotik, freeradius, session-sync | 12 | ✅ Complete | `8a3a942` |
+| 5 | payment-gateway, mikrotik, freeradius, session-sync | 12 | ✅ Complete | `253a1b5` |
 | 6 | OLT/ONU, VPN, customer, agent, whatsapp, telegram, push, upload, backup | ~305 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
@@ -303,7 +303,7 @@ Deferred to Batch 5 (integration batch):
 
 ### Batch 5 Detail ✅
 
-**Commit**: `8a3a942`
+**Commit**: `253a1b5`
 
 | Module | Endpoints | Source |
 |--------|-----------|--------|
