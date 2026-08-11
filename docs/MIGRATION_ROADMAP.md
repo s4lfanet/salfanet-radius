@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-2 ✅)
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-3 ✅)
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -171,11 +171,13 @@ yang akan digunakan saat API routes mulai dipindah di Phase 3.
 
 ```text
 Total API routes:  399
-Ported:             27   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2
-                          + settings 7 + users 1 + admin-users 5 + notifications 5)
+Ported:             46   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2
+                          + settings 7 + users 1 + admin-users 5 + notifications 5
+                          + pppoe 11 + hotspot 8 + invoices 5 + keuangan 8)
   - Batch 1:          8   ✅ (health, company, dashboard, permissions)
   - Batch 2:         14   ✅ (settings, users, admin-users, notifications)
-  - Batch 3+:       372   ⏳
+  - Batch 3:         19   ✅ (pppoe, hotspot, invoices, keuangan)
+  - Batch 4+:       353   ⏳
 ```
 
 ### Batches
@@ -184,8 +186,8 @@ Ported:             27   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 |-------|---------|--------|--------|--------|
 | 1 | health, company, dashboard, permissions | 8 | ✅ Complete | `0a98b07` |
 | 2 | settings, users, admin-users, notifications | 14 | ✅ Complete | `6c461b` |
-| 3 | pppoe, hotspot, invoices, payment, keuangan | ~47 | ⏳ Pending | — |
-| 4 | network, olt, genieacs, freeradius, radius, sessions | ~99 | ⏳ Pending | — |
+| 3 | pppoe, hotspot, invoices, keuangan | 19 | ✅ Complete | `411bf3` |
+| 4 | payment, network, olt, genieacs, freeradius, radius, sessions | ~99 | ⏳ Pending | — |
 | 5 | customer, agent, technician | ~49 | ⏳ Pending | — |
 | 6 | whatsapp, telegram, push, upload, backup, dll | ~168 | ⏳ Pending | — |
 
@@ -220,6 +222,35 @@ Key behaviors preserved:
 - Isolation update: modifies radgroupreply (Mikrotik-Rate-Limit, Framed-Pool, Address-List) + VPS kernel route + iptables
 - Admin user CRUD: bcrypt password hashing, phone number formatting (62 prefix), permission assignment
 - Notifications: overdue invoice detection, expired user detection, pending registration detection
+
+### Batch 3 Detail ✅
+
+**Commit**: `411bf3`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| PPPoE | `GET/POST/PUT/DELETE /api/v1/pppoe/customers`, `GET/POST/PUT/DELETE /profiles`, `GET/POST/PUT/DELETE /areas` | `frontend/.../api/pppoe/{customers,profiles,areas}` |
+| Hotspot | `GET/POST/PUT/DELETE /api/v1/hotspot/profiles`, `GET/POST/DELETE/PATCH /voucher`, `DELETE /voucher/bulk`, `DELETE /voucher/delete-expired` | `frontend/.../api/hotspot/{profiles,voucher}` |
+| Invoices | `GET/POST/PUT/DELETE /api/v1/invoices`, `GET /invoices/counts` | `frontend/.../api/invoices` |
+| Keuangan | `GET/POST/PUT/DELETE /api/v1/keuangan/transactions`, `GET/POST/PUT/DELETE /categories` | `frontend/.../api/keuangan/{transactions,categories}` |
+
+Key behaviors preserved:
+- PPPoE customers: session enrichment via radacct (online/offline/partial), phone dedup, auto customerId with prefix
+- PPPoE profiles: auto-sync to radgroupreply (Mikrotik-Group, Mikrotik-Rate-Limit) + radgroupcheck (Simultaneous-Use)
+- PPPoE areas: activity logging for create/update/delete, blocks delete if users exist
+- Hotspot profiles: BigInt usageQuota serialization, sellingPrice = costPrice + resellerFee
+- Hotspot vouchers: batch generation (max 25k, batched insert of 1000), bulk patch/delete
+- Invoices: auto invoice number (INV-YYYYMM-NNNN), payment token + link, mark-as-paid atomic updateMany,
+  expiredAt extension by validity unit, user activation, manual payment approval,
+  Keuangan transaction sync, RADIUS radcheck + radusergroup re-sync
+- Keuangan: WIB date filter conversion, income/expense stats with category breakdowns,
+  filter delete, activity logging for transactions
+
+Deferred to Batch 4:
+- Payment gateway webhooks (Midtrans/Xendit/Duitku/Tripay, 1472 lines)
+- PPPoE user sync-mikrotik, bulk operations, send-notification, export
+- Hotspot voucher resync, send-whatsapp, rekap-voucher, agents
+- Invoice generate, send-reminder, export, by-token, pdf
 
 ### Per-batch workflow
 
