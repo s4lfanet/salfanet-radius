@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1 ✅)
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-2 ✅)
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (Batch 1) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -171,9 +171,11 @@ yang akan digunakan saat API routes mulai dipindah di Phase 3.
 
 ```text
 Total API routes:  399
-Ported:             13   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2)
+Ported:             27   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2
+                          + settings 7 + users 1 + admin-users 5 + notifications 5)
   - Batch 1:          8   ✅ (health, company, dashboard, permissions)
-  - Batch 2+:       386   ⏳
+  - Batch 2:         14   ✅ (settings, users, admin-users, notifications)
+  - Batch 3+:       372   ⏳
 ```
 
 ### Batches
@@ -181,7 +183,7 @@ Ported:             13   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | Batch | Modules | Routes | Status | Commit |
 |-------|---------|--------|--------|--------|
 | 1 | health, company, dashboard, permissions | 8 | ✅ Complete | `0a98b07` |
-| 2 | settings, users, notifications | ~28 | ⏳ Pending | — |
+| 2 | settings, users, admin-users, notifications | 14 | ✅ Complete | `6c461b` |
 | 3 | pppoe, hotspot, invoices, payment, keuangan | ~47 | ⏳ Pending | — |
 | 4 | network, olt, genieacs, freeradius, radius, sessions | ~99 | ⏳ Pending | — |
 | 5 | customer, agent, technician | ~49 | ⏳ Pending | — |
@@ -201,6 +203,23 @@ Ported:             13   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 Supporting modules created:
 - `ActivityLogModule` — logActivity + getRecentActivities
 - `TimezoneUtils` — nowWIB, startOfDayWIBtoUTC (backend version)
+
+### Batch 2 Detail ✅
+
+**Commit**: `6c461b`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| Settings | `GET/POST /api/v1/settings/company`, `POST /timezone`, `GET/PUT /isolation`, `GET/PUT /map`, `GET/POST /restart-services` | `frontend/.../api/settings/*` |
+| Users | `GET /api/v1/users/list` | `frontend/.../api/users/list` |
+| AdminUsers | `GET/POST /api/v1/admin/users`, `GET/PUT/DELETE /:id`, `POST /:id/reset-permissions` | `frontend/.../api/admin/users` |
+| Notifications | `GET/POST/DELETE /api/v1/notifications`, `POST /mark-read`, `POST /generate` | `frontend/.../api/notifications/*` |
+
+Key behaviors preserved:
+- Timezone update: modifies .env, ecosystem.config.js, MySQL timezone, system timezone (Linux)
+- Isolation update: modifies radgroupreply (Mikrotik-Rate-Limit, Framed-Pool, Address-List) + VPS kernel route + iptables
+- Admin user CRUD: bcrypt password hashing, phone number formatting (62 prefix), permission assignment
+- Notifications: overdue invoice detection, expired user detection, pending registration detection
 
 ### Per-batch workflow
 
