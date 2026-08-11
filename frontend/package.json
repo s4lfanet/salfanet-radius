@@ -1,7 +1,7 @@
 {
-  "name": "salfanet-radius",
-  "version": "2.34.9",
-  "private": false,
+  "name": "@salfanet/frontend",
+  "version": "2.35.0",
+  "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "cross-env NODE_OPTIONS='--max-old-space-size=1536 --max-semi-space-size=64' NEXT_TELEMETRY_DISABLED=1 next build",
@@ -36,12 +36,14 @@
     "deploy:status": "node scripts/run-deploy.js --status",
     "deploy:rollback": "node scripts/run-deploy.js --rollback",
     "cron": "node cron-service.js",
-    "push:vapid": "node scripts/generate-vapid.js"
+    "push:vapid": "node scripts/generate-vapid.js",
+    "typecheck": "tsc --noEmit"
   },
   "overrides": {
     "minimatch": "^10.2.1"
   },
   "dependencies": {
+    "@salfanet/shared-types": "workspace:*",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@prisma/client": "^6.19.0",
     "@radix-ui/react-alert-dialog": "^1.1.15",
