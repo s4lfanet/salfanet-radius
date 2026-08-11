@@ -469,6 +469,17 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.6 — 2026-08-11
+
+### Fixed
+- **Fresh install: `salfanet-cron` HTTP 401 loop on every job** — Fresh installs via `vps-installer.sh` deployed `production/ecosystem.config.js` pointing `salfanet-cron` at the deprecated `cron-service.js` (HTTP polling to `/api/cron`). That route requires an `x-cron-secret` header matching `CRON_SECRET`, which `cron-service.js` never sends and which the installer never generates — every job failed with `HTTP 401: Unauthorized`, 3 retries each cycle, forever.
+- **Root cause found by full uninstall/reinstall test on a clean LXC VPS.**
+- **Fix attempt 1 (reverted)**: pointed `salfanet-cron` at `src/cron/runner-wrapper.cjs` (the documented "correct" migration target used by `updater.sh`/`cleanup-refactor.sh`). This crash-looped instead: `require('tsx/cjs')` inside the wrapper does NOT apply `tsconfig.json` `paths` aliases (`@/*`), causing `ERR_MODULE_NOT_FOUND: Cannot find package '@/server'` on every job import.
+- **Fix (final)**: `salfanet-cron` now runs the `tsx` CLI binary directly (`node_modules/.bin/tsx -r ./src/cron/preload.cjs src/cron/runner.ts`) instead of `runner-wrapper.cjs`. The tsx CLI resolves `@/*` aliases correctly; `preload.cjs` still mocks the `server-only` guard so Next.js server modules can be imported outside Next.js. Verified: all 15 scheduled jobs run directly via `src/server/jobs/*` with zero HTTP round-trip, zero 401s, zero crash restarts (`↺ 0`) after the fix.
+### Files
+- `production/ecosystem.config.js` — `salfanet-cron` `script`/`args` changed to tsx CLI + preload; removed unused `API_URL` env var
+- `vps-install/install-pm2.sh` — fallback ecosystem generator + `start_cron_service()` existence check updated to match
+
 ### v2.34.5 — 2026-08-11
 
 ### Removed
@@ -508,29 +519,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
 ### Files
 - `src/server/jobs/pppoe-session-sync.ts` — clamp TIMESTAMPDIFF ke INT range, tambah filter `acctstarttime > '2000-01-01'` pada update aktif
-
-### v2.32.0 — 2026-05-11
-
-### Added
-- **Centralized Cron Schedule Management** — jadwal semua cron job kini bisa diatur dari satu halaman Admin → Settings → Cron tab "Jadwal Cron"; perubahan disimpan ke DB `cron_schedule_config`, aktif setelah `pm2 restart salfanet-cron`
-- **Schedule Editor modal** — 17 preset waktu (Every minute, Every 5 min, dll.) + custom cron expression; menampilkan default schedule sebagai referensi
-- **3-tab layout cron page** — Tab: Status & Trigger, Jadwal Cron, Riwayat Eksekusi
-- **API `/api/cron/schedules`** — GET/PUT/DELETE untuk manajemen schedule override per job (SUPERADMIN only)
-- **DB table `cron_schedule_config`** — menyimpan override schedule per jobType
-### Changed
-- **`runner.ts`** — load schedule overrides dari DB saat startup; fallback ke default jika tidak ada override atau tabel belum ada; support `preload.cjs` mock untuk `server-only`
-- **`jobs.config.ts`** — hapus `import 'server-only'` guard (redundant; diganti comment penjelasan)
-### Fixed
-- **Duplicate `CronSettingsPage` declaration** — page.tsx memiliki dua `export default function CronSettingsPage()` yang menyebabkan build error Turbopack; baris duplikat dihapus
-- **`server-only` module block tsx cron runner** — `src/cron/preload.cjs` mocking module `server-only` sebelum tsx load file apapun agar standalone cron runner bisa berjalan
-### Files
-- `src/app/admin/settings/cron/page.tsx` — rewrite lengkap dengan 3-tab layout + ScheduleEditor modal
-- `src/app/api/cron/schedules/route.ts` — NEW: CRUD API untuk schedule override
-- `src/cron/runner.ts` — load schedule overrides dari DB via `initSchedules()`
-- `src/cron/preload.cjs` — NEW: mock `server-only` agar tsx bisa load server files
-- `src/cron/runner-wrapper.cjs` — NEW: CJS wrapper entry point (opsional)
-- `src/server/jobs/jobs.config.ts` — hapus `import 'server-only'`
-- `prisma/schema.prisma` — tambah model `cronScheduleConfig`
 
 <!-- AUTO-CHANGELOG:END -->
 
