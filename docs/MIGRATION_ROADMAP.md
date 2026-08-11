@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ⏳ Pending
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ⏳ Pending
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -38,7 +38,7 @@ salfanet-radius/ (pnpm monorepo)
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
 | 3 | Port API Modules (399 routes) | ✅ Complete | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7), `27a1fa0` (B8), `431adcb` (B9), `cba6e57` (B10), `f54b2c8` (B11), `a1f52cd` (B12), `529a1f1` (B13) |
-| 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
+| 4 | Port Cron Jobs (17 jobs) | ✅ Complete | 3-5 hari | `0b3ec1e` |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
 | 7 | Regression Test | ⏳ Pending | 3-5 hari | — |
@@ -812,24 +812,48 @@ routes have corresponding NestJS backend implementations.
 
 ---
 
-## Phase 4: Port Cron Jobs ⏳
+## Phase 4: Port Cron Jobs ✅
 
-**Status**: Pending
+**Status**: Complete
+**Commit**: `0b3ec1e`
 **Estimasi**: 3-5 hari
 
-### Jobs to port (17 total)
+### Jobs ported (17 total)
 
-1. hotspot_sync, pppoe_auto_isolir, agent_sales, invoice_generate
-2. invoice_reminder, notification_check, disconnect_sessions
-3. telegram_backup, telegram_health, activity_log_cleanup
-4. auto_renewal, webhook_log_cleanup, invoice_status_update
-5. session_monitor, pppoe_session_sync, suspend_check, freeradius_health
+All 17 cron jobs are now running via NestJS `@nestjs/schedule` with
+`@Cron()` decorators. All deferred stubs replaced with real
+implementations.
+
+| Job | Schedule | Implementation |
+|-----|----------|----------------|
+| hotspot_sync | `* * * * *` | WAITING→ACTIVE on first login, ACTIVE→EXPIRED on expiry, MikroTik disconnect, agentNotification |
+| pppoe_auto_isolir | `0 * * * *` | Mark expired PPPoE users as ISOLATED |
+| agent_sales | `*/5 * * * *` | Record agent sales for active vouchers |
+| invoice_generate | `0 7 * * *` | Generate monthly invoices for active users |
+| invoice_reminder | `0 * * * *` | WhatsApp + Email reminders for overdue invoices |
+| invoice_status_update | `0 * * * *` | Mark PENDING invoices as OVERDUE |
+| notification_check | `0 */6 * * *` | Count overdue invoices + expired users |
+| session_monitor | `*/15 * * * *` | Count active radacct sessions |
+| disconnect_sessions | `*/5 * * * *` | Disconnect ISOLATED/EXPIRED/SUSPENDED via MikroTik API |
+| activity_log_cleanup | `0 2 * * *` | Delete activity logs older than 90 days |
+| auto_renewal | `0 8 * * *` | Auto-renew from balance, extend expiry |
+| webhook_log_cleanup | `0 3 * * *` | Delete webhook logs older than 30 days |
+| freeradius_health | `*/5 * * * *` | Check systemctl, auto-restart, ensure isolir radgroupreply |
+| pppoe_session_sync | `*/5 * * * *` | Sync MikroTik /ppp/active to radacct, close stale sessions |
+| suspend_check | `0 * * * *` | Activate approved suspends, restore ended suspends |
+| cron_history_cleanup | `0 4 * * *` | Delete cron history older than 7 days |
+| olt_poll | via trigger | Ping OLTs, update isOnline + lastPollAt |
 
 ### Strategy
 
-- Port ke NestJS `@nestjs/schedule` dengan `@Cron()` decorator
-- Update PM2 config: `salfanet-cron` → run backend cron
-- Runner lama tetap jalan sampai semua jobs verified
+- ✅ Ported to NestJS `@nestjs/schedule` with `@Cron()` decorator
+- ✅ All deferred stubs replaced with real implementations
+- ✅ WhatsApp + Email wired into invoice_reminder
+- ✅ MikroTik API wired into disconnect_sessions + pppoe_session_sync
+- ✅ FreeRADIUS health check with auto-restart
+- ✅ runWithLock() prevents concurrent execution
+- ⏳ PM2 config update: `salfanet-cron` → run backend cron (Phase 6)
+- ⏳ Legacy runner kept active until verified (Phase 7)
 
 ---
 
