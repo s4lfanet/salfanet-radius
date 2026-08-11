@@ -184,7 +184,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 6:         46   ✅ (manual-payments, registrations, voucher-templates, customer-portal, agent-portal)
   - Batch 7:         55   ✅ (technician-portal, tickets, evoucher, inventory, upload)
   - Batch 8:         39   ✅ (whatsapp, telegram, push, backup, public)
-  - Batch 9+:       177   ⏳
+  - Batch 9:         60   ✅ (olt, vpn, network-infra, customer/agent portal extras)
+  - Batch 10+:      117   ⏳
 ```
 
 ### Batches
@@ -199,7 +200,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 6 | manual-payments, registrations, voucher-templates, customer-portal, agent-portal | 46 | ✅ Complete | `70b9df6` |
 | 7 | technician-portal, tickets, evoucher, inventory, upload | 55 | ✅ Complete | `75b48c4` |
 | 8 | whatsapp, telegram, push, backup, public | 39 | ✅ Complete | `27a1fa0` |
-| 9 | OLT/ONU, VPN, network trace, cables, splices, fiber-paths, customer/agent portal extras | ~177 | ⏳ Pending | — |
+| 9 | OLT/ONU, VPN, network trace, cables, splices, fiber-paths, customer/agent portal extras | 60 | ✅ Complete | `431adcb` |
+| 10+ | Remaining routes | ~117 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -584,6 +586,56 @@ Key behaviors preserved:
 - Inventory movement: atomic transaction (movement + stock update),
   ADJUSTMENT sets absolute value, OUT validates sufficient stock
 - Upload: file type validation, size limits, unique filename generation
+
+### Batch 9 Detail ✅
+
+**Commit**: `431adcb`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| Olt | `GET/PUT /api/v1/olt/:id`, `GET /:id/chassis`, `GET /:id/onus`, `GET/POST /:id/onus/register`, `GET /:id/onus/:onuId/detail`, `DELETE /:id/onus/:onuId/delete`, `GET /:id/alerts`, `POST /:id/alerts/:alertId/resolve`, `GET /:id/metrics`, `GET/PUT /api/v1/olt/alert-settings` | `frontend/.../api/olt/[id]/*` |
+| Vpn | `GET/POST/PUT/DELETE /api/v1/network/vpn/servers`, `GET/POST/PATCH /api/v1/network/vpn/clients` | `frontend/.../api/network/vpn-{server,client}` |
+| NetworkInfra | `GET /api/v1/network/trace`, `GET/POST/PUT/DELETE /cables`, `GET/POST/DELETE /splices`, `GET/POST/PUT/DELETE /joint-closures`, `GET/POST/PUT/DELETE /fiber-paths`, `POST /auto-connect`, `GET/PUT /map-settings` | `frontend/.../api/network/*` |
+| CustomerPortal extras | `GET /invoices/payment`, `POST /topup-direct`, `POST /upgrade`, `GET/POST /renewal`, `GET /ont`, `GET/POST /wifi` | `frontend/.../api/customer/*` |
+| AgentPortal extras | `POST /generate-voucher`, `POST /record-sales`, `GET /deposit/payment-methods`, `POST /deposit/manual-request`, `POST /deposit/webhook` | `frontend/.../api/agent/*` |
+
+New modules created:
+- `OltModule` — OLT detail, chassis, ONU register/detail/delete, alerts, metrics, alert settings
+- `VpnModule` — VPN servers CRUD, VPN clients with NAS auto-creation and credential generation
+- `NetworkInfraModule` — trace, cables, splices, joint-closures, fiber-paths, auto-connect, map-settings
+
+Customer portal extras added to existing `CustomerPortalModule`:
+- Invoice payment link, top-up direct, package upgrade, renewal check/create
+- ONT info and WiFi config via GenieACS
+
+Agent portal extras added to existing `AgentPortalModule`:
+- Generate voucher (balance deduction, batch code, sales recording)
+- Record sales (cron endpoint)
+- Deposit payment-methods, manual-request, webhook handler
+
+Key behaviors preserved:
+- OLT detail: includes routers, ONU statuses (filterable), alerts, metrics, monitoring logs
+- OLT update: router assignments replaced in transaction
+- VPN client creation: auto IP allocation from subnet pool, credential generation,
+  NAS entry auto-created with secret for RADIUS
+- Network trace: splice traversal with attenuation calculation and signal budget
+- Cable creation: tubes and cores auto-generated in transaction with color coding
+- Splice creation: marks cores as ASSIGNED, deletion releases cores with history
+- Joint closure: auto-syncs to network_nodes for unified map
+- Auto-connect: creates cable + segment between two devices
+- Customer renewal: checks unpaid invoices, calculates new expiry from validity unit
+- Agent voucher generation: balance deduction in transaction, batch code, sales records
+- Agent webhook: handles common gateway payload formats (Midtrans/Xendit/Duitku/Tripay)
+
+Deferred integrations (DB-based fallbacks implemented):
+- Telnet/SNMP-based OLT chassis scan and ONU registration (DB-based slot layout)
+- MikroTik API connection for VPN clients (DB + NAS entry created)
+- Payment gateway integration for invoice/topup/upgrade/renewal payment links
+- GenieACS parameter update for WiFi config
+- Webhook signature verification (gateway-specific)
+
+Backend module count: 37 → 40
+Build verified with `pnpm build`.
 
 ### Per-batch workflow
 
