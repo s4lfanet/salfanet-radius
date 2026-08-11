@@ -41,6 +41,9 @@ import { TelegramModule } from './modules/telegram/telegram.module';
 import { PushModule } from './modules/push/push.module';
 import { BackupModule } from './modules/backup/backup.module';
 import { PublicModule } from './modules/public/public.module';
+import { OltModule } from './modules/olt/olt.module';
+import { NetworkInfraModule } from './modules/network-infra/network-infra.module';
+import { VpnModule } from './modules/vpn/vpn.module';
 
 @Module({
   imports: [
@@ -93,6 +96,9 @@ import { PublicModule } from './modules/public/public.module';
     PushModule,
     BackupModule,
     PublicModule,
+    OltModule,
+    NetworkInfraModule,
+    VpnModule,
   ],
   providers: [
     {

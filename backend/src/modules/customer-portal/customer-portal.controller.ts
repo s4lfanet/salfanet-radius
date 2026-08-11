@@ -166,4 +166,80 @@ export class CustomerPortalController {
   async cancelSuspendRequest(@Req() req: Request, @Query('id') id: string) {
     return this.customerPortalService.cancelSuspendRequest((req as any).customer.userId, id);
   }
+
+  // ==================== INVOICE PAYMENT ====================
+
+  @Get('invoices/payment')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get payment link for invoice' })
+  async getInvoicePaymentLink(@Req() req: Request, @Query('invoiceId') invoiceId: string) {
+    return this.customerPortalService.getInvoicePaymentLink((req as any).customer.userId, invoiceId);
+  }
+
+  // ==================== TOPUP ====================
+
+  @Post('topup-direct')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create top-up invoice' })
+  async createTopup(@Req() req: Request, @Body() body: { amount: number; gateway?: string; paymentChannel?: string }) {
+    return this.customerPortalService.createTopup((req as any).customer.userId, body);
+  }
+
+  // ==================== UPGRADE ====================
+
+  @Post('upgrade')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create upgrade invoice' })
+  async createUpgrade(@Req() req: Request, @Body() body: { newProfileId: string; gateway?: string }) {
+    return this.customerPortalService.createUpgrade((req as any).customer.userId, body);
+  }
+
+  // ==================== RENEWAL ====================
+
+  @Get('renewal')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if user can renew' })
+  async checkRenewal(@Req() req: Request) {
+    return this.customerPortalService.checkRenewal((req as any).customer.userId);
+  }
+
+  @Post('renewal')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create renewal invoice' })
+  async createRenewal(@Req() req: Request, @Body() body: { newProfileId?: string }) {
+    return this.customerPortalService.createRenewal((req as any).customer.userId, body);
+  }
+
+  // ==================== ONT ====================
+
+  @Get('ont')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get ONT device info from GenieACS' })
+  async getOntInfo(@Req() req: Request) {
+    return this.customerPortalService.getOntInfo((req as any).customer.userId);
+  }
+
+  // ==================== WIFI ====================
+
+  @Get('wifi')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get WiFi/ONT info from GenieACS' })
+  async getWifiInfo(@Req() req: Request) {
+    return this.customerPortalService.getWifiInfo((req as any).customer.userId);
+  }
+
+  @Post('wifi')
+  @UseGuards(CustomerGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update WiFi config via GenieACS' })
+  async updateWifiConfig(@Req() req: Request, @Body() body: { deviceId: string; wlanIndex?: number; ssid?: string; password?: string; securityMode?: string; enabled?: boolean }) {
+    return this.customerPortalService.updateWifiConfig((req as any).customer.userId, body);
+  }
 }
