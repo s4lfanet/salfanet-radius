@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `pending` (B7) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -182,7 +182,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 4:         24   ✅ (payment, network, radius, sessions)
   - Batch 5:         12   ✅ (payment-gateway, mikrotik, freeradius, session-sync)
   - Batch 6:         46   ✅ (manual-payments, registrations, voucher-templates, customer-portal, agent-portal)
-  - Batch 7+:       271   ⏳
+  - Batch 7:         55   ✅ (technician-portal, tickets, evoucher, inventory, upload)
+  - Batch 8+:       216   ⏳
 ```
 
 ### Batches
@@ -195,7 +196,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 4 | payment, network, radius, sessions | 24 | ✅ Complete | `fbe4837` |
 | 5 | payment-gateway, mikrotik, freeradius, session-sync | 12 | ✅ Complete | `253a1b5` |
 | 6 | manual-payments, registrations, voucher-templates, customer-portal, agent-portal | 46 | ✅ Complete | `70b9df6` |
-| 7 | OLT/ONU, VPN, whatsapp, telegram, push, upload, backup, technician, tickets | ~271 | ⏳ Pending | — |
+| 7 | technician-portal, tickets, evoucher, inventory, upload | 55 | ✅ Complete | `pending` |
+| 8 | OLT/ONU, VPN, whatsapp, telegram, push, backup, public, pwa, sse, system | ~216 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -444,19 +446,82 @@ Key behaviors preserved:
 - Agent dashboard: WIB timezone stats, voucher stock, profile agentAccess filter
 - Referral code: 8-char alphanumeric (excludes I/O/0/1), 10 retry attempts
 
-Deferred to Batch 7+:
+Deferred to Batch 8+:
 - WhatsApp/Email/Push notifications (currently logged only)
 - Customer portal: invoice payment creation, topup-direct, upgrade-package,
-  renewal, tickets, wifi/ONT management
+  renewal, wifi/ONT management
 - Agent portal: generate-voucher, record-sales, manual-deposit-request,
-  payment-methods, deposit webhook, tickets
-- Technician portal (20 routes): auth, customers, form-data, genieacs,
-  isolated, monitor, offline, profile, sessions, tasks, tickets, upload,
-  work-orders
-- OLT/ONU management (15 routes), GenieACS (27 routes)
+  payment-methods, deposit webhook
+- OLT/ONU management (15 routes), GenieACS device detail
 - VPN management, network trace, cables, splices, fiber-paths
-- WhatsApp (14), Telegram (5), Push (8), Upload (3), Backup (9)
-- Tickets (6), Evoucher (3), Inventory (4), PWA (1), SSE (1), Public (6)
+- WhatsApp (14), Telegram (5), Push (8), Backup (9)
+- PWA (1), SSE (1), Public (6), System (1)
+
+### Batch 7 Detail ✅
+
+**Commit**: `pending`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| TechnicianPortal | `GET /api/v1/technician/{customers,form-data,sessions,monitor,offline,isolated,profile,genieacs,genieacs/devices,work-orders,tasks}`, `PUT /api/v1/technician/{profile,tasks}`, `POST /api/v1/technician/work-orders` | `frontend/.../api/technician/*` |
+| Tickets | `GET/POST/PUT/DELETE /api/v1/tickets`, `GET/POST /api/v1/tickets/categories`, `PUT/DELETE /api/v1/tickets/categories`, `GET/POST /api/v1/tickets/messages`, `GET /api/v1/tickets/stats` | `frontend/.../api/tickets/*` |
+| Evoucher | `GET /api/v1/evoucher/profiles`, `GET /api/v1/evoucher/order/:token`, `POST /api/v1/evoucher/purchase` | `frontend/.../api/evoucher/*` |
+| Inventory | `GET/POST/PUT/DELETE /api/v1/inventory/{items,categories,suppliers,movements}` | `frontend/.../api/inventory/*` |
+| Upload | `POST /api/v1/upload/{payment-proof,logo,pppoe-customer,ticket}` | `frontend/.../api/upload/*`, `frontend/.../api/technician/upload` |
+
+New modules created:
+- `TechnicianPortalModule` — field technician self-service portal
+  - Customers: paginated list with search/filter, profile/area/router includes
+  - Form-data: dropdown data (profiles, routers, areas)
+  - Sessions: active radacct sessions cross-referenced with PPPoE users,
+    duration/bytes formatting, client-side search + pagination
+  - Monitor: status group counts, online count from radacct, active sessions,
+    isolated customers list
+  - Offline: active/isolated users filtered against online radacct sessions
+  - Isolated: isolated users with unpaid invoices, online status check,
+    total unpaid amount stats
+  - Profile: dual support (adminUser + technician), bcrypt password change
+  - Tasks: work orders assigned to technician, status update with completedAt
+  - Work-orders: list with filters, actions (ASSIGN/START/COMPLETE/CANCEL)
+  - GenieACS: settings (masked password), devices from external API
+    with 30s timeout, online/offline based on lastInform
+- `TicketsModule` — support ticket system
+  - CRUD: list with filters (customer/admin scoped), create with unique
+    ticket number (TKTYYMMRRRR, 10 retries), update with auto
+    resolvedAt/closedAt, delete
+  - Categories: CRUD with item-count check before delete
+  - Messages: list by ticket, create with lastResponseAt update
+  - Stats: open/in-progress/resolved/closed/total counts
+- `EvoucherModule` — public e-voucher purchase flow
+  - Profiles: active profiles with eVoucherAccess, sorted by price
+  - Order by token: includes profile, vouchers, payment gateways, company
+  - Purchase: order number (EVC-YYYYMMDD-NNNN), secure payment token,
+    payment link generation, PENDING voucherOrder creation
+- `InventoryModule` — stock management
+  - Items: list with filters (category/supplier/search/lowStock),
+    stock status (out_of_stock/low_stock/in_stock),
+    create with initial stock movement, update, delete (cascade)
+  - Categories: CRUD with item-count check
+  - Suppliers: CRUD with item-count check
+  - Movements: list, create (IN/OUT/ADJUSTMENT with atomic stock update),
+    delete (reverse with stock restoration)
+- `UploadModule` — file upload handling via multer (memoryStorage)
+  - Payment proof: public, JPG/PNG/WebP, 5MB
+  - Logo: admin, PNG/JPG/SVG/WebP/AVIF/GIF, 2MB
+  - PPPoE customer: admin, idCard/installation subfolders
+  - Ticket attachment: technician, JPG/PNG/WebP/GIF, 5MB
+
+Dependencies added:
+- `multer@^2.2.0`, `@types/multer@^2.2.0`
+
+Key behaviors preserved:
+- Technician auth: dual support (adminUser + technician), JWT via
+  AuthService.signTechnicianToken, 7-day expiry
+- Ticket number: TKTYYMMRRRR format with 10 retry attempts
+- E-voucher order: EVC-YYYYMMDD-NNNN format, 32-byte hex payment token
+- Inventory movement: atomic transaction (movement + stock update),
+  ADJUSTMENT sets absolute value, OUT validates sufficient stock
+- Upload: file type validation, size limits, unique filename generation
 
 ### Per-batch workflow
 
