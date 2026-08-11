@@ -30,6 +30,7 @@
     "class-validator": "^0.14.1",
     "jose": "^6.2.2",
     "jsonwebtoken": "^9.0.3",
+    "nanoid": "^5.1.16",
     "next-auth": "^4.24.12",
     "node-routeros": "^1.6.8",
     "nodemailer": "^7.0.11",
