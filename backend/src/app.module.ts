@@ -26,6 +26,11 @@ import { PaymentGatewayModule } from './modules/payment-gateway/payment-gateway.
 import { MikrotikModule } from './modules/mikrotik/mikrotik.module';
 import { FreeradiusModule } from './modules/freeradius/freeradius.module';
 import { SessionSyncModule } from './modules/session-sync/session-sync.module';
+import { ManualPaymentsModule } from './modules/manual-payments/manual-payments.module';
+import { RegistrationsModule } from './modules/registrations/registrations.module';
+import { VoucherTemplatesModule } from './modules/voucher-templates/voucher-templates.module';
+import { CustomerPortalModule } from './modules/customer-portal/customer-portal.module';
+import { AgentPortalModule } from './modules/agent-portal/agent-portal.module';
 
 @Module({
   imports: [
@@ -63,6 +68,11 @@ import { SessionSyncModule } from './modules/session-sync/session-sync.module';
     MikrotikModule,
     FreeradiusModule,
     SessionSyncModule,
+    ManualPaymentsModule,
+    RegistrationsModule,
+    VoucherTemplatesModule,
+    CustomerPortalModule,
+    AgentPortalModule,
   ],
   providers: [
     {
