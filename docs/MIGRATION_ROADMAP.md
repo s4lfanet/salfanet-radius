@@ -1,7 +1,7 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ Complete | Phase 2 🔄 In Progress
-> **Last updated**: 2026-08-11
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1 ✅)
+> **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
 ---
@@ -36,8 +36,8 @@ salfanet-radius/ (pnpm monorepo)
 | Phase | Nama | Status | Estimasi | Commit |
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
-| 2 | Backend Auth Module | 🔄 In Progress | 3-5 hari | — |
-| 3 | Port API Modules (399 routes) | ⏳ Pending | 2-3 minggu | — |
+| 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (Batch 1) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -84,13 +84,14 @@ salfanet-radius/
 
 ---
 
-## Phase 2: Backend Auth Module 🔄
+## Phase 2: Backend Auth Module ✅
 
-**Status**: In Progress
-**Estimasi**: 3-5 hari
+**Status**: Complete
+**Commit**: `92a81e5`
+**Tanggal**: 2026-08-11
 **Risiko**: TINGGI — auth harus kompatibel dengan frontend existing
 
-### Tujuan
+### Yang dilakukan
 
 Port sistem authentication & authorization dari Next.js ke NestJS:
 - NextAuth-compatible JWT session (admin login)
@@ -101,14 +102,37 @@ Port sistem authentication & authorization dari Next.js ke NestJS:
 
 ### Tasks
 
-- [ ] 2.1 Audit auth system existing (NextAuth config, permissions, JWT)
-- [ ] 2.2 Port Prisma schema reference ke backend
-- [ ] 2.3 Implement AuthModule (login, session, 2FA)
-- [ ] 2.4 Implement Guards (Admin, Agent, Technician, Customer, Public)
-- [ ] 2.5 Implement Permission system (hasPermission, requirePermission)
-- [ ] 2.6 Implement rate limiting
-- [ ] 2.7 Test auth endpoints
-- [ ] 2.8 Commit
+- [x] 2.1 Audit auth system existing (NextAuth config, permissions, JWT)
+- [x] 2.2 Port Prisma schema reference ke backend
+- [x] 2.3 Implement AuthModule (login, session, 2FA)
+- [x] 2.4 Implement Guards (Admin, Agent, Technician, Customer, Public)
+- [x] 2.5 Implement Permission system (hasPermission, requirePermission)
+- [x] 2.6 Implement rate limiting (@nestjs/throttler)
+- [x] 2.7 Test auth endpoints (build + bootstrap verified)
+- [x] 2.8 Commit
+
+### Auth Endpoints
+
+| Endpoint | Method | Auth | Description |
+|----------|--------|------|-------------|
+| `/api/v1/auth/login` | POST | Public | Admin login (credentials) |
+| `/api/v1/auth/verify-2fa` | POST | Public | 2FA TOTP verification |
+| `/api/v1/auth/me` | GET | Admin | Current user info + permissions |
+| `/api/v1/auth/permissions` | GET | Admin | Current user permissions |
+| `/api/v1/auth/verify` | GET | Admin | Verify token validity |
+| `/api/v1/auth/logout` | POST | Admin | Logout (stateless) |
+
+### Guards & Decorators
+
+| Guard | Token Source | Secret | Expiry |
+|-------|-------------|--------|--------|
+| AdminGuard | Bearer header OR NextAuth cookie | NEXTAUTH_SECRET | 30 days |
+| AgentGuard | Bearer header | AGENT_JWT_SECRET | 7 days |
+| TechnicianGuard | Bearer header | JWT_SECRET | 7 days |
+| CustomerGuard | Bearer header | customerSession table | per session |
+| PermissionsGuard | request.user (after AdminGuard) | — | — |
+
+Decorators: `@Public()`, `@Permissions('key')`, `@CurrentUser()`
 
 ### Auth Patterns yang harus di-port
 
@@ -137,22 +161,46 @@ yang akan digunakan saat API routes mulai dipindah di Phase 3.
 
 ---
 
-## Phase 3: Port API Modules ⏳
+## Phase 3: Port API Modules 🔄
 
-**Status**: Pending
+**Status**: In Progress — Batch 1 ✅ Complete
 **Estimasi**: 2-3 minggu
 **Risiko**: TINGGI — 399 endpoints harus dport satu per satu
 
+### Progress
+
+```text
+Total API routes:  399
+Ported:             13   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2)
+  - Batch 1:          8   ✅ (health, company, dashboard, permissions)
+  - Batch 2+:       386   ⏳
+```
+
 ### Batches
 
-| Batch | Modules | Routes | Estimasi |
-|-------|---------|--------|----------|
-| 1 | health, company, dashboard, permissions | 8 | 3-5 hari |
-| 2 | auth, settings, users, notifications | 28 | 5-7 hari |
-| 3 | pppoe, hotspot, invoices, payment, keuangan | 47 | 7-10 hari |
-| 4 | network, olt, genieacs, freeradius, radius, sessions | 99 | 7-10 hari |
-| 5 | customer, agent, technician | 49 | 5-7 hari |
-| 6 | whatsapp, telegram, push, upload, backup, dll | 168 | 3-5 hari |
+| Batch | Modules | Routes | Status | Commit |
+|-------|---------|--------|--------|--------|
+| 1 | health, company, dashboard, permissions | 8 | ✅ Complete | `0a98b07` |
+| 2 | settings, users, notifications | ~28 | ⏳ Pending | — |
+| 3 | pppoe, hotspot, invoices, payment, keuangan | ~47 | ⏳ Pending | — |
+| 4 | network, olt, genieacs, freeradius, radius, sessions | ~99 | ⏳ Pending | — |
+| 5 | customer, agent, technician | ~49 | ⏳ Pending | — |
+| 6 | whatsapp, telegram, push, upload, backup, dll | ~168 | ⏳ Pending | — |
+
+### Batch 1 Detail ✅
+
+**Commit**: `0a98b07`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| Health | `GET /api/v1/health` | `frontend/.../api/health` |
+| Company | `GET/POST /api/v1/company`, `GET /api/v1/company/info` | `frontend/.../api/company` |
+| Dashboard | `GET /api/v1/dashboard/stats`, `analytics`, `traffic` | `frontend/.../api/dashboard/*` |
+| Permissions | `GET /api/v1/permissions`, `role-templates` | `frontend/.../api/permissions` |
+
+Supporting modules created:
+- `ActivityLogModule` — logActivity + getRecentActivities
+- `TimezoneUtils` — nowWIB, startOfDayWIBtoUTC (backend version)
 
 ### Per-batch workflow
 
