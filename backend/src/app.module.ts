@@ -44,6 +44,10 @@ import { PublicModule } from './modules/public/public.module';
 import { OltModule } from './modules/olt/olt.module';
 import { NetworkInfraModule } from './modules/network-infra/network-infra.module';
 import { VpnModule } from './modules/vpn/vpn.module';
+import { GenieacsModule } from './modules/genieacs/genieacs.module';
+import { AdminExtrasModule } from './modules/admin-extras/admin-extras.module';
+import { EmailModule } from './modules/email/email.module';
+import { CronModule } from './modules/cron/cron.module';
 
 @Module({
   imports: [
@@ -99,6 +103,10 @@ import { VpnModule } from './modules/vpn/vpn.module';
     OltModule,
     NetworkInfraModule,
     VpnModule,
+    GenieacsModule,
+    AdminExtrasModule,
+    EmailModule,
+    CronModule,
   ],
   providers: [
     {
