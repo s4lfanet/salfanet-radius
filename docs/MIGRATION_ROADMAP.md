@@ -185,7 +185,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 7:         55   ✅ (technician-portal, tickets, evoucher, inventory, upload)
   - Batch 8:         39   ✅ (whatsapp, telegram, push, backup, public)
   - Batch 9:         60   ✅ (olt, vpn, network-infra, customer/agent portal extras)
-  - Batch 10+:      117   ⏳
+  - Batch 10:        80   ✅ (genieacs, admin-extras, email, cron)
+  - Batch 11+:       37   ⏳
 ```
 
 ### Batches
@@ -201,7 +202,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 7 | technician-portal, tickets, evoucher, inventory, upload | 55 | ✅ Complete | `75b48c4` |
 | 8 | whatsapp, telegram, push, backup, public | 39 | ✅ Complete | `27a1fa0` |
 | 9 | OLT/ONU, VPN, network trace, cables, splices, fiber-paths, customer/agent portal extras | 60 | ✅ Complete | `431adcb` |
-| 10+ | Remaining routes | ~117 | ⏳ Pending | — |
+| 10 | GenieACS, admin-extras, email, cron | 80 | ✅ Complete | `cba6e57` |
+| 11+ | Remaining routes | ~37 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -635,6 +637,50 @@ Deferred integrations (DB-based fallbacks implemented):
 - Webhook signature verification (gateway-specific)
 
 Backend module count: 37 → 40
+Build verified with `pnpm build`.
+
+### Batch 10 Detail ✅
+
+**Commit**: `cba6e57`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| Genieacs | `GET/PUT /settings`, `POST /test`, `GET /devices`, `GET /devices/:id`, `GET /devices/:id/all-parameters`, `POST /devices/:id/{refresh,reboot,factory-reset,connection-request,download,parameters}`, `GET /devices/:id/{wan,wifi,tasks}`, `GET/DELETE /tasks`, `POST /tasks/:id/retry`, `GET /faults`, `GET /files`, `GET/POST/PUT/DELETE /presets`, `GET/POST/PUT/DELETE /provisions`, `GET/POST/PUT/DELETE /virtual-parameters`, `GET/POST/PUT/DELETE /vp-scripts`, `GET/POST/PUT/DELETE /parameter-display`, `POST /parameter-display/reset`, `POST /sync`, `POST /auto-provision`, `GET /backup` | `frontend/.../api/genieacs/*`, `frontend/.../api/settings/genieacs/*` |
+| AdminExtras | `GET /admin/analytics`, `GET /admin/laporan`, `GET /admin/isolated-users`, `POST /admin/isolate-user`, `GET/POST /admin/agent-deposits/:id`, `GET/POST /admin/topup-requests/:id/{approve,reject}`, `GET/POST /admin/suspend-requests/:id`, `GET/POST /admin/referrals`, `GET/PUT /admin/referrals/config`, `GET/POST/PUT/DELETE /admin/technicians`, `POST /admin/pppoe/sync-all-radius`, `POST/GET /admin/pppoe/users/:id/deposit`, `POST /admin/users/:id/renewal`, `GET/POST /admin/cloudflare-tunnel`, `GET /admin/system/info`, `POST /admin/olt/test-connection`, `GET /admin/olt/model-profiles`, `GET/POST /admin/invoices/import`, `GET/POST/DELETE /admin/profile/2fa`, `GET/POST /admin/evoucher/orders` | `frontend/.../api/admin/*` |
+| Email | `GET/PUT /settings/email`, `POST /settings/email/test`, `GET/POST/PUT/DELETE /settings/email/templates`, `GET /email/history` | `frontend/.../api/email/*`, `frontend/.../api/settings/email/*` |
+| Cron | `POST /cron/:jobType`, `GET/PUT/DELETE /cron/schedules`, `GET /cron/status` | `frontend/.../api/cron/*` |
+
+New modules created:
+- `GenieacsModule` — full GenieACS NBI integration (devices, tasks, faults, files,
+  presets, provisions, virtual-parameters, VP scripts, parameter-display, sync)
+- `AdminExtrasModule` — analytics, reports, isolation, agent-deposits, topup-requests,
+  suspend-requests, referrals, technicians, sync-all-radius, deposits, renewals,
+  cloudflare-tunnel, system-info, OLT test, invoice import, 2FA, evoucher orders
+- `EmailModule` — settings, templates, history (nodemailer deferred)
+- `CronModule` — 17 job types with DB-based logic, schedules, status
+
+Key behaviors preserved:
+- GenieACS: NBI API with Basic Auth, 30s timeout for device list, 10s for tasks
+- Analytics: monthly revenue, ARPU, churn, profile/area breakdowns
+- Auto-isolir: expired ACTIVE users → ISOLATED
+- Agent sales: records sales for ACTIVE vouchers without existing sale records
+- Invoice generate: monthly invoices for auto-renewal users (dedup by month)
+- Invoice status update: PENDING → OVERDUE when dueDate passed
+- Auto-renewal: deducts balance, extends expiry by validity unit
+- Sync-all-radius: upserts radcheck + radusergroup for all active users
+- Referral credit: adds reward amount to referrer balance in transaction
+- Suspend approve: updates user status to SUSPENDED
+- Topup approve: marks invoice PAID, increments user balance
+
+Deferred integrations:
+- Nodemailer for email sending (history logged as 'failed')
+- otplib for 2FA TOTP verification (secret generated, verification pending)
+- Cloudflare tunnel fields (not in company model, stub response)
+- GenieACS auto-provision scan (placeholder)
+- MikroTik session sync in cron (deferred to mikrotik module)
+- RADIUS CoA for disconnect sessions (deferred)
+
+Backend module count: 40 → 44
 Build verified with `pnpm build`.
 
 ### Per-batch workflow
