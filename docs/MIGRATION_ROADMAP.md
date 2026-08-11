@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7), `pending` (B8) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -183,7 +183,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
   - Batch 5:         12   ✅ (payment-gateway, mikrotik, freeradius, session-sync)
   - Batch 6:         46   ✅ (manual-payments, registrations, voucher-templates, customer-portal, agent-portal)
   - Batch 7:         55   ✅ (technician-portal, tickets, evoucher, inventory, upload)
-  - Batch 8+:       216   ⏳
+  - Batch 8:         39   ✅ (whatsapp, telegram, push, backup, public)
+  - Batch 9+:       177   ⏳
 ```
 
 ### Batches
@@ -197,7 +198,8 @@ Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 5 | payment-gateway, mikrotik, freeradius, session-sync | 12 | ✅ Complete | `253a1b5` |
 | 6 | manual-payments, registrations, voucher-templates, customer-portal, agent-portal | 46 | ✅ Complete | `70b9df6` |
 | 7 | technician-portal, tickets, evoucher, inventory, upload | 55 | ✅ Complete | `75b48c4` |
-| 8 | OLT/ONU, VPN, whatsapp, telegram, push, backup, public, pwa, sse, system | ~216 | ⏳ Pending | — |
+| 8 | whatsapp, telegram, push, backup, public | 39 | ✅ Complete | `pending` |
+| 9 | OLT/ONU, VPN, network trace, cables, splices, fiber-paths, customer/agent portal extras | ~177 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -446,16 +448,76 @@ Key behaviors preserved:
 - Agent dashboard: WIB timezone stats, voucher stock, profile agentAccess filter
 - Referral code: 8-char alphanumeric (excludes I/O/0/1), 10 retry attempts
 
-Deferred to Batch 8+:
-- WhatsApp/Email/Push notifications (currently logged only)
+Deferred to Batch 9+:
+- WhatsApp/Email notifications in webhook/broadcast (currently logged only)
 - Customer portal: invoice payment creation, topup-direct, upgrade-package,
   renewal, wifi/ONT management
 - Agent portal: generate-voucher, record-sales, manual-deposit-request,
   payment-methods, deposit webhook
 - OLT/ONU management (15 routes), GenieACS device detail
 - VPN management, network trace, cables, splices, fiber-paths
-- WhatsApp (14), Telegram (5), Push (8), Backup (9)
-- PWA (1), SSE (1), Public (6), System (1)
+- web-push npm dependency (push module degrades gracefully if not installed)
+
+### Batch 8 Detail ✅
+
+**Commit**: `pending`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| WhatsApp | `POST /api/v1/whatsapp/send`, `GET/POST /api/v1/whatsapp/templates`, `PUT/DELETE /api/v1/whatsapp/templates/:id`, `GET/POST /api/v1/whatsapp/providers`, `PUT/DELETE /api/v1/whatsapp/providers/:id`, `GET /api/v1/whatsapp/providers/:id/{status,qr}`, `POST /api/v1/whatsapp/providers/:id/{restart,test}`, `GET /api/v1/whatsapp/history`, `GET/PUT /api/v1/whatsapp/reminder-settings`, `POST /api/v1/whatsapp/{broadcast,broadcast-invoice}`, `GET/POST /api/v1/whatsapp/webhook` | `frontend/.../api/whatsapp/*` |
+| Telegram | `GET/POST /api/v1/telegram/settings`, `POST /api/v1/telegram/{test,send-backup,send-health,test-backup}` | `frontend/.../api/telegram/*` |
+| Push | `GET /api/v1/push/vapid-public-key`, `POST /api/v1/push/{subscribe,unsubscribe,agent-subscribe,agent-unsubscribe,technician-subscribe,technician-unsubscribe}`, `GET/POST /api/v1/push/send` | `frontend/.../api/push/*` |
+| Backup | `GET /api/v1/backup`, `GET /api/v1/backup/history`, `POST /api/v1/backup/create`, `GET /api/v1/backup/download/:id`, `DELETE /api/v1/backup/delete/:id`, `POST /api/v1/backup/restore`, `GET /api/v1/backup/health` | `frontend/.../api/backup/*` |
+| Public | `GET /api/v1/public/{company,areas,profiles,stats,payment-gateways}` | `frontend/.../api/public/*` |
+
+New modules created:
+- `WhatsAppModule` — WhatsApp messaging and provider management
+  - Send: failover across providers, phone normalization (62 prefix),
+    history logging per attempt
+  - Templates: CRUD, auto-seeds 17 default templates on first list
+  - Providers: CRUD, status check, QR fetch, session restart, test send
+  - History: paginated with stats (sent/failed/incoming counts)
+  - Reminder settings: singleton get/update
+  - Broadcast: template variable replacement, per-user send
+  - Broadcast invoice: invoice reminder template, per-invoice send
+  - Webhook: incoming message normalization (Kirimi/Wablas/Fonnte/WAHA/Meta),
+    logs to history as "incoming"
+- `TelegramModule` — Telegram backup integration
+  - Settings: get (masked token), update
+  - Test: sends to general chat, backup topic, health topic
+  - Send backup: attaches SQL file to Telegram document
+  - Send health: DB size, table count, user counts report
+  - Test backup: creates real mysqldump, sends to Telegram, logs to history
+- `PushModule` — Web push notifications
+  - VAPID public key retrieval
+  - Customer/agent/technician subscribe/unsubscribe (synthetic userIds
+    for agent_ and tech_ prefixes)
+  - Broadcast: targeted or all, web-push library with graceful degradation
+    if not installed, auto-deactivates 410/404 subscriptions
+  - Send to user, send to all technicians
+  - Broadcast history and stats
+- `BackupModule` — Database backup management
+  - List/history: last 100 backups
+  - Create: mysqldump with --single-transaction, logs to backupHistory
+  - Download: file stream by backup ID
+  - Delete: removes file from disk + history record
+  - Restore: mysql import from uploaded SQL file (500MB limit)
+  - Health: table count, DB size, last backup timestamp
+- `PublicModule` — Public-facing endpoints
+  - Company info (no sensitive fields)
+  - Active areas for registration form
+  - Active profiles with speed/validity
+  - Public stats (rounded for privacy, no revenue)
+  - Active payment gateways
+
+Key behaviors preserved:
+- WhatsApp phone normalization: 0 prefix → 62, no prefix → 62
+- WhatsApp failover: tries providers by priority desc, logs each attempt
+- WhatsApp template seeding: 17 default templates on first GET
+- Telegram message threading: backup/health topic support
+- Push subscription deactivation: 410/404 → isActive=false
+- Backup: mysqldump --opt --single-transaction for consistent snapshot
+- Public stats: rounded to nearest 10 for privacy
 
 ### Batch 7 Detail ✅
 
