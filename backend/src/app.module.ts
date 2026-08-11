@@ -18,6 +18,10 @@ import { PppoeModule } from './modules/pppoe/pppoe.module';
 import { HotspotModule } from './modules/hotspot/hotspot.module';
 import { InvoicesModule } from './modules/invoices/invoices.module';
 import { KeuanganModule } from './modules/keuangan/keuangan.module';
+import { PaymentModule } from './modules/payment/payment.module';
+import { NetworkModule } from './modules/network/network.module';
+import { RadiusModule } from './modules/radius/radius.module';
+import { SessionsModule } from './modules/sessions/sessions.module';
 
 @Module({
   imports: [
@@ -47,6 +51,10 @@ import { KeuanganModule } from './modules/keuangan/keuangan.module';
     HotspotModule,
     InvoicesModule,
     KeuanganModule,
+    PaymentModule,
+    NetworkModule,
+    RadiusModule,
+    SessionsModule,
   ],
   providers: [
     {
