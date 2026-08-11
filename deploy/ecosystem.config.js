@@ -1,21 +1,17 @@
 /**
  * PM2 Ecosystem Configuration — Salfanet Radius (NestJS Migration)
  *
- * Four managed processes:
+ * Three managed processes:
  *   1. salfanet-frontend  — Next.js standalone (port 3000)
- *   2. salfanet-backend   — NestJS API server (port 3001)
- *   3. salfanet-cron      — NestJS cron runner (same process as backend,
- *                           but can be split if needed)
- *   4. salfanet-wa        — Baileys WhatsApp service (port 4000, internal)
+ *   2. salfanet-backend   — NestJS API server + cron jobs (port 3001)
+ *   3. salfanet-wa        — Baileys WhatsApp service (port 4000, internal)
  *
  * Deployment:
  *   pm2 start deploy/ecosystem.config.js
  *   pm2 save
  *
  * The backend process handles both API requests AND cron jobs via
- * @nestjs/schedule. If you want cron in a separate process, set
- * RUN_CRON_ONLY=1 and it will start the NestJS app without listening
- * on a port (cron-only mode).
+ * @nestjs/schedule. Legacy cron runner has been removed.
  */
 
 const APP_DIR = process.env.APP_DIR || '/var/www/salfanet-radius';
@@ -95,40 +91,7 @@ module.exports = {
     },
 
     // ─────────────────────────────────────────────────────────────────────
-    // 3. Legacy Cron Service (frontend runner — kept during migration)
-    //    Once backend cron jobs are verified (Phase 7), this can be removed.
-    // ─────────────────────────────────────────────────────────────────────
-    {
-      name: 'salfanet-cron',
-      script: 'node_modules/.bin/tsx',
-      args: ['-r', './src/cron/preload.cjs', 'src/cron/runner.ts'],
-      cwd: `${APP_DIR}/frontend`,
-      instances: 1,
-      exec_mode: 'fork',
-      watch: false,
-      max_memory_restart: '150M',
-      node_args: [
-        '--max-old-space-size=120',
-        '--max-semi-space-size=4',
-        '--optimize-for-size',
-      ],
-      env: {
-        NODE_ENV: 'production',
-        NODE_OPTIONS: '--max-old-space-size=120',
-        TZ: 'Asia/Jakarta',
-      },
-      error_file: './logs/cron-error.log',
-      out_file: './logs/cron-out.log',
-      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
-      merge_logs: true,
-      autorestart: true,
-      max_restarts: 5,
-      min_uptime: '10s',
-      restart_delay: 5000,
-    },
-
-    // ─────────────────────────────────────────────────────────────────────
-    // 4. Baileys WhatsApp Native Service (port 4000, internal only)
+    // 3. Baileys WhatsApp Native Service (port 4000, internal only)
     // ─────────────────────────────────────────────────────────────────────
     {
       name: 'salfanet-wa',
