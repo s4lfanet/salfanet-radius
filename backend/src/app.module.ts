@@ -22,6 +22,10 @@ import { PaymentModule } from './modules/payment/payment.module';
 import { NetworkModule } from './modules/network/network.module';
 import { RadiusModule } from './modules/radius/radius.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
+import { PaymentGatewayModule } from './modules/payment-gateway/payment-gateway.module';
+import { MikrotikModule } from './modules/mikrotik/mikrotik.module';
+import { FreeradiusModule } from './modules/freeradius/freeradius.module';
+import { SessionSyncModule } from './modules/session-sync/session-sync.module';
 
 @Module({
   imports: [
@@ -55,6 +59,10 @@ import { SessionsModule } from './modules/sessions/sessions.module';
     NetworkModule,
     RadiusModule,
     SessionsModule,
+    PaymentGatewayModule,
+    MikrotikModule,
+    FreeradiusModule,
+    SessionSyncModule,
   ],
   providers: [
     {

@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { getTimezoneOffsetMs } from '../../common/utils/timezone';
+import { MikrotikService } from '../mikrotik/mikrotik.service';
+import { SessionSyncService } from '../session-sync/session-sync.service';
 
 function formatBytes(bytes: number): string {
   if (!bytes) return '0 B';
@@ -40,7 +42,11 @@ async function getLatestMacByUsernames(prisma: PrismaService, usernames: string[
 export class SessionsService {
   private readonly logger = new Logger(SessionsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mikrotikService: MikrotikService,
+    private readonly sessionSyncService: SessionSyncService,
+  ) {}
 
   /**
    * Mark stale radacct sessions as stopped.
@@ -395,14 +401,20 @@ export class SessionsService {
   }
 
   /**
-   * Get realtime sessions from MikroTik API — ported from /api/sessions/realtime
-   * MikroTik API integration is deferred to integration batch.
+   * Get realtime sessions from MikroTik API — ported from /api/sessions/realtime.
+   * Fetches live hotspot and PPPoE sessions via node-routeros.
    */
   async getRealtimeSessions(routerId?: string) {
+    const [hotspotResult, pppoeResult] = await Promise.all([
+      this.mikrotikService.getHotspotSessions(routerId),
+      this.mikrotikService.getPppoeSessions(routerId),
+    ]);
+
     return {
-      error: 'Realtime MikroTik API integration deferred to integration batch',
-      suggestion: 'Use legacy /api/sessions/realtime endpoint until node-routeros integration is ported',
-      routerId,
+      hotspot: hotspotResult.sessions,
+      pppoe: pppoeResult.sessions,
+      errors: [...hotspotResult.errors, ...pppoeResult.errors],
+      total: hotspotResult.sessions.length + pppoeResult.sessions.length,
     };
   }
 
@@ -512,14 +524,21 @@ export class SessionsService {
   }
 
   /**
-   * Trigger session sync — ported from /api/sessions/sync
-   * Sync job execution is deferred to integration batch (requires syncPPPoESessions, syncHotspotWithRadius).
+   * Trigger session sync — ported from /api/sessions/sync.
+   * Delegates to SessionSyncService for PPPoE and hotspot sync jobs.
    */
   async syncSessions(type?: string) {
-    return {
-      error: 'Session sync job execution deferred to integration batch',
-      suggestion: 'Use legacy /api/sessions/sync endpoint until sync jobs are ported',
-      type: type || 'all',
-    };
+    const syncType = type || 'all';
+    if (syncType === 'pppoe') {
+      return this.sessionSyncService.syncPppoeSessions();
+    }
+    if (syncType === 'hotspot') {
+      return this.sessionSyncService.syncHotspotSessions();
+    }
+    const [pppoe, hotspot] = await Promise.all([
+      this.sessionSyncService.syncPppoeSessions(),
+      this.sessionSyncService.syncHotspotSessions(),
+    ]);
+    return { pppoe, hotspot };
   }
 }

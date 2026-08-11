@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-4 ✅)
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 🔄 In Progress (Batch 1-5 ✅)
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -37,7 +37,7 @@ salfanet-radius/ (pnpm monorepo)
 |-------|------|--------|----------|--------|
 | 1 | Setup Monorepo Structure | ✅ Complete | 1 hari | `8eaab66` |
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
-| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4) |
+| 3 | Port API Modules (399 routes) | 🔄 In Progress | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `8a3a942` (B5) |
 | 4 | Port Cron Jobs (17 jobs) | ⏳ Pending | 3-5 hari | — |
 | 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
@@ -171,15 +171,17 @@ yang akan digunakan saat API routes mulai dipindah di Phase 3.
 
 ```text
 Total API routes:  399
-Ported:             70   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2
+Ported:             82   (auth 6 + health 1 + company 3 + dashboard 3 + permissions 2
                           + settings 7 + users 1 + admin-users 5 + notifications 5
                           + pppoe 11 + hotspot 8 + invoices 5 + keuangan 8
-                          + payment 2 + network 16 + radius 4 + sessions 4)
+                          + payment 2 + network 16 + radius 4 + sessions 4
+                          + payment-gateway 2 + mikrotik 4 + freeradius 3 + session-sync 3)
   - Batch 1:          8   ✅ (health, company, dashboard, permissions)
   - Batch 2:         14   ✅ (settings, users, admin-users, notifications)
   - Batch 3:         19   ✅ (pppoe, hotspot, invoices, keuangan)
   - Batch 4:         24   ✅ (payment, network, radius, sessions)
-  - Batch 5+:       329   ⏳
+  - Batch 5:         12   ✅ (payment-gateway, mikrotik, freeradius, session-sync)
+  - Batch 6+:       317   ⏳
 ```
 
 ### Batches
@@ -190,8 +192,8 @@ Ported:             70   (auth 6 + health 1 + company 3 + dashboard 3 + permissi
 | 2 | settings, users, admin-users, notifications | 14 | ✅ Complete | `6c461b` |
 | 3 | pppoe, hotspot, invoices, keuangan | 19 | ✅ Complete | `411bf3` |
 | 4 | payment, network, radius, sessions | 24 | ✅ Complete | `fbe4837` |
-| 5 | payment webhooks, MikroTik integration, OLT/ONU, VPN, customer, agent | ~120 | ⏳ Pending | — |
-| 6 | whatsapp, telegram, push, upload, backup, dll | ~168 | ⏳ Pending | — |
+| 5 | payment-gateway, mikrotik, freeradius, session-sync | 12 | ✅ Complete | `8a3a942` |
+| 6 | OLT/ONU, VPN, customer, agent, whatsapp, telegram, push, upload, backup | ~305 | ⏳ Pending | — |
 
 ### Batch 1 Detail ✅
 
@@ -298,6 +300,80 @@ Deferred to Batch 5 (integration batch):
 - VPN management routes (vpn-server, vpn-client, vpn-routing, l2tp/pptp/sstp control)
 - Network trace, cables, splices, joint-closures, fiber-paths, auto-connect
 - OLT chassis/ONU management, ONU register/reboot/delete
+
+### Batch 5 Detail ✅
+
+**Commit**: `8a3a942`
+
+| Module | Endpoints | Source |
+|--------|-----------|--------|
+| PaymentGateway | `POST /api/v1/payment/create`, `POST /api/v1/payment/webhook` | `frontend/.../api/payment/{create,webhook}` |
+| Mikrotik | `POST /api/v1/mikrotik/test-connection`, `GET /api/v1/mikrotik/{hotspot-sessions,pppoe-sessions}`, `POST /api/v1/mikrotik/disconnect` | `frontend/.../api/network/routers`, `frontend/.../api/sessions/realtime`, `frontend/.../server/services/radius/coa-handler.service` |
+| Freeradius | `POST /api/v1/freeradius/reload`, `GET /api/v1/freeradius/radclient-status`, `POST /api/v1/freeradius/coa-disconnect` | `frontend/.../server/services/radius/freeradius.service`, `frontend/.../server/services/radius/coa-handler.service` |
+| SessionSync | `POST /api/v1/session-sync/{pppoe,hotspot,all}` | `frontend/.../server/jobs/{pppoe-session-sync,hotspot-sync}` |
+
+New modules created:
+- `PaymentGatewayModule` — payment create + unified webhook handler
+  - `gateway-clients.ts` — Midtrans/Xendit/Duitku/Tripay client wrappers
+  - `payment-create.service.ts` — invoice & voucher payment creation
+  - `payment-webhook.service.ts` — gateway detection, signature verification,
+    order-type dispatch (invoice/voucher/topup/agent-deposit), idempotency,
+    atomic settlement, Keuangan sync, RADIUS restoration, referral bonus
+- `MikrotikModule` — node-routeros integration
+  - Router connection testing, live hotspot/PPPoE session retrieval,
+    live traffic overlay, CoA disconnect via MikroTik API
+- `FreeradiusModule` — FreeRADIUS config sync & CoA
+  - NAS client config generation (clients.d/nas-from-db.conf),
+    include-file verification, conditional restart with cooldown,
+    radclient CoA disconnect
+- `SessionSyncModule` — cron job porting
+  - PPPoE session sync (stale close, blocked user close, orphan import,
+    acctsessiontime update, cronHistory logging)
+  - Hotspot voucher sync (WAITING→ACTIVE on first login, ACTIVE→EXPIRED,
+    MikroTik API disconnect + CoA fallback, FreeRADIUS cleanup)
+
+Sessions module upgraded:
+- `export.service.ts` — Excel export via exceljs, PDF export (basic),
+  shared session fetch with filters
+- `sessions.controller.ts` — Excel/PDF download responses
+- `sessions.service.ts` — realtime via MikrotikService, sync via SessionSyncService
+
+Dependencies added:
+- `midtrans-client@^1.4.3`, `xendit-node@^7.0.0`, `exceljs@^4.4.0`,
+  `date-fns@^4.4.0`, `date-fns-tz@^3.2.0`
+
+Key behaviors preserved:
+- Payment create: invoice & voucher flows, gateway activation check,
+  dynamic base URL resolution, gateway-specific payment URL/snap token/QR string,
+  payment record + pending webhook log persistence
+- Payment webhook: content-type detection (JSON + form-urlencoded for Duitku),
+  gateway detection (Midtrans/Xendit/Xendit-FVA/Duitku/Tripay),
+  signature verification (SHA-512/M MD5/HMAC-SHA256/token),
+  status normalization (settlement/capture/pending/expire/cancel/deny/failed),
+  idempotency guard, atomic invoice settlement (updateMany),
+  amount mismatch validation, payment record creation,
+  Keuangan income transaction sync, user expiry extension & reactivation,
+  RADIUS radcheck/radusergroup/radreply restoration for isolated users,
+  referral bonus processing (FIRST_PAYMENT), agent deposit balance increment,
+  voucher order settlement with unique code generation
+- MikroTik: uptime string parsing (1w2d3h4m5s), bytes-in=upload, bytes-out=download,
+  hotspot /ip/hotspot/active/print, PPPoE /ppp/active/print,
+  disconnect via /ip/hotspot/active/remove and /ppp/active/remove
+- FreeRADIUS: NAS config generation with VPN gateway clients,
+  secret mismatch skip warning, clients.conf include verification,
+  3-second restart cooldown, non-fatal restart failure handling
+- Session sync: 90-minute stale threshold, blocked/stop user session close,
+  orphan RADIUS session auto-import to pppoe_users,
+  voucher first-login activation with validity-based expiry,
+  expired voucher disconnect + radacct stop + radcheck EXPIRED + radreply message
+
+Deferred to Batch 6+:
+- WhatsApp/Email/Push notifications in webhook handler (currently logged only)
+- VPN management routes (vpn-server, vpn-client, vpn-routing)
+- Network trace, cables, splices, joint-closures, fiber-paths, auto-connect
+- OLT chassis/ONU management, ONU register/reboot/delete
+- Customer portal routes, agent portal routes
+- WhatsApp, Telegram, push notification, upload, backup routes
 
 ### Per-batch workflow
 

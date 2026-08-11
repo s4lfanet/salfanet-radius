@@ -1,13 +1,18 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Res, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Response } from 'express';
 import { SessionsService } from './sessions.service';
+import { ExportService } from './export.service';
 import { AdminGuard } from '../../common/guards/admin.guard';
 
 @ApiTags('sessions')
 @Controller('sessions')
 @UseGuards(AdminGuard)
 export class SessionsController {
-  constructor(private readonly sessionsService: SessionsService) {}
+  constructor(
+    private readonly sessionsService: SessionsService,
+    private readonly exportService: ExportService,
+  ) {}
 
   @Get()
   @ApiBearerAuth()
@@ -36,7 +41,7 @@ export class SessionsController {
 
   @Get('realtime')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get realtime sessions from MikroTik API (deferred)' })
+  @ApiOperation({ summary: 'Get realtime sessions from MikroTik API' })
   @ApiQuery({ name: 'routerId', required: false })
   async getRealtime(@Query('routerId') routerId?: string) {
     return this.sessionsService.getRealtimeSessions(routerId);
@@ -44,7 +49,7 @@ export class SessionsController {
 
   @Get('export')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Export sessions (JSON format, Excel/PDF deferred)' })
+  @ApiOperation({ summary: 'Export sessions (Excel/PDF/JSON)' })
   @ApiQuery({ name: 'format', required: false, description: 'excel | pdf | json (default: json)' })
   @ApiQuery({ name: 'type', required: false })
   @ApiQuery({ name: 'routerId', required: false })
@@ -60,15 +65,32 @@ export class SessionsController {
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
     @Query('mode') mode?: string,
+    @Res({ passthrough: false }) res?: Response,
   ) {
-    return this.sessionsService.exportSessions({
-      format, type, routerId, username, startDate, endDate, mode,
-    });
+    const fmt = format || 'json';
+    const params = { format: fmt, type, routerId, username, startDate, endDate, mode };
+
+    if (fmt === 'excel') {
+      const { buffer, filename } = await this.exportService.exportSessionsToExcel(params);
+      res!.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res!.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res!.end(buffer);
+    }
+
+    if (fmt === 'pdf') {
+      const { buffer, filename } = await this.exportService.exportSessionsToPdf(params);
+      res!.setHeader('Content-Type', 'application/pdf');
+      res!.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return res!.end(buffer);
+    }
+
+    // JSON format — delegate to sessionsService for backward compatibility
+    return this.sessionsService.exportSessions(params);
   }
 
   @Post('sync')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Trigger session sync job (deferred)' })
+  @ApiOperation({ summary: 'Trigger session sync job (pppoe/hotspot/all)' })
   @ApiQuery({ name: 'type', required: false, description: 'pppoe | hotspot | all (default: all)' })
   async syncSessions(@Query('type') type?: string) {
     return this.sessionsService.syncSessions(type);
