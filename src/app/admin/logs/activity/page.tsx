@@ -1,0 +1,280 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
+import { usePermissions } from '@/hooks/usePermissions';
+import { formatWIB } from '@/lib/timezone';
+import { Activity, Search, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+
+interface ActivityLogEntry {
+  id: string;
+  username: string;
+  userRole: string | null;
+  action: string;
+  description: string;
+  module: string;
+  status: string;
+  ipAddress: string | null;
+  createdAt: string;
+}
+
+const MODULES = [
+  { value: 'all', label: 'Semua Modul' },
+  { value: 'pppoe', label: 'PPPoE' },
+  { value: 'hotspot', label: 'Hotspot' },
+  { value: 'voucher', label: 'Voucher' },
+  { value: 'invoice', label: 'Invoice' },
+  { value: 'payment', label: 'Pembayaran' },
+  { value: 'agent', label: 'Agen' },
+  { value: 'session', label: 'Sesi' },
+  { value: 'transaction', label: 'Transaksi' },
+  { value: 'system', label: 'Sistem' },
+  { value: 'auth', label: 'Autentikasi' },
+  { value: 'network', label: 'Jaringan' },
+  { value: 'user', label: 'Pengguna' },
+];
+
+const STATUS_STYLES: Record<string, string> = {
+  success: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
+  warning: 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400',
+  error: 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400',
+};
+
+const PAGE_SIZE = 25;
+
+export default function ActivityLogsPage() {
+  const { t } = useTranslation();
+  const { hasPermission } = usePermissions();
+  const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [moduleFilter, setModuleFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [offset, setOffset] = useState(0);
+  const [total, setTotal] = useState(0);
+
+  const fetchLogs = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+        module: moduleFilter,
+        search,
+      });
+      const res = await fetch(`/api/admin/activity-logs?${params.toString()}`);
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data.success) {
+        setLogs(data.activities);
+        setTotal(data.total);
+      } else {
+        setError(data.error || 'Gagal memuat log aktivitas');
+      }
+    } catch (e: any) {
+      setError(e.message || 'Terjadi kesalahan');
+    } finally {
+      setLoading(false);
+    }
+  }, [offset, moduleFilter, search]);
+
+  useEffect(() => {
+    if (hasPermission && !hasPermission('settings.view')) return;
+    fetchLogs();
+  }, [fetchLogs, hasPermission]);
+
+  const handleSearch = () => {
+    setOffset(0);
+    setSearch(searchInput.trim());
+  };
+
+  const handleModuleChange = (value: string) => {
+    setOffset(0);
+    setModuleFilter(value);
+  };
+
+  const handleRefresh = () => {
+    fetchLogs();
+  };
+
+  const hasNext = offset + PAGE_SIZE < total;
+  const hasPrev = offset > 0;
+
+  if (hasPermission && !hasPermission('settings.view')) {
+    return (
+      <div className="p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center text-gray-500 dark:text-gray-400">
+          Anda tidak memiliki izin untuk mengakses halaman ini
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 md:p-6 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <Activity className="w-5 h-5 text-brand-500" />
+          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+            {t('nav.activityLogs') || 'Log Aktivitas'}
+          </h1>
+        </div>
+        <button
+          onClick={handleRefresh}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={moduleFilter}
+          onChange={(e) => handleModuleChange(e.target.value)}
+          className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500"
+        >
+          {MODULES.map((m) => (
+            <option key={m.value} value={m.value}>
+              {m.label}
+            </option>
+          ))}
+        </select>
+        <div className="flex items-center gap-1.5">
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              placeholder="Cari username, aksi, deskripsi, IP..."
+              className="pl-7 pr-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500 w-64"
+            />
+          </div>
+          <button
+            onClick={handleSearch}
+            className="px-3 py-1.5 text-xs font-medium rounded-md bg-brand-500 hover:bg-brand-600 text-white transition-colors"
+          >
+            Cari
+          </button>
+        </div>
+        <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+          {loading ? 'Memuat...' : `${total} total`}
+        </div>
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-md p-3 text-xs text-red-700 dark:text-red-400">
+          {error}
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">Waktu</th>
+                <th className="px-3 py-2 text-left font-medium">Pengguna</th>
+                <th className="px-3 py-2 text-left font-medium">Modul</th>
+                <th className="px-3 py-2 text-left font-medium">Aksi</th>
+                <th className="px-3 py-2 text-left font-medium">Deskripsi</th>
+                <th className="px-3 py-2 text-left font-medium">Status</th>
+                <th className="px-3 py-2 text-left font-medium">IP</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-white/5">
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-400">
+                    Memuat log aktivitas...
+                  </td>
+                </tr>
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-3 py-8 text-center text-gray-400">
+                    Tidak ada log aktivitas
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
+                    <td className="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-400">
+                      {formatWIB(log.createdAt, 'dd MMM yyyy, HH:mm:ss')}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {log.username}
+                      </div>
+                      {log.userRole && (
+                        <div className="text-[10px] text-gray-400 uppercase">{log.userRole}</div>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 dark:bg-white/5 dark:text-gray-400 uppercase">
+                        {log.module}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap font-mono text-gray-700 dark:text-gray-300">
+                      {log.action}
+                    </td>
+                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-md truncate">
+                      {log.description}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap">
+                      <span
+                        className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium uppercase ${
+                          STATUS_STYLES[log.status] || STATUS_STYLES.success
+                        }`}
+                      >
+                        {log.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap text-gray-500 dark:text-gray-500 font-mono">
+                      {log.ipAddress || '-'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination */}
+        {total > PAGE_SIZE && (
+          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-white/5 text-xs">
+            <div className="text-gray-500 dark:text-gray-400">
+              Menampilkan {offset + 1}-{Math.min(offset + PAGE_SIZE, total)} dari {total}
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+                disabled={!hasPrev || loading}
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setOffset(offset + PAGE_SIZE)}
+                disabled={!hasNext || loading}
+                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

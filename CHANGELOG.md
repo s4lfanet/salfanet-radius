@@ -6,6 +6,19 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.34.9] — 2026-08-11
+### Fixed
+- **Admin sidebar "Log Aktivitas" menu returned 404** — The sidebar linked to `/admin/logs/activity` (and the notification dispatcher used the same URL for deep-links), but the page was never created. Clicking the menu or opening a notification link produced `Failed to load resource: 404 (Not Found)` in the browser console. The API `/api/admin/activity-logs` existed and worked; only the UI page was missing.
+- **Root cause**: the page file `src/app/admin/logs/activity/page.tsx` was never written, AND `.gitignore` had an overly-broad `logs/` rule that matched *any* directory named `logs` anywhere in the tree (including `src/app/admin/logs/`), so even if the file had been created it would have been silently excluded from git.
+- **Fix**:
+  - Created `src/app/admin/logs/activity/page.tsx` — a full activity-log viewer (filter by module, search, pagination, status badges, WIB timestamps) backed by the existing `/api/admin/activity-logs` endpoint.
+  - Fixed `.gitignore`: changed `logs/` → `/logs/` so only the root-level runtime logs directory is ignored, not source-tree directories named `logs`.
+### Files
+- `src/app/admin/logs/activity/page.tsx` — new page (280 lines)
+- `.gitignore` — `logs/` → `/logs/` (anchored to repo root)
+
+---
+
 ## [2.34.8] — 2026-08-11
 ### Fixed
 - **Fresh install: `/api/company/info` returns HTTP 404 ("Company not found")** — The comprehensive seeder `prisma/seeds/seed-all.ts` (run by `vps-install/install-app.sh` as `npm run db:seed`) never created a row in the `Company` table. It only *read* `prisma.company.findFirst()` to derive the isolir rate limit (falling back to a hardcoded default when null). The standalone `prisma/seeds/seed-company.ts` existed but was never invoked by the installer. As a result, on a fresh install the `Company` table was empty and the public `/api/company/info` route (used by login/customer/agent layouts for branding) returned 404 by design.
