@@ -14,6 +14,10 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { UsersModule } from './modules/users/users.module';
 import { AdminUsersModule } from './modules/admin-users/admin-users.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PppoeModule } from './modules/pppoe/pppoe.module';
+import { HotspotModule } from './modules/hotspot/hotspot.module';
+import { InvoicesModule } from './modules/invoices/invoices.module';
+import { KeuanganModule } from './modules/keuangan/keuangan.module';
 
 @Module({
   imports: [
@@ -39,6 +43,10 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     UsersModule,
     AdminUsersModule,
     NotificationsModule,
+    PppoeModule,
+    HotspotModule,
+    InvoicesModule,
+    KeuanganModule,
   ],
   providers: [
     {
