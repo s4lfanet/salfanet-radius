@@ -1150,16 +1150,32 @@ Deployed to VPS `192.168.54.129` on 2026-08-12:
 
 ### Remaining (Future Cleanup — Major Refactor)
 
-These require refactoring 375 pages/components that import `@/server` + 131 pages that fetch `/api/*`:
-- [ ] Remove `frontend/src/app/api/` (399 legacy API routes)
-- [ ] Remove `frontend/src/server/` (57 legacy service files — auth, prisma, services)
-- [ ] Refactor 375 files: replace `@/server` imports with `@/lib/api-client` calls
-- [ ] Refactor 131 files: replace `fetch('/api/...')` with `fetch('/api/v1/...')`
-- [ ] Move `frontend/prisma/` to `backend/prisma/` or shared
+**Actual file analysis (verified 2026-08-12):**
+
+| Category | Count | Action |
+|----------|-------|--------|
+| `frontend/src/app/api/` (legacy routes) | 399 routes (375 import `@/server`) | Delete — all replaced by NestJS `/api/v1/*` |
+| `frontend/src/server/` (legacy services) | 44 files (auth, db, services) | Delete — after API routes removed |
+| Non-API files importing `@/server` | 6 files (2 lib + 4 features) | Refactor to use `@/lib/api-client` |
+| Pages doing `fetch('/api/...')` | 131 `.tsx` files | Change to `fetch('/api/v1/...')` |
+
+**Tasks:**
+
+- [ ] **Refactor 6 non-API files** that import `@/server`:
+  - `src/lib/olt/poller.ts`
+  - `src/lib/network/fiber-prisma.ts`
+  - `src/features/reports/queries.ts`
+  - `src/features/pppoe/queries.ts`
+  - `src/features/hotspot/queries.ts`
+  - `src/features/billing/queries.ts`
+- [ ] **Refactor 131 pages**: change `fetch('/api/...')` → `fetch('/api/v1/...')` (per-module, test each)
+- [ ] **Remove `frontend/src/app/api/`** (399 legacy routes) — after all pages migrated to `/api/v1/*`
+- [ ] **Remove `frontend/src/server/`** (44 files) — after API routes removed + 6 files refactored
+- [ ] Move `frontend/prisma/` to `backend/prisma/` or shared location
 - [ ] Update `vps-install/` scripts for monorepo
 - [ ] Frontend `package.json` — remove server-only deps (prisma, next-auth, etc.)
 
-> **Note**: This is a major refactor (~500 files) and should be done gradually per-module to avoid breaking the frontend. Each module should be refactored, tested, and committed independently.
+> **Note**: The 375 files that import `@/server` are ALL legacy API routes (`.ts`) — they will be deleted along with `frontend/src/app/api/`. No `.tsx` pages/components import `@/server` directly. The main work is changing 131 pages from `fetch('/api/...')` to `fetch('/api/v1/...')`, which should be done per-module to avoid breaking the frontend.
 
 ---
 
