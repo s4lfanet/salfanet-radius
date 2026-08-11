@@ -35,7 +35,6 @@
     "deploy:quick": "node scripts/run-deploy.js --quick",
     "deploy:status": "node scripts/run-deploy.js --status",
     "deploy:rollback": "node scripts/run-deploy.js --rollback",
-    "cron": "node cron-service.js",
     "push:vapid": "node scripts/generate-vapid.js",
     "typecheck": "tsc --noEmit"
   },
