@@ -8,5 +8,6 @@ import { MikrotikModule } from '../mikrotik/mikrotik.module';
   imports: [FreeradiusModule, MikrotikModule],
   controllers: [SessionSyncController],
   providers: [SessionSyncService],
+  exports: [SessionSyncService],
 })
 export class SessionSyncModule {}
