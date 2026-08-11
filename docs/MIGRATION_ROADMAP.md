@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ⏳ Pending
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ✅ Complete | Phase 7 ⏳ Pending
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -40,7 +40,7 @@ salfanet-radius/ (pnpm monorepo)
 | 3 | Port API Modules (399 routes) | ✅ Complete | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7), `27a1fa0` (B8), `431adcb` (B9), `cba6e57` (B10), `f54b2c8` (B11), `a1f52cd` (B12), `529a1f1` (B13) |
 | 4 | Port Cron Jobs (17 jobs) | ✅ Complete | 3-5 hari | `0b3ec1e` |
 | 5 | Frontend Cleanup (decouple) | ✅ Complete | 2-3 hari | `a981dbc` |
-| 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
+| 6 | Independent Build & Deploy | ✅ Complete | 2-3 hari | `d29846b` |
 | 7 | Regression Test | ⏳ Pending | 3-5 hari | — |
 | 8 | Cleanup & Documentation | ⏳ Pending | 2-3 hari | — |
 
@@ -910,33 +910,61 @@ If empty → falls back to legacy Next.js `/api/*` routes.
 
 ---
 
-## Phase 6: Independent Build & Deploy ⏳
+## Phase 6: Independent Build & Deploy ✅
 
-**Status**: Pending
+**Status**: Complete
+**Commit**: `d29846b`
 **Estimasi**: 2-3 hari
 
-### Tasks
+### Tasks completed
 
-- [ ] `frontend/package.json` — hanya UI deps
-- [ ] `backend/package.json` — hanya server deps
-- [ ] PM2 config: 4 processes (frontend, backend, cron, wa)
-- [ ] Nginx: `/api/` → backend, `/` → frontend
-- [ ] Docker configs (optional)
+- [x] `backend/package.json` — server deps confirmed (NestJS, Prisma, etc.)
+- [x] PM2 config: 4 processes (frontend, backend, cron, wa)
+- [x] Nginx: `/api/v1/*` → backend, `/api/*` → frontend (legacy), `/` → frontend
+- [x] Deploy script with build + restart
+- [x] Backend `.env.example` with all required vars
+- [ ] `frontend/package.json` — UI-only deps (deferred — frontend still has legacy API deps)
+- [ ] Docker configs (optional, deferred)
 
 ### PM2 Architecture
 
 ```
 salfanet-frontend  → Next.js standalone (port 3000)
-salfanet-backend   → NestJS (port 3001)
-salfanet-cron      → NestJS cron runner
+salfanet-backend   → NestJS API + cron (port 3001)
+salfanet-cron      → Legacy cron runner (fallback, port —)
 salfanet-wa        → WhatsApp service (port 4000)
 ```
 
-### Nginx
+### Nginx Routing
 
 ```nginx
-location /api/ { proxy_pass http://127.0.0.1:3001; }
-location / { proxy_pass http://127.0.0.1:3000; }
+location /api/v1/ { proxy_pass http://127.0.0.1:3001; }  # NestJS backend
+location /api/docs { proxy_pass http://127.0.0.1:3001; }  # Swagger
+location /api/ { proxy_pass http://127.0.0.1:3000; }      # Legacy routes
+location / { proxy_pass http://127.0.0.1:3000; }          # Next.js
+```
+
+### Deploy files
+
+| File | Description |
+|------|-------------|
+| `deploy/ecosystem.config.js` | PM2 config (4 processes) |
+| `deploy/nginx-salfanet.conf` | Nginx reverse proxy |
+| `deploy/deploy.sh` | Build + deploy script |
+| `deploy/README.md` | Setup instructions + architecture |
+| `backend/.env.example` | All backend env vars |
+
+### Deploy command
+
+```bash
+# Full deploy
+./deploy/deploy.sh
+
+# Backend only
+./deploy/deploy.sh --backend
+
+# Frontend only
+./deploy/deploy.sh --frontend
 ```
 
 ---
