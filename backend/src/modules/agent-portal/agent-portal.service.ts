@@ -232,4 +232,253 @@ export class AgentPortalService {
 
     return { sessions };
   }
+
+  // ==================== GENERATE VOUCHER ====================
+
+  async generateVoucher(agentId: string, body: { profileId: string; quantity: number; codeLength?: number; codeType?: string; prefix?: string }) {
+    const agent = await this.prisma.agent.findUnique({ where: { id: agentId } });
+    if (!agent) throw new HttpException('Agent not found', HttpStatus.NOT_FOUND);
+
+    const profile = await this.prisma.hotspotProfile.findUnique({ where: { id: body.profileId } });
+    if (!profile) throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
+
+    const quantity = Math.min(body.quantity || 1, 100);
+    const cost = profile.sellingPrice * quantity;
+
+    if (agent.balance < cost) {
+      throw new HttpException('Insufficient balance', HttpStatus.BAD_REQUEST);
+    }
+
+    const codeLength = body.codeLength || 8;
+    const prefix = body.prefix || '';
+    const batchCode = `BATCH-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+    const vouchers: any[] = [];
+    return this.prisma.$transaction(async (tx) => {
+      // Deduct balance
+      await tx.agent.update({ where: { id: agentId }, data: { balance: { decrement: cost } } });
+
+      for (let i = 0; i < quantity; i++) {
+        const code = prefix + Math.random().toString(36).slice(2, 2 + codeLength).toUpperCase();
+        const voucher = await tx.hotspotVoucher.create({
+          data: {
+            id: `vch_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`,
+            code, password: code,
+            profileId: profile.id,
+            status: 'ACTIVE',
+            agentId,
+            batchCode,
+          },
+        });
+        vouchers.push({ id: voucher.id, code: voucher.code });
+
+        // Record sale
+        await tx.agentSale.create({
+          data: {
+            id: `sale_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`,
+            agentId,
+            voucherCode: code,
+            profileName: profile.name,
+            amount: profile.sellingPrice,
+            paymentStatus: 'PAID',
+            paymentDate: new Date(),
+            paidAmount: profile.sellingPrice,
+          },
+        });
+      }
+
+      // Create notification
+      await tx.agentNotification.create({
+        data: {
+          id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          agentId,
+          type: 'voucher_generated',
+          title: 'Voucher Generated',
+          message: `${quantity} voucher(s) generated for ${profile.name}. Cost: ${cost}`,
+        },
+      });
+
+      const updatedAgent = await tx.agent.findUnique({ where: { id: agentId }, select: { balance: true } });
+
+      return {
+        vouchers,
+        batchCode,
+        cost,
+        newBalance: updatedAgent?.balance || 0,
+        note: 'RADIUS sync deferred to session-sync integration.',
+      };
+    });
+  }
+
+  // ==================== RECORD SALES (cron) ====================
+
+  async recordSales() {
+    // Find ACTIVE vouchers with batch codes that don't have sales records
+    const vouchers = await this.prisma.hotspotVoucher.findMany({
+      where: { status: 'ACTIVE', agentId: { not: null }, batchCode: { not: null } },
+      include: { profile: true },
+      take: 500,
+    });
+
+    let recorded = 0;
+    const errors: string[] = [];
+
+    for (const voucher of vouchers) {
+      if (!voucher.agentId) continue;
+      const existingSale = await this.prisma.agentSale.findFirst({
+        where: { voucherCode: voucher.code },
+      });
+      if (existingSale) continue;
+
+      try {
+        await this.prisma.agentSale.create({
+          data: {
+            id: `sale_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            agentId: voucher.agentId,
+            voucherCode: voucher.code,
+            profileName: voucher.profile?.name || 'Unknown',
+            amount: voucher.profile?.sellingPrice || 0,
+            paymentStatus: 'PAID',
+            paymentDate: new Date(),
+            paidAmount: voucher.profile?.sellingPrice || 0,
+          },
+        });
+        recorded++;
+      } catch (err: any) {
+        errors.push(`${voucher.code}: ${err.message}`);
+      }
+    }
+
+    return { recorded, errors };
+  }
+
+  // ==================== DEPOSIT PAYMENT METHODS ====================
+
+  async getDepositPaymentMethods(gateway?: string, amount?: number) {
+    const where: Record<string, unknown> = { isActive: true };
+    if (gateway) where.provider = gateway;
+
+    const gateways = await this.prisma.paymentGateway.findMany({ where: where as never });
+    const company = await this.prisma.company.findFirst();
+
+    const methods: any[] = [];
+    for (const g of gateways) {
+      // Payment method retrieval deferred to payment-gateway integration
+      methods.push({
+        gateway: g.provider,
+        gatewayName: g.name,
+        code: `${g.provider}_default`,
+        name: `${g.name} Default`,
+        fee: 0,
+        iconUrl: null,
+      });
+    }
+
+    return { methods, note: 'Detailed payment method retrieval deferred to payment-gateway integration.' };
+  }
+
+  // ==================== MANUAL DEPOSIT REQUEST ====================
+
+  async createManualDepositRequest(agentId: string, body: {
+    amount: number; note?: string;
+    targetBankName?: string; targetBankAccountNumber?: string; targetBankAccountName?: string;
+    senderAccountName?: string; senderAccountNumber?: string; receiptImage?: string;
+  }) {
+    const agent = await this.prisma.agent.findUnique({ where: { id: agentId } });
+    if (!agent) throw new HttpException('Agent not found', HttpStatus.NOT_FOUND);
+    if (!body.amount || body.amount < 10000) throw new HttpException('Minimum deposit is 10000', HttpStatus.BAD_REQUEST);
+
+    const deposit = await this.prisma.agentDeposit.create({
+      data: {
+        id: `dep_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+        agentId,
+        amount: body.amount,
+        status: 'PENDING',
+        note: body.note || null,
+        targetBankName: body.targetBankName || null,
+        targetBankAccountNumber: body.targetBankAccountNumber || null,
+        targetBankAccountName: body.targetBankAccountName || null,
+        senderAccountName: body.senderAccountName || null,
+        senderAccountNumber: body.senderAccountNumber || null,
+        receiptImage: body.receiptImage || null,
+      },
+    });
+
+    // Create notifications
+    await this.prisma.agentNotification.create({
+      data: {
+        id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        agentId,
+        type: 'deposit_request',
+        title: 'Deposit Request Submitted',
+        message: `Your deposit request for ${body.amount} has been submitted and is pending admin approval.`,
+      },
+    });
+
+    await this.prisma.notification.create({
+      data: {
+        type: 'agent_deposit_request',
+        title: 'Agent Deposit Request',
+        message: `Agent ${agent.name} requested a deposit of ${body.amount}`,
+        link: '/admin/agent-deposits',
+      },
+    });
+
+    return { success: true, deposit };
+  }
+
+  // ==================== DEPOSIT WEBHOOK ====================
+
+  async handleDepositWebhook(body: any, headers: Record<string, string>) {
+    // Gateway-specific signature verification deferred to payment-gateway integration
+    // Log webhook for now
+    this.logger.log(`Agent deposit webhook received: ${JSON.stringify(body).slice(0, 200)}`);
+
+    // Try to extract order ID and status from common webhook formats
+    const orderId = body.order_id || body.external_id || body.merchantOrderId || body.transaction_id;
+    const status = body.transaction_status || body.status || body.result?.status;
+
+    if (!orderId) return { success: false, message: 'No order ID found in webhook' };
+
+    const deposit = await this.prisma.agentDeposit.findFirst({
+      where: { paymentToken: orderId },
+    });
+
+    if (!deposit) return { success: false, message: 'Deposit not found' };
+
+    if (status === 'success' || status === 'PAID' || status === 'settlement' || status === 'capture') {
+      return this.prisma.$transaction(async (tx) => {
+        await tx.agentDeposit.update({
+          where: { id: deposit.id },
+          data: { status: 'SUCCESS', paidAt: new Date() },
+        });
+        await tx.agent.update({
+          where: { id: deposit.agentId },
+          data: { balance: { increment: deposit.amount } },
+        });
+
+        await tx.agentNotification.create({
+          data: {
+            id: `notif_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            agentId: deposit.agentId,
+            type: 'deposit_success',
+            title: 'Deposit Success',
+            message: `Your deposit of ${deposit.amount} has been confirmed. New balance updated.`,
+          },
+        });
+
+        return { success: true, status: 'SUCCESS', orderId };
+      });
+    }
+
+    if (status === 'failed' || status === 'FAILED' || status === 'expire' || status === 'denied') {
+      await this.prisma.agentDeposit.update({
+        where: { id: deposit.id },
+        data: { status: 'FAILED' },
+      });
+      return { success: true, status: 'FAILED', orderId };
+    }
+
+    return { success: true, status: 'PENDING', orderId };
+  }
 }

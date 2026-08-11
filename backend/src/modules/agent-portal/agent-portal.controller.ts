@@ -86,4 +86,59 @@ export class AgentPortalController {
   async getSessions(@Req() req: Request) {
     return this.agentPortalService.getSessions((req as any).agent.agentId);
   }
+
+  // ==================== GENERATE VOUCHER ====================
+
+  @Post('generate-voucher')
+  @UseGuards(AgentGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate hotspot vouchers (deducts agent balance)' })
+  async generateVoucher(@Req() req: Request, @Body() body: { profileId: string; quantity: number; codeLength?: number; codeType?: string; prefix?: string }) {
+    return this.agentPortalService.generateVoucher((req as any).agent.agentId, body);
+  }
+
+  // ==================== RECORD SALES (cron) ====================
+
+  @Public()
+  @Post('record-sales')
+  @ApiOperation({ summary: 'Record agent sales for ACTIVE vouchers (cron)' })
+  async recordSales() {
+    return this.agentPortalService.recordSales();
+  }
+
+  // ==================== DEPOSIT PAYMENT METHODS ====================
+
+  @Public()
+  @Get('deposit/payment-methods')
+  @ApiOperation({ summary: 'Get available payment methods for gateway and amount' })
+  async getDepositPaymentMethods(@Query('gateway') gateway?: string, @Query('amount') amount?: string) {
+    return this.agentPortalService.getDepositPaymentMethods(gateway, amount ? parseFloat(amount) : undefined);
+  }
+
+  // ==================== MANUAL DEPOSIT REQUEST ====================
+
+  @Post('deposit/manual-request')
+  @UseGuards(AgentGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create manual deposit request (requires admin approval)' })
+  async createManualDepositRequest(@Req() req: Request, @Body() body: {
+    amount: number; note?: string;
+    targetBankName?: string; targetBankAccountNumber?: string; targetBankAccountName?: string;
+    senderAccountName?: string; senderAccountNumber?: string; receiptImage?: string;
+  }) {
+    return this.agentPortalService.createManualDepositRequest((req as any).agent.agentId, body);
+  }
+
+  // ==================== DEPOSIT WEBHOOK ====================
+
+  @Public()
+  @Post('deposit/webhook')
+  @ApiOperation({ summary: 'Handle deposit payment webhook (Midtrans/Xendit/Duitku/Tripay)' })
+  async handleDepositWebhook(@Body() body: any, @Req() req: Request) {
+    const headers: Record<string, string> = {};
+    for (const key of Object.keys(req.headers)) {
+      headers[key] = req.headers[key] as string;
+    }
+    return this.agentPortalService.handleDepositWebhook(body, headers);
+  }
 }
