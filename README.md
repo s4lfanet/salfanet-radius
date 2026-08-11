@@ -469,6 +469,16 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.7 — 2026-08-11
+
+### Fixed
+- **LXC install: app unreachable from browser even though everything looked healthy** — On a fresh LXC install, `http://VPS_IP/` timed out from any real external client even though Nginx was listening correctly on `0.0.0.0:80`/`:443`, PM2/MySQL/FreeRADIUS were all active, and `/api/health` responded fine when curled *from inside* the VPS. Root cause: the installer's `SKIP_UFW=true` logic for `--env lxc` unconditionally skips ALL UFW rule changes (assuming firewalling is handled at the Proxmox host and that UFW/iptables don't work in unprivileged LXC). But UFW was already **active** on this container (from the base image) with a restrictive default (`deny incoming`, only `22/tcp` allowed) — so port 80/443/1812/1813/3799 were silently blocked for genuine external traffic. Self-curl from the VPS to its own IP appeared to work fine because that traffic hairpins through `lo`, which UFW's default rules exempt — masking the problem during internal testing.
+- **Fix**: `configure_ufw()` (install-security.sh), `configure_firewall_nginx()` (install-nginx.sh), and `configure_firewall()` (install-freeradius.sh) now check `ufw status` even when `SKIP_UFW=true`. If UFW is already active, the required `allow` rules (80/tcp, 443/tcp, 1812/udp, 1813/udp, 3799/udp, 500/udp, 4500/udp, 1701/udp) are still added (best-effort, non-fatal) instead of being skipped outright. UFW is never *enabled* for LXC (that stays skipped, since forcing `ufw enable` in an unsupported container could break networking) — only rules are added to an already-active UFW.
+### Files
+- `vps-install/install-security.sh` — `configure_ufw()`
+- `vps-install/install-nginx.sh` — `configure_firewall_nginx()`
+- `vps-install/install-freeradius.sh` — `configure_firewall()`
+
 ### v2.34.6 — 2026-08-11
 
 ### Fixed
@@ -512,13 +522,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - **System Info API: silent git errors** — Semua `execSync` git di `/api/admin/system/info` kini pakai `stdio: 'pipe'` sehingga stderr tidak bocor ke PM2 log; `getAppDir()` kini mencari `/var/www/salfanet-frontend` lebih dulu (direktori dengan `.git`) sebelum fallback ke path lain
 ### Files
 - `src/app/api/admin/system/info/route.ts` — tambah `stdio: 'pipe'` pada `execSync`/`execFileSync`, perbarui urutan kandidat `getAppDir()`
-
-### v2.32.1 — 2026-05-11
-
-### Fixed
-- **PPPoE Session Sync error 1264** — `acctsessiontime` di-clamp ke range INT MariaDB (`GREATEST(0, LEAST(..., 2147483647))`) pada semua 4 UPDATE query; sesi dengan `acctstarttime` tidak valid (`0000-00-00` atau sangat lama) tidak lagi menyebabkan cron gagal
-### Files
-- `src/server/jobs/pppoe-session-sync.ts` — clamp TIMESTAMPDIFF ke INT range, tambah filter `acctstarttime > '2000-01-01'` pada update aktif
 
 <!-- AUTO-CHANGELOG:END -->
 
