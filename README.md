@@ -469,6 +469,18 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.9 — 2026-08-11
+
+### Fixed
+- **Admin sidebar "Log Aktivitas" menu returned 404** — The sidebar linked to `/admin/logs/activity` (and the notification dispatcher used the same URL for deep-links), but the page was never created. Clicking the menu or opening a notification link produced `Failed to load resource: 404 (Not Found)` in the browser console. The API `/api/admin/activity-logs` existed and worked; only the UI page was missing.
+- **Root cause**: the page file `src/app/admin/logs/activity/page.tsx` was never written, AND `.gitignore` had an overly-broad `logs/` rule that matched *any* directory named `logs` anywhere in the tree (including `src/app/admin/logs/`), so even if the file had been created it would have been silently excluded from git.
+- **Fix**:
+  - Created `src/app/admin/logs/activity/page.tsx` — a full activity-log viewer (filter by module, search, pagination, status badges, WIB timestamps) backed by the existing `/api/admin/activity-logs` endpoint.
+  - Fixed `.gitignore`: changed `logs/` → `/logs/` so only the root-level runtime logs directory is ignored, not source-tree directories named `logs`.
+### Files
+- `src/app/admin/logs/activity/page.tsx` — new page (280 lines)
+- `.gitignore` — `logs/` → `/logs/` (anchored to repo root)
+
 ### v2.34.8 — 2026-08-11
 
 ### Fixed
@@ -507,22 +519,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 - Dihapus: `go.mod`, `go.sum`, `Dockerfile`, `Makefile`, `.air.toml`, `docker-compose.yml`
 - Dihapus: `vps-install/install-go.sh`, `nginx-frontend.conf` (config nginx orphan yang mengarah ke Go `:8080`)
 - Dihapus: `docs/GO_MIGRATION_PROMPT.md`
-
-### v2.34.4 — 2026-05-13
-
-### Added
-- **Sidebar: Permintaan Top-Up & Suspend** — tambah `nav.topupRequests` (`/admin/topup-requests`) dan `nav.suspendRequests` (`/admin/suspend-requests`) sebagai child PPPoE
-- **Sidebar: ODC, ODP, Peta Jaringan** — tambah 3 item ke Topology: Network Map, ODC, ODP
-- **Sidebar: Fiber ODC & Fiber ODP** — tambah ke seksi Manajemen Fiber
-- **Sidebar: GenieACS Files** — tambah child `nav.files` ke seksi GenieACS
-- **Sidebar: Kelola Teknisi** — tambah item standalone di catManagement
-- **Sidebar: Log Aktivitas** — tambah item standalone di catManagement
-- **Sidebar: Pengaturan Keamanan** — tambah child `/admin/settings/security` ke settingsMenu
-- **Sidebar: WhatsApp jadi submenu** — ubah dari single link ke children (Settings, Riwayat, Template, Kirim, Notifikasi, Providers)
-- **i18n: tambah nav keys** — `topupRequests`, `suspendRequests`, `activityLogs`, `security`, `fiberOdcs`, `fiberOdps`
-### Files
-- `src/app/admin/AdminClientLayout.tsx` — tambah menu items, WhatsApp jadi submenu, import UserCog
-- `src/locales/id.json` — tambah 6 nav translation keys
 
 <!-- AUTO-CHANGELOG:END -->
 
