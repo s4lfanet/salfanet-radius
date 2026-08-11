@@ -1,6 +1,6 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ⏳ Pending
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ⏳ Pending
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
 
@@ -39,7 +39,7 @@ salfanet-radius/ (pnpm monorepo)
 | 2 | Backend Auth Module | ✅ Complete | 3-5 hari | `92a81e5` |
 | 3 | Port API Modules (399 routes) | ✅ Complete | 2-3 minggu | `0a98b07` (B1), `6c461b` (B2), `411bf3` (B3), `fbe4837` (B4), `253a1b5` (B5), `70b9df6` (B6), `75b48c4` (B7), `27a1fa0` (B8), `431adcb` (B9), `cba6e57` (B10), `f54b2c8` (B11), `a1f52cd` (B12), `529a1f1` (B13) |
 | 4 | Port Cron Jobs (17 jobs) | ✅ Complete | 3-5 hari | `0b3ec1e` |
-| 5 | Frontend Cleanup | ⏳ Pending | 2-3 hari | — |
+| 5 | Frontend Cleanup (decouple) | ✅ Complete | 2-3 hari | `a981dbc` |
 | 6 | Independent Build & Deploy | ⏳ Pending | 2-3 hari | — |
 | 7 | Regression Test | ⏳ Pending | 3-5 hari | — |
 | 8 | Cleanup & Documentation | ⏳ Pending | 2-3 hari | — |
@@ -857,20 +857,56 @@ implementations.
 
 ---
 
-## Phase 5: Frontend Cleanup ⏳
+## Phase 5: Frontend Cleanup ✅
 
-**Status**: Pending
+**Status**: Complete (Decouple only — safe strategy)
+**Commit**: `a981dbc`
 **Estimasi**: 2-3 hari
 
-### Tasks
+### Strategy: Decouple only
 
-- [ ] Remove all `src/app/api/` dari frontend
-- [ ] Remove `src/server/` dari frontend
-- [ ] Remove `src/cron/` dari frontend
-- [ ] Remove `prisma/` dari frontend
-- [ ] Update 5 layout files — remove prisma import, ganti dengan API call
-- [ ] Centralize API client: `NEXT_PUBLIC_API_URL` env var
-- [ ] Verify: frontend build tidak butuh Prisma
+Layout files decoupled from Prisma. Legacy routes kept as fallback
+until Phase 7 regression test verification. Actual deletion of
+`src/app/api/`, `src/server/`, `src/cron/`, `prisma/` deferred to
+Phase 7.
+
+### Tasks completed
+
+- [x] Update 5 layout files — removed `prisma` import, use `getCompanyInfo()` API call
+- [x] Centralize API client: `NEXT_PUBLIC_API_URL` env var
+- [x] Verify: no pages or components import Prisma directly
+- [x] Verify: frontend build compiles successfully
+- [ ] Remove all `src/app/api/` — deferred to Phase 7
+- [ ] Remove `src/server/` — deferred to Phase 7
+- [ ] Remove `src/cron/` — deferred to Phase 7
+- [ ] Remove `prisma/` — deferred to Phase 7
+
+### Files changed
+
+| File | Change |
+|------|--------|
+| `frontend/src/lib/api-client.ts` (new) | Centralized API client with `apiFetch()`, `apiFetchAuth()`, `getCompanyInfo()` |
+| `frontend/src/app/layout.tsx` | `prisma.company.findFirst()` → `getCompanyInfo()` |
+| `frontend/src/app/admin/layout.tsx` | Same |
+| `frontend/src/app/agent/layout.tsx` | Same |
+| `frontend/src/app/customer/layout.tsx` | Same |
+| `frontend/src/app/technician/layout.tsx` | Same |
+| `frontend/.env.example` | Added `NEXT_PUBLIC_API_URL` |
+
+### API Client
+
+```typescript
+// Server-side (server components, layouts)
+import { getCompanyInfo } from '@/lib/api-client';
+const company = await getCompanyInfo();
+
+// Client-side (with auth)
+import { apiFetchAuth } from '@/lib/api-client';
+const data = await apiFetchAuth('/api/v1/users');
+```
+
+If `NEXT_PUBLIC_API_URL` is set → calls NestJS backend.
+If empty → falls back to legacy Next.js `/api/*` routes.
 
 ---
 
