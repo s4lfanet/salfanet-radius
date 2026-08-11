@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from 'next';
 import AgentLayoutClient from './AgentLayoutClient';
-import { prisma } from '@/server/db/client';
+import { getCompanyInfo } from '@/lib/api-client';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const company = await prisma.company.findFirst({ select: { name: true } });
+  const company = await getCompanyInfo();
   return {
     title: `Agent Portal - ${company?.name || 'SALFANET RADIUS'}`,
     description: 'Portal Agent untuk Generate Voucher',
