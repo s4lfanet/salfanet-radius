@@ -419,4 +419,231 @@ export class CustomerPortalService {
     await this.prisma.suspendRequest.update({ where: { id }, data: { status: 'CANCELLED' } });
     return { success: true, message: 'Suspend request cancelled' };
   }
+
+  // ==================== INVOICE PAYMENT ====================
+
+  async getInvoicePaymentLink(userId: string, invoiceId: string) {
+    const invoice = await this.prisma.invoice.findFirst({
+      where: { id: invoiceId, userId },
+      include: { user: true },
+    });
+    if (!invoice) throw new HttpException('Invoice not found', HttpStatus.NOT_FOUND);
+    if (invoice.status === 'PAID') throw new HttpException('Invoice already paid', HttpStatus.BAD_REQUEST);
+
+    const gateways = await this.prisma.paymentGateway.findMany({ where: { isActive: true } });
+    if (gateways.length === 0) throw new HttpException('No active payment gateway', HttpStatus.BAD_REQUEST);
+
+    // Payment link generation deferred to payment-gateway module integration
+    // Return invoice details and available gateways
+    return {
+      invoice: {
+        id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount,
+        status: invoice.status, dueDate: invoice.dueDate,
+      },
+      gateways: gateways.map((g) => ({ id: g.id, name: g.name, provider: g.provider })),
+      paymentLink: null,
+      note: 'Payment link generation deferred to payment-gateway integration.',
+    };
+  }
+
+  // ==================== TOPUP DIRECT ====================
+
+  async createTopup(userId: string, body: { amount: number; gateway?: string; paymentChannel?: string }) {
+    if (!body.amount || body.amount < 1000) throw new HttpException('Minimum topup amount is 1000', HttpStatus.BAD_REQUEST);
+
+    const user = await this.prisma.pppoeUser.findUnique({ where: { id: userId } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+    const company = await this.prisma.company.findFirst();
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const count = await this.prisma.invoice.count({ where: { invoiceNumber: { startsWith: `TOP-${year}${month}-` } } });
+    const invoiceNumber = `TOP-${year}${month}-${String(count + 1).padStart(4, '0')}`;
+
+    const invoice = await this.prisma.invoice.create({
+      data: {
+        id: nanoid(),
+        userId, invoiceNumber,
+        amount: body.amount,
+        status: 'PENDING',
+        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        invoiceType: 'TOPUP' as never,
+      },
+    });
+
+    // Payment gateway integration deferred
+    return {
+      invoiceNumber: invoice.invoiceNumber,
+      amount: invoice.amount,
+      paymentUrl: null,
+      note: 'Payment URL generation deferred to payment-gateway integration.',
+    };
+  }
+
+  // ==================== UPGRADE PACKAGE ====================
+
+  async createUpgrade(userId: string, body: { newProfileId: string; gateway?: string }) {
+    const user = await this.prisma.pppoeUser.findUnique({ where: { id: userId }, include: { profile: true } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+    const newProfile = await this.prisma.pppoeProfile.findUnique({ where: { id: body.newProfileId } });
+    if (!newProfile) throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
+    if (user.profileId === body.newProfileId) throw new HttpException('Already on this package', HttpStatus.BAD_REQUEST);
+
+    // Calculate upgrade fee (price difference)
+    const currentPrice = user.profile?.price || 0;
+    const upgradeFee = Math.max(0, newProfile.price - currentPrice);
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const count = await this.prisma.invoice.count({ where: { invoiceNumber: { startsWith: `UPG-${year}${month}-` } } });
+    const invoiceNumber = `UPG-${year}${month}-${String(count + 1).padStart(4, '0')}`;
+
+    const invoice = await this.prisma.invoice.create({
+      data: {
+        id: nanoid(),
+        userId, invoiceNumber,
+        amount: upgradeFee,
+        status: 'PENDING',
+        dueDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        invoiceType: 'ADDON' as never,
+        notes: `Upgrade to ${newProfile.name}`,
+      },
+    });
+
+    return {
+      invoice: { id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount },
+      newProfile: { id: newProfile.id, name: newProfile.name, price: newProfile.price },
+      paymentUrl: null,
+      note: 'Payment URL generation deferred to payment-gateway integration.',
+    };
+  }
+
+  // ==================== RENEWAL ====================
+
+  async checkRenewal(userId: string) {
+    const user = await this.prisma.pppoeUser.findUnique({ where: { id: userId }, include: { profile: true } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+    const unpaidInvoices = await this.prisma.invoice.count({
+      where: { userId, status: { in: ['PENDING', 'OVERDUE'] } },
+    });
+
+    if (unpaidInvoices > 0) {
+      return { canRenew: false, reason: 'You have unpaid invoices', unpaidCount: unpaidInvoices };
+    }
+
+    return {
+      canRenew: true,
+      currentProfile: user.profile ? { id: user.profile.id, name: user.profile.name, price: user.profile.price } : null,
+      expiredAt: user.expiredAt,
+    };
+  }
+
+  async createRenewal(userId: string, body: { newProfileId?: string }) {
+    const user = await this.prisma.pppoeUser.findUnique({ where: { id: userId }, include: { profile: true } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+    const unpaidInvoices = await this.prisma.invoice.count({
+      where: { userId, status: { in: ['PENDING', 'OVERDUE'] } },
+    });
+    if (unpaidInvoices > 0) throw new HttpException('You have unpaid invoices', HttpStatus.BAD_REQUEST);
+
+    const profile = body.newProfileId
+      ? await this.prisma.pppoeProfile.findUnique({ where: { id: body.newProfileId } })
+      : user.profile;
+    if (!profile) throw new HttpException('Profile not found', HttpStatus.NOT_FOUND);
+
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const count = await this.prisma.invoice.count({ where: { invoiceNumber: { startsWith: `INV-${year}${month}-` } } });
+    const invoiceNumber = `INV-${year}${month}-${String(count + 1).padStart(4, '0')}`;
+
+    // Calculate new expiry
+    const baseDate = user.expiredAt && user.expiredAt > now ? user.expiredAt : now;
+    const newExpiredAt = new Date(baseDate);
+    if (profile.validityUnit === 'DAYS') newExpiredAt.setDate(newExpiredAt.getDate() + profile.validityValue);
+    else if (profile.validityUnit === 'MONTHS') newExpiredAt.setMonth(newExpiredAt.getMonth() + profile.validityValue);
+    else newExpiredAt.setMonth(newExpiredAt.getMonth() + 1); // Default 1 month
+
+    const invoice = await this.prisma.invoice.create({
+      data: {
+        id: nanoid(),
+        userId, invoiceNumber,
+        amount: profile.price,
+        status: 'PENDING',
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        invoiceType: 'RENEWAL' as never,
+        notes: `Renewal ${profile.name} until ${newExpiredAt.toLocaleDateString('id-ID')}`,
+      },
+    });
+
+    // WhatsApp/Email notifications deferred
+
+    return {
+      invoice: { id: invoice.id, invoiceNumber: invoice.invoiceNumber, amount: invoice.amount },
+      newExpiredDate: newExpiredAt,
+      paymentLink: null,
+      note: 'Payment link generation deferred to payment-gateway integration.',
+    };
+  }
+
+  // ==================== ONT (GenieACS) ====================
+
+  async getOntInfo(userId: string) {
+    const user = await this.prisma.pppoeUser.findUnique({ where: { id: userId }, select: { username: true } });
+    if (!user) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+    const settings = await this.prisma.genieacsSettings.findFirst({ where: { isActive: true } });
+    if (!settings) throw new HttpException('GenieACS not configured', HttpStatus.NOT_FOUND);
+
+    try {
+      const authHeader = 'Basic ' + Buffer.from(`${settings.username}:${settings.password}`).toString('base64');
+      const response = await fetch(`${settings.host}/devices?query=${encodeURIComponent(JSON.stringify({ 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL': { $regex: user.username } }))}`, {
+        headers: { Authorization: authHeader },
+      });
+      if (!response.ok) throw new HttpException('GenieACS error', HttpStatus.BAD_GATEWAY);
+      const devices = await response.json() as any[];
+      if (devices.length === 0) return { device: null, message: 'No ONT device found for this user' };
+
+      const device = devices[0];
+      const params = device._params || {};
+      return {
+        device: {
+          _id: device._id,
+          serialNumber: params['Device.DeviceInfo.SerialNumber'] || '',
+          manufacturer: params['Device.DeviceInfo.Manufacturer'] || '',
+          model: params['Device.DeviceInfo.ModelName'] || '',
+          pppoeUsername: user.username,
+          ipAddress: params['Device.ManagementServer.ConnectionRequestURL'] || '',
+          rxPower: null, txPower: null, temperature: null, uptime: null,
+          wifiSSID: null, wifiPassword: null, wifiEnabled: null,
+          connectedHosts: [],
+        },
+      };
+    } catch {
+      throw new HttpException('Failed to fetch ONT info from GenieACS', HttpStatus.BAD_GATEWAY);
+    }
+  }
+
+  // ==================== WIFI (GenieACS) ====================
+
+  async getWifiInfo(userId: string) {
+    return this.getOntInfo(userId); // Same GenieACS data, WiFi extraction deferred
+  }
+
+  async updateWifiConfig(userId: string, body: { deviceId: string; wlanIndex?: number; ssid?: string; password?: string; securityMode?: string; enabled?: boolean }) {
+    const settings = await this.prisma.genieacsSettings.findFirst({ where: { isActive: true } });
+    if (!settings) throw new HttpException('GenieACS not configured', HttpStatus.NOT_FOUND);
+
+    // GenieACS parameter update via API deferred
+    return {
+      success: true,
+      message: 'WiFi config update deferred to GenieACS integration.',
+      requested: body,
+    };
+  }
 }
