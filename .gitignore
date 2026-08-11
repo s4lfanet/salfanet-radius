@@ -13,7 +13,7 @@ build/
 dist/
 
 # Exception: APK build API route (not a build artifact)
-!src/app/api/admin/apk/build/
+!frontend/src/app/api/admin/apk/build/
 
 # Testing outputs
 coverage/
@@ -34,7 +34,7 @@ lerna-debug.log*
 .env*.local
 
 # Runtime user-uploaded files — jangan di-commit, JANGAN dihapus saat update
-public/uploads/
+frontend/public/uploads/
 data/uploads/
 
 # TypeScript
@@ -74,8 +74,8 @@ temp/
 *.old
 
 # Prisma local databases
-prisma/*.db
-prisma/*.db-journal
+**/prisma/*.db
+**/prisma/*.db-journal
 
 # Cache
 .cache/
