@@ -36,6 +36,11 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { EvoucherModule } from './modules/evoucher/evoucher.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { WhatsAppModule } from './modules/whatsapp/whatsapp.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
+import { PushModule } from './modules/push/push.module';
+import { BackupModule } from './modules/backup/backup.module';
+import { PublicModule } from './modules/public/public.module';
 
 @Module({
   imports: [
@@ -83,6 +88,11 @@ import { UploadModule } from './modules/upload/upload.module';
     EvoucherModule,
     InventoryModule,
     UploadModule,
+    WhatsAppModule,
+    TelegramModule,
+    PushModule,
+    BackupModule,
+    PublicModule,
   ],
   providers: [
     {
