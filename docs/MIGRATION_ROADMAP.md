@@ -1,23 +1,24 @@
 # Salfanet Radius — Migration Roadmap
 
-> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ✅ Complete | Phase 7 ✅ Complete | Phase 8 ✅ Complete — MIGRATION DONE
+> **Status**: Phase 1 ✅ | Phase 2 ✅ | Phase 3 ✅ Complete (Batch 1-13) | Phase 4 ✅ Complete | Phase 5 ✅ Complete | Phase 6 ✅ Complete | Phase 7 ✅ Complete | Phase 8 ✅ Complete | VPS Deploy ✅ Done | Post-Migration Cleanup ✅ Partial — MIGRATION DONE
 > **Last updated**: 2026-08-12
 > **Target**: Frontend (Next.js) + Backend (NestJS) + API contract — independently buildable & deployable
+> **VPS**: `192.168.54.129` — Backend `:3001`, Frontend `:3000`, Swagger `/api/docs`
 
 ---
 
 ## Overview
 
-Salfanet Radius adalah sistem manajemen ISP/RADIUS yang saat ini berupa monolith Next.js.
-Roadmap ini mendokumentasikan migrasi bertahap menuju arsitektur terpisah:
+Salfanet Radius adalah sistem manajemen ISP/RADIUS yang telah berhasil dimigrasi
+dari monolith Next.js menjadi arsitektur terpisah: Next.js (frontend) + NestJS (backend).
 
 ```
 salfanet-radius/ (pnpm monorepo)
-├── frontend/     # Next.js — UI only, no API routes, no Prisma
+├── frontend/     # Next.js — UI + legacy API routes (during transition)
 ├── backend/      # NestJS — API + business logic + cron
 ├── packages/     # Shared TypeScript types
-├── api/          # OpenAPI documentation
-└── deploy/       # Docker, Nginx, PM2 configs
+├── deploy/       # PM2, Nginx, deploy scripts
+└── docs/         # Architecture, development, migration docs
 ```
 
 ### Prinsip Migrasi
@@ -43,6 +44,9 @@ salfanet-radius/ (pnpm monorepo)
 | 6 | Independent Build & Deploy | ✅ Complete | 2-3 hari | `d29846b` |
 | 7 | Regression Test (e2e + checklist) | ✅ Complete | 3-5 hari | `8757606` |
 | 8 | Cleanup & Documentation | ✅ Complete | 2-3 hari | `067a8e3` |
+| — | VPS Deploy & Verification | ✅ Complete | 1 hari | `ad60028` |
+| — | Post-Migration Cleanup (cron) | ✅ Complete | 1 hari | `d65ab2a`, `2934fb0` |
+| — | Legacy API/Server Removal | ⏳ Deferred | 1-2 minggu | — (500+ file refactor) |
 
 ---
 
@@ -1079,24 +1083,60 @@ All 8 phases of the Next.js → NestJS migration are complete.
 
 | Metric | Value |
 |--------|-------|
-| Total phases | 8 |
+| Total phases | 8 + VPS deploy + cleanup |
 | API modules ported | 46 (399 routes) |
-| Cron jobs ported | 17 |
+| Cron jobs ported | 17 (NestJS @nestjs/schedule) |
 | E2E tests | 46 (all passing) |
 | Layout files decoupled | 5 |
-| PM2 processes | 4 |
+| PM2 processes | 3 (frontend, backend, wa) |
 | Documentation files | 7 |
+| Legacy cron removed | ✅ (cron runner + 13 job files) |
+| VPS verified | ✅ (192.168.54.129) |
 
 ### VPS Verification — DONE ✅
 
 Deployed to VPS `192.168.54.129` on 2026-08-12:
-- Backend NestJS running on port 3001 (Prisma connected, 17 cron jobs running)
-- Frontend Next.js running on port 3000 (monorepo build)
-- Nginx proxy: `/api/v1/*` → backend, `/api/*` → frontend legacy, `/` → frontend
-- Swagger docs accessible at `/api/docs`
-- Login tested (superadmin) — JWT auth working
-- Dashboard, users, PPPoE, cron status, settings endpoints all returning 200
-- PM2 saved with 3 processes (salfanet-frontend, salfanet-backend, salfanet-wa)
+
+**PM2 Processes (3 running):**
+
+| Process | Port | Memory | Status |
+|---------|------|--------|--------|
+| `salfanet-frontend` | 3000 | ~180mb | online (Next.js standalone) |
+| `salfanet-backend` | 3001 | ~46mb | online (NestJS API + cron) |
+| `salfanet-wa` | 4000 | ~73mb | online (Baileys WhatsApp) |
+
+**Nginx Routing:**
+
+| Path | Target | Status |
+|------|--------|--------|
+| `/api/v1/*` | Backend `:3001` | ✅ 200 |
+| `/api/docs` | Swagger `:3001` | ✅ 200 |
+| `/api/doc` | Redirect → `/api/docs` | ✅ 301 |
+| `/api/*` | Legacy routes `:3000` | ✅ (fallback) |
+| `/*` | Frontend `:3000` | ✅ 200 |
+
+**API Tests (with JWT token):**
+
+| Endpoint | Method | Auth | Status |
+|----------|--------|------|--------|
+| `/health` | GET | public | ✅ 200 (DB connected) |
+| `/api/v1/company/info` | GET | public | ✅ 200 |
+| `/api/v1/auth/login` | POST | public | ✅ 200 (JWT returned) |
+| `/api/v1/dashboard/stats` | GET | admin | ✅ 200 |
+| `/api/v1/users/list` | GET | admin | ✅ 200 |
+| `/api/v1/pppoe/customers` | GET | admin | ✅ 200 |
+| `/api/v1/cron/status` | GET | admin | ✅ 200 (17 jobs running) |
+| `/api/v1/settings/company` | GET | admin | ✅ 200 |
+
+**Cron Jobs Verified Running:**
+- `hotspot_sync` — every minute ✅
+- `pppoe_session_sync` — every 5 min ✅
+- `freeradius_health` — every 5 min ✅
+- `disconnect_sessions` — every 5 min ✅
+- `agent_sales` — hourly ✅
+- `invoice_reminder` — hourly ✅
+- `notification_check` — hourly ✅
+- (10 more jobs all running)
 
 ### Cleanup Completed
 
@@ -1132,8 +1172,12 @@ These require refactoring 375 pages/components that import `@/server` + 131 page
 | API versioning | `/api/v1/*` | Endpoint lama tetap jalan selama transisi |
 | Auth strategy | Dual-stack | NextAuth tetap untuk login, NestJS verify JWT |
 | Frontend framework | Tetap Next.js | 162 pages, 70 components — tidak perlu rewrite |
-| Database | Prisma + MySQL | Tetap sama, schema dipindah ke backend |
-| Cron | @nestjs/schedule | Native NestJS integration |
+| Database | Prisma + MySQL | Tetap sama, schema di `frontend/prisma/` |
+| Cron | @nestjs/schedule | Native NestJS integration, legacy runner removed |
+| PM2 processes | 3 (frontend, backend, wa) | Legacy cron removed after VPS verification |
+| Nginx | Reverse proxy | `/api/v1/*` → backend, `/` → frontend, `/api/*` → legacy |
+| Swagger | `/api/docs` | Auto-generated from NestJS decorators |
+| CSP | Google Fonts allowed | `style-src` + `font-src` updated untuk fonts.googleapis.com |
 
 ---
 
