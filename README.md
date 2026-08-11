@@ -469,6 +469,14 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v2.34.8 — 2026-08-11
+
+### Fixed
+- **Fresh install: `/api/company/info` returns HTTP 404 ("Company not found")** — The comprehensive seeder `prisma/seeds/seed-all.ts` (run by `vps-install/install-app.sh` as `npm run db:seed`) never created a row in the `Company` table. It only *read* `prisma.company.findFirst()` to derive the isolir rate limit (falling back to a hardcoded default when null). The standalone `prisma/seeds/seed-company.ts` existed but was never invoked by the installer. As a result, on a fresh install the `Company` table was empty and the public `/api/company/info` route (used by login/customer/agent layouts for branding) returned 404 by design.
+- **Fix**: `seed-all.ts` now creates a default `Company` row (id, name `SALFANET RADIUS`, timezone `Asia/Jakarta`, default isolation settings, empty `bankAccounts`) when none exists, before the isolir-group step reads `company.isolationRateLimit`. Existing installs are left untouched (idempotent `findFirst` guard).
+### Files
+- `prisma/seeds/seed-all.ts` — new step 4.5 "Seed Company" between Hotspot Profiles and WhatsApp Templates
+
 ### v2.34.7 — 2026-08-11
 
 ### Fixed
@@ -515,13 +523,6 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 ### Files
 - `src/app/admin/AdminClientLayout.tsx` — tambah menu items, WhatsApp jadi submenu, import UserCog
 - `src/locales/id.json` — tambah 6 nav translation keys
-
-### v2.32.2 — 2026-05-13
-
-### Fixed
-- **System Info API: silent git errors** — Semua `execSync` git di `/api/admin/system/info` kini pakai `stdio: 'pipe'` sehingga stderr tidak bocor ke PM2 log; `getAppDir()` kini mencari `/var/www/salfanet-frontend` lebih dulu (direktori dengan `.git`) sebelum fallback ke path lain
-### Files
-- `src/app/api/admin/system/info/route.ts` — tambah `stdio: 'pipe'` pada `execSync`/`execFileSync`, perbarui urutan kandidat `getAppDir()`
 
 <!-- AUTO-CHANGELOG:END -->
 
