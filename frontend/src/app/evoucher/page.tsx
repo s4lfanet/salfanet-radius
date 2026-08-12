@@ -28,10 +28,11 @@ export default function EVoucherPage() {
 
   const loadCompanySettings = async () => {
     try {
-      const res = await fetch('/api/company');
+      const res = await fetch('/api/company/info');
       if (res.ok) {
         const data = await res.json();
-        if (data.poweredBy) setPoweredBy(data.poweredBy);
+        const company = data.data || data;
+        if (company.poweredBy) setPoweredBy(company.poweredBy);
       }
     } catch (error) { console.error('Load company error:', error); }
   };
