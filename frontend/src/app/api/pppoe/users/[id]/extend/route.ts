@@ -101,7 +101,7 @@ export async function POST(
         `;
       }
 
-      // Restore PPP secret profile in MikroTik (critical for local/hybrid mode)
+      // Restore PPP secret profile in MikroTik (critical for local mode)
       if (user.routerId && shouldManagePppSecretForSuspend(user.router?.authMode)) {
         managePppSecret(user.routerId, 'enable', {
           username: user.username,
@@ -119,7 +119,7 @@ export async function POST(
       // If the user is already ACTIVE, do NOT disconnect (avoid interrupting live sessions).
       const wasIsolated = user.status === 'isolated';
       if (wasIsolated) {
-        // Kick via MikroTik API (for local/hybrid sessions)
+        // Kick via MikroTik API (for local sessions)
         if (user.routerId && shouldManagePppSecretForSuspend(user.router?.authMode)) {
           kickPppoeSession(user.routerId, user.username).then((kicked) => {
             console.log(`[Extend] Kicked ${kicked} session(s) for ${user.username} (was isolated)`);

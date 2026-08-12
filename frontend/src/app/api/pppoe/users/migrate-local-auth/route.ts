@@ -7,7 +7,7 @@ import { authOptions } from '@/server/auth/config';
 /**
  * POST /api/pppoe/users/migrate-local-auth
  * Bulk create PPP secrets in MikroTik for all PPPoE users that don't have one yet.
- * Only processes routers with authMode = local or hybrid.
+ * Only processes routers with authMode = local.
  * Body (optional): { routerId?: string } — limit to one router
  */
 export async function POST(request: Request) {
@@ -18,12 +18,12 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}));
     const { routerId } = body as { routerId?: string };
 
-    // Get all active routers with local/hybrid auth mode
+    // Get all active routers with local auth mode
     const routers = await prisma.router.findMany({
       where: {
         isActive: true,
         type: 'mikrotik',
-        authMode: { in: ['local', 'hybrid'] },
+        authMode: 'local',
         username: { not: null },
         password: { not: null },
         ...(routerId && { id: routerId }),

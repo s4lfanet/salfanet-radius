@@ -106,20 +106,20 @@ export async function listPppoeUsers(params: { status?: string | null }) {
     : [];
   const onlineSet = new Set(activeSessions.map(s => s.username));
 
-  // For hybrid/local routers, also poll MikroTik /ppp/active because
+  // For local routers, also poll MikroTik /ppp/active because
   // local-auth users bypass RADIUS accounting and won't appear in radacct.
   // Group users by router to determine which routers need polling.
-  const localHybridRouterIds = new Set<string>();
+  const localRouterIds = new Set<string>();
   for (const u of users) {
     if (u.router && u.router.id) {
       const mode = u.router.authMode || 'local';
-      if (mode === 'local' || mode === 'hybrid') {
-        localHybridRouterIds.add(u.router.id);
+      if (mode === 'local') {
+        localRouterIds.add(u.router.id);
       }
     }
   }
-  if (localHybridRouterIds.size > 0) {
-    const pppActiveNames = await batchListPppActive([...localHybridRouterIds]);
+  if (localRouterIds.size > 0) {
+    const pppActiveNames = await batchListPppActive([...localRouterIds]);
     for (const name of pppActiveNames) {
       onlineSet.add(name);
     }
@@ -318,8 +318,8 @@ export async function createPppoeUser(
     }
 
     // Create PPP Secret in MikroTik (conditional by router authMode)
-    // local/hybrid → enabled (secret is primary/secondary auth)
-    // radius       → disabled (secret is backup only, RADIUS is primary)
+    // local  → enabled (secret is primary auth)
+    // radius → disabled (secret is backup only, RADIUS is primary)
     if (routerId) {
       try {
         const router = await prisma.router.findUnique({

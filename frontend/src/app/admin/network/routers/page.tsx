@@ -814,12 +814,10 @@ export default function RouterPage() {
                   >
                     <option value="radius" className="bg-background dark:bg-slate-800">RADIUS Only — Semua auth via FreeRADIUS</option>
                     <option value="local" className="bg-background dark:bg-slate-800">Local Only — Auth via database lokal MikroTik</option>
-                    <option value="hybrid" className="bg-background dark:bg-slate-800">Hybrid — Local + RADIUS fallback</option>
                   </select>
                   <p className="text-xs text-muted-foreground mt-1.5">
                     {formData.authMode === 'radius' && 'Semua user autentikasi melalui FreeRADIUS server.'}
                     {formData.authMode === 'local' && 'User autentikasi via database lokal MikroTik (tidak butuh RADIUS).'}
-                    {formData.authMode === 'hybrid' && 'Cek local user dulu, jika tidak ada fallback ke FreeRADIUS.'}
                   </p>
                 </div>
                 )}

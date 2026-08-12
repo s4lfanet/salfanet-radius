@@ -245,7 +245,7 @@ export async function listPppSecrets(routerId: string): Promise<Array<{ name: st
 
 /**
  * List all active PPP sessions from a MikroTik router (/ppp/active/print).
- * Used for online detection in hybrid/local mode where radacct may not
+ * Used for online detection in local mode where radacct may not
  * capture all sessions (local-auth users bypass RADIUS accounting).
  *
  * @param routerId - Router UUID
@@ -319,7 +319,6 @@ export async function getMikrotikProfileName(profileId: string): Promise<string 
  * Returns: { shouldCreate, disabled }
  * - local/null → create enabled (secret is primary auth)
  * - radius     → create disabled (secret is backup, RADIUS is primary)
- * - hybrid     → create enabled (both local + RADIUS)
  */
 export function shouldCreatePppSecret(authMode: string | null | undefined): { shouldCreate: boolean; disabled: boolean } {
   const mode = authMode || 'local'  // null/undefined = local (default)
@@ -327,16 +326,16 @@ export function shouldCreatePppSecret(authMode: string | null | undefined): { sh
     // RADIUS mode: create disabled (backup only, not used for auth)
     return { shouldCreate: true, disabled: true }
   }
-  // local or hybrid: create enabled
+  // local: create enabled
   return { shouldCreate: true, disabled: false }
 }
 
 /**
  * Decide whether to enable/disable PPP secret based on router authMode.
- * - local/hybrid → enable/disable secret (MikroTik is auth source)
- * - radius       → skip (RADIUS handles auth via radcheck)
+ * - local  → enable/disable secret (MikroTik is auth source)
+ * - radius → skip (RADIUS handles auth via radcheck)
  */
 export function shouldManagePppSecretForSuspend(authMode: string | null | undefined): boolean {
   const mode = authMode || 'local'
-  return mode !== 'radius'  // local/hybrid → manage secret; radius → skip
+  return mode !== 'radius'  // local → manage secret; radius → skip
 }

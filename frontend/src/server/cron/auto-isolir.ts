@@ -125,13 +125,13 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
         DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
       `;
 
-      // 3. PPP secret: enable + change profile to 'isolir' (for local/hybrid auth path)
+      // 3. PPP secret: enable + change profile to 'isolir' (for local auth path)
       if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
         managePppSecret(user.router.id, 'enable', { username: user.username, password: user.password, profile: 'isolir' })
           .then(r => console.log(`[AUTO_ISOLIR] PPP secret enable+isolir for ${user.username}: ${r.message}`))
           .catch(e => console.error(`[AUTO_ISOLIR] PPP secret enable failed for ${user.username}:`, e?.message || e));
 
-        // Kick active session via MikroTik API (critical for local/hybrid — CoA doesn't work on local-auth sessions)
+        // Kick active session via MikroTik API (critical for local — CoA doesn't work on local-auth sessions)
         kickPppoeSession(user.router.id, user.username)
           .then(kicked => console.log(`[AUTO_ISOLIR] Kicked ${kicked} session(s) for ${user.username}`))
           .catch(e => console.error(`[AUTO_ISOLIR] Kick failed for ${user.username}:`, e?.message || e));
