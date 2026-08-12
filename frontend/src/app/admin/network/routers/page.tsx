@@ -802,7 +802,8 @@ export default function RouterPage() {
                   </select>
                 </div>
 
-                {/* Authentication Mode */}
+                {/* Authentication Mode — only for MikroTik */}
+                {formData.type === 'mikrotik' && (
                 <div>
                   <label className="block text-sm font-medium text-[#00f7ff] mb-2">Authentication Mode *</label>
                   <select
@@ -821,6 +822,7 @@ export default function RouterPage() {
                     {formData.authMode === 'hybrid' && 'Cek local user dulu, jika tidak ada fallback ke FreeRADIUS.'}
                   </p>
                 </div>
+                )}
 
                 {/* VPN Client Toggle */}
                 <div className="p-4 bg-[#00f7ff]/10 border border-[#00f7ff]/30 rounded-xl">
