@@ -30,7 +30,7 @@ const NAS_CLIENTS_FILE = '/etc/freeradius/3.0/clients.d/nas-from-db.conf';
 export async function syncNasClients(): Promise<boolean> {
   try {
     // Use raw SQL to avoid Prisma silently dropping rows that have NULL in
-    // non-nullable app columns (port, apiPort, username, password).
+    // non-nullable app columns (port, username, password).
     // These fields are irrelevant for RADIUS sync but a Prisma findMany()
     // returns only rows it can fully deserialize — rows with NULL in non-nullable
     // Int/String fields are silently omitted, causing "unknown client" errors.
