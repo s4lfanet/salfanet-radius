@@ -111,6 +111,18 @@ export async function POST(
         : `/radius add address=${radiusServerIp} secret=${radiusSecret}${srcAddressParam} service=ppp,hotspot,login,wireless authentication-port=${radiusAuthPort} accounting-port=${radiusAcctPort} timeout=3s comment="${comment}"`;
       const gatewayRadiusEntry = rosVersion === 7 ? gatewayRadiusEntryRos7 : gatewayRadiusEntryRos6;
 
+      // Auth mode configuration
+      const authMode = router.authMode || 'radius';
+      const authModeComment = `# Authentication Mode: ${authMode.toUpperCase()}`;
+      const authModeConfig = authMode === 'local'
+        ? `# LOCAL ONLY — tidak menggunakan RADIUS untuk autentikasi
+/ppp aaa set use-radius=no accounting=yes interim-update=5m`
+        : authMode === 'hybrid'
+        ? `# HYBRID — local database + RADIUS fallback
+/ppp aaa set use-radius=yes accounting=yes interim-update=5m`
+        : `# RADIUS ONLY — semua autentikasi via FreeRADIUS
+/ppp aaa set use-radius=yes accounting=yes interim-update=5m`;
+
       return `
 # ============================================
 # SALFANET RADIUS Setup Script (RouterOS ${rosVersion}.x)
@@ -119,21 +131,24 @@ export async function POST(
 # RADIUS Server: ${radiusServerIp}
 # VPN Gateway: ${isVpnSetup ? gatewayIp : 'N/A (Public IP mode)'}
 # Connection: ${router.vpnClientId ? 'VPN Tunnel' : 'Public IP'}
+# Auth Mode: ${authMode.toUpperCase()}
 # Generated: ${new Date().toISOString()}
 # ============================================
 
 # 1. Hapus RADIUS lama (jika ada)
 /radius remove [find where comment~"SALFANET" || comment~"Auto Setup" || comment~"gateway masquerade"]
 
-# 2. Tambah RADIUS Server (utama — auth/acct + CoA)
+${authMode === 'local' ? `# LOCAL MODE — RADIUS tidak digunakan, skip RADIUS server setup
+${authModeConfig}` : `# 2. Tambah RADIUS Server (utama — auth/acct + CoA)
 ${srcAddressNote}
 ${mainRadiusLine}
 ${gatewayRadiusEntry}
 # 3. Enable RADIUS untuk PPP + Interim-Update setiap 5 menit
-/ppp aaa set use-radius=yes accounting=yes interim-update=5m
+${authModeConfig}`}
 
+${authMode !== 'local' ? `
 # 4. Enable RADIUS Incoming (CoA/Disconnect)
-/radius incoming set accept=yes port=${radiusCOAPort}
+/radius incoming set accept=yes port=${radiusCOAPort}` : ''}
 
 # 5. Buat IP Pool untuk PPP (jika belum ada)
 :if ([:len [/ip pool find name="pool-radius-default"]] = 0) do={
@@ -146,8 +161,9 @@ ${gatewayRadiusEntry}
 }
 
 # 7. Enable RADIUS untuk semua Hotspot Server Profile
-/ip hotspot profile set [find] use-radius=yes
+${authMode !== 'local' ? '/ip hotspot profile set [find] use-radius=yes' : '# Skipped — local auth mode'}
 
+${authMode !== 'local' ? `
 # ============================================
 # FIREWALL RULES — RADIUS & CoA
 # ============================================
@@ -167,7 +183,7 @@ ${gatewayFirewallRule}
 /tool netwatch add host=${radiusServerIp} interval=30s timeout=5s \\
     down-script="/log warning message=\\"SALFANET: RADIUS server ${radiusServerIp} tidak reachable\\"" \\
     up-script="/log info message=\\"SALFANET: RADIUS server ${radiusServerIp} kembali online\\"" \\
-    comment="SALFANET RADIUS Monitor"
+    comment="SALFANET RADIUS Monitor"` : ''}
 
 # ============================================
 # SELESAI! Verifikasi dengan:
@@ -175,8 +191,7 @@ ${gatewayFirewallRule}
 # /ppp aaa print
 # /radius incoming print
 # /ppp profile print where name="salfanetradius"
-# /ip firewall filter print where comment~"SALFANET-RADIUS"
-# /tool netwatch print
+${authMode !== 'local' ? '# /ip firewall filter print where comment~"SALFANET-RADIUS"\n# /tool netwatch print' : ''}
 # ============================================
 # LANGKAH SELANJUTNYA: Setup Isolir
 # Klik tombol "Setup Isolir" pada router ini untuk mendapatkan

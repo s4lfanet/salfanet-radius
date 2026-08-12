@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { ipAddress, username, password, port, apiPort } = await request.json()
+    const { ipAddress, username, password, port } = await request.json()
 
     if (!ipAddress || !username || !password) {
       return NextResponse.json(
@@ -25,9 +25,8 @@ export async function POST(request: Request) {
     }
 
     const primaryPort = parseInt(port) || 8728
-    const sslPort = parseInt(apiPort) || 8729
 
-    // --- Try primary port (non-SSL) ---
+    // Try API connection (non-SSL)
     const mtik = new MikroTikConnection({
       host: ipAddress,
       username,
@@ -39,34 +38,14 @@ export async function POST(request: Request) {
     const result = await mtik.testConnection()
 
     if (result.success) {
-      return NextResponse.json({ ...result, usedPort: primaryPort, usedTls: false })
+      return NextResponse.json({ ...result, usedPort: primaryPort })
     }
 
-    // --- Fallback: try SSL port (API-SSL) only if port is different ---
+    // Failed — return error with diagnosis
     const primaryError = result.message
-    let sslError = ''
-    if (sslPort !== primaryPort) {
-      const mtikSsl = new MikroTikConnection({
-        host: ipAddress,
-        username,
-        password,
-        port: sslPort,
-        timeout: 8000,
-        tls: true,
-      })
-      const sslResult = await mtikSsl.testConnection()
-
-      if (sslResult.success) {
-        return NextResponse.json({ ...sslResult, usedPort: sslPort, usedTls: true })
-      }
-      sslError = sslResult.message
-    }
-
-    // Both failed — return combined error with diagnosis
-    const sslPart = sslPort !== primaryPort ? ` | Port ${sslPort} (SSL): ${sslError}` : ''
     return NextResponse.json({
       success: false,
-      message: `Port ${primaryPort}: ${primaryError}${sslPart}`,
+      message: `Port ${primaryPort}: ${primaryError}`,
       diagnosis: primaryError.includes('timed out') || primaryError.includes('firewall')
         ? 'firewall_block'
         : primaryError.includes('ECONNREFUSED')

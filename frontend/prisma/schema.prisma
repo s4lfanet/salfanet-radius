@@ -319,11 +319,11 @@ model router {
   nasname        String             // NAS IP Address (can be same for multiple NAS with different ports)
   shortname      String
   type           String             @default("mikrotik")
+  authMode       String             @default("radius")  // "local" | "radius" | "hybrid"
   ipAddress      String
-  username       String
-  password       String
+  username       String?
+  password       String?
   port           Int                @default(8728)
-  apiPort        Int                @default(8729)
   secret         String             @default("secret123")
   ports          Int                @default(1812)
   server         String?

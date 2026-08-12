@@ -13,11 +13,11 @@ interface Router {
   nasname: string
   shortname: string
   type: string
+  authMode: string
   ipAddress: string
-  username: string
-  password: string
+  username?: string
+  password?: string
   port: number
-  apiPort: number
   secret: string
   ports: number
   server?: string
@@ -65,12 +65,12 @@ export default function RouterPage() {
     nasname: '',
     shortname: '',
     type: 'mikrotik',
+    authMode: 'radius',
     ipAddress: '',
     username: '',
     password: '',
     port: '8728',
-    apiPort: '8729',
-    secret: 'secret123',
+    secret: '',
     ports: '1812',
     server: '',
     community: '',
@@ -90,6 +90,16 @@ export default function RouterPage() {
   const [showTutorial, setShowTutorial] = useState(true)
   const [scriptModalData, setScriptModalData] = useState<{ script: string; scriptRos6?: string; scriptRos7?: string; config: any } | null>(null)
   const [scriptRosTab, setScriptRosTab] = useState<6 | 7>(7)
+
+  // Generate random RADIUS secret (16 chars alphanumeric)
+  const generateSecret = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let secret = ''
+    for (let i = 0; i < 16; i++) {
+      secret += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return secret
+  }
 
   useEffect(() => {
     loadRouters()
@@ -143,7 +153,7 @@ export default function RouterPage() {
           username: vpnClient.resolvedUsername || prev.username,
           password: vpnClient.resolvedPassword || prev.password,
           // Auto-fill RADIUS secret from NAS entry linked to this VPN client
-          secret: vpnClient.nasSecret || prev.secret,
+          secret: vpnClient.nasSecret || prev.secret || generateSecret(),
         }))
       }
     } else {
@@ -212,30 +222,19 @@ export default function RouterPage() {
           username: formData.username,
           password: formData.password,
           port: parseInt(formData.port) || 8728,
-          apiPort: parseInt(formData.apiPort) || 8729,
         }),
       })
 
       const result = await response.json()
 
       if (result.success) {
-        // Jika berhasil pakai port berbeda dari yang diset (misalnya fallback ke SSL 8729),
-        // otomatis update form port ke port yang berhasil
-        if (result.usedPort && result.usedPort !== parseInt(formData.port)) {
-          setFormData(prev => ({
-            ...prev,
-            port: result.usedTls ? prev.apiPort : result.usedPort.toString(),
-            apiPort: result.usedTls ? result.usedPort.toString() : prev.apiPort,
-          }))
-        }
         setTestResult(result)
-        const portInfo = result.usedTls ? ` (port ${result.usedPort} SSL)` : ` (port ${result.usedPort})`
+        const portInfo = ` (port ${result.usedPort})`
         showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', result.identity) + portInfo)
       } else if (formData.vpnClientId) {
         // VPN client: ping sudah berhasil, API gagal = MikroTik firewall memblokir
         const apiPort = parseInt(formData.port) || 8728
-        const apiSslPort = parseInt(formData.apiPort) || 8729
-        const firewallCmd = `/ip firewall filter add chain=input src-address=172.16.212.1 protocol=tcp dst-port=${apiPort},${apiSslPort} action=accept place-before=0 comment="Allow VPS API"`
+        const firewallCmd = `/ip firewall filter add chain=input src-address=172.16.212.1 protocol=tcp dst-port=${apiPort} action=accept place-before=0 comment="Allow VPS API"`
         setTestResult({ success: true, message: result.message, identity: 'VPN (ping OK, API pending)' })
         showSuccess(`VPN terhubung ✓\n\nAPI port ${apiPort} diblokir firewall MikroTik. Jalankan perintah ini di terminal MikroTik:\n\n${firewallCmd}`)
       } else {
@@ -303,8 +302,9 @@ export default function RouterPage() {
 
   const resetForm = () => {
     setFormData({
-      name: '', nasname: '', shortname: '', type: 'mikrotik', ipAddress: '', username: '', password: '',
-      port: '8728', apiPort: '8729', secret: 'secret123', ports: '1812', server: '', community: '', description: '', vpnClientId: '',
+      name: '', nasname: '', shortname: '', type: 'mikrotik', authMode: 'radius',
+      ipAddress: '', username: '', password: '',
+      port: '8728', secret: generateSecret(), ports: '1812', server: '', community: '', description: '', vpnClientId: '',
     })
     setTestResult(null)
     setUseVpnClient(false)
@@ -314,8 +314,9 @@ export default function RouterPage() {
     setEditingRouter(routerData)
     setFormData({
       name: routerData.name, nasname: routerData.nasname, shortname: routerData.shortname, type: routerData.type,
-      ipAddress: routerData.ipAddress, username: routerData.username, password: routerData.password,
-      port: routerData.port.toString(), apiPort: routerData.apiPort.toString(), secret: routerData.secret,
+      authMode: routerData.authMode || 'radius',
+      ipAddress: routerData.ipAddress, username: routerData.username || '', password: routerData.password || '',
+      port: routerData.port.toString(), secret: routerData.secret,
       ports: routerData.ports.toString(), server: routerData.server || '', community: routerData.community || '',
       description: routerData.description || '', vpnClientId: routerData.vpnClientId || '',
     })
@@ -705,6 +706,10 @@ export default function RouterPage() {
                           <p className="font-mono text-sm text-foreground">{routerData.type}</p>
                         </div>
                         <div>
+                          <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">Auth Mode</p>
+                          <p className="font-mono text-sm text-foreground">{routerData.authMode || 'radius'}</p>
+                        </div>
+                        <div>
                           <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.apiPort')}</p>
                           <p className="font-mono text-sm text-foreground">{routerData.port}</p>
                         </div>
@@ -797,6 +802,26 @@ export default function RouterPage() {
                   </select>
                 </div>
 
+                {/* Authentication Mode */}
+                <div>
+                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">Authentication Mode *</label>
+                  <select
+                    value={formData.authMode}
+                    onChange={(e) => setFormData({ ...formData, authMode: e.target.value })}
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                    required
+                  >
+                    <option value="radius" className="bg-background dark:bg-slate-800">RADIUS Only — Semua auth via FreeRADIUS</option>
+                    <option value="local" className="bg-background dark:bg-slate-800">Local Only — Auth via database lokal MikroTik</option>
+                    <option value="hybrid" className="bg-background dark:bg-slate-800">Hybrid — Local + RADIUS fallback</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {formData.authMode === 'radius' && 'Semua user autentikasi melalui FreeRADIUS server.'}
+                    {formData.authMode === 'local' && 'User autentikasi via database lokal MikroTik (tidak butuh RADIUS).'}
+                    {formData.authMode === 'hybrid' && 'Cek local user dulu, jika tidak ada fallback ke FreeRADIUS.'}
+                  </p>
+                </div>
+
                 {/* VPN Client Toggle */}
                 <div className="p-4 bg-[#00f7ff]/10 border border-[#00f7ff]/30 rounded-xl">
                   <label className="flex items-center gap-3 cursor-pointer">
@@ -850,34 +875,22 @@ export default function RouterPage() {
                   />
                 </div>
 
-                {/* Ports — only show for MikroTik routers, not gateway/VPS */}
-                {formData.type !== 'gateway' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#00f7ff] mb-2">{t('network.apiPort')}</label>
-                    <input
-                      type="number"
-                      value={formData.port}
-                      onChange={(e) => setFormData({ ...formData, port: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
-                      placeholder="8728"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[#00f7ff] mb-2">{t('network.apiSslPortLabel')}</label>
-                    <input
-                      type="number"
-                      value={formData.apiPort}
-                      onChange={(e) => setFormData({ ...formData, apiPort: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
-                      placeholder="8729"
-                    />
-                  </div>
+                {/* API Port — only show for MikroTik routers, not gateway/VPS */}
+                {formData.type === 'mikrotik' && (
+                <div>
+                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">{t('network.apiPort')}</label>
+                  <input
+                    type="number"
+                    value={formData.port}
+                    onChange={(e) => setFormData({ ...formData, port: e.target.value })}
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                    placeholder="8728"
+                  />
                 </div>
                 )}
 
-                {/* Credentials */}
-                {formData.type !== 'gateway' && (
+                {/* Credentials — only for MikroTik */}
+                {formData.type === 'mikrotik' && (
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-[#00f7ff] mb-2">{t('network.username')} *</label>
@@ -887,7 +900,7 @@ export default function RouterPage() {
                         onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                         className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
                         placeholder="admin"
-                        required={formData.type !== 'gateway'}
+                        required
                       />
                     </div>
                     <div>
@@ -898,27 +911,37 @@ export default function RouterPage() {
                         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
                         placeholder="********"
-                        required={formData.type !== 'gateway' && !editingRouter}
+                        required={!editingRouter}
                       />
                     </div>
                   </div>
                 )}
 
-                {/* RADIUS Secret */}
+                {/* RADIUS Secret — auto-generated */}
                 <div>
-                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">{t('network.radiusSecret')} *</label>
-                  <input
-                    type="text"
-                    value={formData.secret}
-                    onChange={(e) => setFormData({ ...formData, secret: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
-                    placeholder="secret123"
-                    required
-                  />
+                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">{t('network.radiusSecret')} (Auto-generated)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={formData.secret}
+                      readOnly
+                      className="flex-1 px-4 py-3 bg-input border border-border rounded-xl text-foreground font-mono text-sm focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all cursor-not-allowed opacity-80"
+                      placeholder="Auto-generated"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, secret: generateSecret() })}
+                      className="px-4 py-3 bg-[#bc13fe]/20 border border-[#bc13fe]/40 text-[#bc13fe] rounded-xl hover:bg-[#bc13fe]/30 transition-all font-medium whitespace-nowrap"
+                      title="Generate new secret"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">Secret di-generate otomatis. Copy paste ke MikroTik saat setup RADIUS.</p>
                 </div>
 
-                {/* Test Connection */}
-                {!editingRouter && (
+                {/* Test Connection — only for MikroTik */}
+                {!editingRouter && formData.type === 'mikrotik' && (
                   <div className="p-4 bg-[#bc13fe]/10 border border-[#bc13fe]/30 rounded-xl">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium text-foreground">{t('network.testConnection')}</span>
