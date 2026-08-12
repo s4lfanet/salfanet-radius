@@ -22,6 +22,7 @@ interface PPPoEProfile {
   downloadSpeed: number; uploadSpeed: number; groupName: string;
   mikrotikProfileName?: string | null; ipPoolName?: string | null; ipPoolRange?: string | null;
   localAddress?: string | null; lastRouterId?: string | null;
+  radiusPoolName?: string | null;
   rateLimit?: string;
   validityValue: number; validityUnit: 'DAYS' | 'MONTHS';
   sharedUser: boolean; isActive: boolean; syncedToRadius: boolean; createdAt: string;
@@ -47,6 +48,7 @@ const defaultForm = {
   priority: '8', limitAtDownload: '', limitAtUpload: '',
   groupName: '', validityValue: '1', validityUnit: 'MONTHS' as 'DAYS' | 'MONTHS',
   sharedUser: true, isActive: true,
+  radiusPoolName: '',  // RADIUS IP Pool (empty = auto from speed-tier)
 };
 
 export default function PPPoEProfilesPage() {
@@ -77,6 +79,9 @@ export default function PPPoEProfilesPage() {
   const [syncPoolRanges, setSyncPoolRanges] = useState('');
   const [syncLockedRouter, setSyncLockedRouter] = useState(false);
 
+  // RADIUS IP Pool options (fetched from radippool)
+  const [radiusPools, setRadiusPools] = useState<{ pool_name: string; total: number }[]>([]);
+
   // Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
@@ -84,12 +89,20 @@ export default function PPPoEProfilesPage() {
   const [importResults, setImportResults] = useState<{ success: number; error: number; errors: string[] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { loadProfiles(); loadRouterList(); }, []);
+  useEffect(() => { loadProfiles(); loadRouterList(); loadRadiusPools(); }, []);
 
   const loadProfiles = async () => {
     try { const res = await fetch('/api/pppoe/profiles'); const data = await res.json(); setProfiles(data.profiles || []); }
     catch (e) { console.error('Load error:', e); }
     finally { setLoading(false); }
+  };
+
+  const loadRadiusPools = async () => {
+    try {
+      const res = await fetch('/api/admin/ippool');
+      const data = await res.json();
+      setRadiusPools(data.pools || []);
+    } catch (e) { console.error('Load RADIUS pools error:', e); }
   };
 
   const loadRouterList = async () => {
@@ -174,6 +187,7 @@ export default function PPPoEProfilesPage() {
         sharedUser: formData.sharedUser,
         isActive: formData.isActive,
         ppnRate: formData.ppnActive ? (parseInt(formData.ppnRate) || 11) : null,
+        radiusPoolName: formData.radiusPoolName || null,
       };
       const res = await fetch('/api/pppoe/profiles', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       const result = await res.json();
@@ -225,6 +239,7 @@ export default function PPPoEProfilesPage() {
       groupName: profile.groupName, validityValue: profile.validityValue.toString(), validityUnit: profile.validityUnit,
       sharedUser: profile.sharedUser, isActive: profile.isActive,
       ppnRate: profile.ppnRate?.toString() || '11',
+      radiusPoolName: profile.radiusPoolName || '',
     });
     setIsDialogOpen(true);
   };
@@ -740,6 +755,26 @@ export default function PPPoEProfilesPage() {
                     )}
                   </div>
                 </div>
+              </div>
+
+              {/* RADIUS IP Pool Selection */}
+              <div>
+                <ModalLabel>RADIUS IP Pool</ModalLabel>
+                <select
+                  value={formData.radiusPoolName}
+                  onChange={(e) => setFormData({ ...formData, radiusPoolName: e.target.value })}
+                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                >
+                  <option value="">Auto — dari speed tier ({formData.downloadSpeed}Mbps-Pool)</option>
+                  {radiusPools.map(p => (
+                    <option key={p.pool_name} value={p.pool_name} className="bg-background dark:bg-slate-800">
+                      {p.pool_name} ({p.total} IPs)
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Pilih IP pool untuk RADIUS sqlippool. "Auto" akan menggunakan {formData.downloadSpeed}Mbps-Pool berdasarkan kecepatan download.
+                </p>
               </div>
 
               {/* Burst */}

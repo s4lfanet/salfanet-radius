@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       groupName,
       mikrotikProfileName,
       ipPoolName,
+      radiusPoolName,
       price,
       downloadSpeed: rawDownloadSpeed,
       uploadSpeed: rawUploadSpeed,
@@ -96,6 +97,7 @@ export async function POST(request: NextRequest) {
         groupName: finalGroupName,
         mikrotikProfileName: finalMikrotikProfileName,
         ipPoolName: finalIpPoolName,
+        radiusPoolName: radiusPoolName || null,
         price: parseInt(price),
         downloadSpeed: parseInt(downloadSpeed),
         uploadSpeed: parseInt(uploadSpeed),
@@ -160,6 +162,7 @@ export async function PUT(request: NextRequest) {
       groupName,
       mikrotikProfileName,
       ipPoolName,
+      radiusPoolName,
       price,
       downloadSpeed: rawDownloadSpeed,
       uploadSpeed: rawUploadSpeed,
@@ -231,6 +234,7 @@ export async function PUT(request: NextRequest) {
     if (normalizedGroupName) updateData.groupName = normalizedGroupName;
     if (normalizedGroupName) updateData.mikrotikProfileName = normalizedGroupName;
     if (normalizedIpPoolName !== undefined) updateData.ipPoolName = normalizedIpPoolName;
+    if (radiusPoolName !== undefined) updateData.radiusPoolName = radiusPoolName || null;
     if (price) updateData.price = parseInt(price);
     if (downloadSpeed !== undefined) updateData.downloadSpeed = parseInt(downloadSpeed.toString());
     if (uploadSpeed !== undefined) updateData.uploadSpeed = parseInt(uploadSpeed.toString());
