@@ -67,25 +67,29 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Upsert radgroupreply: Pool-Name (speed tier pool mapping)
-    // Maps profile group to an IP pool based on download speed
+    // Upsert radgroupreply: Pool-Name
+    // Priority: 1) profile.radiusPoolName (explicit selection)  2) speed-tier fallback ({downloadSpeed}Mbps-Pool)
+    // Only set if the pool exists in radippool table
     const downloadSpeed = profile.downloadSpeed || 10;
-    const poolName = `${downloadSpeed}Mbps-Pool`;
-    const existingPool = await prisma.radgroupreply.findFirst({
-      where: { groupname: profile.groupName, attribute: 'Pool-Name' },
-    });
+    const speedTierPoolName = `${downloadSpeed}Mbps-Pool`;
+    const poolName = (profile as any).radiusPoolName || speedTierPoolName;
 
-    if (existingPool) {
-      await prisma.radgroupreply.update({
-        where: { id: existingPool.id },
-        data: { value: poolName },
+    // Verify pool exists in radippool before assigning
+    const poolExists: Array<{ cnt: number }> = await prisma.$queryRaw`
+      SELECT COUNT(*) as cnt FROM radippool WHERE pool_name = ${poolName}
+    `;
+
+    if (poolExists[0]?.cnt > 0) {
+      const existingPool = await prisma.radgroupreply.findFirst({
+        where: { groupname: profile.groupName, attribute: 'Pool-Name' },
       });
-    } else {
-      // Only add Pool-Name if the pool exists in radippool
-      const poolExists: Array<{ cnt: number }> = await prisma.$queryRaw`
-        SELECT COUNT(*) as cnt FROM radippool WHERE pool_name = ${poolName}
-      `;
-      if (poolExists[0]?.cnt > 0) {
+
+      if (existingPool) {
+        await prisma.radgroupreply.update({
+          where: { id: existingPool.id },
+          data: { value: poolName },
+        });
+      } else {
         await prisma.radgroupreply.create({
           data: {
             groupname: profile.groupName,
@@ -95,6 +99,11 @@ export async function POST(request: NextRequest) {
           },
         });
       }
+    } else {
+      // Pool doesn't exist — remove any stale Pool-Name mapping
+      await prisma.radgroupreply.deleteMany({
+        where: { groupname: profile.groupName, attribute: 'Pool-Name' },
+      });
     }
 
     // Upsert radgroupcheck: Simultaneous-Use
