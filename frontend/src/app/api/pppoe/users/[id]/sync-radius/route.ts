@@ -30,19 +30,29 @@ export async function POST(
     const nasIdentifier = user.routerId || null;
 
     // Re-create radcheck (password) — with nas_identifier for multi-tenant isolation
-    await prisma.radcheck.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+    // Delete ALL rows for this username+attribute regardless of nas_identifier
+    // (unique constraint is on username+attribute, not nas_identifier)
+    await prisma.$executeRaw`
+      DELETE FROM radcheck WHERE username = ${username} AND attribute = 'Cleartext-Password'
+    `;
     await prisma.radcheck.create({
       data: { username, attribute: 'Cleartext-Password', op: ':=', value: user.password, nas_identifier: nasIdentifier },
     });
 
     // Re-create radusergroup (profile group) — with nas_identifier
-    await prisma.radusergroup.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+    // Delete ALL rows for this username regardless of nas_identifier
+    await prisma.$executeRaw`
+      DELETE FROM radusergroup WHERE username = ${username}
+    `;
     await prisma.radusergroup.create({
       data: { username, groupname: user.profile.groupName, priority: 0, nas_identifier: nasIdentifier },
     });
 
     // Re-create radreply (static IP if set) — with nas_identifier
-    await prisma.radreply.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+    // Delete ALL rows for this username regardless of nas_identifier
+    await prisma.$executeRaw`
+      DELETE FROM radreply WHERE username = ${username}
+    `;
     if (user.ipAddress) {
       await prisma.radreply.create({
         data: { username, attribute: 'Framed-IP-Address', op: ':=', value: user.ipAddress, nas_identifier: nasIdentifier },
