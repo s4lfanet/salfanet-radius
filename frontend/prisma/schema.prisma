@@ -627,14 +627,16 @@ model radacct {
 }
 
 model radcheck {
-  id        Int    @id @default(autoincrement())
-  username  String @db.VarChar(64)
-  attribute String @db.VarChar(64)
-  op        String @default(":=") @db.Char(2)
-  value     String @db.VarChar(253)
+  id             Int    @id @default(autoincrement())
+  username       String @db.VarChar(64)
+  attribute      String @db.VarChar(64)
+  op             String @default(":=") @db.Char(2)
+  value          String @db.VarChar(253)
+  nas_identifier String? @db.VarChar(128) // Multi-NAS isolation: router.id (diadopsi dari home.pmynet.id-main)
 
   @@unique([username, attribute])
   @@index([username])
+  @@index([nas_identifier])
 }
 
 model radgroupcheck {
@@ -671,24 +673,28 @@ model radpostauth {
 }
 
 model radreply {
-  id        Int    @id @default(autoincrement()) @db.UnsignedInt
-  username  String @db.VarChar(64)
-  attribute String @db.VarChar(64)
-  op        String @default("=") @db.Char(2)
-  value     String @db.VarChar(253)
+  id             Int    @id @default(autoincrement()) @db.UnsignedInt
+  username       String @db.VarChar(64)
+  attribute      String @db.VarChar(64)
+  op             String @default("=") @db.Char(2)
+  value          String @db.VarChar(253)
+  nas_identifier String? @db.VarChar(128) // Multi-NAS isolation: router.id
 
   @@index([username])
+  @@index([nas_identifier])
 }
 
 model radusergroup {
-  id        Int    @id @default(autoincrement())
-  username  String @db.VarChar(64)
-  groupname String @db.VarChar(64)
-  priority  Int    @default(1)
+  id             Int    @id @default(autoincrement())
+  username       String @db.VarChar(64)
+  groupname      String @db.VarChar(64)
+  priority       Int    @default(1)
+  nas_identifier String? @db.VarChar(128) // Multi-NAS isolation: router.id
 
   @@unique([username, groupname])
   @@index([groupname])
   @@index([username])
+  @@index([nas_identifier])
 }
 
 model sessions {
@@ -2479,4 +2485,21 @@ model data_usage_by_period {
   @@index([period_start])
   @@index([period_end])
   @@map("data_usage_by_period")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUI (Chargeable User Identity) — FreeRADIUS cui module
+// Diadopsi dari home.pmynet.id-main (FreeRADIUS 3.2.8 schema)
+// Tracking user unik lintas session/NAS untuk billing dan audit
+// ─────────────────────────────────────────────────────────────────────────────
+model cui {
+  clientipaddress  String   @db.VarChar(46)
+  callingstationid String   @db.VarChar(50)
+  username         String   @db.VarChar(64)
+  cui              String   @db.VarChar(32)
+  creationdate     DateTime @default(now())
+  lastaccounting   DateTime @default(now())
+
+  @@id([username, clientipaddress, callingstationid])
+  @@map("cui")
 }
