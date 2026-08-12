@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ActivityLogService } from '../activity-log/activity-log.service';
 import { nanoid } from 'nanoid';
 import * as os from 'os';
+import * as crypto from 'crypto';
 
 function getServerIp(): string {
   const interfaces = os.networkInterfaces();
@@ -123,7 +124,7 @@ export class NetworkService {
   }
 
   async updateRouter(body: Record<string, unknown>, user?: { id?: string; username?: string; role?: string }) {
-    const { id, name, type, ipAddress, nasIpAddress, nasname: nasnameFromBody, username, password, port, secret, isActive, latitude, longitude, vpnClientId } = body as any;
+    const { id, name, type, authMode, ipAddress, nasIpAddress, nasname: nasnameFromBody, username, password, port, secret, isActive, latitude, longitude, vpnClientId } = body as any;
     if (!id) throw new HttpException('Router ID is required', HttpStatus.BAD_REQUEST);
 
     const currentRouter = await this.prisma.router.findUnique({ where: { id } });
