@@ -150,9 +150,9 @@ run_migrations() {
             print_warn "SP import had issues (may already exist)"
     fi
 
-    # Seed (optional — don't fail if seed has issues)
-    print_info "Running database seed..."
-    pnpm run db:seed 2>/dev/null || print_warn "Seed had issues — you can run manually later"
+    # Seed — REQUIRED (creates admin user, company, permissions, templates)
+    print_info "Running database seed (creates admin user + default data)..."
+    pnpm run db:seed || die "Database seed failed — run manually: cd frontend && pnpm run db:seed"
 
     print_success "Database migrations + seed complete"
 }
