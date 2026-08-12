@@ -473,6 +473,276 @@ async function runSuspendCheck(): Promise<any> {
   return { suspended, total: approved.length, errors }
 }
 
+// ─── Job: Invoice Generate (auto-generate monthly invoices) ────────────────
+
+async function runInvoiceGenerate(): Promise<any> {
+  const now = nowWIB()
+  const errors: string[] = []
+
+  // Get company settings
+  const company = await prisma.company.findFirst({
+    select: { invoiceGenerateDays: true, baseUrl: true, name: true, phone: true },
+  })
+  const genDays = company?.invoiceGenerateDays ?? 7
+  const baseUrl = company?.baseUrl || 'http://localhost:3000'
+
+  // Target month = current month (generate invoice for current billing period)
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth() + 1
+  const monthStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0))
+  const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999))
+
+  // Find active/isolated users that need invoices
+  const users = await prisma.pppoeUser.findMany({
+    where: { status: { in: ['active', 'isolated'] } },
+    include: {
+      profile: { select: { id: true, name: true, price: true, ppnActive: true, ppnRate: true } },
+    },
+  })
+
+  // Batch fetch existing invoices for this month to avoid duplicates
+  const existingInvoices = await prisma.invoice.findMany({
+    where: {
+      userId: { in: users.map(u => u.id) },
+      invoiceType: { in: ['MONTHLY', 'RENEWAL'] },
+      dueDate: { gte: monthStart, lte: monthEnd },
+      status: { not: 'CANCELLED' },
+    },
+    select: { userId: true },
+  })
+  const usersWithInvoice = new Set(existingInvoices.map(i => i.userId).filter(Boolean) as string[])
+
+  let generated = 0
+  let skipped = 0
+
+  for (const user of users) {
+    try {
+      if (usersWithInvoice.has(user.id)) {
+        skipped++
+        continue
+      }
+
+      if (!user.profile) {
+        errors.push(`${user.username}: profile not found`)
+        continue
+      }
+
+      const subscriptionType = (user as any).subscriptionType || 'POSTPAID'
+      let dueDate: Date
+      let invoiceType: string
+
+      if (subscriptionType === 'PREPAID') {
+        // PREPAID: invoice dueDate = expiredAt (renewal reminder)
+        if (!user.expiredAt) { skipped++; continue }
+        dueDate = user.expiredAt
+        invoiceType = 'RENEWAL'
+      } else {
+        // POSTPAID: dueDate = billingDay of current month
+        const billingDay = (user as any).billingDay ?? 1
+        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
+        const day = Math.min(billingDay, daysInMonth)
+        dueDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
+        invoiceType = 'MONTHLY'
+      }
+
+      // Calculate amount with PPN
+      const baseAmount = user.profile.price
+      let amount = baseAmount
+      let taxRate: number | null = null
+      if (user.profile.ppnActive && user.profile.ppnRate > 0) {
+        taxRate = Number(user.profile.ppnRate)
+        amount = Math.round(baseAmount + (baseAmount * taxRate / 100))
+      }
+
+      // Generate IDs (inline to avoid server-only import)
+      const { nanoid } = require('nanoid')
+      const { randomBytes } = require('crypto')
+      const invoiceId = nanoid()
+      const dateStr = `${year}${String(month).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`
+      const random = randomBytes(3).toString('hex').toUpperCase()
+      const invoiceNumber = `INV-${dateStr}-${random}`
+      const paymentToken = randomBytes(32).toString('hex')
+      const paymentLink = `${baseUrl}/pay/${paymentToken}`
+
+      await prisma.invoice.create({
+        data: {
+          id: invoiceId,
+          invoiceNumber,
+          userId: user.id,
+          amount,
+          baseAmount,
+          ...(taxRate !== null && { taxRate }),
+          dueDate,
+          status: 'PENDING',
+          invoiceType: invoiceType as any,
+          customerName: user.name,
+          customerPhone: user.phone,
+          customerEmail: user.email || null,
+          customerUsername: user.username,
+          paymentToken,
+          paymentLink,
+          createdAt: new Date(),
+        },
+      })
+
+      generated++
+    } catch (err: any) {
+      errors.push(`${user.username}: ${err?.message || err}`)
+    }
+  }
+
+  console.log(`[INVOICE_GENERATE] generated=${generated} skipped=${skipped} errors=${errors.length}`)
+  return { generated, skipped, total: users.length, errors }
+}
+
+// ─── Job: Invoice Reminder (send WA/email for due/overdue invoices) ────────
+
+async function runInvoiceReminder(): Promise<any> {
+  const now = nowWIB()
+  const errors: string[] = []
+
+  // Find PENDING/OVERDUE invoices with dueDate within next 7 days or already overdue
+  const remindBefore = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const invoices = await prisma.invoice.findMany({
+    where: {
+      status: { in: ['PENDING', 'OVERDUE'] },
+      dueDate: { lte: remindBefore },
+      customerPhone: { not: null },
+    },
+    select: {
+      id: true, invoiceNumber: true, amount: true, dueDate: true, status: true,
+      customerName: true, customerPhone: true, customerUsername: true,
+      paymentLink: true, sentReminders: true,
+    },
+  })
+
+  // Check if WA provider is available
+  const waProviders = await prisma.whatsapp_providers.findMany({ where: { isActive: true } })
+  const waAvailable = waProviders.length > 0
+
+  let sent = 0
+  let skipped = 0
+
+  for (const inv of invoices) {
+    try {
+      if (!waAvailable || !inv.customerPhone) {
+        skipped++
+        continue
+      }
+
+      // Parse sentReminders to avoid duplicate reminders
+      let sentDays: number[] = []
+      try { sentDays = inv.sentReminders ? JSON.parse(inv.sentReminders) : [] } catch {}
+      const daysUntilDue = Math.ceil((inv.dueDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
+      if (sentDays.includes(daysUntilDue)) {
+        skipped++
+        continue
+      }
+
+      // Send WA reminder via internal HTTP API (avoid server-only import)
+      try {
+        const apiUrl = process.env.CRON_API_URL || 'http://localhost:3000'
+        await execAsync(
+          `curl -s -X POST ${apiUrl}/api/invoices/send-reminder -H "Content-Type: application/json" -d '${JSON.stringify({ invoiceId: inv.id, channel: 'whatsapp' }).replace(/'/g, "'\\''")}'`,
+          { timeout: 15000 }
+        )
+        sentDays.push(daysUntilDue)
+        await prisma.invoice.update({
+          where: { id: inv.id },
+          data: { sentReminders: JSON.stringify(sentDays) },
+        })
+        sent++
+      } catch (waErr: any) {
+        errors.push(`${inv.invoiceNumber}: WA failed: ${waErr?.message || waErr}`)
+      }
+    } catch (err: any) {
+      errors.push(`${inv.invoiceNumber}: ${err?.message || err}`)
+    }
+  }
+
+  console.log(`[INVOICE_REMINDER] sent=${sent} skipped=${skipped} errors=${errors.length}`)
+  return { sent, skipped, total: invoices.length, errors }
+}
+
+// ─── Job: Auto Renewal (auto-renew prepaid from balance) ──────────────────
+
+async function runAutoRenewal(): Promise<any> {
+  const now = nowWIB()
+  const errors: string[] = []
+
+  // Find PREPAID users with autoRenewal=true whose expiredAt is within next 3 days or already expired
+  const renewWindow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+  const users = await prisma.pppoeUser.findMany({
+    where: {
+      autoRenewal: true,
+      subscriptionType: 'PREPAID',
+      status: { in: ['active', 'isolated'] },
+      expiredAt: { lte: renewWindow },
+    },
+    include: {
+      profile: { select: { id: true, name: true, price: true, ppnActive: true, ppnRate: true, validityValue: true, validityUnit: true } },
+    },
+  })
+
+  let renewed = 0
+  let skipped = 0
+
+  for (const user of users) {
+    try {
+      if (!user.profile) { skipped++; continue }
+
+      // Calculate amount with PPN
+      const baseAmount = user.profile.price
+      let amount = baseAmount
+      if (user.profile.ppnActive && user.profile.ppnRate > 0) {
+        amount = Math.round(baseAmount + (baseAmount * Number(user.profile.ppnRate) / 100))
+      }
+
+      // Check balance (balance field on pppoeUser)
+      if (user.balance < amount) {
+        skipped++
+        continue
+      }
+
+      // Deduct balance
+      await prisma.pppoeUser.update({
+        where: { id: user.id },
+        data: { balance: { decrement: amount } },
+      })
+
+      // Extend expiredAt based on profile validity
+      const validityValue = (user.profile as any).validityValue || 1
+      const validityUnit = (user.profile as any).validityUnit || 'MONTHS'
+      let validityMs: number
+      switch (validityUnit) {
+        case 'MINUTES': validityMs = validityValue * 60 * 1000; break
+        case 'HOURS':   validityMs = validityValue * 60 * 60 * 1000; break
+        case 'DAYS':    validityMs = validityValue * 24 * 60 * 60 * 1000; break
+        case 'MONTHS':  validityMs = validityValue * 30 * 24 * 60 * 60 * 1000; break
+        default:        validityMs = 30 * 24 * 60 * 60 * 1000
+      }
+      const baseDate = user.expiredAt && user.expiredAt > now ? user.expiredAt : now
+      const newExpiredAt = new Date(baseDate.getTime() + validityMs)
+
+      await prisma.pppoeUser.update({
+        where: { id: user.id },
+        data: {
+          expiredAt: newExpiredAt,
+          status: 'active',
+        },
+      })
+
+      renewed++
+      console.log(`[AUTO_RENEWAL] Renewed ${user.username} until ${newExpiredAt.toISOString()}`)
+    } catch (err: any) {
+      errors.push(`${user.username}: ${err?.message || err}`)
+    }
+  }
+
+  console.log(`[AUTO_RENEWAL] renewed=${renewed} skipped=${skipped} errors=${errors.length}`)
+  return { renewed, skipped, total: users.length, errors }
+}
+
 // ─── Job registry ───────────────────────────────────────────────────────────
 
 const jobImplementations: Record<string, () => Promise<any>> = {
@@ -485,14 +755,14 @@ const jobImplementations: Record<string, () => Promise<any>> = {
   webhook_log_cleanup: () => runWebhookLogCleanup(),
   cron_history_cleanup: () => runCronHistoryCleanup(),
   freeradius_health: () => runFreeradiusHealth(),
+  invoice_generate: () => runInvoiceGenerate(),
+  invoice_reminder: () => runInvoiceReminder(),
+  auto_renewal: () => runAutoRenewal(),
   // Jobs not yet implemented (return placeholder):
   hotspot_sync: async () => ({ message: 'Not yet implemented in Next.js cron runner' }),
   agent_sales: async () => ({ message: 'Not yet implemented' }),
-  invoice_generate: async () => ({ message: 'Not yet implemented' }),
-  invoice_reminder: async () => ({ message: 'Not yet implemented' }),
   notification_check: async () => ({ message: 'Not yet implemented' }),
   session_monitor: async () => ({ message: 'Not yet implemented' }),
-  auto_renewal: async () => ({ message: 'Not yet implemented' }),
   pppoe_session_sync: async () => ({ message: 'Not yet implemented' }),
 }
 
