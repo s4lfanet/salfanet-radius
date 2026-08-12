@@ -70,22 +70,22 @@ export class NetworkService {
   }
 
   async createRouter(body: Record<string, unknown>, user?: { id?: string; username?: string; role?: string }) {
-    const { name, ipAddress, nasIpAddress, username, password, port, apiPort, secret, latitude, longitude, vpnClientId, type } = body as any;
+    const { name, ipAddress, nasIpAddress, username, password, port, secret, latitude, longitude, vpnClientId, type, authMode } = body as any;
 
     if (!name || !ipAddress) throw new HttpException('Name and IP address are required', HttpStatus.BAD_REQUEST);
 
-    const isGateway = type === 'gateway' || name.toLowerCase().includes('gateway');
-    if (!isGateway && (!username || !password)) {
+    const isMikrotik = type !== 'gateway' && type !== 'other';
+    if (isMikrotik && (!username || !password)) {
       throw new HttpException('Username and password are required for MikroTik routers', HttpStatus.BAD_REQUEST);
     }
 
     const portInt = parseInt(port) || 8728;
-    const apiPortInt = parseInt(apiPort) || 8729;
     const shortname = name.toLowerCase().replace(/[^a-z0-9]/g, '');
     const nasname = nasIpAddress || ipAddress;
+    const finalSecret = secret || crypto.randomBytes(12).toString('hex');
 
     const existingRouter = await this.prisma.router.findFirst({
-      where: { nasname, ports: 1812, secret: secret || 'secret123' },
+      where: { nasname, ports: 1812, secret: finalSecret },
     });
     if (existingRouter) {
       throw new HttpException(
@@ -94,24 +94,20 @@ export class NetworkService {
       );
     }
 
-    // Note: MikroTik connection test is deferred to integration batch
-    // (requires node-routeros which is a frontend dependency)
-
     const router = await this.prisma.router.create({
       data: {
         id: crypto.randomUUID(), name, nasname, shortname,
-        type: type || 'mikrotik', ipAddress,
-        username: username || '', password: password || '',
-        port: portInt, apiPort: apiPortInt,
-        secret: secret || 'secret123', ports: 1812,
-        description: isGateway ? `Gateway - ${name}` : `MikroTik Router - ${name}`,
+        type: type || 'mikrotik', authMode: authMode || 'radius',
+        ipAddress,
+        username: username || null, password: password || null,
+        port: portInt,
+        secret: finalSecret, ports: 1812,
+        description: type === 'gateway' ? `Gateway - ${name}` : `MikroTik Router - ${name}`,
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
         vpnClientId: vpnClientId || null, isActive: true,
       },
     });
-
-    // reloadFreeRadius deferred to integration batch
 
     await this.activityLog.logActivity({
       userId: user?.id, username: user?.username || 'Admin', userRole: user?.role,
@@ -122,7 +118,7 @@ export class NetworkService {
 
     return {
       success: true, router,
-      message: isGateway ? 'Gateway added successfully' : 'Router added (connection test deferred)',
+      message: type === 'gateway' ? 'Gateway added successfully' : 'Router added (connection test deferred)',
     };
   }
 
@@ -140,9 +136,12 @@ export class NetworkService {
       where: { id },
       data: {
         ...(name && { name }), ...(shortname && { shortname }),
-        ...(type && { type }), ...(nasname && { nasname }),
-        ...(ipAddress && { ipAddress }), ...(username && { username }),
-        ...(password && { password }), ...(port && { port: parseInt(port.toString()) }),
+        ...(type && { type }), ...(authMode && { authMode }),
+        ...(nasname && { nasname }),
+        ...(ipAddress && { ipAddress }),
+        ...(username !== undefined && { username: username || null }),
+        ...(password !== undefined && { password: password || null }),
+        ...(port && { port: parseInt(port.toString()) }),
         ...(secret && { secret }), ...(isActive !== undefined && { isActive }),
         ...(latitude !== undefined && { latitude: latitude ? parseFloat(latitude) : null }),
         ...(longitude !== undefined && { longitude: longitude ? parseFloat(longitude) : null }),

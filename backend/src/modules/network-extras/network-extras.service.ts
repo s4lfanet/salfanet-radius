@@ -5,18 +5,18 @@ import { PrismaService } from '../../prisma/prisma.service';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { RouterOSAPI } = require('node-routeros');
 
-function makeRouterApi(router: { ipAddress: string; username: string; password: string; port: number }) {
+function makeRouterApi(router: { ipAddress: string; username?: string | null; password?: string | null; port: number }) {
   return new RouterOSAPI({
     host: router.ipAddress,
     port: router.port || 8728,
-    user: router.username,
-    password: router.password,
+    user: router.username || '',
+    password: router.password || '',
     timeout: 10000,
   });
 }
 
 async function withMikrotik<T>(
-  router: { ipAddress: string; username: string; password: string; port: number },
+  router: { ipAddress: string; username?: string | null; password?: string | null; port: number },
   fn: (conn: any) => Promise<T>,
 ): Promise<T> {
   const conn = makeRouterApi(router);
