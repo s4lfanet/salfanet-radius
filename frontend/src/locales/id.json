@@ -435,6 +435,8 @@
     "radCheck": "RadCheck",
     "radiusLogs": "Log Langsung",
     "radiusBackup": "Backup & Restore FreeRADIUS",
+    "ipPool": "IP Pool",
+    "dataUsage": "Data Usage",
     "catReports": "Laporan",
     "laporan": "Laporan & Analitik",
     "laporanData": "Export Data",
