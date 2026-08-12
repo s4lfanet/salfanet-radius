@@ -1,48 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { prisma } from '@/server/db/client';
+import { requirePermission } from '@/server/middleware/api-auth';
 
-// Proxy route for /api/admin/ippool (base path)
-// Forwards to NestJS backend /api/v1/ippool with NextAuth cookie
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
-
-async function proxyToBackend(request: NextRequest, backendPath: string) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
-
-  const cookieHeader = request.headers.get('cookie') || '';
-  const url = new URL(request.url);
-  const targetUrl = `${BACKEND_URL}${backendPath}${url.search}`;
-
-  const method = request.method;
-  const headers: Record<string, string> = { Cookie: cookieHeader };
-
-  let body: string | undefined;
-  if (method !== 'GET' && method !== 'DELETE') {
-    body = await request.text();
-    headers['Content-Type'] = 'application/json';
-  }
-
-  const res = await fetch(targetUrl, { method, headers, body });
-  const data = await res.text();
-  return new NextResponse(data, { status: res.status, headers: { 'Content-Type': 'application/json' } });
-}
-
+// GET /api/admin/ippool — list pools
 export async function GET(request: NextRequest) {
-  return proxyToBackend(request, '/api/v1/ippool');
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
+
+  try {
+    const pools = await prisma.radippool.groupBy({
+      by: ['pool_name'],
+      _count: { framedipaddress: true },
+      _min: { framedipaddress: true },
+      _max: { framedipaddress: true },
+      orderBy: { pool_name: 'asc' },
+    });
+    const result = pools.map((p) => ({
+      pool_name: p.pool_name,
+      total_ips: p._count.framedipaddress,
+      start_ip: p._min.framedipaddress,
+      end_ip: p._max.framedipaddress,
+    }));
+    return NextResponse.json({ success: true, data: result });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: 'Failed to list pools' }, { status: 500 });
+  }
 }
 
+// POST /api/admin/ippool — create pool
 export async function POST(request: NextRequest) {
-  return proxyToBackend(request, '/api/v1/ippool');
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
+
+  try {
+    const body = await request.json();
+    const { pool_name, network, start, end } = body;
+    if (!pool_name || !network || start < 1 || end > 254 || start >= end) {
+      return NextResponse.json({ success: false, error: 'Invalid pool parameters' }, { status: 400 });
+    }
+    const existing = await prisma.radippool.count({ where: { pool_name } });
+    if (existing > 0) {
+      return NextResponse.json({ success: false, error: `Pool '${pool_name}' already exists` }, { status: 400 });
+    }
+    const ips: { pool_name: string; framedipaddress: string }[] = [];
+    for (let i = start; i <= end; i++) {
+      ips.push({ pool_name, framedipaddress: `${network}.${i}` });
+    }
+    await prisma.radippool.createMany({ data: ips });
+    return NextResponse.json({
+      success: true,
+      data: { pool_name, total_ips: ips.length, start_ip: `${network}.${start}`, end_ip: `${network}.${end}` },
+    });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: 'Failed to create pool' }, { status: 500 });
+  }
 }
 
-export async function PUT(request: NextRequest) {
-  return proxyToBackend(request, '/api/v1/ippool/expand');
-}
-
+// DELETE /api/admin/ippool?poolName=...
 export async function DELETE(request: NextRequest) {
-  return proxyToBackend(request, '/api/v1/ippool');
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const poolName = searchParams.get('poolName');
+    if (!poolName) {
+      return NextResponse.json({ success: false, error: 'poolName is required' }, { status: 400 });
+    }
+    const allocated = await prisma.radippool.count({
+      where: { pool_name: poolName, username: { not: '' } },
+    });
+    if (allocated > 0) {
+      return NextResponse.json(
+        { success: false, error: `Cannot delete pool '${poolName}': ${allocated} IPs are currently allocated` },
+        { status: 400 },
+      );
+    }
+    const result = await prisma.radippool.deleteMany({ where: { pool_name: poolName } });
+    await prisma.radgroupreply.deleteMany({ where: { attribute: 'Pool-Name', value: poolName } });
+    return NextResponse.json({ success: true, data: { pool_name: poolName, deleted: result.count } });
+  } catch (err) {
+    return NextResponse.json({ success: false, error: 'Failed to delete pool' }, { status: 500 });
+  }
 }
