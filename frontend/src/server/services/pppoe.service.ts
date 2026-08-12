@@ -7,7 +7,7 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { sendAdminCreateUser } from '@/server/services/notifications/whatsapp-templates.service';
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
-import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName } from '@/server/services/mikrotik/ppp-secret.service';
+import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { randomBytes } from 'crypto';
@@ -105,6 +105,25 @@ export async function listPppoeUsers(params: { status?: string | null }) {
       })
     : [];
   const onlineSet = new Set(activeSessions.map(s => s.username));
+
+  // For hybrid/local routers, also poll MikroTik /ppp/active because
+  // local-auth users bypass RADIUS accounting and won't appear in radacct.
+  // Group users by router to determine which routers need polling.
+  const localHybridRouterIds = new Set<string>();
+  for (const u of users) {
+    if (u.router && u.router.id) {
+      const mode = u.router.authMode || 'local';
+      if (mode === 'local' || mode === 'hybrid') {
+        localHybridRouterIds.add(u.router.id);
+      }
+    }
+  }
+  if (localHybridRouterIds.size > 0) {
+    const pppActiveNames = await batchListPppActive([...localHybridRouterIds]);
+    for (const name of pppActiveNames) {
+      onlineSet.add(name);
+    }
+  }
 
   return users.map(user => ({ ...user, isOnline: onlineSet.has(user.username) }));
 }
