@@ -177,12 +177,23 @@ async function runAutoIsolir(): Promise<any> {
   const now = nowWIB()
   const errors: string[] = []
 
-  // Only isolate PREPAID users with autoIsolationEnabled=true
-  // POSTPAID users are handled by invoice/suspend flow
-  const expiredUsers = await prisma.pppoeUser.findMany({
+  // Check company settings
+  const company = await prisma.company.findFirst({
+    select: { isolationEnabled: true, gracePeriodDays: true },
+  })
+  const isolationEnabled = company?.isolationEnabled !== false // default true
+  if (!isolationEnabled) {
+    console.log('[AUTO_ISOLIR] Isolation disabled by company settings — skipping')
+    return { isolated: 0, total: 0, errors: [], skipped: 'isolation_disabled' }
+  }
+  const graceDays = company?.gracePeriodDays || 0
+  const cutoff = new Date(now.getTime() - graceDays * 24 * 60 * 60 * 1000)
+
+  // ─── PREPAID: expiredAt < now - graceDays ──────────────────────────────
+  const prepaidExpired = await prisma.pppoeUser.findMany({
     where: {
       status: 'active',
-      expiredAt: { lt: now },
+      expiredAt: { lt: cutoff },
       autoIsolationEnabled: true,
       subscriptionType: 'PREPAID',
     },
@@ -194,8 +205,33 @@ async function runAutoIsolir(): Promise<any> {
     },
   })
 
+  // ─── POSTPAID: has OVERDUE invoice past dueDate + graceDays ────────────
+  // Find postpaid users with overdue invoices past grace period
+  const postpaidOverdue = await prisma.pppoeUser.findMany({
+    where: {
+      status: 'active',
+      autoIsolationEnabled: true,
+      subscriptionType: 'POSTPAID',
+      invoices: {
+        some: {
+          status: 'OVERDUE',
+          dueDate: { lt: cutoff },
+        },
+      },
+    },
+    select: {
+      id: true, username: true, name: true, password: true,
+      ipAddress: true, routerId: true, expiredAt: true,
+      profile: { select: { groupName: true } },
+      router: { select: { id: true, authMode: true } },
+    },
+  })
+
+  const allExpiredUsers = [...prepaidExpired, ...postpaidOverdue]
+  console.log(`[AUTO_ISOLIR] Found ${prepaidExpired.length} prepaid + ${postpaidOverdue.length} postpaid = ${allExpiredUsers.length} users to isolate (grace: ${graceDays}d)`)
+
   let isolated = 0
-  for (const user of expiredUsers) {
+  for (const user of allExpiredUsers) {
     try {
       const nasId = user.router?.id || null
       const authMode = user.router?.authMode || 'local'
@@ -253,14 +289,15 @@ async function runAutoIsolir(): Promise<any> {
       }
 
       isolated++
-      console.log(`[AUTO_ISOLIR] Isolated ${user.username} (expired: ${user.expiredAt?.toISOString()}, mode: ${authMode})`)
+      const subType = prepaidExpired.find(u => u.id === user.id) ? 'PREPAID' : 'POSTPAID'
+      console.log(`[AUTO_ISOLIR] Isolated ${user.username} (${subType}, expired: ${user.expiredAt?.toISOString()}, mode: ${authMode})`)
     } catch (e: any) {
       errors.push(`${user.username}: ${e?.message || e}`)
       console.error(`[AUTO_ISOLIR] Failed for ${user.username}:`, e?.message || e)
     }
   }
 
-  return { isolated, total: expiredUsers.length, errors }
+  return { isolated, total: allExpiredUsers.length, prepaid: prepaidExpired.length, postpaid: postpaidOverdue.length, errors }
 }
 
 // ─── Job: Auto Stop ─────────────────────────────────────────────────────────
@@ -349,11 +386,99 @@ async function runFreeradiusHealth(): Promise<any> {
   }
 }
 
+// ─── Job: Disconnect Sessions (kick isolated/stop users still online) ───────
+
+async function runDisconnectSessions(): Promise<any> {
+  // Find users with isolated/stop/blocked status — they should NOT be online
+  const isolatedUsers = await prisma.pppoeUser.findMany({
+    where: { status: { in: ['isolated', 'stop', 'blocked'] } },
+    select: { id: true, username: true, status: true, routerId: true, router: { select: { id: true, authMode: true } } },
+  })
+
+  let disconnected = 0
+  const errors: string[] = []
+
+  for (const user of isolatedUsers) {
+    if (!user.router?.id) continue
+    const authMode = user.router?.authMode || 'local'
+
+    // For local/hybrid: kick via MikroTik API
+    if (authMode !== 'radius') {
+      try {
+        const result = await mikrotikStopUser(user.router.id, user.username)
+        if (result.kicked) {
+          disconnected++
+          console.log(`[DISCONNECT] Kicked ${user.username} (status=${user.status})`)
+        }
+      } catch (e: any) {
+        errors.push(`${user.username}: ${e?.message || e}`)
+      }
+    }
+
+    // For all modes: also try CoA (best-effort, for RADIUS-authed sessions)
+    try {
+      const secret = process.env.RADIUS_COA_SECRET || 'secret123'
+      const nasIp = (await prisma.router.findUnique({ where: { id: user.router.id }, select: { nasname: true } }))?.nasname
+      if (nasIp) {
+        await execAsync(`echo 'User-Name="${user.username}"' | radclient -x ${nasIp}:3799 disconnect ${secret} -t 2`, { timeout: 5000 })
+      }
+    } catch { /* non-fatal */ }
+  }
+
+  return { disconnected, total: isolatedUsers.length, errors }
+}
+
+// ─── Job: Invoice Status Update (PENDING → OVERDUE) ─────────────────────────
+
+async function runInvoiceStatusUpdate(): Promise<any> {
+  const now = nowWIB()
+  const result = await prisma.invoice.updateMany({
+    where: {
+      status: 'PENDING',
+      dueDate: { lt: now },
+    },
+    data: { status: 'OVERDUE' },
+  })
+  if (result.count > 0) {
+    console.log(`[INVOICE_STATUS] ${result.count} invoices marked as OVERDUE`)
+  }
+  return { updated: result.count }
+}
+
+// ─── Job: Suspend Check (postpaid overdue → isolated) ───────────────────────
+// This is a secondary check — runAutoIsolir already handles postpaid overdue.
+// This job also handles manual SuspendRequest approvals.
+
+async function runSuspendCheck(): Promise<any> {
+  let suspended = 0
+  const errors: string[] = []
+
+  // 1. Process approved manual suspend requests
+  const approved = await prisma.suspendRequest.findMany({
+    where: { status: 'APPROVED', startDate: { lte: nowWIB() } },
+  })
+  for (const req of approved) {
+    try {
+      await prisma.pppoeUser.update({ where: { id: req.userId }, data: { status: 'isolated' } })
+      suspended++
+      console.log(`[SUSPEND_CHECK] Manual suspend applied for user ${req.userId}`)
+    } catch (e: any) {
+      errors.push(`suspend_${req.id}: ${e?.message || e}`)
+    }
+  }
+
+  // 2. Auto-isolir for postpaid is handled by runAutoIsolir — no duplicate here
+  return { suspended, total: approved.length, errors }
+}
+
 // ─── Job registry ───────────────────────────────────────────────────────────
 
 const jobImplementations: Record<string, () => Promise<any>> = {
   pppoe_auto_isolir: () => runAutoIsolir(),
   auto_stop: () => runAutoStop(),
+  disconnect_sessions: () => runDisconnectSessions(),
+  invoice_status_update: () => runInvoiceStatusUpdate(),
+  suspend_check: () => runSuspendCheck(),
   activity_log_cleanup: () => runActivityLogCleanup(),
   webhook_log_cleanup: () => runWebhookLogCleanup(),
   cron_history_cleanup: () => runCronHistoryCleanup(),
@@ -363,13 +488,10 @@ const jobImplementations: Record<string, () => Promise<any>> = {
   agent_sales: async () => ({ message: 'Not yet implemented' }),
   invoice_generate: async () => ({ message: 'Not yet implemented' }),
   invoice_reminder: async () => ({ message: 'Not yet implemented' }),
-  invoice_status_update: async () => ({ message: 'Not yet implemented' }),
   notification_check: async () => ({ message: 'Not yet implemented' }),
   session_monitor: async () => ({ message: 'Not yet implemented' }),
-  disconnect_sessions: async () => ({ message: 'Not yet implemented' }),
   auto_renewal: async () => ({ message: 'Not yet implemented' }),
   pppoe_session_sync: async () => ({ message: 'Not yet implemented' }),
-  suspend_check: async () => ({ message: 'Not yet implemented' }),
 }
 
 // ─── Job runner with history logging ────────────────────────────────────────
