@@ -18,11 +18,23 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
   const errors: string[] = [];
   const now = nowWIB();
 
-  // Find expired active users with autoIsolation enabled
-  const expiredUsers = await prisma.pppoeUser.findMany({
+  // Check company settings
+  const company = await prisma.company.findFirst({
+    select: { isolationEnabled: true, gracePeriodDays: true },
+  });
+  const isolationEnabled = company?.isolationEnabled !== false;
+  if (!isolationEnabled) {
+    console.log('[AUTO_ISOLIR] Isolation disabled by company settings — skipping');
+    return { isolated: 0, total: 0, errors };
+  }
+  const graceDays = company?.gracePeriodDays || 0;
+  const cutoff = new Date(now.getTime() - graceDays * 24 * 60 * 60 * 1000);
+
+  // PREPAID: expiredAt < now - graceDays
+  const prepaidExpired = await prisma.pppoeUser.findMany({
     where: {
       status: 'active',
-      expiredAt: { lt: now },
+      expiredAt: { lt: cutoff },
       autoIsolationEnabled: true,
       subscriptionType: 'PREPAID',
     },
@@ -40,10 +52,41 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
     },
   });
 
+  // POSTPAID: has OVERDUE invoice past dueDate + graceDays
+  const postpaidOverdue = await prisma.pppoeUser.findMany({
+    where: {
+      status: 'active',
+      autoIsolationEnabled: true,
+      subscriptionType: 'POSTPAID',
+      invoices: {
+        some: {
+          status: 'OVERDUE',
+          dueDate: { lt: cutoff },
+        },
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      password: true,
+      ipAddress: true,
+      profileId: true,
+      routerId: true,
+      expiredAt: true,
+      profile: { select: { groupName: true } },
+      router: { select: { id: true, authMode: true } },
+    },
+  });
+
+  const expiredUsers = [...prepaidExpired, ...postpaidOverdue];
+  console.log(`[AUTO_ISOLIR] Found ${prepaidExpired.length} prepaid + ${postpaidOverdue.length} postpaid = ${expiredUsers.length} users (grace: ${graceDays}d)`);
+
   let isolated = 0;
   for (const user of expiredUsers) {
     try {
       const nasIdentifier = user.router?.id || null;
+      const authMode = user.router?.authMode || 'local';
 
       // 1. Update DB status
       await prisma.pppoeUser.update({
@@ -103,7 +146,8 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       }
 
       isolated++;
-      console.log(`[AUTO_ISOLIR] Isolated ${user.username} (expired: ${user.expiredAt?.toISOString()})`);
+      const subType = prepaidExpired.find(u => u.id === user.id) ? 'PREPAID' : 'POSTPAID';
+      console.log(`[AUTO_ISOLIR] Isolated ${user.username} (${subType}, expired: ${user.expiredAt?.toISOString()})`);
     } catch (e: any) {
       errors.push(`${user.username}: ${e?.message || e}`);
       console.error(`[AUTO_ISOLIR] Failed to isolate ${user.username}:`, e?.message || e);
