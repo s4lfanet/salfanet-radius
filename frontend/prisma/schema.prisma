@@ -2437,3 +2437,46 @@ model network_fiber_paths {
 
   @@index([status])
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RADIUS IP Pool — FreeRADIUS ippool module
+// Diadopsi dari home.pmynet.id-main (FreeRADIUS 3.2.8 schema)
+// ─────────────────────────────────────────────────────────────────────────────
+model radippool {
+  id                Int       @id @default(autoincrement()) @db.UnsignedInt
+  pool_name         String    @db.VarChar(30)
+  framedipaddress   String    @db.VarChar(15)
+  nasipaddress      String    @default("") @db.VarChar(15)
+  calledstationid   String    @default("") @db.VarChar(30)
+  callingstationid  String    @default("") @db.VarChar(30)
+  expiry_time       DateTime? @default(now())
+  username          String    @default("") @db.VarChar(64)
+  pool_key          String    @default("") @db.VarChar(30)
+
+  @@index([pool_name, expiry_time])
+  @@index([framedipaddress])
+  @@index([nasipaddress, pool_key, framedipaddress])
+  @@map("radippool")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAS Registry — sudah ada via model `router` (mapped to `nas` table)
+// Lihat model router di atas (line 316) — sudah punya nasname, secret, ports, dll
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Data Usage by Period — bandwidth reporting per user per period
+// Diadopsi dari FreeRADIUS process-radacct.sql (home.pmynet.id-main)
+// ─────────────────────────────────────────────────────────────────────────────
+model data_usage_by_period {
+  username         String  @db.VarChar(64)
+  period_start     DateTime
+  period_end       DateTime?
+  acctinputoctets  BigInt?
+  acctoutputoctets BigInt?
+
+  @@id([username, period_start])
+  @@index([period_start])
+  @@index([period_end])
+  @@map("data_usage_by_period")
+}
