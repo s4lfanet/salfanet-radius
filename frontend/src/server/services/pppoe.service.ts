@@ -266,17 +266,25 @@ export async function createPppoeUser(
   let radiusSynced = false;
   if (!noPppoeAccount && password) {
     try {
+      // nas_identifier = routerId for multi-tenant isolation (NULL = global)
+      const nasIdentifier = routerId || null;
+
+      // Delete old entries (avoid duplicates on re-create)
+      await prisma.radcheck.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+      await prisma.radusergroup.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+      await prisma.radreply.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+
       await prisma.radcheck.create({
-        data: { username, attribute: 'Cleartext-Password', op: ':=', value: password },
+        data: { username, attribute: 'Cleartext-Password', op: ':=', value: password, nas_identifier: nasIdentifier },
       });
 
       await prisma.radusergroup.create({
-        data: { username, groupname: profile.groupName, priority: 0 },
+        data: { username, groupname: profile.groupName, priority: 0, nas_identifier: nasIdentifier },
       });
 
       if (ipAddress) {
         await prisma.radreply.create({
-          data: { username, attribute: 'Framed-IP-Address', op: ':=', value: ipAddress },
+          data: { username, attribute: 'Framed-IP-Address', op: ':=', value: ipAddress, nas_identifier: nasIdentifier },
         });
       }
 
@@ -290,8 +298,9 @@ export async function createPppoeUser(
     }
   } else if (noPppoeAccount && ipAddress) {
     try {
+      const nasIdentifier = routerId || null;
       await prisma.radreply.create({
-        data: { username, attribute: 'Framed-IP-Address', op: ':=', value: ipAddress },
+        data: { username, attribute: 'Framed-IP-Address', op: ':=', value: ipAddress, nas_identifier: nasIdentifier },
       });
       await prisma.radusergroup.create({
         data: { username, groupname: profile.groupName, priority: 0 },
@@ -498,11 +507,15 @@ export async function updatePppoeUser(
       const oldUsername = currentUser.username;
       const newUsername = data.username || currentUser.username;
 
-      await prisma.radcheck.deleteMany({ where: { username: oldUsername } });
-      await prisma.radreply.deleteMany({ where: { username: oldUsername } });
-      await prisma.radusergroup.deleteMany({ where: { username: oldUsername } });
-
       const finalRouterId = data.routerId !== undefined ? data.routerId : currentUser.routerId;
+      // nas_identifier = routerId for multi-tenant isolation (NULL = global)
+      const nasIdentifier = finalRouterId || null;
+      const oldNasIdentifier = currentUser.routerId || null;
+
+      // Delete old entries for old username + old nas_identifier
+      await prisma.radcheck.deleteMany({ where: { username: oldUsername, nas_identifier: oldNasIdentifier } });
+      await prisma.radreply.deleteMany({ where: { username: oldUsername, nas_identifier: oldNasIdentifier } });
+      await prisma.radusergroup.deleteMany({ where: { username: oldUsername, nas_identifier: oldNasIdentifier } });
       let router = null;
       if (finalRouterId) {
         router = await prisma.router.findUnique({ where: { id: finalRouterId }, select: { id: true, nasname: true } });
@@ -520,26 +533,26 @@ export async function updatePppoeUser(
       } else if (effectiveStatus === 'isolated') {
         // Keep login allowed but restrict to isolir group
         await prisma.radcheck.create({
-          data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password },
+          data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
         });
         // NOTE: NAS-IP-Address NOT stored in radcheck (breaks auth in VPN/NAT setups)
         await prisma.radusergroup.create({
-          data: { username: newUsername, groupname: 'isolir', priority: 1 },
+          data: { username: newUsername, groupname: 'isolir', priority: 1, nas_identifier: nasIdentifier },
         });
         // No Framed-IP-Address � isolated users get IP from pool-isolir
       } else {
         // active (default): full sync
         await prisma.radcheck.create({
-          data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password },
+          data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
         });
         // NOTE: NAS-IP-Address NOT stored in radcheck (breaks auth in VPN/NAT setups)
         await prisma.radusergroup.create({
-          data: { username: newUsername, groupname: newProfile.groupName, priority: 0 },
+          data: { username: newUsername, groupname: newProfile.groupName, priority: 0, nas_identifier: nasIdentifier },
         });
         const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
         if (finalIp) {
           await prisma.radreply.create({
-            data: { username: newUsername, attribute: 'Framed-IP-Address', op: ':=', value: finalIp },
+            data: { username: newUsername, attribute: 'Framed-IP-Address', op: ':=', value: finalIp, nas_identifier: nasIdentifier },
           });
         }
       }

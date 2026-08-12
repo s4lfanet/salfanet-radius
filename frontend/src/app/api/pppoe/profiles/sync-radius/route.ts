@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
 // POST - Sync a PPPoE profile to FreeRADIUS (radgroupreply / radgroupcheck)
 export async function POST(request: NextRequest) {
@@ -130,6 +131,13 @@ export async function POST(request: NextRequest) {
       where: { id },
       data: { syncedToRadius: true, lastSyncAt: new Date() },
     });
+
+    // Reload FreeRADIUS so profile changes take effect immediately
+    try {
+      await reloadFreeRadius();
+    } catch (e) {
+      console.warn('FreeRADIUS reload failed after profile sync:', e);
+    }
 
     return NextResponse.json({
       success: true,

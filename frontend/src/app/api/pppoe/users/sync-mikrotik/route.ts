@@ -4,6 +4,7 @@ import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { RouterOSAPI } from 'node-routeros';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
+import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
 async function generateCustomerId(): Promise<string> {
   const co = await prisma.company.findFirst({ select: { customerIdPrefix: true } });
@@ -292,28 +293,39 @@ export async function POST(request: NextRequest) {
         // Sync to RADIUS if enabled
         if (syncToRadius) {
           try {
-            // Add to radcheck
+            // nas_identifier = routerId for multi-tenant isolation
+            // (NULL = global user, can auth from any NAS)
+            const nasIdentifier = routerId || null;
+
+            // Delete old entries for this username + nas_identifier (avoid duplicates on re-import)
+            await prisma.radcheck.deleteMany({ where: { username: secret.name, nas_identifier: nasIdentifier } });
+            await prisma.radusergroup.deleteMany({ where: { username: secret.name, nas_identifier: nasIdentifier } });
+            await prisma.radreply.deleteMany({ where: { username: secret.name, nas_identifier: nasIdentifier } });
+
+            // Add to radcheck (Cleartext-Password) — with nas_identifier
             await prisma.radcheck.create({
               data: {
                 username: secret.name,
                 attribute: 'Cleartext-Password',
                 op: ':=',
                 value: secret.password,
+                nas_identifier: nasIdentifier,
               },
             });
 
-            // Add to radusergroup
+            // Add to radusergroup — with nas_identifier
             await prisma.radusergroup.create({
               data: {
                 username: secret.name,
                 groupname: profile.groupName,
                 priority: 0,
+                nas_identifier: nasIdentifier,
               },
             });
 
             // NOTE: NAS-IP-Address NOT stored in radcheck (breaks auth in VPN/NAT setups)
 
-            // Add Framed-IP-Address if user has static IP
+            // Add Framed-IP-Address if user has static IP — with nas_identifier
             if (secret['remote-address']) {
               await prisma.radreply.create({
                 data: {
@@ -321,14 +333,15 @@ export async function POST(request: NextRequest) {
                   attribute: 'Framed-IP-Address',
                   op: ':=',
                   value: secret['remote-address'],
+                  nas_identifier: nasIdentifier,
                 },
               });
             }
 
-            // Update syncedToRadius flag
+            // Update syncedToRadius flag + lastSyncAt
             await prisma.pppoeUser.update({
               where: { id: userId },
-              data: { syncedToRadius: true },
+              data: { syncedToRadius: true, lastSyncAt: new Date() },
             });
           } catch (radiusError: any) {
             console.error(`Failed to sync ${secret.name} to RADIUS:`, radiusError);
@@ -352,6 +365,15 @@ export async function POST(request: NextRequest) {
     }
 
     result.message = `Sync completed. Imported: ${result.stats.imported}, Skipped: ${result.stats.skipped}, Failed: ${result.stats.failed}`;
+
+    // Reload FreeRADIUS if any users were synced to RADIUS
+    if (syncToRadius && result.stats.imported > 0) {
+      try {
+        await reloadFreeRadius();
+      } catch (e) {
+        console.warn('FreeRADIUS reload failed after MikroTik import:', e);
+      }
+    }
 
     return NextResponse.json(result);
   } catch (error: any) {
