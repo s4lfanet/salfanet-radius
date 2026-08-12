@@ -1199,6 +1199,30 @@ export default function PPPoEProfilesPage() {
 
             <div className="grid grid-cols-1 gap-3 mt-4 border-t border-border pt-4">
               <div>
+                <ModalLabel>Ambil dari IP Pool Management (RADIUS)</ModalLabel>
+                <select
+                  value=""
+                  onChange={(e) => {
+                    const selected = radiusPools.find(p => p.pool_name === e.target.value);
+                    if (selected) {
+                      setSyncIpPoolName(selected.pool_name);
+                      setSyncPoolRanges(`${selected.start_ip}-${selected.end_ip}`);
+                    }
+                  }}
+                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                >
+                  <option value="">-- Pilih pool (opsional, atau isi manual di bawah) --</option>
+                  {radiusPools.map(p => (
+                    <option key={p.pool_name} value={p.pool_name} className="bg-background dark:bg-slate-800">
+                      {p.pool_name} ({p.total_ips} IPs — {p.start_ip} s/d {p.end_ip})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Memilih pool di sini otomatis mengisi Nama Pool + IP Range di bawah dari data IP Pool Management.
+                </p>
+              </div>
+              <div>
                 <ModalLabel>Nama Pool</ModalLabel>
                 <ModalInput
                   type="text"
