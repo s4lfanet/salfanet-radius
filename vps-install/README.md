@@ -113,8 +113,19 @@ bash vps-install/vps-uninstaller.sh --force
 | DB User | `salfanet_user` |
 | DB Password | `salfanetradius123` (override with `--db-password`) |
 | DB Root Password | `root123` (set during install) |
+| **Admin Login** | `superadmin` / `admin123` |
 
 **Ganti semua password default setelah install!**
+
+## Post-Install Checklist
+
+1. Buka `http://YOUR_VPS_IP` di browser
+2. Login dengan `superadmin` / `admin123`
+3. Ganti password admin di Settings
+4. Tambahkan RADIUS clients (NAS) di admin panel
+5. Buat PPPoE profiles dan IP pools
+6. Konfigurasi WhatsApp provider (opsional)
+7. Ganti DB password MySQL: `ALTER USER 'salfanet_user'@'localhost' IDENTIFIED BY 'newpassword';`
 
 ## Prerequisites
 
