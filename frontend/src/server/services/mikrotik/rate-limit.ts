@@ -24,8 +24,8 @@ export interface RouterConfig {
   ipAddress: string;
   nasname?: string;
   port?: number | null;
-  username: string;
-  password: string;
+  username: string | null;
+  password: string | null;
   secret?: string;
 }
 
@@ -53,8 +53,8 @@ async function changeRateLimitViaAPI(
   const api = new RouterOSAPI({
     host: router.ipAddress,
     port: router.port || 8728,
-    user: router.username,
-    password: router.password,
+    user: router.username || '',
+    password: router.password || '',
     timeout: 8,
   });
 
