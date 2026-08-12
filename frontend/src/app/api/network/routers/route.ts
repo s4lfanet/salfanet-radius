@@ -100,7 +100,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, ipAddress, nasIpAddress, username, password, port, apiPort, secret, latitude, longitude, vpnClientId, type } = body;
+    const { name, ipAddress, nasIpAddress, username, password, port, secret, latitude, longitude, vpnClientId, type, authMode } = body;
 
     // Basic validation
     if (!name || !ipAddress) {
@@ -110,9 +110,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For non-gateway types, require username and password
-    const isGateway = type === 'gateway' || name.toLowerCase().includes('gateway');
-    if (!isGateway && (!username || !password)) {
+    // For mikrotik type, require username and password
+    const isMikrotik = type !== 'gateway' && type !== 'other';
+    if (isMikrotik && (!username || !password)) {
       return NextResponse.json(
         { error: 'Username and password are required for MikroTik routers' },
         { status: 400 }
@@ -121,7 +121,9 @@ export async function POST(request: NextRequest) {
 
     // Parse integers
     const portInt = parseInt(port) || 8728;
-    const apiPortInt = parseInt(apiPort) || 8729;
+
+    // Auto-generate secret if not provided
+    const finalSecret = secret || crypto.randomBytes(12).toString('hex');
 
     // Generate shortname from name (remove spaces, lowercase)
     const shortname = name.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -136,7 +138,7 @@ export async function POST(request: NextRequest) {
       where: {
         nasname,
         ports: 1812,
-        secret: secret || 'secret123',
+        secret: finalSecret,
       },
     });
 
@@ -150,11 +152,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Test connection to MikroTik (skip for gateway type AND skip when vpnClientId is set)
-    // When vpnClientId is set, the IP is a VPN tunnel address managed by the system.
-    // The API connection is still valid but MikroTik firewall may need manual configuration.
-    // This is consistent with the PUT handler which also skips test when vpnClientId is set.
-    if (!isGateway && !vpnClientId) {
+    // Test connection to MikroTik (skip for gateway/other type AND skip when vpnClientId is set)
+    if (isMikrotik && !vpnClientId) {
       try {
         const conn = new RouterOSAPI({
           host: ipAddress,
@@ -180,7 +179,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Save to database
-    // Note: 'server' field left NULL - it's for FreeRADIUS virtual_server name, not RADIUS IP
     const router = await prisma.router.create({
       data: {
         id: crypto.randomUUID(),
@@ -188,15 +186,14 @@ export async function POST(request: NextRequest) {
         nasname,           // IP untuk FreeRADIUS client (IP publik/VPN)
         shortname,
         type: type || 'mikrotik',
+        authMode: authMode || 'radius',
         ipAddress,         // IP untuk koneksi API MikroTik
-        username: username || '',  // Empty string for gateway type
-        password: password || '',  // Empty string for gateway type
+        username: username || null,
+        password: password || null,
         port: portInt,
-        apiPort: apiPortInt,
-        secret: secret || 'secret123',
-        // server: NULL - untuk FreeRADIUS virtual_server name
+        secret: finalSecret,
         ports: 1812, // RADIUS auth port
-        description: isGateway ? `Gateway - ${name}` : `MikroTik Router - ${name}`,
+        description: type === 'gateway' ? `Gateway - ${name}` : `MikroTik Router - ${name}`,
         latitude: latitude ? parseFloat(latitude) : null,
         longitude: longitude ? parseFloat(longitude) : null,
         vpnClientId: vpnClientId || null,
@@ -233,7 +230,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       router,
-      message: isGateway ? 'Gateway added successfully' : 'Router added and connection test successful',
+      message: type === 'gateway' ? 'Gateway added successfully' : 'Router added and connection test successful',
     });
   } catch (error) {
     console.error('Add router error:', error);
@@ -245,8 +242,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    // Support both 'nasname' (from frontend) and 'nasIpAddress' for backward compatibility
-    const { id, name, type, ipAddress, nasIpAddress, nasname: nasnameFromBody, username, password, port, secret, isActive, latitude, longitude, vpnClientId } = body;
+    const { id, name, type, authMode, ipAddress, nasIpAddress, nasname: nasnameFromBody, username, password, port, secret, isActive, latitude, longitude, vpnClientId } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Router ID is required' }, { status: 400 });
@@ -256,27 +252,24 @@ export async function PUT(request: NextRequest) {
     const shortname = name ? name.toLowerCase().replace(/[^a-z0-9]/g, '') : undefined;
     
     // nasname = IP untuk FreeRADIUS (IP publik/VPN)
-    // Support: nasIpAddress (legacy) atau nasname (dari frontend)
     const nasname = nasIpAddress || nasnameFromBody || ipAddress || undefined;
 
-    // Determine router type — skip connection test for gateway/VPS (no API credentials)
+    // Determine router type
     const currentRouter = await prisma.router.findUnique({ where: { id } });
     if (!currentRouter) {
       return NextResponse.json({ error: 'Router not found' }, { status: 404 });
     }
     const effectiveType = type || currentRouter.type;
-    const isGateway = effectiveType === 'gateway';
+    const isMikrotik = effectiveType !== 'gateway' && effectiveType !== 'other';
 
     // Test connection only for MikroTik routers with changed credentials
-    // Skip when vpnClientId is set: IP is a VPN tunnel IP managed by the system,
-    // the connection test is not reliable from arbitrary network contexts.
     const effectiveVpnClientId = vpnClientId !== undefined ? vpnClientId : currentRouter.vpnClientId
-    if (!isGateway && !effectiveVpnClientId && (username || password || port)) {
+    if (isMikrotik && !effectiveVpnClientId && (username || password || port)) {
       try {
         const conn = new RouterOSAPI({
           host: ipAddress || currentRouter.ipAddress,
-          user: username || currentRouter.username,
-          password: password || currentRouter.password,
+          user: username || currentRouter.username || '',
+          password: password || currentRouter.password || '',
           port: port || currentRouter.port || 8728,
           timeout: 5,
           tls: false,
@@ -295,19 +288,17 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // Note: 'server' field is for FreeRADIUS virtual_server name, not RADIUS IP
-    // Don't update it here - RADIUS Server IP is from environment variable
-    
     const router = await prisma.router.update({
       where: { id },
       data: {
         ...(name && { name }),
         ...(shortname && { shortname }),
         ...(type && { type }),
+        ...(authMode && { authMode }),
         ...(nasname && { nasname }),
         ...(ipAddress && { ipAddress }),
-        ...(username && { username }),
-        ...(password && { password }),
+        ...(username !== undefined && { username: username || null }),
+        ...(password !== undefined && { password: password || null }),
         ...(port && { port: parseInt(port.toString()) }),
         ...(secret && { secret }),
         ...(isActive !== undefined && { isActive }),

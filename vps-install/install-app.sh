@@ -143,6 +143,13 @@ run_migrations() {
             print_warn "RADIUS enhancements SQL had issues (may already be applied)"
     fi
 
+    # Apply nas_id multi-tenant migration
+    if [ -f "prisma/migrate-nas-id-multi-tenant.sql" ]; then
+        print_info "Applying nas_id multi-tenant migration..."
+        mysql -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < prisma/migrate-nas-id-multi-tenant.sql 2>/dev/null || \
+            print_warn "nas_id migration had issues (may already be applied)"
+    fi
+
     # Import FreeRADIUS stored procedure
     if [ -f "$APP_DIR/deploy/freeradius/fr_allocate_sp.sql" ]; then
         print_info "Importing FreeRADIUS stored procedure..."
