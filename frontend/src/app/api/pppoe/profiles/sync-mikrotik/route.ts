@@ -62,7 +62,7 @@ export async function PUT(request: NextRequest) {
     if (!router) return NextResponse.json({ error: 'Router tidak ditemukan' }, { status: 404 });
 
     const host = router.ipAddress || router.nasname;
-    const portsToTry = [router.port || 8728, router.apiPort || 8729].filter((p, i, arr) => arr.indexOf(p) === i);
+    const portsToTry = [router.port || 8728].filter((p, i, arr) => arr.indexOf(p) === i);
 
     type PortResult = {
       port: number; success: boolean; identity?: string;
@@ -73,9 +73,7 @@ export async function PUT(request: NextRequest) {
     const results: PortResult[] = [];
 
     for (const port of portsToTry) {
-      const useTls = port === 8729 || (router.apiPort && port === router.apiPort && port !== (router.port || 8728));
-      const apiOpts: any = { host, port, user: router.username, password: router.password, timeout: 10 };
-      if (useTls) apiOpts.tls = { rejectUnauthorized: false };
+      const apiOpts: any = { host, port, user: router.username || '', password: router.password || '', timeout: 10 };
       const api = new RouterOSAPI(apiOpts);
       const r: PortResult = { port, success: false };
       try {
@@ -131,15 +129,15 @@ export async function PUT(request: NextRequest) {
     if (!anySuccess) {
       hint = `Tidak bisa konek ke ${host}.\nPastikan:\n1. /ip service api enabled=yes di MikroTik\n2. Port ${portsToTry.join('/')} tidak diblokir firewall\n3. IP dan kredensial benar`;
     } else if (bestResult && !bestResult.pppRead) {
-      hint = `Koneksi berhasil tapi tidak bisa baca /ppp/profile.\nPastikan user "${router.username}" di MikroTik ada di group dengan policy=read,write,api`;
+      hint = `Koneksi berhasil tapi tidak bisa baca /ppp/profile.\nPastikan user "${router.username || ''}" di MikroTik ada di group dengan policy=read,write,api`;
     } else if (bestResult && !bestResult.pppWrite) {
-      hint = `Bisa baca tapi tidak bisa menulis /ppp/profile.\nPastikan user "${router.username}" di MikroTik ada di group dengan policy=write`;
+      hint = `Bisa baca tapi tidak bisa menulis /ppp/profile.\nPastikan user "${router.username || ''}" di MikroTik ada di group dengan policy=write`;
     }
 
     return NextResponse.json({
       success: anySuccess,
       host,
-      user: router.username,
+      user: router.username || '',
       routerName: router.name || router.nasname,
       results,
       hint,
@@ -196,13 +194,9 @@ export async function POST(request: NextRequest) {
     const connectAndSync = async (router: typeof routerList[0]): Promise<{ routerId: string; routerName: string; success: boolean; action?: string; message?: string; error?: string; debug: string[]; warnings: string[] }> => {
       const host = router.ipAddress || router.nasname;
       const primaryPort = router.port || 8728;
-      const fallbackPort = router.apiPort || 8729;
 
       const tryPort = async (port: number): Promise<{ port: number; action: string; profileName: string; debug: string[]; warnings: string[] }> => {
-        // port 8729 is API-SSL — requires TLS; port 8728 is plain API
-        const useTls = port === 8729 || (router.apiPort && port === router.apiPort && port !== router.port);
-        const apiOpts: any = { host, port, user: router.username, password: router.password, timeout: 15 };
-        if (useTls) apiOpts.tls = { rejectUnauthorized: false };
+        const apiOpts: any = { host, port, user: router.username || '', password: router.password || '', timeout: 15 };
         const api = new RouterOSAPI(apiOpts);
         const debug: string[] = [];
         const warnings: string[] = [];
@@ -211,7 +205,7 @@ export async function POST(request: NextRequest) {
           api.connect(),
           new Promise<never>((_, reject) => setTimeout(() => reject(new Error(`Connection timed out (15s) to ${host}:${port}`)), 15000)),
         ]);
-        debug.push(`✅ Connected to ${host}:${port} (user: ${router.username})`);
+        debug.push(`✅ Connected to ${host}:${port} (user: ${router.username || ''})`);
 
         try {
           // STEP 1: Ensure IP pool exists (create if needed) before touching PPP profile
@@ -295,12 +289,7 @@ export async function POST(request: NextRequest) {
 
       try {
         let syncResult: { port: number; action: string; profileName: string; debug: string[]; warnings: string[] };
-        try {
-          syncResult = await tryPort(primaryPort);
-        } catch (e1: any) {
-          if (fallbackPort === primaryPort) throw e1;
-          syncResult = await tryPort(fallbackPort);
-        }
+        syncResult = await tryPort(primaryPort);
         const actionLabel = syncResult.action === 'created' ? 'dibuat' : 'diperbarui';
         return {
           routerId: router.id,

@@ -1,21 +1,22 @@
 -- Migration: tambah kolom nas_id ke radcheck, radusergroup, radreply
 -- Tujuan: isolasi username per-NAS untuk multi-tenant dengan username yang sama
+-- nas_id = VARCHAR(36) untuk match dengan router.id (UUID) di tabel nas
 -- Idempotent: safe to run multiple times
 -- Jalankan SETELAH prisma db push
 
 -- Add nas_id column to radcheck (if not exists)
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'radcheck' AND COLUMN_NAME = 'nas_id');
-SET @sql = IF(@col_exists = 0, 'ALTER TABLE radcheck ADD COLUMN nas_id INT DEFAULT NULL', 'SELECT "radcheck.nas_id already exists" AS info');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE radcheck ADD COLUMN nas_id VARCHAR(36) DEFAULT NULL', 'SELECT "radcheck.nas_id already exists" AS info');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Add nas_id column to radusergroup (if not exists)
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'radusergroup' AND COLUMN_NAME = 'nas_id');
-SET @sql = IF(@col_exists = 0, 'ALTER TABLE radusergroup ADD COLUMN nas_id INT DEFAULT NULL', 'SELECT "radusergroup.nas_id already exists" AS info');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE radusergroup ADD COLUMN nas_id VARCHAR(36) DEFAULT NULL', 'SELECT "radusergroup.nas_id already exists" AS info');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Add nas_id column to radreply (if not exists)
 SET @col_exists = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'radreply' AND COLUMN_NAME = 'nas_id');
-SET @sql = IF(@col_exists = 0, 'ALTER TABLE radreply ADD COLUMN nas_id INT DEFAULT NULL', 'SELECT "radreply.nas_id already exists" AS info');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE radreply ADD COLUMN nas_id VARCHAR(36) DEFAULT NULL', 'SELECT "radreply.nas_id already exists" AS info');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Add index on nas_id for radcheck (if not exists)
