@@ -7,6 +7,7 @@ import { formatWIB } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
+import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
 
@@ -1180,7 +1181,7 @@ async function handleInvoicePayment(
     const trimmed = invoiceNumber.substring(4); // Remove leading 'INV-'
     invoice = await prisma.invoice.findFirst({
       where: { invoiceNumber: trimmed },
-      include: { user: { include: { profile: true } } }
+      include: { user: { include: { profile: true, router: { select: { id: true, authMode: true } } } } }
     });
   }
 
@@ -1565,6 +1566,7 @@ async function handleInvoicePayment(
           // RADIUS SYNC FOR REACTIVATION
           // ============================================
 
+          const nasIdentifier = user.routerId || null;
           try {
             // Remove forced reject (if any) from previous SUSPENDED state
             await prisma.radcheck.deleteMany({
@@ -1582,10 +1584,10 @@ async function handleInvoicePayment(
               },
             });
 
-            // 1. Restore radcheck (username + password)
+            // 1. Restore radcheck (username + password) — with nas_identifier
             await prisma.$executeRaw`
-                INSERT INTO radcheck (username, attribute, op, value)
-                VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password})
+                INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+                VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
                 ON DUPLICATE KEY UPDATE value = ${user.password}
               `;
 
@@ -1594,8 +1596,8 @@ async function handleInvoicePayment(
                 DELETE FROM radusergroup WHERE username = ${user.username}
               `;
             await prisma.$executeRaw`
-                INSERT INTO radusergroup (username, groupname, priority)
-                VALUES (${user.username}, ${profile.groupName}, 0)
+                INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+                VALUES (${user.username}, ${profile.groupName}, 0, ${nasIdentifier})
                 ON DUPLICATE KEY UPDATE groupname = ${profile.groupName}
               `;
 
@@ -1608,16 +1610,40 @@ async function handleInvoicePayment(
             });
             console.log(`✅ Removed isolated message from radreply for ${user.username}`);
 
-            // 4. Restore radreply (if static IP)
+            // 4. Restore radreply (if static IP) — with nas_identifier
+            await prisma.$executeRaw`
+                DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address'
+              `;
             if (user.ipAddress) {
               await prisma.$executeRaw`
-                  INSERT INTO radreply (username, attribute, op, value)
-                  VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress})
+                  INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+                  VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress}, ${nasIdentifier})
                   ON DUPLICATE KEY UPDATE value = ${user.ipAddress}
                 `;
             }
 
             console.log(`✅ RADIUS entries restored for ${user.username}`);
+
+            // 4b. Restore PPP secret profile in MikroTik (critical for local/hybrid mode)
+            //     Change profile back to original + enable + kick active session
+            if (user.routerId && shouldManagePppSecretForSuspend((user as any).router?.authMode)) {
+              managePppSecret(user.routerId, 'enable', {
+                username: user.username,
+                password: user.password,
+                profile: profile.groupName,
+              }).then((r) => {
+                console.log(`✅ [Webhook] PPP secret restored to "${profile.groupName}" for ${user.username}: ${r.message}`);
+              }).catch((e) => {
+                console.error(`[Webhook] PPP secret restore failed for ${user.username}:`, e?.message || e);
+              });
+
+              // Kick active session via MikroTik API (for local/hybrid sessions)
+              kickPppoeSession(user.routerId, user.username).then((kicked) => {
+                console.log(`✅ [Webhook] Kicked ${kicked} session(s) for ${user.username}`);
+              }).catch((e) => {
+                console.error(`[Webhook] Kick failed for ${user.username}:`, e?.message || e);
+              });
+            }
 
             // Update registration status to ACTIVE if this is installation invoice
             const registration = await prisma.registrationRequest.findFirst({
