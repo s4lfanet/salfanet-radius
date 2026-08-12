@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 
-// Session sync has been migrated to NestJS backend
-// This legacy route delegates to the backend API
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
-
+/**
+ * POST /api/sessions/sync
+ * Trigger session sync via /api/cron (native Next.js, no NestJS backend).
+ * Query: ?type=pppoe | hotspot | all
+ */
 export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -14,15 +14,18 @@ export async function POST(request: NextRequest) {
   }
 
   const type = request.nextUrl.searchParams.get('type');
+  const jobType = type === 'pppoe' ? 'pppoe_session_sync' : type === 'hotspot' ? 'hotspot_sync' : 'pppoe_session_sync';
 
   try {
-    const token = (session as any).accessToken || '';
-    const res = await fetch(`${BACKEND_URL}/api/v1/cron/trigger`, {
+    const cronSecret = process.env.CRON_SECRET || '';
+    const apiUrl = process.env.CRON_API_URL || 'http://localhost:3000';
+    const res = await fetch(`${apiUrl}/api/cron`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({
-        type: type === 'pppoe' ? 'pppoe_session_sync' : type === 'hotspot' ? 'hotspot_sync' : 'all',
-      }),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(cronSecret && { 'x-cron-secret': cronSecret }),
+      },
+      body: JSON.stringify({ type: jobType }),
     });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });

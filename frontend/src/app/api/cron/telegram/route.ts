@@ -1,12 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { prisma } from '@/server/db/client';
 import { unauthorized, forbidden, badRequest, serverError } from '@/lib/api-response';
 
-// Telegram cron jobs have been migrated to NestJS backend (@nestjs/schedule)
-// This legacy route delegates to the backend API
-
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3001';
+/**
+ * GET /api/cron/telegram — get telegram bot status (native Next.js)
+ * POST /api/cron/telegram — control telegram bot (start/stop)
+ *
+ * Previously delegated to NestJS backend — now native.
+ */
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,12 +17,18 @@ export async function GET(request: NextRequest) {
     if (!session) return unauthorized();
     if (session.user.role !== 'SUPER_ADMIN') return forbidden();
 
-    const token = (session as any).accessToken || '';
-    const res = await fetch(`${BACKEND_URL}/api/v1/telegram/cron/status`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const config = await prisma.telegramBackupSettings.findFirst();
+    return NextResponse.json({
+      success: true,
+      data: {
+        enabled: config?.enabled ?? false,
+        botToken: config?.botToken ? '***configured***' : null,
+        chatId: config?.chatId || null,
+        schedule: config?.schedule || 'daily',
+        scheduleTime: config?.scheduleTime || '02:00',
+        lastSyncAt: null,
+      },
     });
-    const data = await res.json();
-    return NextResponse.json(data);
   } catch (error: any) {
     return serverError(error.message);
   }
@@ -32,17 +41,36 @@ export async function POST(request: NextRequest) {
     if (session.user.role !== 'SUPER_ADMIN') return forbidden();
 
     const body = await request.json();
-    const { action, job } = body;
-    if (!action || !job) return badRequest('Action and job are required');
+    const { action } = body;
+    if (!action || !['start', 'stop', 'test'].includes(action)) {
+      return badRequest('Action must be start, stop, or test');
+    }
 
-    const token = (session as any).accessToken || '';
-    const res = await fetch(`${BACKEND_URL}/api/v1/telegram/cron/control`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ action, job }),
+    if (action === 'test') {
+      const { sendTelegramMessage } = await import('@/server/services/notifications/telegram.service');
+      const config = await prisma.telegramBackupSettings.findFirst();
+      if (!config?.botToken || !config?.chatId) {
+        return badRequest('Telegram bot not configured');
+      }
+      try {
+        await sendTelegramMessage(
+          { botToken: config.botToken, chatId: config.chatId },
+          '🤖 Test message from Salfanet Cron'
+        );
+        return NextResponse.json({ success: true, message: 'Test message sent' });
+      } catch (e: any) {
+        return serverError(`Failed to send: ${e.message}`);
+      }
+    }
+
+    // start/stop — just toggle enabled flag
+    const enabled = action === 'start';
+    await prisma.telegramBackupSettings.updateMany({ data: { enabled } });
+
+    return NextResponse.json({
+      success: true,
+      message: `Telegram bot ${enabled ? 'started' : 'stopped'}`,
     });
-    const data = await res.json();
-    return NextResponse.json(data, { status: res.status });
   } catch (error: any) {
     return serverError(error.message);
   }
