@@ -51,6 +51,8 @@ import { CronModule } from './modules/cron/cron.module';
 import { NetworkExtrasModule } from './modules/network-extras/network-extras.module';
 import { ExtrasModule } from './modules/extras/extras.module';
 import { ExportModule } from './modules/export/export.module';
+import { IppoolModule } from './modules/ippool/ippool.module';
+import { DataUsageModule } from './modules/data-usage/data-usage.module';
 
 @Module({
   imports: [
@@ -113,6 +115,8 @@ import { ExportModule } from './modules/export/export.module';
     NetworkExtrasModule,
     ExtrasModule,
     ExportModule,
+    IppoolModule,
+    DataUsageModule,
   ],
   providers: [
     {
