@@ -7,8 +7,8 @@ export interface HotspotRouterConnection {
   nasname: string;
   ipAddress?: string | null;
   port?: number | null;
-  username: string;
-  password: string;
+  username: string | null;
+  password: string | null;
 }
 
 export interface LiveHotspotTraffic {
@@ -66,8 +66,8 @@ export async function fetchLiveHotspotTrafficMap(
       const api = new RouterOSAPI({
         host: router.ipAddress || router.nasname,
         port: router.port || 8728,
-        user: router.username,
-        password: router.password,
+        user: router.username || '',
+        password: router.password || '',
         timeout: 10,
       });
 

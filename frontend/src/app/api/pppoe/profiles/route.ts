@@ -301,7 +301,7 @@ export async function PUT(request: NextRequest) {
                 });
                 if (routerRow) {
                   await changePPPoERateLimit(
-                    { ipAddress: routerRow.ipAddress, nasname: routerRow.nasname, port: routerRow.port, username: routerRow.username, password: routerRow.password, secret: routerRow.secret },
+                    { ipAddress: routerRow.ipAddress, nasname: routerRow.nasname, port: routerRow.port, username: routerRow.username || '', password: routerRow.password || '', secret: routerRow.secret },
                     user.username,
                     rateLimit,
                     { acctSessionId: activeSession.acctsessionid || undefined, nasIpAddress: routerRow.ipAddress, framedIpAddress: activeSession.framedipaddress || undefined },
