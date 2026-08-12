@@ -9,20 +9,26 @@ export async function GET(request: NextRequest) {
   if (!authCheck.authorized) return authCheck.response;
 
   try {
-    const pools = await prisma.radippool.groupBy({
-      by: ['pool_name'],
-      _count: { framedipaddress: true },
-      _min: { framedipaddress: true },
-      _max: { framedipaddress: true },
-      orderBy: { pool_name: 'asc' },
-    });
-    const result = pools.map((p) => ({
+    // NOTE: framedipaddress is VARCHAR — MIN()/MAX() on it sorts lexicographically
+    // (e.g. "192.168.14.10" < "192.168.14.2" as strings), giving wrong IP range.
+    // Use INET_ATON()/INET_NTOA() to compare/convert numerically for correct start/end IP.
+    const result: Array<{ pool_name: string; total_ips: bigint; start_ip: string; end_ip: string }> = await prisma.$queryRaw`
+      SELECT
+        pool_name,
+        COUNT(*) as total_ips,
+        INET_NTOA(MIN(INET_ATON(framedipaddress))) as start_ip,
+        INET_NTOA(MAX(INET_ATON(framedipaddress))) as end_ip
+      FROM radippool
+      GROUP BY pool_name
+      ORDER BY pool_name ASC
+    `;
+    const data = result.map((p) => ({
       pool_name: p.pool_name,
-      total_ips: p._count.framedipaddress,
-      start_ip: p._min.framedipaddress,
-      end_ip: p._max.framedipaddress,
+      total_ips: Number(p.total_ips),
+      start_ip: p.start_ip,
+      end_ip: p.end_ip,
     }));
-    return NextResponse.json({ success: true, data: result });
+    return NextResponse.json({ success: true, data });
   } catch (err) {
     return NextResponse.json({ success: false, error: 'Failed to list pools' }, { status: 500 });
   }
