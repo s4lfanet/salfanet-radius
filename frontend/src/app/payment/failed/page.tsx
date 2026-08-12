@@ -18,7 +18,7 @@ function PaymentFailedContent() {
 
   useEffect(() => {
     if (token || orderId) fetchInvoiceInfo(); else setLoading(false);
-    fetch('/api/company').then(res => res.json()).then(data => { if (data.phone) { let phone = data.phone.replace(/^0/, '62'); if (!phone.startsWith('62')) phone = '62' + phone; setCompanyPhone(phone); } }).catch(() => { });
+    fetch('/api/company/info').then(res => res.json()).then(data => { const c = data.data || data; if (c.phone) { let phone = c.phone.replace(/^0/, '62'); if (!phone.startsWith('62')) phone = '62' + phone; setCompanyPhone(phone); } }).catch(() => { });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, orderId]);
 

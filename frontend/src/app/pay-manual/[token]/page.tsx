@@ -63,11 +63,12 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
 
   const fetchBankAccounts = useCallback(async () => {
     try {
-      const response = await fetch('/api/company');
+      const response = await fetch('/api/company/info');
       const data = await response.json();
-      
-      if (data.bankAccounts) {
-        setBankAccounts(data.bankAccounts);
+      const company = data.data || data;
+
+      if (company.bankAccounts) {
+        setBankAccounts(company.bankAccounts);
       }
     } catch (error) {
       // Silent fail - bank accounts are optional
