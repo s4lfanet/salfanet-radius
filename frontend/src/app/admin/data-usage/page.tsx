@@ -40,7 +40,7 @@ interface TopConsumers {
   }>;
 }
 
-const API_BASE = '/api/v1/data-usage';
+const API_BASE = '/api/admin/data-usage';
 
 export default function DataUsagePage() {
   const { t } = useTranslation();
