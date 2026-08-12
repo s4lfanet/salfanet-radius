@@ -2,10 +2,9 @@
  * Centralized API client for frontend → backend communication.
  *
  * Uses NEXT_PUBLIC_API_URL env var to determine the backend URL.
- * Falls back to /api/* (legacy Next.js routes) if not set.
+ * Falls back to /api/* (Next.js API routes) if not set.
  *
- * During migration: if NEXT_PUBLIC_API_URL is set, calls NestJS backend.
- * If not set, calls legacy Next.js API routes (same origin).
+ * All backend logic is now in Next.js API routes (no NestJS backend).
  */
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
@@ -17,10 +16,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 function buildUrl(path: string): string {
   if (!path.startsWith('/')) path = '/' + path;
   if (API_BASE_URL) {
-    // NestJS backend: /api/v1/* prefix
     return `${API_BASE_URL}${path}`;
   }
-  // Legacy: relative path to Next.js API routes
+  // Default: relative path to Next.js API routes
   return path;
 }
 
@@ -56,18 +54,10 @@ export async function apiFetch<T = any>(
  */
 export async function getCompanyInfo(): Promise<{ name?: string } | null> {
   try {
-    const data = await apiFetch<{ success: boolean; data?: { name?: string } }>(
-      '/api/v1/company/info',
-    );
-    return data?.data || null;
+    const data = await apiFetch<{ name?: string }>('/api/company');
+    return data || null;
   } catch {
-    // Fallback: try legacy Next.js route
-    try {
-      const data = await apiFetch<{ name?: string }>('/api/company');
-      return data || null;
-    } catch {
-      return null;
-    }
+    return null;
   }
 }
 
