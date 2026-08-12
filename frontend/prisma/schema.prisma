@@ -2503,3 +2503,14 @@ model cui {
   @@id([username, clientipaddress, callingstationid])
   @@map("cui")
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAS Reload — FreeRADIUS lightweight accounting-on/off tracking
+// Diadopsi dari FreeRADIUS standard schema (home.pmynet.id-main)
+// ─────────────────────────────────────────────────────────────────────────────
+model nasreload {
+  nasipaddress String   @id @db.VarChar(15)
+  reloadtime   DateTime @default(now())
+
+  @@map("nasreload")
+}
