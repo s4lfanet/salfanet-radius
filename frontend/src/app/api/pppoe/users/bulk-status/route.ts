@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { disconnectMultiplePPPoEUsers } from '@/server/services/radius/coa-handler.service';
-import { managePppSecret, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
+import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 
 export async function PUT(request: Request) {
   try {
@@ -157,15 +157,26 @@ export async function PUT(request: Request) {
       }
 
       // Manage PPP secret for local/hybrid routers
-      // - active/isolated: enable (user still needs to login)
-      // - blocked/stop:    disable (prevent local fallback)
+      // - active:   enable + restore original profile
+      // - isolated: enable + change profile to 'isolir'
+      // - blocked/stop: disable + kick
       if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
         const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
-        managePppSecret(user.router.id, action, { username: user.username, password: user.password }).then((r) => {
-          console.log(`[PPP_SECRET] bulk ${action} for "${user.username}" (status=${status}): ${r.message}`)
+        const profile = status === 'isolated' ? 'isolir' : (status === 'active' ? (user.profile?.groupName || undefined) : undefined);
+        managePppSecret(user.router.id, action, { username: user.username, password: user.password, profile }).then((r) => {
+          console.log(`[PPP_SECRET] bulk ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`)
         }).catch((e) => {
           console.error(`[PPP_SECRET] bulk ${action} failed for "${user.username}":`, e?.message || e)
         });
+
+        // Kick active session via MikroTik API
+        if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+          kickPppoeSession(user.router.id, user.username).then((kicked) => {
+            console.log(`[PPP_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`)
+          }).catch((e) => {
+            console.error(`[PPP_KICK] bulk failed for "${user.username}":`, e?.message || e)
+          });
+        }
       }
     }
 
