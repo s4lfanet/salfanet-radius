@@ -82,3 +82,54 @@ wait_for_mysql() {
 generate_secret() {
     openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64
 }
+
+# ============================================================================
+# VPS IP DETECTION
+# ============================================================================
+# Detect the VPS IP address for use in .env (NEXTAUTH_URL, RADIUS_SERVER_IP)
+# Priority:
+#   1. VPS_IP env var (if already set by user)
+#   2. Default route interface IP (private/local IP — e.g. 192.168.x.x, 10.x.x.x)
+#   3. First non-loopback IPv4 from hostname -I
+#   4. Public IP via curl (fallback for cloud VPS with only public IP)
+detect_vps_ip() {
+    # Already set by user?
+    if [ -n "$VPS_IP" ]; then
+        echo "$VPS_IP"
+        return 0
+    fi
+
+    # Method 1: IP of default route interface (most reliable for local/private IP)
+    local default_iface
+    default_iface=$(ip route show default 2>/dev/null | awk '{print $5}' | head -1)
+    if [ -n "$default_iface" ]; then
+        local iface_ip
+        iface_ip=$(ip -4 addr show "$default_iface" 2>/dev/null | grep -oP 'inet \K[\d.]+' | head -1)
+        if [ -n "$iface_ip" ] && [ "$iface_ip" != "127.0.0.1" ]; then
+            echo "$iface_ip"
+            return 0
+        fi
+    fi
+
+    # Method 2: hostname -I (first non-loopback IP)
+    local host_ip
+    host_ip=$(hostname -I 2>/dev/null | awk '{print $1}')
+    if [ -n "$host_ip" ] && [ "$host_ip" != "127.0.0.1" ]; then
+        echo "$host_ip"
+        return 0
+    fi
+
+    # Method 3: Public IP fallback (for cloud VPS)
+    local pub_ip
+    pub_ip=$(curl -s --connect-timeout 3 ifconfig.me 2>/dev/null || curl -s --connect-timeout 3 icanhazip.com 2>/dev/null)
+    if [ -n "$pub_ip" ]; then
+        echo "$pub_ip"
+        return 0
+    fi
+
+    # Last resort
+    echo "127.0.0.1"
+}
+
+# Detect and export VPS_IP (used by install-app.sh for .env generation)
+export VPS_IP="${VPS_IP:-$(detect_vps_ip)}"
