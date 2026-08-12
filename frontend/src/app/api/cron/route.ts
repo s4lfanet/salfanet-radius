@@ -6,6 +6,14 @@ import { prisma } from '@/server/db/client'
 import { nowWIB } from '@/lib/timezone'
 import { CRON_JOB_MAP } from '@/server/cron/jobs'
 import { runAutoIsolir, runAutoStop } from '@/server/cron/auto-isolir'
+import {
+  runInvoiceGenerate,
+  runInvoiceStatusUpdate,
+  runInvoiceReminder,
+  runAutoRenewal,
+  runDisconnectSessions,
+  runSuspendCheck,
+} from '@/server/cron/invoice-jobs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -65,6 +73,24 @@ export async function POST(request: NextRequest) {
         case 'auto_stop':
           result = await runAutoStop()
           break
+        case 'invoice_generate':
+          result = await runInvoiceGenerate()
+          break
+        case 'invoice_status_update':
+          result = await runInvoiceStatusUpdate()
+          break
+        case 'invoice_reminder':
+          result = await runInvoiceReminder()
+          break
+        case 'auto_renewal':
+          result = await runAutoRenewal()
+          break
+        case 'disconnect_sessions':
+          result = await runDisconnectSessions()
+          break
+        case 'suspend_check':
+          result = await runSuspendCheck()
+          break
         case 'notification_check':
           result = await runNotificationCheck()
           break
@@ -77,9 +103,11 @@ export async function POST(request: NextRequest) {
         case 'cron_history_cleanup':
           result = await runCronHistoryCleanup()
           break
+        case 'freeradius_health':
+          result = await runFreeradiusHealth()
+          break
         default:
-          // For jobs not yet implemented in Next.js, return info
-          result = { success: true, message: `Job ${jobType} triggered — delegate to backend or implement in Next.js` }
+          result = { success: true, message: `Job ${jobType} not yet implemented` }
       }
 
       const completedAt = nowWIB()
@@ -137,4 +165,17 @@ async function runCronHistoryCleanup() {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
   const result = await prisma.cronHistory.deleteMany({ where: { startedAt: { lt: thirtyDaysAgo } } })
   return { deleted: result.count }
+}
+
+async function runFreeradiusHealth() {
+  try {
+    const { exec } = await import('child_process')
+    const { promisify } = await import('util')
+    const execAsync = promisify(exec)
+    const { stdout } = await execAsync('systemctl is-active freeradius', { timeout: 5000 })
+    const healthy = stdout.trim() === 'active'
+    return { healthy, status: stdout.trim() }
+  } catch (e: any) {
+    return { healthy: false, error: e?.message }
+  }
 }
