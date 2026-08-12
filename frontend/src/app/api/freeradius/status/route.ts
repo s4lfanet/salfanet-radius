@@ -133,13 +133,38 @@ export async function GET() {
         let activeConnections = 0;
         let totalAuthRequests = 0;
         let totalAcctRequests = 0;
+        let staleSessions = 0;
 
         try {
             // Active connections = sessions with no stop time in radacct
+            // EXCLUDE stale sessions: acctsessiontime=0 + no traffic + start > 10min ago
+            // (user authenticated but never sent interim update — likely disconnected without Accounting-Stop)
             const activeResult = await prisma.$queryRaw<Array<{ cnt: bigint }>>`
-                SELECT COUNT(*) as cnt FROM radacct WHERE acctstoptime IS NULL
+                SELECT COUNT(*) as cnt FROM radacct 
+                WHERE acctstoptime IS NULL
+                  AND NOT (
+                    (acctsessiontime = 0 OR acctsessiontime IS NULL)
+                    AND (acctinputoctets = 0 OR acctinputoctets IS NULL)
+                    AND (acctoutputoctets = 0 OR acctoutputoctets IS NULL)
+                    AND acctstarttime < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+                  )
             `;
             activeConnections = Number(activeResult[0]?.cnt || 0);
+
+            // Count stale sessions (for UI warning)
+            try {
+                const staleResult = await prisma.$queryRaw<Array<{ cnt: bigint }>>`
+                    SELECT COUNT(*) as cnt FROM radacct 
+                    WHERE acctstoptime IS NULL
+                      AND (acctsessiontime = 0 OR acctsessiontime IS NULL)
+                      AND (acctinputoctets = 0 OR acctinputoctets IS NULL)
+                      AND (acctoutputoctets = 0 OR acctoutputoctets IS NULL)
+                      AND acctstarttime < DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+                `;
+                staleSessions = Number(staleResult[0]?.cnt || 0);
+            } catch {
+                // ignore
+            }
 
             // Total auth requests = count of radpostauth entries (all-time)
             try {
@@ -172,6 +197,7 @@ export async function GET() {
                 version,
                 startTime,
                 activeConnections,
+                staleSessions,
                 totalAuthRequests,
                 totalAcctRequests,
                 lastRestart: startTime,
