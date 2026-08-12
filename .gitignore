@@ -78,6 +78,9 @@ tmp/
 temp/
 *.tmp
 *.sql
+!deploy/freeradius/fr_allocate_sp.sql
+!deploy/freeradius/*.sql
+!frontend/prisma/**/*.sql
 *.backup
 *.bak
 *.old
