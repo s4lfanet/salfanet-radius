@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { generateInvoiceNumber, generateInvoiceId, generateTransactionId, generateCategoryId } from '@/server/services/billing/invoice.service';
+import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import crypto from 'crypto';
 
 export async function POST(
@@ -21,7 +22,7 @@ export async function POST(
     // Get user data
     const user = await prisma.pppoeUser.findUnique({
       where: { id },
-      include: { profile: true, area: true },
+      include: { profile: true, area: true, router: { select: { id: true, authMode: true } } },
     });
 
     if (!user) {
@@ -59,6 +60,7 @@ export async function POST(
     // Restore RADIUS tables so user reconnects with the correct profile.
     // This is critical when user was previously isolated (radusergroup = 'isolir').
     // Without this, the user would get restricted isolir access even after extension.
+    const nasIdentifier = user.routerId || null;
     try {
       // Remove any old rejection / suspension markers
       await prisma.radcheck.deleteMany({
@@ -71,10 +73,10 @@ export async function POST(
         where: { username: user.username, attribute: 'Reply-Message' },
       });
 
-      // Ensure password exists in radcheck
+      // Ensure password exists in radcheck — with nas_identifier
       await prisma.$executeRaw`
-        INSERT INTO radcheck (username, attribute, op, value)
-        VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password})
+        INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+        VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
         ON DUPLICATE KEY UPDATE value = ${user.password}
       `;
 
@@ -83,20 +85,33 @@ export async function POST(
         DELETE FROM radusergroup WHERE username = ${user.username}
       `;
       await prisma.$executeRaw`
-        INSERT INTO radusergroup (username, groupname, priority)
-        VALUES (${user.username}, ${newProfile.groupName}, 1)
+        INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+        VALUES (${user.username}, ${newProfile.groupName}, 1, ${nasIdentifier})
       `;
 
       // Restore static IP (remove old, re-add if exists)
-      await prisma.radreply.deleteMany({
-        where: { username: user.username, attribute: 'Framed-IP-Address' },
-      });
+      await prisma.$executeRaw`
+        DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address'
+      `;
       if (user.ipAddress) {
         await prisma.$executeRaw`
-          INSERT INTO radreply (username, attribute, op, value)
-          VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress})
+          INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+          VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress}, ${nasIdentifier})
           ON DUPLICATE KEY UPDATE value = ${user.ipAddress}
         `;
+      }
+
+      // Restore PPP secret profile in MikroTik (critical for local/hybrid mode)
+      if (user.routerId && shouldManagePppSecretForSuspend(user.router?.authMode)) {
+        managePppSecret(user.routerId, 'enable', {
+          username: user.username,
+          password: user.password,
+          profile: newProfile.groupName,
+        }).then((r) => {
+          console.log(`[Extend] PPP secret restored to "${newProfile.groupName}" for ${user.username}: ${r.message}`);
+        }).catch((e) => {
+          console.error(`[Extend] PPP secret restore failed for ${user.username}:`, e?.message || e);
+        });
       }
 
       // Only send CoA disconnect if the user was previously isolated — they need to
@@ -104,6 +119,15 @@ export async function POST(
       // If the user is already ACTIVE, do NOT disconnect (avoid interrupting live sessions).
       const wasIsolated = user.status === 'isolated';
       if (wasIsolated) {
+        // Kick via MikroTik API (for local/hybrid sessions)
+        if (user.routerId && shouldManagePppSecretForSuspend(user.router?.authMode)) {
+          kickPppoeSession(user.routerId, user.username).then((kicked) => {
+            console.log(`[Extend] Kicked ${kicked} session(s) for ${user.username} (was isolated)`);
+          }).catch((e) => {
+            console.error(`[Extend] Kick failed for ${user.username}:`, e?.message || e);
+          });
+        }
+
         const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
         const coaResult = await disconnectPPPoEUser(user.username);
         console.log(`[Extend] RADIUS restored + CoA disconnect for ${user.username} (was isolated):`, coaResult);

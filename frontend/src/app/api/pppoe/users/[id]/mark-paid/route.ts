@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { generateTransactionId, generateCategoryId } from '@/server/services/billing/invoice.service';
+import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 
 export async function POST(
   request: NextRequest,
@@ -24,6 +25,7 @@ export async function POST(
         password: true,
         ipAddress: true,
         profile: { select: { groupName: true } },
+        router: { select: { id: true, authMode: true } },
       },
     });
 
@@ -104,6 +106,7 @@ export async function POST(
     // Critical when user was isolated (radusergroup = 'isolir') — without this
     // they would still get restricted isolir access even after paying.
     if (userRecord.profile) {
+      const nasIdentifier = userRecord.router?.id || null;
       try {
         // Remove any old rejection/suspension markers
         await prisma.radcheck.deleteMany({
@@ -116,32 +119,53 @@ export async function POST(
           where: { username: userRecord.username, attribute: 'Reply-Message' },
         });
 
-        // Ensure password exists in radcheck
+        // Ensure password exists in radcheck — with nas_identifier
         await prisma.$executeRaw`
-          INSERT INTO radcheck (username, attribute, op, value)
-          VALUES (${userRecord.username}, 'Cleartext-Password', ':=', ${userRecord.password})
+          INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+          VALUES (${userRecord.username}, 'Cleartext-Password', ':=', ${userRecord.password}, ${nasIdentifier})
           ON DUPLICATE KEY UPDATE value = ${userRecord.password}
         `;
 
-        // Restore original subscription group
+        // Restore original subscription group — delete by username, insert with nas_identifier
         await prisma.$executeRaw`
           DELETE FROM radusergroup WHERE username = ${userRecord.username}
         `;
         await prisma.$executeRaw`
-          INSERT INTO radusergroup (username, groupname, priority)
-          VALUES (${userRecord.username}, ${userRecord.profile.groupName}, 1)
+          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+          VALUES (${userRecord.username}, ${userRecord.profile.groupName}, 1, ${nasIdentifier})
         `;
 
-        // Restore static IP
-        await prisma.radreply.deleteMany({
-          where: { username: userRecord.username, attribute: 'Framed-IP-Address' },
-        });
+        // Restore static IP — delete by username+attribute, insert with nas_identifier
+        await prisma.$executeRaw`
+          DELETE FROM radreply WHERE username = ${userRecord.username} AND attribute = 'Framed-IP-Address'
+        `;
         if (userRecord.ipAddress) {
           await prisma.$executeRaw`
-            INSERT INTO radreply (username, attribute, op, value)
-            VALUES (${userRecord.username}, 'Framed-IP-Address', ':=', ${userRecord.ipAddress})
+            INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+            VALUES (${userRecord.username}, 'Framed-IP-Address', ':=', ${userRecord.ipAddress}, ${nasIdentifier})
             ON DUPLICATE KEY UPDATE value = ${userRecord.ipAddress}
           `;
+        }
+
+        // Restore PPP secret profile in MikroTik (critical for local/hybrid mode)
+        // Change profile back to original + enable + kick active session
+        if (userRecord.router?.id && shouldManagePppSecretForSuspend(userRecord.router.authMode)) {
+          managePppSecret(userRecord.router.id, 'enable', {
+            username: userRecord.username,
+            password: userRecord.password,
+            profile: userRecord.profile.groupName,
+          }).then((r) => {
+            console.log(`[MarkPaid] PPP secret restored to "${userRecord.profile.groupName}" for ${userRecord.username}: ${r.message}`);
+          }).catch((e) => {
+            console.error(`[MarkPaid] PPP secret restore failed for ${userRecord.username}:`, e?.message || e);
+          });
+
+          // Kick active session so user reconnects with restored profile
+          kickPppoeSession(userRecord.router.id, userRecord.username).then((kicked) => {
+            console.log(`[MarkPaid] Kicked ${kicked} session(s) for ${userRecord.username}`);
+          }).catch((e) => {
+            console.error(`[MarkPaid] Kick failed for ${userRecord.username}:`, e?.message || e);
+          });
         }
 
         // Send CoA disconnect so user immediately reconnects with restored profile
