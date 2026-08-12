@@ -50,7 +50,7 @@ interface PoolStats {
   utilization: string;
 }
 
-const API_BASE = '/api/v1/ippool';
+const API_BASE = '/api/admin/ippool';
 
 export default function IPPoolPage() {
   const { t } = useTranslation();
