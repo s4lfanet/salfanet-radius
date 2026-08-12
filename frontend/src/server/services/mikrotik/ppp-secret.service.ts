@@ -244,6 +244,64 @@ export async function listPppSecrets(routerId: string): Promise<Array<{ name: st
 }
 
 /**
+ * List all active PPP sessions from a MikroTik router (/ppp/active/print).
+ * Used for online detection in hybrid/local mode where radacct may not
+ * capture all sessions (local-auth users bypass RADIUS accounting).
+ *
+ * @param routerId - Router UUID
+ * @returns Set of usernames currently active on the router
+ */
+export async function listPppActive(routerId: string): Promise<Set<string>> {
+  const router = await getRouterConfig(routerId)
+  if (!router) return new Set()
+
+  const host = router.ipAddress || router.nasname
+  const apiPort = router.port || 8728
+  let api: any
+  try {
+    api = new RouterOSAPI({
+      host,
+      port: apiPort,
+      user: router.username || '',
+      password: router.password || '',
+      timeout: 10,
+    })
+    await api.connect()
+    const active = (await api.write('/ppp/active/print')) as Array<any>
+    const usernames = new Set<string>()
+    for (const s of active) {
+      const name = s.name || s.user || ''
+      if (name) usernames.add(name)
+    }
+    return usernames
+  } catch (e: any) {
+    console.error(`[PPP_ACTIVE] listPppActive for router ${router.name}:`, e?.message || e)
+    return new Set()
+  } finally {
+    try { if (api) await api.close() } catch { /* ignore */ }
+  }
+}
+
+/**
+ * Batch fetch active PPP usernames from multiple routers.
+ * Returns a combined Set of all active usernames across all specified routers.
+ *
+ * @param routerIds - Array of router UUIDs to poll
+ * @returns Set of usernames active on any of the routers
+ */
+export async function batchListPppActive(routerIds: string[]): Promise<Set<string>> {
+  if (routerIds.length === 0) return new Set()
+  const results = await Promise.allSettled(routerIds.map(id => listPppActive(id)))
+  const combined = new Set<string>()
+  for (const r of results) {
+    if (r.status === 'fulfilled') {
+      for (const name of r.value) combined.add(name)
+    }
+  }
+  return combined
+}
+
+/**
  * Resolve MikroTik PPP profile name from our pppoeProfile.
  * Uses mikrotikProfileName if set, otherwise uses groupName.
  */

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { disconnectMultiplePPPoEUsers } from '@/server/services/radius/coa-handler.service';
+import { managePppSecret, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 
 export async function PUT(request: Request) {
   try {
@@ -29,9 +30,9 @@ export async function PUT(request: Request) {
     // Get all users with router info
     const users = await prisma.pppoeUser.findMany({
       where: { id: { in: userIds } },
-      include: { 
+      include: {
         profile: true,
-        router: { select: { id: true, nasname: true } },
+        router: { select: { id: true, nasname: true, authMode: true } },
       },
     });
 
@@ -50,121 +51,121 @@ export async function PUT(request: Request) {
 
     // Update RADIUS for each user based on status
     for (const user of users) {
+      const nasIdentifier = user.router?.id || null;
       if (status === 'active') {
         // Remove suspension markers
         await prisma.radcheck.deleteMany({
           where: {
             username: user.username,
             attribute: 'Auth-Type',
+            ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
           },
         });
-        // Remove NAS-IP-Address restriction (can prevent login if NAS-IP differs)
         await prisma.radcheck.deleteMany({
           where: {
             username: user.username,
             attribute: 'NAS-IP-Address',
+            ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
           },
         });
         await prisma.radreply.deleteMany({
           where: {
             username: user.username,
             attribute: 'Reply-Message',
+            ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
           },
         });
 
-        // Restore to original profile
-        // 1. Ensure password in radcheck
         await prisma.$executeRaw`
-          INSERT INTO radcheck (username, attribute, op, value)
-          VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password})
+          INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+          VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
           ON DUPLICATE KEY UPDATE value = ${user.password}
         `;
-
-        // 3. Restore to original group
         await prisma.$executeRaw`
-          DELETE FROM radusergroup WHERE username = ${user.username}
+          DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         await prisma.$executeRaw`
-          INSERT INTO radusergroup (username, groupname, priority)
-          VALUES (${user.username}, ${user.profile.groupName}, 1)
+          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+          VALUES (${user.username}, ${user.profile.groupName}, 1, ${nasIdentifier})
         `;
-
-        // 4. Restore static IP if exists
         if (user.ipAddress) {
           await prisma.$executeRaw`
-            INSERT INTO radreply (username, attribute, op, value)
-            VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress})
+            INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+            VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress}, ${nasIdentifier})
             ON DUPLICATE KEY UPDATE value = ${user.ipAddress}
           `;
         }
       } else if (status === 'isolated') {
-        // Move to isolir group - MikroTik will apply isolir profile
-        // Remove static IP so user gets IP from MikroTik pool-isolir
-
-        // Remove suspension markers (isolated users must still be able to login)
+        // Isolated users MUST still be able to login (to get isolir profile)
         await prisma.radcheck.deleteMany({
           where: {
             username: user.username,
             attribute: 'Auth-Type',
+            ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
           },
         });
-        // Remove NAS-IP-Address restriction (can prevent login if NAS-IP differs)
         await prisma.radcheck.deleteMany({
           where: {
             username: user.username,
             attribute: 'NAS-IP-Address',
+            ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
           },
         });
         await prisma.radreply.deleteMany({
           where: {
             username: user.username,
             attribute: 'Reply-Message',
+            ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
           },
         });
-        
-        // 1. Keep password in radcheck
+
         await prisma.$executeRaw`
-          INSERT INTO radcheck (username, attribute, op, value)
-          VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password})
+          INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+          VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
           ON DUPLICATE KEY UPDATE value = ${user.password}
         `;
-
-        // 3. Move to isolir group (this maps to MikroTik profile 'isolir')
         await prisma.$executeRaw`
-          DELETE FROM radusergroup WHERE username = ${user.username}
+          DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         await prisma.$executeRaw`
-          INSERT INTO radusergroup (username, groupname, priority)
-          VALUES (${user.username}, 'isolir', 1)
+          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+          VALUES (${user.username}, 'isolir', 1, ${nasIdentifier})
         `;
-
-        // 4. DELETE Framed-IP so user gets IP from MikroTik pool-isolir
         await prisma.$executeRaw`
-          DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address'
+          DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
       } else if (status === 'blocked') {
-        // Block: Remove from all RADIUS tables
         await prisma.$executeRaw`
-          DELETE FROM radcheck WHERE username = ${user.username}
+          DELETE FROM radcheck WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         await prisma.$executeRaw`
-          DELETE FROM radusergroup WHERE username = ${user.username}
+          DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         await prisma.$executeRaw`
-          DELETE FROM radreply WHERE username = ${user.username}
+          DELETE FROM radreply WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
       } else if (status === 'stop') {
-        // Stop subscription: Remove from all RADIUS tables (same as blocked but different intent)
-        // User has voluntarily stopped subscription
         await prisma.$executeRaw`
-          DELETE FROM radcheck WHERE username = ${user.username}
+          DELETE FROM radcheck WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         await prisma.$executeRaw`
-          DELETE FROM radusergroup WHERE username = ${user.username}
+          DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         await prisma.$executeRaw`
-          DELETE FROM radreply WHERE username = ${user.username}
+          DELETE FROM radreply WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
+      }
+
+      // Manage PPP secret for local/hybrid routers
+      // - active/isolated: enable (user still needs to login)
+      // - blocked/stop:    disable (prevent local fallback)
+      if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
+        const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
+        managePppSecret(user.router.id, action, { username: user.username, password: user.password }).then((r) => {
+          console.log(`[PPP_SECRET] bulk ${action} for "${user.username}" (status=${status}): ${r.message}`)
+        }).catch((e) => {
+          console.error(`[PPP_SECRET] bulk ${action} failed for "${user.username}":`, e?.message || e)
+        });
       }
     }
 
