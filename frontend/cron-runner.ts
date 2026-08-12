@@ -484,7 +484,9 @@ async function runInvoiceGenerate(): Promise<any> {
     select: { invoiceGenerateDays: true, baseUrl: true, name: true, phone: true },
   })
   const genDays = company?.invoiceGenerateDays ?? 7
-  const baseUrl = company?.baseUrl || 'http://localhost:3000'
+  const baseUrl = (company?.baseUrl && !company.baseUrl.includes('localhost'))
+    ? company.baseUrl
+    : process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
   // Target month = current month (generate invoice for current billing period)
   const year = now.getUTCFullYear()
@@ -493,8 +495,22 @@ async function runInvoiceGenerate(): Promise<any> {
   const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999))
 
   // Find active/isolated users that need invoices
+  // PREPAID: only generate if expiredAt is within invoiceGenerateDays days (or already expired but not too long)
+  // POSTPAID: always generate monthly invoice
+  const prepaidCutoff = new Date(now.getTime() + genDays * 24 * 60 * 60 * 1000)
   const users = await prisma.pppoeUser.findMany({
-    where: { status: { in: ['active', 'isolated'] } },
+    where: {
+      status: { in: ['active', 'isolated'] },
+      OR: [
+        // POSTPAID: always generate
+        { subscriptionType: 'POSTPAID' },
+        // PREPAID: only if expiredAt is within genDays days or already expired (but not more than 30 days ago)
+        {
+          subscriptionType: 'PREPAID',
+          expiredAt: { lte: prepaidCutoff, gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) },
+        },
+      ],
+    },
     include: {
       profile: { select: { id: true, name: true, price: true, ppnActive: true, ppnRate: true } },
     },
