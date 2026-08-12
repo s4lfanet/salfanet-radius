@@ -7,7 +7,21 @@
 --   mysql -u salfanet_user -p salfanet_radius < fr_allocate_sp.sql
 -- =====================================================
 
-CREATE INDEX IF NOT EXISTS poolname_username_callingstationid ON radippool(pool_name, username, callingstationid);
+-- MySQL does not support CREATE INDEX IF NOT EXISTS; use a stored procedure approach
+DROP PROCEDURE IF EXISTS add_pool_index;
+DELIMITER $$
+CREATE PROCEDURE add_pool_index()
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.statistics
+                   WHERE table_schema = DATABASE()
+                     AND table_name = 'radippool'
+                     AND index_name = 'poolname_username_callingstationid') THEN
+        CREATE INDEX poolname_username_callingstationid ON radippool(pool_name, username, callingstationid);
+    END IF;
+END$$
+DELIMITER ;
+CALL add_pool_index();
+DROP PROCEDURE IF EXISTS add_pool_index;
 
 DELIMITER $$
 

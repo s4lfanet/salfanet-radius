@@ -14,16 +14,48 @@
 -- =====================================================
 -- 1. Multi-NAS Isolation: nas_identifier column
 --    Memungkinkan username yang sama di NAS/router berbeda
+--    MySQL 8.0 does not support ADD COLUMN IF NOT EXISTS — use procedure
 -- =====================================================
 
-ALTER TABLE radcheck ADD COLUMN IF NOT EXISTS nas_identifier VARCHAR(128) DEFAULT NULL;
-ALTER TABLE radreply ADD COLUMN IF NOT EXISTS nas_identifier VARCHAR(128) DEFAULT NULL;
-ALTER TABLE radusergroup ADD COLUMN IF NOT EXISTS nas_identifier VARCHAR(128) DEFAULT NULL;
-
--- Index untuk query filter per-NAS
-CREATE INDEX IF NOT EXISTS idx_radcheck_nas_identifier ON radcheck(nas_identifier);
-CREATE INDEX IF NOT EXISTS idx_radreply_nas_identifier ON radreply(nas_identifier);
-CREATE INDEX IF NOT EXISTS idx_radusergroup_nas_identifier ON radusergroup(nas_identifier);
+DROP PROCEDURE IF EXISTS add_nas_identifier_columns;
+DELIMITER $$
+CREATE PROCEDURE add_nas_identifier_columns()
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema = DATABASE() AND table_name = 'radcheck'
+                     AND column_name = 'nas_identifier') THEN
+        ALTER TABLE radcheck ADD COLUMN nas_identifier VARCHAR(128) DEFAULT NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema = DATABASE() AND table_name = 'radreply'
+                     AND column_name = 'nas_identifier') THEN
+        ALTER TABLE radreply ADD COLUMN nas_identifier VARCHAR(128) DEFAULT NULL;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                   WHERE table_schema = DATABASE() AND table_name = 'radusergroup'
+                     AND column_name = 'nas_identifier') THEN
+        ALTER TABLE radusergroup ADD COLUMN nas_identifier VARCHAR(128) DEFAULT NULL;
+    END IF;
+    -- Index untuk query filter per-NAS
+    IF NOT EXISTS (SELECT 1 FROM information_schema.statistics
+                   WHERE table_schema = DATABASE() AND table_name = 'radcheck'
+                     AND index_name = 'idx_radcheck_nas_identifier') THEN
+        CREATE INDEX idx_radcheck_nas_identifier ON radcheck(nas_identifier);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.statistics
+                   WHERE table_schema = DATABASE() AND table_name = 'radreply'
+                     AND index_name = 'idx_radreply_nas_identifier') THEN
+        CREATE INDEX idx_radreply_nas_identifier ON radreply(nas_identifier);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.statistics
+                   WHERE table_schema = DATABASE() AND table_name = 'radusergroup'
+                     AND index_name = 'idx_radusergroup_nas_identifier') THEN
+        CREATE INDEX idx_radusergroup_nas_identifier ON radusergroup(nas_identifier);
+    END IF;
+END$$
+DELIMITER ;
+CALL add_nas_identifier_columns();
+DROP PROCEDURE IF EXISTS add_nas_identifier_columns;
 
 -- =====================================================
 -- 2. RADIUS IP Pool table (radippool)

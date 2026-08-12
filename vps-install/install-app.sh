@@ -122,11 +122,19 @@ run_migrations() {
     # Generate Prisma client
     pnpm exec prisma generate || die "prisma generate failed"
 
-    # Run migrations
-    pnpm exec prisma migrate deploy || {
-        print_warn "prisma migrate deploy had issues — trying db push..."
-        pnpm exec prisma db push --accept-data-loss || die "prisma db push failed"
-    }
+    # This project uses db push (not migrate deploy) — schema-driven table creation
+    pnpm exec prisma db push --accept-data-loss || die "prisma db push failed"
+
+    # Run custom SQL migrations (flat .sql files in prisma/migrations/)
+    if [ -d "prisma/migrations" ]; then
+        print_info "Applying custom SQL migrations..."
+        for sql_file in prisma/migrations/*.sql; do
+            [ -f "$sql_file" ] || continue
+            print_info "  → $(basename "$sql_file")"
+            mysql -u "$DB_USER" -p"$DB_PASSWORD" "$DB_NAME" < "$sql_file" 2>/dev/null || \
+                print_warn "  $(basename "$sql_file") had issues (may already be applied)"
+        done
+    fi
 
     # Run RADIUS enhancement SQL (radippool, cui, data_usage tables, SP)
     if [ -f "prisma/migrate-radius-enhancements.sql" ]; then
