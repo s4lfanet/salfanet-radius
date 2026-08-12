@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
 // Catch-all for /api/admin/ippool/*
 // Supports: /stats, /:poolName (details), /mappings/list, /mappings (POST), /expand (PUT), /mappings/:id (DELETE)
@@ -110,6 +111,8 @@ export async function POST(request: NextRequest) {
           data: { groupname, attribute: 'Pool-Name', op: ':=', value: pool_name },
         });
       }
+      // Reload FreeRADIUS after pool-group mapping change
+      try { await reloadFreeRadius(); } catch (e) { console.warn('FreeRADIUS reload failed after mapping create:', e); }
       return NextResponse.json({ success: true, data: { groupname, pool_name, mapped: true } });
     }
 
@@ -147,6 +150,8 @@ export async function PUT(request: NextRequest) {
       }
       if (newIps.length > 0) {
         await prisma.radippool.createMany({ data: newIps });
+        // Reload FreeRADIUS so expanded pool IPs are available
+        try { await reloadFreeRadius(); } catch (e) { console.warn('FreeRADIUS reload failed after pool expand:', e); }
       }
       const total = await prisma.radippool.count({ where: { pool_name } });
       return NextResponse.json({ success: true, data: { pool_name, added: newIps.length, total_ips: total } });
@@ -176,6 +181,8 @@ export async function DELETE(request: NextRequest) {
         return NextResponse.json({ success: false, error: 'Pool mapping not found' }, { status: 404 });
       }
       await prisma.radgroupreply.delete({ where: { id } });
+      // Reload FreeRADIUS after mapping deletion
+      try { await reloadFreeRadius(); } catch (e) { console.warn('FreeRADIUS reload failed after mapping delete:', e); }
       return NextResponse.json({ success: true, data: { id, deleted: true } });
     }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
 // GET /api/admin/ippool — list pools
 export async function GET(request: NextRequest) {
@@ -47,6 +48,8 @@ export async function POST(request: NextRequest) {
       ips.push({ pool_name, framedipaddress: `${network}.${i}` });
     }
     await prisma.radippool.createMany({ data: ips });
+    // Reload FreeRADIUS so new pool is available for sqlippool allocation
+    try { await reloadFreeRadius(); } catch (e) { console.warn('FreeRADIUS reload failed after pool create:', e); }
     return NextResponse.json({
       success: true,
       data: { pool_name, total_ips: ips.length, start_ip: `${network}.${start}`, end_ip: `${network}.${end}` },
@@ -78,6 +81,8 @@ export async function DELETE(request: NextRequest) {
     }
     const result = await prisma.radippool.deleteMany({ where: { pool_name: poolName } });
     await prisma.radgroupreply.deleteMany({ where: { attribute: 'Pool-Name', value: poolName } });
+    // Reload FreeRADIUS after pool deletion
+    try { await reloadFreeRadius(); } catch (e) { console.warn('FreeRADIUS reload failed after pool delete:', e); }
     return NextResponse.json({ success: true, data: { pool_name: poolName, deleted: result.count } });
   } catch (err) {
     return NextResponse.json({ success: false, error: 'Failed to delete pool' }, { status: 500 });
