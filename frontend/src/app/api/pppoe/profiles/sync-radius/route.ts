@@ -66,6 +66,36 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Upsert radgroupreply: Pool-Name (speed tier pool mapping)
+    // Maps profile group to an IP pool based on download speed
+    const downloadSpeed = profile.downloadSpeed || 10;
+    const poolName = `${downloadSpeed}Mbps-Pool`;
+    const existingPool = await prisma.radgroupreply.findFirst({
+      where: { groupname: profile.groupName, attribute: 'Pool-Name' },
+    });
+
+    if (existingPool) {
+      await prisma.radgroupreply.update({
+        where: { id: existingPool.id },
+        data: { value: poolName },
+      });
+    } else {
+      // Only add Pool-Name if the pool exists in radippool
+      const poolExists: Array<{ cnt: number }> = await prisma.$queryRaw`
+        SELECT COUNT(*) as cnt FROM radippool WHERE pool_name = ${poolName}
+      `;
+      if (poolExists[0]?.cnt > 0) {
+        await prisma.radgroupreply.create({
+          data: {
+            groupname: profile.groupName,
+            attribute: 'Pool-Name',
+            op: ':=',
+            value: poolName,
+          },
+        });
+      }
+    }
+
     // Upsert radgroupcheck: Simultaneous-Use
     const existingSimUse = await prisma.radgroupcheck.findFirst({
       where: { groupname: profile.groupName, attribute: 'Simultaneous-Use' },

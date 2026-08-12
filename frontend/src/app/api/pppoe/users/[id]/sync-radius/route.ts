@@ -23,24 +23,32 @@ export async function POST(
 
     const username = user.username;
 
-    // Re-create radcheck (password)
-    await prisma.radcheck.deleteMany({ where: { username } });
-    await prisma.radcheck.create({
-      data: { username, attribute: 'Cleartext-Password', op: ':=', value: user.password },
-    });
+    // nas_id = router UUID if user is assigned to a specific router (multi-tenant isolation)
+    // When nas_id is NULL, the entry applies globally to all NAS
+    // When nas_id is set, the entry only applies to that specific NAS
+    const nasId = user.routerId || null;
 
-    // Re-create radusergroup (profile group)
-    await prisma.radusergroup.deleteMany({ where: { username } });
-    await prisma.radusergroup.create({
-      data: { username, groupname: user.profile.groupName, priority: 0 },
-    });
+    // Re-create radcheck (password) — with nas_id for multi-tenant isolation
+    await prisma.radcheck.deleteMany({ where: { username, nas_id: nasId } });
+    await prisma.$executeRaw`
+      INSERT INTO radcheck (username, attribute, op, value, nas_id)
+      VALUES (${username}, 'Cleartext-Password', ':=', ${user.password}, ${nasId})
+    `;
 
-    // Re-create radreply (static IP if set)
-    await prisma.radreply.deleteMany({ where: { username } });
+    // Re-create radusergroup (profile group) — with nas_id
+    await prisma.radusergroup.deleteMany({ where: { username, nas_id: nasId } });
+    await prisma.$executeRaw`
+      INSERT INTO radusergroup (username, groupname, priority, nas_id)
+      VALUES (${username}, ${user.profile.groupName}, 0, ${nasId})
+    `;
+
+    // Re-create radreply (static IP if set) — with nas_id
+    await prisma.radreply.deleteMany({ where: { username, nas_id: nasId } });
     if (user.ipAddress) {
-      await prisma.radreply.create({
-        data: { username, attribute: 'Framed-IP-Address', op: ':=', value: user.ipAddress },
-      });
+      await prisma.$executeRaw`
+        INSERT INTO radreply (username, attribute, op, value, nas_id)
+        VALUES (${username}, 'Framed-IP-Address', ':=', ${user.ipAddress}, ${nasId})
+      `;
     }
 
     // Mark synced
@@ -49,7 +57,7 @@ export async function POST(
       data: { syncedToRadius: true, lastSyncAt: new Date() },
     });
 
-    return ok({ success: true, message: `${username} berhasil di-sync ke RADIUS` });
+    return ok({ success: true, message: `${username} berhasil di-sync ke RADIUS${nasId ? ` (NAS: ${nasId})` : ' (global)'}` });
   } catch (error) {
     console.error('Sync radius error:', error);
     return serverError();

@@ -370,14 +370,12 @@ export async function disconnectPPPoEUser(username: string) {
       console.log(`[CoA] CoA failed for ${username}: ${coaErr?.message}`)
     }
 
-    // ── STEP 3: MikroTik API disconnect (with TLS + hard 5s timeout) ─────
+    // ── STEP 3: MikroTik API disconnect (with hard 5s timeout) ─────
     let apiSuccess = false
     if (nas.username && nas.password) {
-      const primaryPort = (nas as any).apiPort || 8729
-      const fallbackPort = (nas as any).port || 8728
-      const portsToTry = [primaryPort, ...(fallbackPort !== primaryPort ? [fallbackPort] : [])]
+      const port = (nas as any).port || 8728
 
-      for (const tryPort of portsToTry) {
+      for (const tryPort of [port]) {
         if (apiSuccess) break
         try {
           const apiResult = await withTimeout(
@@ -388,10 +386,6 @@ export async function disconnectPPPoEUser(username: string) {
                 user: nas!.username,
                 password: nas!.password,
                 timeout: 3,
-              }
-              // Enable TLS for API-SSL port (8729)
-              if (tryPort === 8729 || tryPort === (nas as any).apiPort) {
-                apiOpts.tls = { rejectUnauthorized: false }
               }
               const api = new RouterOSAPI(apiOpts)
               await api.connect()
@@ -491,7 +485,7 @@ export async function addToMikrotikAddressList(
   }
 
   const targetIp = nas.ipAddress && nas.ipAddress !== nas.nasname ? nas.ipAddress : nas.nasname
-  const portsToTry = [nas.apiPort, nas.port].filter((p, i, arr) => p && arr.indexOf(p) === i) as number[]
+  const portsToTry = [nas.port || 8728].filter((p, i, arr) => p && arr.indexOf(p) === i) as number[]
 
   for (const port of portsToTry) {
     try {
@@ -500,12 +494,9 @@ export async function addToMikrotikAddressList(
           const apiOpts: any = {
             host: targetIp,
             port,
-            user: nas!.username,
-            password: nas!.password,
+            user: nas!.username || '',
+            password: nas!.password || '',
             timeout: 3,
-          }
-          if (port === 8729 || port === nas!.apiPort) {
-            apiOpts.tls = { rejectUnauthorized: false }
           }
           const api = new RouterOSAPI(apiOpts)
           await api.connect()
