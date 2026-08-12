@@ -7,6 +7,7 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { sendAdminCreateUser } from '@/server/services/notifications/whatsapp-templates.service';
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
+import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName } from '@/server/services/mikrotik/ppp-secret.service';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { randomBytes } from 'crypto';
@@ -295,6 +296,35 @@ export async function createPppoeUser(
       radiusSynced = true;
     } catch (syncError) {
       console.error('RADIUS sync error:', syncError);
+    }
+
+    // Create PPP Secret in MikroTik (conditional by router authMode)
+    // local/hybrid → enabled (secret is primary/secondary auth)
+    // radius       → disabled (secret is backup only, RADIUS is primary)
+    if (routerId) {
+      try {
+        const router = await prisma.router.findUnique({
+          where: { id: routerId },
+          select: { authMode: true },
+        });
+        const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
+        if (shouldCreate) {
+          const mtProfile = await getMikrotikProfileName(profileId);
+          managePppSecret(routerId, 'create', {
+            username,
+            password,
+            profile: mtProfile || undefined,
+            disabled,
+            comment: `Salfanet-${user.id.slice(0, 8)}`,
+          }).then((r) => {
+            console.log(`[PPP_SECRET] create for "${username}" on router ${routerId}: ${r.message}`)
+          }).catch((e) => {
+            console.error(`[PPP_SECRET] create failed for "${username}":`, e?.message || e)
+          });
+        }
+      } catch (e: any) {
+        console.error(`[PPP_SECRET] lookup router authMode failed:`, e?.message || e);
+      }
     }
   } else if (noPppoeAccount && ipAddress) {
     try {
@@ -605,6 +635,36 @@ export async function updatePppoeUser(
               { allowDisconnect: true }
             );
           }
+        }
+      }
+
+      // Update PPP Secret in MikroTik (conditional by router authMode)
+      if (finalRouterId) {
+        try {
+          const router = await prisma.router.findUnique({
+            where: { id: finalRouterId },
+            select: { authMode: true },
+          });
+          const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
+          if (shouldCreate) {
+            const mtProfile = await getMikrotikProfileName(newProfile.id);
+            const action = (oldUsername && oldUsername !== newUsername) ? 'rename' : 'update';
+            const secretParams: any = {
+              username: oldUsername || newUsername,
+              password: data.password || currentUser.password,
+              profile: mtProfile || undefined,
+              disabled: effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled,
+              comment: `Salfanet-${id.slice(0, 8)}`,
+            };
+            if (action === 'rename') secretParams.newUsername = newUsername;
+            managePppSecret(finalRouterId, action, secretParams).then((r) => {
+              console.log(`[PPP_SECRET] ${action} for "${newUsername}" on router ${finalRouterId}: ${r.message}`)
+            }).catch((e) => {
+              console.error(`[PPP_SECRET] ${action} failed for "${newUsername}":`, e?.message || e)
+            });
+          }
+        } catch (e: any) {
+          console.error(`[PPP_SECRET] update lookup router authMode failed:`, e?.message || e);
         }
       }
     } catch (syncError) {

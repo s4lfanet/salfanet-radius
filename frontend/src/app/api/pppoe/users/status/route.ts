@@ -4,6 +4,7 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
 import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { managePppSecret, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 // sendIsolationNotification moved to NestJS backend — customer notifications handled by backend cron
 
 export async function PUT(request: Request) {
@@ -44,7 +45,7 @@ export async function PUT(request: Request) {
         email: true,
         expiredAt: true,
         profile: { select: { groupName: true } },
-        router: { select: { id: true, nasname: true } },
+        router: { select: { id: true, nasname: true, authMode: true } },
       },
     });
 
@@ -182,6 +183,16 @@ export async function PUT(request: Request) {
       await prisma.$executeRaw`
         DELETE FROM radreply WHERE username = ${user.username}
       `;
+    }
+
+    // Manage PPP Secret in MikroTik based on authMode (local/hybrid only — radius uses radcheck)
+    if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
+      const action = (status === 'active') ? 'enable' : 'disable';
+      managePppSecret(user.router.id, action, { username: user.username, password: user.password }).then((r) => {
+        console.log(`[PPP_SECRET] ${action} for "${user.username}" (status=${status}): ${r.message}`)
+      }).catch((e) => {
+        console.error(`[PPP_SECRET] ${action} failed for "${user.username}":`, e?.message || e)
+      });
     }
 
     // Send CoA disconnect to force user to re-authenticate with new config
