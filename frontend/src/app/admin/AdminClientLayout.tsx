@@ -756,20 +756,21 @@ function AdminLayoutContent({
     }
   }, [session, status]);
 
-  // Load company data
+  // Load company data (use public endpoint — works before login)
   useEffect(() => {
-    fetch('/api/company')
+    fetch('/api/company/info')
       .then((res) => res.json())
       .then((data) => {
-        if (data.name) {
+        const c = data.data || data;
+        if (c.name) {
           setCompany({
-            name: data.name,
-            email: data.email,
-            phone: data.phone,
-            address: data.address,
-            baseUrl: data.baseUrl || window.location.origin,
-            adminPhone: data.phone,
-            logo: data.logo || '',
+            name: c.name,
+            email: c.email,
+            phone: c.phone,
+            address: c.address,
+            baseUrl: c.baseUrl || window.location.origin,
+            adminPhone: c.phone,
+            logo: c.logo || '',
           });
         }
       })
