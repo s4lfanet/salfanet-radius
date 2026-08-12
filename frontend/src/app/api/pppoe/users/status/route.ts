@@ -4,7 +4,7 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
 import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { managePppSecret, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
+import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 // sendIsolationNotification moved to NestJS backend — customer notifications handled by backend cron
 
 export async function PUT(request: Request) {
@@ -193,17 +193,27 @@ export async function PUT(request: Request) {
     }
 
     // Manage PPP Secret in MikroTik based on authMode (local/hybrid only — radius uses radcheck)
-    // - active:   enable PPP secret (user can login normally)
-    // - isolated: enable PPP secret (user still needs to login to get isolir profile)
+    // - active:   enable PPP secret + restore original profile
+    // - isolated: enable PPP secret + change profile to 'isolir'
     // - blocked:  disable PPP secret (prevent local fallback auth)
     // - stop:     disable PPP secret (prevent local fallback auth)
     if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
       const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
-      managePppSecret(user.router.id, action, { username: user.username, password: user.password }).then((r) => {
-        console.log(`[PPP_SECRET] ${action} for "${user.username}" (status=${status}): ${r.message}`)
+      const profile = status === 'isolated' ? 'isolir' : (status === 'active' ? (user.profile?.groupName || undefined) : undefined);
+      managePppSecret(user.router.id, action, { username: user.username, password: user.password, profile }).then((r) => {
+        console.log(`[PPP_SECRET] ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`)
       }).catch((e) => {
         console.error(`[PPP_SECRET] ${action} failed for "${user.username}":`, e?.message || e)
       });
+
+      // Kick active session via MikroTik API (critical for local/hybrid — CoA doesn't work on local-auth sessions)
+      if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+        kickPppoeSession(user.router.id, user.username).then((kicked) => {
+          console.log(`[PPP_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status})`)
+        }).catch((e) => {
+          console.error(`[PPP_KICK] Failed for "${user.username}":`, e?.message || e)
+        });
+      }
     }
 
     // Send CoA disconnect to force user to re-authenticate with new config

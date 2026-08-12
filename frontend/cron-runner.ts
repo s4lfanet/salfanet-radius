@@ -81,12 +81,104 @@ async function getEffectiveSchedule(jobType: string): Promise<{ schedule: string
   return { schedule: def.defaultSchedule, enabled: true }
 }
 
+// ─── MikroTik API helper ────────────────────────────────────────────────────
+
+async function getRouterCreds(routerId: string) {
+  const r = await prisma.router.findUnique({
+    where: { id: routerId },
+    select: { id: true, nasname: true, ipAddress: true, port: true, username: true, password: true, authMode: true },
+  })
+  return r
+}
+
+async function mikrotikIsolateUser(routerId: string, username: string): Promise<{ profileChanged: boolean; kicked: boolean; error?: string }> {
+  const RouterOSAPI = require('node-routeros').RouterOSAPI
+  const router = await getRouterCreds(routerId)
+  if (!router) return { profileChanged: false, kicked: false, error: 'Router not found' }
+
+  const host = router.ipAddress || router.nasname
+  const apiPort = router.port || 8728
+  let api: any
+  try {
+    api = new RouterOSAPI({ host, port: apiPort, user: router.username || '', password: router.password || '', timeout: 10 })
+    await api.connect()
+    const menu = api.write.bind(api)
+
+    // 1. Change PPP secret profile to 'isolir'
+    const allSecrets = await menu('/ppp/secret/print')
+    const secret = allSecrets.find((s: any) => s.name === username)
+    let profileChanged = false
+    if (secret) {
+      if (secret.profile !== 'isolir') {
+        await menu('/ppp/secret/set', [`=.id=${secret['.id']}`, '=profile=isolir'])
+        profileChanged = true
+      }
+    }
+
+    // 2. Kick active session
+    const allActive = await menu('/ppp/active/print')
+    const active = allActive.find((a: any) => a.name === username)
+    let kicked = false
+    if (active) {
+      await menu('/ppp/active/remove', [`=.id=${active['.id']}`])
+      kicked = true
+    }
+
+    return { profileChanged, kicked }
+  } catch (e: any) {
+    return { profileChanged: false, kicked: false, error: e?.message || String(e) }
+  } finally {
+    try { if (api) await api.close() } catch { /* ignore */ }
+  }
+}
+
+async function mikrotikStopUser(routerId: string, username: string): Promise<{ disabled: boolean; kicked: boolean; error?: string }> {
+  const RouterOSAPI = require('node-routeros').RouterOSAPI
+  const router = await getRouterCreds(routerId)
+  if (!router) return { disabled: false, kicked: false, error: 'Router not found' }
+
+  const host = router.ipAddress || router.nasname
+  const apiPort = router.port || 8728
+  let api: any
+  try {
+    api = new RouterOSAPI({ host, port: apiPort, user: router.username || '', password: router.password || '', timeout: 10 })
+    await api.connect()
+    const menu = api.write.bind(api)
+
+    // 1. Disable PPP secret
+    const allSecrets = await menu('/ppp/secret/print')
+    const secret = allSecrets.find((s: any) => s.name === username)
+    let disabled = false
+    if (secret) {
+      await menu('/ppp/secret/set', [`=.id=${secret['.id']}`, '=disabled=yes'])
+      disabled = true
+    }
+
+    // 2. Kick active session
+    const allActive = await menu('/ppp/active/print')
+    const active = allActive.find((a: any) => a.name === username)
+    let kicked = false
+    if (active) {
+      await menu('/ppp/active/remove', [`=.id=${active['.id']}`])
+      kicked = true
+    }
+
+    return { disabled, kicked }
+  } catch (e: any) {
+    return { disabled: false, kicked: false, error: e?.message || String(e) }
+  } finally {
+    try { if (api) await api.close() } catch { /* ignore */ }
+  }
+}
+
 // ─── Job: Auto Isolir ───────────────────────────────────────────────────────
 
 async function runAutoIsolir(): Promise<any> {
   const now = nowWIB()
   const errors: string[] = []
 
+  // Only isolate PREPAID users with autoIsolationEnabled=true
+  // POSTPAID users are handled by invoice/suspend flow
   const expiredUsers = await prisma.pppoeUser.findMany({
     where: {
       status: 'active',
@@ -106,6 +198,7 @@ async function runAutoIsolir(): Promise<any> {
   for (const user of expiredUsers) {
     try {
       const nasId = user.router?.id || null
+      const authMode = user.router?.authMode || 'local'
 
       // 1. Update DB status
       await prisma.pppoeUser.update({
@@ -113,7 +206,7 @@ async function runAutoIsolir(): Promise<any> {
         data: { status: 'isolated' },
       })
 
-      // 2. RADIUS: move to isolir group
+      // 2. RADIUS: move to isolir group (for RADIUS and hybrid auth path)
       await prisma.radcheck.deleteMany({
         where: { username: user.username, attribute: 'Auth-Type', ...(nasId ? { nas_identifier: nasId } : {}) },
       })
@@ -136,7 +229,19 @@ async function runAutoIsolir(): Promise<any> {
         DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasId} IS NULL OR nas_identifier = ${nasId})
       `
 
-      // 3. CoA disconnect (best-effort)
+      // 3. MikroTik: change PPP secret profile to 'isolir' + kick active session
+      //    This is CRITICAL for local/hybrid mode — CoA doesn't work on local-auth sessions
+      if (user.router?.id && authMode !== 'radius') {
+        const mtResult = await mikrotikIsolateUser(user.router.id, user.username)
+        if (mtResult.error) {
+          errors.push(`${user.username}: MikroTik error: ${mtResult.error}`)
+          console.error(`[AUTO_ISOLIR] MikroTik error for ${user.username}:`, mtResult.error)
+        } else {
+          console.log(`[AUTO_ISOLIR] MikroTik: profileChanged=${mtResult.profileChanged} kicked=${mtResult.kicked} for ${user.username}`)
+        }
+      }
+
+      // 4. CoA disconnect (best-effort, for RADIUS-authed sessions)
       try {
         const secret = process.env.RADIUS_COA_SECRET || 'secret123'
         const nasIp = user.router ? (await prisma.router.findUnique({ where: { id: user.router.id }, select: { nasname: true } }))?.nasname : null
@@ -144,11 +249,11 @@ async function runAutoIsolir(): Promise<any> {
           await execAsync(`echo 'User-Name="${user.username}"' | radclient -x ${nasIp}:3799 disconnect ${secret} -t 2`, { timeout: 5000 })
         }
       } catch (e: any) {
-        // CoA failure is non-fatal
+        // CoA failure is non-fatal — MikroTik API kick already handled local sessions
       }
 
       isolated++
-      console.log(`[AUTO_ISOLIR] Isolated ${user.username} (expired: ${user.expiredAt?.toISOString()})`)
+      console.log(`[AUTO_ISOLIR] Isolated ${user.username} (expired: ${user.expiredAt?.toISOString()}, mode: ${authMode})`)
     } catch (e: any) {
       errors.push(`${user.username}: ${e?.message || e}`)
       console.error(`[AUTO_ISOLIR] Failed for ${user.username}:`, e?.message || e)
@@ -173,14 +278,37 @@ async function runAutoStop(): Promise<any> {
   for (const user of longIsolated) {
     try {
       const nasId = user.router?.id || null
+      const authMode = user.router?.authMode || 'local'
+
+      // 1. Update DB status
       await prisma.pppoeUser.update({ where: { id: user.id }, data: { status: 'stop' } })
 
+      // 2. Remove from RADIUS tables
       await prisma.$executeRaw`DELETE FROM radcheck WHERE username = ${user.username} AND (${nasId} IS NULL OR nas_identifier = ${nasId})`
       await prisma.$executeRaw`DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasId} IS NULL OR nas_identifier = ${nasId})`
       await prisma.$executeRaw`DELETE FROM radreply WHERE username = ${user.username} AND (${nasId} IS NULL OR nas_identifier = ${nasId})`
 
+      // 3. MikroTik: disable PPP secret + kick active session
+      if (user.router?.id && authMode !== 'radius') {
+        const mtResult = await mikrotikStopUser(user.router.id, user.username)
+        if (mtResult.error) {
+          console.error(`[AUTO_STOP] MikroTik error for ${user.username}:`, mtResult.error)
+        } else {
+          console.log(`[AUTO_STOP] MikroTik: disabled=${mtResult.disabled} kicked=${mtResult.kicked} for ${user.username}`)
+        }
+      }
+
+      // 4. CoA disconnect (best-effort)
+      try {
+        const secret = process.env.RADIUS_COA_SECRET || 'secret123'
+        const nasIp = user.router ? (await prisma.router.findUnique({ where: { id: user.router.id }, select: { nasname: true } }))?.nasname : null
+        if (nasIp) {
+          await execAsync(`echo 'User-Name="${user.username}"' | radclient -x ${nasIp}:3799 disconnect ${secret} -t 2`, { timeout: 5000 })
+        }
+      } catch (e: any) { /* non-fatal */ }
+
       stopped++
-      console.log(`[AUTO_STOP] Stopped ${user.username}`)
+      console.log(`[AUTO_STOP] Stopped ${user.username} (mode: ${authMode})`)
     } catch (e: any) {
       console.error(`[AUTO_STOP] Failed for ${user.username}:`, e?.message || e)
     }
