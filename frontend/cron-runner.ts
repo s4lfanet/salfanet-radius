@@ -389,16 +389,18 @@ async function runFreeradiusHealth(): Promise<any> {
 // ─── Job: Disconnect Sessions (kick isolated/stop users still online) ───────
 
 async function runDisconnectSessions(): Promise<any> {
-  // Find users with isolated/stop/blocked status — they should NOT be online
-  const isolatedUsers = await prisma.pppoeUser.findMany({
-    where: { status: { in: ['isolated', 'stop', 'blocked'] } },
+  // Only kick stop/blocked users — they must be OFFLINE entirely.
+  // isolated users must STAY ONLINE in isolir profile (64k/64k) — do NOT kick them.
+  // Kicking isolated users every 5 min causes reconnect loops.
+  const offlineUsers = await prisma.pppoeUser.findMany({
+    where: { status: { in: ['stop', 'blocked'] } },
     select: { id: true, username: true, status: true, routerId: true, router: { select: { id: true, authMode: true } } },
   })
 
   let disconnected = 0
   const errors: string[] = []
 
-  for (const user of isolatedUsers) {
+  for (const user of offlineUsers) {
     if (!user.router?.id) continue
     const authMode = user.router?.authMode || 'local'
 
@@ -425,7 +427,7 @@ async function runDisconnectSessions(): Promise<any> {
     } catch { /* non-fatal */ }
   }
 
-  return { disconnected, total: isolatedUsers.length, errors }
+  return { disconnected, total: offlineUsers.length, errors }
 }
 
 // ─── Job: Invoice Status Update (PENDING → OVERDUE) ─────────────────────────
