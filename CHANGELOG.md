@@ -6,6 +6,60 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [3.2.0] — 2026-08-12 — FreeRADIUS Integration + Admin UI
+
+### FreeRADIUS Server Configuration (Stage 1 — Verified on VPS)
+- Enabled `sqlippool` module (SQL-backed IP pool, not file-based `rlm_ippool`)
+- Enabled `cui` module with MySQL backend (`cuisql`)
+- Imported stored procedure `fr_allocate_previous_or_new_framedipaddress` (modified: removed `SET TRANSACTION` to avoid conflict with rlm_sql transaction wrapper)
+- Configured `queries.conf` to use stored procedure for atomic IP allocation
+- Added `sqlippool` + `cuisql` to `sites-enabled/default` post-auth section
+- Added `sqlippool` to accounting section for lease release on STOP/ON/OFF
+- Fixed `Pool-Name` attribute: moved from `radgroupreply` to `radgroupcheck` (check item, not reply)
+- Verified with `radtest`: Access-Accept + `Framed-IP-Address = 172.19.200.10` from `10Mbps-Pool`
+- Verified CUI table populated on auth
+- FreeRADIUS config validation: `freeradius -XC` exit 0
+- Service status: `active (running)`
+
+### Admin UI (Stage 2)
+- New page: `/admin/ippool` — IP Pool Management
+  - List pools with total IPs and range
+  - Pool statistics (total pools, total IPs, allocated, utilization %)
+  - Create pool (network + start/end octet)
+  - Expand pool (add more IPs to existing pool)
+  - Delete pool (only when no IPs allocated)
+  - Pool details modal with recent allocations
+  - Pool-Name → RADIUS group mappings (radgroupcheck)
+  - Map/unmap group to pool
+- New page: `/admin/data-usage` — Data Usage Reports
+  - Top Consumers tab (filter by 7/30/90 days, top 10/20/50)
+  - Monthly Summary tab (current month aggregate)
+  - Per User tab (search by username, date-range usage)
+  - Manual aggregate trigger button
+  - Upload/Download/Total in GB
+- Added sidebar menu entries under FreeRADIUS group: IP Pool, Data Usage
+- Added translation keys (id.json): `nav.ipPool`, `nav.dataUsage`
+
+### Deployment Scripts
+- `deploy/freeradius/install-radius-modules.sh` — idempotent installer for sqlippool + cui + SP
+- `deploy/freeradius/queries-sqlippool.conf` — FreeRADIUS queries using stored procedure
+- `deploy/freeradius/cui.conf` — CUI module config (MySQL)
+- `deploy/freeradius/sqlippool.conf` — sqlippool module config
+- `deploy/freeradius/fr_allocate_sp.sql` — stored procedure (modified from FreeRADIUS 3.2.8)
+
+### Legacy API Route Cleanup
+- Stubbed 6 legacy API routes that imported deleted `@/server/jobs/*`:
+  - `/api/cron` — delegates to backend `/api/v1/cron/trigger`
+  - `/api/cron/status` — delegates to backend `/api/v1/cron/status`
+  - `/api/cron/schedules` — delegates to backend `/api/v1/cron/schedules`
+  - `/api/cron/telegram` — delegates to backend `/api/v1/telegram/cron/*`
+  - `/api/sessions/sync` — delegates to backend `/api/v1/cron/trigger`
+  - `/api/invoices/send-reminders-bulk` — delegates to backend
+  - `/api/admin/isolate-user` — delegates to backend
+  - `/api/pppoe/users/status` — removed `sendIsolationNotification` import (now backend cron)
+
+---
+
 ## [3.1.0] — 2026-08-12 — RADIUS Enhancements
 
 ### New Features — Adopted from home.pmynet.id-main (FreeRADIUS 3.2.8)
