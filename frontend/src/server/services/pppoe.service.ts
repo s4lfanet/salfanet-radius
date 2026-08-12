@@ -333,7 +333,7 @@ export async function createPppoeUser(
         data: { username, attribute: 'Framed-IP-Address', op: ':=', value: ipAddress, nas_identifier: nasIdentifier },
       });
       await prisma.radusergroup.create({
-        data: { username, groupname: profile.groupName, priority: 0 },
+        data: { username, groupname: profile.groupName, priority: 0, nas_identifier: nasIdentifier },
       });
     } catch (syncError) {
       console.error('Static IP sync error:', syncError);
