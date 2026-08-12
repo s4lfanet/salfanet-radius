@@ -468,22 +468,23 @@ export async function POST(request: NextRequest) {
 
           await prisma.pppoeUser.update({ where: { username: rowData.username }, data: updateData });
 
-          // Sync RADIUS: update password and profile
+          // Sync RADIUS: update password and profile — with nas_identifier for multi-tenant isolation
+          const upsertNasId = rowRouterId !== null ? rowRouterId : (existingUser.routerId || null);
+          await prisma.$executeRaw`DELETE FROM radcheck WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
           await prisma.$executeRaw`
-            INSERT INTO radcheck (username, attribute, op, value)
-            VALUES (${existingUser.username}, 'Cleartext-Password', ':=', ${password})
-            ON DUPLICATE KEY UPDATE value = ${password}
+            INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+            VALUES (${existingUser.username}, 'Cleartext-Password', ':=', ${password}, ${upsertNasId})
           `;
-          await prisma.$executeRaw`DELETE FROM radusergroup WHERE username = ${existingUser.username}`;
+          await prisma.$executeRaw`DELETE FROM radusergroup WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
           await prisma.$executeRaw`
-            INSERT INTO radusergroup (username, groupname, priority)
-            VALUES (${existingUser.username}, ${upsertProfile.groupName}, 1)
+            INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+            VALUES (${existingUser.username}, ${upsertProfile.groupName}, 1, ${upsertNasId})
           `;
           if (updateData.ipAddress) {
+            await prisma.$executeRaw`DELETE FROM radreply WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
             await prisma.$executeRaw`
-              INSERT INTO radreply (username, attribute, op, value)
-              VALUES (${existingUser.username}, 'Framed-IP-Address', ':=', ${updateData.ipAddress})
-              ON DUPLICATE KEY UPDATE value = ${updateData.ipAddress}
+              INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+              VALUES (${existingUser.username}, 'Framed-IP-Address', ':=', ${updateData.ipAddress}, ${upsertNasId})
             `;
           }
 
@@ -590,28 +591,29 @@ export async function POST(request: NextRequest) {
           data: userData,
         });
 
-        // Sync to RADIUS
+        // Sync to RADIUS — with nas_identifier for multi-tenant isolation
+        const newNasId = rowRouterId || null;
+        await prisma.$executeRaw`DELETE FROM radcheck WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))`;
         await prisma.$executeRaw`
-          INSERT INTO radcheck (username, attribute, op, value)
-          VALUES (${newUser.username}, 'Cleartext-Password', ':=', ${newUser.password})
-          ON DUPLICATE KEY UPDATE value = ${newUser.password}
+          INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+          VALUES (${newUser.username}, 'Cleartext-Password', ':=', ${newUser.password}, ${newNasId})
         `;
 
         await prisma.$executeRaw`
-          DELETE FROM radusergroup WHERE username = ${newUser.username}
+          DELETE FROM radusergroup WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))
         `;
 
         await prisma.$executeRaw`
-          INSERT INTO radusergroup (username, groupname, priority)
-          VALUES (${newUser.username}, ${rowProfile.groupName}, 1)
+          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+          VALUES (${newUser.username}, ${rowProfile.groupName}, 1, ${newNasId})
         `;
 
         // Add static IP if provided
         if (newUser.ipAddress) {
+          await prisma.$executeRaw`DELETE FROM radreply WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))`;
           await prisma.$executeRaw`
-            INSERT INTO radreply (username, attribute, op, value)
-            VALUES (${newUser.username}, 'Framed-IP-Address', ':=', ${newUser.ipAddress})
-            ON DUPLICATE KEY UPDATE value = ${newUser.ipAddress}
+            INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+            VALUES (${newUser.username}, 'Framed-IP-Address', ':=', ${newUser.ipAddress}, ${newNasId})
           `;
         }
 

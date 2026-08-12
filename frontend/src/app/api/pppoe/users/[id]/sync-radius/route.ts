@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { ok, unauthorized, notFound, serverError } from '@/lib/api-response';
 import { prisma } from '@/server/db/client';
+import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
 // POST /api/pppoe/users/[id]/sync-radius — re-sync a single user to RADIUS tables
 export async function POST(
@@ -53,6 +54,13 @@ export async function POST(
       where: { id },
       data: { syncedToRadius: true, lastSyncAt: new Date() },
     });
+
+    // Reload FreeRADIUS so changes take effect immediately
+    try {
+      await reloadFreeRadius();
+    } catch (e) {
+      console.warn('FreeRADIUS reload failed after user sync:', e);
+    }
 
     return ok({ success: true, message: `${username} berhasil di-sync ke RADIUS${nasIdentifier ? ` (NAS: ${nasIdentifier})` : ' (global)'}` });
   } catch (error) {
