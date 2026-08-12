@@ -68,7 +68,7 @@ export async function GET() {
           select: { vpnClientId: true, secret: true, username: true, password: true },
         })
       : []
-    type NasEntry = { vpnClientId: string | null; secret: string; username: string; password: string }
+    type NasEntry = { vpnClientId: string | null; secret: string; username: string | null; password: string | null }
     const nasMap = new Map(nasEntries.map((n: NasEntry) => [n.vpnClientId, n]))
     const vpnClientsWithSecret = vpnClients.map((c: { id: string; name: string; vpnIp: string; isRadiusServer: boolean; apiUsername: string | null; apiPassword: string | null }) => {
       const nas = nasMap.get(c.id)
