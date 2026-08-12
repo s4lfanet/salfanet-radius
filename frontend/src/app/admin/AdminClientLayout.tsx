@@ -234,6 +234,8 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.radCheck', href: '/admin/freeradius/radcheck', requiredPermission: 'settings.view' },
           { titleKey: 'nav.radiusLogs', href: '/admin/freeradius/logs', requiredPermission: 'settings.view' },
           { titleKey: 'nav.radiusBackup', href: '/admin/freeradius/backup', requiredPermission: 'settings.view' },
+          { titleKey: 'nav.ipPool', href: '/admin/ippool', requiredPermission: 'settings.view' },
+          { titleKey: 'nav.dataUsage', href: '/admin/data-usage', requiredPermission: 'settings.view' },
         ],
       },
     ],
