@@ -73,13 +73,10 @@ async function disconnectHotspotUser(router: any, username: string): Promise<{ s
   const apiOpts: any = {
     host,
     port,
-    user: router.username,
-    password: router.password,
+    user: router.username || '',
+    password: router.password || '',
     timeout: 5,
   };
-  if (port === 8729 || port === router.apiPort) {
-    apiOpts.tls = { rejectUnauthorized: false };
-  }
   const api = new RouterOSAPI(apiOpts);
 
   try {
@@ -153,26 +150,19 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 // Disconnect PPPoE user via MikroTik API
 async function disconnectPPPoEUser(router: any, username: string): Promise<{ success: boolean; error?: string }> {
   const host = router.ipAddress || router.nasname;
-  // Try API-SSL port first (apiPort/8729), then plaintext (port/8728)
-  const primaryPort = router.apiPort || 8729;
-  const fallbackPort = router.port || 8728;
-  const portsToTry = [primaryPort, ...(fallbackPort !== primaryPort ? [fallbackPort] : [])];
+  const port = router.port || 8728;
 
-  for (const tryPort of portsToTry) {
+  for (const tryPort of [port]) {
     try {
       const result = await withTimeout(
         (async () => {
           const apiOpts: any = {
             host,
             port: tryPort,
-            user: router.username,
-            password: router.password,
+            user: router.username || '',
+            password: router.password || '',
             timeout: 5,
           };
-          // Enable TLS for API-SSL port (8729)
-          if (tryPort === 8729 || tryPort === router.apiPort) {
-            apiOpts.tls = { rejectUnauthorized: false };
-          }
           const api = new RouterOSAPI(apiOpts);
 
           try {
