@@ -8,7 +8,7 @@ import { authOptions } from '@/server/auth/config';
 /**
  * GET /api/pppoe/users/sync-check
  * Compare PPPoE users in DB vs PPP secrets in MikroTik.
- * Only checks routers with authMode = local or hybrid (not radius).
+ * Only checks routers with authMode = local (not radius).
  * Returns list of users missing from MikroTik.
  */
 export async function GET(request: Request) {
@@ -16,12 +16,12 @@ export async function GET(request: Request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    // Get all active routers with local/hybrid auth mode
+    // Get all active routers with local auth mode
     const routers = await prisma.router.findMany({
       where: {
         isActive: true,
         type: 'mikrotik',
-        authMode: { in: ['local', 'hybrid'] },
+        authMode: 'local',
         username: { not: null },
         password: { not: null },
       },

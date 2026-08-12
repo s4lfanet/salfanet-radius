@@ -147,7 +147,7 @@ export async function POST(
           `;
         }
 
-        // Restore PPP secret profile in MikroTik (critical for local/hybrid mode)
+        // Restore PPP secret profile in MikroTik (critical for local mode)
         // Change profile back to original + enable + kick active session
         if (userRecord.router?.id && shouldManagePppSecretForSuspend(userRecord.router.authMode)) {
           managePppSecret(userRecord.router.id, 'enable', {
