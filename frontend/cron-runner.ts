@@ -1,9 +1,10 @@
 /**
- * Standalone Next.js Cron Runner — replaces NestJS backend cron scheduler.
+ * Standalone Next.js Cron Runner — thin scheduler.
  *
- * This file is self-contained: it does NOT import from src/server/* (which
- * uses 'server-only'). All job logic is inlined here to avoid the
- * 'server-only' import restriction.
+ * This file does NOT contain business logic. It only schedules jobs and
+ * triggers them via HTTP POST to /api/cron (the Next.js API route).
+ * All business logic lives in the API route, which can import from src/server/*
+ * (no 'server-only' restriction).
  *
  * Usage:
  *   npx tsx cron-runner.ts                          # run all jobs on schedule
@@ -19,7 +20,7 @@ import { promisify } from 'util'
 
 const execAsync = promisify(exec)
 
-// ─── Prisma (standalone, no 'server-only') ──────────────────────────────────
+// ─── Prisma (standalone, for schedule config only) ──────────────────────────
 
 const prisma = new PrismaClient({ log: ['warn', 'error'] })
 
@@ -33,7 +34,6 @@ process.on('unhandledRejection', (reason) => {
 // ─── Timezone helper ────────────────────────────────────────────────────────
 
 function nowWIB(): Date {
-  // WIB = UTC+7. Return a Date where UTC values represent WIB time.
   const now = new Date()
   return new Date(now.getTime() + 7 * 60 * 60 * 1000)
 }
@@ -56,765 +56,109 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'invoice_status_update', name: 'Invoice Status Update',  description: 'Update status invoice', defaultSchedule: '0 * * * *' },
   { type: 'notification_check',    name: 'Notification Check',     description: 'Cek notifikasi expired/overdue', defaultSchedule: '0 */6 * * *' },
   { type: 'session_monitor',       name: 'Session Monitor',        description: 'Monitor sesi mencurigakan', defaultSchedule: '*/15 * * * *' },
-  { type: 'disconnect_sessions',   name: 'Disconnect Sessions',    description: 'Disconnect sesi isolir/stop', defaultSchedule: '*/5 * * * *' },
+  { type: 'disconnect_sessions',   name: 'Disconnect Sessions',    description: 'Disconnect sesi stop/blocked', defaultSchedule: '*/5 * * * *' },
   { type: 'auto_renewal',          name: 'Auto Renewal',           description: 'Auto renew prepaid dari saldo', defaultSchedule: '0 8 * * *' },
   { type: 'activity_log_cleanup',  name: 'Activity Log Cleanup',   description: 'Hapus log >30 hari', defaultSchedule: '0 2 * * *' },
   { type: 'webhook_log_cleanup',   name: 'Webhook Log Cleanup',    description: 'Hapus webhook log >7 hari', defaultSchedule: '0 3 * * *' },
   { type: 'freeradius_health',     name: 'FreeRADIUS Health',      description: 'Cek kesehatan FreeRADIUS', defaultSchedule: '*/5 * * * *' },
   { type: 'pppoe_session_sync',    name: 'PPPoE Session Sync',     description: 'Sync sesi PPPoE ke radacct', defaultSchedule: '*/5 * * * *' },
-  { type: 'suspend_check',         name: 'Suspend Check',          description: 'Cek user perlu disuspend', defaultSchedule: '0 * * * *' },
+  { type: 'auto_stop',             name: 'Auto Stop',              description: 'Stop user isolated >30 hari', defaultSchedule: '0 5 * * *' },
+  { type: 'suspend_check',         name: 'Suspend Check',          description: 'Cek user yang perlu disuspend', defaultSchedule: '0 * * * *' },
   { type: 'cron_history_cleanup',  name: 'History Cleanup',        description: 'Hapus cron history >30 hari', defaultSchedule: '0 4 * * *' },
-  { type: 'auto_stop',             name: 'Auto Stop',              description: 'Stop user isolir >30 hari', defaultSchedule: '0 5 * * *' },
 ]
 
-const CRON_JOB_MAP = new Map(CRON_JOB_DEFS.map(j => [j.type, j]))
+// ─── Schedule config ────────────────────────────────────────────────────────
 
 async function getEffectiveSchedule(jobType: string): Promise<{ schedule: string; enabled: boolean }> {
-  const def = CRON_JOB_MAP.get(jobType)
+  const def = CRON_JOB_DEFS.find(d => d.type === jobType)
   if (!def) return { schedule: '* * * * *', enabled: false }
   try {
     const config = await prisma.cronScheduleConfig.findUnique({ where: { jobType } })
     if (config) return { schedule: config.schedule, enabled: config.enabled }
-  } catch (e) {
+  } catch {
     // Table might not exist yet
   }
   return { schedule: def.defaultSchedule, enabled: true }
 }
 
-// ─── MikroTik API helper ────────────────────────────────────────────────────
+// ─── HTTP trigger to /api/cron ──────────────────────────────────────────────
 
-async function getRouterCreds(routerId: string) {
-  const r = await prisma.router.findUnique({
-    where: { id: routerId },
-    select: { id: true, nasname: true, ipAddress: true, port: true, username: true, password: true, authMode: true },
-  })
-  return r
-}
+const API_URL = process.env.CRON_API_URL || 'http://localhost:3000'
+const CRON_SECRET = process.env.CRON_SECRET || ''
 
-async function mikrotikIsolateUser(routerId: string, username: string): Promise<{ profileChanged: boolean; kicked: boolean; error?: string }> {
-  const RouterOSAPI = require('node-routeros').RouterOSAPI
-  const router = await getRouterCreds(routerId)
-  if (!router) return { profileChanged: false, kicked: false, error: 'Router not found' }
+/**
+ * Trigger a job via HTTP POST to /api/cron.
+ * The API route handles all business logic (can import from src/server/*).
+ * Returns the job result from the API.
+ */
+async function triggerJobViaAPI(jobType: string): Promise<any> {
+  const url = `${API_URL}/api/cron`
+  const body = JSON.stringify({ type: jobType })
 
-  const host = router.ipAddress || router.nasname
-  const apiPort = router.port || 8728
-  let api: any
+  // Use curl to avoid needing fetch/undici in standalone mode
+  const { stdout } = await execAsync(
+    `curl -s -X POST ${url} -H "Content-Type: application/json" -H "x-cron-secret: ${CRON_SECRET}" -d '${body.replace(/'/g, "'\\''")}'`,
+    { timeout: 120000 }
+  )
+
   try {
-    api = new RouterOSAPI({ host, port: apiPort, user: router.username || '', password: router.password || '', timeout: 10 })
-    await api.connect()
-    const menu = api.write.bind(api)
-
-    // 1. Change PPP secret profile to 'isolir'
-    const allSecrets = await menu('/ppp/secret/print')
-    const secret = allSecrets.find((s: any) => s.name === username)
-    let profileChanged = false
-    if (secret) {
-      if (secret.profile !== 'isolir') {
-        await menu('/ppp/secret/set', [`=.id=${secret['.id']}`, '=profile=isolir'])
-        profileChanged = true
-      }
-    }
-
-    // 2. Kick active session
-    const allActive = await menu('/ppp/active/print')
-    const active = allActive.find((a: any) => a.name === username)
-    let kicked = false
-    if (active) {
-      await menu('/ppp/active/remove', [`=.id=${active['.id']}`])
-      kicked = true
-    }
-
-    return { profileChanged, kicked }
-  } catch (e: any) {
-    return { profileChanged: false, kicked: false, error: e?.message || String(e) }
-  } finally {
-    try { if (api) await api.close() } catch { /* ignore */ }
+    return JSON.parse(stdout)
+  } catch {
+    return { success: false, raw: stdout.slice(0, 500) }
   }
-}
-
-async function mikrotikStopUser(routerId: string, username: string): Promise<{ disabled: boolean; kicked: boolean; error?: string }> {
-  const RouterOSAPI = require('node-routeros').RouterOSAPI
-  const router = await getRouterCreds(routerId)
-  if (!router) return { disabled: false, kicked: false, error: 'Router not found' }
-
-  const host = router.ipAddress || router.nasname
-  const apiPort = router.port || 8728
-  let api: any
-  try {
-    api = new RouterOSAPI({ host, port: apiPort, user: router.username || '', password: router.password || '', timeout: 10 })
-    await api.connect()
-    const menu = api.write.bind(api)
-
-    // 1. Disable PPP secret
-    const allSecrets = await menu('/ppp/secret/print')
-    const secret = allSecrets.find((s: any) => s.name === username)
-    let disabled = false
-    if (secret) {
-      await menu('/ppp/secret/set', [`=.id=${secret['.id']}`, '=disabled=yes'])
-      disabled = true
-    }
-
-    // 2. Kick active session
-    const allActive = await menu('/ppp/active/print')
-    const active = allActive.find((a: any) => a.name === username)
-    let kicked = false
-    if (active) {
-      await menu('/ppp/active/remove', [`=.id=${active['.id']}`])
-      kicked = true
-    }
-
-    return { disabled, kicked }
-  } catch (e: any) {
-    return { disabled: false, kicked: false, error: e?.message || String(e) }
-  } finally {
-    try { if (api) await api.close() } catch { /* ignore */ }
-  }
-}
-
-// ─── Job: Auto Isolir ───────────────────────────────────────────────────────
-
-async function runAutoIsolir(): Promise<any> {
-  const now = nowWIB()
-  const errors: string[] = []
-
-  // Check company settings
-  const company = await prisma.company.findFirst({
-    select: { isolationEnabled: true, gracePeriodDays: true },
-  })
-  const isolationEnabled = company?.isolationEnabled !== false // default true
-  if (!isolationEnabled) {
-    console.log('[AUTO_ISOLIR] Isolation disabled by company settings — skipping')
-    return { isolated: 0, total: 0, errors: [], skipped: 'isolation_disabled' }
-  }
-  const graceDays = company?.gracePeriodDays || 0
-  const cutoff = new Date(now.getTime() - graceDays * 24 * 60 * 60 * 1000)
-
-  // ─── PREPAID: expiredAt < now - graceDays ──────────────────────────────
-  const prepaidExpired = await prisma.pppoeUser.findMany({
-    where: {
-      status: 'active',
-      expiredAt: { lt: cutoff },
-      autoIsolationEnabled: true,
-      subscriptionType: 'PREPAID',
-    },
-    select: {
-      id: true, username: true, name: true, password: true,
-      ipAddress: true, routerId: true, expiredAt: true,
-      profile: { select: { groupName: true } },
-      router: { select: { id: true, authMode: true } },
-    },
-  })
-
-  // ─── POSTPAID: has OVERDUE invoice past dueDate + graceDays ────────────
-  // Find postpaid users with overdue invoices past grace period
-  const postpaidOverdue = await prisma.pppoeUser.findMany({
-    where: {
-      status: 'active',
-      autoIsolationEnabled: true,
-      subscriptionType: 'POSTPAID',
-      invoices: {
-        some: {
-          status: 'OVERDUE',
-          dueDate: { lt: cutoff },
-        },
-      },
-    },
-    select: {
-      id: true, username: true, name: true, password: true,
-      ipAddress: true, routerId: true, expiredAt: true,
-      profile: { select: { groupName: true } },
-      router: { select: { id: true, authMode: true } },
-    },
-  })
-
-  const allExpiredUsers = [...prepaidExpired, ...postpaidOverdue]
-  console.log(`[AUTO_ISOLIR] Found ${prepaidExpired.length} prepaid + ${postpaidOverdue.length} postpaid = ${allExpiredUsers.length} users to isolate (grace: ${graceDays}d)`)
-
-  let isolated = 0
-  for (const user of allExpiredUsers) {
-    try {
-      const nasId = user.router?.id || null
-      const authMode = user.router?.authMode || 'local'
-
-      // 1. Update DB status
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
-        data: { status: 'isolated' },
-      })
-
-      // 2. RADIUS: move to isolir group (for RADIUS auth path)
-      await prisma.radcheck.deleteMany({
-        where: { username: user.username, attribute: 'Auth-Type', ...(nasId ? { nas_identifier: nasId } : {}) },
-      })
-
-      await prisma.$executeRaw`
-        INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
-        VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasId})
-        ON DUPLICATE KEY UPDATE value = ${user.password}
-      `
-
-      await prisma.$executeRaw`
-        DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasId} IS NULL OR nas_identifier = ${nasId})
-      `
-      await prisma.$executeRaw`
-        INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-        VALUES (${user.username}, 'isolir', 1, ${nasId})
-      `
-
-      await prisma.$executeRaw`
-        DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasId} IS NULL OR nas_identifier = ${nasId})
-      `
-
-      // 3. MikroTik: change PPP secret profile to 'isolir' + kick active session
-      //    This is CRITICAL for local mode — CoA doesn't work on local-auth sessions
-      if (user.router?.id && authMode !== 'radius') {
-        const mtResult = await mikrotikIsolateUser(user.router.id, user.username)
-        if (mtResult.error) {
-          errors.push(`${user.username}: MikroTik error: ${mtResult.error}`)
-          console.error(`[AUTO_ISOLIR] MikroTik error for ${user.username}:`, mtResult.error)
-        } else {
-          console.log(`[AUTO_ISOLIR] MikroTik: profileChanged=${mtResult.profileChanged} kicked=${mtResult.kicked} for ${user.username}`)
-        }
-      }
-
-      // 4. CoA disconnect (best-effort, for RADIUS-authed sessions)
-      try {
-        const secret = process.env.RADIUS_COA_SECRET || 'secret123'
-        const nasIp = user.router ? (await prisma.router.findUnique({ where: { id: user.router.id }, select: { nasname: true } }))?.nasname : null
-        if (nasIp) {
-          await execAsync(`echo 'User-Name="${user.username}"' | radclient -x ${nasIp}:3799 disconnect ${secret} -t 2`, { timeout: 5000 })
-        }
-      } catch (e: any) {
-        // CoA failure is non-fatal — MikroTik API kick already handled local sessions
-      }
-
-      isolated++
-      const subType = prepaidExpired.find(u => u.id === user.id) ? 'PREPAID' : 'POSTPAID'
-      console.log(`[AUTO_ISOLIR] Isolated ${user.username} (${subType}, expired: ${user.expiredAt?.toISOString()}, mode: ${authMode})`)
-    } catch (e: any) {
-      errors.push(`${user.username}: ${e?.message || e}`)
-      console.error(`[AUTO_ISOLIR] Failed for ${user.username}:`, e?.message || e)
-    }
-  }
-
-  return { isolated, total: allExpiredUsers.length, prepaid: prepaidExpired.length, postpaid: postpaidOverdue.length, errors }
-}
-
-// ─── Job: Auto Stop ─────────────────────────────────────────────────────────
-
-async function runAutoStop(): Promise<any> {
-  const now = nowWIB()
-  const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-
-  const longIsolated = await prisma.pppoeUser.findMany({
-    where: { status: 'isolated', expiredAt: { lt: thirtyDaysAgo } },
-    select: { id: true, username: true, routerId: true, router: { select: { id: true, authMode: true } } },
-  })
-
-  let stopped = 0
-  for (const user of longIsolated) {
-    try {
-      const nasId = user.router?.id || null
-      const authMode = user.router?.authMode || 'local'
-
-      // 1. Update DB status
-      await prisma.pppoeUser.update({ where: { id: user.id }, data: { status: 'stop' } })
-
-      // 2. Remove from RADIUS tables
-      await prisma.$executeRaw`DELETE FROM radcheck WHERE username = ${user.username} AND (${nasId} IS NULL OR nas_identifier = ${nasId})`
-      await prisma.$executeRaw`DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasId} IS NULL OR nas_identifier = ${nasId})`
-      await prisma.$executeRaw`DELETE FROM radreply WHERE username = ${user.username} AND (${nasId} IS NULL OR nas_identifier = ${nasId})`
-
-      // 3. MikroTik: disable PPP secret + kick active session
-      if (user.router?.id && authMode !== 'radius') {
-        const mtResult = await mikrotikStopUser(user.router.id, user.username)
-        if (mtResult.error) {
-          console.error(`[AUTO_STOP] MikroTik error for ${user.username}:`, mtResult.error)
-        } else {
-          console.log(`[AUTO_STOP] MikroTik: disabled=${mtResult.disabled} kicked=${mtResult.kicked} for ${user.username}`)
-        }
-      }
-
-      // 4. CoA disconnect (best-effort)
-      try {
-        const secret = process.env.RADIUS_COA_SECRET || 'secret123'
-        const nasIp = user.router ? (await prisma.router.findUnique({ where: { id: user.router.id }, select: { nasname: true } }))?.nasname : null
-        if (nasIp) {
-          await execAsync(`echo 'User-Name="${user.username}"' | radclient -x ${nasIp}:3799 disconnect ${secret} -t 2`, { timeout: 5000 })
-        }
-      } catch (e: any) { /* non-fatal */ }
-
-      stopped++
-      console.log(`[AUTO_STOP] Stopped ${user.username} (mode: ${authMode})`)
-    } catch (e: any) {
-      console.error(`[AUTO_STOP] Failed for ${user.username}:`, e?.message || e)
-    }
-  }
-
-  return { stopped, total: longIsolated.length }
-}
-
-// ─── Job: Cleanup tasks ─────────────────────────────────────────────────────
-
-async function runActivityLogCleanup(): Promise<any> {
-  const ago = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const r = await prisma.activityLog.deleteMany({ where: { createdAt: { lt: ago } } })
-  return { deleted: r.count }
-}
-
-async function runWebhookLogCleanup(): Promise<any> {
-  const ago = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  const r = await prisma.webhookLog.deleteMany({ where: { createdAt: { lt: ago } } })
-  return { deleted: r.count }
-}
-
-async function runCronHistoryCleanup(): Promise<any> {
-  const ago = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const r = await prisma.cronHistory.deleteMany({ where: { startedAt: { lt: ago } } })
-  return { deleted: r.count }
-}
-
-// ─── Job: FreeRADIUS Health ─────────────────────────────────────────────────
-
-async function runFreeradiusHealth(): Promise<any> {
-  try {
-    const { stdout } = await execAsync('systemctl is-active freeradius', { timeout: 5000 })
-    const healthy = stdout.trim() === 'active'
-    return { healthy, status: stdout.trim() }
-  } catch (e: any) {
-    return { healthy: false, error: e?.message }
-  }
-}
-
-// ─── Job: Disconnect Sessions (kick isolated/stop users still online) ───────
-
-async function runDisconnectSessions(): Promise<any> {
-  // Only kick stop/blocked users — they must be OFFLINE entirely.
-  // isolated users must STAY ONLINE in isolir profile (64k/64k) — do NOT kick them.
-  // Kicking isolated users every 5 min causes reconnect loops.
-  const offlineUsers = await prisma.pppoeUser.findMany({
-    where: { status: { in: ['stop', 'blocked'] } },
-    select: { id: true, username: true, status: true, routerId: true, router: { select: { id: true, authMode: true } } },
-  })
-
-  let disconnected = 0
-  const errors: string[] = []
-
-  for (const user of offlineUsers) {
-    if (!user.router?.id) continue
-    const authMode = user.router?.authMode || 'local'
-
-    // For local: kick via MikroTik API
-    if (authMode !== 'radius') {
-      try {
-        const result = await mikrotikStopUser(user.router.id, user.username)
-        if (result.kicked) {
-          disconnected++
-          console.log(`[DISCONNECT] Kicked ${user.username} (status=${user.status})`)
-        }
-      } catch (e: any) {
-        errors.push(`${user.username}: ${e?.message || e}`)
-      }
-    }
-
-    // For all modes: also try CoA (best-effort, for RADIUS-authed sessions)
-    try {
-      const secret = process.env.RADIUS_COA_SECRET || 'secret123'
-      const nasIp = (await prisma.router.findUnique({ where: { id: user.router.id }, select: { nasname: true } }))?.nasname
-      if (nasIp) {
-        await execAsync(`echo 'User-Name="${user.username}"' | radclient -x ${nasIp}:3799 disconnect ${secret} -t 2`, { timeout: 5000 })
-      }
-    } catch { /* non-fatal */ }
-  }
-
-  return { disconnected, total: offlineUsers.length, errors }
-}
-
-// ─── Job: Invoice Status Update (PENDING → OVERDUE) ─────────────────────────
-
-async function runInvoiceStatusUpdate(): Promise<any> {
-  const now = nowWIB()
-  const result = await prisma.invoice.updateMany({
-    where: {
-      status: 'PENDING',
-      dueDate: { lt: now },
-    },
-    data: { status: 'OVERDUE' },
-  })
-  if (result.count > 0) {
-    console.log(`[INVOICE_STATUS] ${result.count} invoices marked as OVERDUE`)
-  }
-  return { updated: result.count }
-}
-
-// ─── Job: Suspend Check (postpaid overdue → isolated) ───────────────────────
-// This is a secondary check — runAutoIsolir already handles postpaid overdue.
-// This job also handles manual SuspendRequest approvals.
-
-async function runSuspendCheck(): Promise<any> {
-  let suspended = 0
-  const errors: string[] = []
-
-  // 1. Process approved manual suspend requests
-  const approved = await prisma.suspendRequest.findMany({
-    where: { status: 'APPROVED', startDate: { lte: nowWIB() } },
-  })
-  for (const req of approved) {
-    try {
-      await prisma.pppoeUser.update({ where: { id: req.userId }, data: { status: 'isolated' } })
-      suspended++
-      console.log(`[SUSPEND_CHECK] Manual suspend applied for user ${req.userId}`)
-    } catch (e: any) {
-      errors.push(`suspend_${req.id}: ${e?.message || e}`)
-    }
-  }
-
-  // 2. Auto-isolir for postpaid is handled by runAutoIsolir — no duplicate here
-  return { suspended, total: approved.length, errors }
-}
-
-// ─── Job: Invoice Generate (auto-generate monthly invoices) ────────────────
-
-async function runInvoiceGenerate(): Promise<any> {
-  const now = nowWIB()
-  const errors: string[] = []
-
-  // Get company settings
-  const company = await prisma.company.findFirst({
-    select: { invoiceGenerateDays: true, baseUrl: true, name: true, phone: true },
-  })
-  const genDays = company?.invoiceGenerateDays ?? 7
-  const baseUrl = (company?.baseUrl && !company.baseUrl.includes('localhost'))
-    ? company.baseUrl
-    : process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-
-  // Target month = current month (generate invoice for current billing period)
-  const year = now.getUTCFullYear()
-  const month = now.getUTCMonth() + 1
-  const monthStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0))
-  const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999))
-
-  // Find active/isolated users that need invoices
-  // PREPAID: only generate if expiredAt is within invoiceGenerateDays days (or already expired but not too long)
-  // POSTPAID: always generate monthly invoice
-  const prepaidCutoff = new Date(now.getTime() + genDays * 24 * 60 * 60 * 1000)
-  const users = await prisma.pppoeUser.findMany({
-    where: {
-      status: { in: ['active', 'isolated'] },
-      OR: [
-        // POSTPAID: always generate
-        { subscriptionType: 'POSTPAID' },
-        // PREPAID: only if expiredAt is within genDays days or already expired (but not more than 30 days ago)
-        {
-          subscriptionType: 'PREPAID',
-          expiredAt: { lte: prepaidCutoff, gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) },
-        },
-      ],
-    },
-    include: {
-      profile: { select: { id: true, name: true, price: true, ppnActive: true, ppnRate: true } },
-    },
-  })
-
-  // Batch fetch existing invoices for this month to avoid duplicates
-  const existingInvoices = await prisma.invoice.findMany({
-    where: {
-      userId: { in: users.map(u => u.id) },
-      invoiceType: { in: ['MONTHLY', 'RENEWAL'] },
-      dueDate: { gte: monthStart, lte: monthEnd },
-      status: { not: 'CANCELLED' },
-    },
-    select: { userId: true },
-  })
-  const usersWithInvoice = new Set(existingInvoices.map(i => i.userId).filter(Boolean) as string[])
-
-  let generated = 0
-  let skipped = 0
-
-  for (const user of users) {
-    try {
-      if (usersWithInvoice.has(user.id)) {
-        skipped++
-        continue
-      }
-
-      if (!user.profile) {
-        errors.push(`${user.username}: profile not found`)
-        continue
-      }
-
-      const subscriptionType = (user as any).subscriptionType || 'POSTPAID'
-      let dueDate: Date
-      let invoiceType: string
-
-      if (subscriptionType === 'PREPAID') {
-        // PREPAID: invoice dueDate = expiredAt (renewal reminder)
-        if (!user.expiredAt) { skipped++; continue }
-        dueDate = user.expiredAt
-        invoiceType = 'RENEWAL'
-      } else {
-        // POSTPAID: dueDate = billingDay of current month
-        const billingDay = (user as any).billingDay ?? 1
-        const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate()
-        const day = Math.min(billingDay, daysInMonth)
-        dueDate = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999))
-        invoiceType = 'MONTHLY'
-      }
-
-      // Calculate amount with PPN
-      const baseAmount = user.profile.price
-      let amount = baseAmount
-      let taxRate: number | null = null
-      if (user.profile.ppnActive && user.profile.ppnRate > 0) {
-        taxRate = Number(user.profile.ppnRate)
-        amount = Math.round(baseAmount + (baseAmount * taxRate / 100))
-      }
-
-      // Generate IDs (inline to avoid server-only import)
-      const { nanoid } = require('nanoid')
-      const { randomBytes } = require('crypto')
-      const invoiceId = nanoid()
-      const dateStr = `${year}${String(month).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`
-      const random = randomBytes(3).toString('hex').toUpperCase()
-      const invoiceNumber = `INV-${dateStr}-${random}`
-      const paymentToken = randomBytes(32).toString('hex')
-      const paymentLink = `${baseUrl}/pay/${paymentToken}`
-
-      await prisma.invoice.create({
-        data: {
-          id: invoiceId,
-          invoiceNumber,
-          userId: user.id,
-          amount,
-          baseAmount,
-          ...(taxRate !== null && { taxRate }),
-          dueDate,
-          status: 'PENDING',
-          invoiceType: invoiceType as any,
-          customerName: user.name,
-          customerPhone: user.phone,
-          customerEmail: user.email || null,
-          customerUsername: user.username,
-          paymentToken,
-          paymentLink,
-          createdAt: new Date(),
-        },
-      })
-
-      generated++
-    } catch (err: any) {
-      errors.push(`${user.username}: ${err?.message || err}`)
-    }
-  }
-
-  console.log(`[INVOICE_GENERATE] generated=${generated} skipped=${skipped} errors=${errors.length}`)
-  return { generated, skipped, total: users.length, errors }
-}
-
-// ─── Job: Invoice Reminder (send WA/email for due/overdue invoices) ────────
-
-async function runInvoiceReminder(): Promise<any> {
-  const now = nowWIB()
-  const errors: string[] = []
-
-  // Find PENDING/OVERDUE invoices with dueDate within next 7 days or already overdue
-  const remindBefore = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  const invoices = await prisma.invoice.findMany({
-    where: {
-      status: { in: ['PENDING', 'OVERDUE'] },
-      dueDate: { lte: remindBefore },
-      customerPhone: { not: null },
-    },
-    select: {
-      id: true, invoiceNumber: true, amount: true, dueDate: true, status: true,
-      customerName: true, customerPhone: true, customerUsername: true,
-      paymentLink: true, sentReminders: true,
-    },
-  })
-
-  // Check if WA provider is available
-  const waProviders = await prisma.whatsapp_providers.findMany({ where: { isActive: true } })
-  const waAvailable = waProviders.length > 0
-
-  let sent = 0
-  let skipped = 0
-
-  for (const inv of invoices) {
-    try {
-      if (!waAvailable || !inv.customerPhone) {
-        skipped++
-        continue
-      }
-
-      // Parse sentReminders to avoid duplicate reminders
-      let sentDays: number[] = []
-      try { sentDays = inv.sentReminders ? JSON.parse(inv.sentReminders) : [] } catch {}
-      const daysUntilDue = Math.ceil((inv.dueDate.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
-      if (sentDays.includes(daysUntilDue)) {
-        skipped++
-        continue
-      }
-
-      // Send WA reminder via internal HTTP API (avoid server-only import)
-      try {
-        const apiUrl = process.env.CRON_API_URL || 'http://localhost:3000'
-        await execAsync(
-          `curl -s -X POST ${apiUrl}/api/invoices/send-reminder -H "Content-Type: application/json" -d '${JSON.stringify({ invoiceId: inv.id, channel: 'whatsapp' }).replace(/'/g, "'\\''")}'`,
-          { timeout: 15000 }
-        )
-        sentDays.push(daysUntilDue)
-        await prisma.invoice.update({
-          where: { id: inv.id },
-          data: { sentReminders: JSON.stringify(sentDays) },
-        })
-        sent++
-      } catch (waErr: any) {
-        errors.push(`${inv.invoiceNumber}: WA failed: ${waErr?.message || waErr}`)
-      }
-    } catch (err: any) {
-      errors.push(`${inv.invoiceNumber}: ${err?.message || err}`)
-    }
-  }
-
-  console.log(`[INVOICE_REMINDER] sent=${sent} skipped=${skipped} errors=${errors.length}`)
-  return { sent, skipped, total: invoices.length, errors }
-}
-
-// ─── Job: Auto Renewal (auto-renew prepaid from balance) ──────────────────
-
-async function runAutoRenewal(): Promise<any> {
-  const now = nowWIB()
-  const errors: string[] = []
-
-  // Find PREPAID users with autoRenewal=true whose expiredAt is within next 3 days or already expired
-  const renewWindow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
-  const users = await prisma.pppoeUser.findMany({
-    where: {
-      autoRenewal: true,
-      subscriptionType: 'PREPAID',
-      status: { in: ['active', 'isolated'] },
-      expiredAt: { lte: renewWindow },
-    },
-    include: {
-      profile: { select: { id: true, name: true, price: true, ppnActive: true, ppnRate: true, validityValue: true, validityUnit: true } },
-    },
-  })
-
-  let renewed = 0
-  let skipped = 0
-
-  for (const user of users) {
-    try {
-      if (!user.profile) { skipped++; continue }
-
-      // Calculate amount with PPN
-      const baseAmount = user.profile.price
-      let amount = baseAmount
-      if (user.profile.ppnActive && user.profile.ppnRate > 0) {
-        amount = Math.round(baseAmount + (baseAmount * Number(user.profile.ppnRate) / 100))
-      }
-
-      // Check balance (balance field on pppoeUser)
-      if (user.balance < amount) {
-        skipped++
-        continue
-      }
-
-      // Deduct balance
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
-        data: { balance: { decrement: amount } },
-      })
-
-      // Extend expiredAt based on profile validity
-      const validityValue = (user.profile as any).validityValue || 1
-      const validityUnit = (user.profile as any).validityUnit || 'MONTHS'
-      let validityMs: number
-      switch (validityUnit) {
-        case 'MINUTES': validityMs = validityValue * 60 * 1000; break
-        case 'HOURS':   validityMs = validityValue * 60 * 60 * 1000; break
-        case 'DAYS':    validityMs = validityValue * 24 * 60 * 60 * 1000; break
-        case 'MONTHS':  validityMs = validityValue * 30 * 24 * 60 * 60 * 1000; break
-        default:        validityMs = 30 * 24 * 60 * 60 * 1000
-      }
-      const baseDate = user.expiredAt && user.expiredAt > now ? user.expiredAt : now
-      const newExpiredAt = new Date(baseDate.getTime() + validityMs)
-
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
-        data: {
-          expiredAt: newExpiredAt,
-          status: 'active',
-        },
-      })
-
-      renewed++
-      console.log(`[AUTO_RENEWAL] Renewed ${user.username} until ${newExpiredAt.toISOString()}`)
-    } catch (err: any) {
-      errors.push(`${user.username}: ${err?.message || err}`)
-    }
-  }
-
-  console.log(`[AUTO_RENEWAL] renewed=${renewed} skipped=${skipped} errors=${errors.length}`)
-  return { renewed, skipped, total: users.length, errors }
-}
-
-// ─── Job registry ───────────────────────────────────────────────────────────
-
-const jobImplementations: Record<string, () => Promise<any>> = {
-  pppoe_auto_isolir: () => runAutoIsolir(),
-  auto_stop: () => runAutoStop(),
-  disconnect_sessions: () => runDisconnectSessions(),
-  invoice_status_update: () => runInvoiceStatusUpdate(),
-  suspend_check: () => runSuspendCheck(),
-  activity_log_cleanup: () => runActivityLogCleanup(),
-  webhook_log_cleanup: () => runWebhookLogCleanup(),
-  cron_history_cleanup: () => runCronHistoryCleanup(),
-  freeradius_health: () => runFreeradiusHealth(),
-  invoice_generate: () => runInvoiceGenerate(),
-  invoice_reminder: () => runInvoiceReminder(),
-  auto_renewal: () => runAutoRenewal(),
-  // Jobs not yet implemented (return placeholder):
-  hotspot_sync: async () => ({ message: 'Not yet implemented in Next.js cron runner' }),
-  agent_sales: async () => ({ message: 'Not yet implemented' }),
-  notification_check: async () => ({ message: 'Not yet implemented' }),
-  session_monitor: async () => ({ message: 'Not yet implemented' }),
-  pppoe_session_sync: async () => ({ message: 'Not yet implemented' }),
 }
 
 // ─── Job runner with history logging ────────────────────────────────────────
 
-async function runJob(jobType: string, fn: () => Promise<any>) {
+async function runJob(jobType: string) {
   const { enabled } = await getEffectiveSchedule(jobType)
   if (!enabled) {
     console.log(`[${new Date().toISOString()}] [CRON] ${jobType} — skipped (disabled)`)
     return
   }
 
-  const jobId = `cron_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
   const startedAt = nowWIB()
+  const jobId = `cron_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
   console.log(`[${startedAt.toISOString()}] [CRON] ${jobType} — starting`)
 
-  await prisma.cronHistory.create({
-    data: { id: jobId, jobType, status: 'running', startedAt },
-  })
+  // Create history record
+  try {
+    await prisma.cronHistory.create({
+      data: { id: jobId, jobType, status: 'running', startedAt },
+    })
+  } catch {
+    // Table might not exist
+  }
 
   try {
-    const result = await fn()
+    const result = await triggerJobViaAPI(jobType)
     const completedAt = nowWIB()
     const duration = completedAt.getTime() - startedAt.getTime()
-    await prisma.cronHistory.update({
-      where: { id: jobId },
-      data: { status: 'success', completedAt, duration, result: JSON.stringify(result).slice(0, 1000) },
-    })
-    console.log(`[${completedAt.toISOString()}] [CRON] ${jobType} — success (${duration}ms)`, result)
+
+    const success = result?.success !== false
+    try {
+      await prisma.cronHistory.update({
+        where: { id: jobId },
+        data: {
+          status: success ? 'success' : 'error',
+          completedAt,
+          duration,
+          result: JSON.stringify(result).slice(0, 1000),
+          ...(result?.error && { error: String(result.error).slice(0, 500) }),
+        },
+      })
+    } catch { /* non-fatal */ }
+
+    console.log(`[${completedAt.toISOString()}] [CRON] ${jobType} — ${success ? 'success' : 'error'} (${duration}ms)`, result)
   } catch (error: any) {
     const completedAt = nowWIB()
     const duration = completedAt.getTime() - startedAt.getTime()
-    await prisma.cronHistory.update({
-      where: { id: jobId },
-      data: { status: 'error', completedAt, duration, error: error?.message || 'Job failed' },
-    })
+    try {
+      await prisma.cronHistory.update({
+        where: { id: jobId },
+        data: { status: 'error', completedAt, duration, error: error?.message || 'Job failed' },
+      })
+    } catch { /* non-fatal */ }
     console.error(`[${completedAt.toISOString()}] [CRON] ${jobType} — error:`, error?.message || error)
   }
 }
@@ -823,21 +167,23 @@ async function runJob(jobType: string, fn: () => Promise<any>) {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════')
-  console.log('  Salfanet Cron Runner — Next.js native')
+  console.log('  Salfanet Cron Runner — thin scheduler (HTTP → /api/cron)')
+  console.log(`  API URL: ${API_URL}`)
+  console.log(`  CRON_SECRET: ${CRON_SECRET ? 'set' : 'NOT SET — will use session auth'}`)
   console.log('═══════════════════════════════════════════════════════════')
 
   // Manual trigger: --job=xxx
   const jobArg = process.argv.find(a => a.startsWith('--job='))
   if (jobArg) {
     const jobType = jobArg.split('=')[1]
-    const fn = jobImplementations[jobType]
-    if (!fn) {
+    const def = CRON_JOB_DEFS.find(d => d.type === jobType)
+    if (!def) {
       console.error(`Unknown job: ${jobType}`)
-      console.log('Available jobs:', Object.keys(jobImplementations).join(', '))
+      console.log('Available jobs:', CRON_JOB_DEFS.map(d => d.type).join(', '))
       process.exit(1)
     }
     console.log(`Manual trigger: ${jobType}`)
-    await runJob(jobType, fn)
+    await runJob(jobType)
     await prisma.$disconnect()
     process.exit(0)
   }
@@ -851,16 +197,13 @@ async function main() {
       continue
     }
 
-    const fn = jobImplementations[def.type]
-    if (!fn) continue
-
     if (!cron.validate(schedule)) {
       console.log(`  [ERR]  ${def.type} — invalid schedule: ${schedule}`)
       continue
     }
 
     const task = cron.schedule(schedule, async () => {
-      try { await runJob(def.type, fn) } catch (e) { console.error(`[CRON] Uncaught in ${def.type}:`, e) }
+      try { await runJob(def.type) } catch (e) { console.error(`[CRON] Uncaught in ${def.type}:`, e) }
     })
 
     tasks.push(task)
