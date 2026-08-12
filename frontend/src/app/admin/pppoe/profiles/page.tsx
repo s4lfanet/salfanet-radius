@@ -80,7 +80,7 @@ export default function PPPoEProfilesPage() {
   const [syncLockedRouter, setSyncLockedRouter] = useState(false);
 
   // RADIUS IP Pool options (fetched from radippool)
-  const [radiusPools, setRadiusPools] = useState<{ pool_name: string; total: number }[]>([]);
+  const [radiusPools, setRadiusPools] = useState<{ pool_name: string; total_ips: number; start_ip: string; end_ip: string }[]>([]);
 
   // Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -100,8 +100,10 @@ export default function PPPoEProfilesPage() {
   const loadRadiusPools = async () => {
     try {
       const res = await fetch('/api/admin/ippool');
-      const data = await res.json();
-      setRadiusPools(data.pools || []);
+      const json = await res.json();
+      // API returns { success, data: [{ pool_name, total_ips, start_ip, end_ip }] }
+      const pools = json.data || json.pools || [];
+      setRadiusPools(pools);
     } catch (e) { console.error('Load RADIUS pools error:', e); }
   };
 
@@ -768,7 +770,7 @@ export default function PPPoEProfilesPage() {
                   <option value="">Auto — dari speed tier ({formData.downloadSpeed}Mbps-Pool)</option>
                   {radiusPools.map(p => (
                     <option key={p.pool_name} value={p.pool_name} className="bg-background dark:bg-slate-800">
-                      {p.pool_name} ({p.total} IPs)
+                      {p.pool_name} ({p.total_ips} IPs — {p.start_ip} s/d {p.end_ip})
                     </option>
                   ))}
                 </select>
