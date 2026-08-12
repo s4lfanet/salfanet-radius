@@ -23,7 +23,7 @@ module.exports = {
     // ─────────────────────────────────────────────────────────────────────
     {
       name: 'salfanet-frontend',
-      script: 'frontend/.next/standalone/server.js',
+      script: 'frontend/.next/standalone/frontend/server.js',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'cluster',
