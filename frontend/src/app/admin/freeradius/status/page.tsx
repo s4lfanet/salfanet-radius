@@ -20,6 +20,7 @@ interface RadiusStatus {
     version: string;
     startTime: string;
     activeConnections: number;
+    staleSessions: number;
     totalAuthRequests: number;
     totalAcctRequests: number;
     lastRestart: string;
@@ -94,6 +95,24 @@ export default function FreeRADIUSStatusPage() {
             }
     };
 
+    const handleCleanupStale = async () => {
+        setActionLoading('cleanup');
+        try {
+            const response = await fetch('/api/freeradius/cleanup-stale', { method: 'POST' });
+            const data = await response.json();
+            if (response.ok && data.success) {
+                addToast({ type: 'success', title: t('common.success'), description: data.message, duration: 3000 });
+                setTimeout(fetchStatus, 1000);
+            } else {
+                throw new Error(data.error || 'Cleanup failed');
+            }
+        } catch (error: any) {
+            addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to cleanup' });
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -154,7 +173,21 @@ export default function FreeRADIUSStatusPage() {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {status?.staleSessions != null && status.staleSessions > 0 && (
+                                <button
+                                    onClick={handleCleanupStale}
+                                    disabled={actionLoading !== null}
+                                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-orange-600 border border-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    {actionLoading === 'cleanup' ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <AlertTriangle className="w-4 h-4" />
+                                    )}
+                                    Cleanup Stale ({status?.staleSessions ?? 0})
+                                </button>
+                            )}
                             {status?.running ? (
                                 <>
                                     <button
@@ -244,6 +277,12 @@ export default function FreeRADIUSStatusPage() {
                                 </div>
                                 <p className="text-lg font-bold text-foreground">{status.activeConnections || 0}</p>
                                 <p className="text-xs text-muted-foreground">connections</p>
+                                {status.staleSessions > 0 && (
+                                    <p className="text-xs text-amber-500 mt-1 flex items-center gap-1">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        {status.staleSessions} stale
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )}
