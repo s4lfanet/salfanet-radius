@@ -1,6 +1,12 @@
 # Mobile app (Flutter) - tidak perlu di-push ke GitHub
 mobile-app/
 
+# Reference repo (FreeRADIUS source — not part of this project)
+home.pmynet.id-main/
+
+# Temporary git commit message files
+.git/COMMIT_MSG_*
+
 # Dependencies
 node_modules/
 .pnp
