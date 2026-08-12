@@ -3,7 +3,8 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — Next.js (frontend) + NestJS (backend API + cron) + Baileys WhatsApp service
-> **Migration:** Phase 1-7 complete, Phase 8 (cleanup & docs) in progress. See [docs/MIGRATION_ROADMAP.md](docs/MIGRATION_ROADMAP.md)
+> **Migration:** All 8 phases complete + VPS verified + post-migration cleanup done. See [docs/MIGRATION_ROADMAP.md](docs/MIGRATION_ROADMAP.md)
+> **Version:** 3.1.0 — with RADIUS IP Pool, Data Usage Reporting, Multi-NAS Isolation
 
 ---
 
@@ -17,9 +18,11 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 
 | Category | Key Capabilities |
 |----------|-----------------|
-| **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect |
+| **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect, **IP Pool management**, **Multi-NAS isolation** |
 | **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
 | **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis |
+| **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
+| **Data Usage Reporting** | Per-user bandwidth tracking (daily aggregation via cron), monthly summary, top consumers, GB upload/download per period |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates |
 | **Billing** | Postpaid/prepaid invoices, auto-generation, payment reminders, balance/deposit, auto-renewal |
 | **Payment** | Manual upload (bukti transfer), Midtrans/Xendit/Duitku gateway, approval workflow, 0–5 bank accounts |
@@ -69,8 +72,7 @@ pm2 logs salfanet-wa --lines 20
 | Process | Mode | Port | Purpose |
 |---------|------|------|---------|
 | `salfanet-frontend` | cluster | 3000 | Next.js standalone (UI only) |
-| `salfanet-backend` | fork | 3001 | NestJS API + cron jobs |
-| `salfanet-cron` | fork | — | Legacy cron runner (fallback) |
+| `salfanet-backend` | fork | 3001 | NestJS API + cron jobs (17 jobs via @nestjs/schedule) |
 | `salfanet-wa` | fork | 4000 (internal) | Baileys WA service |
 
 ### Auth Session
@@ -79,7 +81,62 @@ Session WhatsApp tersimpan di `/var/data/salfanet/baileys_auth/` dan persist mes
 
 ---
 
-## 🚀 Tech Stack
+## � RADIUS Enhancements (v3.1.0)
+
+Diadopsi dari FreeRADIUS 3.2.8 schema (`home.pmynet.id-main` project).
+
+### IP Pool Management (`/api/v1/ippool`)
+
+Dynamic IP allocation via FreeRADIUS `ippool` module — tidak perlu IP static per user.
+
+| Endpoint | Method | Fungsi |
+|----------|--------|--------|
+| `/api/v1/ippool` | GET | List semua pool dengan summary |
+| `/api/v1/ippool/stats` | GET | Statistik global (total, allocated, free, utilization) |
+| `/api/v1/ippool/:name` | GET | Detail pool + recent allocations |
+| `/api/v1/ippool` | POST | Create pool (pool_name, network, start, end) |
+| `/api/v1/ippool/expand` | PUT | Expand pool dengan IP tambahan |
+| `/api/v1/ippool` | DELETE | Hapus pool (hanya jika tidak ada allocation) |
+| `/api/v1/ippool/mappings/list` | GET | List Pool-Name → group mappings |
+| `/api/v1/ippool/mappings` | POST | Map pool ke RADIUS group |
+| `/api/v1/ippool/mappings/:id` | DELETE | Hapus mapping |
+
+**Seed IP Pool per speed tier:**
+```bash
+cd frontend && npx prisma db seed -- --ippool
+# Creates: 10Mbps-Pool, 20Mbps-Pool, 30Mbps-Pool, 50Mbps-Pool
+# Each: 1022 IPs (/22 subnet) + auto-mapped to RADIUS groups
+```
+
+### Data Usage Reporting (`/api/v1/data-usage`)
+
+Bandwidth tracking per user per period — diadopsi dari FreeRADIUS `process-radacct.sql`.
+
+| Endpoint | Method | Fungsi |
+|----------|--------|--------|
+| `/api/v1/data-usage` | GET | Bandwidth per user untuk date range |
+| `/api/v1/data-usage/monthly` | GET | Monthly summary per user (sorted by usage) |
+| `/api/v1/data-usage/top` | GET | Top bandwidth consumers |
+| `/api/v1/data-usage/aggregate` | POST | Manual trigger aggregation |
+
+**Cron:** Daily at 00:05 — aggregate `radacct` → `data_usage_by_period` table.
+
+### Multi-NAS Isolation
+
+Username isolation per-NAS untuk ISP dengan multiple router/MikroTik:
+- Column `nas_identifier` di `radcheck`, `radreply`, `radusergroup`
+- Auto-sync dari `pppoeUser.routerId` saat sync ke RADIUS
+- Memungkinkan username yang sama di router berbeda tanpa konflik
+
+### CUI (Chargeable User Identity)
+
+Persistent user tracking across sessions/NAS untuk billing & audit:
+- Table `cui` (FreeRADIUS `cui` module)
+- Unique identifier per user+IP+MAC combination
+
+---
+
+## �🚀 Tech Stack
 
 | Component | Technology |
 |-----------|------------|

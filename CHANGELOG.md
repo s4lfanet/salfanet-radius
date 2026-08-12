@@ -6,6 +6,59 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [3.1.0] — 2026-08-12 — RADIUS Enhancements
+
+### New Features — Adopted from home.pmynet.id-main (FreeRADIUS 3.2.8)
+
+#### IP Pool Management (`cff6473`)
+- New Prisma model: `radippool` (FreeRADIUS ippool module)
+- New NestJS module: `IppoolModule` at `/api/v1/ippool`
+- 9 API endpoints: list, stats, create, expand, delete, pool-group mappings
+- Dynamic IP allocation per speed tier — no more static IP per user
+- Pool utilization statistics (total, allocated, free, %)
+
+#### Data Usage Reporting (`cff6473`)
+- New Prisma model: `data_usage_by_period`
+- New NestJS module: `DataUsageModule` at `/api/v1/data-usage`
+- 4 API endpoints: per-user usage, monthly summary, top consumers, manual aggregate
+- Cron job `data_usage_aggregate` — daily at 00:05, aggregates `radacct` → `data_usage_by_period`
+- Bandwidth reporting in GB (upload, download, total) per user per period
+
+#### Multi-NAS Isolation (`29d835d`)
+- Added `nas_identifier` column to `radcheck`, `radreply`, `radusergroup`
+- Auto-sync from `pppoeUser.routerId` → `nas_identifier` on RADIUS sync
+- Updated sync logic in `extras.service.ts` and `admin-extras.service.ts`
+- Enables same username on different routers without conflict
+
+#### CUI — Chargeable User Identity (`29d835d`)
+- New Prisma model: `cui` (FreeRADIUS cui module)
+- Persistent user tracking across sessions/NAS for billing & audit
+
+#### NAS Reload Tracking (`29d835d`)
+- New Prisma model: `nasreload` (FreeRADIUS lightweight accounting-on/off)
+
+#### IP Pool Speed Tier Seed (`29d835d`)
+- New seed script: `frontend/prisma/seeds/ippool-speed-tiers.ts`
+- Creates 4 pools: 10Mbps, 20Mbps, 30Mbps, 50Mbps (1022 IPs each, /22 subnet)
+- Auto-maps Pool-Name to RADIUS groups via `radgroupreply`
+
+#### Migration SQL Script (`29d835d`)
+- `frontend/prisma/migrate-radius-enhancements.sql` — all schema changes in one file
+- Includes: nas_identifier columns, radippool, cui, data_usage_by_period, nasreload
+- Backfill: populates nas_identifier from pppoe_users for existing data
+
+### Post-Migration Cleanup
+- Removed legacy cron runner + 13 job files (`d65ab2a`, `2934fb0`)
+- Removed `frontend/bin/server.exe` (17MB binary), `package-lock.json`, `baileys_whatsapp_patch/`
+- Fixed `wa-service.js` path in ecosystem config
+- Updated `.gitignore` for package-lock.json, frontend/bin/
+
+### Documentation
+- Updated `docs/MIGRATION_ROADMAP.md` — VPS verification details, cleanup status, accurate file counts
+- Updated `README.md` — new features, PM2 processes (3 not 4), RADIUS enhancements section
+
+---
+
 ## [3.0.0] — 2026-08-12 — NestJS Migration
 
 ### Architecture Migration — Next.js → Next.js + NestJS Monorepo
