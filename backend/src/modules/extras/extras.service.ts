@@ -121,17 +121,17 @@ export class ExtrasService {
     const errors: string[] = [];
     for (const user of users) {
       try {
-        // Upsert radcheck
+        // Upsert radcheck with nas_identifier for multi-NAS isolation
         await this.prisma.radcheck.upsert({
           where: { username_attribute: { username: user.username, attribute: 'Cleartext-Password' } },
-          create: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password },
-          update: { value: user.password },
+          create: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password, nas_identifier: user.routerId || null },
+          update: { value: user.password, nas_identifier: user.routerId || null },
         });
         if (user.profile) {
           await this.prisma.radusergroup.upsert({
             where: { username_groupname: { username: user.username, groupname: user.profile.name } },
-            create: { username: user.username, groupname: user.profile.name, priority: 1 },
-            update: {},
+            create: { username: user.username, groupname: user.profile.name, priority: 1, nas_identifier: user.routerId || null },
+            update: { nas_identifier: user.routerId || null },
           });
         }
         synced++;
@@ -177,15 +177,15 @@ export class ExtrasService {
 
     await this.prisma.radcheck.upsert({
       where: { username_attribute: { username: user.username, attribute: 'Cleartext-Password' } },
-      create: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password },
-      update: { value: user.password },
+      create: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password, nas_identifier: user.routerId || null },
+      update: { value: user.password, nas_identifier: user.routerId || null },
     });
 
     if (user.profile) {
       await this.prisma.radusergroup.upsert({
         where: { username_groupname: { username: user.username, groupname: user.profile.name } },
-        create: { username: user.username, groupname: user.profile.name, priority: 1 },
-        update: {},
+        create: { username: user.username, groupname: user.profile.name, priority: 1, nas_identifier: user.routerId || null },
+        update: { nas_identifier: user.routerId || null },
       });
     }
 

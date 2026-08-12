@@ -347,7 +347,7 @@ export class AdminExtrasService {
   async syncAllRadius() {
     const users = await this.prisma.pppoeUser.findMany({
       where: { status: { in: ['ACTIVE', 'ISOLATED'] } },
-      select: { id: true, username: true, password: true, profileId: true },
+      select: { id: true, username: true, password: true, profileId: true, routerId: true },
       take: 500,
     });
 
@@ -356,11 +356,11 @@ export class AdminExtrasService {
 
     for (const user of users) {
       try {
-        // Update radcheck
+        // Update radcheck with nas_identifier
         await this.prisma.radcheck.upsert({
           where: { username_attribute: { username: user.username, attribute: 'Cleartext-Password' } },
-          create: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password },
-          update: { value: user.password },
+          create: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password, nas_identifier: user.routerId || null },
+          update: { value: user.password, nas_identifier: user.routerId || null },
         });
 
         // Update radusergroup
@@ -369,8 +369,8 @@ export class AdminExtrasService {
           if (profile) {
             await this.prisma.radusergroup.upsert({
               where: { username_groupname: { username: user.username, groupname: profile.name } },
-              create: { username: user.username, groupname: profile.name, priority: 1 },
-              update: { priority: 1 },
+              create: { username: user.username, groupname: profile.name, priority: 1, nas_identifier: user.routerId || null },
+              update: { priority: 1, nas_identifier: user.routerId || null },
             });
           }
         }
