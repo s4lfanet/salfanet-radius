@@ -123,9 +123,6 @@ export async function POST(
       const authModeConfig = authMode === 'local'
         ? `# LOCAL ONLY — tidak menggunakan RADIUS untuk autentikasi
 /ppp aaa set use-radius=no accounting=yes interim-update=5m`
-        : authMode === 'hybrid'
-        ? `# HYBRID — local database + RADIUS fallback
-/ppp aaa set use-radius=yes accounting=yes interim-update=5m`
         : `# RADIUS ONLY — semua autentikasi via FreeRADIUS
 /ppp aaa set use-radius=yes accounting=yes interim-update=5m`;
 

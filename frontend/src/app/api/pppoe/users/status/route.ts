@@ -192,7 +192,7 @@ export async function PUT(request: Request) {
       `;
     }
 
-    // Manage PPP Secret in MikroTik based on authMode (local/hybrid only — radius uses radcheck)
+    // Manage PPP Secret in MikroTik based on authMode (local only — radius uses radcheck)
     // - active:   enable PPP secret + restore original profile
     // - isolated: enable PPP secret + change profile to 'isolir'
     // - blocked:  disable PPP secret (prevent local fallback auth)
@@ -206,7 +206,7 @@ export async function PUT(request: Request) {
         console.error(`[PPP_SECRET] ${action} failed for "${user.username}":`, e?.message || e)
       });
 
-      // Kick active session via MikroTik API (critical for local/hybrid — CoA doesn't work on local-auth sessions)
+      // Kick active session via MikroTik API (critical for local — CoA doesn't work on local-auth sessions)
       if (status === 'isolated' || status === 'blocked' || status === 'stop') {
         kickPppoeSession(user.router.id, user.username).then((kicked) => {
           console.log(`[PPP_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status})`)

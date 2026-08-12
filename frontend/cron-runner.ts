@@ -242,7 +242,7 @@ async function runAutoIsolir(): Promise<any> {
         data: { status: 'isolated' },
       })
 
-      // 2. RADIUS: move to isolir group (for RADIUS and hybrid auth path)
+      // 2. RADIUS: move to isolir group (for RADIUS auth path)
       await prisma.radcheck.deleteMany({
         where: { username: user.username, attribute: 'Auth-Type', ...(nasId ? { nas_identifier: nasId } : {}) },
       })
@@ -266,7 +266,7 @@ async function runAutoIsolir(): Promise<any> {
       `
 
       // 3. MikroTik: change PPP secret profile to 'isolir' + kick active session
-      //    This is CRITICAL for local/hybrid mode — CoA doesn't work on local-auth sessions
+      //    This is CRITICAL for local mode — CoA doesn't work on local-auth sessions
       if (user.router?.id && authMode !== 'radius') {
         const mtResult = await mikrotikIsolateUser(user.router.id, user.username)
         if (mtResult.error) {
@@ -402,7 +402,7 @@ async function runDisconnectSessions(): Promise<any> {
     if (!user.router?.id) continue
     const authMode = user.router?.authMode || 'local'
 
-    // For local/hybrid: kick via MikroTik API
+    // For local: kick via MikroTik API
     if (authMode !== 'radius') {
       try {
         const result = await mikrotikStopUser(user.router.id, user.username)

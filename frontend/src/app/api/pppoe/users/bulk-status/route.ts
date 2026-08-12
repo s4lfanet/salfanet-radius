@@ -156,7 +156,7 @@ export async function PUT(request: Request) {
         `;
       }
 
-      // Manage PPP secret for local/hybrid routers
+      // Manage PPP secret for local routers
       // - active:   enable + restore original profile
       // - isolated: enable + change profile to 'isolir'
       // - blocked/stop: disable + kick

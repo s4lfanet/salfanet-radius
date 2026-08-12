@@ -1624,7 +1624,7 @@ async function handleInvoicePayment(
 
             console.log(`✅ RADIUS entries restored for ${user.username}`);
 
-            // 4b. Restore PPP secret profile in MikroTik (critical for local/hybrid mode)
+            // 4b. Restore PPP secret profile in MikroTik (critical for local mode)
             //     Change profile back to original + enable + kick active session
             if (user.routerId && shouldManagePppSecretForSuspend((user as any).router?.authMode)) {
               managePppSecret(user.routerId, 'enable', {
@@ -1637,7 +1637,7 @@ async function handleInvoicePayment(
                 console.error(`[Webhook] PPP secret restore failed for ${user.username}:`, e?.message || e);
               });
 
-              // Kick active session via MikroTik API (for local/hybrid sessions)
+              // Kick active session via MikroTik API (for local sessions)
               kickPppoeSession(user.routerId, user.username).then((kicked) => {
                 console.log(`✅ [Webhook] Kicked ${kicked} session(s) for ${user.username}`);
               }).catch((e) => {
