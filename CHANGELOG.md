@@ -6,6 +6,61 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.2.0] — 2026-08-13 — Redis Cache + Realtime UI Fixes + RADIUS Script IP Fix + Auth Mode Cleanup
+
+### Added — Redis Cache untuk Data Non-Realtime
+- **Redis utility** (`backend/src/server/cache/redis.ts`): `getCached`, `setCached`, `invalidateKey`, `invalidatePattern`, `cacheAside` dengan graceful degradation (fallback ke DB jika Redis unavailable)
+- **Cache endpoints** (TTL 5 menit):
+  - `GET /api/pppoe/profiles` → cache key `pppoe:profiles`
+  - `GET /api/pppoe/areas` → cache key `pppoe:areas`
+  - `GET /api/network/routers` → cache key `network:routers`
+- **Cache invalidation** otomatis saat create/update/delete pada profiles, areas, routers
+- **Tidak di-cache** (realtime): PPPoE users (online/offline status), sessions, invoices, payment status
+- Package: `ioredis ^6.0.0` ditambahkan ke backend dependencies
+
+### Fixed — Halaman Berhenti Langganan Realtime Update
+- **Root cause**: `loadData()` dipanggil setelah optimistic update dan menimpa state dengan data dari server (race condition)
+- **Root cause 2**: `setUsers` dipanggil setelah `await fetch` sukses — API RADIUS sync/CoA bisa makan 3-5 detik, user tetap di tabel selama menunggu
+- **Fix — True optimistic update**: hapus user dari list **sebelum** API call, rollback jika API gagal
+  - `handleReactivate`: hapus sebelum fetch + rollback jika gagal
+  - `handleDelete`: hapus sebelum fetch + rollback jika gagal
+  - `handleBulkDelete`: hapus sebelum fetch + rollback jika gagal
+- **Fix — Kolom No Layanan**: tampilkan `customerId` (nomor regis pelanggan) bukan `username` (PPPoE username)
+  - Mobile card view: tampilkan `customerId · username`
+  - Search filter: tambah `customerId` sebagai search field
+- **Cache no-store**: semua fetch PPPoE users, profiles, areas, routers, invoices pakai `cache: 'no-store'`
+- **Skip MikroTik polling**: `listPppoeUsers({ status: 'stop' })` skip MikroTik `/ppp/active` polling karena stopped users tidak mungkin online
+- **Service worker cache version** bump ke v11 untuk purge cache lama
+- File: `frontend/src/app/admin/pppoe/stopped/page.tsx`, `frontend/src/app/admin/pppoe/users/page.tsx`, `frontend/src/app/admin/pppoe/users/[id]/page.tsx`
+
+### Fixed — RADIUS Setup Script IP Server
+- **Root cause**: script generator pakai hostname dari `NEXTAUTH_URL` / request Host header → resolve ke domain `radius.salfa.my.id` → Cloudflare proxy IP (172.67.x.x / 104.21.x.x), bukan IP asli VPS
+- **Fix**: hapus DNS resolution dan domain fallback, gunakan `os.networkInterfaces()` untuk detect IP asli VPS
+- **Prioritas IP**: `RADIUS_SERVER_IP` env → `VPS_IP` env → auto-detect dari network interfaces
+- **VPN-specific**: WireGuard pakai VPN gateway IP, PPP VPN pakai RADIUS VPN client IP, public/direct pakai VPS IP + `src-address` = router `nasname`
+- **Generated script** sekarang pakai IP literal di: `# RADIUS Server:`, `/radius add address=`, CoA firewall rules, auth/accounting firewall rules, Netwatch host
+- File: `backend/src/app/api/network/routers/[id]/setup-radius/route.ts`
+
+### Fixed — Isolation Flow: Fallback MikroTik API Kick
+- **Root cause**: `disconnectPPPoEUser` return early saat tidak ada active `radacct` record, padahal user masih connected di MikroTik `/ppp/active`
+- **Fix**: tambah fallback — jika `radacct` kosong, cari active router → kick session via MikroTik API (`/ppp/active/remove`)
+- File: `backend/src/server/services/pppoe.service.ts`
+
+### Fixed — PPP Secret Re-enabled saat Isolir/Aktivasi (hybrid mode)
+- **Root cause**: `shouldManagePppSecretForSuspend` return `true` untuk `hybrid` mode → `managePppSecret('enable')` set `disabled=no` pada secret yang sudah di-disable manual
+- **Fix**: hanya `local` mode yang manage PPP secret. `radius` mode skip management (RADIUS primary, secret backup only)
+- **Fix**: RADIUS-created backup secrets sekarang `disabled=yes` by default
+- File: `backend/src/server/services/mikrotik/ppp-secret.service.ts`
+
+### Cleanup — Hapus hybrid Auth Mode
+- **hybrid** mode obsolete — hanya `local` dan `radius` yang didukung
+- Update router row di VPS: `authMode = hybrid` → `radius`
+- Update comments di `backend/src/app/api/invoices/route.ts`
+- `hybrid` di OLT VLAN/switch config commands tetap dipertahankan (valid RouterOS/ZTE networking term, bukan auth mode)
+- File: `backend/prisma/schema.prisma`, `backend/src/app/api/invoices/route.ts`, `backend/src/server/services/mikrotik/ppp-secret.service.ts`
+
+---
+
 ## [4.1.0] — 2026-08-13 — PSB Wizard + Cron Jobs Implementation + Data Consistency Fix
 
 ### Added — PSB Wizard 3-Step untuk Tambah Pelanggan
