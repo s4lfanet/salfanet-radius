@@ -11,6 +11,7 @@ import { formatWIB } from '@/lib/timezone';
 interface StoppedUser {
   id: string;
   username: string;
+  customerId: string | null;
   name: string;
   phone: string;
   email: string | null;
@@ -172,6 +173,7 @@ export default function StoppedSubscriptionsPage() {
   // Filter users
   const filteredUsers = users.filter(user => {
     const matchSearch = !searchQuery ||
+      (user.customerId || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.phone.includes(searchQuery) ||
@@ -300,7 +302,7 @@ export default function StoppedSubscriptionsPage() {
                     />
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{user.name}</p>
-                      <p className="text-xs text-muted-foreground font-mono">{user.username}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{user.customerId || '-'} · {user.username}</p>
                     </div>
                   </div>
                   <span className="px-1.5 py-0.5 text-[10px] font-medium rounded-full ml-2 shrink-0 bg-destructive/20 text-destructive">
@@ -389,10 +391,11 @@ export default function StoppedSubscriptionsPage() {
                       />
                     </td>
                     <td className="px-3 py-2">
-                      <p className="font-medium text-xs">{user.username}</p>
+                      <p className="font-medium text-xs font-mono">{user.customerId || '-'}</p>
                     </td>
                     <td className="px-3 py-2">
                       <p className="text-xs font-medium">{user.name}</p>
+                      <p className="text-[10px] text-muted-foreground font-mono">{user.username}</p>
                       {user.email && <p className="text-[10px] text-muted-foreground truncate max-w-[150px]">{user.email}</p>}
                     </td>
                     <td className="px-3 py-2">
