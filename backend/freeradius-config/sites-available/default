@@ -64,7 +64,12 @@ server default {
             # Stale session threshold di pppoe-session-sync.ts = 30 menit (6x interval)
             Acct-Interim-Interval = 300
         }
-        sql
+        # All post-auth modules are non-fatal (- prefix) so that RADIUS auth
+        # still succeeds even if IP pool allocation or SQL logging fails.
+        # MikroTik handles IP assignment via profile's address-pool.
+        -sql
+        -sqlippool
+        -cuisql
         #
         # REST post-auth: set firstLoginAt, expiresAt, dan buat transaksi keuangan real-time
         # '-rest' = non-fatal: jika app tidak berjalan, autentikasi tetap berhasil
