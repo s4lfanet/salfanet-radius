@@ -15,9 +15,16 @@ import { prisma } from "@/server/db/client";
 export async function POST(request: NextRequest) {
   let username: string | undefined;
   try {
-    // Use text() + manual parse (more compatible than request.json())
-    const rawBody = await request.text();
-    const body = JSON.parse(rawBody);
+    // Parse request body — try request.json() first, fallback to text+parse
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      const rawBody = await request.text();
+      // Cleanup: remove literal backslash-quotes if FreeRADIUS sends escaped JSON
+      const cleaned = rawBody.replace(/\\"/g, '"');
+      body = JSON.parse(cleaned);
+    }
     username = body.username;
 
     if (!username) {
