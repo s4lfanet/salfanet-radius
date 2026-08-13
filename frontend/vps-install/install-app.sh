@@ -177,12 +177,25 @@ install_dependencies() {
     
     print_info "Downloading packages from npm registry..."
     
-    if ! npm install --production=false 2>&1 | tee /tmp/npm-install.log; then
-        print_error "npm install failed!"
-        echo ""
-        echo "Last 20 lines of error:"
-        tail -20 /tmp/npm-install.log
-        return 1
+    # Try pnpm first (monorepo workspace), fall back to npm
+    if command -v pnpm &>/dev/null && [ -f "pnpm-workspace.yaml" ]; then
+        print_info "Using pnpm (monorepo workspace detected)..."
+        if ! pnpm install 2>&1 | tee /tmp/npm-install.log; then
+            print_error "pnpm install failed!"
+            echo ""
+            echo "Last 20 lines of error:"
+            tail -20 /tmp/npm-install.log
+            return 1
+        fi
+    else
+        print_info "Using npm (falling back from pnpm)..."
+        if ! npm install --production=false 2>&1 | tee /tmp/npm-install.log; then
+            print_error "npm install failed!"
+            echo ""
+            echo "Last 20 lines of error:"
+            tail -20 /tmp/npm-install.log
+            return 1
+        fi
     fi
     
     # Verify node_modules exists
@@ -255,7 +268,10 @@ ensure_mysql_ready_for_app_setup() {
 setup_prisma() {
     print_step "Setting up Prisma ORM"
     
-    cd ${APP_DIR} || return 1
+    cd ${APP_DIR}/backend || {
+        print_error "Failed to change to ${APP_DIR}/backend"
+        return 1
+    }
     
     # Fix Prisma engine permissions first
     fix_prisma_engines
@@ -265,10 +281,10 @@ setup_prisma() {
     # Disable Prisma update notifications
     export PRISMA_HIDE_UPDATE_MESSAGE=true
     
-    # Use local prisma binary (avoids npx downloading latest version which may differ from project's prisma v6)
-    local PRISMA_BIN="${APP_DIR}/node_modules/.bin/prisma"
+    # Use local prisma binary from backend (where schema.prisma lives)
+    local PRISMA_BIN="${APP_DIR}/backend/node_modules/.bin/prisma"
     if [ ! -f "$PRISMA_BIN" ]; then
-        print_error "Local prisma binary not found at $PRISMA_BIN — npm install may have failed"
+        print_error "Local prisma binary not found at $PRISMA_BIN — install may have failed"
         return 1
     fi
 

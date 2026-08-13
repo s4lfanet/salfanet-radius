@@ -300,7 +300,7 @@ run_installation() {
     print_info "Running Step 8: Security Setup (fail2ban, UFW, cleanup cron)..."
     source "$SCRIPT_DIR/install-security.sh"
     install_security || {
-        print_warning "Security setup partial — lanjutkan manual: bash vps-install/install-security.sh"
+        print_warning "Security setup partial — lanjutkan manual: bash frontend/vps-install/install-security.sh"
     }
 
     # Step 9: Auth Self-Heal (legacy-safe; ensures active SUPER_ADMIN exists)
@@ -372,14 +372,14 @@ Firewall (UFW)  : $([ "${SKIP_UFW}" = "true" ] && echo "DILEWATI - konfigurasi d
 -----------------------
 APK Status      : $([ "${APK_BUILT:-false}" = "true" ] && echo "Sudah dibuild" || echo "Belum dibuild")
 APK Download URL: $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}/downloads/salfanet-radius.apk" || echo "http://${VPS_IP}/downloads/salfanet-radius.apk")
-Build APK       : bash ${APP_DIR}/vps-install/install-apk.sh
-Rebuild APK     : bash ${APP_DIR}/vps-install/install-apk.sh --rebuild
-APK Status Cek  : bash ${APP_DIR}/vps-install/install-apk.sh --status
+Build APK       : bash ${APP_DIR}/frontend/vps-install/install-apk.sh
+Rebuild APK     : bash ${APP_DIR}/frontend/vps-install/install-apk.sh --rebuild
+APK Status Cek  : bash ${APP_DIR}/frontend/vps-install/install-apk.sh --status
 
 [>] SSTP VPN CLIENT (koneksi ke MikroTik CHR)
 --------------------------------------------
 VPN Client Tools: $([ "${VPN_CLIENT_INSTALLED:-false}" = "true" ] && echo "Terinstall (/usr/local/bin/vpn-connect)" || echo "Tidak diinstall (opsional)")
-Install VPN     : bash ${APP_DIR}/vps-install/install-vpn-client.sh
+Install VPN     : bash ${APP_DIR}/frontend/vps-install/install-vpn-client.sh
 Konfigurasi VPN : Edit /etc/vpn/vpn.conf (VPN_SERVER, VPN_USER, VPN_PASS, VPN_SUBNET)
 Koneksi VPN     : vpn-connect start
 Status VPN      : vpn-connect status
@@ -388,8 +388,8 @@ Status VPN      : vpn-connect status
 -------------------------------------------------------------------
 Protokol        : WireGuard (UDP 51820) — RouterOS 7.1+
 Subnet          : 10.200.0.0/24
-Install WG      : bash ${APP_DIR}/vps-install/install-wg-server.sh
-Install L2TP    : bash ${APP_DIR}/vps-install/install-l2tp-server.sh  (untuk RouterOS 6)
+Install WG      : bash ${APP_DIR}/frontend/vps-install/install-wg-server.sh
+Install L2TP    : bash ${APP_DIR}/frontend/vps-install/install-l2tp-server.sh  (untuk RouterOS 6)
 Status WG       : wg show wg0
 Manage Peers    : Admin Panel → Network → VPN Server → klik tombol WireGuard
 Info File       : /etc/wireguard/wg-server-info.json
@@ -400,7 +400,9 @@ MySQL     : $(systemctl is-active mysql 2>/dev/null || echo 'N/A')
 FreeRADIUS: $(systemctl is-active freeradius 2>/dev/null || echo 'N/A')
 Nginx     : $(systemctl is-active nginx 2>/dev/null || echo 'N/A')
 Redis     : $(systemctl is-active redis-server 2>/dev/null || echo 'tidak diinstall')
-PM2 App   : $(pm2 list 2>/dev/null | grep -q "salfanet-radius.*online" && echo "online" || echo "offline")
+PM2 App   : $(pm2 list 2>/dev/null | grep -q "salfanet-frontend.*online" && echo "frontend online" || echo "frontend offline")
+PM2 API   : $(pm2 list 2>/dev/null | grep -q "salfanet-backend.*online" && echo "backend online" || echo "backend offline")
+PM2 Cron  : $(pm2 list 2>/dev/null | grep -q "salfanet-cron.*online" && echo "cron online" || echo "cron offline")
 
 [>] NETWORK / FIREWALL
 ----------------------
@@ -441,7 +443,7 @@ tail -f /var/log/freeradius/radius.log  # Logs
 2. Login admin, ganti password
 3. Tambahkan NAS/router di pengaturan RADIUS
 4. Bagikan link APK ke customer: $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}/downloads/salfanet-radius.apk" || echo "http://${VPS_IP}/downloads/salfanet-radius.apk")
-$([ "${REDIS_INSTALLED:-false}" = "false" ] && echo "5. [Opsional] Install Redis: bash ${APP_DIR}/vps-install/install-redis.sh" || echo "")
+$([ "${REDIS_INSTALLED:-false}" = "false" ] && echo "5. [Opsional] Install Redis: bash ${APP_DIR}/frontend/vps-install/install-redis.sh" || echo "")
 $([ "${DEPLOY_ENV}" = "vps" ] && [ -z "${VPS_DOMAIN:-}" ] && echo "6. Setup SSL: certbot --nginx -d yourdomain.com" || \
   echo "6. [Opsional] Setup Cloudflare Tunnel untuk akses dari internet")
 
@@ -480,13 +482,13 @@ show_final_summary() {
         echo -e "  APK DL  : ${WHITE}http://${VPS_IP}/downloads/salfanet-radius.apk${NC}"
         fi
     else
-        echo -e "  ${YELLOW}APK belum dibuild. Jalankan: bash ${APP_DIR}/vps-install/install-apk.sh${NC}"
+        echo -e "  ${YELLOW}APK belum dibuild. Jalankan: bash ${APP_DIR}/frontend/vps-install/install-apk.sh${NC}"
     fi
     echo ""
     if [ "${REDIS_INSTALLED:-false}" = "true" ]; then
         echo -e "  Redis   : ${GREEN}Aktif (redis://127.0.0.1:6379)${NC}"
     else
-        echo -e "  ${YELLOW}Redis: tidak diinstall. Jalankan: bash ${APP_DIR}/vps-install/install-redis.sh${NC}"
+        echo -e "  ${YELLOW}Redis: tidak diinstall. Jalankan: bash ${APP_DIR}/frontend/vps-install/install-redis.sh${NC}"
     fi
     echo ""
     if [ "${DEPLOY_ENV}" = "lxc" ]; then

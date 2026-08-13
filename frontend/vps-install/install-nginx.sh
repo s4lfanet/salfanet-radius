@@ -62,14 +62,14 @@ _proxy_locations() {
     error_log  /var/log/nginx/salfanet-radius-error.log;
 
     location /downloads/ {
-        alias /var/www/salfanet-radius/public/downloads/;
+        alias /var/www/salfanet-radius/frontend/public/downloads/;
         autoindex off;
         add_header Content-Disposition 'attachment';
     }
 
     # PWA manifest files — serve directly from public/ (no Node.js needed)
     location ~ ^/manifest(-[a-z]+)?\.json$ {
-        root /var/www/salfanet-radius/public;
+        root /var/www/salfanet-radius/frontend/public;
         expires 1d;
         add_header Cache-Control "public, max-age=86400";
         add_header Content-Type "application/manifest+json";
@@ -77,7 +77,7 @@ _proxy_locations() {
 
     # Service worker — no cache
     location = /sw.js {
-        root /var/www/salfanet-radius/public;
+        root /var/www/salfanet-radius/frontend/public;
         expires off;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
         add_header Service-Worker-Allowed "/";
@@ -85,22 +85,40 @@ _proxy_locations() {
 
     # PWA icons and assets
     location /pwa/ {
-        root /var/www/salfanet-radius/public;
+        root /var/www/salfanet-radius/frontend/public;
         expires 30d;
         add_header Cache-Control "public, max-age=2592000, immutable";
         access_log off;
     }
 
     location /_next/static/ {
-        alias /var/www/salfanet-radius/.next/static/;
+        alias /var/www/salfanet-radius/frontend/.next/static/;
         expires 365d;
         access_log off;
         add_header Cache-Control "public, immutable";
     }
 
-    # API routes — no cache, return JSON not HTML on error
-    location /api/ {
+    # NextAuth routes — handled by frontend (port 3000)
+    location /api/auth/ {
         proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   CF-Connecting-IP $http_cf_connecting_ip;
+
+        add_header Cache-Control 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' always;
+        add_header Pragma 'no-cache' always;
+
+        proxy_hide_header X-Frame-Options;
+        proxy_hide_header X-XSS-Protection;
+        proxy_hide_header X-Content-Type-Options;
+    }
+
+    # API routes — handled by backend (port 3001), no cache, return JSON not HTML on error
+    location /api/ {
+        proxy_pass         http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header   Host $host;
         proxy_set_header   X-Real-IP $remote_addr;
@@ -169,14 +187,14 @@ _proxy_locations_https_domain() {
     error_log  /var/log/nginx/salfanet-radius-error.log;
 
     location /downloads/ {
-        alias /var/www/salfanet-radius/public/downloads/;
+        alias /var/www/salfanet-radius/frontend/public/downloads/;
         autoindex off;
         add_header Content-Disposition 'attachment';
     }
 
     # Static assets - long cache (hashed filenames change on rebuild)
     location /_next/static/ {
-        alias /var/www/salfanet-radius/.next/static/;
+        alias /var/www/salfanet-radius/frontend/.next/static/;
         expires 365d;
         access_log off;
         add_header Cache-Control "public, immutable";
@@ -184,7 +202,7 @@ _proxy_locations_https_domain() {
 
     # PWA manifest files — serve directly from public/ (no Node.js needed)
     location ~ ^/manifest(-[a-z]+)?\.json$ {
-        root /var/www/salfanet-radius/public;
+        root /var/www/salfanet-radius/frontend/public;
         expires 1d;
         add_header Cache-Control "public, max-age=86400";
         add_header Content-Type "application/manifest+json";
@@ -192,7 +210,7 @@ _proxy_locations_https_domain() {
 
     # Service worker — no cache
     location = /sw.js {
-        root /var/www/salfanet-radius/public;
+        root /var/www/salfanet-radius/frontend/public;
         expires off;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
         add_header Service-Worker-Allowed "/";
@@ -200,15 +218,37 @@ _proxy_locations_https_domain() {
 
     # PWA icons and assets
     location /pwa/ {
-        root /var/www/salfanet-radius/public;
+        root /var/www/salfanet-radius/frontend/public;
         expires 30d;
         add_header Cache-Control "public, max-age=2592000, immutable";
         access_log off;
     }
 
-    # API routes - NO cache, bypass Cloudflare CDN
-    location /api/ {
+    # NextAuth routes — handled by frontend (port 3000), NO cache, bypass Cloudflare CDN
+    location /api/auth/ {
         proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   CF-Connecting-IP $http_cf_connecting_ip;
+
+        # Prevent Cloudflare and browser from caching API responses
+        add_header Cache-Control 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0' always;
+        add_header CDN-Cache-Control 'no-store' always;
+        add_header Cloudflare-CDN-Cache-Control 'no-store' always;
+        add_header Pragma 'no-cache' always;
+
+        proxy_hide_header Content-Security-Policy;
+        proxy_hide_header X-Frame-Options;
+        proxy_hide_header X-XSS-Protection;
+        proxy_hide_header X-Content-Type-Options;
+    }
+
+    # API routes — handled by backend (port 3001), NO cache, bypass Cloudflare CDN
+    location /api/ {
+        proxy_pass         http://127.0.0.1:3001;
         proxy_http_version 1.1;
         proxy_set_header   Host $host;
         proxy_set_header   X-Real-IP $remote_addr;
@@ -278,8 +318,14 @@ events {
 
 http {
     # upstream keepalive to Node.js — reuse TCP connections
-    upstream nextjs {
+    # frontend (UI + NextAuth) on port 3000, backend (API + Prisma) on port 3001
+    upstream nextjs_frontend {
         server 127.0.0.1:3000;
+        keepalive 16;
+    }
+
+    upstream nextjs_backend {
+        server 127.0.0.1:3001;
         keepalive 16;
     }
 
@@ -355,7 +401,7 @@ create_nginx_config() {
     if [ -n "${VPS_DOMAIN:-}" ]; then
         print_info "Domain: ${VPS_DOMAIN} — generating 4-block HTTPS config..."
 
-        cat > /etc/nginx/sites-available/salfanet-radius <<EOF
+        cat > /etc/nginx/sites-available/salfanet <<EOF
 # Block 1: HTTP domain → HTTPS redirect
 server {
     listen 80;
@@ -412,7 +458,7 @@ EOF
         # No domain: 2-block config (HTTP + HTTPS) with IP only
         print_info "No domain set — generating IP-only HTTP+HTTPS config..."
 
-        cat > /etc/nginx/sites-available/salfanet-radius <<EOF
+        cat > /etc/nginx/sites-available/salfanet <<EOF
 # Block 1: HTTP (IP direct access)
 server {
     listen 80 default_server;
@@ -508,7 +554,7 @@ setup_ssl_domain() {
         local CERT="/etc/ssl/certs/nginx-selfsigned.crt"
         local KEY_SS="/etc/ssl/private/nginx-selfsigned.key"
 
-        cat > /etc/nginx/sites-available/salfanet-radius <<EOF
+        cat > /etc/nginx/sites-available/salfanet <<EOF
 # Block 1: HTTP domain → HTTPS redirect
 server {
     listen 80;
@@ -572,7 +618,7 @@ enable_nginx_site() {
     rm -f /etc/nginx/sites-enabled/default
     
     # Enable our site
-    ln -sf /etc/nginx/sites-available/salfanet-radius /etc/nginx/sites-enabled/
+    ln -sf /etc/nginx/sites-available/salfanet /etc/nginx/sites-enabled/
     
     print_success "Nginx site enabled"
 }
@@ -626,12 +672,20 @@ verify_external_web_access() {
 
     local PUBLIC_IP="${VPS_IP:-$(detect_ip_address)}"
 
-    # 1) Internal app check (Next.js)
+    # 1) Internal app check (frontend: UI + NextAuth on port 3000)
     if curl -fsS -I --max-time 5 http://127.0.0.1:3000 >/dev/null 2>&1; then
-        print_success "Internal app check OK: http://127.0.0.1:3000"
+        print_success "Internal frontend check OK: http://127.0.0.1:3000"
     else
-        print_warning "Internal app check failed: http://127.0.0.1:3000"
-        print_info "  Cek PM2: pm2 status && pm2 logs salfanet-radius --lines 60"
+        print_warning "Internal frontend check failed: http://127.0.0.1:3000"
+        print_info "  Cek PM2: pm2 status && pm2 logs salfanet-frontend --lines 60"
+    fi
+
+    # 1b) Internal app check (backend: API + Prisma on port 3001)
+    if curl -fsS --max-time 5 http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+        print_success "Internal backend check OK: http://127.0.0.1:3001/api/health"
+    else
+        print_warning "Internal backend check failed: http://127.0.0.1:3001/api/health"
+        print_info "  Cek PM2: pm2 status && pm2 logs salfanet-backend --lines 60"
     fi
 
     # 2) Internal Nginx check (HTTP)
@@ -698,7 +752,7 @@ install_nginx() {
     print_info "Nginx Configuration:"
     echo "  HTTP Port:  80  (redirects to HTTPS for domain)"
     echo "  HTTPS Port: 443 (self-signed cert, Cloudflare-compatible)"
-    echo "  Proxy to:   http://127.0.0.1:3000"
+    echo "  Proxy to:   http://127.0.0.1:3000 (frontend) + http://127.0.0.1:3001 (backend)"
     if [ -n "${VPS_DOMAIN:-}" ]; then
     echo "  Access URL: https://${VPS_DOMAIN}"
     echo "  Direct IP:  https://${VPS_IP:-$(detect_ip_address)}"

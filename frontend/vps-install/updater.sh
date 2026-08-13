@@ -28,8 +28,10 @@ print_error()   { echo -e "${RED}✗ $1${NC}" >&2; }
 # ─── Config ────────────────────────────────────────────────────────────────
 APP_DIR="${APP_DIR:-/var/www/salfanet-radius}"
 GITHUB_REPO="s4lfanet/salfanet-radius"
-PM2_APP_NAME="salfanet-radius"
+PM2_FRONTEND_NAME="salfanet-frontend"
+PM2_BACKEND_NAME="salfanet-backend"
 PM2_CRON_NAME="salfanet-cron"
+PM2_WA_NAME="salfanet-wa"
 BACKUP_BASE="/root/salfanet-backups"
 TARGET_VERSION=""
 USE_BRANCH=""
@@ -94,7 +96,8 @@ apply_sql_migrations() {
     command -v mysql &>/dev/null || return 0
     _parse_db_parts || return 0
     local APPLIED_LOG="/var/lib/salfanet-applied-migrations.txt"
-    local MIGRATIONS_DIR="$APP_DIR/prisma/migrations"
+    local MIGRATIONS_DIR="$APP_DIR/backend/prisma/migrations"
+    [ -d "$MIGRATIONS_DIR" ] || MIGRATIONS_DIR="$APP_DIR/prisma/migrations"
     [ -d "$MIGRATIONS_DIR" ] || return 0
 
     touch "$APPLIED_LOG" 2>/dev/null || true
@@ -173,6 +176,8 @@ fi
 CURRENT_VERSION="unknown"
 if [ -f "$APP_DIR/VERSION" ]; then
     CURRENT_VERSION=$(cat "$APP_DIR/VERSION")
+elif [ -f "$APP_DIR/frontend/package.json" ]; then
+    CURRENT_VERSION=$(node -p "require('$APP_DIR/frontend/package.json').version" 2>/dev/null || echo "unknown")
 elif [ -f "$APP_DIR/package.json" ]; then
     CURRENT_VERSION=$(node -p "require('$APP_DIR/package.json').version" 2>/dev/null || echo "unknown")
 fi
@@ -293,19 +298,22 @@ if [ -n "$USE_BRANCH" ]; then
     print_success "Stale file cleanup done"
 
     print_step "Installing dependencies"
-    # Try npm ci first (faster, strict lock file) — fall back to npm install
-    # if lock file is out of sync with package.json (common after refactor).
-    if ! npm ci --omit=dev 2>/tmp/updater-npm-ci.log; then
-        print_info "npm ci failed (lock file mismatch) — falling back to npm install..."
-        npm install --production=false 2>&1 | tail -10
+    # Monorepo with two Next.js apps (frontend/ + backend/).
+    # Prefer pnpm at the workspace root; fall back to npm install in each app.
+    if command -v pnpm &>/dev/null; then
+        pnpm install 2>&1 | tail -10
+    else
+        print_info "pnpm not found — installing in frontend/ and backend/ separately..."
+        (cd "$APP_DIR/frontend" && npm install --production=false 2>&1 | tail -10)
+        (cd "$APP_DIR/backend"  && npm install --production=false 2>&1 | tail -10)
     fi
 
     print_step "Generating Prisma client"
-    node_modules/.bin/prisma generate
+    (cd "$APP_DIR/backend" && npx prisma generate)
 
     print_step "Running database migrations"
     backup_genieacs_data
-    node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || node_modules/.bin/prisma db push
+    (cd "$APP_DIR/backend" && npx prisma db push --accept-data-loss 2>/dev/null || npx prisma db push)
     restore_genieacs_data
     apply_sql_migrations || true ────────────────────────────────
     # Migrate legacy admin_user -> admin_users if needed and ensure
@@ -316,35 +324,61 @@ if [ -n "$USE_BRANCH" ]; then
     fi
 
     print_step "Building application"
-    print_info "Removing previous .next build cache for clean build..."
-    rm -rf "$APP_DIR/.next" 2>/dev/null || true
-    NODE_OPTIONS="--max-old-space-size=1536" NEXT_TELEMETRY_DISABLED=1 npm run build
+    print_info "Removing previous .next build caches for clean build..."
+    rm -rf "$APP_DIR/backend/.next" 2>/dev/null || true
+    rm -rf "$APP_DIR/frontend/.next" 2>/dev/null || true
 
-    # ── Copy static assets to standalone ──────────────────────────────────
-    if [ -d "$APP_DIR/.next/standalone" ]; then
-        mkdir -p "$APP_DIR/.next/standalone/public"
-        cp -r "$APP_DIR/public/." "$APP_DIR/.next/standalone/public/" 2>/dev/null || true
-        mkdir -p "$APP_DIR/.next/standalone/.next"
-        cp -r "$APP_DIR/.next/static" "$APP_DIR/.next/standalone/.next/static/" 2>/dev/null || true
-        print_success "Static assets copied to standalone"
+    # ── Build backend (API routes + Prisma + services, port 3001) ──────────
+    print_info "Building backend..."
+    cd "$APP_DIR/backend"
+    npx prisma generate
+    NODE_OPTIONS="--max-old-space-size=1536" NEXT_TELEMETRY_DISABLED=1 npx next build
+    if [ -d ".next/standalone" ]; then
+        mkdir -p .next/standalone/backend/public
+        cp -r public/. .next/standalone/backend/public/ 2>/dev/null || true
+        mkdir -p .next/standalone/backend/.next
+        cp -r .next/static .next/standalone/backend/.next/static/ 2>/dev/null || true
+        cp .env .next/standalone/backend/.env 2>/dev/null || true
+        print_success "Backend static assets copied to standalone"
+    fi
+
+    # ── Build frontend (UI + NextAuth routes, port 3000) ───────────────────
+    print_info "Building frontend..."
+    cd "$APP_DIR/frontend"
+    NODE_OPTIONS="--max-old-space-size=1536" NEXT_TELEMETRY_DISABLED=1 npx next build
+    if [ -d ".next/standalone" ]; then
+        mkdir -p .next/standalone/frontend/public
+        cp -r public/. .next/standalone/frontend/public/ 2>/dev/null || true
+        mkdir -p .next/standalone/frontend/.next
+        cp -r .next/static .next/standalone/frontend/.next/static/ 2>/dev/null || true
+        cp .env .next/standalone/frontend/.env 2>/dev/null || true
+        print_success "Frontend static assets copied to standalone"
     fi
 
     print_step "Restarting services"
+    # Two Next.js apps: salfanet-frontend (port 3000) + salfanet-backend (port 3001).
     # Self-heal old PM2 app definitions that still use "npm start / next start"
-    # while project now uses standalone server script.
+    # or the legacy single-app "salfanet-radius" name.
     APP_NEEDS_MIGRATION=false
-    CURRENT_APP_SCRIPT=$(pm2 describe "$PM2_APP_NAME" 2>/dev/null | grep -i "script path" | head -1 | sed 's/.*: //')
-    if [ -n "$CURRENT_APP_SCRIPT" ] && [[ "$CURRENT_APP_SCRIPT" != *".next/standalone/server.js"* ]]; then
+    CURRENT_FE_SCRIPT=$(pm2 describe "$PM2_FRONTEND_NAME" 2>/dev/null | grep -i "script path" | head -1 | sed 's/.*: //')
+    if [ -n "$CURRENT_FE_SCRIPT" ] && [[ "$CURRENT_FE_SCRIPT" != *"frontend/.next/standalone"* ]]; then
         APP_NEEDS_MIGRATION=true
-        print_info "PM2 app script is legacy ($CURRENT_APP_SCRIPT) — migrating to standalone"
+        print_info "PM2 frontend script is legacy ($CURRENT_FE_SCRIPT) — migrating to standalone"
+    fi
+    # Legacy single-app process may still be named salfanet-radius
+    if pm2 describe "salfanet-radius" &>/dev/null; then
+        APP_NEEDS_MIGRATION=true
+        print_info "Legacy salfanet-radius process detected — migrating to split apps"
+        pm2 delete "salfanet-radius" 2>/dev/null || true
     fi
 
     if [ "$APP_NEEDS_MIGRATION" = true ] && [ -f "$APP_DIR/ecosystem.config.js" ]; then
-        pm2 delete "$PM2_APP_NAME" 2>/dev/null || true
-        pm2 start "$APP_DIR/ecosystem.config.js" --only "$PM2_APP_NAME" 2>&1 | tail -3
-        print_success "salfanet-radius migrated to standalone PM2 config"
+        pm2 start "$APP_DIR/ecosystem.config.js" --only "$PM2_FRONTEND_NAME" 2>&1 | tail -3
+        pm2 start "$APP_DIR/ecosystem.config.js" --only "$PM2_BACKEND_NAME" 2>&1 | tail -3
+        print_success "salfanet-frontend + salfanet-backend started from ecosystem config"
     else
-        pm2 reload "$PM2_APP_NAME" --update-env 2>/dev/null || pm2 restart "$PM2_APP_NAME" 2>/dev/null || true
+        pm2 reload "$PM2_FRONTEND_NAME" --update-env 2>/dev/null || pm2 restart "$PM2_FRONTEND_NAME" 2>/dev/null || true
+        pm2 reload "$PM2_BACKEND_NAME" --update-env 2>/dev/null || pm2 restart "$PM2_BACKEND_NAME" 2>/dev/null || true
     fi
 
     # Jika ecosystem.config.js berubah (migrasi cron-service.js → tsx runner),
@@ -359,7 +393,6 @@ if [ -n "$USE_BRANCH" ]; then
     fi
 
     # ── Baileys WhatsApp Service ───────────────────────────────────────────
-    PM2_WA_NAME="salfanet-wa"
     mkdir -p /var/data/salfanet/baileys_auth
     CURRENT_WA_PROC=$(pm2 describe "$PM2_WA_NAME" 2>/dev/null | grep -i "status" | head -1 || true)
     if [ -z "$CURRENT_WA_PROC" ]; then
@@ -416,7 +449,7 @@ if [ -n "$USE_BRANCH" ]; then
             && print_success "L2TP/IPsec server diperbarui" || true
     fi
 
-    NEW_VERSION=$(node -p "require('$APP_DIR/package.json').version" 2>/dev/null || echo "unknown")
+    NEW_VERSION=$(node -p "require('$APP_DIR/frontend/package.json').version" 2>/dev/null || node -p "require('$APP_DIR/package.json').version" 2>/dev/null || echo "unknown")
     echo ""
     print_success "Update complete! ${CURRENT_VERSION} → ${NEW_VERSION}"
     exit 0
@@ -525,8 +558,10 @@ fi
 
 # ─── Stop services ────────────────────────────────────────────────────────
 print_step "Stopping PM2 processes"
-pm2 stop "$PM2_APP_NAME" 2>/dev/null || true
+pm2 stop "$PM2_FRONTEND_NAME" 2>/dev/null || true
+pm2 stop "$PM2_BACKEND_NAME" 2>/dev/null || true
 pm2 stop "$PM2_CRON_NAME" 2>/dev/null || true
+pm2 stop "salfanet-radius" 2>/dev/null || true
 print_success "Services stopped"
 
 # ─── Deploy new build ─────────────────────────────────────────────────────
@@ -576,22 +611,22 @@ fi
 
 # ─── Run DB migrations ────────────────────────────────────────────────────
 print_step "Running database migrations (prisma db push)"
-cd "$APP_DIR"
+cd "$APP_DIR/backend"
 
 if [ -f "$APP_DIR/.env" ]; then
     export $(grep -v '^#' "$APP_DIR/.env" | grep 'DATABASE_URL' | xargs) 2>/dev/null || true
 fi
 
-node_modules/.bin/prisma generate 2>/dev/null || true
+npx prisma generate 2>/dev/null || true
 backup_genieacs_data
-node_modules/.bin/prisma db push --accept-data-loss 2>/dev/null || \
-    node_modules/.bin/prisma db push || \
+npx prisma db push --accept-data-loss 2>/dev/null || \
+    npx prisma db push || \
     print_info "DB push skipped (check manually)"
 restore_genieacs_data
 apply_sql_migrations || true
 
 print_step "Applying seed data (new templates & config)"
-npm run db:seed 2>/dev/null || print_info "Seed skipped (check manually)"
+(cd "$APP_DIR/backend" && npm run db:seed 2>/dev/null) || print_info "Seed skipped (check manually)"
 
 # ─── Update VPN Client (SSTP/L2TP ke CHR) jika sudah terinstall ──────────
 # Flow lama: VPS sebagai client → konek ke MikroTik CHR → FreeRADIUS
@@ -656,8 +691,20 @@ fi
 
 # ─── Restart services ─────────────────────────────────────────────────────
 print_step "Starting PM2 processes"
-pm2 start "$PM2_APP_NAME" 2>/dev/null || true
-pm2 start "$PM2_CRON_NAME" 2>/dev/null || true
+# Delete legacy single-app process if present
+pm2 delete "salfanet-radius" 2>/dev/null || true
+if [ -f "$APP_DIR/ecosystem.config.js" ]; then
+    pm2 start "$APP_DIR/ecosystem.config.js" --only "$PM2_FRONTEND_NAME" 2>/dev/null || \
+        pm2 restart "$PM2_FRONTEND_NAME" 2>/dev/null || true
+    pm2 start "$APP_DIR/ecosystem.config.js" --only "$PM2_BACKEND_NAME" 2>/dev/null || \
+        pm2 restart "$PM2_BACKEND_NAME" 2>/dev/null || true
+    pm2 start "$APP_DIR/ecosystem.config.js" --only "$PM2_CRON_NAME" 2>/dev/null || \
+        pm2 restart "$PM2_CRON_NAME" 2>/dev/null || true
+else
+    pm2 start "$PM2_FRONTEND_NAME" 2>/dev/null || true
+    pm2 start "$PM2_BACKEND_NAME" 2>/dev/null || true
+    pm2 start "$PM2_CRON_NAME" 2>/dev/null || true
+fi
 pm2 save
 
 # ─── Cleanup ──────────────────────────────────────────────────────────────
@@ -673,7 +720,7 @@ echo ""
 print_success "${CURRENT_VERSION}  →  ${NEW_VERSION}"
 echo ""
 print_info "Cek status   : pm2 status"
-print_info "Cek log      : pm2 logs ${PM2_APP_NAME}"
+print_info "Cek log      : pm2 logs ${PM2_FRONTEND_NAME} / ${PM2_BACKEND_NAME}"
 print_info "Backup ada di: $BACKUP_BASE"
 # Tampilkan status VPN
 [ -f "/usr/local/bin/vpn-connect" ]               && print_info "VPN Client (CHR) : vpn-connect status"
