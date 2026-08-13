@@ -372,6 +372,40 @@ export default function PppoeUsersPage() {
 
   useEffect(() => { loadData(); }, []);
 
+  // Realtime online/offline status polling — refresh every 10 seconds
+  // without reloading the entire page. Only fetches the online username set.
+  useEffect(() => {
+    if (users.length === 0) return;
+    let cancelled = false;
+
+    const pollOnlineStatus = async () => {
+      try {
+        const usernames = users.map(u => u.username).join(',');
+        const res = await fetch(`/api/pppoe/users/online-status?usernames=${encodeURIComponent(usernames)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled || !data.online) return;
+        const onlineSet = new Set(data.online as string[]);
+        setUsers(prev => {
+          // Only update if there's an actual change to avoid unnecessary re-renders
+          let changed = false;
+          const next = prev.map(u => {
+            const isOnline = onlineSet.has(u.username);
+            if (u.isOnline !== isOnline) { changed = true; return { ...u, isOnline }; }
+            return u;
+          });
+          return changed ? next : prev;
+        });
+      } catch (e) { /* silent — polling errors are non-fatal */ }
+    };
+
+    // Poll immediately, then every 10 seconds
+    pollOnlineStatus();
+    const interval = setInterval(pollOnlineStatus, 10000);
+
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [users.length]);
+
   const loadData = async () => {
     try {
       const [usersRes, profilesRes, routersRes, areasRes] = await Promise.all([
@@ -1307,6 +1341,9 @@ export default function PppoeUsersPage() {
                 {val === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-current" />}{label}
               </button>
             ))}
+            <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" title="Status sesi diperbarui otomatis setiap 10 detik">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />Live
+            </span>
           </div>
           <div className="flex items-center gap-1.5 mt-1.5">
             <Filter className="h-3 w-3 text-muted-foreground" /><span className="text-[10px] text-muted-foreground">Bayar:</span>
