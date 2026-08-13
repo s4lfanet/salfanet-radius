@@ -23,6 +23,26 @@ export const createPppoeUserSchema = z.object({
   subscriptionType: z.enum(['PREPAID', 'POSTPAID']).default('POSTPAID'),
   billingDay: z.number().int().min(1).max(31).optional(),
   comment: z.string().max(500).optional(),
+  // PSB wizard fields
+  odp: z.string().max(100).optional(),
+  discount: z.number().int().min(0).optional(),
+  discountNote: z.string().max(255).optional(),
+  installDate: z.string().optional(),
+  connectionType: z.enum(['PPPOE', 'STATIC_IP', 'HOTSPOT']).optional(),
+  idCardNumber: z.string().max(50).optional(),
+  idCardPhoto: z.string().max(500).optional(),
+  installationPhotos: z.array(z.string()).optional(),
+  macAddress: z.string().optional(),
+  latitude: z.string().optional(),
+  longitude: z.string().optional(),
+  expiredAt: z.string().optional(),
+  registeredAt: z.string().optional(),
+  autoIsolationEnabled: z.boolean().optional(),
+  followRoad: z.boolean().optional(),
+  noPppoeAccount: z.boolean().optional(),
+  pppoeCustomerId: z.string().optional(),
+  firstInvoice: z.enum(['none', 'prorate', 'full']).optional(),
+  createPppSecret: z.boolean().optional(),
 })
 
 export const updatePppoeUserSchema = createPppoeUserSchema.partial().omit({ username: true })
