@@ -22,6 +22,18 @@ importers:
       bcryptjs:
         specifier: ^3.0.2
         version: 3.0.3
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
+      cross-env:
+        specifier: ^10.1.0
+        version: 10.1.0
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.4.0
+      date-fns-tz:
+        specifier: ^3.2.0
+        version: 3.2.0(date-fns@4.4.0)
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
@@ -40,6 +52,12 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.3
         version: 9.0.3
+      jspdf:
+        specifier: ^4.2.0
+        version: 4.2.1
+      jspdf-autotable:
+        specifier: ^5.0.7
+        version: 5.0.8(jspdf@4.2.1)
       midtrans-client:
         specifier: ^1.4.3
         version: 1.4.3(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
@@ -94,6 +112,9 @@ importers:
       ssh2:
         specifier: ^1.17.0
         version: 1.17.0
+      tailwind-merge:
+        specifier: ^3.3.1
+        version: 3.6.0
       web-push:
         specifier: ^3.6.7
         version: 3.6.7(supports-color@8.1.1)
