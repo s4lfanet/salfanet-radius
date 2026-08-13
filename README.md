@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.1.0 — PSB wizard 3-step, 4 cron jobs implemented, data consistency fix
+> **Version:** 4.2.0 — Redis cache, realtime UI fixes, RADIUS script IP fix, auth mode cleanup
 
 ---
 
@@ -19,7 +19,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 |----------|-----------------|
 | **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect, **IP Pool management**, **Multi-NAS isolation** |
 | **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
-| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)** |
+| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)**, **true optimistic update (reactivate/delete instant)** |
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
 | **Data Usage Reporting** | Per-user bandwidth tracking (daily aggregation via cron), monthly summary, top consumers, GB upload/download per period |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates |
@@ -30,11 +30,14 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Financial** | Income/expense tracking with categories, keuangan reconciliation |
 | **Network (FTTH)** | OLT/ODC/ODP management, customer port assignment, network map, distance calculation |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
-| **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates |
+| **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong** |
 | **Cron Jobs** | 17 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
 | **Roles & Permissions** | 53 permissions, 5 portals (Admin/Customer/Agent/Technician + SuperAdmin) |
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
 | **Security** | Session timeout 30 min, idle warning, RBAC, HTTPS/SSL |
+| **Performance** | **Redis cache untuk data non-realtime** (profiles, areas, routers), graceful degradation jika Redis unavailable |
+| **Auth Modes** | `local` (MikroTik primary) dan `radius` (FreeRADIUS primary, PPP secret backup disabled). **hybrid mode obsolete** |
+| **RADIUS Setup** | Auto-generated RouterOS script pakai **IP asli VPS** (bukan domain/Cloudflare proxy), VPN-specific address selection |
 | **Bahasa** | Bahasa Indonesia (full) |
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
 | **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle, admin broadcast |
@@ -78,6 +81,45 @@ pm2 logs salfanet-wa --lines 20
 ### Auth Session
 
 Session WhatsApp tersimpan di `/var/data/salfanet/baileys_auth/` dan persist meski PM2 restart. Untuk logout/scan ulang, klik **Restart Session** di admin panel.
+
+---
+
+## ⚡ Redis Cache (v4.2.0)
+
+Redis digunakan untuk cache data non-realtime agar load halaman lebih cepat. Data realtime (online/offline, sessions, invoices) **tidak di-cache**.
+
+### Yang Di-Cache (TTL 5 menit)
+
+| Endpoint | Cache Key | TTL |
+|----------|-----------|-----|
+| `GET /api/pppoe/profiles` | `pppoe:profiles` | 5 menit |
+| `GET /api/pppoe/areas` | `pppoe:areas` | 5 menit |
+| `GET /api/network/routers` | `network:routers` | 5 menit |
+
+Cache di-invalidate otomatis saat create/update/delete pada data terkait.
+
+### Yang TIDAK Di-Cache (Realtime)
+
+- `/api/pppoe/users` — online/offline status harus realtime
+- `/api/pppoe/users/[id]` — detail user harus realtime
+- `/api/invoices` — status pembayaran harus realtime
+- `/api/sessions/*` — session data harus realtime
+
+### Graceful Degradation
+
+Jika Redis unavailable, semua function cache tetap jalan dengan fallback ke database langsung (return null, caller query DB).
+
+### Setup
+
+Redis harus terinstall dan running di VPS:
+```bash
+sudo apt install redis-server
+sudo systemctl enable redis-server
+sudo systemctl start redis-server
+redis-cli ping  # harus return PONG
+```
+
+File: `backend/src/server/cache/redis.ts`
 
 ---
 
