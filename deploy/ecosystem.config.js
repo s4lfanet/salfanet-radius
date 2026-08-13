@@ -76,6 +76,8 @@ module.exports = {
         PORT: 3001,
         HOSTNAME: '127.0.0.1',
         TZ: 'Asia/Jakarta',
+        // CRON_SECRET — shared with cron-runner for API auth bypass
+        CRON_SECRET: process.env.CRON_SECRET || '',
         // Database, auth, and external service vars are read from backend/.env
       },
       error_file: './logs/backend-error.log',
@@ -110,6 +112,7 @@ module.exports = {
         NODE_OPTIONS: '--max-old-space-size=120',
         TZ: 'Asia/Jakarta',
         CRON_API_URL: 'http://127.0.0.1:3001',
+        CRON_SECRET: process.env.CRON_SECRET || '',
       },
       error_file: './logs/cron-error.log',
       out_file: './logs/cron-out.log',
