@@ -3,6 +3,7 @@ import { nowWIB } from '@/lib/timezone';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
+import { shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 
 /**
  * Invoice Generate — generate monthly invoices for active/isolated users.
@@ -227,7 +228,8 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
       expiredAt: { lte: renewWindow },
     },
     include: {
-      profile: { select: { id: true, name: true, price: true, ppnActive: true, ppnRate: true, validityValue: true, validityUnit: true } },
+      profile: { select: { id: true, name: true, groupName: true, price: true, ppnActive: true, ppnRate: true, validityValue: true, validityUnit: true } },
+      router: { select: { id: true, authMode: true } },
     },
   });
 
@@ -268,6 +270,56 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
         where: { id: user.id },
         data: { expiredAt: newExpiredAt, status: 'active' },
       });
+
+      // If user was isolated, restore RADIUS + PPP secret so they reconnect normally
+      if (user.status === 'isolated') {
+        const nasIdentifier = user.router?.id || null;
+        const authMode = user.router?.authMode || 'local';
+        const groupName = (user.profile as any).groupName;
+        try {
+          // Restore radcheck password
+          await prisma.$executeRaw`
+            INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+            VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
+            ON DUPLICATE KEY UPDATE value = ${user.password}
+          `;
+          // Restore radusergroup to original profile
+          await prisma.$executeRaw`
+            DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+          `;
+          await prisma.$executeRaw`
+            INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+            VALUES (${user.username}, ${groupName}, 1, ${nasIdentifier})
+          `;
+          // Remove isolir reply message
+          await prisma.radreply.deleteMany({
+            where: {
+              username: user.username,
+              attribute: 'Reply-Message',
+              ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
+            }
+          });
+          // Restore PPP secret in MikroTik
+          if (user.router?.id && shouldManagePppSecretForSuspend(authMode)) {
+            const { managePppSecret, kickPppoeSession } = await import('@/server/services/mikrotik/ppp-secret.service');
+            managePppSecret(user.router.id, 'enable', {
+              username: user.username,
+              password: user.password,
+              profile: groupName,
+            }).then(r => console.log(`[AUTO_RENEWAL] PPP secret restored to ${groupName} for ${user.username}: ${r.message}`))
+              .catch(e => console.error(`[AUTO_RENEWAL] PPP secret restore failed for ${user.username}:`, e?.message || e));
+            kickPppoeSession(user.router.id, user.username)
+              .then(k => console.log(`[AUTO_RENEWAL] Kicked ${k} session(s) for ${user.username}`))
+              .catch(e => console.error(`[AUTO_RENEWAL] Kick failed for ${user.username}:`, e?.message || e));
+          }
+          // CoA disconnect
+          const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
+          await disconnectPPPoEUser(user.username);
+          console.log(`[AUTO_RENEWAL] RADIUS restored for ${user.username} (was isolated)`);
+        } catch (radiusErr: any) {
+          console.error(`[AUTO_RENEWAL] RADIUS restore error for ${user.username}:`, radiusErr?.message);
+        }
+      }
 
       renewed++;
       console.log(`[AUTO_RENEWAL] Renewed ${user.username} until ${newExpiredAt.toISOString()}`);

@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
+import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { sendPaymentSuccess } from '@/server/services/notifications/whatsapp-templates.service';
@@ -242,6 +243,7 @@ export async function PUT(request: NextRequest) {
         user: {
           include: {
             profile: true,
+            router: { select: { id: true, authMode: true } },
           },
         },
       },
@@ -497,58 +499,92 @@ export async function PUT(request: NextRequest) {
           console.log(`  - Status: ${user.status} → ${shouldActivate ? 'active' : user.status}`);
           if (packageChanged) console.log(`  - RADIUS: Updating group to ${targetProfile?.groupName || targetProfileId}`);
 
+          const nasIdentifier = user.router?.id || null;
+          const authMode = user.router?.authMode || 'local';
+          const groupName = targetProfile?.groupName || profile.groupName;
+
           // Restore RADIUS to active profile
           try {
             if (shouldActivate) {
               // Remove forced reject (if any) from previous SUSPENDED state
               await prisma.radcheck.deleteMany({
-                where: { username: user.username, attribute: 'Auth-Type' }
+                where: {
+                  username: user.username,
+                  attribute: 'Auth-Type',
+                  ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
+                }
               });
               // Remove NAS-IP-Address restriction
               await prisma.radcheck.deleteMany({
-                where: { username: user.username, attribute: 'NAS-IP-Address' }
+                where: {
+                  username: user.username,
+                  attribute: 'NAS-IP-Address',
+                  ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
+                }
               });
             }
 
-            // 1. Ensure password in radcheck
+            // 1. Ensure password in radcheck (with nas_identifier)
             await prisma.$executeRaw`
-              INSERT INTO radcheck (username, attribute, op, value)
-              VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password})
+              INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+              VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
               ON DUPLICATE KEY UPDATE value = ${user.password}
             `;
 
-            // 2. Set group to target profile (new or existing)
-            const groupName = targetProfile?.groupName || profile.groupName;
+            // 2. Set group to target profile (with nas_identifier)
             await prisma.$executeRaw`
-              DELETE FROM radusergroup WHERE username = ${user.username}
+              DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
             `;
             await prisma.$executeRaw`
-              INSERT INTO radusergroup (username, groupname, priority)
-              VALUES (${user.username}, ${groupName}, 1)
+              INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+              VALUES (${user.username}, ${groupName}, 1, ${nasIdentifier})
             `;
 
             if (shouldActivate) {
               // 3. Remove isolated message from radreply
               await prisma.radreply.deleteMany({
-                where: { username: user.username, attribute: 'Reply-Message' }
+                where: {
+                  username: user.username,
+                  attribute: 'Reply-Message',
+                  ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
+                }
               });
               console.log(`  - Removed isolated message from radreply`);
             }
 
-            // 4. Restore / update static IP if exists
+            // 4. Restore / update static IP if exists (with nas_identifier)
             if (user.ipAddress) {
               await prisma.$executeRaw`
-                INSERT INTO radreply (username, attribute, op, value)
-                VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress})
+                INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+                VALUES (${user.username}, 'Framed-IP-Address', ':=', ${user.ipAddress}, ${nasIdentifier})
                 ON DUPLICATE KEY UPDATE value = ${user.ipAddress}
               `;
             } else {
               await prisma.$executeRaw`
-                DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address'
+                DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
               `;
             }
 
             console.log(`  - RADIUS: Profile set to ${groupName}`);
+
+            // 4.5. Restore MikroTik PPP secret from 'isolir' → user's profile
+            // Critical: during isolation, PPP secret profile was changed to 'isolir'.
+            // Must restore it back to the user's actual profile, otherwise user
+            // reconnects with isolir profile (local/hybrid auth mode).
+            if (user.router?.id && shouldManagePppSecretForSuspend(authMode)) {
+              managePppSecret(user.router.id, 'enable', {
+                username: user.username,
+                password: user.password,
+                profile: groupName,
+              })
+                .then(r => console.log(`  - PPP secret: Restored to ${groupName} for ${user.username}: ${r.message}`))
+                .catch(e => console.error(`  - PPP secret: Failed to restore for ${user.username}:`, e?.message || e));
+
+              // Kick active session via MikroTik API (critical for local/hybrid auth)
+              kickPppoeSession(user.router.id, user.username)
+                .then(kicked => console.log(`  - MikroTik: Kicked ${kicked} session(s) for ${user.username}`))
+                .catch(e => console.error(`  - MikroTik: Kick failed for ${user.username}:`, e?.message || e));
+            }
 
             if (shouldActivate) {
               // Update registration status to ACTIVE if this is installation invoice
