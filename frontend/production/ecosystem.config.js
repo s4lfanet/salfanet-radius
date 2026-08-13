@@ -126,7 +126,7 @@ module.exports = {
     // ─────────────────────────────────────────────────────────────────────
     {
       name: 'salfanet-wa',
-      script: './frontend/wa-service.js',
+      script: './backend/wa-service.js',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
