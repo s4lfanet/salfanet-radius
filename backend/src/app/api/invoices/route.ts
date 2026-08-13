@@ -570,7 +570,7 @@ export async function PUT(request: NextRequest) {
             // 4.5. Restore MikroTik PPP secret from 'isolir' → user's profile
             // Critical: during isolation, PPP secret profile was changed to 'isolir'.
             // Must restore it back to the user's actual profile, otherwise user
-            // reconnects with isolir profile (local/hybrid auth mode).
+            // reconnects with isolir profile (local auth mode).
             if (user.router?.id && shouldManagePppSecretForSuspend(authMode)) {
               managePppSecret(user.router.id, 'enable', {
                 username: user.username,
@@ -580,7 +580,7 @@ export async function PUT(request: NextRequest) {
                 .then(r => console.log(`  - PPP secret: Restored to ${groupName} for ${user.username}: ${r.message}`))
                 .catch(e => console.error(`  - PPP secret: Failed to restore for ${user.username}:`, e?.message || e));
 
-              // Kick active session via MikroTik API (critical for local/hybrid auth)
+              // Kick active session via MikroTik API (critical for local auth)
               kickPppoeSession(user.router.id, user.username)
                 .then(kicked => console.log(`  - MikroTik: Kicked ${kicked} session(s) for ${user.username}`))
                 .catch(e => console.error(`  - MikroTik: Kick failed for ${user.username}:`, e?.message || e));
