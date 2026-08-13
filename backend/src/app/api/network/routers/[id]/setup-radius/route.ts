@@ -1,5 +1,31 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { lookup } from 'dns/promises';
+
+// Check if a string is a valid IP address (IPv4 or IPv6)
+function isValidIp(host: string): boolean {
+  // IPv4: x.x.x.x where each octet 0-255
+  const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (ipv4.test(host)) {
+    return host.split('.').every(octet => parseInt(octet) >= 0 && parseInt(octet) <= 255);
+  }
+  // IPv6: contains ':'
+  return host.includes(':');
+}
+
+// Resolve hostname to IP address via DNS lookup
+// If already an IP, return as-is. If resolution fails, return original hostname.
+async function resolveToIp(host: string): Promise<string> {
+  if (!host || isValidIp(host)) return host;
+  try {
+    const result = await lookup(host, { family: 4 });
+    console.log(`[SETUP_RADIUS] Resolved ${host} → ${result.address}`);
+    return result.address;
+  } catch (e: any) {
+    console.warn(`[SETUP_RADIUS] DNS lookup failed for ${host}: ${e?.message} — using hostname as-is`);
+    return host;
+  }
+}
 
 export async function POST(
   request: NextRequest,
@@ -26,6 +52,9 @@ export async function POST(
 
     // Determine RADIUS server IP based on connection type
     // Fallback order: RADIUS_SERVER_IP → VPS_IP → hostname dari NEXTAUTH_URL/APP_URL (skip localhost) → request host header → '127.0.0.1'
+    // IMPORTANT: If the resolved value is a domain name (e.g. radius.salfa.my.id),
+    //            resolve it to the actual IP address via DNS — MikroTik /radius add
+    //            requires an IP, not a domain (domain causes intermittent issues).
     const _appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || '';
     let _urlHostname = '';
     try {
@@ -38,6 +67,10 @@ export async function POST(
     const _reqHost = request.headers.get('host')?.split(':')[0] || '';
     const _validReqHost = isLocalhost(_reqHost) ? '' : _reqHost;
     let radiusServerIp = process.env.RADIUS_SERVER_IP || process.env.VPS_IP || _envHost || _validReqHost || '127.0.0.1';
+    // Resolve domain name to IP address (MikroTik requires IP, not domain)
+    if (!isValidIp(radiusServerIp)) {
+      radiusServerIp = await resolveToIp(radiusServerIp);
+    }
     let nasSrcAddress = ''; // VPN IP of the router (NAS), used as src-address in /radius add
 
     // LOGIC:
