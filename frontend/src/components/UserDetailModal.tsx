@@ -1129,7 +1129,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
   const loadAddons = async () => {
     try {
       const res = await fetch(`/api/pppoe/users/${userId}/addons`, { cache: 'no-store' });
-      if (res.ok) setAddons(await res.json());
+      if (res.ok) { const data = await res.json(); setAddons(data.addons || []); }
     } catch (e) { console.error('Load addons error:', e); }
     finally { setLoading(false); }
   };
@@ -1319,7 +1319,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
   const loadPromises = async () => {
     try {
       const res = await fetch(`/api/pppoe/users/${userId}/promise`, { cache: 'no-store' });
-      if (res.ok) setPromises(await res.json());
+      if (res.ok) { const data = await res.json(); setPromises(data.promises || []); }
     } catch (e) { console.error('Load promises error:', e); }
     finally { setLoading(false); }
   };
