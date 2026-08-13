@@ -9,9 +9,9 @@ rest {
 
 	#
 	#  Base URI of the Next.js app.
-	#  Will be set automatically by installer to http://localhost:3000
+	#  After split: backend API is on port 3001 (not frontend port 3000)
 	#
-	connect_uri = "http://localhost:3000"
+	connect_uri = "http://localhost:3001"
 
 	#
 	#  How long (in seconds) to wait when establishing a TCP connection.
