@@ -1,0 +1,82 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '20'
+
+    - name: Build Frontend
+      working-directory: ./frontend
+      run: |
+        npm install
+        npm run build
+
+    # ── 1. Setup SSH Key ─────────────────────────────────────────────
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -p 1024 -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+    # ── Debug SSH ────────────────────────────────────────────────────
+    - name: Test SSH
+      run: |
+        echo "Key fingerprint:"
+        ssh-keygen -lf ~/.ssh/deploy_key
+        echo "Test koneksi:"
+        ssh -i ~/.ssh/deploy_key -p 1024 -v ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "echo OK" 2>&1 | tail -30
+
+    # ── 2. Sinkronisasi file via rsync ────────────────────────────────
+    - name: Sync Files
+      run: |
+        rsync -az --delete --timeout=120 \
+          -e "ssh -p 1024 -i ~/.ssh/deploy_key" \
+          --exclude=/node_modules/ \
+          --exclude=/frontend/node_modules/ \
+          --exclude=/backend/node_modules/ \
+          --exclude=/.git/ \
+          --exclude=/.github/ \
+          --exclude=/core/src/ \
+          --exclude=/.env \
+          --exclude=/backend/.env \
+          --exclude='*.ini' \
+          ./ ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/www/wwwroot/billing.pmynet.id/
+
+    # ── 3. Tulis .env ke VPS ─────────────────────────────────────────
+    - name: Write .env
+      run: |
+        printf 'DB_HOST=%s\nDB_USER=%s\nDB_PASS=%s\nDB_NAME=%s\nJWT_SECRET=%s\nRADIUS_SECRET=%s\n' \
+          '${{ secrets.DB_HOST }}' \
+          '${{ secrets.DB_USER }}' \
+          '${{ secrets.DB_PASS }}' \
+          '${{ secrets.DB_NAME }}' \
+          '${{ secrets.JWT_SECRET }}' \
+          '${{ secrets.RADIUS_SECRET }}' \
+          > /tmp/backend.env
+        scp -P 1024 -i ~/.ssh/deploy_key /tmp/backend.env \
+          ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:/www/wwwroot/billing.pmynet.id/backend/.env
+        echo ".env OK"
+
+    # ── 4. Restart Docker ────────────────────────────────────────────
+    - name: Restart Backend
+      run: |
+        ssh -i ~/.ssh/deploy_key -p 1024 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'ENDSSH'
+          set -e
+          export PATH=/www/server/nodejs/v24.14.1/bin:/usr/local/bin:/usr/bin:/bin:$PATH
+          cd /www/wwwroot/billing.pmynet.id
+          docker compose up -d --build backend 2>&1 || docker-compose up -d --build backend 2>&1
+          docker image prune -f
+          echo "Deploy selesai"
+        ENDSSH

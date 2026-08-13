@@ -1,0 +1,33 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - generic [ref=f6e5]:
+      - paragraph [ref=f6e10]: Admin Control Panel
+      - paragraph [ref=f6e70]: Invalid username or password
+      - generic [ref=f6e11]:
+        - textbox "Masukkan username Anda" [ref=f6e17]: admin
+        - generic [ref=f6e23]:
+          - textbox "Masukkan password Anda" [ref=f6e24]: admin123
+          - button [ref=f6e25]
+        - button "Masuk" [ref=f6e29]
+      - paragraph [ref=f6e33]: Powered by SALFANET RADIUS
+    - generic [ref=f6e35]:
+      - generic [ref=f6e36]: Panel Admin
+      - heading "SALFANET RADIUS" [level=1] [ref=f6e37]
+      - paragraph [ref=f6e39]: Solusi manajemen Billing ISP terlengkap. Kelola ribuan pelanggan MikroTik secara otomatis, aman, dan efisien dalam satu dashboard.
+      - generic [ref=f6e40]:
+        - generic [ref=f6e41]:
+          - paragraph [ref=f6e45]: User Friendly
+          - paragraph [ref=f6e46]: Mudah digunakan oleh semua tim
+        - generic [ref=f6e47]:
+          - paragraph [ref=f6e51]: Data Terpusat
+          - paragraph [ref=f6e52]: Satu dashboard semua router
+        - generic [ref=f6e53]:
+          - paragraph [ref=f6e57]: Secure
+          - paragraph [ref=f6e58]: Data aman & terenkripsi
+      - generic [ref=f6e59]:
+        - paragraph [ref=f6e62]: Automated Billing — Isolir otomatis & notifikasi WhatsApp
+        - paragraph [ref=f6e65]: Multi-Router — Kelola banyak MikroTik dalam satu server
+        - paragraph [ref=f6e68]: Payment Gateway — QRIS, Virtual Account, dan Retail
+  - alert [ref=f6e3]
+  - region "Notifications (F8)":
+    - list

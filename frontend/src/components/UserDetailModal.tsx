@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Camera, ImageIcon, ZoomIn } from 'lucide-react';
 import { formatWIB, formatLocalDate } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
-import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
+import { showSuccess, showError, showWarning, showConfirm } from '@/lib/sweetalert';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
 
@@ -35,6 +35,10 @@ interface User {
   idCardPhoto?: string | null;
   installationPhotos?: string[] | null;
   createdAt?: string | null;
+  discount?: number | null;
+  discountNote?: string | null;
+  registeredByTechnicianId?: string | null;
+  registeredByTechnician?: { id: string; name: string } | null;
 }
 
 interface Session {
@@ -129,6 +133,8 @@ export default function UserDetailModal({
     installationPhotos: [] as string[],
     autoIsolationEnabled: true,
     registeredAt: '',
+    discount: 0,
+    discountNote: '',
   });
 
   useEffect(() => {
@@ -156,6 +162,8 @@ export default function UserDetailModal({
         installationPhotos: user.installationPhotos || [],
         autoIsolationEnabled: user.autoIsolationEnabled !== false,
         registeredAt: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : '',
+        discount: user.discount || 0,
+        discountNote: user.discountNote || '',
       });
     }
   }, [user]);
@@ -279,6 +287,8 @@ export default function UserDetailModal({
               { id: 'sessions', label: t('userModal.sessions') },
               { id: 'auth', label: t('userModal.authLogs') },
               { id: 'invoices', label: t('userModal.invoices') },
+              { id: 'addons', label: '📦 Add-ons' },
+              { id: 'promise', label: '🤝 Janji Bayar' },
               { id: 'photos', label: '📷 Foto' },
             ].map((tab) => (
               <button
@@ -513,6 +523,31 @@ export default function UserDetailModal({
                   <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
                     {t('userModal.gpsNote')}
                   </p>
+                  {/* GPS Map Preview */}
+                  {formData.latitude && formData.longitude && (
+                    <div className="mt-3 rounded-lg overflow-hidden border border-border dark:border-[#bc13fe]/30">
+                      <iframe
+                        src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(formData.longitude) - 0.005}%2C${Number(formData.latitude) - 0.005}%2C${Number(formData.longitude) + 0.005}%2C${Number(formData.latitude) + 0.005}&layer=mapnik&marker=${formData.latitude}%2C${formData.longitude}`}
+                        className="w-full h-[200px] border-0"
+                        title="GPS Location Map"
+                        loading="lazy"
+                      />
+                      <div className="flex items-center justify-between p-2 bg-muted/50 dark:bg-[#0a0520]">
+                        <span className="text-[10px] font-mono text-muted-foreground">
+                          📍 {Number(formData.latitude).toFixed(6)}, {Number(formData.longitude).toFixed(6)}
+                        </span>
+                        <a
+                          href={`https://www.google.com/maps?q=${formData.latitude},${formData.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-2 py-1 text-[10px] bg-primary/10 text-primary dark:bg-[#00f7ff]/20 dark:text-[#00f7ff] border border-primary/30 dark:border-[#00f7ff]/30 rounded hover:bg-primary/20 transition"
+                        >
+                          <MapPin className="h-2.5 w-2.5 mr-1" />
+                          Google Maps ↗
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Subscription Type */}
@@ -637,6 +672,50 @@ export default function UserDetailModal({
                   </select>
                   <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
                     Pilih tindakan otomatis saat tanggal tagihan / expired terlewati.
+                  </p>
+                </div>
+
+                {/* Diskon Tagihan */}
+                <div>
+                  <label className={labelCls}>💰 Diskon Tagihan (Rp/bulan)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.discount}
+                    onChange={(e) => setFormData({ ...formData, discount: parseInt(e.target.value) || 0 })}
+                    placeholder="0"
+                    className={inputCls}
+                  />
+                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
+                    Diskon dikurangi dari harga paket setiap bulan.
+                  </p>
+                </div>
+                <div>
+                  <label className={labelCls}>📝 Alasan Diskon</label>
+                  <input
+                    type="text"
+                    value={formData.discountNote}
+                    onChange={(e) => setFormData({ ...formData, discountNote: e.target.value })}
+                    placeholder="Mis: Promo loyalitas, kerabat, dll"
+                    className={inputCls}
+                  />
+                </div>
+
+                {/* Teknisi Pemasang */}
+                <div className="col-span-2">
+                  <label className={labelCls}>🔧 Teknisi Pemasang</label>
+                  <div className="flex items-center gap-2 p-3 bg-muted/50 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
+                    <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
+                      {user?.registeredByTechnician?.name || 'System / Admin'}
+                    </span>
+                    {user?.createdAt && (
+                      <span className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50">
+                        · Terdaftar: {formatWIB(user.createdAt, 'dd MMM yyyy')}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/50 mt-1">
+                    Teknisi yang melakukan pendaftaran/PSB pelanggan ini.
                   </p>
                 </div>
 
@@ -910,6 +989,16 @@ export default function UserDetailModal({
             </div>
           )}
 
+          {/* Add-ons Tab */}
+          {activeTab === 'addons' && (
+            <CustomerAddonsTab userId={user.id} />
+          )}
+
+          {/* Janji Bayar Tab */}
+          {activeTab === 'promise' && (
+            <PaymentPromiseTab userId={user.id} userStatus={user.status} />
+          )}
+
           {activeTab === 'photos' && (
             <div className="space-y-6">
               {/* KTP Section */}
@@ -1023,5 +1112,366 @@ export default function UserDetailModal({
       </div>
     </div>,
     document.body
+  );
+}
+
+// ─── Customer Add-ons Tab ────────────────────────────────────────────────────
+
+function CustomerAddonsTab({ userId }: { userId: string }) {
+  const { t } = useTranslation();
+  const [addons, setAddons] = useState<any[]>([]);
+  const [addonTypes, setAddonTypes] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ addonTypeId: '', priceOverride: '', startDate: new Date().toISOString().split('T')[0], notes: '' });
+
+  const loadAddons = async () => {
+    try {
+      const res = await fetch(`/api/pppoe/users/${userId}/addons`, { cache: 'no-store' });
+      if (res.ok) setAddons(await res.json());
+    } catch (e) { console.error('Load addons error:', e); }
+    finally { setLoading(false); }
+  };
+
+  const loadAddonTypes = async () => {
+    try {
+      const res = await fetch('/api/addon-types', { cache: 'no-store' });
+      if (res.ok) { const data = await res.json(); setAddonTypes(data.addons || []); }
+    } catch (e) { console.error('Load addon types error:', e); }
+  };
+
+  useEffect(() => { loadAddons(); loadAddonTypes(); }, [userId]);
+
+  const handleAssign = async () => {
+    if (!form.addonTypeId) { await showError('Pilih jenis layanan tambahan'); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/pppoe/users/${userId}/addons`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          addonTypeId: form.addonTypeId,
+          priceOverride: form.priceOverride ? parseInt(form.priceOverride) : null,
+          startDate: form.startDate,
+          notes: form.notes || null,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal');
+      await showSuccess('Layanan tambahan berhasil ditambahkan');
+      setShowModal(false);
+      setForm({ addonTypeId: '', priceOverride: '', startDate: new Date().toISOString().split('T')[0], notes: '' });
+      loadAddons();
+    } catch (err: any) { await showError(err.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleRemove = async (addonId: string, addonName: string) => {
+    const confirmed = await showConfirm(`Hentikan layanan "${addonName}"? End date akan diset ke hari ini.`);
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/customer-addons/${addonId}`, { method: 'DELETE' });
+      if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Gagal'); }
+      await showSuccess('Layanan tambahan dihentikan');
+      loadAddons();
+    } catch (err: any) { await showError(err.message); }
+  };
+
+  const active = addons.filter(a => !a.endDate || new Date(a.endDate) >= new Date());
+  const past = addons.filter(a => a.endDate && new Date(a.endDate) < new Date());
+  const selectedType = addonTypes.find(t => t.id === form.addonTypeId);
+
+  if (loading) return <div className="text-center py-8 text-muted-foreground">Memuat layanan tambahan...</div>;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Layanan Tambahan Aktif</h3>
+        <button
+          onClick={() => setShowModal(true)}
+          className="inline-flex items-center px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
+        >
+          + Tambah
+        </button>
+      </div>
+
+      {active.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border dark:border-[#bc13fe]/20">
+          Belum ada layanan tambahan aktif
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {active.map(a => (
+            <div key={a.id} className="flex items-center justify-between p-3 bg-muted/30 dark:bg-[#bc13fe]/10 rounded-lg border border-border dark:border-[#bc13fe]/20">
+              <div>
+                <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">{a.addonType?.name || a.addonName}</div>
+                <div className="text-xs text-muted-foreground">
+                  {a.addonType?.isRecurring ? 'Bulanan' : 'Sekali'} · Mulai {a.startDate ? new Date(a.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                  {a.notes ? ` · ${a.notes}` : ''}
+                </div>
+                {a.priceOverride != null && (
+                  <div className="text-[10px] text-amber-500 mt-0.5">⚠️ Harga custom</div>
+                )}
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-bold text-primary dark:text-[#00f7ff]">Rp {Number(a.effectivePrice || a.priceOverride || a.addonType?.price || 0).toLocaleString('id-ID')}</span>
+                <button
+                  onClick={() => handleRemove(a.id, a.addonType?.name || a.addonName)}
+                  className="px-2 py-1 text-xs bg-destructive/10 text-destructive border border-destructive/30 rounded hover:bg-destructive/20 transition"
+                >
+                  Hentikan
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {past.length > 0 && (
+        <details className="mt-4">
+          <summary className="text-xs text-muted-foreground cursor-pointer">Riwayat addon ({past.length})</summary>
+          <div className="space-y-1 mt-2">
+            {past.map(a => (
+              <div key={a.id} className="flex justify-between p-2 bg-muted/20 rounded text-xs opacity-60">
+                <span>{a.addonType?.name || a.addonName}</span>
+                <span className="text-muted-foreground">Berakhir {a.endDate ? new Date(a.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* Assign Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">Tambah Layanan Tambahan</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Jenis Layanan *</label>
+                <select
+                  value={form.addonTypeId}
+                  onChange={e => setForm(f => ({ ...f, addonTypeId: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                >
+                  <option value="">-- Pilih layanan --</option>
+                  {addonTypes.filter(t => t.isActive).map(t => (
+                    <option key={t.id} value={t.id}>{t.name} — Rp {Number(t.price).toLocaleString('id-ID')}{t.isRecurring ? '/bln' : ' (sekali)'}</option>
+                  ))}
+                </select>
+              </div>
+              {selectedType && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Harga Custom (opsional)</label>
+                  <input
+                    type="number"
+                    value={form.priceOverride}
+                    onChange={e => setForm(f => ({ ...f, priceOverride: e.target.value }))}
+                    placeholder={`Default: Rp ${Number(selectedType.price).toLocaleString('id-ID')}`}
+                    className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium mb-1">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  value={form.startDate}
+                  onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Catatan (opsional)</label>
+                <input
+                  type="text"
+                  value={form.notes}
+                  onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="Catatan tambahan..."
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded hover:bg-muted transition">Batal</button>
+              <button onClick={handleAssign} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition disabled:opacity-50">
+                {saving ? 'Menyimpan...' : 'Tambahkan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Payment Promise (Janji Bayar) Tab ───────────────────────────────────────
+
+function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus: string }) {
+  const [promises, setPromises] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [promiseDate, setPromiseDate] = useState('');
+  const [promiseNotes, setPromiseNotes] = useState('');
+
+  const loadPromises = async () => {
+    try {
+      const res = await fetch(`/api/pppoe/users/${userId}/promise`, { cache: 'no-store' });
+      if (res.ok) setPromises(await res.json());
+    } catch (e) { console.error('Load promises error:', e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadPromises(); }, [userId]);
+
+  const handleCreate = async () => {
+    if (!promiseDate) { await showError('Pilih tanggal janji bayar'); return; }
+    if (new Date(promiseDate) <= new Date()) { await showError('Tanggal janji harus di masa depan'); return; }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/pppoe/users/${userId}/promise`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ promiseDate, notes: promiseNotes || null }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal');
+      await showSuccess(data.message || 'Janji bayar dibuat. Akses internet dibuka hingga tanggal janji.');
+      setShowModal(false);
+      setPromiseDate('');
+      setPromiseNotes('');
+      loadPromises();
+    } catch (err: any) { await showError(err.message); }
+    finally { setSaving(false); }
+  };
+
+  const handleCancel = async (promiseId: string) => {
+    const confirmed = await showConfirm('Batalkan janji bayar? Pelanggan akan diisolir kembali.');
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/pppoe/users/${userId}/promise`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Gagal');
+      await showSuccess(data.message || 'Janji bayar dibatalkan. Pelanggan diisolir kembali.');
+      loadPromises();
+    } catch (err: any) { await showError(err.message); }
+  };
+
+  if (loading) return <div className="text-center py-8 text-muted-foreground">Memuat data janji bayar...</div>;
+
+  const activePromise = promises.find(p => p.status === 'active');
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-foreground dark:text-[#e0d0ff]">Janji Bayar</h3>
+        {!activePromise && (
+          <button
+            onClick={() => {
+              const tomorrow = new Date();
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              setPromiseDate(tomorrow.toISOString().split('T')[0]);
+              setShowModal(true);
+            }}
+            className="inline-flex items-center px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
+          >
+            + Buat Janji Bayar
+          </button>
+        )}
+      </div>
+
+      {activePromise ? (
+        <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-lg">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded">AKTIF</span>
+                <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
+                  Janji bayar hingga {new Date(activePromise.promiseDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+              {activePromise.notes && (
+                <p className="text-xs text-muted-foreground mb-2">📝 {activePromise.notes}</p>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                Dibuat: {activePromise.createdAt ? new Date(activePromise.createdAt).toLocaleDateString('id-ID') : '-'}
+              </p>
+            </div>
+            <button
+              onClick={() => handleCancel(activePromise.id)}
+              className="px-2 py-1 text-xs bg-destructive/10 text-destructive border border-destructive/30 rounded hover:bg-destructive/20 transition"
+            >
+              Batalkan
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg border border-border dark:border-[#bc13fe]/20">
+          Tidak ada janji bayar aktif
+        </div>
+      )}
+
+      {promises.length > 0 && (
+        <details className="mt-4">
+          <summary className="text-xs text-muted-foreground cursor-pointer">Riwayat janji bayar ({promises.length})</summary>
+          <div className="space-y-1 mt-2">
+            {promises.map(p => (
+              <div key={p.id} className="flex justify-between items-center p-2 bg-muted/20 rounded text-xs">
+                <span>
+                  {new Date(p.promiseDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
+                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                  p.status === 'active' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                  p.status === 'fulfilled' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                }`}>{p.status}</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* Create Promise Modal */}
+      {showModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">🤝 Buat Janji Bayar</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Pelanggan berjanji membayar tagihan pada tanggal tertentu. Akses internet akan dibuka hingga tanggal janji. Jika tidak dibayar hingga tanggal janji, pelanggan akan diisolir otomatis.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium mb-1">Tanggal Janji Bayar *</label>
+                <input
+                  type="date"
+                  value={promiseDate}
+                  onChange={e => setPromiseDate(e.target.value)}
+                  min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Catatan (opsional)</label>
+                <textarea
+                  value={promiseNotes}
+                  onChange={e => setPromiseNotes(e.target.value)}
+                  placeholder="Mis: Janji bayar tanggal gajian..."
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-5">
+              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded hover:bg-muted transition">Batal</button>
+              <button onClick={handleCreate} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition disabled:opacity-50">
+                {saving ? 'Menyimpan...' : 'Buat Janji'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

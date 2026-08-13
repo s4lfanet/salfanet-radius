@@ -1,0 +1,35 @@
+{
+  "name": "Portal Kolektor – PMY NET",
+  "short_name": "Kolektor PMY NET",
+  "description": "Aplikasi penagihan dan manajemen wilayah untuk kolektor PMY NET",
+  "id": "coll-pmynet",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#15803d",
+  "theme_color": "#15803d",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "/icon-kolektor.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "finance"],
+  "shortcuts": [
+    {
+      "name": "Tagihan Belum Lunas",
+      "short_name": "Belum Lunas",
+      "url": "/",
+      "icons": [{ "src": "/icon-kolektor.svg", "sizes": "any" }]
+    }
+  ]
+}
