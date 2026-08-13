@@ -719,20 +719,40 @@ export async function updatePppoeUser(
           const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
           if (shouldCreate) {
             const mtProfile = await getMikrotikProfileName(newProfile.id);
-            const action = (oldUsername && oldUsername !== newUsername) ? 'rename' : 'update';
-            const secretParams: any = {
-              username: oldUsername || newUsername,
-              password: data.password || currentUser.password,
-              profile: mtProfile || undefined,
-              disabled: effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled,
-              comment: `Salfanet-${id.slice(0, 8)}`,
-            };
-            if (action === 'rename') secretParams.newUsername = newUsername;
-            managePppSecret(finalRouterId, action, secretParams).then((r) => {
-              console.log(`[PPP_SECRET] ${action} for "${newUsername}" on router ${finalRouterId}: ${r.message}`)
-            }).catch((e) => {
-              console.error(`[PPP_SECRET] ${action} failed for "${newUsername}":`, e?.message || e)
-            });
+            const usernameChanged = oldUsername && oldUsername !== newUsername;
+
+            if (usernameChanged) {
+              // Delete old secret then create new (rename fails if target name already exists)
+              managePppSecret(finalRouterId, 'delete', { username: oldUsername, password: currentUser.password }).then((r) => {
+                console.log(`[PPP_SECRET] delete old "${oldUsername}" on router ${finalRouterId}: ${r.message}`)
+              }).catch((e) => {
+                console.error(`[PPP_SECRET] delete old failed for "${oldUsername}":`, e?.message || e)
+              });
+              managePppSecret(finalRouterId, 'create', {
+                username: newUsername,
+                password: data.password || currentUser.password,
+                profile: mtProfile || undefined,
+                disabled: effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled,
+                comment: `Salfanet-${id.slice(0, 8)}`,
+              }).then((r) => {
+                console.log(`[PPP_SECRET] create new "${newUsername}" on router ${finalRouterId}: ${r.message}`)
+              }).catch((e) => {
+                console.error(`[PPP_SECRET] create new failed for "${newUsername}":`, e?.message || e)
+              });
+            } else {
+              // Same username — just update password/profile
+              managePppSecret(finalRouterId, 'update', {
+                username: newUsername,
+                password: data.password || currentUser.password,
+                profile: mtProfile || undefined,
+                disabled: effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled,
+                comment: `Salfanet-${id.slice(0, 8)}`,
+              }).then((r) => {
+                console.log(`[PPP_SECRET] update for "${newUsername}" on router ${finalRouterId}: ${r.message}`)
+              }).catch((e) => {
+                console.error(`[PPP_SECRET] update failed for "${newUsername}":`, e?.message || e)
+              });
+            }
           }
         } catch (e: any) {
           console.error(`[PPP_SECRET] update lookup router authMode failed:`, e?.message || e);
@@ -741,6 +761,19 @@ export async function updatePppoeUser(
     } catch (syncError) {
       console.error('RADIUS re-sync error:', syncError);
     }
+  }
+
+  // Username or password changed: disconnect old session so user reconnects with new credentials
+  if ((data.username && data.username !== currentUser.username) || data.password) {
+    try {
+      const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
+      // Disconnect old username session (if username changed, old session still uses old name)
+      const targetUsername = (data.username && data.username !== currentUser.username) ? currentUser.username : currentUser.username;
+      await disconnectPPPoEUser(targetUsername).catch((e: Error) =>
+        console.error('[User Update] CoA disconnect (credential change) error:', e.message)
+      );
+      console.log(`[User Update] CoA disconnect sent for "${targetUsername}" — credential change, user will reconnect with new credentials`);
+    } catch { /* ignore */ }
   }
 
   // Status change: CoA disconnect
