@@ -2,6 +2,8 @@
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { ok, created, badRequest, unauthorized, notFound, conflict, serverError } from '@/lib/api-response';
+import bcrypt from 'bcryptjs';
+import { prisma } from '@/server/db/client';
 import {
   listPppoeUsers,
   getPppoeUserById,
@@ -74,7 +76,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Remove PPPoE user
+// DELETE - Remove PPPoE user (requires password confirmation)
 export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return unauthorized();
@@ -83,6 +85,29 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     if (!id) return badRequest('User ID is required');
+
+    // Parse body for password confirmation
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch { body = {}; }
+
+    const confirmPassword = body.confirmPassword;
+    if (!confirmPassword) {
+      return badRequest('Konfirmasi password superadmin wajib diisi untuk menghapus pelanggan.');
+    }
+
+    // Verify the logged-in admin's password
+    const adminId = (session.user as any)?.id;
+    if (!adminId) return unauthorized();
+
+    const admin = await prisma.adminUser.findUnique({ where: { id: adminId } });
+    if (!admin) return unauthorized();
+
+    const isValid = await bcrypt.compare(confirmPassword, admin.password);
+    if (!isValid) {
+      return badRequest('Password yang Anda masukkan salah. Hapus pelanggan dibatalkan.');
+    }
 
     const result = await deletePppoeUser(id, session, request);
     return ok({ success: true, message: 'User deleted successfully', ...result });
