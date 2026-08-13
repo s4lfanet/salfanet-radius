@@ -161,7 +161,7 @@ export async function runSessionMonitor(): Promise<{ suspicious: number; stale: 
       take: 50,
     });
 
-    // 3. Sesi orphan — username di radacct tidak ada di pppoe_users
+    // 3. Sesi orphan — username di radacct tidak ada di pppoe_users maupun hotspot_vouchers
     const activeUsernames = await prisma.radacct.findMany({
       where: { acctstoptime: null },
       select: { username: true },
@@ -170,12 +170,20 @@ export async function runSessionMonitor(): Promise<{ suspicious: number; stale: 
 
     const orphanedSessions: { radacctid: BigInt; username: string }[] = [];
     if (activeUsernames.length > 0) {
-      const knownUsers = new Set(
-        (await prisma.pppoeUser.findMany({
+      const [knownPppoeUsers, knownVouchers] = await Promise.all([
+        prisma.pppoeUser.findMany({
           where: { username: { in: activeUsernames.map(u => u.username) } },
           select: { username: true },
-        })).map(u => u.username)
-      );
+        }),
+        prisma.hotspotVoucher.findMany({
+          where: { code: { in: activeUsernames.map(u => u.username) } },
+          select: { code: true },
+        }),
+      ]);
+      const knownUsers = new Set([
+        ...knownPppoeUsers.map(u => u.username),
+        ...knownVouchers.map(v => v.code),
+      ]);
 
       const orphanUsernames = activeUsernames
         .map(u => u.username)
@@ -191,6 +199,42 @@ export async function runSessionMonitor(): Promise<{ suspicious: number; stale: 
           take: 50,
         });
         orphanedSessions.push(...orphanDb.map(s => ({ radacctid: s.radacctid, username: s.username })));
+
+        // Auto-close orphaned sessions
+        for (let i = 0; i < orphanedSessions.length; i += 50) {
+          const batch = orphanedSessions.slice(i, i + 50);
+          try {
+            await prisma.radacct.updateMany({
+              where: { radacctid: { in: batch.map(b => b.radacctid.toString()) as any } },
+              data: {
+                acctstoptime: now,
+                acctupdatetime: now,
+                acctterminatecause: 'Orphaned-Session-Cleanup',
+              },
+            });
+          } catch (err: any) {
+            errors.push(`Orphan auto-close error: ${err?.message || 'Unknown'}`);
+          }
+        }
+      }
+    }
+
+    // Auto-close stale sessions (>30 days without stop)
+    if (staleSessions.length > 0) {
+      for (let i = 0; i < staleSessions.length; i += 50) {
+        const batch = staleSessions.slice(i, i + 50);
+        try {
+          await prisma.radacct.updateMany({
+            where: { radacctid: { in: batch.map(b => b.radacctid.toString()) as any } },
+            data: {
+              acctstoptime: now,
+              acctupdatetime: now,
+              acctterminatecause: 'Stale-Session-Cleanup',
+            },
+          });
+        } catch (err: any) {
+          errors.push(`Stale auto-close error: ${err?.message || 'Unknown'}`);
+        }
       }
     }
 
@@ -199,10 +243,10 @@ export async function runSessionMonitor(): Promise<{ suspicious: number; stale: 
       console.log(`[SESSION_MONITOR] ${suspiciousSessions.length} suspicious sessions (user isolated/suspended but still active)`);
     }
     if (staleSessions.length > 0) {
-      console.log(`[SESSION_MONITOR] ${staleSessions.length} stale sessions (>30 days without stop)`);
+      console.log(`[SESSION_MONITOR] ${staleSessions.length} stale sessions (>30 days) — auto-closed`);
     }
     if (orphanedSessions.length > 0) {
-      console.log(`[SESSION_MONITOR] ${orphanedSessions.length} orphaned sessions (username not in pppoe_users)`);
+      console.log(`[SESSION_MONITOR] ${orphanedSessions.length} orphaned sessions (not registered) — auto-closed`);
     }
 
     return {
@@ -222,10 +266,11 @@ export async function runSessionMonitor(): Promise<{ suspicious: number; stale: 
  * Sync sesi PPPoE dari MikroTik ke database:
  *   - Ambil daftar PPP active dari semua router via RouterOS API
  *   - Bandingkan dengan radacct (acctstoptime IS NULL)
- *   - Tandai sesi yang tidak ada di MikroTik tapi masih open di radacct → set acctstoptime
+ *   - Close sesi yang tidak ada di MikroTik tapi masih open di radacct → set acctstoptime
+ *   - Close sesi orphaned (username tidak terdaftar di pppoe_users maupun hotspot_vouchers)
  *   - Update sessions table untuk tracking realtime
  */
-export async function runPppoeSessionSync(): Promise<{ synced: number; closed: number; total: number; errors: string[] }> {
+export async function runPppoeSessionSync(): Promise<{ synced: number; closed: number; orphaned: number; total: number; errors: string[] }> {
   const errors: string[] = [];
   const now = nowWIB();
 
@@ -237,63 +282,110 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
     });
 
     if (routers.length === 0) {
-      return { synced: 0, closed: 0, total: 0, errors };
+      return { synced: 0, closed: 0, orphaned: 0, total: 0, errors };
     }
 
     // Batch fetch PPP active dari semua router
     const activeUsernames = await batchListPppActive(routers.map(r => r.id));
 
-    // Cari sesi open di radacct yang username-nya TIDAK ada di PPP active MikroTik
-    // → kemungkinan user sudah disconnect tapi radacct belum di-stop
+    // Cari sesi open di radacct
     const openSessions = await prisma.radacct.findMany({
       where: { acctstoptime: null },
       select: { radacctid: true, username: true, nasipaddress: true, acctstarttime: true },
       take: 500,
     });
 
+    if (openSessions.length === 0) {
+      return { synced: 0, closed: 0, orphaned: 0, total: 0, errors };
+    }
+
+    // Ambil daftar username yang terdaftar di pppoe_users dan hotspot_vouchers
+    const allUsernames = [...new Set(openSessions.map(s => s.username))];
+    const [pppoeUsers, hotspotVouchers] = await Promise.all([
+      prisma.pppoeUser.findMany({
+        where: { username: { in: allUsernames } },
+        select: { username: true },
+      }),
+      prisma.hotspotVoucher.findMany({
+        where: { code: { in: allUsernames } },
+        select: { code: true },
+      }),
+    ]);
+    const registeredUsernames = new Set([
+      ...pppoeUsers.map(u => u.username),
+      ...hotspotVouchers.map(v => v.code),
+    ]);
+
+    // Klasifikasi sesi: stale (tidak di MikroTik), orphaned (tidak terdaftar), atau active
     let closed = 0;
-    const toClose: BigInt[] = [];
+    let orphaned = 0;
+    const toCloseStale: BigInt[] = [];
+    const toCloseOrphaned: BigInt[] = [];
+
     for (const session of openSessions) {
-      if (!activeUsernames.has(session.username)) {
-        toClose.push(session.radacctid);
+      const isRegistered = registeredUsernames.has(session.username);
+      const isOnMikrotik = activeUsernames.has(session.username);
+
+      if (!isRegistered) {
+        // Orphaned — username tidak ada di pppoe_users maupun hotspot_vouchers
+        toCloseOrphaned.push(session.radacctid);
+      } else if (!isOnMikrotik) {
+        // Stale — user terdaftar tapi sudah tidak aktif di MikroTik
+        toCloseStale.push(session.radacctid);
       }
     }
 
-    // Batch update — set acctstoptime untuk sesi yang sudah tidak aktif
-    if (toClose.length > 0) {
-      // Prisma tidak support BigInt in where untuk updateMany langsung,
-      // jadi update per-batch
-      const batchSize = 50;
-      for (let i = 0; i < toClose.length; i += batchSize) {
-        const batch = toClose.slice(i, i + batchSize);
-        try {
-          await prisma.radacct.updateMany({
-            where: { radacctid: { in: batch.map(b => b.toString()) as any } },
-            data: {
-              acctstoptime: now,
-              acctupdatetime: now,
-              acctterminatecause: 'Session-Timeout-Cron',
-            },
-          });
-          closed += batch.length;
-        } catch (err: any) {
-          errors.push(`Batch close error: ${err?.message || 'Unknown'}`);
-        }
+    // Close stale sessions (user disconnect tapi radacct belum di-stop)
+    const batchSize = 50;
+    for (let i = 0; i < toCloseStale.length; i += batchSize) {
+      const batch = toCloseStale.slice(i, i + batchSize);
+      try {
+        await prisma.radacct.updateMany({
+          where: { radacctid: { in: batch.map(b => b.toString()) as any } },
+          data: {
+            acctstoptime: now,
+            acctupdatetime: now,
+            acctterminatecause: 'Session-Timeout-Cron',
+          },
+        });
+        closed += batch.length;
+      } catch (err: any) {
+        errors.push(`Stale close error: ${err?.message || 'Unknown'}`);
       }
     }
 
-    // Update sessions table — sync dari radacct open sessions
-    const stillOpen = openSessions.filter(s => activeUsernames.has(s.username));
-    const synced = stillOpen.length;
+    // Close orphaned sessions (username tidak terdaftar di sistem)
+    for (let i = 0; i < toCloseOrphaned.length; i += batchSize) {
+      const batch = toCloseOrphaned.slice(i, i + batchSize);
+      try {
+        await prisma.radacct.updateMany({
+          where: { radacctid: { in: batch.map(b => b.toString()) as any } },
+          data: {
+            acctstoptime: now,
+            acctupdatetime: now,
+            acctterminatecause: 'Orphaned-Session-Cleanup',
+          },
+        });
+        orphaned += batch.length;
+      } catch (err: any) {
+        errors.push(`Orphan close error: ${err?.message || 'Unknown'}`);
+      }
+    }
+
+    // Hitung sesi yang masih aktif dan terdaftar
+    const synced = openSessions.filter(s =>
+      registeredUsernames.has(s.username) && activeUsernames.has(s.username)
+    ).length;
 
     return {
       synced,
       closed,
+      orphaned,
       total: openSessions.length,
       errors,
     };
   } catch (error: any) {
     errors.push(error?.message || 'Unknown error');
-    return { synced: 0, closed: 0, total: 0, errors };
+    return { synced: 0, closed: 0, orphaned: 0, total: 0, errors };
   }
 }
