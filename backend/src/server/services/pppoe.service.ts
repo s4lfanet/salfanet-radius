@@ -8,6 +8,7 @@ import { logActivity } from '@/server/services/activity-log.service';
 import { sendAdminCreateUser } from '@/server/services/notifications/whatsapp-templates.service';
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
 import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { invalidateKey, invalidatePattern, CACHE_KEYS } from '@/server/cache/redis';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
@@ -515,6 +516,9 @@ export async function createPppoeUser(
     console.error('Activity log error:', logError);
   }
 
+  // Invalidate profiles cache (user count changed)
+  try { await invalidateKey(CACHE_KEYS.profiles); } catch {}
+
   return { user: { ...user, syncedToRadius: radiusSynced }, radiusSynced };
 }
 
@@ -821,6 +825,9 @@ export async function updatePppoeUser(
     console.error('Activity log error:', logError);
   }
 
+  // Invalidate profiles cache (user count may have changed if profileId changed)
+  try { await invalidateKey(CACHE_KEYS.profiles); } catch {}
+
   return user;
 }
 
@@ -844,6 +851,9 @@ export async function deletePppoeUser(
   }
 
   await prisma.pppoeUser.delete({ where: { id } });
+
+  // Invalidate profiles cache (user count changed)
+  try { await invalidateKey(CACHE_KEYS.profiles); } catch {}
 
   // Activity log
   try {
