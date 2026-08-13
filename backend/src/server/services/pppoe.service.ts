@@ -10,6 +10,7 @@ import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
 import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 import { randomBytes } from 'crypto';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';
@@ -597,10 +598,18 @@ export async function updatePppoeUser(
       const nasIdentifier = finalRouterId || null;
       const oldNasIdentifier = currentUser.routerId || null;
 
-      // Delete old entries for old username + old nas_identifier
-      await prisma.radcheck.deleteMany({ where: { username: oldUsername, nas_identifier: oldNasIdentifier } });
-      await prisma.radreply.deleteMany({ where: { username: oldUsername, nas_identifier: oldNasIdentifier } });
-      await prisma.radusergroup.deleteMany({ where: { username: oldUsername, nas_identifier: oldNasIdentifier } });
+      // Delete ALL old entries for old username — regardless of nas_identifier
+      // (sync-all-radius may have created entries with NULL nas_identifier,
+      //  so filtering by nas_identifier would leave orphaned rows)
+      await prisma.radcheck.deleteMany({ where: { username: oldUsername } });
+      await prisma.radreply.deleteMany({ where: { username: oldUsername } });
+      await prisma.radusergroup.deleteMany({ where: { username: oldUsername } });
+
+      // If username changed, update radacct so accounting records follow
+      if (oldUsername !== newUsername) {
+        await prisma.$executeRaw`UPDATE radacct SET username = ${newUsername} WHERE username = ${oldUsername}`;
+        await prisma.$executeRaw`UPDATE radpostauth SET username = ${newUsername} WHERE username = ${oldUsername}`;
+      }
       let router = null;
       if (finalRouterId) {
         router = await prisma.router.findUnique({ where: { id: finalRouterId }, select: { id: true, nasname: true } });
@@ -647,11 +656,18 @@ export async function updatePppoeUser(
         data: { syncedToRadius: true, lastSyncAt: new Date() },
       });
 
+      // Reload FreeRADIUS so NAS/SQL changes take effect immediately
+      try {
+        await reloadFreeRadius();
+      } catch (reloadErr) {
+        console.error('[User Update] FreeRADIUS reload error:', reloadErr);
+      }
+
       // If profile changed, apply new rate limit via CoA
       const profileChanged = data.profileId && data.profileId !== currentUser.profileId;
       if (profileChanged && newProfile) {
         const activeSession = await prisma.radacct.findFirst({
-          where: { username: oldUsername, acctstoptime: null },
+          where: { username: newUsername, acctstoptime: null },
           select: { acctsessionid: true, nasipaddress: true, framedipaddress: true },
         });
 
