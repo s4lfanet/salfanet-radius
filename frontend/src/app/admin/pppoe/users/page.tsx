@@ -877,11 +877,11 @@ export default function PppoeUsersPage() {
 
   const handleStopSubscription = async (user: PppoeUser) => {
     const confirmed = await showConfirm(
-      `Stop langganan untuk ${user.name} (${user.username})?\nUser akan dipindahkan ke daftar berhenti berlangganan.`,
+      `Stop berlangganan dan HAPUS ${user.name} (${user.username})?\nPelanggan akan dihapus permanen dari sistem.`,
       t('pppoe.stop')
     );
     if (!confirmed) return;
-    await handleStatusChange(user.id, 'stop');
+    setDeleteUserId(user.id);
   };
 
   const handleBulkDelete = async () => {
@@ -1490,7 +1490,7 @@ export default function PppoeUsersPage() {
                     >
                       <Shield className="h-3.5 w-3.5 pointer-events-none" />
                     </button>
-                    <button onClick={() => handleStopSubscription(user)} className="compact-action p-1.5 text-destructive/70 hover:bg-destructive/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Stop Langganan" title="Stop Langganan"><Ban className="h-3.5 w-3.5 pointer-events-none" /></button>
+                    <button onClick={() => handleStopSubscription(user)} className="compact-action p-1.5 text-destructive hover:bg-destructive/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Stop & Hapus" title="Stop & Hapus"><Ban className="h-3.5 w-3.5 pointer-events-none" /></button>
                     <button onClick={() => setDeleteUserId(user.id)} className="compact-action p-1.5 text-destructive hover:bg-destructive/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Hapus" title="Hapus"><Trash2 className="h-3.5 w-3.5 pointer-events-none" /></button>
                     <button onClick={() => setPrintDialogUser(user)} className="compact-action p-1.5 text-purple-500 hover:bg-purple-500/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Cetak Invoice" title="Cetak Invoice"><Printer className="h-3.5 w-3.5 pointer-events-none" /></button>
                     {invoiceCounts[user.id] > 0 ? (
@@ -1676,8 +1676,8 @@ export default function PppoeUsersPage() {
                   <Shield className={`h-3.5 w-3.5 ${user.status === 'isolated' ? 'text-success' : 'text-orange-500'}`} />
                   {user.status === 'isolated' ? 'Aktifkan' : 'Isolir'}
                 </button>
-                <button onClick={() => { handleStopSubscription(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
-                  <Ban className="h-3.5 w-3.5 text-destructive/70" /> Stop Langganan
+                <button onClick={() => { handleStopSubscription(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-destructive/10 text-destructive flex items-center gap-2 cursor-pointer">
+                  <Ban className="h-3.5 w-3.5" /> Stop & Hapus
                 </button>
                 <button onClick={() => { setPrintDialogUser(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
                   <Printer className="h-3.5 w-3.5 text-purple-500" /> Cetak Invoice
