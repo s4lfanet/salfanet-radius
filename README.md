@@ -2,9 +2,8 @@
 
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
-> **Architecture:** pnpm monorepo — Next.js (frontend) + NestJS (backend API + cron) + Baileys WhatsApp service
-> **Migration:** All 8 phases complete + VPS verified + post-migration cleanup done. See [docs/MIGRATION_ROADMAP.md](docs/MIGRATION_ROADMAP.md)
-> **Version:** 3.1.0 — with RADIUS IP Pool, Data Usage Reporting, Multi-NAS Isolation
+> **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
+> **Version:** 4.0.0 — Two-Next.js-app architecture, realtime online/offline status, PPPoE reconnect fix
 
 ---
 
@@ -20,7 +19,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 |----------|-----------------|
 | **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect, **IP Pool management**, **Multi-NAS isolation** |
 | **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
-| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis |
+| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)** |
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
 | **Data Usage Reporting** | Per-user bandwidth tracking (daily aggregation via cron), monthly summary, top consumers, GB upload/download per period |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates |
@@ -71,8 +70,9 @@ pm2 logs salfanet-wa --lines 20
 
 | Process | Mode | Port | Purpose |
 |---------|------|------|---------|
-| `salfanet-frontend` | cluster | 3000 | Next.js standalone (UI only) |
-| `salfanet-backend` | fork | 3001 | NestJS API + cron jobs (17 jobs via @nestjs/schedule) |
+| `salfanet-frontend` | cluster | 3000 | Next.js standalone (UI + NextAuth routes) |
+| `salfanet-backend` | fork | 3001 | Next.js standalone (API routes + Prisma + services) |
+| `salfanet-cron` | fork | — | Cron runner (calls backend APIs on schedule) |
 | `salfanet-wa` | fork | 4000 (internal) | Baileys WA service |
 
 ### Auth Session
@@ -140,15 +140,16 @@ Persistent user tracking across sessions/NAS untuk billing & audit:
 
 | Component | Technology |
 |-----------|------------|
-| Frontend | Next.js 16 (App Router, standalone output) |
-| Backend | NestJS 11 (TypeScript, @nestjs/schedule for cron) |
+| Frontend | Next.js 16 (App Router, standalone output) — UI + NextAuth |
+| Backend | Next.js 16 (App Router, standalone output) — API routes + Prisma + services |
+| Cron | Separate tsx runner (PM2 fork, calls backend APIs) |
 | Language | TypeScript (shared types via @salfanet/shared-types) |
 | Styling | Tailwind CSS |
 | Database | MySQL 8.0 + Prisma ORM |
 | RADIUS | FreeRADIUS 3.0.26 |
 | Process Manager | PM2 (4 processes) |
-| Reverse Proxy | Nginx (/api/v1/* → backend, / → frontend) |
-| Session Tracking | FreeRADIUS radacct (real-time) |
+| Reverse Proxy | Nginx (`/api/auth/*` → frontend, `/api/*` → backend, `/` → frontend) |
+| Session Tracking | FreeRADIUS radacct + MikroTik /ppp/active (realtime polling) |
 | Maps | Leaflet / OpenStreetMap |
 | Package Manager | pnpm (monorepo workspaces) |
 
@@ -158,38 +159,39 @@ Persistent user tracking across sessions/NAS untuk billing & audit:
 
 ```
 salfanet-radius/                  # pnpm monorepo root
-├── frontend/                     # Next.js — UI only (no Prisma in layouts)
+├── frontend/                     # Next.js — UI + NextAuth (port 3000)
 │   ├── src/
 │   │   ├── app/                  # Admin, agent, customer, technician portals
+│   │   │   └── api/auth/         # NextAuth routes only
 │   │   ├── components/           # Shared React components
 │   │   ├── features/             # Vertical slices (queries, schemas)
-│   │   ├── lib/api-client.ts     # Centralized API client (NEXT_PUBLIC_API_URL)
+│   │   ├── lib/api-client.ts     # Centralized API client (→ backend port 3001)
 │   │   ├── locales/              # i18n (id, en)
-│   │   └── server/               # Legacy services (kept during migration)
-│   ├── prisma/                   # Prisma schema (shared with backend)
+│   │   └── hooks/                # React hooks (usePermissions, useTranslation, etc.)
+│   ├── scripts/postbuild.js      # Copy static assets to standalone (monorepo)
 │   └── package.json
-├── backend/                      # NestJS — API + business logic + cron
+├── backend/                      # Next.js — API + Prisma + services (port 3001)
 │   ├── src/
-│   │   ├── modules/              # 46 feature modules (auth, pppoe, hotspot, etc.)
-│   │   ├── common/               # Guards, decorators, interceptors, filters
-│   │   ├── prisma/               # PrismaService
-│   │   └── main.ts               # Bootstrap (port 3001, /api/v1 prefix)
-│   ├── test/                     # E2E tests (jest + supertest)
+│   │   ├── app/api/              # API route handlers (/api/pppoe, /api/invoices, etc.)
+│   │   ├── server/               # Services (mikrotik, radius, cron, pppoe, billing)
+│   │   │   ├── services/mikrotik/  # MikroTik API integration
+│   │   │   ├── cron/               # Cron job logic
+│   │   │   └── db/client.ts        # Prisma client
+│   │   └── lib/api-response.ts    # Standard API response helpers
+│   ├── prisma/                   # Prisma schema + migrations + seeds
+│   ├── freeradius-config/        # FreeRADIUS config templates
+│   ├── scripts/postbuild.js      # Copy static assets to standalone (monorepo)
+│   ├── cron-runner.ts            # Standalone cron runner entry point
 │   └── package.json
 ├── packages/                     # Shared TypeScript types
 │   └── shared-types/
 ├── deploy/                       # Deployment configuration
-│   ├── ecosystem.config.js       # PM2 config (4 processes)
-│   ├── nginx-salfanet.conf       # Nginx reverse proxy
-│   ├── deploy.sh                 # Build + deploy script
-│   ├── REGRESSION_TEST_CHECKLIST.md
+│   ├── ecosystem.config.js       # PM2 config (4 processes: frontend, backend, cron, wa)
+│   ├── nginx-salfanet.conf       # Nginx reverse proxy (2-app routing)
 │   └── README.md
 ├── docs/                         # Documentation
-│   ├── MIGRATION_ROADMAP.md      # Migration progress tracker
-│   └── AI_PROJECT_MEMORY.md      # Full architecture reference
-├── freeradius-config/            # FreeRADIUS config templates
-├── vps-install/                  # VPS installer scripts
-├── mobile-app/                   # Flutter customer app
+├── frontend/vps-install/         # VPS installer scripts (installer, updater, uninstaller)
+├── frontend/production/          # Production deployment configs
 └── pnpm-workspace.yaml
 ```
 
@@ -204,7 +206,7 @@ ssh root@YOUR_VPS_IP
 
 git clone https://github.com/s4lfanet/salfanet-radius.git /root/salfanet-radius
 cd /root/salfanet-radius
-bash vps-install/vps-installer.sh
+bash frontend/vps-install/vps-installer.sh
 ```
 
 Installer akan berjalan **interaktif** — mendeteksi environment otomatis, memandu konfigurasi, lalu menjalankan semua step.
@@ -220,7 +222,7 @@ scp -r ./salfanet-radius root@YOUR_VPS_IP:/root/salfanet-radius
 # SSH ke server, lalu jalankan installer
 ssh root@YOUR_VPS_IP
 cd /root/salfanet-radius
-bash vps-install/vps-installer.sh
+bash frontend/vps-install/vps-installer.sh
 ```
 
 ---
@@ -236,7 +238,7 @@ bash vps-install/vps-installer.sh
 
 ```bash
 # Contoh: paksa environment + IP
-bash vps-install/vps-installer.sh --env lxc --ip 192.168.1.50
+bash frontend/vps-install/vps-installer.sh --env lxc --ip 192.168.1.50
 ```
 
 ---
@@ -246,7 +248,7 @@ bash vps-install/vps-installer.sh --env lxc --ip 192.168.1.50
 Cara paling aman. **Semua data upload (logo, foto KTP pelanggan, bukti bayar) otomatis dipreservasi.**
 
 ```bash
-bash /var/www/salfanet-radius/vps-install/updater.sh
+bash /var/www/salfanet-radius/frontend/vps-install/updater.sh
 ```
 
 Atau update dari branch terbaru secara manual:
@@ -254,10 +256,14 @@ Atau update dari branch terbaru secara manual:
 ```bash
 cd /var/www/salfanet-radius
 git pull origin master
-npm install --legacy-peer-deps
-npx prisma db push
-npm run build
-pm2 reload all
+pnpm install
+cd backend && npx prisma generate && npx prisma db push && cd ..
+cd frontend && npx prisma generate && cd ..
+# Build both apps
+cd backend && NODE_OPTIONS='--max-old-space-size=1536' npx next build && node scripts/postbuild.js && cd ..
+cd frontend && NODE_OPTIONS='--max-old-space-size=1536' npx next build && node scripts/postbuild.js && cd ..
+# Restart PM2
+pm2 restart salfanet-frontend salfanet-backend salfanet-cron --update-env
 ```
 
 Lihat detail lengkap di [vps-install/README.md](vps-install/README.md).
@@ -416,8 +422,11 @@ curl -OJ http://YOUR_VPS/api/admin/apk/file?role=customer \
 
 ```bash
 # PM2
-pm2 status ; pm2 logs salfanet-radius
-pm2 restart ecosystem.config.js --update-env
+pm2 status
+pm2 logs salfanet-frontend --lines 50
+pm2 logs salfanet-backend --lines 50
+pm2 logs salfanet-cron --lines 50
+pm2 restart salfanet-frontend salfanet-backend salfanet-cron --update-env
 
 # FreeRADIUS
 systemctl restart freeradius
@@ -427,6 +436,12 @@ radtest 'user@realm' password 127.0.0.1 0 testing123
 # Database
 mysql -u salfanet_user -psalfanetradius123 salfanet_radius
 mysqldump -u salfanet_user -psalfanetradius123 salfanet_radius > backup.sql
+
+# Build (manual)
+cd /var/www/salfanet-radius
+cd backend && npx prisma generate && NODE_OPTIONS='--max-old-space-size=1536' npx next build && node scripts/postbuild.js && cd ..
+cd frontend && NODE_OPTIONS='--max-old-space-size=1536' npx next build && node scripts/postbuild.js && cd ..
+pm2 restart salfanet-frontend salfanet-backend --update-env
 ```
 
 ---
@@ -439,8 +454,10 @@ Jika `Nginx` dan app sudah jalan di server tapi dari internet tetap tidak bisa a
 
 ```bash
 # Di VM/VPS guest
-ss -tulpn | grep -E ':80|:443|:3000'
-curl -I http://127.0.0.1:3000
+ss -tulpn | grep -E ':80|:443|:3000|:3001'
+curl -I http://127.0.0.1:3000   # frontend
+curl -I http://127.0.0.1:3001   # backend
+curl http://127.0.0.1:3001/api/health  # backend health check
 curl -I http://127.0.0.1
 systemctl status nginx --no-pager
 pm2 status
@@ -458,10 +475,24 @@ Catatan: `IP:2020` adalah port SSH, bukan URL web aplikasi.
 
 ```bash
 pm2 status
-pm2 logs salfanet-radius --lines 100
+pm2 logs salfanet-frontend --lines 100
+pm2 logs salfanet-backend --lines 100
 cd /var/www/salfanet-radius
-npm run build
-pm2 restart ecosystem.config.js --update-env
+# Rebuild both apps
+cd backend && NODE_OPTIONS='--max-old-space-size=1536' npx next build && node scripts/postbuild.js && cd ..
+cd frontend && NODE_OPTIONS='--max-old-space-size=1536' npx next build && node scripts/postbuild.js && cd ..
+pm2 restart salfanet-frontend salfanet-backend --update-env
+```
+
+### 3) API returns 404 (route not found)
+
+Pastikan nginx routing benar — `/api/auth/*` → frontend (3000), `/api/*` → backend (3001):
+
+```bash
+nginx -T 2>&1 | grep -A2 'location.*api'
+# Should show:
+#   location /api/auth/  → proxy_pass http://127.0.0.1:3000
+#   location /api/       → proxy_pass http://127.0.0.1:3001
 ```
 
 ### 4) Jalankan diagnosa Nginx otomatis dari installer
@@ -537,7 +568,44 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 
 ---
 
-## 📝 Changelog
+## � Realtime Online/Offline Status
+
+Status online/offline pelanggan PPPoE di admin page (`/admin/pppoe/users`) diperbarui otomatis setiap **10 detik** tanpa reload halaman.
+
+**Cara kerja:**
+1. Frontend polling `GET /api/pppoe/users/online-status` setiap 10 detik
+2. Backend cek `radacct` (RADIUS users) + MikroTik `/ppp/active` (local users)
+3. Frontend update `isOnline` field hanya jika ada perubahan (cegah unnecessary re-render)
+4. Badge **"Live"** dengan indikator pulse di filter Sesi
+
+**Endpoint:** `GET /api/pppoe/users/online-status?usernames=user1,user2,...`
+
+Response:
+```json
+{ "online": ["user1", "user3"], "onlineCount": 2, "total": 5, "timestamp": "..." }
+```
+
+---
+
+## 🔧 PPPoE Reconnect Setelah Payment
+
+Saat pelanggan isolir dilunaskan (manual atau auto-renewal), sistem otomatis:
+
+1. Update status user → `active`
+2. Restore RADIUS `radcheck` (password) + `radusergroup` (profile group) dengan `nas_identifier`
+3. Hapus entry isolir dari `radreply`
+4. Restore `Framed-IP-Address` jika user punya IP static
+5. Restore MikroTik PPP secret: enable + set profile ke group user (bukan `isolir`)
+6. Kick session lama via MikroTik + RADIUS CoA disconnect
+7. User reconnect otomatis dengan profile yang benar
+
+**FreeRADIUS config penting:**
+- `rest` module → `connect_uri = "http://localhost:3001"` (backend, bukan frontend)
+- `sqlippool`, `sql`, `cuisql` di post-auth → non-fatal (`-` prefix) agar auth tetap berhasil jika pool gagal
+
+---
+
+## �📝 Changelog
 
 Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di GitHub.
 

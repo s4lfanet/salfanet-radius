@@ -110,7 +110,7 @@ check_and_create_swap() {
 # ============================================================================
 
 build_application() {
-    print_step "Building Next.js application (5-10 minutes)"
+    print_step "Building Next.js applications (frontend + backend, 5-10 minutes)"
     
     cd ${APP_DIR} || {
         print_error "Failed to change to ${APP_DIR}"
@@ -118,44 +118,15 @@ build_application() {
     }
     
     # Verify prerequisites
-    if [ ! -d "node_modules" ]; then
-        print_error "node_modules not found! Run install-app.sh first"
+    if [ ! -d "frontend/node_modules" ] || [ ! -d "backend/node_modules" ]; then
+        print_error "node_modules not found in frontend/ or backend/! Run install-app.sh first"
         return 1
     fi
     
-    # Fix tsconfig.json: remove expo extend that breaks Next.js build
-    if grep -q '"extends": "expo/tsconfig.base"' tsconfig.json 2>/dev/null; then
-        print_info "Removing invalid expo tsconfig extend from root tsconfig.json..."
-        # Remove the "extends" line and fix trailing comma on "exclude" block
-        python3 -c "
-import json, re, sys
-with open('tsconfig.json', 'r') as f:
-    content = f.read()
-# Remove the extends line
-content = re.sub(r',?\s*\"extends\"\s*:\s*\"expo/tsconfig.base\"\s*', '', content)
-# Also ensure mobile-app is excluded
-try:
-    data = json.loads(content)
-    excl = data.get('exclude', [])
-    if 'mobile-app' not in excl:
-        excl.append('mobile-app')
-    data['exclude'] = excl
-    # Remove extends key if still present
-    data.pop('extends', None)
-    with open('tsconfig.json', 'w') as f:
-        json.dump(data, f, indent=2)
-    print('tsconfig.json fixed successfully')
-except Exception as e:
-    print(f'JSON fix failed: {e}, trying raw replace')
-    with open('tsconfig.json', 'w') as f:
-        f.write(content)
-" 2>&1 || sed -i '/"extends": "expo\/tsconfig.base"/d' tsconfig.json
-        print_success "tsconfig.json fixed"
-    fi
-
-    # Clean previous build
+    # Clean previous builds
     print_info "Cleaning previous build artifacts..."
-    rm -rf .next .turbo node_modules/.cache 2>/dev/null || true
+    rm -rf frontend/.next frontend/.turbo frontend/node_modules/.cache 2>/dev/null || true
+    rm -rf backend/.next backend/.turbo backend/node_modules/.cache 2>/dev/null || true
     print_success "Build cache cleared"
     
     # Free memory before build (critical for 2GB RAM VPS)
@@ -165,62 +136,131 @@ except Exception as e:
     local FREE_MEM=$(free -m | awk 'NR==2{printf "%s", $7}')
     print_info "Available memory: ${FREE_MEM}MB"
     
-    # Build with optimizations
-    print_info "Starting Next.js build process..."
+    # -----------------------------------------------------------------------
+    # Build BACKEND (API routes + Prisma + services) — port 3001
+    # -----------------------------------------------------------------------
+    print_info "Starting backend Next.js build (API + Prisma)..."
     print_info "Building with Node.js memory limit: 1.5GB"
     echo ""
     
-    if NEXT_TELEMETRY_DISABLED=1 \
-       PRISMA_HIDE_UPDATE_MESSAGE=true \
-       npm run build:vps 2>&1 | tee /tmp/build.log; then
-        print_success "Build completed successfully!"
+    if ( cd ${APP_DIR}/backend && \
+         npx prisma generate && \
+         NEXT_TELEMETRY_DISABLED=1 PRISMA_HIDE_UPDATE_MESSAGE=true \
+         NODE_OPTIONS='--max-old-space-size=1536' npx next build ) 2>&1 | tee /tmp/build-backend.log; then
+        print_success "Backend build completed successfully!"
     else
-        print_error "Build failed!"
+        print_error "Backend build failed!"
         echo ""
         print_info "Build error details:"
         echo "=========================================="
-        grep -i "error" /tmp/build.log | tail -20 || tail -30 /tmp/build.log
+        grep -i "error" /tmp/build-backend.log | tail -20 || tail -30 /tmp/build-backend.log
         echo "=========================================="
         echo ""
         print_info "Common solutions:"
         echo "  1. Ensure you have enough memory/swap"
-        echo "  2. Check full log: cat /tmp/build.log"
-        echo "  3. Try manual build: cd ${APP_DIR} && npm run build"
+        echo "  2. Check full log: cat /tmp/build-backend.log"
+        echo "  3. Try manual build: cd ${APP_DIR}/backend && npx prisma generate && NODE_OPTIONS='--max-old-space-size=1536' npx next build"
         return 1
     fi
     
-    # Verify build output
-    if [ ! -d ".next" ]; then
-        print_error ".next directory not created! Build may have failed."
+    # Verify backend build output
+    if [ ! -d "${APP_DIR}/backend/.next" ]; then
+        print_error "backend/.next directory not created! Build may have failed."
         return 1
     fi
-
-    print_success ".next build directory verified"
+    print_success "backend/.next build directory verified"
 
     # -----------------------------------------------------------------------
-    # REQUIRED for Next.js standalone mode: copy public/ and .next/static/
-    # into .next/standalone/ so the standalone server.js can serve them.
-    # Without this step, PWA manifests, sw.js, and all static assets 404.
+    # REQUIRED for Next.js standalone mode (monorepo): copy public/ and
+    # .next/static/ into .next/standalone/backend/ so the standalone
+    # server.js can serve them. Without this, static assets 404.
     # See: https://nextjs.org/docs/app/api-reference/next-config-js/output#automatically-copying-traced-files
     # -----------------------------------------------------------------------
-    if [ -d ".next/standalone" ]; then
-        print_info "Copying public assets into standalone bundle..."
+    if [ -d "${APP_DIR}/backend/.next/standalone" ]; then
+        print_info "Copying backend public assets into standalone bundle..."
 
-        # public/ → .next/standalone/public/  (use public/. to copy contents, not dir)
-        if [ -d "public" ]; then
-            mkdir -p .next/standalone/public
-            cp -r public/. .next/standalone/public/
-            print_success "public/ copied → .next/standalone/public/"
+        if [ -d "${APP_DIR}/backend/public" ]; then
+            mkdir -p ${APP_DIR}/backend/.next/standalone/backend/public
+            cp -r ${APP_DIR}/backend/public/. ${APP_DIR}/backend/.next/standalone/backend/public/
+            print_success "backend/public copied → .next/standalone/backend/public/"
         fi
 
-        # .next/static/ → .next/standalone/.next/static/
-        if [ -d ".next/static" ]; then
-            mkdir -p .next/standalone/.next
-            cp -r .next/static .next/standalone/.next/static/
-            print_success ".next/static/ copied → .next/standalone/.next/static/"
+        if [ -d "${APP_DIR}/backend/.next/static" ]; then
+            mkdir -p ${APP_DIR}/backend/.next/standalone/backend/.next
+            cp -r ${APP_DIR}/backend/.next/static ${APP_DIR}/backend/.next/standalone/backend/.next/static/
+            print_success "backend/.next/static copied → .next/standalone/backend/.next/static/"
+        fi
+
+        # Copy .env into standalone dir so the standalone server picks it up
+        if [ -f "${APP_DIR}/backend/.env" ]; then
+            cp ${APP_DIR}/backend/.env ${APP_DIR}/backend/.next/standalone/backend/.env
+            print_success "backend/.env copied → .next/standalone/backend/.env"
         fi
     else
-        print_warning ".next/standalone not found — skipping asset copy (non-standalone build?)"
+        print_warning "backend/.next/standalone not found — skipping asset copy (non-standalone build?)"
+    fi
+
+    # -----------------------------------------------------------------------
+    # Build FRONTEND (UI + NextAuth routes) — port 3000
+    # -----------------------------------------------------------------------
+    print_info "Starting frontend Next.js build (UI + NextAuth)..."
+    print_info "Building with Node.js memory limit: 1.5GB"
+    echo ""
+    
+    if ( cd ${APP_DIR}/frontend && \
+         NEXT_TELEMETRY_DISABLED=1 \
+         NODE_OPTIONS='--max-old-space-size=1536' npx next build ) 2>&1 | tee /tmp/build-frontend.log; then
+        print_success "Frontend build completed successfully!"
+    else
+        print_error "Frontend build failed!"
+        echo ""
+        print_info "Build error details:"
+        echo "=========================================="
+        grep -i "error" /tmp/build-frontend.log | tail -20 || tail -30 /tmp/build-frontend.log
+        echo "=========================================="
+        echo ""
+        print_info "Common solutions:"
+        echo "  1. Ensure you have enough memory/swap"
+        echo "  2. Check full log: cat /tmp/build-frontend.log"
+        echo "  3. Try manual build: cd ${APP_DIR}/frontend && NODE_OPTIONS='--max-old-space-size=1536' npx next build"
+        return 1
+    fi
+    
+    # Verify frontend build output
+    if [ ! -d "${APP_DIR}/frontend/.next" ]; then
+        print_error "frontend/.next directory not created! Build may have failed."
+        return 1
+    fi
+    print_success "frontend/.next build directory verified"
+
+    # -----------------------------------------------------------------------
+    # REQUIRED for Next.js standalone mode (monorepo): copy public/ and
+    # .next/static/ into .next/standalone/frontend/ so the standalone
+    # server.js can serve them. Without this, PWA manifests, sw.js, and
+    # all static assets 404.
+    # -----------------------------------------------------------------------
+    if [ -d "${APP_DIR}/frontend/.next/standalone" ]; then
+        print_info "Copying frontend public assets into standalone bundle..."
+
+        if [ -d "${APP_DIR}/frontend/public" ]; then
+            mkdir -p ${APP_DIR}/frontend/.next/standalone/frontend/public
+            cp -r ${APP_DIR}/frontend/public/. ${APP_DIR}/frontend/.next/standalone/frontend/public/
+            print_success "frontend/public copied → .next/standalone/frontend/public/"
+        fi
+
+        if [ -d "${APP_DIR}/frontend/.next/static" ]; then
+            mkdir -p ${APP_DIR}/frontend/.next/standalone/frontend/.next
+            cp -r ${APP_DIR}/frontend/.next/static ${APP_DIR}/frontend/.next/standalone/frontend/.next/static/
+            print_success "frontend/.next/static copied → .next/standalone/frontend/.next/static/"
+        fi
+
+        # Copy .env into standalone dir so the standalone server picks it up
+        if [ -f "${APP_DIR}/frontend/.env" ]; then
+            cp ${APP_DIR}/frontend/.env ${APP_DIR}/frontend/.next/standalone/frontend/.env
+            print_success "frontend/.env copied → .next/standalone/frontend/.env"
+        fi
+    else
+        print_warning "frontend/.next/standalone not found — skipping asset copy (non-standalone build?)"
     fi
 }
 
@@ -243,8 +283,8 @@ const APP_DIR = process.env.APP_DIR || '/var/www/salfanet-radius';
 module.exports = {
   apps: [
     {
-      name: 'salfanet-radius',
-      script: '.next/standalone/server.js',
+      name: 'salfanet-frontend',
+      script: 'frontend/.next/standalone/frontend/server.js',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'cluster',
@@ -252,8 +292,27 @@ module.exports = {
       max_memory_restart: '450M',
       node_args: ['--max-old-space-size=400','--max-semi-space-size=8','--optimize-for-size'],
       env: { NODE_ENV: 'production', NODE_OPTIONS: '--max-old-space-size=400', PORT: 3000, HOSTNAME: '127.0.0.1', TZ: 'Asia/Jakarta' },
-      error_file: './logs/error.log',
-      out_file: './logs/out.log',
+      error_file: './logs/frontend-error.log',
+      out_file: './logs/frontend-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      autorestart: true,
+      max_restarts: 10,
+      min_uptime: '10s',
+      cron_restart: '0 */6 * * *'
+    },
+    {
+      name: 'salfanet-backend',
+      script: 'backend/.next/standalone/backend/server.js',
+      cwd: APP_DIR,
+      instances: 1,
+      exec_mode: 'cluster',
+      watch: false,
+      max_memory_restart: '450M',
+      node_args: ['--max-old-space-size=400','--max-semi-space-size=8','--optimize-for-size'],
+      env: { NODE_ENV: 'production', NODE_OPTIONS: '--max-old-space-size=400', PORT: 3001, HOSTNAME: '127.0.0.1', TZ: 'Asia/Jakarta' },
+      error_file: './logs/backend-error.log',
+      out_file: './logs/backend-out.log',
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       merge_logs: true,
       autorestart: true,
@@ -265,8 +324,8 @@ module.exports = {
       name: 'salfanet-cron',
       // tsx CLI binary directly -- runner-wrapper.cjs's require('tsx/cjs') hook does
       // NOT apply tsconfig path aliases (@/*), causing ERR_MODULE_NOT_FOUND.
-      script: 'node_modules/.bin/tsx',
-      args: ['-r', './src/cron/preload.cjs', 'src/cron/runner.ts'],
+      script: 'backend/node_modules/.bin/tsx',
+      args: ['backend/cron-runner.ts'],
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
@@ -285,7 +344,7 @@ module.exports = {
     },
     {
       name: 'salfanet-wa',
-      script: './wa-service.js',
+      script: './frontend/wa-service.js',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
@@ -309,46 +368,50 @@ EOF
     fi
 
     mkdir -p ${APP_DIR}/logs
-    print_success "PM2 ecosystem configured (salfanet-radius + salfanet-cron + salfanet-wa)"
+    print_success "PM2 ecosystem configured (salfanet-frontend + salfanet-backend + salfanet-cron + salfanet-wa)"
 }
 
 check_port_conflict() {
-    print_info "Checking for port conflicts on port 3000..."
+    print_info "Checking for port conflicts on ports 3000 (frontend) and 3001 (backend)..."
     
-    # Check if port 3000 is in use
-    local PORT_CHECK=$(lsof -ti:3000 2>/dev/null || netstat -tlnp 2>/dev/null | grep :3000 | awk '{print $7}' | cut -d'/' -f1)
-    
-    if [ -n "$PORT_CHECK" ]; then
-        print_warning "Port 3000 is already in use by PID(s): $PORT_CHECK"
+    local CONFLICT_FOUND=0
+
+    for PORT in 3000 3001; do
+        local PORT_CHECK=$(lsof -ti:${PORT} 2>/dev/null || netstat -tlnp 2>/dev/null | grep :${PORT} | awk '{print $7}' | cut -d'/' -f1)
         
-        # Show process details
-        echo ""
-        print_info "Process details:"
-        ps aux | grep -E "$PORT_CHECK|PID" | grep -v grep
-        echo ""
-        
-        read -p "Kill conflicting processes? [Y/n]: " KILL_CONFIRM
-        if [[ ! "$KILL_CONFIRM" =~ ^[Nn]$ ]]; then
-            kill_conflicting_processes
+        if [ -n "$PORT_CHECK" ]; then
+            print_warning "Port ${PORT} is already in use by PID(s): $PORT_CHECK"
+            
+            # Show process details
+            echo ""
+            print_info "Process details:"
+            ps aux | grep -E "$PORT_CHECK|PID" | grep -v grep
+            echo ""
+            
+            read -p "Kill conflicting processes on port ${PORT}? [Y/n]: " KILL_CONFIRM
+            if [[ ! "$KILL_CONFIRM" =~ ^[Nn]$ ]]; then
+                kill_conflicting_processes ${PORT}
+            else
+                print_error "Cannot start application with port ${PORT} in use"
+                print_info "Please manually kill the process or change the application port"
+                return 1
+            fi
         else
-            print_error "Cannot start application with port 3000 in use"
-            print_info "Please manually kill the process or change the application port"
-            return 1
+            print_success "Port ${PORT} is available"
         fi
-    else
-        print_success "Port 3000 is available"
-    fi
+    done
 }
 
 kill_conflicting_processes() {
-    print_info "Killing processes using port 3000..."
+    local PORT=${1:-3000}
+    print_info "Killing processes using port ${PORT}..."
     
-    # Get all PIDs using port 3000
-    local PIDS=$(lsof -ti:3000 2>/dev/null)
+    # Get all PIDs using port ${PORT}
+    local PIDS=$(lsof -ti:${PORT} 2>/dev/null)
     
     if [ -z "$PIDS" ]; then
         # Try netstat method
-        PIDS=$(netstat -tlnp 2>/dev/null | grep :3000 | awk '{print $7}' | cut -d'/' -f1 | grep -v '-')
+        PIDS=$(netstat -tlnp 2>/dev/null | grep :${PORT} | awk '{print $7}' | cut -d'/' -f1 | grep -v '-')
     fi
     
     if [ -n "$PIDS" ]; then
@@ -361,29 +424,32 @@ kill_conflicting_processes() {
         
         # Verify port is free
         sleep 2
-        if lsof -ti:3000 >/dev/null 2>&1 || netstat -tlnp 2>/dev/null | grep -q :3000; then
-            print_error "Failed to free port 3000!"
-            print_info "Try manually: sudo lsof -ti:3000 | xargs sudo kill -9"
+        if lsof -ti:${PORT} >/dev/null 2>&1 || netstat -tlnp 2>/dev/null | grep -q :${PORT}; then
+            print_error "Failed to free port ${PORT}!"
+            print_info "Try manually: sudo lsof -ti:${PORT} | xargs sudo kill -9"
             return 1
         else
-            print_success "Port 3000 is now free"
+            print_success "Port ${PORT} is now free"
         fi
     else
-        print_success "No processes to kill"
+        print_success "No processes to kill on port ${PORT}"
     fi
 }
 
 cleanup_pm2_processes() {
     print_info "Cleaning up old PM2 processes..."
     
-    # Kill any processes on port 3000 first
-    print_info "Ensuring port 3000 is free..."
+    # Kill any processes on ports 3000 (frontend) and 3001 (backend) first
+    print_info "Ensuring ports 3000 and 3001 are free..."
     lsof -ti:3000 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+    lsof -ti:3001 2>/dev/null | xargs -r kill -9 2>/dev/null || true
     
     # Cleanup root PM2 processes
     pm2 delete all 2>/dev/null || true
-    pm2 delete salfanet-radius 2>/dev/null || true
+    pm2 delete salfanet-frontend 2>/dev/null || true
+    pm2 delete salfanet-backend 2>/dev/null || true
     pm2 delete salfanet-cron 2>/dev/null || true
+    pm2 delete salfanet-radius 2>/dev/null || true
     pm2 kill 2>/dev/null || true
 
     # Remove stale root PM2 dump so old processes don't resurrect on reboot
@@ -391,8 +457,10 @@ cleanup_pm2_processes() {
 
     # Cleanup app user PM2 processes using su - for proper environment
     sudo su - ${APP_USER} -c 'pm2 delete all 2>/dev/null || true'
-    sudo su - ${APP_USER} -c 'pm2 delete salfanet-radius 2>/dev/null || true'
+    sudo su - ${APP_USER} -c 'pm2 delete salfanet-frontend 2>/dev/null || true'
+    sudo su - ${APP_USER} -c 'pm2 delete salfanet-backend 2>/dev/null || true'
     sudo su - ${APP_USER} -c 'pm2 delete salfanet-cron 2>/dev/null || true'
+    sudo su - ${APP_USER} -c 'pm2 delete salfanet-radius 2>/dev/null || true'
     sudo su - ${APP_USER} -c 'pm2 kill 2>/dev/null || true'
 
     # Remove stale PM2 dumps for app user as well
@@ -411,8 +479,9 @@ cleanup_pm2_processes() {
     pkill -9 -f "/home/.*/salfanet-radius" 2>/dev/null || true
     pkill -9 -f "/var/www/salfanet-radius" 2>/dev/null || true
     
-    # Final check on port 3000
+    # Final check on ports 3000 and 3001
     lsof -ti:3000 2>/dev/null | xargs -r kill -9 2>/dev/null || true
+    lsof -ti:3001 2>/dev/null | xargs -r kill -9 2>/dev/null || true
     
     # Wait for cleanup
     sleep 2
@@ -425,7 +494,7 @@ cleanup_pm2_processes() {
 }
 
 start_pm2_app() {
-    print_info "Starting applications (radius + cron) with PM2 as user: ${APP_USER}..."
+    print_info "Starting applications (frontend + backend + cron) with PM2 as user: ${APP_USER}..."
     
     cd ${APP_DIR} || return 1
     
@@ -438,8 +507,8 @@ start_pm2_app() {
     # Cleanup old PM2 processes
     cleanup_pm2_processes
     
-    # Start both apps with PM2 as app user using su - for proper environment
-    print_info "Launching applications (radius + cron) as ${APP_USER}..."
+    # Start all apps with PM2 as app user using su - for proper environment
+    print_info "Launching applications (frontend + backend + cron) as ${APP_USER}..."
     if ! sudo su - ${APP_USER} -c "cd ${APP_DIR} && pm2 start ecosystem.config.js" 2>&1 | tee /tmp/pm2-start.log; then
         print_error "PM2 start failed!"
         cat /tmp/pm2-start.log
@@ -466,14 +535,14 @@ start_pm2_app() {
         sudo /usr/lib/node_modules/pm2/bin/pm2 startup systemd -u ${APP_USER} --hp /home/${APP_USER} || true
     fi
     
-    # Wait for app to stabilize
+    # Wait for apps to stabilize
     print_info "Waiting for applications to stabilize..."
     sleep 5
 
     # ── Start Baileys WhatsApp service ────────────────────────────────────
     print_info "Starting salfanet-wa (Baileys WhatsApp service)..."
     mkdir -p /var/data/salfanet/baileys_auth
-    if [ -f "${APP_DIR}/wa-service.js" ]; then
+    if [ -f "${APP_DIR}/frontend/wa-service.js" ]; then
         if sudo su - ${APP_USER} -c "cd ${APP_DIR} && pm2 describe salfanet-wa" &>/dev/null; then
             sudo su - ${APP_USER} -c "pm2 restart salfanet-wa --update-env" 2>/dev/null || true
         else
@@ -481,30 +550,33 @@ start_pm2_app() {
         fi
         print_success "salfanet-wa started"
     else
-        print_warning "wa-service.js not found — skipping salfanet-wa startup"
+        print_warning "frontend/wa-service.js not found — skipping salfanet-wa startup"
     fi
 
     # Save updated PM2 config (includes salfanet-wa)
     sudo su - ${APP_USER} -c 'pm2 save'
 
     # Check if apps are running using su -
-    if sudo su - ${APP_USER} -c 'pm2 list' | grep -q "salfanet-radius.*online"; then
+    if sudo su - ${APP_USER} -c 'pm2 list' | grep -qE "salfanet-frontend.*online|salfanet-backend.*online"; then
         print_success "Applications started successfully!"
         echo ""
         print_info "Application status:"
         sudo su - ${APP_USER} -c 'pm2 list'
         echo ""
         print_info "Application URLs:"
-        echo "  Main App: http://${VPS_IP} (via Nginx port 80)"
+        echo "  Frontend: http://${VPS_IP} (via Nginx port 80)"
+        echo "  Backend API: http://127.0.0.1:3001 (internal)"
         echo "  Cron Service: Running in background"
+        echo "  WhatsApp Service: Running in background"
         echo ""
         print_info "Monitor logs:"
-        echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-radius'"
+        echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-frontend'"
+        echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-backend'"
         echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-cron'"
         echo ""
         print_info "Restart apps:"
-        echo "  sudo su - ${APP_USER} -c 'pm2 restart salfanet-radius'"
-        echo "  sudo su - ${APP_USER} -c 'pm2 restart salfanet-cron'"
+        echo "  sudo su - ${APP_USER} -c 'pm2 restart salfanet-frontend'"
+        echo "  sudo su - ${APP_USER} -c 'pm2 restart salfanet-backend'"
         echo "  sudo su - ${APP_USER} -c 'pm2 restart all'"
     else
         print_error "Applications failed to start!"
@@ -516,7 +588,7 @@ start_pm2_app() {
         echo "  sudo su - ${APP_USER} -c 'pm2 logs'"
         echo "  sudo su - ${APP_USER} -c 'pm2 restart all'"
         echo "  lsof -i:3000"
-        echo "  cd ${APP_DIR} && sudo su - ${APP_USER} -c 'npm start'"
+        echo "  lsof -i:3001"
         return 1
     fi
 }
@@ -525,8 +597,8 @@ start_cron_service() {
     print_info "Cron service will be started via ecosystem.config.js"
     
     # Check if the tsx cron runner exists
-    if [ ! -f "${APP_DIR}/src/cron/runner.ts" ]; then
-        print_warning "src/cron/runner.ts not found (cron service will be skipped)"
+    if [ ! -f "${APP_DIR}/backend/cron-runner.ts" ]; then
+        print_warning "backend/cron-runner.ts not found (cron service will be skipped)"
         return 0
     fi
     
@@ -536,7 +608,7 @@ start_cron_service() {
 run_post_install_fixes() {
     print_step "Running post-installation fixes"
     
-    cd ${APP_DIR} || return 1
+    cd ${APP_DIR}/backend || return 1
     
     # Fix emoji encoding
     if [ -f "prisma/seeds/fix-emoji.js" ]; then
@@ -645,31 +717,49 @@ fi
 
 cd ${APP_DIR}
 
-# Install dependencies
+# Install dependencies (frontend + backend)
 echo ">> Installing dependencies..."
-npm install --production=false
+( cd frontend && npm install --production=false )
+( cd backend && npm install --production=false )
 
-# Generate Prisma Client
+# Generate Prisma Client (backend)
 echo "[>] Generating Prisma Client..."
-node_modules/.bin/prisma generate
+( cd backend && node_modules/.bin/prisma generate )
 
-# Push database schema
+# Push database schema (backend)
 echo "[>] Updating database schema..."
-node_modules/.bin/prisma db push --accept-data-loss
+( cd backend && node_modules/.bin/prisma db push --accept-data-loss )
 
-# Build application
-echo "[>] Building application..."
-NODE_OPTIONS="--max-old-space-size=1536" npm run build
+# Build backend application (API routes + Prisma + services)
+echo "[>] Building backend application..."
+( cd backend && NODE_OPTIONS="--max-old-space-size=1536" npx next build )
 
-# Copy public assets into standalone bundle (required for PWA manifests + sw.js)
-if [ -d ".next/standalone" ]; then
-    echo "[>] Copying public assets into standalone bundle..."
-    [ -d "public" ] && { mkdir -p .next/standalone/public; cp -r public/. .next/standalone/public/; } || true
-    if [ -d ".next/static" ]; then
-        mkdir -p .next/standalone/.next
-        cp -r .next/static .next/standalone/.next/static/ || true
+# Copy backend public assets into standalone bundle (required for static assets)
+if [ -d "backend/.next/standalone" ]; then
+    echo "[>] Copying backend public assets into standalone bundle..."
+    [ -d "backend/public" ] && { mkdir -p backend/.next/standalone/backend/public; cp -r backend/public/. backend/.next/standalone/backend/public/; } || true
+    if [ -d "backend/.next/static" ]; then
+        mkdir -p backend/.next/standalone/backend/.next
+        cp -r backend/.next/static backend/.next/standalone/backend/.next/static/ || true
     fi
-    echo "[OK] Standalone assets copied"
+    [ -f "backend/.env" ] && cp backend/.env backend/.next/standalone/backend/.env || true
+    echo "[OK] Backend standalone assets copied"
+fi
+
+# Build frontend application (UI + NextAuth routes)
+echo "[>] Building frontend application..."
+( cd frontend && NODE_OPTIONS="--max-old-space-size=1536" npx next build )
+
+# Copy frontend public assets into standalone bundle (required for PWA manifests + sw.js)
+if [ -d "frontend/.next/standalone" ]; then
+    echo "[>] Copying frontend public assets into standalone bundle..."
+    [ -d "frontend/public" ] && { mkdir -p frontend/.next/standalone/frontend/public; cp -r frontend/public/. frontend/.next/standalone/frontend/public/; } || true
+    if [ -d "frontend/.next/static" ]; then
+        mkdir -p frontend/.next/standalone/frontend/.next
+        cp -r frontend/.next/static frontend/.next/standalone/frontend/.next/static/ || true
+    fi
+    [ -f "frontend/.env" ] && cp frontend/.env frontend/.next/standalone/frontend/.env || true
+    echo "[OK] Frontend standalone assets copied"
 fi
 
 # Fix ownership
@@ -688,7 +778,7 @@ sudo su - ${APP_USER} -c "cd ${APP_DIR} && pm2 reload ecosystem.config.js --upda
 sudo su - ${APP_USER} -c 'pm2 save'
 
 echo "[OK] Deployment completed!"
-echo ">> Note: PM2 may show 2 salfanet-radius processes because cluster instances=2 is intentional."
+echo ">> Note: PM2 runs 4 processes: salfanet-frontend, salfanet-backend, salfanet-cron, salfanet-wa."
 echo ""
 echo ">> Application status:"
 sudo su - ${APP_USER} -c 'pm2 list'
@@ -717,11 +807,13 @@ install_pm2_and_build() {
     sudo su - ${APP_USER} -c 'pm2 list'
     echo ""
     print_info "View logs:"
-    echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-radius'"
+    echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-frontend'"
+    echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-backend'"
     echo "  sudo su - ${APP_USER} -c 'pm2 logs salfanet-cron'"
     echo ""
     print_info "Restart application:"
-    echo "  sudo su - ${APP_USER} -c 'pm2 restart salfanet-radius'"
+    echo "  sudo su - ${APP_USER} -c 'pm2 restart salfanet-frontend'"
+    echo "  sudo su - ${APP_USER} -c 'pm2 restart salfanet-backend'"
     echo "  sudo su - ${APP_USER} -c 'pm2 restart all'"
     
     return 0
