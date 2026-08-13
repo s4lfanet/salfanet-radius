@@ -37,16 +37,16 @@ export default function StoppedSubscriptionsPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  const loadData = async () => {
+  const loadData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await fetch('/api/pppoe/users?status=stop', { cache: 'no-store' });
       const data = await res.json();
       setUsers(data.users || []);
     } catch (error) {
       console.error('Load data error:', error);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -96,7 +96,8 @@ export default function StoppedSubscriptionsPage() {
         setUsers(prev => prev.filter(u => !deletedIds.has(u.id)));
         setSelectedUsers(new Set());
         await showSuccess(`${result.deleted || selectedUsers.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
-        loadData();
+        // Silent background reload (no loading flash)
+        loadData(true);
       } else {
         await showError(result.error || t('common.failedDelete'));
       }
@@ -122,8 +123,8 @@ export default function StoppedSubscriptionsPage() {
         setUsers(prev => prev.filter(u => u.id !== userId));
         setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerReactivated'));
-        // Reload in background to sync any server-side changes
-        loadData();
+        // Silent background reload (no loading flash)
+        loadData(true);
       } else {
         await showError(result.error || t('common.failedActivate'));
       }
@@ -145,7 +146,7 @@ export default function StoppedSubscriptionsPage() {
         setUsers(prev => prev.filter(u => u.id !== userId));
         setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerDeleted'));
-        loadData();
+        loadData(true);
       } else {
         await showError(result.error || t('common.failedDelete'));
       }
