@@ -325,7 +325,28 @@ export async function disconnectPPPoEUser(username: string) {
     })
 
     if (!activeSession) {
-      console.log(`[CoA] No active session found for ${username}`)
+      console.log(`[CoA] No active radacct session for ${username} — trying MikroTik API kick`)
+
+      // Fallback: user may be connected on MikroTik but missing from radacct
+      // (e.g. after username rename, accounting gap, or radacct cleanup)
+      // Try to kick via MikroTik API directly
+      try {
+        const nas = await prisma.router.findFirst({
+          where: { isActive: true },
+          orderBy: { createdAt: 'desc' },
+        })
+        if (nas) {
+          const { kickPppoeSession } = await import('@/server/services/mikrotik/ppp-secret.service')
+          const kicked = await kickPppoeSession(nas.id, username)
+          console.log(`[CoA] MikroTik API kick result for ${username}: ${kicked} session(s) removed`)
+          if (kicked > 0) {
+            return { success: true, message: `Disconnected via MikroTik API (${kicked} session(s))` }
+          }
+        }
+      } catch (mtErr: any) {
+        console.error(`[CoA] MikroTik API kick failed for ${username}:`, mtErr?.message)
+      }
+
       return { success: true, message: 'No active session' }
     }
 
