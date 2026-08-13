@@ -1,17 +1,15 @@
 /**
- * PM2 Ecosystem Configuration — Salfanet Radius (NestJS Migration)
+ * PM2 Ecosystem Configuration — Salfanet Radius (Two Next.js Apps)
  *
- * Three managed processes:
- *   1. salfanet-frontend  — Next.js standalone (port 3000)
- *   2. salfanet-backend   — NestJS API server + cron jobs (port 3001)
- *   3. salfanet-wa        — Baileys WhatsApp service (port 4000, internal)
+ * Four managed processes:
+ *   1. salfanet-frontend  — Next.js standalone (port 3000) — UI + NextAuth
+ *   2. salfanet-backend   — Next.js standalone (port 3001) — API + Prisma + services
+ *   3. salfanet-cron      — Cron runner (tsx, calls backend APIs on schedule)
+ *   4. salfanet-wa        — Baileys WhatsApp service (port 4000, internal)
  *
  * Deployment:
  *   pm2 start deploy/ecosystem.config.js
  *   pm2 save
- *
- * The backend process handles both API requests AND cron jobs via
- * @nestjs/schedule. Legacy cron runner has been removed.
  */
 
 const APP_DIR = process.env.APP_DIR || '/var/www/salfanet-radius';
@@ -56,12 +54,12 @@ module.exports = {
     },
 
     // ─────────────────────────────────────────────────────────────────────
-    // 2. NestJS Backend API Server (port 3001)
-    //    Handles all /api/v1/* requests + cron jobs via @nestjs/schedule
+    // 2. Next.js Backend API Server (port 3001)
+    //    Handles all /api/* requests + Prisma + MikroTik/RADIUS services
     // ─────────────────────────────────────────────────────────────────────
     {
       name: 'salfanet-backend',
-      script: 'backend/dist/main.js',
+      script: 'backend/.next/standalone/backend/server.js',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
@@ -76,8 +74,8 @@ module.exports = {
         NODE_ENV: 'production',
         NODE_OPTIONS: '--max-old-space-size=350',
         PORT: 3001,
+        HOSTNAME: '127.0.0.1',
         TZ: 'Asia/Jakarta',
-        CORS_ORIGINS: 'http://127.0.0.1:3000,http://localhost:3000',
         // Database, auth, and external service vars are read from backend/.env
       },
       error_file: './logs/backend-error.log',
@@ -91,7 +89,40 @@ module.exports = {
     },
 
     // ─────────────────────────────────────────────────────────────────────
-    // 3. Baileys WhatsApp Native Service (port 4000, internal only)
+    // 3. Cron Runner (calls backend APIs on schedule)
+    //    Standalone tsx process — no HTTP server, just scheduled API calls
+    // ─────────────────────────────────────────────────────────────────────
+    {
+      name: 'salfanet-cron',
+      script: 'backend/node_modules/.bin/tsx',
+      args: ['backend/cron-runner.ts'],
+      cwd: APP_DIR,
+      instances: 1,
+      exec_mode: 'fork',
+      watch: false,
+      max_memory_restart: '150M',
+      node_args: [
+        '--max-old-space-size=120',
+        '--max-semi-space-size=4',
+      ],
+      env: {
+        NODE_ENV: 'production',
+        NODE_OPTIONS: '--max-old-space-size=120',
+        TZ: 'Asia/Jakarta',
+        CRON_API_URL: 'http://127.0.0.1:3001',
+      },
+      error_file: './logs/cron-error.log',
+      out_file: './logs/cron-out.log',
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      merge_logs: true,
+      autorestart: true,
+      max_restarts: 5,
+      min_uptime: '10s',
+      restart_delay: 5000,
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // 4. Baileys WhatsApp Native Service (port 4000, internal only)
     // ─────────────────────────────────────────────────────────────────────
     {
       name: 'salfanet-wa',

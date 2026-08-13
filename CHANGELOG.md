@@ -6,6 +6,66 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.0.0] — 2026-08-13 — Two-Next.js App Architecture + Realtime Status + PPPoE Reconnect Fix
+
+### Architecture — Two Independent Next.js Apps
+- **Migrated from NestJS backend back to Next.js** — both frontend and backend are now Next.js 16 standalone apps
+- `frontend/` (port 3000): UI pages, components, NextAuth authentication routes
+- `backend/` (port 3001): API routes, Prisma, MikroTik services, RADIUS services, cron business logic
+- `packages/shared-types/`: Shared TypeScript types between apps
+- Frontend communicates with backend over HTTP via `lib/api-client.ts`
+- Nginx routes: `/api/auth/*` → frontend (3000), `/api/*` → backend (3001), `/` → frontend (3000)
+- PM2 processes: `salfanet-frontend`, `salfanet-backend`, `salfanet-cron`, `salfanet-wa`
+- Cron runner: standalone tsx process that calls backend APIs on schedule
+- Monorepo standalone build: `scripts/postbuild.js` copies static assets to nested standalone dirs
+
+### Fixed — PPPoE Tidak Reconnect Setelah Payment dari Isolir
+- **Root cause 1**: Isolir flow mengubah MikroTik PPP secret profile ke `isolir`, tapi payment restoration hanya update RADIUS tables tanpa restore PPP secret
+- **Root cause 2**: FreeRADIUS `rest` module `connect_uri` masih ke port 3000 (frontend) — seharusnya port 3001 (backend). Setelah split, route `/api/radius/authorize` ada di backend
+- **Root cause 3**: `sqlippool` di FreeRADIUS post-auth bersifat fatal — jika gagal allocate IP, Access-Accept berubah menjadi Access-Reject
+- **Root cause 4**: Auto-renewal cron hanya update `status: 'active'` tanpa restore RADIUS/PPP secret untuk user yang sebelumnya isolated
+
+#### Fixes Applied
+- `backend/src/app/api/invoices/route.ts` (PUT): Tambah `managePppSecret` + `kickPppoeSession` + `nas_identifier` di RADIUS queries
+- `backend/src/server/cron/invoice-jobs.ts`: Auto-renewal sekarang restore RADIUS + PPP secret untuk user isolated
+- `backend/freeradius-config/mods-enabled/rest`: `connect_uri` → `http://localhost:3001` (backend)
+- `backend/freeradius-config/sites-enabled/default`: `sqlippool`, `sql`, `cuisql` di post-auth → non-fatal (`-` prefix)
+- Clear stale `radippool` entries yang expired
+
+#### Verification
+- User `muhammadluthfi@rw02`: Access-Accept dengan `Mikrotik-Group=PAKET 100MBPS`
+- IP `192.168.14.2` dari `100mbps-pool` (bukan `pool-isolir`)
+- MikroTik: ACTIVE, session tersimpan di `radacct` dengan `acctstoptime=NULL`
+
+### Added — Realtime Online/Offline Status
+- **New API endpoint**: `GET /api/pppoe/users/online-status` — lightweight endpoint yang hanya return set username online
+  - Cek `radacct` (RADIUS auth users) + `batchListPppActive` (MikroTik local auth users)
+  - Support filter `?usernames=` untuk restrict ke user yang ditampilkan saja
+- **Frontend polling**: Setiap 10 detik, update `isOnline` field tanpa reload full data
+  - Hanya trigger re-render jika ada perubahan status (cegah unnecessary renders)
+  - Badge **"Live"** dengan indikator pulse di filter Sesi
+- File: `backend/src/app/api/pppoe/users/online-status/route.ts`
+- File: `frontend/src/app/admin/pppoe/users/page.tsx` — polling effect
+
+### Updated — FreeRADIUS Configuration
+- `rest` module: `connect_uri` diupdate dari `localhost:3000` → `localhost:3001` (backend API)
+- `sites-enabled/default` post-auth: semua modules (`sql`, `sqlippool`, `cuisql`, `rest`) sekarang non-fatal
+- Comment diupdate untuk reflect 2-app architecture
+
+### Updated — Deployment Configuration
+- `deploy/ecosystem.config.js`: 4 PM2 processes (frontend, backend, cron, wa)
+- `deploy/nginx-salfanet.conf`: 2-app routing (`/api/auth/*` → 3000, `/api/*` → 3001, `/` → 3000)
+- `frontend/production/ecosystem.config.js`: Updated untuk 2-app architecture
+- `frontend/production/nginx-salfanet-radius.conf`: Updated untuk 2-app routing
+
+### Updated — Installer/Updater/Uninstaller
+- `frontend/vps-install/install-pm2.sh`: Build dan setup 2 Next.js apps terpisah
+- `frontend/vps-install/updater.sh`: Build dan restart 2 apps + cron
+- `frontend/vps-install/vps-uninstaller.sh`: Hapus 4 PM2 processes (frontend, backend, cron, wa)
+- `frontend/vps-install/install-app.sh`: Install dependencies untuk frontend + backend
+
+---
+
 ## [3.2.0] — 2026-08-12 — FreeRADIUS Integration + Admin UI
 
 ### FreeRADIUS Server Configuration (Stage 1 — Verified on VPS)
