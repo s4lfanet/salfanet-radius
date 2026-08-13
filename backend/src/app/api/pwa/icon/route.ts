@@ -15,6 +15,8 @@ function fallbackIcon(size: number): Buffer {
     path.join(process.cwd(), `public/pwa/icon-${size}.png`),
     path.join(process.cwd(), `../public/pwa/icon-${size}.png`),
     path.join('/var/www/salfanet-radius', `public/pwa/icon-${size}.png`),
+    path.join('/var/www/salfanet-radius/frontend', `public/pwa/icon-${size}.png`),
+    path.join('/var/www/salfanet-radius/backend', `public/pwa/icon-${size}.png`),
   ];
   for (const p of candidates) {
     if (existsSync(p)) return readFileSync(p);
