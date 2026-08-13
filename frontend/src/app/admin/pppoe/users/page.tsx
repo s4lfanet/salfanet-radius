@@ -324,6 +324,7 @@ export default function PppoeUsersPage() {
   const [modalLatLng, setModalLatLng] = useState<{ lat: string; lng: string } | undefined>();
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
+  const [actionMenuPos, setActionMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [mapPickerLat, setMapPickerLat] = useState('');
   const [mapPickerLon, setMapPickerLon] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -1520,7 +1521,7 @@ export default function PppoeUsersPage() {
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Online</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden md:table-cell">RADIUS</th>
-                  <th className="px-2 py-2 text-center w-10 text-[10px] font-medium text-muted-foreground uppercase">Aksi</th>
+                  <th className="px-2 py-2 text-center w-10 text-[10px] font-medium text-muted-foreground uppercase sticky right-0 bg-muted/50 z-20">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -1611,77 +1612,24 @@ export default function PppoeUsersPage() {
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-muted text-muted-foreground">Not synced</span>
                         )}
                       </td>
-                      {/* Aksi — Dropdown */}
-                      <td className="px-3 py-2 text-right relative">
+                      {/* Aksi — Sticky right + Dropdown */}
+                      <td className="px-2 py-2 text-center sticky right-0 bg-background z-20 border-l border-border/30">
                         <button
-                          onClick={() => setActionMenuOpen(actionMenuOpen === user.id ? null : user.id)}
+                          onClick={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            if (actionMenuOpen === user.id) {
+                              setActionMenuOpen(null);
+                            } else {
+                              setActionMenuOpen(user.id);
+                              setActionMenuPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+                            }
+                          }}
                           className="compact-action p-1.5 text-muted-foreground hover:bg-muted rounded cursor-pointer focus:outline-none inline-flex items-center justify-center"
                           aria-label="Menu aksi"
                           title="Menu aksi"
                         >
                           <MoreVertical className="h-4 w-4 pointer-events-none" />
                         </button>
-                        {actionMenuOpen === user.id && (
-                          <>
-                            {/* Click-outside overlay */}
-                            <div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(null)} />
-                            {/* Dropdown menu */}
-                            <div className="absolute right-0 top-full mt-1 z-50 min-w-[180px] bg-background border border-border rounded-lg shadow-lg py-1 text-left">
-                              <button
-                                onClick={() => { handleEdit(user); setActionMenuOpen(null); }}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer"
-                              >
-                                <Eye className="h-3.5 w-3.5 text-green-500" /> Lihat Detail
-                              </button>
-                              <button
-                                onClick={() => { handleEdit(user); setActionMenuOpen(null); }}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer"
-                              >
-                                <Pencil className="h-3.5 w-3.5 text-[#00f7ff]" /> Edit
-                              </button>
-                              <button
-                                onClick={() => { handleSyncToRadius(user); setActionMenuOpen(null); }}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer"
-                              >
-                                <RefreshCw className="h-3.5 w-3.5 text-blue-500" /> Sync RADIUS
-                              </button>
-                              <button
-                                onClick={() => { handleStatusChange(user.id, user.status === 'isolated' ? 'active' : 'isolated'); setActionMenuOpen(null); }}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer"
-                              >
-                                <Shield className={`h-3.5 w-3.5 ${user.status === 'isolated' ? 'text-success' : 'text-orange-500'}`} />
-                                {user.status === 'isolated' ? 'Aktifkan' : 'Isolir'}
-                              </button>
-                              <button
-                                onClick={() => { handleStopSubscription(user); setActionMenuOpen(null); }}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer"
-                              >
-                                <Ban className="h-3.5 w-3.5 text-destructive/70" /> Stop Langganan
-                              </button>
-                              <button
-                                onClick={() => { setPrintDialogUser(user); setActionMenuOpen(null); }}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer"
-                              >
-                                <Printer className="h-3.5 w-3.5 text-purple-500" /> Cetak Invoice
-                              </button>
-                              <button
-                                onClick={() => { handleManualExtend(user); setActionMenuOpen(null); }}
-                                disabled={extending === user.id}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer disabled:opacity-50"
-                              >
-                                {extending === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-warning" /> : <Zap className="h-3.5 w-3.5 text-warning" />}
-                                {t('pppoe.extendManual')}
-                              </button>
-                              <div className="border-t border-border my-1" />
-                              <button
-                                onClick={() => { setDeleteUserId(user.id); setActionMenuOpen(null); }}
-                                className="w-full px-3 py-2 text-xs text-left hover:bg-destructive/10 text-destructive flex items-center gap-2 cursor-pointer"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" /> Hapus
-                              </button>
-                            </div>
-                          </>
-                        )}
                       </td>
                     </tr>
                   ))
@@ -1690,6 +1638,49 @@ export default function PppoeUsersPage() {
             </table>
           </div>
         </div>
+
+        {/* Action Dropdown Menu — di luar tabel, fixed positioning agar tidak terpotong */}
+        {actionMenuOpen && actionMenuPos && (() => {
+          const user = filteredUsers.find(u => u.id === actionMenuOpen);
+          if (!user) return null;
+          return (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(null)} />
+              <div
+                className="fixed min-w-[180px] bg-background border border-border rounded-lg shadow-lg py-1 text-left z-50"
+                style={{ top: actionMenuPos.top, right: actionMenuPos.right }}
+              >
+                <button onClick={() => { handleEdit(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
+                  <Eye className="h-3.5 w-3.5 text-green-500" /> Lihat Detail
+                </button>
+                <button onClick={() => { handleEdit(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
+                  <Pencil className="h-3.5 w-3.5 text-[#00f7ff]" /> Edit
+                </button>
+                <button onClick={() => { handleSyncToRadius(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
+                  <RefreshCw className="h-3.5 w-3.5 text-blue-500" /> Sync RADIUS
+                </button>
+                <button onClick={() => { handleStatusChange(user.id, user.status === 'isolated' ? 'active' : 'isolated'); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
+                  <Shield className={`h-3.5 w-3.5 ${user.status === 'isolated' ? 'text-success' : 'text-orange-500'}`} />
+                  {user.status === 'isolated' ? 'Aktifkan' : 'Isolir'}
+                </button>
+                <button onClick={() => { handleStopSubscription(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
+                  <Ban className="h-3.5 w-3.5 text-destructive/70" /> Stop Langganan
+                </button>
+                <button onClick={() => { setPrintDialogUser(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
+                  <Printer className="h-3.5 w-3.5 text-purple-500" /> Cetak Invoice
+                </button>
+                <button onClick={() => { handleManualExtend(user); setActionMenuOpen(null); }} disabled={extending === user.id} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer disabled:opacity-50">
+                  {extending === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-warning" /> : <Zap className="h-3.5 w-3.5 text-warning" />}
+                  {t('pppoe.extendManual')}
+                </button>
+                <div className="border-t border-border my-1" />
+                <button onClick={() => { setDeleteUserId(user.id); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-destructive/10 text-destructive flex items-center gap-2 cursor-pointer">
+                  <Trash2 className="h-3.5 w-3.5" /> Hapus
+                </button>
+              </div>
+            </>
+          );
+        })()}
 
         {/* Add New User Dialog */}
         <AddPppoeUserModal
