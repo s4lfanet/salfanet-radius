@@ -323,6 +323,8 @@ export default function PppoeUsersPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<PppoeUser | null>(null);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [modalLatLng, setModalLatLng] = useState<{ lat: string; lng: string } | undefined>();
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -740,20 +742,28 @@ export default function PppoeUsersPage() {
 
   const handleDelete = async () => {
     if (!deleteUserId) return;
+    if (!deletePassword.trim()) { await showError('Masukkan password login Anda untuk konfirmasi hapus pelanggan.'); return; }
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/pppoe/users?id=${deleteUserId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/pppoe/users?id=${deleteUserId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmPassword: deletePassword }),
+      });
       const result = await res.json();
-      if (res.ok) { 
-        await showSuccess(t('management.userDeleted')); 
-        loadData(); 
-      } else { 
-        await showError(result.error || t('common.failed')); 
+      if (res.ok) {
+        await showSuccess(t('management.userDeleted'));
+        loadData();
+      } else {
+        await showError(result.error || t('common.failed'));
       }
-    } catch (error) { 
-      console.error('Delete error:', error); 
-      await showError(t('common.failed')); 
-    } finally { 
-      setDeleteUserId(null); 
+    } catch (error) {
+      console.error('Delete error:', error);
+      await showError(t('common.failed'));
+    } finally {
+      setDeleting(false);
+      setDeleteUserId(null);
+      setDeletePassword('');
     }
   };
 
@@ -1747,17 +1757,36 @@ export default function PppoeUsersPage() {
         <UserDetailModal isOpen={isDialogOpen && !!editingUser} onClose={() => { setIsDialogOpen(false); setEditingUser(null); setModalLatLng(undefined); }} user={editingUser} onSave={handleSaveUser} profiles={profiles} routers={routers} areas={areas} currentLatLng={modalLatLng} onLatLngChange={(lat, lng) => { setMapPickerLat(lat); setMapPickerLon(lng); setShowMapPicker(true); }} />
 
         {/* Delete Dialog */}
-        <SimpleModal isOpen={!!deleteUserId} onClose={() => setDeleteUserId(null)} size="sm">
+        <SimpleModal isOpen={!!deleteUserId} onClose={() => { setDeleteUserId(null); setDeletePassword(''); }} size="sm">
           <ModalBody className="text-center py-6">
             <div className="w-14 h-14 bg-[#ff4466]/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#ff4466]/50">
               <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteUser')}</h2>
-            <p className="text-xs text-muted-foreground">{t('pppoe.deleteConfirm')}</p>
+            <p className="text-xs text-muted-foreground mb-4">{t('pppoe.deleteConfirm')}</p>
+            <div className="text-left">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                🔒 Konfirmasi Password Login
+              </label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Masukkan password login Anda"
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30 focus:ring-2 focus:ring-destructive/30"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && !deleting) handleDelete(); }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Demi keamanan, masukkan password login Anda untuk mengonfirmasi penghapusan pelanggan.
+              </p>
+            </div>
           </ModalBody>
           <ModalFooter className="justify-center">
-            <ModalButton variant="secondary" onClick={() => setDeleteUserId(null)}>{t('common.cancel')}</ModalButton>
-            <ModalButton variant="danger" onClick={handleDelete}>{t('common.delete')}</ModalButton>
+            <ModalButton variant="secondary" onClick={() => { setDeleteUserId(null); setDeletePassword(''); }}>{t('common.cancel')}</ModalButton>
+            <ModalButton variant="danger" onClick={handleDelete} disabled={deleting || !deletePassword.trim()}>
+              {deleting ? 'Menghapus...' : t('common.delete')}
+            </ModalButton>
           </ModalFooter>
         </SimpleModal>
 
