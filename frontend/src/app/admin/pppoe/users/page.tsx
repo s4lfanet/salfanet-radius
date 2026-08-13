@@ -1647,8 +1647,8 @@ export default function PppoeUsersPage() {
             <>
               <div className="fixed inset-0 z-40" onClick={() => setActionMenuOpen(null)} />
               <div
-                className="fixed min-w-[180px] bg-background border border-border rounded-lg shadow-lg py-1 text-left z-50"
-                style={{ top: actionMenuPos.top, right: actionMenuPos.right }}
+                className="fixed min-w-[180px] max-h-[calc(100vh-20px)] overflow-y-auto bg-background border border-border rounded-lg shadow-lg py-1 text-left z-50"
+                style={{ top: Math.min(actionMenuPos.top, window.innerHeight - 260), right: actionMenuPos.right }}
               >
                 <button onClick={() => { handleEdit(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
                   <Eye className="h-3.5 w-3.5 text-green-500" /> Lihat Detail
