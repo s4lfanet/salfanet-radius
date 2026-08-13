@@ -83,7 +83,7 @@ async function getEffectiveSchedule(jobType: string): Promise<{ schedule: string
 
 // ─── HTTP trigger to /api/cron ──────────────────────────────────────────────
 
-const API_URL = process.env.CRON_API_URL || 'http://localhost:3000'
+const API_URL = process.env.CRON_API_URL || 'http://localhost:3001'
 const CRON_SECRET = process.env.CRON_SECRET || ''
 
 /**
