@@ -5,7 +5,7 @@
  */
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
-import { batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { listPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 
 // ─── hotspot_sync ───────────────────────────────────────────────────────────
 /**
@@ -264,11 +264,14 @@ export async function runSessionMonitor(): Promise<{ suspicious: number; stale: 
 // ─── pppoe_session_sync ─────────────────────────────────────────────────────
 /**
  * Sync sesi PPPoE dari MikroTik ke database:
- *   - Ambil daftar PPP active dari semua router via RouterOS API
+ *   - Ambil daftar PPP active dari setiap router via RouterOS API (per-router)
  *   - Bandingkan dengan radacct (acctstoptime IS NULL)
- *   - Close sesi yang tidak ada di MikroTik tapi masih open di radacct → set acctstoptime
- *   - Close sesi orphaned (username tidak terdaftar di pppoe_users maupun hotspot_vouchers)
- *   - Update sessions table untuk tracking realtime
+ *   - Close sesi stale HANYA untuk router yang API-nya berhasil
+ *   - Close sesi orphaned (username tidak terdaftar di pppoe_users/hotspot_vouchers)
+ *   - JANGAN close sesi jika MikroTik API gagal (kemungkinan timeout, bukan stale)
+ *
+ * SAFETY: Jika semua router API gagal, skip stale-close entirely.
+ *         Hanya close orphaned (username tidak terdaftar) yang aman.
  */
 export async function runPppoeSessionSync(): Promise<{ synced: number; closed: number; orphaned: number; total: number; errors: string[] }> {
   const errors: string[] = [];
@@ -278,15 +281,33 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
     // Ambil semua router aktif
     const routers = await prisma.router.findMany({
       where: { isActive: true },
-      select: { id: true, name: true, nasname: true },
+      select: { id: true, name: true, nasname: true, ipAddress: true },
     });
 
     if (routers.length === 0) {
       return { synced: 0, closed: 0, orphaned: 0, total: 0, errors };
     }
 
-    // Batch fetch PPP active dari semua router
-    const activeUsernames = await batchListPppActive(routers.map(r => r.id));
+    // Per-router fetch PPP active — track which routers succeeded
+    const routerActiveMap = new Map<string, Set<string>>(); // nasIp → active usernames
+    const successNasIps = new Set<string>();
+    let anySuccess = false;
+
+    for (const router of routers) {
+      try {
+        const active = await listPppActive(router.id);
+        const nasIp = router.nasname || router.ipAddress || '';
+        routerActiveMap.set(nasIp, active);
+        if (router.ipAddress && router.ipAddress !== nasIp) {
+          routerActiveMap.set(router.ipAddress, active);
+        }
+        successNasIps.add(nasIp);
+        if (router.ipAddress) successNasIps.add(router.ipAddress);
+        anySuccess = true;
+      } catch (err: any) {
+        errors.push(`Router ${router.name} API failed: ${err?.message || 'Unknown'}`);
+      }
+    }
 
     // Cari sesi open di radacct
     const openSessions = await prisma.radacct.findMany({
@@ -316,26 +337,38 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
       ...hotspotVouchers.map(v => v.code),
     ]);
 
-    // Klasifikasi sesi: stale (tidak di MikroTik), orphaned (tidak terdaftar), atau active
+    // Klasifikasi sesi
     let closed = 0;
     let orphaned = 0;
+    let synced = 0;
     const toCloseStale: BigInt[] = [];
     const toCloseOrphaned: BigInt[] = [];
 
     for (const session of openSessions) {
       const isRegistered = registeredUsernames.has(session.username);
-      const isOnMikrotik = activeUsernames.has(session.username);
+      const nasIp = session.nasipaddress;
+      const routerActive = routerActiveMap.get(nasIp);
+      const routerSucceeded = routerActive !== undefined;
+      const isOnMikrotik = routerSucceeded && routerActive.has(session.username);
 
       if (!isRegistered) {
-        // Orphaned — username tidak ada di pppoe_users maupun hotspot_vouchers
+        // Orphaned — username tidak terdaftar di pppoe_users maupun hotspot_vouchers
+        // Aman untuk close terlepas dari MikroTik API status
         toCloseOrphaned.push(session.radacctid);
-      } else if (!isOnMikrotik) {
-        // Stale — user terdaftar tapi sudah tidak aktif di MikroTik
+      } else if (routerSucceeded && !isOnMikrotik) {
+        // Stale — router API berhasil, user terdaftar, tapi tidak di PPP active MikroTik
         toCloseStale.push(session.radacctid);
+      } else if (!routerSucceeded) {
+        // Router API gagal — JANGAN close, user mungkin masih online
+        // Skip entirely, biarkan sesi open sampai API berhasil atau Accounting-Stop datang
+        synced++; // anggap masih aktif
+      } else {
+        // Active — user terdaftar dan online di MikroTik
+        synced++;
       }
     }
 
-    // Close stale sessions (user disconnect tapi radacct belum di-stop)
+    // Close stale sessions (hanya untuk router yang API-nya berhasil)
     const batchSize = 50;
     for (let i = 0; i < toCloseStale.length; i += batchSize) {
       const batch = toCloseStale.slice(i, i + batchSize);
@@ -372,10 +405,9 @@ export async function runPppoeSessionSync(): Promise<{ synced: number; closed: n
       }
     }
 
-    // Hitung sesi yang masih aktif dan terdaftar
-    const synced = openSessions.filter(s =>
-      registeredUsernames.has(s.username) && activeUsernames.has(s.username)
-    ).length;
+    if (!anySuccess && openSessions.length > 0) {
+      console.log(`[PPPOE_SESSION_SYNC] All router APIs failed — skipped stale-close for ${openSessions.length} sessions`);
+    }
 
     return {
       synced,
