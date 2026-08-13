@@ -88,7 +88,13 @@ export async function POST(request: Request) {
       // Don't fail the request if sync fails
     }
 
-    return NextResponse.json({ profile }, { status: 201 })
+    // Serialize BigInt fields for JSON response
+    const serializedProfile = {
+      ...profile,
+      usageQuota: profile.usageQuota ? Number(profile.usageQuota) : null,
+    }
+
+    return NextResponse.json({ profile: serializedProfile }, { status: 201 })
   } catch (error: any) {
     console.error('Create profile error:', error)
     if (error.code === 'P2002') {
@@ -154,7 +160,13 @@ export async function PUT(request: Request) {
       console.error('RADIUS sync error:', syncError)
     }
 
-    return NextResponse.json({ profile })
+    // Serialize BigInt fields for JSON response
+    const serializedProfile = {
+      ...profile,
+      usageQuota: profile.usageQuota ? Number(profile.usageQuota) : null,
+    }
+
+    return NextResponse.json({ profile: serializedProfile })
   } catch (error: any) {
     console.error('Update profile error:', error)
     if (error.code === 'P2002') {
