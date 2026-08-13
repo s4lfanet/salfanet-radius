@@ -40,7 +40,7 @@ export default function StoppedSubscriptionsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/pppoe/users?status=stop');
+      const res = await fetch('/api/pppoe/users?status=stop', { cache: 'no-store' });
       const data = await res.json();
       setUsers(data.users || []);
     } catch (error) {
@@ -91,8 +91,11 @@ export default function StoppedSubscriptionsPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        await showSuccess(`${result.deleted || selectedUsers.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
+        // Optimistic update: remove deleted users from list immediately
+        const deletedIds = new Set(Array.from(selectedUsers));
+        setUsers(prev => prev.filter(u => !deletedIds.has(u.id)));
         setSelectedUsers(new Set());
+        await showSuccess(`${result.deleted || selectedUsers.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
         loadData();
       } else {
         await showError(result.error || t('common.failedDelete'));
@@ -115,7 +118,11 @@ export default function StoppedSubscriptionsPage() {
       });
       const result = await res.json();
       if (res.ok) {
+        // Optimistic update: remove from list immediately
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerReactivated'));
+        // Reload in background to sync any server-side changes
         loadData();
       } else {
         await showError(result.error || t('common.failedActivate'));
@@ -134,6 +141,9 @@ export default function StoppedSubscriptionsPage() {
       const res = await fetch(`/api/pppoe/users?id=${userId}`, { method: 'DELETE' });
       const result = await res.json();
       if (res.ok) {
+        // Optimistic update: remove from list immediately
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerDeleted'));
         loadData();
       } else {
