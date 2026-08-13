@@ -344,7 +344,7 @@ module.exports = {
     },
     {
       name: 'salfanet-wa',
-      script: './frontend/wa-service.js',
+      script: './backend/wa-service.js',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
@@ -542,7 +542,7 @@ start_pm2_app() {
     # ── Start Baileys WhatsApp service ────────────────────────────────────
     print_info "Starting salfanet-wa (Baileys WhatsApp service)..."
     mkdir -p /var/data/salfanet/baileys_auth
-    if [ -f "${APP_DIR}/frontend/wa-service.js" ]; then
+    if [ -f "${APP_DIR}/backend/wa-service.js" ]; then
         if sudo su - ${APP_USER} -c "cd ${APP_DIR} && pm2 describe salfanet-wa" &>/dev/null; then
             sudo su - ${APP_USER} -c "pm2 restart salfanet-wa --update-env" 2>/dev/null || true
         else
@@ -550,7 +550,7 @@ start_pm2_app() {
         fi
         print_success "salfanet-wa started"
     else
-        print_warning "frontend/wa-service.js not found — skipping salfanet-wa startup"
+        print_warning "backend/wa-service.js not found — skipping salfanet-wa startup"
     fi
 
     # Save updated PM2 config (includes salfanet-wa)

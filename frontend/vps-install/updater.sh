@@ -400,11 +400,11 @@ if [ -n "$USE_BRANCH" ]; then
         # ecosystem.config.js is generated at APP_DIR root by install-pm2.sh / create_pm2_config
         if [ -f "$APP_DIR/ecosystem.config.js" ]; then
             pm2 start "$APP_DIR/ecosystem.config.js" --only "$PM2_WA_NAME" 2>&1 | tail -3 || true
-        elif [ -f "$APP_DIR/wa-service.js" ]; then
+        elif [ -f "$APP_DIR/backend/wa-service.js" ]; then
             # Direct fallback if ecosystem config is missing
             WA_AUTH_DIR=/var/data/salfanet/baileys_auth \
             WA_SERVICE_PORT=4000 \
-            pm2 start "$APP_DIR/wa-service.js" --name "$PM2_WA_NAME" --max-memory-restart 200M 2>&1 | tail -3 || true
+            pm2 start "$APP_DIR/backend/wa-service.js" --name "$PM2_WA_NAME" --max-memory-restart 200M 2>&1 | tail -3 || true
         fi
     else
         pm2 restart "$PM2_WA_NAME" --update-env 2>/dev/null || true
