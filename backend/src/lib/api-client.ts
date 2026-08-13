@@ -1,32 +1,30 @@
 /**
  * Centralized API client for frontend → backend communication.
  *
- * Architecture: 2 Next.js apps
- *   - frontend (port 3000): UI pages + components
- *   - backend  (port 3001): API routes + services + prisma
+ * Uses NEXT_PUBLIC_API_URL env var to determine the backend URL.
+ * Falls back to /api/* (Next.js API routes) if not set.
  *
- * URL resolution:
- *   - Server-side (SSR, generateMetadata): uses SERVER_API_URL or BACKEND_URL
- *   - Client-side (browser): uses relative path (nginx routes /api/* → backend)
+ * All backend logic is now in Next.js API routes (no NestJS backend).
  */
 
-// Server-side: absolute URL to backend (needed for SSR/generateMetadata)
-// Client-side: empty string (relative path, nginx handles routing)
-const isServer = typeof window === 'undefined';
-const SERVER_API_URL = process.env.SERVER_API_URL || process.env.BACKEND_URL || 'http://localhost:3001';
-const CLIENT_API_URL = process.env.NEXT_PUBLIC_API_URL || '';
-const API_BASE_URL = isServer ? SERVER_API_URL : CLIENT_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 /**
- * Build full API URL.
+ * Build full API URL. If NEXT_PUBLIC_API_URL is set, calls backend directly.
+ * Otherwise, uses relative path (same origin, legacy Next.js routes).
  */
 function buildUrl(path: string): string {
   if (!path.startsWith('/')) path = '/' + path;
-  return `${API_BASE_URL}${path}`;
+  if (API_BASE_URL) {
+    return `${API_BASE_URL}${path}`;
+  }
+  // Default: relative path to Next.js API routes
+  return path;
 }
 
 /**
  * Server-side fetch helper (for server components, layouts, generateMetadata).
+ * Uses Node.js fetch (Node 18+).
  */
 export async function apiFetch<T = any>(
   path: string,
@@ -39,6 +37,7 @@ export async function apiFetch<T = any>(
       'Content-Type': 'application/json',
       ...options?.headers,
     },
+    // Disable cache for server-side data that should be fresh
     cache: options?.cache ?? 'no-store',
   });
 
@@ -75,7 +74,6 @@ export async function apiFetchAuth<T = any>(
 
   const res = await fetch(url, {
     ...options,
-    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
