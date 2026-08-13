@@ -538,6 +538,12 @@ model pppoeUser {
   installationPhotos   Json?      // Array of installation photo URLs
   followRoad           Boolean    @default(false) // Garis ke ODP ikuti jalanan
 
+  // PSB wizard fields (from home.pmynet.id reference)
+  odp                  String?    @db.VarChar(100) // ODP reference (cth: ODP-01-GRD)
+  discount             Int?       @default(0) // Diskon tagihan bulanan (Rp)
+  discountNote         String?    @db.VarChar(255) // Alasan diskon
+  installDate          DateTime?  // Tanggal pemasangan (berbeda dari createdAt)
+
   // Referral system fields
   referralCode         String?    @unique @db.VarChar(10) // Auto-generated referral code
   referredById         String?    @map("referred_by_id") // ID of user who referred this customer

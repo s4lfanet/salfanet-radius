@@ -42,6 +42,13 @@ export interface CreatePppoeUserInput {
   registeredAt?: string;
   autoIsolationEnabled?: boolean;
   firstInvoice?: 'none' | 'prorate' | 'full';
+  // PSB wizard fields
+  odp?: string;
+  discount?: number | string;
+  discountNote?: string;
+  installDate?: string;
+  connectionType?: string;
+  createPppSecret?: boolean;
 }
 
 export interface UpdatePppoeUserInput {
@@ -172,6 +179,7 @@ export async function createPppoeUser(
     email, address, latitude, longitude, ipAddress, macAddress, comment,
     expiredAt, subscriptionType, billingDay, idCardNumber, idCardPhoto,
     installationPhotos, followRoad, registeredAt,
+    odp, discount, discountNote, installDate, connectionType,
   } = data;
   const noPppoeAccount = !!(data as any).noPppoeAccount;
 
@@ -248,6 +256,28 @@ export async function createPppoeUser(
     if (!router) throw Object.assign(new Error('Router not found'), { code: 'NOT_FOUND' });
   }
 
+  // Check duplicate NIK (idCardNumber) — warning only, not blocking
+  if (idCardNumber) {
+    const existingNik = await prisma.pppoeUser.findFirst({
+      where: { idCardNumber },
+      select: { username: true, name: true },
+    });
+    if (existingNik) {
+      console.log(`[PSB] NIK "${idCardNumber}" sudah terdaftar atas nama: ${existingNik.name} (${existingNik.username}) — warning only`);
+    }
+  }
+
+  // Check duplicate phone — warning only, not blocking
+  if (resolvedPhone && resolvedPhone !== '-') {
+    const existingPhone = await prisma.pppoeUser.findFirst({
+      where: { phone: resolvedPhone },
+      select: { username: true, name: true },
+    });
+    if (existingPhone) {
+      console.log(`[PSB] No HP "${resolvedPhone}" sudah terdaftar atas nama: ${existingPhone.name} (${existingPhone.username}) — warning only`);
+    }
+  }
+
   // Create user
   const user = await prisma.pppoeUser.create({
     data: {
@@ -279,6 +309,12 @@ export async function createPppoeUser(
       ...((data as any).autoIsolationEnabled !== undefined && { autoIsolationEnabled: !!(data as any).autoIsolationEnabled }),
       ...(registeredAt ? { createdAt: new Date(registeredAt) } : {}),
       ...(pppoeCustomerId ? { pppoeCustomerId } : {}),
+      // PSB wizard fields
+      ...(odp ? { odp } : {}),
+      ...(discount !== undefined ? { discount: parseInt(String(discount)) || 0 } : {}),
+      ...(discountNote ? { discountNote } : {}),
+      ...(installDate ? { installDate: new Date(installDate) } : {}),
+      ...(connectionType ? { connectionType: connectionType as any } : {}),
     } as never,
   });
 
