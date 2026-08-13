@@ -15,13 +15,14 @@ import { prisma } from "@/server/db/client";
 export async function POST(request: NextRequest) {
   let username: string | undefined;
   try {
-    // Parse request body — try request.json() first, fallback to text+parse
+    // Read body as text first (can only read once in Next.js)
+    const rawBody = await request.text();
     let body: any;
     try {
-      body = await request.json();
+      body = JSON.parse(rawBody);
     } catch {
-      const rawBody = await request.text();
-      // Cleanup: remove literal backslash-quotes if FreeRADIUS sends escaped JSON
+      // FreeRADIUS REST module may send escaped quotes (\" instead of ")
+      // Cleanup and retry
       const cleaned = rawBody.replace(/\\"/g, '"');
       body = JSON.parse(cleaned);
     }
