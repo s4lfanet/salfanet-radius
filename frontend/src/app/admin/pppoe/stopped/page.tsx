@@ -37,16 +37,16 @@ export default function StoppedSubscriptionsPage() {
 
   useEffect(() => { loadData(); }, []);
 
-  const loadData = async (silent = false) => {
+  const loadData = async () => {
     try {
-      if (!silent) setLoading(true);
+      setLoading(true);
       const res = await fetch('/api/pppoe/users?status=stop', { cache: 'no-store' });
       const data = await res.json();
       setUsers(data.users || []);
     } catch (error) {
       console.error('Load data error:', error);
     } finally {
-      if (!silent) setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -91,13 +91,11 @@ export default function StoppedSubscriptionsPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        // Optimistic update: remove deleted users from list immediately
+        // Optimistic update: remove deleted users from list immediately — NO reload
         const deletedIds = new Set(Array.from(selectedUsers));
         setUsers(prev => prev.filter(u => !deletedIds.has(u.id)));
         setSelectedUsers(new Set());
         await showSuccess(`${result.deleted || selectedUsers.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
-        // Silent background reload (no loading flash)
-        loadData(true);
       } else {
         await showError(result.error || t('common.failedDelete'));
       }
@@ -119,12 +117,10 @@ export default function StoppedSubscriptionsPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        // Optimistic update: remove from list immediately
+        // Optimistic update: remove from list immediately — NO reload needed
         setUsers(prev => prev.filter(u => u.id !== userId));
         setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerReactivated'));
-        // Silent background reload (no loading flash)
-        loadData(true);
       } else {
         await showError(result.error || t('common.failedActivate'));
       }
@@ -142,11 +138,10 @@ export default function StoppedSubscriptionsPage() {
       const res = await fetch(`/api/pppoe/users?id=${userId}`, { method: 'DELETE' });
       const result = await res.json();
       if (res.ok) {
-        // Optimistic update: remove from list immediately
+        // Optimistic update: remove from list immediately — NO reload needed
         setUsers(prev => prev.filter(u => u.id !== userId));
         setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerDeleted'));
-        loadData(true);
       } else {
         await showError(result.error || t('common.failedDelete'));
       }
