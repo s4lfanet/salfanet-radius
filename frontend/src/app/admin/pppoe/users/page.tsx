@@ -409,7 +409,7 @@ export default function PppoeUsersPage() {
   const loadData = async () => {
     try {
       const [usersRes, profilesRes, routersRes, areasRes] = await Promise.all([
-        fetch('/api/pppoe/users'), fetch('/api/pppoe/profiles'), fetch('/api/network/routers'), fetch('/api/pppoe/areas'),
+        fetch('/api/pppoe/users', { cache: 'no-store' }), fetch('/api/pppoe/profiles', { cache: 'no-store' }), fetch('/api/network/routers', { cache: 'no-store' }), fetch('/api/pppoe/areas', { cache: 'no-store' }),
       ]);
       const [usersData, profilesData, routersData, areasData] = await Promise.all([usersRes.json(), profilesRes.json(), routersRes.json(), areasRes.json()]);
       const loadedUsers = usersData.users || [];
@@ -421,7 +421,7 @@ export default function PppoeUsersPage() {
       // Load invoice counts for all users
       if (loadedUsers.length > 0) {
         const userIds = loadedUsers.map((u: PppoeUser) => u.id).join(',');
-        const invoiceRes = await fetch(`/api/invoices/counts?userIds=${userIds}`);
+        const invoiceRes = await fetch(`/api/invoices/counts?userIds=${userIds}`, { cache: 'no-store' });
         const invoiceData = await invoiceRes.json();
         if (invoiceData.success) {
           setInvoiceCounts(invoiceData.counts || {});
@@ -757,7 +757,13 @@ export default function PppoeUsersPage() {
     try {
       const res = await fetch('/api/pppoe/users/status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, status: newStatus }) });
       const result = await res.json();
-      if (res.ok) { await showSuccess(`Status: ${newStatus}`); loadData(); setActionMenuOpen(null); }
+      if (res.ok) {
+        // Optimistic update: update user status in list immediately
+        setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+        await showSuccess(`Status: ${newStatus}`);
+        loadData();
+        setActionMenuOpen(null);
+      }
       else { await showError(result.error || t('common.failed')); }
     } catch (error) { console.error('Status error:', error); await showError(t('common.failed')); }
   };

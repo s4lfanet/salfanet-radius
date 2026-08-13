@@ -117,12 +117,15 @@ export async function listPppoeUsers(params: { status?: string | null }) {
   // For local routers, also poll MikroTik /ppp/active because
   // local-auth users bypass RADIUS accounting and won't appear in radacct.
   // Group users by router to determine which routers need polling.
+  // Skip MikroTik polling for stopped users — they can't be online
   const localRouterIds = new Set<string>();
-  for (const u of users) {
-    if (u.router && u.router.id) {
-      const mode = u.router.authMode || 'local';
-      if (mode === 'local') {
-        localRouterIds.add(u.router.id);
+  if (params.status !== 'stop') {
+    for (const u of users) {
+      if (u.router && u.router.id) {
+        const mode = u.router.authMode || 'local';
+        if (mode === 'local') {
+          localRouterIds.add(u.router.id);
+        }
       }
     }
   }

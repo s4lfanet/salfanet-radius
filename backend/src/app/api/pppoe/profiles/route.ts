@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { cacheAside, invalidateKey, CACHE_KEYS, CACHE_TTL } from '@/server/cache/redis';
 
 // GET - List all PPPoE profiles with user count
 export async function GET() {
@@ -12,25 +13,30 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const profiles = await prisma.pppoeProfile.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        _count: {
-          select: { users: true }
-        }
-      }
-    });
+    const profilesWithCount = await cacheAside(
+      CACHE_KEYS.profiles,
+      CACHE_TTL.static,
+      async () => {
+        const profiles = await prisma.pppoeProfile.findMany({
+          orderBy: { createdAt: 'desc' },
+          include: {
+            _count: {
+              select: { users: true }
+            }
+          }
+        });
 
-    // Map to include userCount
-    const profilesWithCount = profiles.map(profile => ({
-      ...profile,
-      userCount: profile._count?.users || 0,
-      _count: undefined, // Remove _count from response
-    }));
+        return profiles.map(profile => ({
+          ...profile,
+          userCount: profile._count?.users || 0,
+          _count: undefined,
+        }));
+      }
+    );
 
     return NextResponse.json({
       profiles: profilesWithCount,
-      count: profiles.length,
+      count: profilesWithCount.length,
     });
   } catch (error) {
     console.error('Get PPPoE profiles error:', error);
@@ -140,6 +146,9 @@ export async function POST(request: NextRequest) {
         console.error('[BG] RADIUS sync error (create):', e);
       }
     })();
+
+    // Invalidate profiles cache
+    await invalidateKey(CACHE_KEYS.profiles);
 
     return NextResponse.json({
       success: true,
@@ -323,6 +332,9 @@ export async function PUT(request: NextRequest) {
       })();
     }
 
+    // Invalidate profiles cache
+    await invalidateKey(CACHE_KEYS.profiles);
+
     return NextResponse.json({ success: true, profile });
   } catch (error) {
     console.error('Update PPPoE profile error:', error);
@@ -380,6 +392,9 @@ export async function DELETE(request: NextRequest) {
 
     // Delete profile
     await prisma.pppoeProfile.delete({ where: { id } });
+
+    // Invalidate profiles cache
+    await invalidateKey(CACHE_KEYS.profiles);
 
     return NextResponse.json({
       success: true,

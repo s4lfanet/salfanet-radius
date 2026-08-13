@@ -104,9 +104,9 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
     setLoading(true);
     try {
       const [userRes, invoicesRes, sessionsRes] = await Promise.all([
-        fetch(`/api/pppoe/users/${id}`),
-        fetch(`/api/invoices?userId=${id}&limit=20`),
-        fetch(`/api/pppoe/users/${id}/activity?type=sessions&limit=10`),
+        fetch(`/api/pppoe/users/${id}`, { cache: 'no-store' }),
+        fetch(`/api/invoices?userId=${id}&limit=20`, { cache: 'no-store' }),
+        fetch(`/api/pppoe/users/${id}/activity?type=sessions&limit=10`, { cache: 'no-store' }),
       ]);
       const userData     = await userRes.json();
       const invoicesData = await invoicesRes.json();

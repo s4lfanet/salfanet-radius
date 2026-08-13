@@ -3,24 +3,32 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { cacheAside, invalidateKey, CACHE_KEYS, CACHE_TTL } from '@/server/cache/redis';
 
 // GET - List all areas
 export async function GET() {
   try {
-    const areas = await prisma.pppoeArea.findMany({
-      include: {
-        _count: {
-          select: { users: true },
-        },
-      },
-      orderBy: { name: 'asc' },
-    });
+    const areas = await cacheAside(
+      CACHE_KEYS.areas,
+      CACHE_TTL.static,
+      async () => {
+        const result = await prisma.pppoeArea.findMany({
+          include: {
+            _count: {
+              select: { users: true },
+            },
+          },
+          orderBy: { name: 'asc' },
+        });
+        return result.map((area: any) => ({
+          ...area,
+          userCount: area._count.users,
+        }));
+      }
+    );
 
     return NextResponse.json({
-      areas: areas.map((area: any) => ({
-        ...area,
-        userCount: area._count.users,
-      })),
+      areas,
       count: areas.length,
     });
   } catch (error) {
@@ -70,6 +78,7 @@ export async function POST(request: NextRequest) {
       request,
     });
 
+    await invalidateKey(CACHE_KEYS.areas);
     return NextResponse.json({ area, success: true });
   } catch (error) {
     console.error('Create area error:', error);
@@ -132,6 +141,7 @@ export async function PUT(request: NextRequest) {
       request,
     });
 
+    await invalidateKey(CACHE_KEYS.areas);
     return NextResponse.json({ area, success: true });
   } catch (error) {
     console.error('Update area error:', error);
@@ -187,6 +197,7 @@ export async function DELETE(request: NextRequest) {
       request,
     });
 
+    await invalidateKey(CACHE_KEYS.areas);
     return NextResponse.json({ success: true, message: 'Area berhasil dihapus' });
   } catch (error) {
     console.error('Delete area error:', error);

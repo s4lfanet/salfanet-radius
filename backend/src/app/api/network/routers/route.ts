@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import os from 'os';
 const RouterOSAPI = require('node-routeros').RouterOSAPI;
 import { prisma } from '@/server/db/client';
+import { cacheAside, invalidateKey, CACHE_KEYS, CACHE_TTL } from '@/server/cache/redis';
 
 // Auto-detect server IP from network interfaces
 const getServerIp = (): string => {
@@ -33,63 +34,74 @@ export async function GET() {
   }
   try {
     const radiusServerIp = getRadiusServerIp();
-    
-    const routers = await prisma.router.findMany({
-      include: {
-        vpnClient: {
+
+    // Cache routers + vpnClients (static data, rarely changes)
+    const cached = await cacheAside(
+      CACHE_KEYS.routers,
+      CACHE_TTL.static,
+      async () => {
+        const routers = await prisma.router.findMany({
+          include: {
+            vpnClient: {
+              select: {
+                id: true,
+                name: true,
+                vpnIp: true,
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        // Load VPN clients
+        const vpnClients = await prisma.vpnClient.findMany({
           select: {
             id: true,
             name: true,
             vpnIp: true,
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-    
-    // Load VPN clients
-    const vpnClients = await prisma.vpnClient.findMany({
-      select: {
-        id: true,
-        name: true,
-        vpnIp: true,
-        isRadiusServer: true,
-        apiUsername: true,
-        apiPassword: true,
-      },
-      orderBy: { name: 'asc' },
-    });
+            isRadiusServer: true,
+            apiUsername: true,
+            apiPassword: true,
+          },
+          orderBy: { name: 'asc' },
+        });
 
-    // Attach nasSecret + credentials from linked router (NAS) entry
-    const clientIds = vpnClients.map((c: { id: string }) => c.id)
-    const nasEntries = clientIds.length > 0
-      ? await prisma.router.findMany({
-          where: { vpnClientId: { in: clientIds } },
-          select: { vpnClientId: true, secret: true, username: true, password: true },
+        // Attach nasSecret + credentials from linked router (NAS) entry
+        const clientIds = vpnClients.map((c: { id: string }) => c.id)
+        const nasEntries = clientIds.length > 0
+          ? await prisma.router.findMany({
+              where: { vpnClientId: { in: clientIds } },
+              select: { vpnClientId: true, secret: true, username: true, password: true },
+            })
+          : []
+        type NasEntry = { vpnClientId: string | null; secret: string; username: string | null; password: string | null }
+        const nasMap = new Map(nasEntries.map((n: NasEntry) => [n.vpnClientId, n]))
+        const vpnClientsWithSecret = vpnClients.map((c: { id: string; name: string; vpnIp: string; isRadiusServer: boolean; apiUsername: string | null; apiPassword: string | null }) => {
+          const nas = nasMap.get(c.id)
+          return {
+            ...c,
+            nasSecret: nas?.secret ?? null,
+            resolvedUsername: c.apiUsername ?? nas?.username ?? null,
+            resolvedPassword: c.apiPassword ?? nas?.password ?? null,
+          }
         })
-      : []
-    type NasEntry = { vpnClientId: string | null; secret: string; username: string | null; password: string | null }
-    const nasMap = new Map(nasEntries.map((n: NasEntry) => [n.vpnClientId, n]))
-    const vpnClientsWithSecret = vpnClients.map((c: { id: string; name: string; vpnIp: string; isRadiusServer: boolean; apiUsername: string | null; apiPassword: string | null }) => {
-      const nas = nasMap.get(c.id)
-      return {
-        ...c,
-        nasSecret: nas?.secret ?? null,
-        // Use vpnClient API creds first; fall back to NAS entry creds (e.g. WireGuard)
-        resolvedUsername: c.apiUsername ?? nas?.username ?? null,
-        resolvedPassword: c.apiPassword ?? nas?.password ?? null,
+
+        const routersWithServer = routers.map(router => ({
+          ...router,
+          ports: router.ports || 1812,
+        }));
+
+        return { routers: routersWithServer, vpnClients: vpnClientsWithSecret };
       }
-    })
-    
-    // Add radiusServerIp as computed field for frontend display
-    // Note: 'server' field in NAS table is for FreeRADIUS virtual_server name, NOT RADIUS IP
-    const routersWithServer = routers.map(router => ({
+    );
+
+    // Add radiusServerIp (computed, not cached — may change based on network)
+    const routersWithServerIp = cached.routers.map(router => ({
       ...router,
-      radiusServerIp: radiusServerIp,  // For frontend display only
-      ports: router.ports || 1812,
+      radiusServerIp: radiusServerIp,
     }));
 
-    return NextResponse.json({ routers: routersWithServer, vpnClients: vpnClientsWithSecret, radiusServerIp });
+    return NextResponse.json({ routers: routersWithServerIp, vpnClients: cached.vpnClients, radiusServerIp });
   } catch (error) {
     console.error('Load routers error:', error);
     return NextResponse.json({ error: 'Failed to load routers' }, { status: 500 });
@@ -227,6 +239,8 @@ export async function POST(request: NextRequest) {
       console.error('Activity log error:', logError);
     }
 
+    await invalidateKey(CACHE_KEYS.routers);
+
     return NextResponse.json({
       success: true,
       router,
@@ -344,6 +358,7 @@ export async function PUT(request: NextRequest) {
       where: { id },
       include: { vpnClient: { select: { id: true, name: true, vpnIp: true } } },
     });
+    await invalidateKey(CACHE_KEYS.routers);
     return NextResponse.json({ success: true, router: updatedRouter ?? router, vpnClientChanged: vpnClientId !== undefined });
   } catch (error) {
     console.error('Update router error:', error);
@@ -400,6 +415,7 @@ export async function DELETE(request: NextRequest) {
       console.error('Activity log error:', logError);
     }
 
+    await invalidateKey(CACHE_KEYS.routers);
     return NextResponse.json({ success: true, message: 'Router deleted successfully' });
   } catch (error) {
     console.error('Delete router error:', error);
