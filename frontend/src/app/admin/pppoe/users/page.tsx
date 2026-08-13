@@ -742,7 +742,7 @@ export default function PppoeUsersPage() {
 
   const handleDelete = async () => {
     if (!deleteUserId) return;
-    if (!deletePassword.trim()) { await showError('Masukkan password login Anda untuk konfirmasi hapus pelanggan.'); return; }
+    if (!deletePassword.trim()) { await showError('Masukkan password superadmin untuk konfirmasi hapus pelanggan.'); return; }
     setDeleting(true);
     try {
       const res = await fetch(`/api/pppoe/users?id=${deleteUserId}`, {
@@ -1760,19 +1760,19 @@ export default function PppoeUsersPage() {
             <p className="text-xs text-muted-foreground mb-4">{t('pppoe.deleteConfirm')}</p>
             <div className="text-left">
               <label className="block text-xs font-medium text-muted-foreground mb-1">
-                🔒 Konfirmasi Password Login
+                🔒 Password Superadmin
               </label>
               <input
                 type="password"
                 value={deletePassword}
                 onChange={(e) => setDeletePassword(e.target.value)}
-                placeholder="Masukkan password login Anda"
+                placeholder="Masukkan password superadmin"
                 className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30 focus:ring-2 focus:ring-destructive/30"
                 autoFocus
                 onKeyDown={(e) => { if (e.key === 'Enter' && !deleting) handleDelete(); }}
               />
               <p className="text-[10px] text-muted-foreground mt-1">
-                Demi keamanan, masukkan password login Anda untuk mengonfirmasi penghapusan pelanggan.
+                Demi keamanan, masukkan password superadmin untuk mengonfirmasi penghapusan pelanggan. Hanya Super Admin yang dapat menghapus pelanggan.
               </p>
             </div>
           </ModalBody>

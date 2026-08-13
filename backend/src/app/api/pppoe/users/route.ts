@@ -76,7 +76,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE - Remove PPPoE user (requires password confirmation)
+// DELETE - Remove PPPoE user (requires SUPER_ADMIN role + password confirmation)
 export async function DELETE(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return unauthorized();
@@ -94,7 +94,7 @@ export async function DELETE(request: NextRequest) {
 
     const confirmPassword = body.confirmPassword;
     if (!confirmPassword) {
-      return badRequest('Konfirmasi password superadmin wajib diisi untuk menghapus pelanggan.');
+      return badRequest('Password superadmin wajib diisi untuk menghapus pelanggan.');
     }
 
     // Verify the logged-in admin's password
@@ -104,9 +104,14 @@ export async function DELETE(request: NextRequest) {
     const admin = await prisma.adminUser.findUnique({ where: { id: adminId } });
     if (!admin) return unauthorized();
 
+    // Only SUPER_ADMIN can delete customers
+    if (admin.role !== 'SUPER_ADMIN') {
+      return badRequest('Hanya Super Admin yang dapat menghapus pelanggan.');
+    }
+
     const isValid = await bcrypt.compare(confirmPassword, admin.password);
     if (!isValid) {
-      return badRequest('Password yang Anda masukkan salah. Hapus pelanggan dibatalkan.');
+      return badRequest('Password superadmin yang Anda masukkan salah. Hapus pelanggan dibatalkan.');
     }
 
     const result = await deletePppoeUser(id, session, request);
