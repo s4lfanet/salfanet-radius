@@ -238,11 +238,13 @@ model invoice {
   baseAmount       Int?            // Amount before tax
   taxRate          Decimal?        @db.Decimal(5,2) // Tax percentage
   additionalFees   Json?           // [{name: string, amount: number}]
-  
+  addonAmount      Int             @default(0) // Total addon charges for this invoice
+
   user             pppoeUser?           @relation(fields: [userId], references: [id])
   payments         payment[]
   manualPayments   manualPayment[]
   registration     registrationRequest?
+  invoiceAddons    invoiceAddon[]
 
   @@index([userId], map: "invoices_userId_fkey")
   @@index([status])
@@ -547,7 +549,10 @@ model pppoeUser {
   // Referral system fields
   referralCode         String?    @unique @db.VarChar(10) // Auto-generated referral code
   referredById         String?    @map("referred_by_id") // ID of user who referred this customer
-  
+
+  // Technician who registered this customer (PSB)
+  registeredByTechnicianId String? @map("registered_by_technician_id")
+
   invoices         invoice[]
   manualPayments   manualPayment[]
   tickets          ticket[]
@@ -564,6 +569,9 @@ model pppoeUser {
   referralRewardsReceived referralReward[] @relation("ReferredRewards")
   pushSubscriptions pushSubscription[]
   oltOnuStatuses    oltOnuStatus[]
+  registeredByTechnician technician? @relation(fields: [registeredByTechnicianId], references: [id], onDelete: SetNull)
+  customerAddons   customerAddon[]
+  paymentPromises  paymentPromise[]
 
   @@index([profileId], map: "pppoe_users_profileId_fkey")
   @@index([routerId], map: "pppoe_users_routerId_fkey")
@@ -576,6 +584,7 @@ model pppoeUser {
   @@index([referralCode])
   @@index([referredById])
   @@index([pppoeCustomerId])
+  @@index([registeredByTechnicianId])
   // Performance indexes: common lookup patterns
   @@index([phone])               // customer login by phone number
   @@index([expiredAt])           // cron auto-isolate expired users
@@ -1927,6 +1936,7 @@ model technician {
   otpTokens     technicianOtp[]
   workOrders    workOrder[]
   pushSubscriptions technicianPushSubscription[]
+  registeredCustomers pppoeUser[]
 
   @@index([phoneNumber])
   @@index([isActive])
@@ -2182,6 +2192,79 @@ enum splice_points_deviceType {
 enum splice_points_spliceType {
   FUSION
   MECHANICAL
+}
+
+// ─── Add-on System (from home.pmynet.id-main) ────────────────────────────────
+
+model addonType {
+  id          String   @id @default(cuid())
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  price       Int      @default(0) // harga dalam Rupiah
+  isRecurring Boolean  @default(true) // true = bulanan, false = sekali bayar
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  customerAddons customerAddon[]
+  invoiceAddons  invoiceAddon[]
+
+  @@index([isActive])
+  @@map("addon_types")
+}
+
+model customerAddon {
+  id              String    @id @default(cuid())
+  pppoeUserId     String    @map("pppoe_user_id")
+  addonTypeId     String    @map("addon_type_id")
+  priceOverride   Int?      // null = pakai harga default dari addonType
+  startDate       DateTime  @default(now())
+  endDate         DateTime? // null = masih aktif
+  notes           String?   @db.VarChar(255)
+  createdByAdminId String?  @map("created_by_admin_id") // admin who assigned
+  createdAt       DateTime  @default(now())
+
+  pppoeUser       pppoeUser  @relation(fields: [pppoeUserId], references: [id], onDelete: Cascade)
+  addonType       addonType  @relation(fields: [addonTypeId], references: [id], onDelete: Cascade)
+
+  @@index([pppoeUserId])
+  @@index([addonTypeId])
+  @@index([endDate])
+  @@map("customer_addons")
+}
+
+model invoiceAddon {
+  id          String  @id @default(cuid())
+  invoiceId   String  @map("invoice_id")
+  addonTypeId String? @map("addon_type_id") // null jika addon type sudah dihapus
+  addonName   String  @db.VarChar(100) // snapshot nama addon saat invoice dibuat
+  amount      Int     // harga addon dalam Rupiah
+
+  invoice     invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  addonType   addonType? @relation(fields: [addonTypeId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@map("invoice_addons")
+}
+
+// ─── Promise to Pay / Janji Bayar ────────────────────────────────────────────
+
+model paymentPromise {
+  id              String   @id @default(cuid())
+  pppoeUserId     String   @map("pppoe_user_id")
+  invoiceId       String?  @map("invoice_id") // optional: link ke invoice tertentu
+  promiseDate     DateTime // tanggal janji bayar
+  notes           String?  @db.Text
+  status          String   @default("active") // active, fulfilled, broken
+  createdByAdminId String? @map("created_by_admin_id")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  pppoeUser       pppoeUser @relation(fields: [pppoeUserId], references: [id], onDelete: Cascade)
+
+  @@index([pppoeUserId])
+  @@index([status])
+  @@index([promiseDate, status])
+  @@map("payment_promises")
 }
 
 enum splice_points_status {
