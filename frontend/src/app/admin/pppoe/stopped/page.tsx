@@ -117,14 +117,8 @@ export default function StoppedSubscriptionsPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        console.log('[STOPPED] Reactivating user:', userId, '— removing from list (optimistic)');
         // Optimistic update: remove from list immediately — NO reload needed
-        setUsers(prev => {
-          console.log('[STOPPED] Before filter:', prev.length, 'users. Removing', userId);
-          const next = prev.filter(u => u.id !== userId);
-          console.log('[STOPPED] After filter:', next.length, 'users');
-          return next;
-        });
+        setUsers(prev => prev.filter(u => u.id !== userId));
         setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerReactivated'));
       } else {
