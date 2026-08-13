@@ -84,23 +84,29 @@ export default function StoppedSubscriptionsPage() {
     const confirmed = await showConfirm(t('common.deleteCustomersConfirm').replace('{count}', selectedUsers.size.toString()));
     if (!confirmed) return;
 
+    // TRUE optimistic update: remove from list BEFORE API call
+    const deletedIds = new Set(Array.from(selectedUsers));
+    const usersToRestore = users.filter(u => deletedIds.has(u.id));
+    setUsers(prev => prev.filter(u => !deletedIds.has(u.id)));
+    setSelectedUsers(new Set());
+
     try {
       const res = await fetch('/api/pppoe/users/bulk-delete', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIds: Array.from(selectedUsers) }),
+        body: JSON.stringify({ userIds: Array.from(deletedIds) }),
       });
       const result = await res.json();
       if (res.ok) {
-        // Optimistic update: remove deleted users from list immediately — NO reload
-        const deletedIds = new Set(Array.from(selectedUsers));
-        setUsers(prev => prev.filter(u => !deletedIds.has(u.id)));
-        setSelectedUsers(new Set());
-        await showSuccess(`${result.deleted || selectedUsers.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
+        await showSuccess(`${result.deleted || deletedIds.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
       } else {
+        // Rollback if API failed
+        setUsers(prev => [...prev, ...usersToRestore]);
         await showError(result.error || t('common.failedDelete'));
       }
     } catch (error) {
+      // Rollback if network error
+      setUsers(prev => [...prev, ...usersToRestore]);
       console.error('Bulk delete error:', error);
       await showError(t('common.failedDelete'));
     }
@@ -110,6 +116,12 @@ export default function StoppedSubscriptionsPage() {
     const confirmed = await showConfirm(t('common.reactivateConfirm'));
     if (!confirmed) return;
 
+    // TRUE optimistic update: remove from list BEFORE API call
+    // Save reference for rollback if API fails
+    const userToRestore = users.find(u => u.id === userId);
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
+
     try {
       const res = await fetch('/api/pppoe/users/status', {
         method: 'PUT',
@@ -118,14 +130,19 @@ export default function StoppedSubscriptionsPage() {
       });
       const result = await res.json();
       if (res.ok) {
-        // Optimistic update: remove from list immediately — NO reload needed
-        setUsers(prev => prev.filter(u => u.id !== userId));
-        setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerReactivated'));
       } else {
+        // Rollback: add user back to list if API failed
+        if (userToRestore) {
+          setUsers(prev => [...prev, userToRestore]);
+        }
         await showError(result.error || t('common.failedActivate'));
       }
     } catch (error) {
+      // Rollback: add user back to list if network error
+      if (userToRestore) {
+        setUsers(prev => [...prev, userToRestore]);
+      }
       console.error('Reactivate error:', error);
       await showError(t('common.failedActivate'));
     }
@@ -135,18 +152,28 @@ export default function StoppedSubscriptionsPage() {
     const confirmed = await showConfirm(t('common.deleteConfirmPermanent'));
     if (!confirmed) return;
 
+    // TRUE optimistic update: remove from list BEFORE API call
+    const userToRestore = users.find(u => u.id === userId);
+    setUsers(prev => prev.filter(u => u.id !== userId));
+    setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
+
     try {
       const res = await fetch(`/api/pppoe/users?id=${userId}`, { method: 'DELETE' });
       const result = await res.json();
       if (res.ok) {
-        // Optimistic update: remove from list immediately — NO reload needed
-        setUsers(prev => prev.filter(u => u.id !== userId));
-        setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
         await showSuccess(t('common.customerDeleted'));
       } else {
+        // Rollback if API failed
+        if (userToRestore) {
+          setUsers(prev => [...prev, userToRestore]);
+        }
         await showError(result.error || t('common.failedDelete'));
       }
     } catch (error) {
+      // Rollback if network error
+      if (userToRestore) {
+        setUsers(prev => [...prev, userToRestore]);
+      }
       console.error('Delete error:', error);
       await showError(t('common.failedDelete'));
     }
