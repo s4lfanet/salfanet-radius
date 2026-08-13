@@ -611,56 +611,94 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v4.0.0 — 2026-08-13
+
+### Architecture — Two Independent Next.js Apps
+- **Migrated from NestJS backend back to Next.js** — both frontend and backend are now Next.js 16 standalone apps
+- `frontend/` (port 3000): UI pages, components, NextAuth authentication routes
+- `backend/` (port 3001): API routes, Prisma, MikroTik services, RADIUS services, cron business logic
+- `packages/shared-types/`: Shared TypeScript types between apps
+- Frontend communicates with backend over HTTP via `lib/api-client.ts`
+- Nginx routes: `/api/auth/*` → frontend (3000), `/api/*` → backend (3001), `/` → frontend (3000)
+- PM2 processes: `salfanet-frontend`, `salfanet-backend`, `salfanet-cron`, `salfanet-wa`
+- Cron runner: standalone tsx process that calls backend APIs on schedule
+- Monorepo standalone build: `scripts/postbuild.js` copies static assets to nested standalone dirs
+
+### Fixed — PPPoE Tidak Reconnect Setelah Payment dari Isolir
+- **Root cause 1**: Isolir flow mengubah MikroTik PPP secret profile ke `isolir`, tapi payment restoration hanya update RADIUS tables tanpa restore PPP secret
+- **Root cause 2**: FreeRADIUS `rest` module `connect_uri` masih ke port 3000 (frontend) — seharusnya port 3001 (backend). Setelah split, route `/api/radius/authorize` ada di backend
+- **Root cause 3**: `sqlippool` di FreeRADIUS post-auth bersifat fatal — jika gagal allocate IP, Access-Accept berubah menjadi Access-Reject
+- **Root cause 4**: Auto-renewal cron hanya update `status: 'active'` tanpa restore RADIUS/PPP secret untuk user yang sebelumnya isolated
+
+#### Fixes Applied
+- `backend/src/app/api/invoices/route.ts` (PUT): Tambah `managePppSecret` + `kickPppoeSession` + `nas_identifier` di RADIUS queries
+- `backend/src/server/cron/invoice-jobs.ts`: Auto-renewal sekarang restore RADIUS + PPP secret untuk user isolated
+- `backend/freeradius-config/mods-enabled/rest`: `connect_uri` → `http://localhost:3001` (backend)
+- `backend/freeradius-config/sites-enabled/default`: `sqlippool`, `sql`, `cuisql` di post-auth → non-fatal (`-` prefix)
+- Clear stale `radippool` entries yang expired
+
+#### Verification
+- User `muhammadluthfi@rw02`: Access-Accept dengan `Mikrotik-Group=PAKET 100MBPS`
+- IP `192.168.14.2` dari `100mbps-pool` (bukan `pool-isolir`)
+- MikroTik: ACTIVE, session tersimpan di `radacct` dengan `acctstoptime=NULL`
+
+### Added — Realtime Online/Offline Status
+- **New API endpoint**: `GET /api/pppoe/users/online-status` — lightweight endpoint yang hanya return set username online
+  - Cek `radacct` (RADIUS auth users) + `batchListPppActive` (MikroTik local auth users)
+  - Support filter `?usernames=` untuk restrict ke user yang ditampilkan saja
+- **Frontend polling**: Setiap 10 detik, update `isOnline` field tanpa reload full data
+  - Hanya trigger re-render jika ada perubahan status (cegah unnecessary renders)
+  - Badge **"Live"** dengan indikator pulse di filter Sesi
+- File: `backend/src/app/api/pppoe/users/online-status/route.ts`
+- File: `frontend/src/app/admin/pppoe/users/page.tsx` — polling effect
+
+### Updated — FreeRADIUS Configuration
+- `rest` module: `connect_uri` diupdate dari `localhost:3000` → `localhost:3001` (backend API)
+- `sites-enabled/default` post-auth: semua modules (`sql`, `sqlippool`, `cuisql`, `rest`) sekarang non-fatal
+- Comment diupdate untuk reflect 2-app architecture
+
+### Updated — Deployment Configuration
+- `deploy/ecosystem.config.js`: 4 PM2 processes (frontend, backend, cron, wa)
+- `deploy/nginx-salfanet.conf`: 2-app routing (`/api/auth/*` → 3000, `/api/*` → 3001, `/` → 3000)
+- `frontend/production/ecosystem.config.js`: Updated untuk 2-app architecture
+- `frontend/production/nginx-salfanet-radius.conf`: Updated untuk 2-app routing
+
+### Updated — Installer/Updater/Uninstaller
+- `frontend/vps-install/install-pm2.sh`: Build dan setup 2 Next.js apps terpisah
+- `frontend/vps-install/updater.sh`: Build dan restart 2 apps + cron
+- `frontend/vps-install/vps-uninstaller.sh`: Hapus 4 PM2 processes (frontend, backend, cron, wa)
+- `frontend/vps-install/install-app.sh`: Install dependencies untuk frontend + backend
+- `frontend/vps-install/install-nginx.sh`: 2-app routing + nested static paths
+- `frontend/vps-install/vps-installer.sh`: Path `frontend/vps-install/`, 4 PM2 status
+
+### v3.2.0 — 2026-08-12
+
+### FreeRADIUS Server Configuration (Stage 1 — Verified on VPS)
+- Enabled `sqlippool` module (SQL-backed IP pool, not file-based `rlm_ippool`)
+- Enabled `cui` module with MySQL backend (`cuisql`)
+- Imported stored procedure `fr_allocate_previous_or_new_framedipaddress`
+- Configured `queries.conf` to use stored procedure for atomic IP allocation
+- Added `sqlippool` + `cuisql` to `sites-enabled/default` post-auth section
+- Added `sqlippool` to accounting section for lease release on STOP/ON/OFF
+- Fixed `Pool-Name` attribute: moved from `radgroupreply` to `radgroupcheck`
+- Verified with `radtest`: Access-Accept + `Framed-IP-Address` from pool
+- Verified CUI table populated on auth
+- FreeRADIUS config validation: `freeradius -XC` exit 0
+
+### Admin UI (Stage 2)
+- New page: `/admin/ippool` — IP Pool Management
+- New page: `/admin/data-usage` — Data Usage Reports
+- Added sidebar menu entries under FreeRADIUS group: IP Pool, Data Usage
+
 ### v2.34.9 — 2026-08-11
 
 ### Fixed
-- **Admin sidebar "Log Aktivitas" menu returned 404** — The sidebar linked to `/admin/logs/activity` (and the notification dispatcher used the same URL for deep-links), but the page was never created. Clicking the menu or opening a notification link produced `Failed to load resource: 404 (Not Found)` in the browser console. The API `/api/admin/activity-logs` existed and worked; only the UI page was missing.
-- **Root cause**: the page file `src/app/admin/logs/activity/page.tsx` was never written, AND `.gitignore` had an overly-broad `logs/` rule that matched *any* directory named `logs` anywhere in the tree (including `src/app/admin/logs/`), so even if the file had been created it would have been silently excluded from git.
-- **Fix**:
-  - Created `src/app/admin/logs/activity/page.tsx` — a full activity-log viewer (filter by module, search, pagination, status badges, WIB timestamps) backed by the existing `/api/admin/activity-logs` endpoint.
-  - Fixed `.gitignore`: changed `logs/` → `/logs/` so only the root-level runtime logs directory is ignored, not source-tree directories named `logs`.
-### Files
-- `src/app/admin/logs/activity/page.tsx` — new page (280 lines)
-- `.gitignore` — `logs/` → `/logs/` (anchored to repo root)
-
-### v2.34.8 — 2026-08-11
-
-### Fixed
-- **Fresh install: `/api/company/info` returns HTTP 404 ("Company not found")** — The comprehensive seeder `prisma/seeds/seed-all.ts` (run by `vps-install/install-app.sh` as `npm run db:seed`) never created a row in the `Company` table. It only *read* `prisma.company.findFirst()` to derive the isolir rate limit (falling back to a hardcoded default when null). The standalone `prisma/seeds/seed-company.ts` existed but was never invoked by the installer. As a result, on a fresh install the `Company` table was empty and the public `/api/company/info` route (used by login/customer/agent layouts for branding) returned 404 by design.
-- **Fix**: `seed-all.ts` now creates a default `Company` row (id, name `SALFANET RADIUS`, timezone `Asia/Jakarta`, default isolation settings, empty `bankAccounts`) when none exists, before the isolir-group step reads `company.isolationRateLimit`. Existing installs are left untouched (idempotent `findFirst` guard).
-### Files
-- `prisma/seeds/seed-all.ts` — new step 4.5 "Seed Company" between Hotspot Profiles and WhatsApp Templates
-
-### v2.34.7 — 2026-08-11
-
-### Fixed
-- **LXC install: app unreachable from browser even though everything looked healthy** — On a fresh LXC install, `http://VPS_IP/` timed out from any real external client even though Nginx was listening correctly on `0.0.0.0:80`/`:443`, PM2/MySQL/FreeRADIUS were all active, and `/api/health` responded fine when curled *from inside* the VPS. Root cause: the installer's `SKIP_UFW=true` logic for `--env lxc` unconditionally skips ALL UFW rule changes (assuming firewalling is handled at the Proxmox host and that UFW/iptables don't work in unprivileged LXC). But UFW was already **active** on this container (from the base image) with a restrictive default (`deny incoming`, only `22/tcp` allowed) — so port 80/443/1812/1813/3799 were silently blocked for genuine external traffic. Self-curl from the VPS to its own IP appeared to work fine because that traffic hairpins through `lo`, which UFW's default rules exempt — masking the problem during internal testing.
-- **Fix**: `configure_ufw()` (install-security.sh), `configure_firewall_nginx()` (install-nginx.sh), and `configure_firewall()` (install-freeradius.sh) now check `ufw status` even when `SKIP_UFW=true`. If UFW is already active, the required `allow` rules (80/tcp, 443/tcp, 1812/udp, 1813/udp, 3799/udp, 500/udp, 4500/udp, 1701/udp) are still added (best-effort, non-fatal) instead of being skipped outright. UFW is never *enabled* for LXC (that stays skipped, since forcing `ufw enable` in an unsupported container could break networking) — only rules are added to an already-active UFW.
-### Files
-- `vps-install/install-security.sh` — `configure_ufw()`
-- `vps-install/install-nginx.sh` — `configure_firewall_nginx()`
-- `vps-install/install-freeradius.sh` — `configure_firewall()`
-
-### v2.34.6 — 2026-08-11
-
-### Fixed
-- **Fresh install: `salfanet-cron` HTTP 401 loop on every job** — Fresh installs via `vps-installer.sh` deployed `production/ecosystem.config.js` pointing `salfanet-cron` at the deprecated `cron-service.js` (HTTP polling to `/api/cron`). That route requires an `x-cron-secret` header matching `CRON_SECRET`, which `cron-service.js` never sends and which the installer never generates — every job failed with `HTTP 401: Unauthorized`, 3 retries each cycle, forever.
-- **Root cause found by full uninstall/reinstall test on a clean LXC VPS.**
-- **Fix attempt 1 (reverted)**: pointed `salfanet-cron` at `src/cron/runner-wrapper.cjs` (the documented "correct" migration target used by `updater.sh`/`cleanup-refactor.sh`). This crash-looped instead: `require('tsx/cjs')` inside the wrapper does NOT apply `tsconfig.json` `paths` aliases (`@/*`), causing `ERR_MODULE_NOT_FOUND: Cannot find package '@/server'` on every job import.
-- **Fix (final)**: `salfanet-cron` now runs the `tsx` CLI binary directly (`node_modules/.bin/tsx -r ./src/cron/preload.cjs src/cron/runner.ts`) instead of `runner-wrapper.cjs`. The tsx CLI resolves `@/*` aliases correctly; `preload.cjs` still mocks the `server-only` guard so Next.js server modules can be imported outside Next.js. Verified: all 15 scheduled jobs run directly via `src/server/jobs/*` with zero HTTP round-trip, zero 401s, zero crash restarts (`↺ 0`) after the fix.
-### Files
-- `production/ecosystem.config.js` — `salfanet-cron` `script`/`args` changed to tsx CLI + preload; removed unused `API_URL` env var
-- `vps-install/install-pm2.sh` — fallback ecosystem generator + `start_cron_service()` existence check updated to match
+- **Admin sidebar "Log Aktivitas" menu returned 404** — Created `src/app/admin/logs/activity/page.tsx` and fixed `.gitignore` overly-broad `logs/` rule.
 
 ### v2.34.5 — 2026-08-11
 
 ### Removed
-- **Go backend cleanup — full revert to pure Next.js** — Menghapus seluruh sisa eksperimen migrasi backend ke Go yang sudah tidak terpakai di production. Konfirmasi: `production/ecosystem.config.js` hanya menjalankan 3 proses PM2 (`salfanet-radius`, `salfanet-cron`, `salfanet-wa`) — tidak ada proses Go. `production/nginx-salfanet-radius.conf` mengarahkan seluruh trafik termasuk `/api/*` ke Next.js port 3000. `vps-installer.sh` tidak pernah memanggil `install-go.sh`. Next.js tetap memiliki seluruh 399 API route (`src/app/api/**/route.ts`) sebagai satu-satunya backend aktif.
-### Files
-- Dihapus: `internal/` (69 file Go handler/service), `cmd/server/main.go`
-- Dihapus: `go.mod`, `go.sum`, `Dockerfile`, `Makefile`, `.air.toml`, `docker-compose.yml`
-- Dihapus: `vps-install/install-go.sh`, `nginx-frontend.conf` (config nginx orphan yang mengarah ke Go `:8080`)
-- Dihapus: `docs/GO_MIGRATION_PROMPT.md`
+- **Go backend cleanup — full revert to pure Next.js** — Menghapus seluruh sisa eksperimen migrasi backend ke Go.
 
 <!-- AUTO-CHANGELOG:END -->
 
