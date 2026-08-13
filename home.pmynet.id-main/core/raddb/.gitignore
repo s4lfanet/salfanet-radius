@@ -1,9 +1,0 @@
-dictionary
-radiusd.conf
-sites-enabled
-mods-enabled
-radrelay.conf
-test.conf
-
-# NOTE: mods-enabled dan sites-enabled akan dibuat otomatis oleh setup-radius.sh
-# Jangan commit symbolic links karena path-nya bisa berbeda di VPS

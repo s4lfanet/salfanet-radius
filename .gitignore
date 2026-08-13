@@ -2,7 +2,10 @@
 mobile-app/
 
 # Reference repo (FreeRADIUS source — not part of this project)
-# home.pmynet.id-main/
+home.pmynet.id-main/
+
+# Playwright MCP snapshots
+.playwright-mcp/
 
 # Temporary git commit message files
 .git/COMMIT_MSG_*
