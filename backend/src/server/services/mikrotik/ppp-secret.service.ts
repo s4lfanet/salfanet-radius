@@ -322,8 +322,8 @@ export async function getMikrotikProfileName(profileId: string): Promise<string 
  */
 export function shouldCreatePppSecret(authMode: string | null | undefined): { shouldCreate: boolean; disabled: boolean } {
   const mode = authMode || 'local'  // null/undefined = local (default)
-  if (mode === 'radius' || mode === 'hybrid') {
-    // RADIUS/hybrid mode: create disabled (backup only, RADIUS is primary auth)
+  if (mode === 'radius') {
+    // RADIUS mode: create disabled (backup only, RADIUS is primary auth)
     return { shouldCreate: true, disabled: true }
   }
   // local: create enabled
@@ -334,7 +334,6 @@ export function shouldCreatePppSecret(authMode: string | null | undefined): { sh
  * Decide whether to enable/disable PPP secret based on router authMode.
  * - local  → manage secret (enable/disable, change profile) — MikroTik is auth source
  * - radius → skip (RADIUS handles auth via radcheck)
- * - hybrid → skip (RADIUS is primary, PPP secret is backup only — must stay disabled)
  */
 export function shouldManagePppSecretForSuspend(authMode: string | null | undefined): boolean {
   const mode = authMode || 'local'
