@@ -6,6 +6,56 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.1.0] — 2026-08-13 — PSB Wizard + Cron Jobs Implementation + Data Consistency Fix
+
+### Added — PSB Wizard 3-Step untuk Tambah Pelanggan
+- **Wizard 3-step** mengadopsi flow `home.pmynet.id` untuk tambah pelanggan baru
+- **Step 1 — Data Pelanggan**: nama, phone, NIK (16 digit), email, alamat, foto KTP (capture dari kamera HP via `capture="environment"`), GPS koordinat, MapPicker, foto instalasi, duplicate NIK & phone check
+- **Step 2 — Data Pembayaran**: paket/profile, subscription type (POSTPAID/PREPAID), billing day, discount amount + note, preview harga setelah discount, first invoice option (none/prorate/full), estimasi prorate
+- **Step 3 — Data Secret / Connection**: connection type (PPPoE/Static IP/Hotspot), PPPoE username+password, static IP, router/NAS, area, ODP, MAC address, auto-isolation, install date, comment, conditional "Buat PPP Secret di MikroTik" checkbox (muncul hanya untuk PPPoE + router `auth_mode='radius'`)
+- **Per-step validation** sebelum bisa lanjut ke step berikutnya
+- File: `frontend/src/app/admin/pppoe/users/new/page.tsx`
+
+### Added — Backend Support untuk PSB Wizard
+- `backend/src/features/pppoe/schemas.ts`: Extended `createPppoeUserSchema` dengan `odp`, `discount`, `discountNote`, `installDate`, `connectionType`
+- `backend/src/server/services/pppoe.service.ts`: Persist field baru ke database + NIK/phone duplicate check
+- `backend/src/app/api/pppoe/users/route.ts`: Validasi field baru
+
+### Added — Prisma Schema untuk PSB Wizard
+- `pppoeUser` model: tambah `odp` (varchar 100), `discount` (int default 0), `discountNote` (varchar 255), `installDate` (datetime)
+- Update: `backend/prisma/schema.prisma` + `frontend/prisma/schema.prisma`
+
+### Added — Implementasi 4 Cron Jobs yang Sebelumnya Placeholder
+Sebelumnya 4 cron jobs hanya return "not yet implemented". Sekarang sudah diimplementasi penuh:
+
+- **`hotspot_sync`** (setiap menit): Expire voucher hotspot dengan status `WAITING`/`ACTIVE` yang sudah lewat `expiresAt` → update ke `EXPIRED`
+- **`agent_sales`** (setiap 5 menit): Catat penjualan voucher agent ke `agent_sales` table dengan amount dari `hotspotProfile.sellingPrice`, skip duplicate
+- **`session_monitor`** (setiap 15 menit): Monitor sesi suspicious/stale/orphaned di `radacct`, **auto-close** orphaned (username tidak terdaftar) + stale (>30 hari)
+- **`pppoe_session_sync`** (setiap 5 menit): Sync PPP active dari MikroTik via RouterOS API, **auto-close** stale sessions (tidak di MikroTik) + orphaned sessions (username tidak di `pppoe_users`/`hotspot_vouchers`)
+- File: `backend/src/server/cron/additional-jobs.ts` (baru)
+- File: `backend/src/app/api/cron/route.ts` — switch case untuk 4 jobs baru
+
+### Fixed — Cron Jobs `{"error":"Unauthorized"}`
+- **Root cause**: `CRON_SECRET` hanya ada di PM2 env cron-runner, tidak di `backend/.env`. Backend tidak bisa verify `x-cron-secret` header → fallback session auth → Unauthorized
+- **Fix**:
+  - Tambah `CRON_SECRET` ke `backend/.env` + `backend/.next/standalone/backend/.env` di VPS
+  - `deploy/ecosystem.config.js` + `frontend/production/ecosystem.config.js`: Tambah `CRON_SECRET` ke env backend + cron
+  - `frontend/vps-install/install-app.sh`: Auto-generate `CRON_SECRET` via `openssl rand -hex 32` saat install
+
+### Fixed — Inkonsistensi Data PPPoE (Status Online vs Active Sessions)
+- **Root cause**: `radacct` punya open sessions dari sistem lama (home.pmynet.id) yang username-nya tidak terdaftar di `pppoe_users`. Halaman sessions menampilkan semua radacct open sessions → muncul 3 active padahal hanya 1 user terdaftar
+- **Fix**:
+  - Cleanup 2 orphaned sessions langsung di VPS (`sucidwilestari@sukajadi`, `oomabdulrohman@sukajadi`)
+  - `pppoe_session_sync` cron: auto-close orphaned + stale sessions setiap 5 menit
+  - `session_monitor` cron: auto-close orphaned + stale (>30 hari) sessions setiap 15 menit
+- **Verifikasi**: `radacct_open = 1`, `pppoe_active = 1`, `orphaned_open = 0` ✅
+
+### Fixed — Static Assets 404 Setelah Build
+- **Root cause**: `npx next build` standalone tidak otomatis copy `.next/static/` ke standalone directory → CSS/JS chunks 404 + MIME type error
+- **Fix**: Manual `cp -r .next/static .next/standalone/frontend/.next/static/` (updater.sh sudah handle ini, masalah hanya saat build manual)
+
+---
+
 ## [4.0.0] — 2026-08-13 — Two-Next.js App Architecture + Realtime Status + PPPoE Reconnect Fix
 
 ### Architecture — Two Independent Next.js Apps

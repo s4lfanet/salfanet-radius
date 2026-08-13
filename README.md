@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.0.0 — Two-Next.js-app architecture, realtime online/offline status, PPPoE reconnect fix
+> **Version:** 4.1.0 — PSB wizard 3-step, 4 cron jobs implemented, data consistency fix
 
 ---
 
@@ -19,7 +19,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 |----------|-----------------|
 | **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect, **IP Pool management**, **Multi-NAS isolation** |
 | **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
-| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)** |
+| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)** |
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
 | **Data Usage Reporting** | Per-user bandwidth tracking (daily aggregation via cron), monthly summary, top consumers, GB upload/download per period |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates |
@@ -31,7 +31,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Network (FTTH)** | OLT/ODC/ODP management, customer port assignment, network map, distance calculation |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
 | **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates |
-| **Cron Jobs** | 16 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger |
+| **Cron Jobs** | 17 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
 | **Roles & Permissions** | 53 permissions, 5 portals (Admin/Customer/Agent/Technician + SuperAdmin) |
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
 | **Security** | Session timeout 30 min, idle warning, RBAC, HTTPS/SSL |
@@ -610,6 +610,54 @@ Saat pelanggan isolir dilunaskan (manual atau auto-renewal), sistem otomatis:
 Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di GitHub.
 
 <!-- AUTO-CHANGELOG:START -->
+
+### v4.1.0 — 2026-08-13
+
+### Added — PSB Wizard 3-Step untuk Tambah Pelanggan
+- **Wizard 3-step** mengadopsi flow `home.pmynet.id` untuk tambah pelanggan baru
+- **Step 1 — Data Pelanggan**: nama, phone, NIK (16 digit), email, alamat, foto KTP (capture dari kamera HP via `capture="environment"`), GPS koordinat, MapPicker, foto instalasi, duplicate NIK & phone check
+- **Step 2 — Data Pembayaran**: paket/profile, subscription type (POSTPAID/PREPAID), billing day, discount amount + note, preview harga setelah discount, first invoice option (none/prorate/full), estimasi prorate
+- **Step 3 — Data Secret / Connection**: connection type (PPPoE/Static IP/Hotspot), PPPoE username+password, static IP, router/NAS, area, ODP, MAC address, auto-isolation, install date, comment, conditional "Buat PPP Secret di MikroTik" checkbox (muncul hanya untuk PPPoE + router `auth_mode='radius'`)
+- **Per-step validation** sebelum bisa lanjut ke step berikutnya
+- File: `frontend/src/app/admin/pppoe/users/new/page.tsx`
+
+### Added — Backend Support untuk PSB Wizard
+- `backend/src/features/pppoe/schemas.ts`: Extended `createPppoeUserSchema` dengan `odp`, `discount`, `discountNote`, `installDate`, `connectionType`
+- `backend/src/server/services/pppoe.service.ts`: Persist field baru ke database + NIK/phone duplicate check
+- `backend/src/app/api/pppoe/users/route.ts`: Validasi field baru
+
+### Added — Prisma Schema untuk PSB Wizard
+- `pppoeUser` model: tambah `odp` (varchar 100), `discount` (int default 0), `discountNote` (varchar 255), `installDate` (datetime)
+- Update: `backend/prisma/schema.prisma` + `frontend/prisma/schema.prisma`
+
+### Added — Implementasi 4 Cron Jobs yang Sebelumnya Placeholder
+Sebelumnya 4 cron jobs hanya return "not yet implemented". Sekarang sudah diimplementasi penuh:
+
+- **`hotspot_sync`** (setiap menit): Expire voucher hotspot dengan status `WAITING`/`ACTIVE` yang sudah lewat `expiresAt` → update ke `EXPIRED`
+- **`agent_sales`** (setiap 5 menit): Catat penjualan voucher agent ke `agent_sales` table dengan amount dari `hotspotProfile.sellingPrice`, skip duplicate
+- **`session_monitor`** (setiap 15 menit): Monitor sesi suspicious/stale/orphaned di `radacct`, **auto-close** orphaned (username tidak terdaftar) + stale (>30 hari)
+- **`pppoe_session_sync`** (setiap 5 menit): Sync PPP active dari MikroTik via RouterOS API, **auto-close** stale sessions (tidak di MikroTik) + orphaned sessions (username tidak di `pppoe_users`/`hotspot_vouchers`)
+- File: `backend/src/server/cron/additional-jobs.ts` (baru)
+- File: `backend/src/app/api/cron/route.ts` — switch case untuk 4 jobs baru
+
+### Fixed — Cron Jobs `{"error":"Unauthorized"}`
+- **Root cause**: `CRON_SECRET` hanya ada di PM2 env cron-runner, tidak di `backend/.env`. Backend tidak bisa verify `x-cron-secret` header → fallback session auth → Unauthorized
+- **Fix**:
+  - Tambah `CRON_SECRET` ke `backend/.env` + `backend/.next/standalone/backend/.env` di VPS
+  - `deploy/ecosystem.config.js` + `frontend/production/ecosystem.config.js`: Tambah `CRON_SECRET` ke env backend + cron
+  - `frontend/vps-install/install-app.sh`: Auto-generate `CRON_SECRET` via `openssl rand -hex 32` saat install
+
+### Fixed — Inkonsistensi Data PPPoE (Status Online vs Active Sessions)
+- **Root cause**: `radacct` punya open sessions dari sistem lama (home.pmynet.id) yang username-nya tidak terdaftar di `pppoe_users`. Halaman sessions menampilkan semua radacct open sessions → muncul 3 active padahal hanya 1 user terdaftar
+- **Fix**:
+  - Cleanup 2 orphaned sessions langsung di VPS (`sucidwilestari@sukajadi`, `oomabdulrohman@sukajadi`)
+  - `pppoe_session_sync` cron: auto-close orphaned + stale sessions setiap 5 menit
+  - `session_monitor` cron: auto-close orphaned + stale (>30 hari) sessions setiap 15 menit
+- **Verifikasi**: `radacct_open = 1`, `pppoe_active = 1`, `orphaned_open = 0` ✅
+
+### Fixed — Static Assets 404 Setelah Build
+- **Root cause**: `npx next build` standalone tidak otomatis copy `.next/static/` ke standalone directory → CSS/JS chunks 404 + MIME type error
+- **Fix**: Manual `cp -r .next/static .next/standalone/frontend/.next/static/` (updater.sh sudah handle ini, masalah hanya saat build manual)
 
 ### v4.0.0 — 2026-08-13
 
