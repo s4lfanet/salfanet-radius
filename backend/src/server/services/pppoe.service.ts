@@ -50,6 +50,7 @@ export interface CreatePppoeUserInput {
   installDate?: string;
   connectionType?: string;
   createPppSecret?: boolean;
+  registeredByTechnicianId?: string;
 }
 
 export interface UpdatePppoeUserInput {
@@ -80,6 +81,8 @@ export interface UpdatePppoeUserInput {
   installationPhotos?: unknown;
   followRoad?: boolean;
   registeredAt?: string;
+  discount?: number | string;
+  discountNote?: string | null;
 }
 
 // ─── List ─────────────────────────────────────────────────────────────────────
@@ -100,6 +103,7 @@ export async function listPppoeUsers(params: { status?: string | null }) {
       area: true,
       odpAssignment: { include: { odp: true } },
       pppoeCustomer: { select: { id: true, customerId: true, name: true, phone: true, email: true } },
+      registeredByTechnician: { select: { id: true, name: true } },
     },
     orderBy: { createdAt: 'desc' },
   });
@@ -184,6 +188,7 @@ export async function createPppoeUser(
     expiredAt, subscriptionType, billingDay, idCardNumber, idCardPhoto,
     installationPhotos, followRoad, registeredAt,
     odp, discount, discountNote, installDate, connectionType,
+    registeredByTechnicianId,
   } = data;
   const noPppoeAccount = !!(data as any).noPppoeAccount;
 
@@ -319,6 +324,7 @@ export async function createPppoeUser(
       ...(discountNote ? { discountNote } : {}),
       ...(installDate ? { installDate: new Date(installDate) } : {}),
       ...(connectionType ? { connectionType: connectionType as any } : {}),
+      ...(registeredByTechnicianId ? { registeredByTechnicianId } : {}),
     } as never,
   });
 
@@ -587,6 +593,8 @@ export async function updatePppoeUser(
       ...(data.installationPhotos !== undefined && { installationPhotos: data.installationPhotos }),
       ...(data.followRoad !== undefined && { followRoad: !!data.followRoad }),
       ...(data.registeredAt && { createdAt: new Date(data.registeredAt) }),
+      ...(data.discount !== undefined && { discount: parseInt(String(data.discount)) || 0 }),
+      ...(data.discountNote !== undefined && { discountNote: data.discountNote || null }),
     } as never,
   });
 

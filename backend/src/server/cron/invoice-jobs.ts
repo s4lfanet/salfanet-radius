@@ -74,14 +74,33 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
         invoiceType = 'MONTHLY';
       }
 
-      // Calculate amount with PPN
-      const baseAmount = user.profile.price;
+      // Calculate amount with PPN (subtract user discount from base price)
+      const baseAmount = Math.max(0, user.profile.price - (user.discount || 0));
       let amount = baseAmount;
       let taxRate: number | null = null;
       if (user.profile.ppnActive && user.profile.ppnRate > 0) {
         taxRate = Number(user.profile.ppnRate);
         amount = Math.round(baseAmount + (baseAmount * taxRate / 100));
       }
+
+      // Fetch active recurring addons for the user
+      const addons = await prisma.customerAddon.findMany({
+        where: {
+          pppoeUserId: user.id,
+          endDate: null,
+          addonType: { isRecurring: true, isActive: true },
+        },
+        include: { addonType: true },
+      });
+
+      // Calculate total addon charges (effective price = priceOverride ?? addonType.price)
+      const addonCharges = addons.map((ca) => ({
+        addonTypeId: ca.addonTypeId,
+        addonName: ca.addonType.name,
+        amount: ca.priceOverride !== null ? ca.priceOverride : ca.addonType.price,
+      }));
+      const addonAmount = addonCharges.reduce((sum, a) => sum + a.amount, 0);
+      amount += addonAmount;
 
       const invoiceId = nanoid();
       const invoiceNumber = generateInvoiceNumber();
@@ -95,6 +114,7 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
           userId: user.id,
           amount,
           baseAmount,
+          addonAmount,
           ...(taxRate !== null && { taxRate }),
           dueDate,
           status: 'PENDING',
@@ -106,6 +126,16 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
           paymentToken,
           paymentLink,
           createdAt: new Date(),
+          // Create invoiceAddon records for each recurring addon
+          invoiceAddons: addonCharges.length > 0
+            ? {
+                create: addonCharges.map((a) => ({
+                  addonTypeId: a.addonTypeId,
+                  addonName: a.addonName,
+                  amount: a.amount,
+                })),
+              }
+            : undefined,
         },
       });
 

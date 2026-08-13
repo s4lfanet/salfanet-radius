@@ -8,7 +8,7 @@ import {
   Plus, Pencil, Trash2, Users, CheckCircle2, MapPin, Map, MoreVertical,
   Shield, ShieldOff, Ban, Download, Upload, Search, Filter, X, Eye, EyeOff, RefreshCcw, DollarSign, Loader2, Zap,
   UserPlus, RefreshCw, Clock, Bell, Send, Mail, ArrowUpDown, Printer, FileText,
-  Calendar, CreditCard, Camera, ImageIcon, Info, AlertTriangle, Wrench, CheckCircle, XCircle,
+  Calendar, CreditCard, Camera, ImageIcon, Info, AlertTriangle, Wrench, CheckCircle, XCircle, Hand,
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
@@ -51,6 +51,9 @@ interface PppoeUser {
   routerId?: string | null;
   areaId?: string | null;
   area?: { id: string; name: string } | null;
+  discount?: number | null;
+  discountNote?: string | null;
+  registeredByTechnician?: { id: string; name: string } | null;
 }
 
 interface Profile { id: string; name: string; groupName: string; price: number; }
@@ -1672,6 +1675,9 @@ export default function PppoeUsersPage() {
                 <button onClick={() => { handleManualExtend(user); setActionMenuOpen(null); }} disabled={extending === user.id} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer disabled:opacity-50">
                   {extending === user.id ? <Loader2 className="h-3.5 w-3.5 animate-spin text-warning" /> : <Zap className="h-3.5 w-3.5 text-warning" />}
                   {t('pppoe.extendManual')}
+                </button>
+                <button onClick={() => { handleEdit(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
+                  <Hand className="h-3.5 w-3.5 text-amber-500" /> Janji Bayar
                 </button>
                 <div className="border-t border-border my-1" />
                 <button onClick={() => { setDeleteUserId(user.id); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-destructive/10 text-destructive flex items-center gap-2 cursor-pointer">

@@ -1,0 +1,37 @@
+services:
+  freeradius:
+    build:
+      context: ./freeradius
+      dockerfile: Dockerfile
+    container_name: pmyhome-freeradius
+    restart: always
+    network_mode: host
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pmyhome-backend
+    restart: always
+    environment:
+      - TZ=Asia/Jakarta
+    network_mode: host
+    env_file:
+      - ./backend/.env
+    volumes:
+      - "/var/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket"
+      - "./backend/.env:/app/.env:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Frontend diserve langsung oleh aaPanel nginx dari frontend/dist
+  # Container frontend tidak diperlukan dalam setup ini
