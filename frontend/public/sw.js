@@ -1,4 +1,4 @@
-const CACHE_NAME = 'salfanet-pwa-v11';
+const CACHE_NAME = 'salfanet-pwa-v12';
 const OFFLINE_URL = '/offline';
 const STATIC_ASSETS = [
   OFFLINE_URL,

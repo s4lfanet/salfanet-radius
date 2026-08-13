@@ -1500,7 +1500,7 @@ export default function PppoeUsersPage() {
               <thead className="bg-gray-50 bg-muted/50">
                 <tr>
                   <th className="px-2 py-2 text-center w-8"><input type="checkbox" checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0} onChange={toggleSelectAll} className="rounded border-gray-300 w-3 h-3" /></th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">ID</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">No Layanan</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted" onClick={() => handleSort('name')}>
                     <div className="flex items-center gap-1">Data Pelanggan <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
@@ -1510,15 +1510,15 @@ export default function PppoeUsersPage() {
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('profile')}>
                     <div className="flex items-center gap-1">Paket <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell">Network</th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden xl:table-cell">Teknis</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden lg:table-cell">Router/NAS</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden xl:table-cell">Lokasi</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden sm:table-cell cursor-pointer hover:bg-muted" onClick={() => handleSort('createdAt')}>
                     <div className="flex items-center gap-1">Tanggal <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:bg-muted" onClick={() => handleSort('status')}>
                     <div className="flex items-center gap-1">Status <ArrowUpDown className="w-3 h-3" /></div>
                   </th>
-                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Sesi</th>
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Online</th>
                   <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase hidden md:table-cell">RADIUS</th>
                   <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aksi</th>
                 </tr>
@@ -1554,7 +1554,11 @@ export default function PppoeUsersPage() {
                       <td className="px-3 py-2">
                         <p className="text-xs font-mono font-medium flex items-center gap-1"><span className="text-muted-foreground text-[10px]">User:</span> {user.username}</p>
                         <p className="text-[10px] text-muted-foreground flex items-center gap-1"><span className="text-[10px]">Pass:</span> ••••••</p>
-                        {user.ipAddress && <p className="text-[10px] text-muted-foreground">IP: {user.ipAddress}</p>}
+                        {user.ipAddress && <p className="text-[10px] text-muted-foreground flex items-center gap-1"><span className="text-[10px]">IP:</span> {user.ipAddress}</p>}
+                        {user.macAddress && <p className="text-[10px] text-muted-foreground flex items-center gap-1"><span className="text-[10px]">MAC:</span> {user.macAddress}</p>}
+                        {user.subscriptionType && (
+                          <span className={`inline-flex items-center px-1 py-0.5 rounded text-[9px] font-medium mt-0.5 ${user.subscriptionType === 'POSTPAID' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400'}`}>{user.subscriptionType}</span>
+                        )}
                       </td>
                       {/* Paket */}
                       <td className="px-3 py-2 hidden lg:table-cell">
