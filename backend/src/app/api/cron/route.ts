@@ -14,6 +14,12 @@ import {
   runDisconnectSessions,
   runSuspendCheck,
 } from '@/server/cron/invoice-jobs'
+import {
+  runHotspotSync,
+  runAgentSales,
+  runSessionMonitor,
+  runPppoeSessionSync,
+} from '@/server/cron/additional-jobs'
 
 export async function GET(request: NextRequest) {
   try {
@@ -105,6 +111,18 @@ export async function POST(request: NextRequest) {
           break
         case 'freeradius_health':
           result = await runFreeradiusHealth()
+          break
+        case 'hotspot_sync':
+          result = await runHotspotSync()
+          break
+        case 'agent_sales':
+          result = await runAgentSales()
+          break
+        case 'session_monitor':
+          result = await runSessionMonitor()
+          break
+        case 'pppoe_session_sync':
+          result = await runPppoeSessionSync()
           break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }
