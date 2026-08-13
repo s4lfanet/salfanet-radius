@@ -1,30 +1,29 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { lookup } from 'dns/promises';
+import * as os from 'os';
 
-// Check if a string is a valid IP address (IPv4 or IPv6)
+// Check if a string is a valid IP address (IPv4)
 function isValidIp(host: string): boolean {
-  // IPv4: x.x.x.x where each octet 0-255
   const ipv4 = /^(\d{1,3}\.){3}\d{1,3}$/;
   if (ipv4.test(host)) {
     return host.split('.').every(octet => parseInt(octet) >= 0 && parseInt(octet) <= 255);
   }
-  // IPv6: contains ':'
-  return host.includes(':');
+  return false;
 }
 
-// Resolve hostname to IP address via DNS lookup
-// If already an IP, return as-is. If resolution fails, return original hostname.
-async function resolveToIp(host: string): Promise<string> {
-  if (!host || isValidIp(host)) return host;
-  try {
-    const result = await lookup(host, { family: 4 });
-    console.log(`[SETUP_RADIUS] Resolved ${host} → ${result.address}`);
-    return result.address;
-  } catch (e: any) {
-    console.warn(`[SETUP_RADIUS] DNS lookup failed for ${host}: ${e?.message} — using hostname as-is`);
-    return host;
+// Auto-detect server IP from network interfaces (first non-internal IPv4)
+// This returns the actual IP that MikroTik can reach via local network/VPN,
+// NOT a Cloudflare proxy IP (which doesn't work for RADIUS UDP traffic).
+function getServerIp(): string {
+  const interfaces = os.networkInterfaces();
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] || []) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        return iface.address;
+      }
+    }
   }
+  return '127.0.0.1';
 }
 
 export async function POST(
@@ -51,26 +50,12 @@ export async function POST(
     }
 
     // Determine RADIUS server IP based on connection type
-    // Fallback order: RADIUS_SERVER_IP → VPS_IP → hostname dari NEXTAUTH_URL/APP_URL (skip localhost) → request host header → '127.0.0.1'
-    // IMPORTANT: If the resolved value is a domain name (e.g. radius.salfa.my.id),
-    //            resolve it to the actual IP address via DNS — MikroTik /radius add
-    //            requires an IP, not a domain (domain causes intermittent issues).
-    const _appUrl = process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || '';
-    let _urlHostname = '';
-    try {
-      if (_appUrl) _urlHostname = new URL(_appUrl).hostname;
-    } catch { /* ignore invalid URL */ }
-    // Skip localhost/127.0.0.1 — useless for remote MikroTik
-    const isLocalhost = (h: string) => !h || h === 'localhost' || h === '127.0.0.1' || h === '0.0.0.0';
-    const _envHost = isLocalhost(_urlHostname) ? '' : _urlHostname;
-    // Try request Host header as last resort (the URL the admin accessed the API from)
-    const _reqHost = request.headers.get('host')?.split(':')[0] || '';
-    const _validReqHost = isLocalhost(_reqHost) ? '' : _reqHost;
-    let radiusServerIp = process.env.RADIUS_SERVER_IP || process.env.VPS_IP || _envHost || _validReqHost || '127.0.0.1';
-    // Resolve domain name to IP address (MikroTik requires IP, not domain)
-    if (!isValidIp(radiusServerIp)) {
-      radiusServerIp = await resolveToIp(radiusServerIp);
-    }
+    // Priority: RADIUS_SERVER_IP env → VPS_IP env → auto-detect from network interfaces
+    // IMPORTANT: Jangan pakai domain (NEXTAUTH_URL hostname) karena:
+    // 1. Domain bisa resolve ke Cloudflare proxy IP (104.x.x.x) yang tidak support RADIUS UDP
+    // 2. MikroTik /radius add butuh IP asli yang reachable via local network/VPN
+    // 3. Cloudflare proxy hanya untuk HTTP/HTTPS, bukan UDP 1812/1813/3799
+    let radiusServerIp = process.env.RADIUS_SERVER_IP || process.env.VPS_IP || getServerIp();
     let nasSrcAddress = ''; // VPN IP of the router (NAS), used as src-address in /radius add
 
     // LOGIC:
