@@ -99,6 +99,11 @@ create_env_file() {
     if [ -z "$ENCRYPTION_KEY" ]; then
         export ENCRYPTION_KEY=$(openssl rand -hex 16)
     fi
+
+    # Generate CRON_SECRET for cron-runner ↔ backend API auth
+    if [ -z "$CRON_SECRET" ]; then
+        export CRON_SECRET=$(openssl rand -hex 32)
+    fi
     
     # Get public IP if not set
     if [ -z "$VPS_IP" ]; then
@@ -139,6 +144,9 @@ AGENT_JWT_SECRET="${AGENT_JWT_SECRET}"
 # Encryption Key for sensitive data at rest (GenieACS password, VPN credentials)
 ENCRYPTION_KEY="${ENCRYPTION_KEY}"
 
+# Cron Secret — shared between cron-runner and backend API for auth bypass
+CRON_SECRET="${CRON_SECRET}"
+
 # Node Environment
 NODE_ENV="production"
 
@@ -158,6 +166,7 @@ EOF
     save_install_info "NEXTAUTH_SECRET" "$NEXTAUTH_SECRET"
     save_install_info "AGENT_JWT_SECRET" "$AGENT_JWT_SECRET"
     save_install_info "ENCRYPTION_KEY" "$ENCRYPTION_KEY"
+    save_install_info "CRON_SECRET" "$CRON_SECRET"
     save_install_info "VPS_IP" "$VPS_IP"
 }
 
