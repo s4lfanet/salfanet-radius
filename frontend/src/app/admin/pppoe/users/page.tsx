@@ -1490,8 +1490,6 @@ export default function PppoeUsersPage() {
                     >
                       <Shield className="h-3.5 w-3.5 pointer-events-none" />
                     </button>
-                    <button onClick={() => handleStopSubscription(user)} className="compact-action p-1.5 text-destructive hover:bg-destructive/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Stop & Hapus" title="Stop & Hapus"><Ban className="h-3.5 w-3.5 pointer-events-none" /></button>
-                    <button onClick={() => setDeleteUserId(user.id)} className="compact-action p-1.5 text-destructive hover:bg-destructive/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Hapus" title="Hapus"><Trash2 className="h-3.5 w-3.5 pointer-events-none" /></button>
                     <button onClick={() => setPrintDialogUser(user)} className="compact-action p-1.5 text-purple-500 hover:bg-purple-500/10 rounded cursor-pointer flex items-center justify-center focus:outline-none" aria-label="Cetak Invoice" title="Cetak Invoice"><Printer className="h-3.5 w-3.5 pointer-events-none" /></button>
                     {invoiceCounts[user.id] > 0 ? (
                       <button onClick={() => handleMarkAllPaid(user.id, user.name)} disabled={markingPaid === user.id} className="compact-action px-2 py-1 text-[10px] font-medium bg-primary text-white rounded hover:bg-primary/90 disabled:opacity-50 ml-auto cursor-pointer focus:outline-none">
@@ -1688,10 +1686,6 @@ export default function PppoeUsersPage() {
                 </button>
                 <button onClick={() => { handleEdit(user); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-muted flex items-center gap-2 cursor-pointer">
                   <Hand className="h-3.5 w-3.5 text-amber-500" /> Janji Bayar
-                </button>
-                <div className="border-t border-border my-1" />
-                <button onClick={() => { setDeleteUserId(user.id); setActionMenuOpen(null); }} className="w-full px-3 py-2 text-xs text-left hover:bg-destructive/10 text-destructive flex items-center gap-2 cursor-pointer">
-                  <Trash2 className="h-3.5 w-3.5" /> Hapus
                 </button>
               </div>
             </>
