@@ -6,6 +6,55 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.3.0] — 2026-08-14 — Add-ons System + Janji Bayar + GPS Maps + Diskon + Teknisi Tracking
+
+### Added — Layanan Add-ons (Add-on Services)
+- **Prisma models**: `addonType`, `customerAddon`, `invoiceAddon` — mendukung recurring (bulanan) & one-time (sekali bayar)
+- **API endpoints**:
+  - `GET/POST /api/addon-types` — list & create addon types
+  - `PUT/DELETE /api/addon-types/[id]` — update & soft-delete addon types
+  - `GET/POST /api/pppoe/users/[id]/addons` — list & assign addon ke pelanggan
+  - `DELETE /api/customer-addons/[id]` — hentikan addon pelanggan (set endDate)
+- **Invoice integration**: addon recurring otomatis ditambahkan ke invoice bulanan saat cron generate
+- **Frontend admin page**: `/admin/pppoe/addons` — kelola jenis layanan tambahan (CRUD + toggle active)
+- **UserDetailModal**: tab "📦 Add-ons" — lihat addon aktif & riwayat, tambah/hentikan addon dengan price override
+
+### Added — Janji Bayar (Promise to Pay)
+- **Prisma model**: `paymentPromise` — status `active`/`fulfilled`/`broken`
+- **API endpoints**: `GET/POST/DELETE /api/pppoe/users/[id]/promise`
+- **Behavior**: membuat janji bayar akan membuka isolir pelanggan hingga tanggal janji; membatalkan akan mengisolir kembali
+- **UserDetailModal**: tab "🤝 Janji Bayar" — buat janji bayar dengan tanggal & catatan, lihat riwayat
+- **Dropdown aksi**: tombol "Janji Bayar" di menu aksi pelanggan (buka modal edit → tab Janji Bayar)
+
+### Added — GPS Maps di Customer Detail
+- **Embedded OpenStreetMap iframe** di tab Info Pengguna — menampilkan lokasi GPS pelanggan
+- **Google Maps link** — tombol "Google Maps ↗" untuk buka koordinat di Google Maps
+- Menggunakan koordinat `latitude`/`longitude` yang sudah ada di database
+
+### Added — Diskon Tagihan di Customer Detail
+- **Field diskon** (`discount` & `discountNote`) sekarang bisa di-edit dari UserDetailModal tab Info
+- **Invoice generation fix**: cron `invoice-jobs.ts` sekarang mengurangi `discount` dari `baseAmount` saat generate invoice bulanan
+- **Update API**: `updatePppoeUser` menerima & menyimpan perubahan `discount` & `discountNote`
+
+### Added — Teknisi Pemasang Tracking
+- **Field baru**: `registeredByTechnicianId` di `pppoeUser` model (nullable, relation ke `technician`)
+- **Display**: UserDetailModal tab Info menampilkan nama teknisi yang mendaftarkan pelanggan + tanggal registrasi
+- **List query**: `listPppoeUsers` sekarang include `registeredByTechnician` relation
+- **Create API**: `createPppoeUser` menerima `registeredByTechnicianId` (untuk PSB dari technician portal)
+- Legacy customers tanpa teknisi menampilkan "System / Admin"
+
+### Fixed — Invoice Generation
+- **Bug**: field `discount` di `pppoeUser` tidak digunakan saat generate invoice bulanan
+- **Fix**: `baseAmount = Math.max(0, user.profile.price - (user.discount || 0))` + tambah recurring addons
+- **Invoice addon records**: `invoiceAddon` records dibuat untuk setiap recurring addon aktif
+
+### Maintenance
+- **`.gitignore`**: untrack `home.pmynet.id-main/` reference repo & `.playwright-mcp/` snapshots
+- **Service worker**: cache version bumped to v16
+- **Sidebar menu**: tambah menu "Layanan Tambahan" di bawah PPPoE
+
+---
+
 ## [4.2.0] — 2026-08-13 — Redis Cache + Realtime UI Fixes + RADIUS Script IP Fix + Auth Mode Cleanup
 
 ### Added — Redis Cache untuk Data Non-Realtime
