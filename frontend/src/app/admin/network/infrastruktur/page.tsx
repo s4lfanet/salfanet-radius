@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, MapPin, ExternalLink, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -92,10 +93,9 @@ function OTBTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/network/otbs?page=${page}&limit=20&search=${encodeURIComponent(search)}`);
-      const d = await res.json();
-      setItems(d.otbs || []);
-      setTotal(d.pagination?.total || 0);
+      const d = await apiAdmin(`/api/network/otbs?page=${page}&limit=20&search=${encodeURIComponent(search)}`);
+      setItems((d as any).otbs || []);
+      setTotal((d as any).pagination?.total || 0);
     } finally {
       setLoading(false);
     }
@@ -108,16 +108,11 @@ function OTBTable({ search }: { search: string }) {
     if (!window.confirm(t('infrastruktur.deleteConfirmOTB', { name: r.name }))) return;
     setDeletingId(r.id);
     try {
-      const res = await fetch(`/api/network/otbs/${r.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setItems(prev => prev.filter(i => i.id !== r.id));
-        setTotal(prev => prev - 1);
-      } else {
-        const d = await res.json().catch(() => ({}));
-        alert(t('infrastruktur.deleteFailed', { error: d.error || res.statusText }));
-      }
-    } catch {
-      alert(t('infrastruktur.deleteFailedOTB'));
+      await apiAdmin(`/api/network/otbs/${r.id}`, { method: 'DELETE' });
+      setItems(prev => prev.filter(i => i.id !== r.id));
+      setTotal(prev => prev - 1);
+    } catch (e: any) {
+      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
     } finally {
       setDeletingId(null);
     }
@@ -175,10 +170,9 @@ function JCTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/network/joint-closures?search=${encodeURIComponent(search)}`);
-      const d = await res.json();
-      setItems(d.data || []);
-      setTotal(d.count || 0);
+      const d = await apiAdmin(`/api/network/joint-closures?search=${encodeURIComponent(search)}`);
+      setItems((d as any).data || []);
+      setTotal((d as any).count || 0);
     } finally {
       setLoading(false);
     }
@@ -190,16 +184,11 @@ function JCTable({ search }: { search: string }) {
     if (!window.confirm(t('infrastruktur.deleteConfirmJC', { name: r.name }))) return;
     setDeletingId(r.id);
     try {
-      const res = await fetch(`/api/network/joint-closures/${r.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setItems(prev => prev.filter(i => i.id !== r.id));
-        setTotal(prev => prev - 1);
-      } else {
-        const d = await res.json().catch(() => ({}));
-        alert(t('infrastruktur.deleteFailed', { error: d.error || res.statusText }));
-      }
-    } catch {
-      alert(t('infrastruktur.deleteFailedJC'));
+      await apiAdmin(`/api/network/joint-closures/${r.id}`, { method: 'DELETE' });
+      setItems(prev => prev.filter(i => i.id !== r.id));
+      setTotal(prev => prev - 1);
+    } catch (e: any) {
+      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
     } finally {
       setDeletingId(null);
     }
@@ -249,9 +238,8 @@ function ODCTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/network/odcs');
-      const d = await res.json();
-      const all: ODC[] = d.odcs || [];
+      const d = await apiAdmin('/api/network/odcs');
+      const all: ODC[] = (d as any).odcs || [];
       const filtered = search
         ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
         : all;
@@ -268,16 +256,11 @@ function ODCTable({ search }: { search: string }) {
     if (!window.confirm(t('infrastruktur.deleteConfirmODC', { name: r.name }))) return;
     setDeletingId(r.id);
     try {
-      const res = await fetch(`/api/network/odcs/${r.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setItems(prev => prev.filter(i => i.id !== r.id));
-        setTotal(prev => prev - 1);
-      } else {
-        const d = await res.json().catch(() => ({}));
-        alert(t('infrastruktur.deleteFailed', { error: d.error || res.statusText }));
-      }
-    } catch {
-      alert(t('infrastruktur.deleteFailedODC'));
+      await apiAdmin(`/api/network/odcs/${r.id}`, { method: 'DELETE' });
+      setItems(prev => prev.filter(i => i.id !== r.id));
+      setTotal(prev => prev - 1);
+    } catch (e: any) {
+      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
     } finally {
       setDeletingId(null);
     }
@@ -329,9 +312,8 @@ function ODPTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/network/odps?limit=500');
-      const d = await res.json();
-      const all: ODP[] = d.odps || d.data || [];
+      const d = await apiAdmin('/api/network/odps?limit=500');
+      const all: ODP[] = (d as any).odps || (d as any).data || [];
       const filtered = search
         ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
         : all;
@@ -348,16 +330,11 @@ function ODPTable({ search }: { search: string }) {
     if (!window.confirm(t('infrastruktur.deleteConfirmODP', { name: r.name }))) return;
     setDeletingId(r.id);
     try {
-      const res = await fetch(`/api/network/odps/${r.id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setItems(prev => prev.filter(i => i.id !== r.id));
-        setTotal(prev => prev - 1);
-      } else {
-        const d = await res.json().catch(() => ({}));
-        alert(t('infrastruktur.deleteFailed', { error: d.error || res.statusText }));
-      }
-    } catch {
-      alert(t('infrastruktur.deleteFailedODP'));
+      await apiAdmin(`/api/network/odps/${r.id}`, { method: 'DELETE' });
+      setItems(prev => prev.filter(i => i.id !== r.id));
+      setTotal(prev => prev - 1);
+    } catch (e: any) {
+      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
     } finally {
       setDeletingId(null);
     }
