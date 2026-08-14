@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import {
   Gift, Save, Loader2, ToggleLeft, ToggleRight,
@@ -36,12 +37,11 @@ export default function ReferralSettingsPage() {
 
   const fetchConfig = async () => {
     try {
-      const res = await fetch('/api/admin/referrals/config');
-      const data = await res.json();
-      if (data.success) {
-        setConfig(data.config);
+      const data = await apiAdmin('/api/admin/referrals/config');
+      if ((data as any).success) {
+        setConfig((data as any).config);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fetch config error:', error);
     } finally {
       setLoading(false);
@@ -51,21 +51,19 @@ export default function ReferralSettingsPage() {
   const saveConfig = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/admin/referrals/config', {
+      const data = await apiAdmin('/api/admin/referrals/config', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config),
       });
 
-      const data = await res.json();
-      if (data.success) {
+      if ((data as any).success) {
         addToast({ type: 'success', title: 'Berhasil!', description: t('referrals.saveSuccess') });
-        setConfig(data.config);
+        setConfig((data as any).config);
       } else {
-        addToast({ type: 'error', title: 'Error', description: data.error || t('referrals.saveError') });
+        addToast({ type: 'error', title: 'Error', description: (data as any).error || t('referrals.saveError') });
       }
-    } catch {
-      addToast({ type: 'error', title: 'Error', description: t('referrals.saveError') });
+    } catch (e: any) {
+      addToast({ type: 'error', title: 'Error', description: e.message || t('referrals.saveError') });
     } finally {
       setSaving(false);
     }

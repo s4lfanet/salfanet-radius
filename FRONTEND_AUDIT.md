@@ -1838,6 +1838,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 51 — Referrals + Settings Referral Pages Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/referrals/page.tsx` — 2 fetch() calls replaced:
+  - `fetch('/api/admin/referrals?...')` (load rewards) → `apiAdmin(...)`
+  - `fetch('/api/admin/referrals/${id}', { method: 'POST' })` (process reward) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+- `frontend/src/app/admin/settings/referral/page.tsx` — 2 fetch() calls replaced:
+  - `fetch('/api/admin/referrals/config')` (load config) → `apiAdmin(...)`
+  - `fetch('/api/admin/referrals/config', { method: 'PUT' })` (save config) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Referrals page loads (redirected to login due to session expiry), zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
