@@ -207,15 +207,19 @@ export default function VpnServerPage() {
     const sshCreds = { host, port, username, password };
     setSavedSshCredentials(sshCreds);
     setL2tpConfig({ vpnServerIp, l2tpUsername, l2tpPassword });
-    // Persist non-sensitive SSH info to localStorage (password is NOT stored)
+    // Persist non-sensitive SSH info to localStorage (passwords are NOT stored)
     try {
       localStorage.setItem('l2tp_ssh_credentials', JSON.stringify({ host, port, username }));
-      localStorage.setItem('l2tp_config', JSON.stringify({ vpnServerIp, l2tpUsername, l2tpPassword }));
+      localStorage.setItem('l2tp_config', JSON.stringify({ vpnServerIp, l2tpUsername }));
     } catch {}
     await executeL2tpAction('status', server, sshCreds);
   };
 
   const executeL2tpAction = async (action: string, server: VpnServer, formValues: { host: string; port: string; username: string; password: string }) => {
+    if (!l2tpConfig.l2tpPassword) {
+      addToast({ type: 'error', title: 'L2TP Password wajib diisi ulang (tidak disimpan untuk keamanan)' });
+      return;
+    }
     setL2tpLoading(true);
     try {
       const result = await apiAdmin('/api/network/vpn-server/l2tp-control', {

@@ -1,5 +1,6 @@
 ﻿"use client"
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { formatCurrency } from '@/lib/utils';
 import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -283,7 +284,6 @@ export default function HotspotVoucherPage() {
     } finally { setDeletingVouchers(false); }
   }
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount)
   const handleSelectVoucher = (id: string) => { setSelectedVouchers(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]); }
   const handleSelectAll = () => { const w = vouchers.filter(v => v.status === 'WAITING').map(v => v.id); setSelectedVouchers(w.length === selectedVouchers.length ? [] : w); }
   const handlePrintSelected = async () => { if (selectedVouchers.length === 0) { await showError(t('hotspot.selectVouchers')); return; } setIsPrintDialogOpen(true); }

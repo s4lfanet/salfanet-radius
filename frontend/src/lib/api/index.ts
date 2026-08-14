@@ -23,3 +23,6 @@ export { customerApi } from './customer';
 export { agentApi } from './agent';
 export { networkApi, dashboardApi } from './network';
 export { settingsApi, adminApi } from './settings';
+
+// Re-export all API contract types
+export type * from '@/types/api';

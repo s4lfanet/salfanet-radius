@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Shield, Search, RefreshCw, Loader2, Wifi, WifiOff, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatCurrency } from '@/lib/utils';
 
 interface UnpaidInvoice {
   id: string;
@@ -48,7 +49,6 @@ export default function TechnicianIsolatedPage() {
   const [filter, setFilter] = useState<'all' | 'online' | 'offline'>('all');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
-  const formatCurrency = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
 
   const fetchData = useCallback(async () => {
     try {
