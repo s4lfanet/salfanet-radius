@@ -48,20 +48,20 @@ export default function MapPicker({
       // Dynamic import Leaflet
       const L = (await import('leaflet')).default;
 
-      // Import CSS via link tag
+      // Import CSS via link tag (self-hosted to comply with CSP)
       if (!document.querySelector('link[href*="leaflet.css"]')) {
         const link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        link.href = '/leaflet/leaflet.css';
         document.head.appendChild(link);
       }
 
-      // Fix default marker icon
+      // Fix default marker icon (self-hosted)
       delete (L.Icon.Default.prototype as any)._getIconUrl;
       L.Icon.Default.mergeOptions({
-        iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-        iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+        iconUrl: '/leaflet/marker-icon.png',
+        shadowUrl: '/leaflet/marker-shadow.png',
       });
 
       if (isCancelled || !mapContainerRef.current) return;
