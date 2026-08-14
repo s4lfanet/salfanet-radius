@@ -1303,6 +1303,25 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 19 — Network Routers Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/routers/page.tsx` — 8 fetch() calls replaced:
+  - `fetch('/api/network/routers')` (load) → `apiAdmin(...)`
+  - `fetch('/api/network/routers/status', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/network/routers/test-gateway', { method: 'POST' })` (2 calls: gateway + VPN ping) → `apiAdmin(...)`
+  - `fetch('/api/network/routers/test', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/network/routers', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/network/routers?id=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/network/routers/${id}/setup-radius', { method: 'POST' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/routers page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network routers page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
