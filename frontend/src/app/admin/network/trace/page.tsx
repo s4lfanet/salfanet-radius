@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showError } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 import {
   RefreshCcw, Route, Link2, AlertTriangle, ChevronRight, MapPin, Cable, Box, GitBranch, Zap,
 } from 'lucide-react';
@@ -52,16 +53,15 @@ function LogicalTraceTab() {
   React.useEffect(() => {
     (async () => {
       try {
-        const [oltsRes, jcsRes, odcsRes, odpsRes] = await Promise.all([
-          fetch('/api/network/olts'), fetch('/api/network/joint-closures'),
-          fetch('/api/network/odcs'), fetch('/api/network/odps'),
+        const [olts, jcs, odcs, odps] = await Promise.all([
+          apiAdmin('/api/network/olts'), apiAdmin('/api/network/joint-closures'),
+          apiAdmin('/api/network/odcs'), apiAdmin('/api/network/odps'),
         ]);
-        const [olts, jcs, odcs, odps] = await Promise.all([oltsRes.json(), jcsRes.json(), odcsRes.json(), odpsRes.json()]);
         const allNodes: NetworkNode[] = [
-          ...(olts.data || []).map((n: any) => ({ ...n, type: 'OLT' as const })),
-          ...(jcs.data || []).map((n: any) => ({ ...n, type: 'JOINT_CLOSURE' as const })),
-          ...(odcs.odcs || []).map((n: any) => ({ ...n, type: 'ODC' as const })),
-          ...(odps.odps || odps.data || []).map((n: any) => ({ ...n, type: 'ODP' as const })),
+          ...((olts as any).data || []).map((n: any) => ({ ...n, type: 'OLT' as const })),
+          ...((jcs as any).data || []).map((n: any) => ({ ...n, type: 'JOINT_CLOSURE' as const })),
+          ...((odcs as any).odcs || []).map((n: any) => ({ ...n, type: 'ODC' as const })),
+          ...((odps as any).odps || (odps as any).data || []).map((n: any) => ({ ...n, type: 'ODP' as const })),
         ];
         setNodes(allNodes);
       } catch { /* silent */ }
@@ -71,10 +71,9 @@ function LogicalTraceTab() {
   const handleTrace = async (fromId: string, toId: string) => {
     setIsLoading(true); setError(null); setTraceResult(null);
     try {
-      const res = await fetch(`/api/network/fiber-paths/trace?from=${fromId}&to=${toId}`);
-      const data = await res.json();
-      if (data.success) setTraceResult(data);
-      else setError(data.error || t('network.tracing.noPathFound'));
+      const data = await apiAdmin(`/api/network/fiber-paths/trace?from=${fromId}&to=${toId}`);
+      if ((data as any).success) setTraceResult(data as any);
+      else setError((data as any).error || t('network.tracing.noPathFound'));
     } catch (err: any) { setError(err.message || 'Failed to trace path'); }
     finally { setIsLoading(false); }
   };
@@ -145,11 +144,9 @@ function PhysicalTraceTab() {
       const params = new URLSearchParams();
       if (searchType === 'core') params.append('coreId', coreId);
       else { params.append('deviceType', deviceType); params.append('deviceId', deviceId); }
-      const res = await fetch(`/api/network/trace?${params}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to trace fiber path');
-      setTraceResult(data);
-      if (!data.path?.length) showError('No fiber path found');
+      const data = await apiAdmin(`/api/network/trace?${params}`);
+      setTraceResult(data as any);
+      if (!(data as any).path?.length) showError('No fiber path found');
     } catch (error: unknown) {
       showError((error as Error).message || 'Failed to trace fiber path');
       setTraceResult(null);
