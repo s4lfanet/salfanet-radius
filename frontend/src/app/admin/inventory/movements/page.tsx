@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 import {
   TrendingUp,
   TrendingDown,
@@ -72,13 +73,13 @@ export default function StockMovementsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [movementsRes, itemsRes] = await Promise.all([
-        fetch('/api/inventory/movements'),
-        fetch('/api/inventory/items'),
+      const [movementsData, itemsData] = await Promise.all([
+        apiAdmin<Movement[]>('/api/inventory/movements'),
+        apiAdmin<Item[]>('/api/inventory/items'),
       ]);
 
-      if (movementsRes.ok) setMovements(await movementsRes.json());
-      if (itemsRes.ok) setItems(await itemsRes.json());
+      setMovements(movementsData || []);
+      setItems(itemsData || []);
     } catch (error) {
       await showError(t('inventory.failedLoadData'));
     } finally {
@@ -105,24 +106,17 @@ export default function StockMovementsPage() {
     }
 
     try {
-      const res = await fetch('/api/inventory/movements', {
+      const result = await apiAdmin<{ error?: string }>('/api/inventory/movements', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
-      const result = await res.json();
-
-      if (res.ok) {
-        await showSuccess(t('inventory.movementCreated'));
-        setIsDialogOpen(false);
-        resetForm();
-        loadData();
-      } else {
-        await showError(result.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('inventory.failedRecordMovement'));
+      await showSuccess(t('inventory.movementCreated'));
+      setIsDialogOpen(false);
+      resetForm();
+      loadData();
+    } catch (error: any) {
+      await showError(error?.message || t('inventory.failedRecordMovement'));
     }
   };
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Building2, Save, Loader2, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface BankAccount {
   bankName: string;
@@ -24,11 +25,8 @@ export default function BankAccountsPage() {
 
   const fetchBankAccounts = async () => {
     try {
-      const res = await fetch('/api/company');
-      if (res.ok) {
-        const data = await res.json();
-        setBankAccounts(data.bankAccounts || []);
-      }
+      const data = await apiAdmin<{ bankAccounts?: BankAccount[] }>('/api/company');
+      setBankAccounts(data.bankAccounts || []);
     } catch (error) {
       console.error('Error fetching bank accounts:', error);
     } finally {
@@ -57,16 +55,12 @@ export default function BankAccountsPage() {
     setSaving(true);
     try {
       // First fetch current company data so we don't overwrite other fields
-      const getRes = await fetch('/api/company');
-      if (!getRes.ok) throw new Error('Failed to fetch company');
-      const current = await getRes.json();
+      const current = await apiAdmin<Record<string, any>>('/api/company');
 
-      const res = await fetch('/api/company', {
+      await apiAdmin('/api/company', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...current, bankAccounts }),
       });
-      if (!res.ok) throw new Error('Save failed');
       addToast({ type: 'success', title: t('common.success'), description: t('settings.bankAccountsSaved') || 'Rekening bank berhasil disimpan', duration: 2500 });
     } catch {
       addToast({ type: 'error', title: t('common.error'), description: t('settings.saveSettingsFailed') });

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm, showWarning } from '@/lib/sweetalert';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 import {
   SimpleModal,
   ModalHeader,
@@ -73,25 +74,9 @@ export default function TicketCategoriesPage() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/tickets/categories');
-      if (res.ok) {
-        const data = await res.json();
-        // If no data from DB, use default categories
-        if (!data || data.length === 0) {
-          const defaultCategories = TICKET_CATEGORIES.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            description: cat.description,
-            color: cat.color,
-            isActive: true,
-            _count: { tickets: 0 }
-          }));
-          setCategories(defaultCategories);
-        } else {
-          setCategories(data);
-        }
-      } else {
-        // On error, show default categories
+      const data = await apiAdmin<Category[]>('/api/tickets/categories');
+      // If no data from DB, use default categories
+      if (!data || data.length === 0) {
         const defaultCategories = TICKET_CATEGORIES.map(cat => ({
           id: cat.id,
           name: cat.name,
@@ -101,6 +86,8 @@ export default function TicketCategoriesPage() {
           _count: { tickets: 0 }
         }));
         setCategories(defaultCategories);
+      } else {
+        setCategories(data);
       }
     } catch (error) {
       console.error('Failed to fetch categories:', error);
@@ -155,23 +142,17 @@ export default function TicketCategoriesPage() {
       : formData;
 
     try {
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
 
-      if (res.ok) {
-        fetchCategories();
-        handleCloseModal();
-        await showSuccess(editingCategory ? t('ticket.categoryUpdated') : t('ticket.categoryCreated'));
-      } else {
-        const error = await res.json();
-        await showError(error.error || t('ticket.saveFailed'));
-      }
-    } catch (error) {
+      fetchCategories();
+      handleCloseModal();
+      await showSuccess(editingCategory ? t('ticket.categoryUpdated') : t('ticket.categoryCreated'));
+    } catch (error: any) {
       console.error('Failed to save category:', error);
-      await showError(t('ticket.saveFailed'));
+      await showError(error?.message || t('ticket.saveFailed'));
     }
   };
 
@@ -185,20 +166,15 @@ export default function TicketCategoriesPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/tickets/categories?id=${category.id}`, {
+      await apiAdmin(`/api/tickets/categories?id=${category.id}`, {
         method: 'DELETE',
       });
 
-      if (res.ok) {
-        fetchCategories();
-        await showSuccess(t('ticket.categoryDeleted') || 'Category deleted');
-      } else {
-        const error = await res.json();
-        await showError(error.error || t('ticket.deleteFailed'));
-      }
-    } catch (error) {
+      fetchCategories();
+      await showSuccess(t('ticket.categoryDeleted') || 'Category deleted');
+    } catch (error: any) {
       console.error('Failed to delete category:', error);
-      await showError(t('ticket.deleteFailed'));
+      await showError(error?.message || t('ticket.deleteFailed'));
     }
   };
 

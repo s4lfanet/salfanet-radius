@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Save, Loader2, Info } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface FooterSettings {
   footerAdmin: string;
@@ -58,8 +59,7 @@ export default function FooterSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    fetch('/api/company')
-      .then(res => res.json())
+    apiAdmin<Record<string, any>>('/api/company')
       .then(data => {
         if (data) {
           setSettings({
@@ -79,12 +79,10 @@ export default function FooterSettingsPage() {
     setSaving(true);
     try {
       // Fetch current full company data first so we don't overwrite other fields
-      const currentRes = await fetch('/api/company');
-      const current = await currentRes.json();
+      const current = await apiAdmin<Record<string, any>>('/api/company');
 
-      const response = await fetch('/api/company', {
+      await apiAdmin('/api/company', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...current,
           footerAdmin: settings.footerAdmin,
@@ -94,11 +92,7 @@ export default function FooterSettingsPage() {
         }),
       });
 
-      if (response.ok) {
-        addToast({ type: 'success', title: 'Tersimpan', description: 'Pengaturan footer berhasil disimpan.', duration: 2000 });
-      } else {
-        throw new Error('Gagal menyimpan');
-      }
+      addToast({ type: 'success', title: 'Tersimpan', description: 'Pengaturan footer berhasil disimpan.', duration: 2000 });
     } catch {
       addToast({ type: 'error', title: 'Gagal', description: 'Terjadi kesalahan saat menyimpan.', duration: 4000 });
     } finally {

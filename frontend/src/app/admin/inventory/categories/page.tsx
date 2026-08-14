@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Plus, Pencil, Trash2, Tag, RefreshCcw } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 import {
   SimpleModal,
   ModalHeader,
@@ -45,10 +46,8 @@ export default function CategoriesPage() {
   const loadCategories = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/inventory/categories');
-      if (res.ok) {
-        setCategories(await res.json());
-      }
+      const data = await apiAdmin<Category[]>('/api/inventory/categories');
+      setCategories(data || []);
     } catch (error) {
       await showError(t('common.error'));
     } finally {
@@ -83,29 +82,22 @@ export default function CategoriesPage() {
         ? { ...formData, id: editingCategory.id }
         : formData;
 
-      const res = await fetch('/api/inventory/categories', {
+      await apiAdmin('/api/inventory/categories', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
-
-      if (res.ok) {
-        await showSuccess(
-          editingCategory
-            ? t('inventory.categoryUpdated')
-            : t('inventory.categoryCreated')
-        );
-        setIsDialogOpen(false);
-        setEditingCategory(null);
-        resetForm();
-        loadCategories();
-      } else {
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(
+        editingCategory
+          ? t('inventory.categoryUpdated')
+          : t('inventory.categoryCreated')
+      );
+      setIsDialogOpen(false);
+      setEditingCategory(null);
+      resetForm();
+      loadCategories();
+    } catch (error: any) {
+      await showError(error?.message || t('common.error'));
     }
   };
 
@@ -118,19 +110,14 @@ export default function CategoriesPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/inventory/categories?id=${category.id}`, {
+      await apiAdmin(`/api/inventory/categories?id=${category.id}`, {
         method: 'DELETE',
       });
 
-      if (res.ok) {
-        await showSuccess(t('inventory.categoryDeleted'));
-        loadCategories();
-      } else {
-        const result = await res.json();
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(t('inventory.categoryDeleted'));
+      loadCategories();
+    } catch (error: any) {
+      await showError(error?.message || t('common.error'));
     }
   };
 

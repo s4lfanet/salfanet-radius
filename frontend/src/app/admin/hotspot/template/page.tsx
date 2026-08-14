@@ -5,6 +5,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { Plus, Edit2, Trash2, Eye, X, RefreshCw, FileCode } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { renderVoucherTemplate } from '@/lib/utils/templateRenderer';
+import { apiAdmin } from '@/lib/api';
 import {
   SimpleModal,
   ModalHeader,
@@ -113,11 +114,8 @@ export default function VoucherTemplatesPage() {
 
   const fetchTemplates = async () => {
     try {
-      const res = await fetch('/api/voucher-templates');
-      if (res.ok) {
-        const data = await res.json();
-        setTemplates(data);
-      }
+      const data = await apiAdmin<VoucherTemplate[]>('/api/voucher-templates');
+      setTemplates(data || []);
     } catch (error) {
       console.error('Failed to fetch templates:', error);
     } finally {
@@ -130,21 +128,15 @@ export default function VoucherTemplatesPage() {
     try {
       const url = editingTemplate ? `/api/voucher-templates/${editingTemplate.id}` : '/api/voucher-templates';
       const method = editingTemplate ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      if (res.ok) {
-        await showSuccess(editingTemplate ? t('common.updated') : t('common.created'));
-        await fetchTemplates();
-        handleCloseDialog();
-      } else {
-        const error = await res.json();
-        await showError(error.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('hotspot.failedSaveTemplate'));
+      await showSuccess(editingTemplate ? t('common.updated') : t('common.created'));
+      await fetchTemplates();
+      handleCloseDialog();
+    } catch (error: any) {
+      await showError(error?.message || t('hotspot.failedSaveTemplate'));
     }
   };
 
@@ -152,16 +144,11 @@ export default function VoucherTemplatesPage() {
     const confirmed = await showConfirm(t('common.deleteConfirm'));
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/voucher-templates/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        await showSuccess(t('hotspot.templateDeleted'));
-        await fetchTemplates();
-      } else {
-        const error = await res.json();
-        await showError(error.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('hotspot.failedDeleteTemplate'));
+      await apiAdmin(`/api/voucher-templates/${id}`, { method: 'DELETE' });
+      await showSuccess(t('hotspot.templateDeleted'));
+      await fetchTemplates();
+    } catch (error: any) {
+      await showError(error?.message || t('hotspot.failedDeleteTemplate'));
     }
   };
 
