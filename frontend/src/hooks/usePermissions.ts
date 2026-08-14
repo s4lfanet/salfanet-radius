@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { apiAdmin } from '@/lib/api';
 
 /**
  * Hook to check user permissions on client side
  * Usage:
- * 
+ *
  * const { hasPermission, permissions, loading } = usePermissions();
- * 
+ *
  * if (hasPermission('users.delete')) {
  *   return <button>Delete</button>
  * }
@@ -23,11 +24,10 @@ export function usePermissions() {
       const userId = (session.user as any).id;
       if (userId) {
         setLoading(true);
-        fetch(`/api/admin/users/${userId}/permissions`)
-          .then((res) => res.json())
+        apiAdmin<{ success?: boolean; permissions?: string[] }>(`/api/admin/users/${userId}/permissions`)
           .then((data) => {
             if (data.success) {
-              setPermissions(data.permissions);
+              setPermissions(data.permissions || []);
             }
           })
           .catch((error) => console.error('Error loading permissions:', error))
