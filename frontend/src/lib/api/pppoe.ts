@@ -42,7 +42,8 @@ export interface PppoeArea {
 export interface CreatePppoeUserPayload {
   username: string;
   password: string;
-  profile: string;
+  profile?: string;
+  profileId?: string;
   routerId?: string;
   areaId?: string;
   registeredAt?: string;

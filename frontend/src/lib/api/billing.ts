@@ -44,6 +44,19 @@ export const invoiceApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  /** Get invoice PDF data (for printing) */
+  getPdf(id: string): Promise<{ success: boolean; data: any }> {
+    return apiAdmin(`/api/invoices/${id}/pdf`);
+  },
+
+  /** Generate invoices */
+  generate(payload: Record<string, any>): Promise<{ success: boolean; [key: string]: any }> {
+    return apiAdmin('/api/invoices/generate', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
 };
 
 export const billingApi = {

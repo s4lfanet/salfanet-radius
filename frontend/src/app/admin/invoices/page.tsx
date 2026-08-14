@@ -695,7 +695,7 @@ export default function InvoicesPage() {
         sendWa: genSendWa,
       });
       if ((data as any).success) {
-        setGenResult(data);
+        setGenResult(data as any);
         loadInvoices();
       } else {
         await showError((data as any).error || 'Gagal generate tagihan');
