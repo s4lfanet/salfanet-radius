@@ -917,6 +917,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 2 — PPPoE New User Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/users/new/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/pppoe/profiles')` → `pppoeApi.listProfiles()`
+  - `fetch('/api/network/routers')` → `networkApi.listRouters()`
+  - `fetch('/api/pppoe/areas')` → `pppoeApi.listAreas()`
+  - `fetch('/api/pppoe/users?search=...')` (2x) → `pppoeApi.listUsers({ search: ... })`
+  - `fetch('/api/pppoe/users', { method: 'POST' })` → `pppoeApi.createUser(payload)`
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ New PPPoE user page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
