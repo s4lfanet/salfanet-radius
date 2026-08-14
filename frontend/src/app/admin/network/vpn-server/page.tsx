@@ -6,6 +6,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Shield, Server, Plus, Pencil, Trash2, Zap, Activity, CheckCircle, XCircle, Settings, Terminal, RefreshCw, FileText, X, Wifi, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface VpnServer {
   id: string
@@ -157,16 +158,15 @@ export default function VpnServerPage() {
 
   const loadVpnClients = async () => {
     try {
-      const res = await fetch('/api/network/vpn-client');
-      const data = await res.json();
-      const clients = (data.clients || []).map((c: any) => ({
+      const data = await apiAdmin('/api/network/vpn-client');
+      const clients = ((data as any).clients || []).map((c: any) => ({
         id: c.id,
         name: c.name,
         username: c.username,
         password: c.password,
         vpnType: (c.vpnType || 'l2tp').toLowerCase(),
         vpnServerId: c.vpnServerId,
-        vpnServerHost: (data.vpnServers || []).find((s: any) => s.id === c.vpnServerId)?.host || '',
+        vpnServerHost: ((data as any).vpnServers || []).find((s: any) => s.id === c.vpnServerId)?.host || '',
         isRadiusServer: c.isRadiusServer ?? false,
       }));
       setVpnClients(clients);
@@ -208,9 +208,8 @@ export default function VpnServerPage() {
   const executeL2tpAction = async (action: string, server: VpnServer, formValues: { host: string; port: string; username: string; password: string }) => {
     setL2tpLoading(true);
     try {
-      const response = await fetch('/api/network/vpn-server/l2tp-control', {
+      const result = await apiAdmin('/api/network/vpn-server/l2tp-control', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action,
           host: formValues.host,
@@ -222,17 +221,16 @@ export default function VpnServerPage() {
           l2tpPassword: l2tpConfig.l2tpPassword,
         }),
       });
-      const result = await response.json();
-      if (result.success) {
-        if (action === 'status') setL2tpStatus(result.result);
-        else if (action === 'logs') setL2tpLogs(result.result.logs || []);
-        else if (action === 'connections') setL2tpConnections(result.result.connections || '');
-        showSuccess(result.message);
+      if ((result as any).success) {
+        if (action === 'status') setL2tpStatus((result as any).result);
+        else if (action === 'logs') setL2tpLogs((result as any).result.logs || []);
+        else if (action === 'connections') setL2tpConnections((result as any).result.connections || '');
+        showSuccess((result as any).message);
         if (action !== 'status' && action !== 'logs' && action !== 'connections') {
           setTimeout(() => handleL2tpAction('status', server), 1000);
         }
       } else {
-        showError(result.message || t('network.operationFailed'));
+        showError((result as any).message || t('network.operationFailed'));
       }
     } catch (error: any) {
       showError(t('network.failedExecuteL2tpCommand') + ': ' + error.message);
@@ -245,12 +243,11 @@ export default function VpnServerPage() {
 
   const loadServers = async () => {
     try {
-      const response = await fetch('/api/network/vpn-server');
-      const data = await response.json();
-      setServers(data.servers || []);
-    } catch (error) {
+      const data = await apiAdmin('/api/network/vpn-server');
+      setServers((data as any).servers || []);
+    } catch (error: any) {
       console.error('Load servers error:', error);
-      showError(t('error.loadFailed') || 'Failed to load VPN servers');
+      showError(error.message || t('error.loadFailed') || 'Failed to load VPN servers');
     } finally {
       setLoading(false);
     }
@@ -266,28 +263,26 @@ export default function VpnServerPage() {
     if (action === 'configure') {
       setPptpLoading(true);
       try {
-        const r = await fetch('/api/network/vpn-server/pptp-control', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+        const res = await apiAdmin('/api/network/vpn-server/pptp-control', {
+          method: 'POST',
           body: JSON.stringify({ action: 'configure', ...savedSshCredentials, port: parseInt(savedSshCredentials.port), vpnServerIp: pptpSshForm.pptpServer, pptpUsername: pptpSshForm.pptpUser, pptpPassword: pptpSshForm.pptpPass }),
         });
-        const res = await r.json();
-        if (res.success) { showSuccess(res.message || 'PPTP dikonfigurasi'); setTimeout(() => handlePptpAction('status', server), 2000); }
-        else showError(res.message || 'Konfigurasi PPTP gagal');
+        if ((res as any).success) { showSuccess((res as any).message || 'PPTP dikonfigurasi'); setTimeout(() => handlePptpAction('status', server), 2000); }
+        else showError((res as any).message || 'Konfigurasi PPTP gagal');
       } catch (e: any) { showError('Gagal: ' + e.message); } finally { setPptpLoading(false); }
       return;
     }
     setPptpLoading(true);
     try {
-      const r = await fetch('/api/network/vpn-server/pptp-control', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const res = await apiAdmin('/api/network/vpn-server/pptp-control', {
+        method: 'POST',
         body: JSON.stringify({ action, ...savedSshCredentials, port: parseInt(savedSshCredentials.port) }),
       });
-      const res = await r.json();
-      if (res.success) {
-        if (action === 'status') setPptpStatus(res.result);
-        else if (action === 'logs') setPptpLogs(res.result?.logs || [res.result?.output || '']);
-        showSuccess(res.message);
-      } else showError(res.message || 'Operasi gagal');
+      if ((res as any).success) {
+        if (action === 'status') setPptpStatus((res as any).result);
+        else if (action === 'logs') setPptpLogs((res as any).result?.logs || [(res as any).result?.output || '']);
+        showSuccess((res as any).message);
+      } else showError((res as any).message || 'Operasi gagal');
     } catch (e: any) { showError('Gagal: ' + e.message); } finally { setPptpLoading(false); }
   };
 
@@ -300,22 +295,20 @@ export default function VpnServerPage() {
     if (pptpSshForm.pptpServer && pptpSshForm.pptpUser && pptpSshForm.pptpPass) {
       setPptpLoading(true);
       try {
-        const r = await fetch('/api/network/vpn-server/pptp-control', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+        const res = await apiAdmin('/api/network/vpn-server/pptp-control', {
+          method: 'POST',
           body: JSON.stringify({ action: 'configure', ...sshCreds, port: parseInt(port), vpnServerIp: pptpSshForm.pptpServer, pptpUsername: pptpSshForm.pptpUser, pptpPassword: pptpSshForm.pptpPass }),
         });
-        const res = await r.json();
-        if (res.success) { showSuccess(res.message || 'PPTP dikonfigurasi'); setTimeout(() => handlePptpAction('status', server), 2000); }
-        else showError(res.message || 'Konfigurasi PPTP gagal');
+        if ((res as any).success) { showSuccess((res as any).message || 'PPTP dikonfigurasi'); setTimeout(() => handlePptpAction('status', server), 2000); }
+        else showError((res as any).message || 'Konfigurasi PPTP gagal');
       } catch (e: any) { showError('Gagal: ' + e.message); } finally { setPptpLoading(false); }
       return;
     }
     setPptpLoading(true);
     try {
-      const r = await fetch('/api/network/vpn-server/pptp-control', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'status', ...sshCreds, port: parseInt(port) }) });
-      const res = await r.json();
-      if (res.success) { setPptpStatus(res.result); showSuccess(res.message); }
-      else showError(res.message || 'Gagal');
+      const res = await apiAdmin('/api/network/vpn-server/pptp-control', { method: 'POST', body: JSON.stringify({ action: 'status', ...sshCreds, port: parseInt(port) }) });
+      if ((res as any).success) { setPptpStatus((res as any).result); showSuccess((res as any).message); }
+      else showError((res as any).message || 'Gagal');
     } catch (e: any) { showError('Gagal: ' + e.message); } finally { setPptpLoading(false); }
   };
 
@@ -402,22 +395,20 @@ export default function VpnServerPage() {
     setShowWgPanel(true);
     setWgLoading(true);
     try {
-      const res = await fetch('/api/network/vps-wg-peer');
-      const data = await res.json();
-      if (data.installed) {
+      const data = await apiAdmin('/api/network/vps-wg-peer');
+      if ((data as any).installed) {
         setWgServerInfo(data);
-        setWgPeers(data.peers || []);
+        setWgPeers((data as any).peers || []);
         // Sync publicKey to DB if not yet saved
-        if (data.publicKey && data.publicKey !== server.wgPublicKey) {
-          await fetch('/api/network/vpn-server', {
+        if ((data as any).publicKey && (data as any).publicKey !== server.wgPublicKey) {
+          await apiAdmin('/api/network/vpn-server', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: server.id, name: server.name, host: server.host, username: server.username, apiPort: server.apiPort, subnet: server.subnet, l2tpEnabled: server.l2tpEnabled, sstpEnabled: server.sstpEnabled, pptpEnabled: server.pptpEnabled, wgEnabled: true, wgPublicKey: data.publicKey, wgPort: data.listenPort }),
+            body: JSON.stringify({ id: server.id, name: server.name, host: server.host, username: server.username, apiPort: server.apiPort, subnet: server.subnet, l2tpEnabled: server.l2tpEnabled, sstpEnabled: server.sstpEnabled, pptpEnabled: server.pptpEnabled, wgEnabled: true, wgPublicKey: (data as any).publicKey, wgPort: (data as any).listenPort }),
           });
           loadServers();
         }
       } else {
-        setWgServerInfo({ installed: false, message: data.message });
+        setWgServerInfo({ installed: false, message: (data as any).message });
       }
     } catch (e: any) {
       addToast({ type: 'error', title: 'Gagal membaca status WireGuard', description: e.message });
@@ -430,34 +421,32 @@ export default function VpnServerPage() {
     if (!wgNewPeerName.trim()) { addToast({ type: 'error', title: 'Nama NAS wajib diisi' }); return; }
     setWgAddingPeer(true);
     try {
-      const res = await fetch('/api/network/vps-wg-peer', {
+      const data = await apiAdmin('/api/network/vps-wg-peer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'add', nasName: wgNewPeerName.trim() }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Gagal tambah peer');
+      if (!(data as any).success) throw new Error((data as any).error || 'Gagal tambah peer');
 
       // Build RouterOS 7 WireGuard setup script
-      const parts = data.vpnIp.split('.');
+      const parts = (data as any).vpnIp.split('.');
       const script = `# WireGuard NAS Setup — ${wgNewPeerName}
 # Generated: ${new Date().toISOString().split('T')[0]}
 # ────────────────────────────────────────────────
 
-/interface/wireguard/add name=wg-salfanet private-key="${data.clientPrivateKey || '<PASTE_NAS_PRIVATE_KEY>'}"
-/interface/wireguard/peers/add interface=wg-salfanet public-key="${data.serverPublicKey}" endpoint-address="${data.serverEndpoint?.split(':')[0]}" endpoint-port=${data.wgPort} allowed-address="${data.allowedIps}" persistent-keepalive=25
-/ip/address/add address=${data.vpnIp}/32 interface=wg-salfanet
-/ip/route/add dst-address=${data.allowedIps.includes('/') ? data.allowedIps : data.allowedIps + '/32'} gateway=wg-salfanet
+/interface/wireguard/add name=wg-salfanet private-key="${(data as any).clientPrivateKey || '<PASTE_NAS_PRIVATE_KEY>'}"
+/interface/wireguard/peers/add interface=wg-salfanet public-key="${(data as any).serverPublicKey}" endpoint-address="${(data as any).serverEndpoint?.split(':')[0]}" endpoint-port=${(data as any).wgPort} allowed-address="${(data as any).allowedIps}" persistent-keepalive=25
+/ip/address/add address=${(data as any).vpnIp}/32 interface=wg-salfanet
+/ip/route/add dst-address=${(data as any).allowedIps.includes('/') ? (data as any).allowedIps : (data as any).allowedIps + '/32'} gateway=wg-salfanet
 
 # FreeRADIUS server source IP via WireGuard
-/radius/add address=${data.allowedIps?.split('/')[0] || data.serverEndpoint?.split(':')[0]} secret=<RADIUS_SECRET> service=ppp,login timeout=3000
+/radius/add address=${(data as any).allowedIps?.split('/')[0] || (data as any).serverEndpoint?.split(':')[0]} secret=<RADIUS_SECRET> service=ppp,login timeout=3000
 
 # RADIUS auth via WireGuard tunnel
-/ip/firewall/filter/add chain=input src-address=${data.vpnIp}/32 protocol=udp dst-port=1812,1813,3799 action=accept comment="RADIUS via WG"
+/ip/firewall/filter/add chain=input src-address=${(data as any).vpnIp}/32 protocol=udp dst-port=1812,1813,3799 action=accept comment="RADIUS via WG"
 `;
       setWgGeneratedScript(script);
       setWgNewPeerName('');
-      addToast({ type: 'success', title: `Peer "${wgNewPeerName}" ditambahkan`, description: `VPN IP: ${data.vpnIp}` });
+      addToast({ type: 'success', title: `Peer "${wgNewPeerName}" ditambahkan`, description: `VPN IP: ${(data as any).vpnIp}` });
       // Refresh peer list
       await openWgPanel(wgPanelServer!);
     } catch (e: any) {
@@ -471,13 +460,11 @@ export default function VpnServerPage() {
     const confirmed = await showConfirm('Hapus peer WireGuard ini? Koneksi NAS akan terputus.', 'Hapus Peer');
     if (!confirmed) return;
     try {
-      const res = await fetch('/api/network/vps-wg-peer', {
+      const data = await apiAdmin('/api/network/vps-wg-peer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'remove', publicKey: pubKey }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Gagal hapus peer');
+      if (!(data as any).success) throw new Error((data as any).error || 'Gagal hapus peer');
       addToast({ type: 'success', title: 'Peer dihapus' });
       setWgPeers(prev => prev.filter(p => p.publicKey !== pubKey));
     } catch (e: any) {
@@ -511,22 +498,20 @@ export default function VpnServerPage() {
     setTestResult(null)
 
     try {
-      const response = await fetch('/api/network/vpn-server/test', {
+      const result = await apiAdmin('/api/network/vpn-server/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ host: formData.host, username: formData.username, password: formData.password, apiPort: parseInt(formData.apiPort) || 8728 }),
       })
 
-      const result = await response.json();
       setTestResult(result);
 
-      if (result.success) {
-        showSuccess(`Router Identity: ${result.identity}\n${result.message}`, t('network.connectionSuccess'));
+      if ((result as any).success) {
+        showSuccess(`Router Identity: ${(result as any).identity}\n${(result as any).message}`, t('network.connectionSuccess'));
       } else {
-        showError(result.message, t('network.connectionFailed'));
+        showError((result as any).message, t('network.connectionFailed'));
       }
-    } catch (error) {
-      const errorResult = { success: false, message: t('network.failedTestConnection') }
+    } catch (error: any) {
+      const errorResult = { success: false, message: error.message || t('network.failedTestConnection') }
       setTestResult(errorResult);
       showError(errorResult.message);
     } finally {
@@ -540,38 +525,24 @@ export default function VpnServerPage() {
     try {
       if (!editingServer) {
         // Save new server to DB (use Auto Setup button to configure MikroTik protocols)
-        const response = await fetch('/api/network/vpn-server', {
+        await apiAdmin('/api/network/vpn-server', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...formData }),
         })
-
-        const result = await response.json()
-
-        if (response.ok) {
-          showSuccess(t('network.vpnServerUpdated') || 'VPN Server berhasil disimpan');
-          setShowModal(false)
-          loadServers()
-        } else {
-          showError(result.error || t('common.error'));
-        }
+        showSuccess(t('network.vpnServerUpdated') || 'VPN Server berhasil disimpan');
+        setShowModal(false)
+        loadServers()
       } else {
-        const response = await fetch('/api/network/vpn-server', {
+        await apiAdmin('/api/network/vpn-server', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...formData, id: editingServer.id }),
         })
-
-        if (response.ok) {
-          showSuccess(t('network.vpnServerUpdated'));
-          setShowModal(false)
-          loadServers()
-        } else {
-          showError(t('network.failedUpdateVpnServer'));
-        }
+        showSuccess(t('network.vpnServerUpdated'));
+        setShowModal(false)
+        loadServers()
       }
-    } catch (error) {
-      showError(t('common.error'));
+    } catch (error: any) {
+      showError(error.message || t('common.error'));
     }
   }
 
@@ -580,14 +551,11 @@ export default function VpnServerPage() {
 
     if (confirmed) {
       try {
-        const response = await fetch(`/api/network/vpn-server?id=${id}`, { method: 'DELETE' })
-
-        if (response.ok) {
-          showSuccess(t('network.vpnServerDeleted'), t('common.deleted'));
-          loadServers();
-        }
-      } catch (error) {
-        showError(t('network.failedDeleteVpnServer'));
+        await apiAdmin(`/api/network/vpn-server?id=${id}`, { method: 'DELETE' })
+        showSuccess(t('network.vpnServerDeleted'), t('common.deleted'));
+        loadServers();
+      } catch (error: any) {
+        showError(error.message || t('network.failedDeleteVpnServer'));
       }
     }
   }
@@ -604,22 +572,20 @@ export default function VpnServerPage() {
     setShowTestPasswordModal(false);
     setTestingId(server.id);
     try {
-      const response = await fetch('/api/network/vpn-server/test', {
+      const result = await apiAdmin('/api/network/vpn-server/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ host: server.host, username: server.username, password: testPasswordValue, apiPort: server.apiPort }),
       });
-      if (!response.ok && response.status === 401) {
+      if ((result as any).success) {
+        addToast({ type: 'success', title: t('network.connectionSuccess') || 'Koneksi Berhasil', description: `Identity: ${(result as any).identity || '-'} — ${(result as any).message || ''}` });
+      } else {
+        addToast({ type: 'error', title: t('network.connectionFailed') || 'Koneksi Gagal', description: (result as any).message || 'Tidak dapat terhubung ke RouterOS API' });
+      }
+    } catch (error: any) {
+      if (error.message?.includes('401')) {
         addToast({ type: 'error', title: 'Sesi telah habis, silakan login ulang' });
         return;
       }
-      const result = await response.json();
-      if (result.success) {
-        addToast({ type: 'success', title: t('network.connectionSuccess') || 'Koneksi Berhasil', description: `Identity: ${result.identity || '-'} — ${result.message || ''}` });
-      } else {
-        addToast({ type: 'error', title: t('network.connectionFailed') || 'Koneksi Gagal', description: result.message || 'Tidak dapat terhubung ke RouterOS API' });
-      }
-    } catch (error: any) {
       addToast({ type: 'error', title: 'Gagal Uji Koneksi', description: error?.message || String(error) });
     } finally {
       setTestingId(null);
@@ -653,6 +619,7 @@ export default function VpnServerPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ serverId: server.id, host: server.host, username: server.username, password: setupPasswordValue, apiPort: server.apiPort.toString(), subnet: server.subnet, name: server.name }),
+        credentials: 'include',
       });
 
       if (!response.body) {

@@ -1125,6 +1125,55 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 10 — Network VPN Server Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/vpn-server/page.tsx` — 16 fetch() calls replaced:
+  - `fetch('/api/network/vpn-client')` → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server/l2tp-control', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server')` (load) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server/pptp-control', { method: 'POST' })` (4 calls: configure, status, logs, action) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-wg-peer')` (load) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server', { method: 'PUT' })` (sync WG key) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-wg-peer', { method: 'POST' })` (add/remove peer) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server/test', { method: 'POST' })` (2 calls: form test + password test) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server', { method: 'POST' })` (create) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server', { method: 'PUT' })` (update) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-server?id=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - 1 SSE streaming fetch call retained with `credentials: 'include'` (setup endpoint reads response body stream)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ VPN server page loads, zero console errors
+
+---
+
+### Phase 2 Batch 11 — Network VPN Client Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/vpn-client/page.tsx` — 15 fetch() calls replaced:
+  - `fetch('/api/network/vpn-routing', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/network/vps-wg-peer')` (load) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-wg-peer', { method: 'POST' })` (add/remove peer) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-client')` (load) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-wg-peer')` (server info) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-l2tp-info')` → `apiAdmin(...)`
+  - `fetch('/api/network/vps-wg-peer', { method: 'PATCH' })` (pool config) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-l2tp-peer', { method: 'PATCH' })` (pool config) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-wg-peer', { method: 'POST' })` (WG add in create flow) → `apiAdmin(...)`
+  - `fetch('/api/network/vps-l2tp-peer', { method: 'POST' })` (L2TP add in create flow) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-client', { method: 'POST' })` (create) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-client?id=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-client', { method: 'PUT' })` (toggle RADIUS) → `apiAdmin(...)`
+  - `fetch('/api/network/vpn-client', { method: 'PATCH' })` (edit IP) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in vpn-client page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ VPN client page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
