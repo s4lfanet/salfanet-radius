@@ -190,9 +190,9 @@ export default function NetworkMapPage() {
       import('leaflet').then((L) => {
         delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: () => string })._getIconUrl;
         L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+          iconRetinaUrl: '/leaflet/marker-icon-2x.png',
+          iconUrl: '/leaflet/marker-icon.png',
+          shadowUrl: '/leaflet/marker-shadow.png',
         });
         setMapReady(true);
       });
@@ -1056,7 +1056,7 @@ export default function NetworkMapPage() {
         <div className="bg-card rounded-lg shadow-sm overflow-hidden" style={{ height: '600px' }}>
           <link
             rel="stylesheet"
-            href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+            href="/leaflet/leaflet.css"
           />
           <MapContainer
             key={`map-${olts.length}-${odcs.length}-${odps.length}-${customers.length}`}
