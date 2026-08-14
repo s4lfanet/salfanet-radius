@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.4.0 — Frontend centralized API migration (Phase 2 Batch 1–52, 361 fetch calls migrated)
+> **Version:** 4.5.0 — Phase 2 complete (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -766,6 +766,43 @@ Saat pelanggan isolir dilunaskan (manual atau auto-renewal), sistem otomatis:
 Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di GitHub.
 
 <!-- AUTO-CHANGELOG:START -->
+
+### v4.5.0 — 2026-08-14 — Phase 2 Complete + Phase 3 Architecture Improvements
+
+#### Overview — Phase 2 Completion & Phase 3 Architecture
+Melanjutkan migrasi API client dari Batch 53 sampai Batch 111 (selesai), dilanjutkan dengan Phase 3 architecture improvements (middleware, error boundaries, permission constants, security fix).
+
+**Total Phase 2: 111 batch, ~510 fetch calls di-migrasi, 55 fetch calls tersisa (semua legitimate blob/FormData/streaming downloads).**
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
+
+#### Phase 2 — Batch 53–111 (Remaining Pages Migration)
+| Batch | Halaman | Calls | Commit |
+|-------|---------|-------|--------|
+| 53–60 | genieacs/presets, network/fiber-cables, genieacs/provisions, hotspot/evoucher, genieacs/virtual-parameters, network/odcs, sessions/hotspot, freeradius/config | ~24 | `2f117d71` |
+| 61–68 | inventory/movements, inventory/suppliers, payment/bank-accounts, hotspot/template, inventory/categories, tickets/categories, settings/footer, network/fiber-joint-closures | ~24 | — |
+| 69–76 | network/fiber-cores, technicians, olt/monitoring, olt/alerts, genieacs/auto-provision, freeradius/status, freeradius/radcheck, topup-requests | ~24 | `6e88dda0` |
+| 77–84 | genieacs/files, genieacs/config, pppoe/users, payment-gateway, technicians, genieacs/auto-provision, freeradius/radcheck, freeradius/status | 24 | `2ae622f8` |
+| 85–90 | settings/isolation, settings/cloudflare-tunnel, admin/login, pppoe/users/new, sessions, suspend-requests | 12 | `2ae622f8` |
+| 91–93 | whatsapp/notifications, hotspot/agent/deposits, genieacs/faults | 6 | `2ae622f8` |
+| 94–111 | 18 pages with 1 fetch call each (11 JSON → apiAdmin, 7 blob/FormData → buildUrl) | 18 | `2ae622f8` |
+
+#### Phase 2 Final Status: ✅ COMPLETE
+- **Total batches**: 111
+- **Total fetch calls migrated**: ~510
+- **Remaining fetch() calls**: 55 (all legitimate blob/FormData/streaming downloads using `buildUrl()`)
+
+#### Phase 3 — Architecture Improvements
+- **middleware.ts** — Protect `/admin/*` routes with NextAuth JWT check
+- **error.tsx** — Route-level error boundary for `/admin/*` with retry & home buttons
+- **loading.tsx** — Route-level loading UI with spinner
+- **permissions.ts** — Centralized permission/role constants + helper functions
+- **usePermissions.ts** — Migrated to `apiAdmin()`
+- **C8 Fix** — SSH password removed from `localStorage` in `vpn-server/page.tsx`
+
+#### Phase 3 Status: ✅ COMPLETE
+
+---
 
 ### v4.4.0 — 2026-08-14 — Frontend Centralized API Migration (Phase 2 Batch 1–52)
 
