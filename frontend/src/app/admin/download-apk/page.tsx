@@ -7,6 +7,7 @@ import {
   Terminal, Copy, Check, HardDrive, ChevronDown,
   Package, Globe, Upload, ImageIcon,
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -281,9 +282,8 @@ export default function DownloadApkPage() {
   const [logoError, setLogoError] = useState('');
 
   const fetchEnv = useCallback(() => {
-    fetch('/api/admin/apk/trigger')
-      .then(r => r.json())
-      .then((data: EnvStatus & { defaultUrl?: string }) => {
+    apiAdmin('/api/admin/apk/trigger')
+      .then((data: any) => {
         setEnv(data);
         if (data.defaultUrl && !customUrl) setCustomUrl(data.defaultUrl);
       })
@@ -292,9 +292,8 @@ export default function DownloadApkPage() {
   }, []);
 
   const fetchCompanyLogo = useCallback(() => {
-    fetch('/api/company')
-      .then(r => r.json())
-      .then(data => { if (data.logo) setCurrentLogo(data.logo); })
+    apiAdmin('/api/company')
+      .then((data: any) => { if (data.logo) setCurrentLogo(data.logo); })
       .catch(() => {});
   }, []);
 
@@ -306,23 +305,20 @@ export default function DownloadApkPage() {
     try {
       const form = new FormData();
       form.append('file', file);
-      const res = await fetch('/api/upload/logo', { method: 'POST', body: form });
-      const data = await res.json();
-      if (data.success && data.url) {
+      const data = await apiAdmin('/api/upload/logo', { method: 'POST', body: form as any });
+      if ((data as any).success && (data as any).url) {
         // Save logo URL to company settings
-        const companyRes = await fetch('/api/company');
-        const company = await companyRes.json();
-        await fetch('/api/company', {
+        const company = await apiAdmin('/api/company');
+        await apiAdmin('/api/company', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...company, logo: data.url }),
+          body: JSON.stringify({ ...(company as any), logo: (data as any).url }),
         });
-        setCurrentLogo(data.url);
+        setCurrentLogo((data as any).url);
       } else {
-        setLogoError(data.error || 'Upload gagal');
+        setLogoError((data as any).error || 'Upload gagal');
       }
-    } catch {
-      setLogoError('Gagal menghubungi server');
+    } catch (e: any) {
+      setLogoError(e.message || 'Gagal menghubungi server');
     } finally {
       setUploadingLogo(false);
       e.target.value = '';
@@ -331,10 +327,9 @@ export default function DownloadApkPage() {
 
   const fetchStatus = useCallback(async (role: RoleKey) => {
     try {
-      const res = await fetch(`/api/admin/apk/status?role=${role}`);
-      const data: BuildStatus = await res.json();
-      setStatuses(prev => ({ ...prev, [role]: data }));
-      return data;
+      const data = await apiAdmin(`/api/admin/apk/status?role=${role}`);
+      setStatuses(prev => ({ ...prev, [role]: data as any }));
+      return data as any;
     } catch { return null; }
   }, []);
 
@@ -363,16 +358,11 @@ export default function DownloadApkPage() {
     setStatuses(prev => ({ ...prev, [role]: { status: 'building', startedAt: new Date().toISOString() } }));
     try {
       const urlParam = customUrl.trim() ? `&url=${encodeURIComponent(customUrl.trim())}` : '';
-      const res = await fetch(`/api/admin/apk/trigger?role=${role}${urlParam}`, { method: 'POST' });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: 'Gagal memulai build' }));
-        setStatuses(prev => ({ ...prev, [role]: { status: 'failed', error: err.error } }));
-        setBuilding(prev => { const s = new Set(prev); s.delete(role); return s; });
-        alert(err.error);
-      }
-    } catch {
-      setStatuses(prev => ({ ...prev, [role]: { status: 'failed', error: 'Network error' } }));
+      await apiAdmin(`/api/admin/apk/trigger?role=${role}${urlParam}`, { method: 'POST' });
+    } catch (e: any) {
+      setStatuses(prev => ({ ...prev, [role]: { status: 'failed', error: e.message || 'Gagal memulai build' } }));
       setBuilding(prev => { const s = new Set(prev); s.delete(role); return s; });
+      alert(e.message || 'Gagal memulai build');
     }
   }
 
