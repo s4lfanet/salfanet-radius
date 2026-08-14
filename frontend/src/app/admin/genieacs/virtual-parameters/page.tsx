@@ -5,6 +5,7 @@ import { Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight, Code2, Cpu, X, 
 import { SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton, ModalInput, ModalLabel, ModalSelect, ModalTextarea } from '@/components/cyberpunk/SimpleModal';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from "@/hooks/useTranslation";
+import { apiAdmin } from '@/lib/api';
 
 interface VirtualParameter {
   id: string;
@@ -55,8 +56,7 @@ export default function VirtualParametersPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/settings/genieacs/virtual-parameters", { cache: "no-store" });
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; data?: VirtualParameter[] }>("/api/settings/genieacs/virtual-parameters", { cache: "no-store" });
       if (data.success) {
         setItems(data.data || []);
       }
@@ -135,16 +135,12 @@ export default function VirtualParametersPage() {
 
       console.log('Submitting virtual parameter:', payload);
 
-      const res = await fetch(endpoint, {
+      const data = await apiAdmin<{ success: boolean; error?: string; details?: string }>(endpoint, {
         method,
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const data = await res.json();
 
-      console.log('Response:', data);
-
-      if (!res.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error || data.details || t('genieacs.failedSaveParam'));
       }
 
@@ -171,9 +167,8 @@ export default function VirtualParametersPage() {
 
     setDeletingId(vp.id);
     try {
-      const res = await fetch(`/api/settings/genieacs/virtual-parameters/${vp.id}`, { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || t('genieacs.failedDeleteParam'));
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/settings/genieacs/virtual-parameters/${vp.id}`, { method: "DELETE" });
+      if (!data.success) throw new Error(data.error || t('genieacs.failedDeleteParam'));
       setItems((prev) => prev.filter((item) => item.id !== vp.id));
     } catch (error: any) {
       addToast({ type: 'error', title: t('common.error'), description: error?.message || t('genieacs.failedDeleteParam') });
@@ -184,9 +179,8 @@ export default function VirtualParametersPage() {
 
   const toggleStatus = async (vp: VirtualParameter) => {
     try {
-      const res = await fetch(`/api/settings/genieacs/virtual-parameters/${vp.id}`, {
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/settings/genieacs/virtual-parameters/${vp.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: vp.name,
           parameter: vp.parameter,
@@ -202,8 +196,7 @@ export default function VirtualParametersPage() {
           showInSummary: typeof vp.showInSummary === 'boolean' ? vp.showInSummary : true,
         }),
       });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || t('genieacs.failedChangeStatus'));
+      if (!data.success) throw new Error(data.error || t('genieacs.failedChangeStatus'));
       setItems((prev) => prev.map((item) => (item.id === vp.id ? { ...item, isActive: !item.isActive } : item)));
     } catch (error: any) {
       addToast({ type: 'error', title: t('common.error'), description: error?.message || t('genieacs.failedChangeStatus') });

@@ -5,6 +5,7 @@ import { Power, RefreshCw, WifiOff, Search, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface Session {
   id: string;
@@ -79,7 +80,7 @@ export default function HotspotSessionsPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await fetch('/api/sessions/sync?type=hotspot', { method: 'POST' });
+      await apiAdmin('/api/sessions/sync?type=hotspot', { method: 'POST' });
       await fetchSessions(1);
       addToast({ type: 'success', title: t('common.success'), description: t('sessions.syncComplete') });
     } catch {
@@ -100,8 +101,7 @@ export default function HotspotSessionsPage() {
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const res = await fetch(`/api/sessions?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ sessions?: Session[]; stats?: any; pagination?: Pagination }>(`/api/sessions?${params}`);
       setSessions(data.sessions || []);
       setStats(data.stats);
       if (data.pagination) {
@@ -142,8 +142,7 @@ export default function HotspotSessionsPage() {
 
   const fetchRouters = async () => {
     try {
-      const res = await fetch('/api/network/routers');
-      const data = await res.json();
+      const data = await apiAdmin<{ routers?: Router[] }>('/api/network/routers');
       setRouters(data.routers || []);
     } catch (error) {
       console.error('Failed to fetch routers:', error);
@@ -193,12 +192,10 @@ export default function HotspotSessionsPage() {
 
     setDisconnecting(true);
     try {
-      const res = await fetch('/api/sessions/disconnect', {
+      const data = await apiAdmin<{ success: boolean; disconnected?: number; error?: string }>('/api/sessions/disconnect', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionIds })
       });
-      const data = await res.json();
       if (data.success) {
         addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', data.disconnected) });
         setSelectedSessions(new Set());

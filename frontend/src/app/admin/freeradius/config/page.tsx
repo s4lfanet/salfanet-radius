@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface FileItem {
     name: string;
@@ -40,9 +41,8 @@ export default function RadiusConfigPage() {
     // Fetch directory listing
     const fetchConfigList = async () => {
         try {
-            const response = await fetch('/api/freeradius/config/list');
-            const data = await response.json();
-            if (response.ok && data.success) {
+            const data = await apiAdmin<{ success: boolean; groups: ConfigGroup[] }>('/api/freeradius/config/list');
+            if (data.success) {
                 setGroups(data.groups);
                 // Select first file by default if none selected
                 if (!selectedFile && data.groups.length > 0 && data.groups[0].files.length > 0) {
@@ -65,14 +65,12 @@ export default function RadiusConfigPage() {
     const fetchFileContent = async (filename: string) => {
         setLoadingFile(true);
         try {
-            const response = await fetch('/api/freeradius/config/read', {
+            const data = await apiAdmin<{ success: boolean; content: string; error?: string }>('/api/freeradius/config/read', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filename })
             });
-            const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 setContent(data.content);
                 setOriginalContent(data.content);
             } else {
@@ -112,17 +110,15 @@ export default function RadiusConfigPage() {
         })) return;
         setSaving(true);
         try {
-            const response = await fetch('/api/freeradius/config/save', {
+            const data = await apiAdmin<{ success: boolean; error?: string }>('/api/freeradius/config/save', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     filename: selectedFile,
                     content
                 })
             });
-            const data = await response.json();
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 setOriginalContent(content);
                 addToast({ type: 'success', title: t('common.success'), description: t('radius.saveSuccess'), duration: 2000 });
 
@@ -134,9 +130,8 @@ export default function RadiusConfigPage() {
                     cancelText: t('common.cancel'),
                     variant: 'info',
                 })) {
-                    const restartRes = await fetch('/api/freeradius/restart', { method: 'POST' });
-                    const restartData = await restartRes.json();
-                    if (restartRes.ok && restartData.success) {
+                    const restartData = await apiAdmin<{ success: boolean; error?: string }>('/api/freeradius/restart', { method: 'POST' });
+                    if (restartData.success) {
                         addToast({ type: 'success', title: 'Success', description: t('radius.success') });
                     } else {
                         addToast({ type: 'error', title: 'Error', description: restartData.error || 'Failed to restart' });

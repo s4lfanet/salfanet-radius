@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 import {
   Plus, Pencil, Trash2, Cable, Eye, RefreshCcw, X,
   ChevronDown, ChevronRight, Activity, Layers, Circle,
@@ -94,8 +95,7 @@ export default function FiberCablesPage() {
   const loadCables = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/network/cables');
-      const data = await res.json();
+      const data = await apiAdmin<{ cables?: FiberCable[] }>('/api/network/cables');
       setCables(data.cables || []);
     } catch (error) {
       console.error('Load error:', error);
@@ -141,14 +141,10 @@ export default function FiberCablesPage() {
         outerDiameter: formData.outerDiameter ? parseFloat(formData.outerDiameter) : null,
       };
 
-      const res = await fetch(url, {
+      const data = await apiAdmin<{ error?: string }>(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t('fiberCable.saveFailed'));
 
       await showSuccess(editingCable ? t('fiberCable.updatedSuccess') : t('fiberCable.createdSuccess'));
       setIsDialogOpen(false);
@@ -180,11 +176,7 @@ export default function FiberCablesPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/network/cables/${cable.id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || t('fiberCable.deleteFailed'));
-      }
+      await apiAdmin(`/api/network/cables/${cable.id}`, { method: 'DELETE' });
       await showSuccess(t('fiberCable.deletedSuccess'));
       loadCables();
     } catch (error: any) {
@@ -194,9 +186,7 @@ export default function FiberCablesPage() {
 
   const viewDetails = async (cable: FiberCable) => {
     try {
-      const res = await fetch(`/api/network/cables/${cable.id}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      const data = await apiAdmin<{ cable?: FiberCable; error?: string }>(`/api/network/cables/${cable.id}`);
       setSelectedCable(data.cable);
       setExpandedTubes(new Set());
       setIsDetailDialogOpen(true);

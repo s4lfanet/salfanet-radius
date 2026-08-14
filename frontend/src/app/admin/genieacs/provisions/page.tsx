@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Loader2, Plus, Trash2, Save, RefreshCw, Download, Upload } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface Provision {
   _id: string;
@@ -27,8 +28,7 @@ export default function GenieACSProvisionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/genieacs/provisions', { cache: 'no-store' });
-      const json = await res.json();
+      const json = await apiAdmin<{ success: boolean; data?: Provision[]; error?: string }>('/api/genieacs/provisions', { cache: 'no-store' });
       if (!json.success) throw new Error(json.error || 'Failed to load');
       setItems(json.data || []);
     } catch (e) {
@@ -58,12 +58,10 @@ export default function GenieACSProvisionsPage() {
         setError('File tidak valid: tidak ada data provisions ditemukan');
         return;
       }
-      const res = await fetch('/api/genieacs/backup', {
+      const json = await apiAdmin<{ success: boolean; error?: string; results?: { provisions?: { ok?: number; errors?: unknown[] } } }>('/api/genieacs/backup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provisions }),
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Restore gagal');
       const r = json.results?.provisions;
       flash(`Restore selesai: ${r?.ok ?? 0} provision dipulihkan${r?.errors?.length ? `, ${r.errors.length} error` : ''}`);
@@ -89,12 +87,10 @@ export default function GenieACSProvisionsPage() {
       const url = isNew
         ? '/api/genieacs/provisions'
         : `/api/genieacs/provisions/${encodeURIComponent(editing._id)}`;
-      const res = await fetch(url, {
+      const json = await apiAdmin<{ success: boolean; error?: string }>(url, {
         method: isNew ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editing),
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Save failed');
       setEditing(null);
       await load();
@@ -108,10 +104,9 @@ export default function GenieACSProvisionsPage() {
   const remove = async (id: string) => {
     if (!confirm(`Delete provision "${id}"?`)) return;
     try {
-      const res = await fetch(`/api/genieacs/provisions/${encodeURIComponent(id)}`, {
+      const json = await apiAdmin<{ success: boolean; error?: string }>(`/api/genieacs/provisions/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Delete failed');
       await load();
     } catch (e) {

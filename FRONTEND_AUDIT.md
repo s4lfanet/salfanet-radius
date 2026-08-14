@@ -1888,6 +1888,125 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 54 — Network Fiber Cables Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/fiber-cables/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/network/cables')` (load cables) → `apiAdmin(...)`
+  - `fetch('/api/network/cables', { method: 'POST' })` or `fetch('/api/network/cables/${id}', { method: 'PUT' })` (save cable) → `apiAdmin(...)`
+  - `fetch('/api/network/cables/${id}', { method: 'DELETE' })` (delete cable) → `apiAdmin(...)`
+  - `fetch('/api/network/cables/${id}')` (view cable details) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/fiber-cables page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 55 — GenieACS Provisions Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/genieacs/provisions/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/genieacs/provisions', { cache: 'no-store' })` (load provisions) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/backup', { method: 'POST' })` (restore provisions) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/provisions', { method: 'POST' })` or `fetch('/api/genieacs/provisions/${id}', { method: 'PUT' })` (save provision) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/provisions/${id}', { method: 'DELETE' })` (delete provision) → `apiAdmin(...)`
+  - `window.open('/api/genieacs/backup?type=provisions')` (backup download) — retained as browser download
+  - Zero inline fetch() calls remaining in genieacs/provisions page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 56 — Hotspot E-Voucher Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/hotspot/evoucher/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/admin/evoucher/orders')` (load orders) → `apiAdmin(...)`
+  - `fetch('/api/admin/evoucher/orders/${id}/cancel', { method: 'POST' })` (cancel order) → `apiAdmin(...)`
+  - `fetch('/api/admin/evoucher/orders/${id}/resend', { method: 'POST' })` (resend vouchers) → `apiAdmin(...)`
+  - `fetch('/api/admin/evoucher/orders/bulk-delete', { method: 'POST' })` (bulk delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in hotspot/evoucher page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 57 — GenieACS Virtual Parameters Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/genieacs/virtual-parameters/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/settings/genieacs/virtual-parameters', { cache: 'no-store' })` (load params) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/virtual-parameters', { method: 'POST' })` or `fetch('/api/settings/genieacs/virtual-parameters/${id}', { method: 'PUT' })` (save param) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/virtual-parameters/${id}', { method: 'DELETE' })` (delete param) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/virtual-parameters/${id}', { method: 'PUT' })` (toggle status) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in genieacs/virtual-parameters page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 58 — Network ODCs Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/odcs/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/network/odcs')` + `fetch('/api/network/olts')` (Promise.all load) → `apiAdmin(...)` x2
+  - `fetch('/api/network/odcs', { method: 'POST' })` or `{ method: 'PUT' })` (save ODC) → `apiAdmin(...)`
+  - `fetch('/api/network/odcs', { method: 'DELETE' })` (delete ODC) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/odcs page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 59 — Sessions Hotspot Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/sessions/hotspot/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/sessions/sync?type=hotspot', { method: 'POST' })` (sync sessions) → `apiAdmin(...)`
+  - `fetch('/api/sessions?${params}')` (load sessions) → `apiAdmin(...)`
+  - `fetch('/api/network/routers')` (load routers) → `apiAdmin(...)`
+  - `fetch('/api/sessions/disconnect', { method: 'POST' })` (disconnect sessions) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in sessions/hotspot page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 60 — FreeRADIUS Config Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/freeradius/config/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/freeradius/config/list')` (load config list) → `apiAdmin(...)`
+  - `fetch('/api/freeradius/config/read', { method: 'POST' })` (read file content) → `apiAdmin(...)`
+  - `fetch('/api/freeradius/config/save', { method: 'POST' })` (save file) → `apiAdmin(...)`
+  - `fetch('/api/freeradius/restart', { method: 'POST' })` (restart FreeRADIUS) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in freeradius/config page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
