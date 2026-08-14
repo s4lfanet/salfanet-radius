@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import Link from 'next/link';
+import { apiAdmin } from '@/lib/api';
 
 // Vendor → available models (aligned with backend vendor libs + OIDs)
 const VENDOR_MODELS: Record<string, Array<{ value: string; label: string; ponType: string }>> = {
@@ -186,22 +187,21 @@ export default function OLTsPage() {
 
   const loadData = async () => {
     try {
-      const [oltsRes, routersRes, profilesRes] = await Promise.all([
-        fetch('/api/network/olts'),
-        fetch('/api/network/routers'),
-        fetch('/api/admin/olt/model-profiles'),
+      const [oltsData, routersData, profilesData] = await Promise.all([
+        apiAdmin('/api/network/olts'),
+        apiAdmin('/api/network/routers'),
+        apiAdmin('/api/admin/olt/model-profiles'),
       ]);
-      const [oltsData, routersData, profilesData] = await Promise.all([oltsRes.json(), routersRes.json(), profilesRes.json()]);
-      const loadedOlts = oltsData.olts || [];
+      const loadedOlts = (oltsData as any).olts || [];
       setOlts(loadedOlts);
-      setRouters(routersData.routers || []);
-      setOltProfiles(profilesData.profiles || []);
-      
+      setRouters((routersData as any).routers || []);
+      setOltProfiles((profilesData as any).profiles || []);
+
       // Check OLT status
       if (loadedOlts.length > 0) {
         checkOLTsStatus(loadedOlts);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load error:', error);
     } finally {
       setLoading(false);
@@ -211,20 +211,15 @@ export default function OLTsPage() {
   const checkOLTsStatus = async (oltList?: OLT[]) => {
     const oltsToCheck = oltList || olts;
     if (oltsToCheck.length === 0) return;
-    
+
     try {
       const oltIds = oltsToCheck.map((o) => o.id);
-      const response = await fetch('/api/network/olts/status', {
+      const data = await apiAdmin('/api/network/olts/status', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oltIds }),
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setOltStatusMap(data.statusMap || {});
-      }
-    } catch (error) {
+      setOltStatusMap((data as any).statusMap || {});
+    } catch (error: any) {
       console.error('Check OLT status error:', error);
     }
   };
@@ -263,9 +258,8 @@ export default function OLTsPage() {
     setConnectionTestResult(null);
 
     try {
-      const response = await fetch('/api/olt/test-connection', {
+      const result = await apiAdmin('/api/olt/test-connection', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ipAddress: formData.ipAddress,
           vendor: formData.vendor,
@@ -281,13 +275,12 @@ export default function OLTsPage() {
         }),
       });
 
-      const result = await response.json();
       setConnectionTestResult(result);
 
-      if (result.success) {
+      if ((result as any).success) {
         showSuccess(
           'Connection Test Successful!',
-          result.results.tests.map((test: any) => 
+          (result as any).results.tests.map((test: any) =>
             `${test.method}: ${test.success ? '✓' : '✗'} ${test.message} (${test.time}ms)`
           ).join('\n')
         );
@@ -298,14 +291,14 @@ export default function OLTsPage() {
       } else {
         showError(
           'Connection Test Failed',
-          result.results.tests.map((test: any) => 
+          (result as any).results.tests.map((test: any) =>
             `${test.method}: ${test.success ? '✓' : '✗'} ${test.message} (${test.time}ms)`
           ).join('\n')
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Connection test error:', error);
-      showError('Error', 'Failed to test connection');
+      showError('Error', error.message || 'Failed to test connection');
     } finally {
       setTestingConnection(false);
     }
@@ -347,25 +340,23 @@ export default function OLTsPage() {
         ...(editingOlt && { id: editingOlt.id }),
       };
       
-      const res = await fetch('/api/network/olts', {
+      const result = await apiAdmin('/api/network/olts', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      
-      const result = await res.json();
-      if (result.success) {
+
+      if ((result as any).success) {
         await showSuccess(editingOlt ? t('common.updated') : t('common.created'));
         setIsDialogOpen(false);
         setEditingOlt(null);
         resetForm();
         loadData();
       } else {
-        await showError(result.error || t('common.saveError'));
+        await showError((result as any).error || t('common.saveError'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error);
-      await showError(t('common.saveError'));
+      await showError(error.message || t('common.saveError'));
     }
   };
 
@@ -375,31 +366,29 @@ export default function OLTsPage() {
       `Are you sure you want to delete "${olt.name}"? This will also delete all associated ODCs and ODPs.`
     );
     if (!confirmed) return;
-    
+
     try {
-      const res = await fetch('/api/network/olts', {
+      const result = await apiAdmin('/api/network/olts', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: olt.id }),
       });
-      
-      const result = await res.json();
-      if (result.success) {
+
+      if ((result as any).success) {
         await showSuccess(t('common.deleted'));
         loadData();
       } else {
-        await showError(result.error || t('common.deleteError'));
+        await showError((result as any).error || t('common.deleteError'));
       }
-    } catch (error) {
-      await showError(t('common.deleteError'));
+    } catch (error: any) {
+      await showError(error.message || t('common.deleteError'));
     }
   };
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('/api/network/olts/template');
+      const response = await fetch('/api/network/olts/template', { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to download template');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -409,8 +398,8 @@ export default function OLTsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error) {
-      await showError(t('common.error'));
+    } catch (error: any) {
+      await showError(error.message || t('common.error'));
     }
   };
 
@@ -423,26 +412,24 @@ export default function OLTsPage() {
     formData.append('file', file);
 
     try {
-      const response = await fetch('/api/network/olts/import', {
+      const result = await apiAdmin('/api/network/olts/import', {
         method: 'POST',
-        body: formData,
+        body: formData as any,
       });
 
-      const result = await response.json();
-
-      if (result.success) {
+      if ((result as any).success) {
         let message = `Import completed!\n\n`;
-        message += `Total rows: ${result.total}\n`;
-        message += `Imported: ${result.imported}\n`;
-        message += `Failed: ${result.failed}`;
+        message += `Total rows: ${(result as any).total}\n`;
+        message += `Imported: ${(result as any).imported}\n`;
+        message += `Failed: ${(result as any).failed}`;
 
-        if (result.failed > 0) {
+        if ((result as any).failed > 0) {
           message += `\n\nErrors:\n`;
-          result.results.errors.slice(0, 5).forEach((err: any) => {
+          (result as any).results.errors.slice(0, 5).forEach((err: any) => {
             message += `Row ${err.row}: ${err.error}\n`;
           });
-          if (result.results.errors.length > 5) {
-            message += `... and ${result.results.errors.length - 5} more errors`;
+          if ((result as any).results.errors.length > 5) {
+            message += `... and ${(result as any).results.errors.length - 5} more errors`;
           }
         }
 
@@ -450,10 +437,10 @@ export default function OLTsPage() {
         loadData();
         setIsImportDialogOpen(false);
       } else {
-        await showError(result.error || t('common.importError'));
+        await showError((result as any).error || t('common.importError'));
       }
-    } catch (error) {
-      await showError(t('common.importError'));
+    } catch (error: any) {
+      await showError(error.message || t('common.importError'));
     } finally {
       setImporting(false);
       if (fileInputRef.current) {
