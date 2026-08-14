@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 interface EmailSettings {
   id?: string;
@@ -250,27 +251,16 @@ export default function EmailSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/settings/email', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setSettings(data);
-        // Only fetch templates after settings loaded successfully
-        await fetchTemplates();
-      } else if (response.status === 401) {
-        // Don't redirect if already on login page
-        if (!window.location.pathname.includes('/login')) {
-          console.error('Unauthorized - session expired');
-          window.location.href = '/admin/login';
-        }
+      const data = await apiAdmin('/api/settings/email');
+      setSettings(data);
+      // Only fetch templates after settings loaded successfully
+      await fetchTemplates();
+    } catch (error: any) {
+      if (error.message?.includes('401') && !window.location.pathname.includes('/login')) {
+        console.error('Unauthorized - session expired');
+        window.location.href = '/admin/login';
         return;
       }
-    } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
@@ -280,32 +270,21 @@ export default function EmailSettingsPage() {
   const fetchTemplates = async () => {
     setLoadingTemplates(true);
     try {
-      const res = await fetch('/api/settings/email/templates', {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const data = await apiAdmin('/api/settings/email/templates');
 
-      if (res.status === 401) {
-        if (!window.location.pathname.includes('/login')) {
-          console.error('Unauthorized - session expired');
-          window.location.href = '/admin/login';
-        }
+      if ((data as any).success) {
+        const templatesMap: Record<string, EmailTemplate> = {};
+        (data as any).data.forEach((t: EmailTemplate) => {
+          templatesMap[t.type] = t;
+        });
+        setTemplates(templatesMap);
+      }
+    } catch (error: any) {
+      if (error.message?.includes('401') && !window.location.pathname.includes('/login')) {
+        console.error('Unauthorized - session expired');
+        window.location.href = '/admin/login';
         return;
       }
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success) {
-          const templatesMap: Record<string, EmailTemplate> = {};
-          data.data.forEach((t: EmailTemplate) => {
-            templatesMap[t.type] = t;
-          });
-          setTemplates(templatesMap);
-        }
-      }
-    } catch (error) {
       console.error('Fetch templates error:', error);
     } finally {
       setLoadingTemplates(false);
@@ -315,30 +294,20 @@ export default function EmailSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch('/api/settings/email', {
+      await apiAdmin('/api/settings/email', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        addToast({ type: 'success', title: t('emailSettings.messages.saved'), description: t('emailSettings.messages.savedDesc') });
-        fetchSettings();
-      } else {
-        // Handle unauthorized error - redirect to login
-        if (response.status === 401) {
-          addToast({ type: 'warning', title: t('emailSettings.messages.sessionExpired'), description: t('emailSettings.messages.sessionExpiredDesc') });
-          window.location.href = '/admin/login';
-          return;
-        }
-
-        addToast({ type: 'error', title: t('emailSettings.test.failed'), description: data.error || t('emailSettings.messages.saveFailed') });
-      }
+      addToast({ type: 'success', title: t('emailSettings.messages.saved'), description: t('emailSettings.messages.savedDesc') });
+      fetchSettings();
     } catch (error: any) {
-      addToast({ type: 'error', title: 'Error!', description: error.message });
+      if (error.message?.includes('401')) {
+        addToast({ type: 'warning', title: t('emailSettings.messages.sessionExpired'), description: t('emailSettings.messages.sessionExpiredDesc') });
+        window.location.href = '/admin/login';
+        return;
+      }
+      addToast({ type: 'error', title: t('emailSettings.test.failed'), description: error.message || t('emailSettings.messages.saveFailed') });
     } finally {
       setSaving(false);
     }
@@ -352,19 +321,15 @@ export default function EmailSettingsPage() {
 
     setTesting(true);
     try {
-      const response = await fetch('/api/settings/email/test', {
+      const data = await apiAdmin('/api/settings/email/test', {
         method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: testEmail }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
+      if ((data as any).success) {
         addToast({ type: 'success', title: t('emailSettings.test.success'), description: t('emailSettings.test.successDesc').replace('{email}', testEmail) });
       } else {
-        addToast({ type: 'error', title: t('emailSettings.test.failed'), description: data.error });
+        addToast({ type: 'error', title: t('emailSettings.test.failed'), description: (data as any).error });
       }
     } catch (error: any) {
       addToast({ type: 'error', title: 'Error!', description: error.message });
@@ -379,23 +344,20 @@ export default function EmailSettingsPage() {
 
     setSavingTemplate(type);
     try {
-      const res = await fetch(`/api/settings/email/templates/${template.id}`, {
+      const data = await apiAdmin(`/api/settings/email/templates/${template.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subject, htmlBody }),
       });
 
-      const data = await res.json();
-
-      if (data.success) {
+      if ((data as any).success) {
         showSuccess('Template updated successfully!');
         fetchTemplates();
       } else {
-        showError(data.error || t('settings.failedUpdateTemplate'));
+        showError((data as any).error || t('settings.failedUpdateTemplate'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update template error:', error);
-      showError(t('settings.failedUpdateTemplate'));
+      showError(error.message || t('settings.failedUpdateTemplate'));
     } finally {
       setSavingTemplate(null);
     }
@@ -1229,22 +1191,19 @@ function HistoryTab() {
       });
 
       console.log('[EmailHistory] Fetching with params:', params.toString());
-      const response = await fetch(`/api/email/history?${params}`, {
-        credentials: 'include',
-      });
-      const data = await response.json();
+      const data = await apiAdmin(`/api/email/history?${params}`);
       console.log('[EmailHistory] Response:', data);
 
-      if (data.success) {
-        console.log('[EmailHistory] Setting history:', data.history.length, 'items');
-        setHistory(data.history);
-        setTotalPages(data.pagination.totalPages);
+      if ((data as any).success) {
+        console.log('[EmailHistory] Setting history:', (data as any).history.length, 'items');
+        setHistory((data as any).history);
+        setTotalPages((data as any).pagination.totalPages);
       } else {
         console.error('[EmailHistory] API returned success: false', data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch email history:', error);
-      addToast({ type: 'error', title: 'Error', description: 'Failed to fetch email history' });
+      addToast({ type: 'error', title: 'Error', description: error.message || 'Failed to fetch email history' });
     } finally {
       setLoading(false);
     }
