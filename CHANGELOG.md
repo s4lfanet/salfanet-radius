@@ -6,6 +6,245 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.4.0] — 2026-08-14 — Frontend Centralized API Migration (Phase 2 Batch 1–52)
+
+### Overview — Frontend Audit & Centralized API Client Migration
+
+Migrasi massif frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Tujuan: konsistensi error handling, typed responses, dan pemisahan frontend (UI-only) dari backend (data + integrations).
+
+**Total: 52 batch, 361 inline `fetch()` calls di-migrasi, 0 inline `fetch()` tersisa di halaman yang sudah di-migrasi.**
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+
+### Phase 1 — Architectural Cleanup (Prasyarat)
+
+#### Phase 1A — Dead Code Removal
+- Hapus import tidak terpakai, komponen yatim, dan type definitions obsolete di frontend
+- Cleanup `node_modules` artifacts dan stale config
+
+#### Phase 1B — NextAuth Refactor & Prisma Removal dari Frontend
+- Frontend tidak lagi import `@prisma/client` atau `lib/prisma` langsung
+- NextAuth session di-refactor agar tidak ada direct DB access dari frontend
+- Semua data access melalui HTTP API ke backend
+
+#### Phase 1C — Uploads ke Nginx
+- File upload serving dipindahkan dari Next.js route ke Nginx static serving (`/uploads/`)
+- Frontend tidak lagi handle upload file system access
+
+### Phase 2 — Centralized API Client Migration (Batch 1–52)
+
+#### Batch 1–8b — Fondasi API Client + 8 Pages + Type Fixes
+- **Created**: `frontend/src/lib/api/` — centralized API client dengan:
+  - `apiAdmin()` — untuk endpoint admin (auth-aware, error handling via `ApiError`)
+  - Typed response parsing
+  - Multipart & blob download support
+- **Migrated pages**: pppoe/profiles, pppoe/areas, pppoe/users, invoices, admin dashboard, keuangan, ippool
+- **Type fixes**: resolve type errors dari API client migration
+- **Calls migrated**: 80
+- **Commits**: `ebf9b861`, `688dccb2`, `62716541`, `115d625b`, `6a98b0ab`, `3830db3a`, `44904978`
+
+#### Batch 9 — Hotspot Voucher
+- `admin/hotspot/voucher/page.tsx` — 15 fetch calls
+- Commit: `6d2c9a5a`
+
+#### Batch 10–11 — VPN Server + VPN Client
+- `admin/vpn-server/page.tsx` + `admin/vpn-client/page.tsx` — 31 fetch calls
+- Commit: `e58c4173`
+
+#### Batch 12 — GenieACS Devices
+- `admin/genieacs/devices/page.tsx` — 13 fetch calls
+- Commit: `06e1adb5`
+
+#### Batch 13 — Network Diagrams
+- `admin/network/diagrams/page.tsx` — 10 fetch calls
+- Commit: `994ce54b`
+
+#### Batch 14 — Network Map
+- `admin/network/map/page.tsx` — 9 fetch calls
+- Commit: `f0dd4a5d`
+
+#### Batch 15 — Network OLTs
+- `admin/network/olts/page.tsx` — 8 fetch calls
+- Commit: `b0822f75`
+
+#### Batch 16 — Hotspot Agent
+- `admin/hotspot/agent/page.tsx` — 9 fetch calls
+- Commit: `3c46f769`
+
+#### Batch 17 — Network Infrastruktur
+- `admin/network/infrastruktur/page.tsx` — 8 fetch calls
+- Commit: `6c503c5a`
+
+#### Batch 18 — WhatsApp Providers
+- `admin/whatsapp/providers/page.tsx` — 7 fetch calls
+- Commit: `1ff826f5`
+
+#### Batch 19 — Network Routers
+- `admin/network/routers/page.tsx` — 8 fetch calls
+- Commit: `0d3d7a74`
+
+#### Batch 20 — Download APK
+- `admin/download-apk/page.tsx` — 7 fetch calls
+- Commit: `e406a1de`
+
+#### Batch 21 — GenieACS Parameter Config
+- `admin/genieacs/parameter-config/page.tsx` — 7 fetch calls
+- Commit: `899d9ee7`
+
+#### Batch 22 — PPPoE Registrations
+- `admin/pppoe/registrations/page.tsx` — 7 fetch calls
+- Commit: `f7acfefa`
+
+#### Batch 23 — GenieACS VP Scripts
+- `admin/genieacs/vp-scripts/page.tsx` — 6 fetch calls
+- Commit: `c9613760`
+
+#### Batch 24 — Management
+- `admin/management/page.tsx` — 6 fetch calls
+- Commit: `1945629b`
+
+#### Batch 25 — Network Trace
+- `admin/network/trace/page.tsx` — 4 fetch calls
+- Commit: `68114996`
+
+#### Batch 26 — Settings Email
+- `admin/settings/email/page.tsx` — 6 fetch calls
+- Commit: `1c1712c8`
+
+#### Batch 27 — Sessions
+- `admin/sessions/page.tsx` — 4 fetch calls
+- Commit: `04e717c4`
+
+#### Batch 28 — Notifications
+- `admin/notifications/page.tsx` — 6 fetch calls
+- Commit: `d519f096`
+
+#### Batch 29 — Settings Database
+- `admin/settings/database/page.tsx` — 6 fetch calls
+- Commit: `03711805`
+
+#### Batch 30 — Settings Company
+- `admin/settings/company/page.tsx` — 5 fetch calls
+- Commit: `909c5365`
+
+#### Batch 31 — Settings Telegram
+- `admin/settings/telegram/page.tsx` — 5 fetch calls
+- Commit: `cb5823da`
+
+#### Batch 32 — Tickets
+- `admin/tickets/page.tsx` — 5 fetch calls
+- Commit: `95e59b99`
+
+#### Batch 33 — Inventory Items
+- `admin/inventory/items/page.tsx` — 5 fetch calls
+- Commit: `0691ff2e`
+
+#### Batch 34 — Settings Cron
+- `admin/settings/cron/page.tsx` — 5 fetch calls
+- Commit: `2570c572`
+
+#### Batch 35 — Sessions PPPoE
+- `admin/sessions/pppoe/page.tsx` — 4 fetch calls (1 blob export intentionally retained)
+- Commit: `ca2b4046`
+
+#### Batch 36 — Network Unified Map
+- `admin/network/unified-map/page.tsx` — 5 fetch calls
+- Commit: `a1ac70d4`
+
+#### Batch 37 — Network Customers
+- `admin/network/customers/page.tsx` — 5 fetch calls
+- Commit: `b15a3c39`
+
+#### Batch 38 — Network Splice Points
+- `admin/network/splice-points/page.tsx` — 5 fetch calls
+- Known backend issue: `/api/network/cables` returns 500 (pre-existing, documented in audit)
+- Commit: `147d720e`
+
+#### Batch 39 — FreeRADIUS Backup
+- `admin/freeradius/backup/page.tsx` — 5 fetch calls
+- Commit: `aa7d45e6`
+
+#### Batch 40 — Ticket Detail
+- `admin/tickets/[id]/page.tsx` — 5 fetch calls
+- Commit: `7004ed0a`
+
+#### Batch 41 — Network ODPs
+- `admin/network/odps/page.tsx` — 5 fetch calls
+- Commit: `bd120916`
+
+#### Batch 42 — PPPoE User Detail
+- `admin/pppoe/users/[id]/page.tsx` — 5 fetch calls
+- Commit: `171fa372`
+
+#### Batch 43 — Manual Payments
+- `admin/manual-payments/page.tsx` — 4 fetch calls
+- Commit: `4212a619`
+
+#### Batch 44 — Settings Security (2FA)
+- `admin/settings/security/page.tsx` — 4 fetch calls
+- Commit: `11128b85`
+
+#### Batch 45 — Settings Isolation Templates
+- `admin/settings/isolation/templates/page.tsx` — 4 fetch calls
+- Commit: `8538112c`
+
+#### Batch 46 — Settings GenieACS
+- `admin/settings/genieacs/page.tsx` — 4 fetch calls
+- Commit: `c7dc6384`
+
+#### Batch 47 — PPPoE Addons
+- `admin/pppoe/addons/page.tsx` — 4 fetch calls
+- Commit: `97f0e58d`
+
+#### Batch 48 — Data Usage
+- `admin/data-usage/page.tsx` — 4 fetch calls
+- Commit: `b98d7827`
+
+#### Batch 49 — WhatsApp Send
+- `admin/whatsapp/send/page.tsx` — 4 fetch calls
+- Commit: `c96e382d`
+
+#### Batch 50 — Push Notifications
+- `admin/push-notifications/page.tsx` — 4 fetch calls
+- Commit: `d68ca94f`
+
+#### Batch 51 — Referrals + Settings Referral
+- `admin/referrals/page.tsx` + `admin/settings/referral/page.tsx` — 4 fetch calls (2 per page)
+- Commit: `80869cbd`
+
+#### Batch 52 — WhatsApp Templates
+- `admin/whatsapp/templates/page.tsx` — 2 fetch calls
+- Commit: `c98f2e80`
+
+### Migration Pattern (per page)
+
+Setiap halaman mengikuti pola berikut:
+1. Identifikasi inline `fetch()` calls
+2. Tambah import `apiAdmin` dari `@/lib/api`
+3. Ganti `fetch(url)` → `apiAdmin(url)`
+4. Ganti `fetch(url, { method, headers, body })` → `apiAdmin(url, { method, body })` (headers auto-set)
+5. Ganti `const res = await fetch(...); const data = await res.json()` → `const data = await apiAdmin(...)`
+6. Hapus `if (!res.ok) throw ...` manual (apiAdmin throw otomatis via `ApiError`)
+7. Preserve: success/error toast, loading state, form payloads, query params, translations
+8. Intentional browser downloads (blob exports) tetap menggunakan `fetch()` atau `window.location.href`
+
+### Verification (per batch)
+
+- ✅ Local build (`npm run build`) — exit code 0
+- ✅ Deploy via `pscp` + remote build + `pm2 restart salfanet-frontend`
+- ✅ Production page test via Playwright (`https://radius.salfa.my.id/admin/...`)
+- ✅ Browser console errors check (0 errors expected)
+- ✅ Update `FRONTEND_AUDIT.md`
+- ✅ Git commit + push
+
+### Phase 2 Status
+
+- **Migrated**: 52 batch, 361 fetch calls
+- **Remaining**: ~176 fetch calls di halaman admin lainnya
+- **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
+
+---
+
 ## [4.3.0] — 2026-08-14 — Add-ons System + Janji Bayar + GPS Maps + Diskon + Teknisi Tracking
 
 ### Added — Layanan Add-ons (Add-on Services)

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo â€” **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.2.0 â€” Redis cache, realtime UI fixes, RADIUS script IP fix, auth mode cleanup
+> **Version:** 4.4.0 â€” Frontend centralized API migration (Phase 2 Batch 1â€“52, 361 fetch calls migrated)
 
 ---
 
@@ -126,6 +126,120 @@ File: `backend/src/server/cache/redis.ts`
 ## ï¿½ RADIUS Enhancements (v3.1.0)
 
 Diadopsi dari FreeRADIUS 3.2.8 schema (`home.pmynet.id-main` project).
+
+## ?? Frontend Audit & Centralized API Migration (v4.4.0)
+
+Migrasi frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Frontend sekarang **UI-only** — tidak ada direct Prisma/DB/MikroTik/SSH/FreeRADIUS access.
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
+
+### Phase 1 — Architectural Cleanup (Prasyarat)
+
+| Phase | Deskripsi | Status |
+|-------|-----------|--------|
+| 1A | Dead code removal (import tidak terpakai, komponen yatim) | ? Done |
+| 1B | NextAuth refactor & Prisma removal dari frontend | ? Done |
+| 1C | Uploads serving dipindahkan ke Nginx (`/uploads/`) | ? Done |
+
+### Phase 2 — Centralized API Client Migration (Batch 1–52)
+
+**Total: 52 batch, 361 inline `fetch()` calls di-migrasi**
+
+| Batch Range | Halaman | Calls | Tanggal |
+|-------------|---------|-------|---------|
+| 1–8b | API client + pppoe/profiles, areas, users, invoices, dashboard, keuangan, ippool | 80 | 13 Aug |
+| 9 | hotspot/voucher | 15 | 13 Aug |
+| 10–11 | vpn-server + vpn-client | 31 | 13 Aug |
+| 12 | genieacs/devices | 13 | 13 Aug |
+| 13 | network/diagrams | 10 | 13 Aug |
+| 14 | network/map | 9 | 13 Aug |
+| 15 | network/olts | 8 | 13 Aug |
+| 16 | hotspot/agent | 9 | 13 Aug |
+| 17 | network/infrastruktur | 8 | 13 Aug |
+| 18 | whatsapp/providers | 7 | 13 Aug |
+| 19 | network/routers | 8 | 13 Aug |
+| 20 | download-apk | 7 | 13 Aug |
+| 21 | genieacs/parameter-config | 7 | 13 Aug |
+| 22 | pppoe/registrations | 7 | 13 Aug |
+| 23 | genieacs/vp-scripts | 6 | 13 Aug |
+| 24 | management | 6 | 13 Aug |
+| 25 | network/trace | 4 | 13 Aug |
+| 26 | settings/email | 6 | 13 Aug |
+| 27 | sessions | 4 | 13 Aug |
+| 28 | notifications | 6 | 13 Aug |
+| 29 | settings/database | 6 | 13 Aug |
+| 30 | settings/company | 5 | 13 Aug |
+| 31 | settings/telegram | 5 | 13 Aug |
+| 32 | tickets | 5 | 13 Aug |
+| 33 | inventory/items | 5 | 13 Aug |
+| 34 | settings/cron | 5 | 13 Aug |
+| 35 | sessions/pppoe | 4 | 13 Aug |
+| 36 | network/unified-map | 5 | 13 Aug |
+| 37 | network/customers | 5 | 13 Aug |
+| 38 | network/splice-points | 5 | 13 Aug |
+| 39 | freeradius/backup | 5 | 13 Aug |
+| 40 | tickets/[id] | 5 | 13 Aug |
+| 41 | network/odps | 5 | 14 Aug |
+| 42 | pppoe/users/[id] | 5 | 14 Aug |
+| 43 | manual-payments | 4 | 14 Aug |
+| 44 | settings/security (2FA) | 4 | 14 Aug |
+| 45 | settings/isolation/templates | 4 | 14 Aug |
+| 46 | settings/genieacs | 4 | 14 Aug |
+| 47 | pppoe/addons | 4 | 14 Aug |
+| 48 | data-usage | 4 | 14 Aug |
+| 49 | whatsapp/send | 4 | 14 Aug |
+| 50 | push-notifications | 4 | 14 Aug |
+| 51 | referrals + settings/referral | 4 | 14 Aug |
+| 52 | whatsapp/templates | 2 | 14 Aug |
+
+### Centralized API Client (`@/lib/api`)
+
+```typescript
+import { apiAdmin } from '@/lib/api';
+
+// GET
+const data = await apiAdmin('/api/pppoe/users');
+
+// POST/PUT/DELETE
+const result = await apiAdmin('/api/pppoe/users', {
+  method: 'POST',
+  body: JSON.stringify(payload),
+});
+
+// Error handling otomatis via ApiError
+try {
+  const data = await apiAdmin('/api/invoices');
+} catch (error) {
+  // error instanceof ApiError — non-2xx response
+}
+```
+
+**Fitur:**
+- Auth-aware (mengirim session cookie otomatis)
+- Auto JSON parsing
+- Auto `Content-Type: application/json` header
+- Throw `ApiError` untuk non-2xx responses
+- Multipart & blob download support
+- Typed method arguments
+
+### Verification (per batch)
+
+Setiap batch diverifikasi dengan:
+1. ? Local build (`npm run build`) — exit code 0
+2. ? Deploy via `pscp` + remote build + `pm2 restart salfanet-frontend`
+3. ? Production page test via Playwright
+4. ? Browser console errors check (0 errors expected)
+5. ? Update `FRONTEND_AUDIT.md`
+6. ? Git commit + push
+
+### Phase 2 Status
+
+- **Migrated**: 52 batch, 361 fetch calls
+- **Remaining**: ~176 fetch calls di halaman admin lainnya
+- **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
+
+---
+
 
 ### IP Pool Management (`/api/v1/ippool`)
 
