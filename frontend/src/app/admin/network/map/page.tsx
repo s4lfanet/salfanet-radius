@@ -8,6 +8,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import UserDetailModal from '@/components/UserDetailModal';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin, networkApi, pppoeApi } from '@/lib/api';
 
 // Dynamic import Leaflet components
 const MapContainer = dynamic(
@@ -347,66 +348,46 @@ export default function NetworkMapPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [oltsRes, odcsRes, odpsRes, customersRes, profilesRes, routersRes] = await Promise.all([
-        fetch('/api/network/olts'),
-        fetch('/api/network/odcs'),
-        fetch('/api/network/odps'),
-        fetch('/api/pppoe/users?limit=5000'),
-        fetch('/api/pppoe/profiles'),
-        fetch('/api/network/routers'),
+      const [oltsData, odcsData, odpsData, customersData, profilesData, routersData] = await Promise.all([
+        apiAdmin('/api/network/olts'),
+        apiAdmin('/api/network/odcs'),
+        apiAdmin('/api/network/odps'),
+        apiAdmin('/api/pppoe/users?limit=5000'),
+        apiAdmin('/api/pppoe/profiles'),
+        apiAdmin('/api/network/routers'),
       ]);
 
-      if (oltsRes.ok) {
-        const data = await oltsRes.json();
-        setOlts(data.olts || data);
-      }
-      if (odcsRes.ok) {
-        const data = await odcsRes.json();
-        setOdcs(data.odcs || data);
-      }
-      if (odpsRes.ok) {
-        const data = await odpsRes.json();
-        setOdps(data.odps || data);
-      }
-      if (customersRes.ok) {
-        const data = await customersRes.json();
-        const customersWithGps = (data.users || data).filter((c: Customer) => c.latitude && c.longitude);
-        setCustomers(customersWithGps);
-      }
-      if (profilesRes.ok) {
-        const data = await profilesRes.json();
-        setProfiles(data.profiles || data);
-      }
-      if (routersRes.ok) {
-        const data = await routersRes.json();
-        const routersData = data.routers || data;
-        setRouterList(routersData);
+      setOlts((oltsData as any).olts || oltsData);
+      setOdcs((odcsData as any).odcs || odcsData);
+      setOdps((odpsData as any).odps || odpsData);
+      const customersWithGps = ((customersData as any).users || customersData).filter((c: Customer) => c.latitude && c.longitude);
+      setCustomers(customersWithGps);
+      setProfiles((profilesData as any).profiles || profilesData);
 
-        // Fetch uplink connections for routers with GPS
-        const routersWithGps = routersData.filter((r: Router) => r.latitude && r.longitude);
-        const connectionPromises = routersWithGps.map(async (r: Router) => {
-          try {
-            const res = await fetch(`/api/network/routers/${r.id}/uplinks`);
-            if (res.ok) {
-              const connData = await res.json();
-              return { routerId: r.id, connections: connData.connections || [] };
-            }
-          } catch (e) {
-            console.error(`Failed to fetch uplinks for router ${r.id}:`, e);
-          }
-          return { routerId: r.id, connections: [] };
-        });
+      const routersList = (routersData as any).routers || routersData;
+      setRouterList(routersList);
 
-        const connectionResults = await Promise.all(connectionPromises);
-        const connMap: Record<string, RouterOltConnection[]> = {};
-        connectionResults.forEach(({ routerId, connections }) => {
-          connMap[routerId] = connections;
-        });
-        setRouterOltConnections(connMap);
-      }
-    } catch (error) {
+      // Fetch uplink connections for routers with GPS
+      const routersWithGps = routersList.filter((r: Router) => r.latitude && r.longitude);
+      const connectionPromises = routersWithGps.map(async (r: Router) => {
+        try {
+          const connData = await apiAdmin(`/api/network/routers/${r.id}/uplinks`);
+          return { routerId: r.id, connections: (connData as any).connections || [] };
+        } catch (e) {
+          console.error(`Failed to fetch uplinks for router ${r.id}:`, e);
+        }
+        return { routerId: r.id, connections: [] };
+      });
+
+      const connectionResults = await Promise.all(connectionPromises);
+      const connMap: Record<string, RouterOltConnection[]> = {};
+      connectionResults.forEach(({ routerId, connections }) => {
+        connMap[routerId] = connections;
+      });
+      setRouterOltConnections(connMap);
+    } catch (error: any) {
       console.error('Error fetching data:', error);
-      addToast({ type: 'error', title: t('common.error'), description: t('network.map.failedLoadNetwork') });
+      addToast({ type: 'error', title: t('common.error'), description: error.message || t('network.map.failedLoadNetwork') });
     } finally {
       setLoading(false);
     }
@@ -415,21 +396,17 @@ export default function NetworkMapPage() {
   // Ping OLT from router
   const pingOltFromRouter = async (routerId: string) => {
     try {
-      const res = await fetch(`/api/network/routers/${routerId}/ping-olt`, {
+      const data = await apiAdmin(`/api/network/routers/${routerId}/ping-olt`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ count: 3, timeout: 500 }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setRouterPingStatus(prev => ({
-          ...prev,
-          [routerId]: data.results || []
-        }));
-        return data.results;
-      }
-    } catch (error) {
+      setRouterPingStatus(prev => ({
+        ...prev,
+        [routerId]: (data as any).results || []
+      }));
+      return (data as any).results;
+    } catch (error: any) {
       console.error('Ping error:', error);
     }
     return [];
@@ -450,16 +427,10 @@ export default function NetworkMapPage() {
     if (!editingCustomer) return;
 
     try {
-      const res = await fetch(`/api/pppoe/users/${editingCustomer.id}`, {
+      await apiAdmin(`/api/pppoe/users/${editingCustomer.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.error || t('common.failedToUpdate'));
-      }
 
       addToast({ type: 'success', title: t('common.success'), description: t('network.map.customerUpdated'), duration: 2000 });
 
