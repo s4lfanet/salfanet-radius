@@ -1034,6 +1034,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 7 — Admin Dashboard Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/admin/activity-logs?...')` → `apiAdmin(...)`
+  - `fetch('/api/dashboard/stats?month=...')` → `apiAdmin(...)`
+  - `fetch('/api/dashboard/analytics?type=all')` → `apiAdmin(...)`
+  - `fetch('/api/system/radius')` → `apiAdmin(...)`
+  - `fetch('/api/system/radius', { method: 'POST' })` → `apiAdmin(..., { method: 'POST' })`
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Dashboard loads, zero console errors
+- Zero inline fetch() calls remaining in dashboard page
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

@@ -43,6 +43,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB, getTimezoneInfo, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 import {
   UserStatusPieChart,
   ChartCard,
@@ -220,12 +221,11 @@ export default function AdminDashboard() {
     setActivityLoading(true);
     try {
       const params = new URLSearchParams({ module, limit: '20', offset: String(offset) });
-      const res = await fetch(`/api/admin/activity-logs?${params}`);
-      const data = await res.json();
-      if (data.success) {
-        setActivityLog(prev => append ? [...prev, ...data.activities] : data.activities);
-        setActivityTotal(data.total);
-        setActivityHasMore(data.hasMore);
+      const data = await apiAdmin(`/api/admin/activity-logs?${params}`);
+      if ((data as any).success) {
+        setActivityLog(prev => append ? [...prev, ...(data as any).activities] : (data as any).activities);
+        setActivityTotal((data as any).total);
+        setActivityHasMore((data as any).hasMore);
       }
     } catch (e) {
       console.error('Failed to load activity log:', e);
@@ -237,17 +237,16 @@ export default function AdminDashboard() {
   const loadDashboardData = useCallback(async (month?: string) => {
     try {
       const m = month || dashboardMonth;
-      const res = await fetch(`/api/dashboard/stats?month=${m}`);
-      const data = await res.json();
-      if (data.success) {
-        setStats(data.stats);
-        setActivities(data.activities || []);
-        setSystemStatus(data.systemStatus);
-        setAgentSales(data.agentSales || []);
-        setAgentSalesTotal(data.agentSalesTotal || { count: 0, revenue: 0 });
-        setRadiusAuthLog(data.radiusAuthLog || []);
-        setRadiusAuthStats(data.radiusAuthStats || { acceptToday: 0, rejectToday: 0 });
-        if (data.periodLabel) setPeriodLabel(data.periodLabel);
+      const data = await apiAdmin(`/api/dashboard/stats?month=${m}`);
+      if ((data as any).success) {
+        setStats((data as any).stats);
+        setActivities((data as any).activities || []);
+        setSystemStatus((data as any).systemStatus);
+        setAgentSales((data as any).agentSales || []);
+        setAgentSalesTotal((data as any).agentSalesTotal || { count: 0, revenue: 0 });
+        setRadiusAuthLog((data as any).radiusAuthLog || []);
+        setRadiusAuthStats((data as any).radiusAuthStats || { acceptToday: 0, rejectToday: 0 });
+        if ((data as any).periodLabel) setPeriodLabel((data as any).periodLabel);
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -259,10 +258,9 @@ export default function AdminDashboard() {
   const loadAnalyticsData = useCallback(async () => {
     try {
       setAnalyticsLoading(true);
-      const res = await fetch('/api/dashboard/analytics?type=all');
-      const data = await res.json();
-      if (data.success) {
-        setAnalyticsData(data.data);
+      const data = await apiAdmin('/api/dashboard/analytics?type=all');
+      if ((data as any).success) {
+        setAnalyticsData((data as any).data);
       }
     } catch (error) {
       console.error('Failed to load analytics data:', error);
@@ -273,9 +271,8 @@ export default function AdminDashboard() {
 
   const loadRadiusStatus = useCallback(async () => {
     try {
-      const res = await fetch('/api/system/radius');
-      const data = await res.json();
-      if (data.success) {
+      const data = await apiAdmin('/api/system/radius');
+      if ((data as any).success) {
         setRadiusStatus(data);
       }
     } catch (error) {
@@ -337,22 +334,20 @@ export default function AdminDashboard() {
 
     setRestarting(true);
     try {
-      const res = await fetch('/api/system/radius', {
+      const data = await apiAdmin('/api/system/radius', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'restart' }),
       });
 
-      const data = await res.json();
-      if (data.success) {
+      if ((data as any).success) {
         addToast({ type: 'success', title: t('notifications.success'), description: t('notifications.radiusRestarted') });
         loadRadiusStatus();
         loadDashboardData();
       } else {
-        addToast({ type: 'error', title: t('notifications.error'), description: data.error || t('errors.restartFailed') });
+        addToast({ type: 'error', title: t('notifications.error'), description: (data as any).error || t('errors.restartFailed') });
       }
-    } catch (error) {
-      addToast({ type: 'error', title: t('notifications.error'), description: t('errors.restartFailed') });
+    } catch (error: any) {
+      addToast({ type: 'error', title: t('notifications.error'), description: error.message || t('errors.restartFailed') });
     } finally {
       setRestarting(false);
     }
