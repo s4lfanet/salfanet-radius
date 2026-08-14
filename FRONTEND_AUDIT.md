@@ -1613,6 +1613,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 37 — Network Customers Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/customers/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/network/customers/assign')` (load assignments) → `apiAdmin(...)`
+  - `fetch('/api/pppoe/users?search=...&limit=10')` (search customers) → `apiAdmin(...)`
+  - `fetch('/api/network/customers/assign?customerId=...')` (nearest ODPs) → `apiAdmin(...)`
+  - `fetch('/api/network/customers/assign', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/network/customers/assign?id=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/customers page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network customers page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
