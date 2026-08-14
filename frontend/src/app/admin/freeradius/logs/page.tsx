@@ -6,6 +6,7 @@ import {
     Terminal, Pause, Play, Download, Trash2,
     Search, Filter, Activity
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 export default function RadiusLogsPage() {
     const { t } = useTranslation();
@@ -17,10 +18,9 @@ export default function RadiusLogsPage() {
 
     const fetchLogs = async () => {
         try {
-            const response = await fetch('/api/freeradius/logs?lines=100');
-            const data = await response.json();
+            const data = await apiAdmin<{ success: boolean; logs: string }>('/api/freeradius/logs?lines=100');
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 setLogs(data.logs.split('\n').filter(Boolean));
                 setLoading(false);
             }

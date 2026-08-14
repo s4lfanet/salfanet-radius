@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, FileSpreadsheet, BarChart3, TrendingUp, Calendar, Activity } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, todayWIBStr, firstOfMonthWIBStr } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ReportType = 'invoice' | 'payment' | 'customer';
@@ -87,10 +88,7 @@ export default function LaporanPage() {
         dateTo,
         status,
       });
-      const res = await fetch(`/api/admin/laporan?${params}`);
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Gagal mengambil data laporan');
+      const data = await apiAdmin<{ rows: Record<string, any>[]; summary: Summary | null; error?: string }>(`/api/admin/laporan?${params}`);
 
       setRows(data.rows || []);
       setSummary(data.summary || null);

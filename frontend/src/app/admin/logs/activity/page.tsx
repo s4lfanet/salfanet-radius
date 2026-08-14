@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { usePermissions } from '@/hooks/usePermissions';
 import { formatWIB } from '@/lib/timezone';
 import { Activity, Search, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface ActivityLogEntry {
   id: string;
@@ -64,11 +65,7 @@ export default function ActivityLogsPage() {
         module: moduleFilter,
         search,
       });
-      const res = await fetch(`/api/admin/activity-logs?${params.toString()}`);
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; activities: ActivityLogEntry[]; total: number; error?: string }>(`/api/admin/activity-logs?${params.toString()}`);
       if (data.success) {
         setLogs(data.activities);
         setTotal(data.total);

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 import {
   Shield,
   Server,
@@ -64,9 +65,8 @@ export default function IsolationSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/settings/isolation');
-      const data = await response.json();
-      
+      const data = await apiAdmin<{ success: boolean; data: any }>('/api/settings/isolation');
+
       if (data.success) {
         setSettings({
           isolationEnabled: data.data.isolationEnabled ?? true,
@@ -93,13 +93,10 @@ export default function IsolationSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const response = await fetch('/api/settings/isolation', {
+      const data = await apiAdmin<{ success: boolean; error?: string }>('/api/settings/isolation', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       });
-
-      const data = await response.json();
 
       if (data.success) {
         addToast({ type: 'success', title: t('common.success'), description: t('isolation.settingsSaved'), duration: 2000 });

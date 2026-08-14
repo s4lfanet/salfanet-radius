@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface Fault {
   _id?: string;
@@ -26,8 +27,7 @@ export default function GenieACSFaultsPage() {
       const url = filter
         ? `/api/genieacs/faults?device=${encodeURIComponent(filter)}`
         : '/api/genieacs/faults';
-      const res = await fetch(url, { cache: 'no-store' });
-      const json = await res.json();
+      const json = await apiAdmin(url, { cache: 'no-store' }) as any;
       if (!json.success) throw new Error(json.error || 'Failed to load');
       setItems(json.data || []);
     } catch (e) {
@@ -44,12 +44,10 @@ export default function GenieACSFaultsPage() {
   const remove = async (id: string) => {
     if (!confirm(`Delete fault "${id}"?`)) return;
     try {
-      const res = await fetch('/api/genieacs/faults', {
+      const json = await apiAdmin('/api/genieacs/faults', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
-      });
-      const json = await res.json();
+      }) as any;
       if (!json.success) throw new Error(json.error || 'Delete failed');
       await load();
     } catch (e) {

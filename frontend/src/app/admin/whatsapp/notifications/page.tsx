@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 interface ReminderSettings {
   id: string;
@@ -38,9 +39,8 @@ export default function NotificationSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const res = await fetch('/api/whatsapp/reminder-settings');
-      const data = await res.json();
-      
+      const data = await apiAdmin('/api/whatsapp/reminder-settings') as any;
+
       if (data.success && data.settings) {
         setSettings(data.settings);
         setEnabled(data.settings.enabled);
@@ -96,9 +96,8 @@ export default function NotificationSettingsPage() {
 
     setSaving(true);
     try {
-      const res = await fetch('/api/whatsapp/reminder-settings', {
+      const data = await apiAdmin('/api/whatsapp/reminder-settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           enabled,
           reminderDays,
@@ -109,9 +108,7 @@ export default function NotificationSettingsPage() {
           batchDelay,
           randomize
         })
-      });
-
-      const data = await res.json();
+      }) as any;
 
       if (data.success) {
         await showSuccess(t('whatsapp.settingsSavedSuccess'));

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface ParamEntry {
   path: string;
@@ -40,9 +41,7 @@ export default function AutoProvisionPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/genieacs/auto-provision');
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Failed to load');
+      const json = await apiAdmin('/api/genieacs/auto-provision');
       const { provision } = json.data ?? {};
       if (provision?.script) setCurrentScript(provision.script);
       else setCurrentScript(null);
@@ -88,13 +87,10 @@ export default function AutoProvisionPage() {
         ...form,
         setParameters: form.setParameters.filter((p) => p.path.trim()),
       };
-      const res = await fetch('/api/genieacs/auto-provision', {
+      await apiAdmin('/api/genieacs/auto-provision', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Save failed');
       setSuccess('Auto-provision applied successfully.');
       load();
     } catch (e) {
@@ -110,9 +106,7 @@ export default function AutoProvisionPage() {
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch('/api/genieacs/auto-provision', { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Delete failed');
+      await apiAdmin('/api/genieacs/auto-provision', { method: 'DELETE' });
       setSuccess('Auto-provision removed.');
       setCurrentScript(null);
     } catch (e) {

@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, Smartphone, Loader2, KeyRound, ArrowLeft } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,10 +23,14 @@ function TwoFactorForm() {
       router.replace('/admin/login');
       return;
     }
-    fetch('/api/public/company')
-      .then(r => r.json())
-      .then(d => { if (d.success && d.company.name) setCompanyName(d.company.name); })
-      .catch(() => {});
+    (async () => {
+      try {
+        const d = await apiAdmin<{ success: boolean; company?: { name?: string } }>('/api/public/company');
+        if (d.success && d.company?.name) setCompanyName(d.company.name);
+      } catch {
+        // ignore
+      }
+    })();
   }, [tfaToken, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

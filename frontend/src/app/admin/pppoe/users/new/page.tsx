@@ -6,7 +6,7 @@ import { ArrowLeft, MapPin, Map, Eye, EyeOff, Loader2, X, ChevronRight, ChevronL
 import MapPicker from '@/components/MapPicker';
 import { ModalInput, ModalSelect, ModalLabel } from '@/components/cyberpunk';
 import { todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
-import { pppoeApi, networkApi } from '@/lib/api';
+import { pppoeApi, networkApi, buildUrl } from '@/lib/api';
 
 interface Profile { id: string; name: string; groupName: string; price: number; }
 interface Router { id: string; name: string; nasname: string; ipAddress: string; authMode?: string; }
@@ -115,9 +115,9 @@ export default function NewPppoeUserPage() {
     setUploadingIdCard(true);
     try {
       const fd = new FormData(); fd.append('file', file); fd.append('type', 'idCard');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+      const res = await fetch(buildUrl('/api/upload/pppoe-customer'), { method: 'POST', body: fd, credentials: 'include' });
       const data = await res.json();
-      if (res.ok && data.url) setFormData(prev => ({ ...prev, idCardPhoto: data.url }));
+      if (data.url) setFormData(prev => ({ ...prev, idCardPhoto: data.url }));
       else await showError('Gagal upload foto KTP');
     } catch { await showError('Gagal upload foto KTP'); }
     finally { setUploadingIdCard(false); }
@@ -129,9 +129,9 @@ export default function NewPppoeUserPage() {
     setUploadingInstallation(true);
     try {
       const fd = new FormData(); fd.append('file', file); fd.append('type', 'installation');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+      const res = await fetch(buildUrl('/api/upload/pppoe-customer'), { method: 'POST', body: fd, credentials: 'include' });
       const data = await res.json();
-      if (res.ok && data.url) setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, data.url] }));
+      if (data.url) setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, data.url] }));
       else await showError('Gagal upload foto instalasi');
     } catch { await showError('Gagal upload foto instalasi'); }
     finally { setUploadingInstallation(false); }

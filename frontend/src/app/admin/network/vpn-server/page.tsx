@@ -6,7 +6,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Shield, Server, Plus, Pencil, Trash2, Zap, Activity, CheckCircle, XCircle, Settings, Terminal, RefreshCw, FileText, X, Wifi, ChevronDown, ChevronUp, Info } from 'lucide-react';
-import { apiAdmin } from '@/lib/api';
+import { apiAdmin, buildUrl } from '@/lib/api';
 
 interface VpnServer {
   id: string
@@ -615,7 +615,7 @@ export default function VpnServerPage() {
 
     const liveSteps: string[] = [];
     try {
-      const response = await fetch('/api/network/vpn-server/setup', {
+      const response = await fetch(buildUrl('/api/network/vpn-server/setup'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ serverId: server.id, host: server.host, username: server.username, password: setupPasswordValue, apiPort: server.apiPort.toString(), subnet: server.subnet, name: server.name }),

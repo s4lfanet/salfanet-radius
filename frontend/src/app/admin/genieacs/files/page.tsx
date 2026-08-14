@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, RefreshCw, Trash2, Upload } from 'lucide-react';
+import { apiAdmin, buildUrl } from '@/lib/api';
 
 interface FileItem {
   _id: string;
@@ -40,8 +41,7 @@ export default function GenieACSFilesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/genieacs/files', { cache: 'no-store' });
-      const json = await res.json();
+      const json = await apiAdmin<{ success: boolean; data?: FileItem[]; error?: string }>('/api/genieacs/files', { cache: 'no-store' });
       if (!json.success) throw new Error(json.error || 'Failed to load');
       setItems(json.data || []);
     } catch (e) {
@@ -70,7 +70,7 @@ export default function GenieACSFilesPage() {
       if (oui) fd.append('oui', oui);
       if (productClass) fd.append('productClass', productClass);
       if (version) fd.append('version', version);
-      const res = await fetch('/api/genieacs/files', { method: 'POST', body: fd });
+      const res = await fetch(buildUrl('/api/genieacs/files'), { method: 'POST', body: fd, credentials: 'include' });
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Upload failed');
       setFile(null);
@@ -89,12 +89,10 @@ export default function GenieACSFilesPage() {
   const remove = async (name: string) => {
     if (!confirm(`Delete file "${name}"?`)) return;
     try {
-      const res = await fetch('/api/genieacs/files', {
+      const json = await apiAdmin<{ success: boolean; error?: string }>('/api/genieacs/files', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileName: name }),
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Delete failed');
       await load();
     } catch (e) {

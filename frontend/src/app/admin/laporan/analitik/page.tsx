@@ -12,6 +12,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -160,8 +161,7 @@ export default function LaporanAnalitikPage() {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const res = await fetch(`/api/admin/analytics?period=${p}`);
-      const json = await res.json();
+      const json = await apiAdmin<{ success: boolean } & AnalyticsData>(`/api/admin/analytics?period=${p}`);
       if (json.success) setData(json);
     } catch {
       // ignore
