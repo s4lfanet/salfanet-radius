@@ -17,6 +17,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { pppoeApi } from '@/lib/api';
 
 interface Area {
   id: string;
@@ -49,9 +50,8 @@ export default function AreasPage() {
 
   const loadData = async () => {
     try {
-      const res = await fetch('/api/pppoe/areas');
-      const data = await res.json();
-      setAreas(data.areas || []);
+      const data = await pppoeApi.listAreas();
+      setAreas((data as any).areas || []);
     } catch (error) {
       console.error('Load areas error:', error);
     } finally {
@@ -62,28 +62,16 @@ export default function AreasPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const method = editingArea ? 'PUT' : 'POST';
       const payload = { ...formData, ...(editingArea && { id: editingArea.id }) };
-
-      const res = await fetch('/api/pppoe/areas', {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const result = await res.json();
-
-      if (res.ok) {
-        setIsDialogOpen(false);
-        setEditingArea(null);
-        resetForm();
-        loadData();
-        await showSuccess(editingArea ? t('common.areaUpdated') : t('common.areaCreated'));
-      } else {
-        await showError(result.error || t('common.failed'));
-      }
-    } catch (error) {
+      await pppoeApi.saveArea(payload);
+      setIsDialogOpen(false);
+      setEditingArea(null);
+      resetForm();
+      loadData();
+      await showSuccess(editingArea ? t('common.areaUpdated') : t('common.areaCreated'));
+    } catch (error: any) {
       console.error('Submit error:', error);
-      await showError(t('common.failedSaveArea'));
+      await showError(error.message || t('common.failedSaveArea'));
     }
   };
 
@@ -103,18 +91,12 @@ export default function AreasPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/pppoe/areas?id=${deleteAreaId}`, { method: 'DELETE' });
-      const result = await res.json();
-
-      if (res.ok) {
-        await showSuccess(t('common.areaDeleted'));
-        loadData();
-      } else {
-        await showError(result.error || t('common.failedDeleteArea'));
-      }
-    } catch (error) {
+      await pppoeApi.deleteArea(deleteAreaId);
+      await showSuccess(t('common.areaDeleted'));
+      loadData();
+    } catch (error: any) {
       console.error('Delete error:', error);
-      await showError(t('common.failedDeleteArea'));
+      await showError(error.message || t('common.failedDeleteArea'));
     } finally {
       setDeleteAreaId(null);
     }
