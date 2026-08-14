@@ -2007,6 +2007,134 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 61 — Inventory Movements Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/inventory/movements/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/inventory/movements')` + `fetch('/api/inventory/items')` (Promise.all load) → `apiAdmin(...)` x2
+  - `fetch('/api/inventory/movements', { method: 'POST' })` (create movement) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+- Also fixed duplicate `await showError` line left from refactor
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 62 — Inventory Suppliers Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/inventory/suppliers/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/inventory/suppliers')` (load) → `apiAdmin(...)`
+  - `fetch('/api/inventory/suppliers', { method: 'POST' })` or `{ method: 'PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/inventory/suppliers?id=${id}', { method: 'DELETE' })` (delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 63 — Payment Bank Accounts Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/payment/bank-accounts/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/company')` (load bank accounts) → `apiAdmin(...)`
+  - `fetch('/api/company')` (fetch current before save) → `apiAdmin(...)`
+  - `fetch('/api/company', { method: 'POST' })` (save) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 64 — Hotspot Template Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/hotspot/template/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/voucher-templates')` (load templates) → `apiAdmin(...)`
+  - `fetch('/api/voucher-templates', { method: 'POST' })` or `fetch('/api/voucher-templates/${id}', { method: 'PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/voucher-templates/${id}', { method: 'DELETE' })` (delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 65 — Inventory Categories Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/inventory/categories/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/inventory/categories')` (load) → `apiAdmin(...)`
+  - `fetch('/api/inventory/categories', { method: 'POST' })` or `{ method: 'PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/inventory/categories?id=${id}', { method: 'DELETE' })` (delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 66 — Tickets Categories Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/tickets/categories/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/tickets/categories')` (load) → `apiAdmin(...)`
+  - `fetch('/api/tickets/categories', { method: 'POST' })` or `{ method: 'PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/tickets/categories?id=${id}', { method: 'DELETE' })` (delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 67 — Settings Footer Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/footer/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/company')` (load footer settings) → `apiAdmin(...)`
+  - `fetch('/api/company')` (fetch current before save) → `apiAdmin(...)`
+  - `fetch('/api/company', { method: 'POST' })` (save) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 68 — Network Fiber Joint Closures Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/fiber-joint-closures/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/network/joint-closures?${params}')` (load) → `apiAdmin(...)`
+  - `fetch('/api/network/joint-closures', { method: 'POST' })` or `fetch('/api/network/joint-closures/${id}', { method: 'PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/network/joint-closures/${id}', { method: 'DELETE' })` (delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

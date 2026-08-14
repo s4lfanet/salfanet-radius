@@ -8,6 +8,7 @@ import {
   Activity, Circle, Link2, Box,
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
+import { apiAdmin } from '@/lib/api';
 import {
   SimpleModal,
   ModalHeader,
@@ -87,8 +88,7 @@ export default function FiberJointClosuresPage() {
       if (filterType) params.append('type', filterType);
       if (filterStatus) params.append('status', filterStatus);
       if (searchTerm) params.append('search', searchTerm);
-      const res = await fetch(`/api/network/joint-closures?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ data?: JointClosure[] }>(`/api/network/joint-closures?${params}`);
       setJointClosures(data.data || []);
     } catch {
       showError(t('common.loadError') || 'Failed to load Joint Closures');
@@ -153,9 +153,8 @@ export default function FiberJointClosuresPage() {
         ? `/api/network/joint-closures/${editingJC.id}`
         : '/api/network/joint-closures';
 
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           latitude: parseFloat(formData.latitude),
@@ -166,9 +165,6 @@ export default function FiberJointClosuresPage() {
           connections: [],
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to save');
 
       showSuccess(
         editingJC ? t('common.updated') || 'Updated successfully' : t('common.created') || 'Created successfully'
@@ -188,9 +184,7 @@ export default function FiberJointClosuresPage() {
     );
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/network/joint-closures/${jc.id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to delete');
+      await apiAdmin(`/api/network/joint-closures/${jc.id}`, { method: 'DELETE' });
       showSuccess('Deleted successfully');
       loadJointClosures();
     } catch (error: unknown) {

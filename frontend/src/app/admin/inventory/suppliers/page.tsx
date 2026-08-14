@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 import {
   Plus,
   Pencil,
@@ -65,10 +66,8 @@ export default function SuppliersPage() {
   const loadSuppliers = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/inventory/suppliers');
-      if (res.ok) {
-        setSuppliers(await res.json());
-      }
+      const data = await apiAdmin<Supplier[]>('/api/inventory/suppliers');
+      setSuppliers(data || []);
     } catch (error) {
       await showError(t('common.error'));
     } finally {
@@ -116,29 +115,22 @@ export default function SuppliersPage() {
         ? { ...formData, id: editingSupplier.id }
         : formData;
 
-      const res = await fetch('/api/inventory/suppliers', {
+      await apiAdmin('/api/inventory/suppliers', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
-
-      if (res.ok) {
-        await showSuccess(
-          editingSupplier
-            ? t('inventory.supplierUpdated')
-            : t('inventory.supplierCreated')
-        );
-        setIsDialogOpen(false);
-        setEditingSupplier(null);
-        resetForm();
-        loadSuppliers();
-      } else {
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(
+        editingSupplier
+          ? t('inventory.supplierUpdated')
+          : t('inventory.supplierCreated')
+      );
+      setIsDialogOpen(false);
+      setEditingSupplier(null);
+      resetForm();
+      loadSuppliers();
+    } catch (error: any) {
+      await showError(error?.message || t('common.error'));
     }
   };
 
@@ -151,19 +143,14 @@ export default function SuppliersPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/inventory/suppliers?id=${supplier.id}`, {
+      await apiAdmin(`/api/inventory/suppliers?id=${supplier.id}`, {
         method: 'DELETE',
       });
 
-      if (res.ok) {
-        await showSuccess(t('inventory.supplierDeleted'));
-        loadSuppliers();
-      } else {
-        const result = await res.json();
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(t('inventory.supplierDeleted'));
+      loadSuppliers();
+    } catch (error: any) {
+      await showError(error?.message || t('common.error'));
     }
   };
 
