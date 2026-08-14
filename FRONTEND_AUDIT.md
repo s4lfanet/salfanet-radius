@@ -1322,6 +1322,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 20 — Download APK Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/download-apk/page.tsx` — 7 fetch() calls replaced:
+  - `fetch('/api/admin/apk/trigger')` (env check) → `apiAdmin(...)`
+  - `fetch('/api/company')` (logo fetch + company data) → `apiAdmin(...)`
+  - `fetch('/api/upload/logo', { method: 'POST', body: FormData })` → `apiAdmin(..., { body: fd })`
+  - `fetch('/api/company', { method: 'POST' })` (save logo) → `apiAdmin(...)`
+  - `fetch('/api/admin/apk/status?role=...')` (build status) → `apiAdmin(...)`
+  - `fetch('/api/admin/apk/trigger?role=...', { method: 'POST' })` (start build) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in download-apk page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Download APK page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
