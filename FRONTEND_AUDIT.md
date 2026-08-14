@@ -2471,6 +2471,69 @@ None of these can use `apiAdmin()` because `apiAdmin()` calls `res.json()` which
 - Item 13: Dark mode inconsistencies (hardcoded colors) — needs comprehensive theme audit
 - Consolidate duplicate utilities (formatCurrency, formatDate) — low priority, current utils work
 
+---
+
+## Phase 4: Type Safety & Production Deploy
+
+### Phase 4.1 — NextAuth Session Types (14 Aug 2026) ✅
+
+**Files fixed:**
+- `frontend/src/hooks/usePermissions.ts` — removed `(session.user as any).id` → `session.user.id`
+- `frontend/src/server/auth/config.ts` — removed `(user as any).username/role` and `(session.user as any).id/username/role` casts
+- `frontend/src/app/admin/AdminClientLayout.tsx` — removed 4 `as any` casts for session.user
+- `frontend/src/app/admin/push-notifications/page.tsx` — removed `as any` cast
+- `frontend/src/app/admin/management/page.tsx` — removed `as any` cast
+
+**Details:**
+- `frontend/src/types/next-auth.d.ts` already had proper type definitions
+- All `(session.user as any)` casts replaced with typed access: `session.user.id`, `session.user.username`, `session.user.role`
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ✅ Deployed to VPS
+
+---
+
+### Phase 4.5 — Enable TypeScript Build Checks (14 Aug 2026) ✅
+
+**File changed:**
+- `frontend/next.config.ts` — `typescript.ignoreBuildErrors: true` → `false`
+
+**8 pre-existing TS errors fixed:**
+1. `ippool/page.tsx` (3 errors) — `variant="ghost"` → `variant="secondary"` (ModalButton doesn't support ghost)
+2. `network/fiber-cores/page.tsx` (1 error) — `Cable[]` → `FiberCable[]` (Cable is a lucide icon, not a type)
+3. `olt/monitoring/page.tsx` (1 error) — `OLTInfo[]` → `OLT[]` (type name mismatch)
+4. `components/charts/index.tsx` (3 errors) — recharts formatter `(value: number | undefined)` → `(value: any)` (recharts ValueType incompatibility)
+
+**Verification:**
+- Build: ✅ SUCCESS (with TypeScript checks enabled)
+- Deploy: ✅ Deployed to VPS
+
+---
+
+### VPS Production Deploy (14 Aug 2026) ✅
+
+**Deploy target:** `192.168.54.129` (local VPS)
+**Production directory:** `/var/www/salfanet-radius/`
+
+**Deploy steps:**
+1. Git pull latest master (`cbc2fdbc`) — 200+ files updated
+2. `pnpm install --no-frozen-lockfile` — dependencies updated
+3. Frontend build: `npx next build` — exit 0, middleware proxy active
+4. Backend build: `npx next build` — exit 0
+5. Copy static assets to standalone directories
+6. PM2 restart: `salfanet-frontend`, `salfanet-backend`, `salfanet-cron`
+
+**Post-deploy verification:**
+- PM2 status: All 4 processes online (frontend, backend, cron, wa)
+- Backend health: `{"status":"ok"}` ✅
+- Frontend `/admin/login`: HTTP 200 ✅
+- Nginx proxy `/admin/login`: HTTP 200 ✅
+- NextAuth `/api/auth/providers`: HTTP 200 ✅
+- Backend RADIUS auth: Processing authorize requests (logs show active auth flow)
+
+**Deploy status: ✅ COMPLETE**
+
 
 ---
 
