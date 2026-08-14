@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Server, Loader2, Zap, Save, CheckCircle, Info, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
 
@@ -152,13 +153,13 @@ export default function GenieACSSettingsPage() {
                 <p className="text-xs text-muted-foreground">{t('genieacs.connectedToGenieacs')}</p>
               </div>
             </div>
-            <a
+            <Link
               href="/admin/genieacs/devices"
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary border border-primary hover:bg-primary/10 dark:hover:bg-primary/20 rounded-lg transition-colors"
             >
               <ExternalLink className="w-3 h-3" />
               {t('genieacs.viewDevices')}
-            </a>
+            </Link>
           </div>
         </div>
       )}

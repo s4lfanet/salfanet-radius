@@ -5,6 +5,7 @@ import { BarChart3, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, X, C
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { formatCurrency } from '@/lib/utils';
 
 interface RekapVoucher {
   batchCode: string;
@@ -233,7 +234,6 @@ export default function RekapVoucherPage() {
   const adminSold = filteredRekap.filter(i => i.agent === null).reduce((sum, i) => sum + i.sold, 0);
   const agentSold = filteredRekap.filter(i => i.agent !== null).reduce((sum, i) => sum + i.sold, 0);
 
-  const formatRupiah = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
   return (
     <div className="bg-background relative">
@@ -385,7 +385,7 @@ export default function RekapVoucherPage() {
         </div>
         <div className="bg-card p-4 rounded-lg border-2 border-[#00f7ff]/30 shadow-[0_0_15px_rgba(0,247,255,0.1)] col-span-2 md:col-span-1">
           <div className="text-xs text-[#00f7ff] font-bold uppercase mb-1">Total Pendapatan</div>
-          <div className="text-base sm:text-xl font-bold text-[#00f7ff] drop-shadow-[0_0_5px_rgba(0,247,255,0.5)]">{formatRupiah(totalRevenue)}</div>
+          <div className="text-base sm:text-xl font-bold text-[#00f7ff] drop-shadow-[0_0_5px_rgba(0,247,255,0.5)]">{formatCurrency(totalRevenue)}</div>
         </div>
       </div>
 
@@ -393,15 +393,15 @@ export default function RekapVoucherPage() {
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-card p-4 rounded-lg border border-border">
           <div className="text-[10px] text-muted-foreground uppercase mb-1">Pendapatan Admin</div>
-          <div className="text-xl font-bold text-blue-400">{formatRupiah(totalAdminEarnings)}</div>
+          <div className="text-xl font-bold text-blue-400">{formatCurrency(totalAdminEarnings)}</div>
         </div>
         <div className="bg-card p-4 rounded-lg border border-border">
           <div className="text-[10px] text-muted-foreground uppercase mb-1">Pendapatan Agent</div>
-          <div className="text-xl font-bold text-[#bc13fe]">{formatRupiah(totalAgentProfit)}</div>
+          <div className="text-xl font-bold text-[#bc13fe]">{formatCurrency(totalAgentProfit)}</div>
         </div>
         <div className="bg-card p-4 rounded-lg border border-success/30">
           <div className="text-[10px] text-muted-foreground uppercase mb-1">Total Pendapatan</div>
-          <div className="text-xl font-bold text-success">{formatRupiah(totalAdminEarnings + totalAgentProfit)}</div>
+          <div className="text-xl font-bold text-success">{formatCurrency(totalAdminEarnings + totalAgentProfit)}</div>
         </div>
       </div>
 
@@ -433,7 +433,7 @@ export default function RekapVoucherPage() {
                   <tr key={id} className="hover:bg-muted">
                     <td className="px-3 py-2 text-xs font-medium text-foreground">{a.name}</td>
                     <td className="px-3 py-2 text-xs text-right text-muted-foreground">{a.sold}</td>
-                    <td className="px-3 py-2 text-xs text-right font-semibold text-[#bc13fe]">{formatRupiah(a.profit)}</td>
+                    <td className="px-3 py-2 text-xs text-right font-semibold text-[#bc13fe]">{formatCurrency(a.profit)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -442,7 +442,7 @@ export default function RekapVoucherPage() {
                   <tr>
                     <td className="px-3 py-2 text-xs font-bold text-foreground">Total</td>
                     <td className="px-3 py-2 text-xs text-right font-bold text-muted-foreground">{agentSold}</td>
-                    <td className="px-3 py-2 text-xs text-right font-bold text-[#bc13fe]">{formatRupiah(totalAgentProfit)}</td>
+                    <td className="px-3 py-2 text-xs text-right font-bold text-[#bc13fe]">{formatCurrency(totalAgentProfit)}</td>
                   </tr>
                 </tfoot>
               )}
@@ -483,7 +483,7 @@ export default function RekapVoucherPage() {
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.profile')}</div>
                   <div>{item.profile.name}</div>
                   {item.sellingPrice > 0 && (
-                    <div className="text-[10px] text-muted-foreground">{formatRupiah(item.sellingPrice)}/voucher</div>
+                    <div className="text-[10px] text-muted-foreground">{formatCurrency(item.sellingPrice)}/voucher</div>
                   )}
                 </div>
                 {item.router && (
@@ -509,7 +509,7 @@ export default function RekapVoucherPage() {
                 </div>
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">Nominal</div>
-                  <div className="font-medium text-[#00f7ff] text-[10px]">{formatRupiah(item.totalRevenue)}</div>
+                  <div className="font-medium text-[#00f7ff] text-[10px]">{formatCurrency(item.totalRevenue)}</div>
                 </div>
               </div>
             </div>
@@ -532,7 +532,7 @@ export default function RekapVoucherPage() {
               </div>
               <div className="text-center">
                 <div className="text-[10px] text-muted-foreground font-bold">Total Pendapatan</div>
-                <div className="font-bold text-[#00f7ff] text-[11px]">{formatRupiah(totalRevenue)}</div>
+                <div className="font-bold text-[#00f7ff] text-[11px]">{formatCurrency(totalRevenue)}</div>
               </div>
             </div>
           </div>
@@ -616,13 +616,13 @@ export default function RekapVoucherPage() {
                       <button onClick={() => openVoucherModal(item.batchCode, 'EXPIRED')} className="font-medium text-muted-foreground hover:underline cursor-pointer">{item.expired}</button>
                     </td>
                     <td className="px-3 py-2 text-[10px] text-right font-medium text-muted-foreground">
-                      {item.sellingPrice > 0 ? formatRupiah(item.sellingPrice) : '-'}
+                      {item.sellingPrice > 0 ? formatCurrency(item.sellingPrice) : '-'}
                     </td>
                     <td className="px-3 py-2 text-[10px] text-right font-medium text-[#00f7ff]">
-                      {item.totalRevenue > 0 ? formatRupiah(item.totalRevenue) : '-'}
+                      {item.totalRevenue > 0 ? formatCurrency(item.totalRevenue) : '-'}
                     </td>
                     <td className="px-3 py-2 text-[10px] text-right font-medium text-[#bc13fe]">
-                      {item.agentProfit > 0 ? formatRupiah(item.agentProfit) : <span className="text-muted-foreground">-</span>}
+                      {item.agentProfit > 0 ? formatCurrency(item.agentProfit) : <span className="text-muted-foreground">-</span>}
                     </td>
                   </tr>
                 ))
@@ -651,10 +651,10 @@ export default function RekapVoucherPage() {
                   </td>
                   <td className="px-3 py-2 text-xs text-right text-muted-foreground">-</td>
                   <td className="px-3 py-2 text-xs text-right text-[#00f7ff]">
-                    {formatRupiah(totalRevenue)}
+                    {formatCurrency(totalRevenue)}
                   </td>
                   <td className="px-3 py-2 text-xs text-right text-[#bc13fe]">
-                    {formatRupiah(totalAgentProfit)}
+                    {formatCurrency(totalAgentProfit)}
                   </td>
                 </tr>
               </tfoot>

@@ -15,7 +15,7 @@ import {
   Trash2,
   MapPin,
 } from 'lucide-react';
-import { formatToWIB } from '@/lib/utils/dateUtils';
+import { formatWIB } from '@/lib/timezone';
 import {
   SimpleModal,
   ModalHeader,
@@ -379,7 +379,7 @@ export default function RegistrationsPage() {
                   )}
                   <div>
                     <span className="text-muted-foreground">{t('common.date')}:</span>
-                    <p className="text-[10px]">{formatToWIB(reg.createdAt)}</p>
+                    <p className="text-[10px]">{formatWIB(reg.createdAt, 'dd/MM/yyyy HH:mm:ss')}</p>
                   </div>
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
@@ -483,7 +483,7 @@ export default function RegistrationsPage() {
                           )}
                         </td>
                         <td className="px-3 py-2 text-[10px] text-muted-foreground hidden lg:table-cell">
-                          {formatToWIB(reg.createdAt)}
+                          {formatWIB(reg.createdAt, 'dd/MM/yyyy HH:mm:ss')}
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex gap-1">

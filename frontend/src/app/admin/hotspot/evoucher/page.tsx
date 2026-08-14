@@ -1,9 +1,9 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { formatToWIB } from '@/lib/utils/dateUtils';
+import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
 import {
   ShoppingCart,
@@ -349,7 +349,7 @@ export default function EVoucherManagementPage() {
                   />
                   <div>
                     <div className="font-mono text-xs text-foreground">{order.orderNumber}</div>
-                    <div className="text-[10px] text-muted-foreground">{formatToWIB(order.createdAt)}</div>
+                    <div className="text-[10px] text-muted-foreground">{formatWIB(order.createdAt, 'dd/MM/yyyy HH:mm:ss')}</div>
                   </div>
                 </div>
                 {getStatusBadge(order.status)}
@@ -447,8 +447,8 @@ export default function EVoucherManagementPage() {
                       <td className="px-3 py-2 text-xs font-medium">{formatCurrency(order.totalAmount)}</td>
                       <td className="px-3 py-2">{getStatusBadge(order.status)}</td>
                       <td className="px-3 py-2 hidden md:table-cell">
-                        <div className="text-[10px]">{formatToWIB(order.createdAt)}</div>
-                        {order.paidAt && <div className="text-[9px] text-success">Paid: {formatToWIB(order.paidAt)}</div>}
+                        <div className="text-[10px]">{formatWIB(order.createdAt, 'dd/MM/yyyy HH:mm:ss')}</div>
+                        {order.paidAt && <div className="text-[9px] text-success">Paid: {formatWIB(order.paidAt, 'dd/MM/yyyy HH:mm:ss')}</div>}
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
