@@ -1711,6 +1711,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 43 — Manual Payments Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/manual-payments/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/manual-payments?...')` (load payments) → `apiAdmin(...)`
+  - `fetch('/api/manual-payments/${id}', { method: 'PATCH' })` (approve) → `apiAdmin(...)`
+  - `fetch('/api/manual-payments/${id}', { method: 'PATCH' })` (reject) → `apiAdmin(...)`
+  - `fetch('/api/manual-payments/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in manual-payments page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Manual payments page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

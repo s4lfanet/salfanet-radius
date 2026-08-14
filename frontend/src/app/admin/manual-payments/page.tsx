@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/select';
 import { CheckCircle, XCircle, Eye, Trash2, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { apiAdmin } from '@/lib/api';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB, nowWIB } from '@/lib/timezone';
 
@@ -114,13 +115,11 @@ export default function ManualPaymentsPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (paymentMonth) params.set('month', paymentMonth);
-      const response = await fetch(`/api/manual-payments?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch payments');
-      const data = await response.json();
-      setPayments(data.data || []);
-    } catch (error) {
+      const data = await apiAdmin(`/api/manual-payments?${params}`);
+      setPayments((data as any).data || []);
+    } catch (error: any) {
       console.error('Error fetching payments:', error);
-      showError(t('common.failedLoadPayments'));
+      showError(error.message || t('common.failedLoadPayments'));
     } finally {
       setLoading(false);
     }
@@ -155,24 +154,21 @@ export default function ManualPaymentsPage() {
 
     try {
       setProcessing(true);
-      const response = await fetch(`/api/manual-payments/${selectedPayment.id}`, {
+      await apiAdmin(`/api/manual-payments/${selectedPayment.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'approve',
           approvedBy: session?.user?.email || 'admin',
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to approve payment');
-
       showSuccess(t('manualPayment.approveSuccess'));
       setShowApproveDialog(false);
       setSelectedPayment(null);
       fetchPayments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving payment:', error);
-      showError(t('manualPayment.failedApprove'));
+      showError(error.message || t('manualPayment.failedApprove'));
     } finally {
       setProcessing(false);
     }
@@ -186,9 +182,8 @@ export default function ManualPaymentsPage() {
 
     try {
       setProcessing(true);
-      const response = await fetch(`/api/manual-payments/${selectedPayment.id}`, {
+      await apiAdmin(`/api/manual-payments/${selectedPayment.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'reject',
           approvedBy: session?.user?.email || 'admin',
@@ -196,16 +191,14 @@ export default function ManualPaymentsPage() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to reject payment');
-
       showSuccess(t('manualPayment.rejectSuccess'));
       setShowRejectDialog(false);
       setSelectedPayment(null);
       setRejectionReason('');
       fetchPayments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting payment:', error);
-      showError(t('manualPayment.failedReject'));
+      showError(error.message || t('manualPayment.failedReject'));
     } finally {
       setProcessing(false);
     }
@@ -216,15 +209,13 @@ export default function ManualPaymentsPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/manual-payments/${id}`, {
+      await apiAdmin(`/api/manual-payments/${id}`, {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete payment');
-
       showSuccess(t('manualPayment.deleteSuccess'));
       fetchPayments();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting payment:', error);
       showError(t('manualPayment.failedDelete'));
     }
