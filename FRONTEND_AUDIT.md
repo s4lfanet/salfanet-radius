@@ -1630,6 +1630,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 38 — Network Splice Points Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/splice-points/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/network/splices?...')` (load splice points) → `apiAdmin(...)`
+  - `fetch('/api/network/cables')` (load cables) → `apiAdmin(...)`
+  - `fetch('/api/network/cores?cableId=...&status=AVAILABLE')` (load cores) → `apiAdmin(...)`
+  - `fetch('/api/network/splices', { method: 'POST' })` (create splice) → `apiAdmin(...)`
+  - `fetch('/api/network/splices/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/splice-points page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Page loads. 2 console errors from pre-existing backend 500 on `/api/network/cables` (not caused by migration — same 500 with original fetch)
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
