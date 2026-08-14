@@ -1174,6 +1174,28 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 12 — GenieACS Devices Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/genieacs/devices/page.tsx` — 13 fetch() calls replaced:
+  - `fetch('/api/settings/genieacs/devices')` + `fetch('/api/settings/genieacs')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/devices/${id}/reboot', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/genieacs/devices/${id}/connection-request', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/devices/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/devices/${id}/refresh', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/devices/${id}/detail')` → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/devices/${id}/parameters')` → `apiAdmin(...)`
+  - `fetch('/api/genieacs/devices/${id}/wifi', { method: 'PUT/POST' })` → `apiAdmin(...)`
+  - `fetch('/api/genieacs/devices/${id}/wan', { method: 'PUT/POST/DELETE' })` (3 calls) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/virtual-parameters|provisions', { method: 'POST' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in genieacs/devices page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ GenieACS devices page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
