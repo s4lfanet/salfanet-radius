@@ -831,6 +831,36 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 1C — Uploads Route to Nginx (14 Aug 2026) ✅
+
+**Nginx config updated:**
+- `deploy/nginx/salfanet.conf` — Added `location /uploads/` serving directly from `/var/data/salfanet/uploads/`
+- Only allows image extensions (jpg, jpeg, png, webp, svg)
+- Rejects dangerous extensions (php, js, html, exe, sh, css)
+- Cache: 1 year immutable
+
+**Files deleted:**
+- `frontend/src/app/uploads/[...filepath]/route.ts` — Next.js file serving route
+- `frontend/src/lib/upload-dir.ts` — Filesystem access utility (UPLOAD_DIR, getUploadDir, getUploadPath)
+
+**Verification:**
+- Build: ✅ SUCCESS (no more uploads route in build output)
+- Production test: Upload image loads directly from nginx (HTTP 200, image/jpeg)
+- Admin dashboard: ✅ Zero console errors
+- Nginx serving: ✅ `curl -I` returns 200 with correct Content-Type and cache headers
+
+**Issues status update:**
+- H5 (Filesystem access in upload route) → ✅ Fixed
+- C8 (SSH credentials in localStorage) → Still open (Phase 3)
+
+**Acceptance criteria update:**
+| Criteria | Before | After Phase 1C |
+|---|---|---|
+| Frontend tidak akses filesystem | ❌ | ✅ |
+| Upload files served efficiently | ❌ (Next.js route) | ✅ (nginx direct) |
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
