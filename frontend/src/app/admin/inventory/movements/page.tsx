@@ -115,8 +115,8 @@ export default function StockMovementsPage() {
       setIsDialogOpen(false);
       resetForm();
       loadData();
-    } catch (error: any) {
-      await showError(error?.message || t('inventory.failedRecordMovement'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('inventory.failedRecordMovement'));
     }
   };
 

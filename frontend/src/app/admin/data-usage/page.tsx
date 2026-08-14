@@ -41,6 +41,23 @@ interface TopConsumers {
   }>;
 }
 
+interface TopConsumersResponse {
+  data: TopConsumers | null;
+}
+
+interface MonthlySummaryResponse {
+  data: MonthlySummary | null;
+}
+
+interface UserUsageResponse {
+  data: UsageRecord[];
+}
+
+interface AggregateResponse {
+  success: boolean;
+  data: { processed: number };
+}
+
 const API_BASE = '/api/admin/data-usage';
 
 export default function DataUsagePage() {
@@ -62,9 +79,9 @@ export default function DataUsagePage() {
   const loadTop = async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin(`${API_BASE}/top?days=${topDays}&limit=${topLimit}`);
-      setTopConsumers((data as any).data || null);
-    } catch (err: any) {
+      const data = await apiAdmin<TopConsumersResponse>(`${API_BASE}/top?days=${topDays}&limit=${topLimit}`);
+      setTopConsumers(data.data || null);
+    } catch (err: unknown) {
       console.error('Failed to load top consumers', err);
     } finally {
       setLoading(false);
@@ -74,9 +91,9 @@ export default function DataUsagePage() {
   const loadMonthly = async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin(`${API_BASE}/monthly`);
-      setMonthly((data as any).data || null);
-    } catch (err: any) {
+      const data = await apiAdmin<MonthlySummaryResponse>(`${API_BASE}/monthly`);
+      setMonthly(data.data || null);
+    } catch (err: unknown) {
       console.error('Failed to load monthly summary', err);
     } finally {
       setLoading(false);
@@ -88,9 +105,9 @@ export default function DataUsagePage() {
     try {
       const params = new URLSearchParams();
       if (searchUser) params.set('username', searchUser);
-      const data = await apiAdmin(`${API_BASE}?${params.toString()}`);
-      setUserUsage((data as any).data || []);
-    } catch (err: any) {
+      const data = await apiAdmin<UserUsageResponse>(`${API_BASE}?${params.toString()}`);
+      setUserUsage(data.data || []);
+    } catch (err: unknown) {
       console.error('Failed to load user usage', err);
     } finally {
       setLoading(false);
@@ -99,14 +116,14 @@ export default function DataUsagePage() {
 
   const triggerAggregate = async () => {
     try {
-      const data = await apiAdmin(`${API_BASE}/aggregate`, { method: 'POST' });
-      if ((data as any).success) {
-        alert(`Aggregation complete: ${(data as any).data.processed} users processed`);
+      const data = await apiAdmin<AggregateResponse>(`${API_BASE}/aggregate`, { method: 'POST' });
+      if (data.success) {
+        alert(`Aggregation complete: ${data.data.processed} users processed`);
         if (tab === 'top') loadTop();
         else if (tab === 'monthly') loadMonthly();
         else loadUserUsage();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       alert('Failed to trigger aggregation');
     }
   };

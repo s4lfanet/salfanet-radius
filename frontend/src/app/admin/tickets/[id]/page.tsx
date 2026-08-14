@@ -85,13 +85,13 @@ export default function AdminTicketDetailPage() {
 
   const fetchTicket = async () => {
     try {
-      const data = await apiAdmin(`/api/tickets?id=${ticketId}`);
-      if (Array.isArray(data) && (data as any[]).length > 0) {
-        setTicket((data as any[])[0]);
-        setSelectedStatus((data as any[])[0].status);
-        setSelectedPriority((data as any[])[0].priority);
+      const data = await apiAdmin<TicketDetail[]>(`/api/tickets?id=${ticketId}`);
+      if (Array.isArray(data) && data.length > 0) {
+        setTicket(data[0]);
+        setSelectedStatus(data[0].status);
+        setSelectedPriority(data[0].priority);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch ticket:', error);
     } finally {
       setLoading(false);
@@ -100,9 +100,9 @@ export default function AdminTicketDetailPage() {
 
   const fetchMessages = async () => {
     try {
-      const data = await apiAdmin(`/api/tickets/messages?ticketId=${ticketId}&includeInternal=true`);
-      setMessages(data as any);
-    } catch (error: any) {
+      const data = await apiAdmin<Message[]>(`/api/tickets/messages?ticketId=${ticketId}&includeInternal=true`);
+      setMessages(data);
+    } catch (error: unknown) {
       console.error('Failed to fetch messages:', error);
     }
   };
@@ -130,9 +130,9 @@ export default function AdminTicketDetailPage() {
       fetchMessages();
       fetchTicket(); // Update lastResponseAt
       await showSuccess(t('ticket.replySent') || 'Reply sent successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to send reply:', error);
-      await showError(error.message || t('ticket.replyFailed'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.replyFailed'));
     } finally {
       setSending(false);
     }
@@ -151,9 +151,9 @@ export default function AdminTicketDetailPage() {
       fetchTicket();
       setEditingStatus(false);
       await showSuccess(t('ticket.statusUpdated') || 'Status updated successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to update status:', error);
-      await showError(error.message || t('ticket.updateFailed'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
     }
   };
 
@@ -170,9 +170,9 @@ export default function AdminTicketDetailPage() {
       fetchTicket();
       setEditingPriority(false);
       await showSuccess(t('ticket.priorityUpdated') || 'Priority updated successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to update priority:', error);
-      await showError(error.message || t('ticket.updateFailed'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.updateFailed'));
     }
   };
 

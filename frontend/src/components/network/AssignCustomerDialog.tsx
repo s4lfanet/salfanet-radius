@@ -79,7 +79,7 @@ export default function AssignCustomerDialog({
       const assignments = await assignmentsRes.json();
 
       // Filter out assigned customers and those without GPS
-      const assignedCustomerIds = assignments.map((a: any) => a.customerId);
+      const assignedCustomerIds = assignments.map((a: { customerId: string }) => a.customerId);
       const unassigned = allCustomers.filter(
         (c: Customer) =>
           !assignedCustomerIds.includes(c.id) &&
@@ -149,8 +149,8 @@ export default function AssignCustomerDialog({
 
       onSuccess();
       handleClose();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }

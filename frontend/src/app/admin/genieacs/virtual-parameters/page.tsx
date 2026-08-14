@@ -148,9 +148,9 @@ export default function VirtualParametersPage() {
       resetForm();
       fetchData();
       addToast({ type: 'success', title: t('common.success'), description: t('genieacs.paramSaved') });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting:', error);
-      addToast({ type: 'error', title: t('common.error'), description: error?.message || t('genieacs.failedSaveParam') });
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('genieacs.failedSaveParam') });
     } finally {
       setSaving(false);
     }
@@ -170,8 +170,8 @@ export default function VirtualParametersPage() {
       const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/settings/genieacs/virtual-parameters/${vp.id}`, { method: "DELETE" });
       if (!data.success) throw new Error(data.error || t('genieacs.failedDeleteParam'));
       setItems((prev) => prev.filter((item) => item.id !== vp.id));
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error?.message || t('genieacs.failedDeleteParam') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('genieacs.failedDeleteParam') });
     } finally {
       setDeletingId(null);
     }
@@ -198,8 +198,8 @@ export default function VirtualParametersPage() {
       });
       if (!data.success) throw new Error(data.error || t('genieacs.failedChangeStatus'));
       setItems((prev) => prev.map((item) => (item.id === vp.id ? { ...item, isActive: !item.isActive } : item)));
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error?.message || t('genieacs.failedChangeStatus') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('genieacs.failedChangeStatus') });
     }
   };
 

@@ -13,7 +13,8 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // Fix default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// _getIconUrl is an internal Leaflet property not exposed in types
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x.src,
   iconUrl: markerIcon.src,
@@ -30,7 +31,7 @@ interface MapEntity {
   longitude: number;
   status: string;
   address?: string | null;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   package?: string;
   speed?: string;
   odpId?: string | null;
@@ -315,26 +316,26 @@ export default function UnifiedNetworkMap({
         // Combine infrastructure + customers
         const allEntities: MapEntity[] = [
           // Infrastructure nodes
-          ...(nodesData.data || []).map((n: any) => ({
+          ...(nodesData.data || []).map((n: Record<string, unknown>) => ({
             id: n.id,
             type: n.type,
             code: n.code,
             name: n.name,
-            latitude: parseFloat(n.latitude),
-            longitude: parseFloat(n.longitude),
+            latitude: parseFloat(n.latitude as string),
+            longitude: parseFloat(n.longitude as string),
             status: n.status,
             address: n.address,
             metadata: n.metadata,
           })),
           // Customers
-          ...(customersData.data || []).map((c: any) => ({
+          ...(customersData.data || []).map((c: Record<string, unknown>) => ({
             id: c.id,
-            type: 'CUSTOMER',
+            type: 'CUSTOMER' as const,
             code: c.username,
             username: c.username,
             name: c.name,
-            latitude: parseFloat(c.latitude),
-            longitude: parseFloat(c.longitude),
+            latitude: parseFloat(c.latitude as string),
+            longitude: parseFloat(c.longitude as string),
             status: c.status,
             address: c.address,
             pppoe_profiles: c.pppoe_profiles,
@@ -345,9 +346,9 @@ export default function UnifiedNetworkMap({
         ];
 
         setEntities(allEntities);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('Error loading entities:', err);
-        setError(err.message);
+        setError(err instanceof Error ? err.message : String(err));
       } finally {
         setLoading(false);
       }
@@ -571,7 +572,7 @@ export default function UnifiedNetworkMap({
         maxClusterRadius={50}
         spiderfyOnMaxZoom={true}
         showCoverageOnHover={false}
-        iconCreateFunction={(cluster: any) => {
+        iconCreateFunction={(cluster: { getChildCount(): number }) => {
           const count = cluster.getChildCount();
           let size = 'small';
           let colorClass = 'bg-blue-500';

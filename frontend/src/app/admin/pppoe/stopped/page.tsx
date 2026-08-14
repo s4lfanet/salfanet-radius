@@ -84,11 +84,11 @@ export default function StoppedSubscriptionsPage() {
     try {
       const result = await pppoeApi.bulkDelete(Array.from(deletedIds));
       await showSuccess(`${result.deleted || deletedIds.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Rollback if API failed
       setUsers(prev => [...prev, ...usersToRestore]);
       console.error('Bulk delete error:', error);
-      await showError(error.message || t('common.failedDelete'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDelete'));
     }
   };
 
@@ -105,13 +105,13 @@ export default function StoppedSubscriptionsPage() {
     try {
       await pppoeApi.updateStatus(userId, 'active');
       await showSuccess(t('common.customerReactivated'));
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Rollback: add user back to list if API failed
       if (userToRestore) {
         setUsers(prev => [...prev, userToRestore]);
       }
       console.error('Reactivate error:', error);
-      await showError(error.message || t('common.failedActivate'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedActivate'));
     }
   };
 
@@ -127,13 +127,13 @@ export default function StoppedSubscriptionsPage() {
     try {
       await pppoeApi.deleteUser(userId);
       await showSuccess(t('common.customerDeleted'));
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Rollback if API failed
       if (userToRestore) {
         setUsers(prev => [...prev, userToRestore]);
       }
       console.error('Delete error:', error);
-      await showError(error.message || t('common.failedDelete'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDelete'));
     }
   };
 

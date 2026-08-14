@@ -21,7 +21,7 @@ export default function CustomerLoginPage() {
   const [footerText, setFooterText] = useState('');
   const [brandLoaded, setBrandLoaded] = useState(false);
   const [otpSendFailed, setOtpSendFailed] = useState(false);
-  const [userDataForBypass, setUserDataForBypass] = useState<any>(null);
+  const [userDataForBypass, setUserDataForBypass] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     // If already logged in as customer, redirect to customer portal
@@ -97,7 +97,7 @@ export default function CustomerLoginPage() {
         setError(data.error || 'Gagal mengirim OTP. Layanan WhatsApp mungkin sedang tidak tersedia.');
         setOtpSendFailed(true);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
       setError('Terjadi kesalahan. Silakan coba lagi.');
     } finally {
@@ -126,7 +126,7 @@ export default function CustomerLoginPage() {
       } else {
         setError(data.error || 'Kode OTP salah');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError('Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setLoading(false);

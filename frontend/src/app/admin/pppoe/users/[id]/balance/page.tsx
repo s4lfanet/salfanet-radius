@@ -118,8 +118,8 @@ export default function BalanceManagementPage() {
       const data = await response.json();
       setUser(data.user);
       setTransactions(data.transactions || []);
-    } catch (error: any) {
-      showError(error.message || t('pppoe.failedLoadBalance'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedLoadBalance'));
     } finally {
       setLoading(false);
     }
@@ -170,8 +170,8 @@ export default function BalanceManagementPage() {
       setTopUpData({ amount: '', paymentMethod: 'CASH', note: '' });
       setIsTopUpModalOpen(false);
       loadBalanceData();
-    } catch (error: any) {
-      showError(error.message || t('pppoe.failedTopUp'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedTopUp'));
     } finally {
       setSubmitting(false);
     }
@@ -203,8 +203,8 @@ export default function BalanceManagementPage() {
 
       showSuccess(user.autoRenewal ? t('pppoe.autoRenewalDisabled') : t('pppoe.autoRenewalEnabled'));
       loadBalanceData();
-    } catch (error: any) {
-      showError(error.message || t('pppoe.failedChangeAutoRenewal'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedChangeAutoRenewal'));
     }
   };
 

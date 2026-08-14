@@ -171,8 +171,8 @@ export default function TrafficChartMonitor() {
       } else {
         setError(data.message || 'Failed to fetch traffic data');
       }
-    } catch (err: any) {
-      setError(err.message || 'Network error');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : String(err)) || 'Network error');
     } finally {
       setLoading(false);
     }

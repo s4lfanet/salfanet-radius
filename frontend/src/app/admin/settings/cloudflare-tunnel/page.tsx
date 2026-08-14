@@ -88,13 +88,13 @@ export default function CloudflareTunnelPage() {
   const loadStatus = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await apiAdmin<any>('/api/admin/cloudflare-tunnel');
+      const data = await apiAdmin<TunnelStatus>('/api/admin/cloudflare-tunnel');
       setStatus(data);
       if (data.baseUrl) {
         setTunnelDomain(data.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''));
       }
       if (data.nginx?.port) {
-        setLocalPort(data.nginx.port);
+        setLocalPort(String(data.nginx.port));
       }
     } catch {
       // ignore
@@ -126,8 +126,8 @@ export default function CloudflareTunnelPage() {
       } else {
         showToast('error', data.error || 'Gagal');
       }
-    } catch (err: any) {
-      showToast('error', err.message || 'Gagal terhubung ke server');
+    } catch (err: unknown) {
+      showToast('error', (err instanceof Error ? err.message : String(err)) || 'Gagal terhubung ke server');
     } finally {
       setActionLoading(null);
     }

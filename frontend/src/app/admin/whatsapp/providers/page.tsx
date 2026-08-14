@@ -122,11 +122,11 @@ export default function WhatsAppProvidersPage() {
 
   const fetchProviders = async () => {
     try {
-      const data = await apiAdmin('/api/whatsapp/providers');
-      setProviders((data as any).sort((a: Provider, b: Provider) => a.priority - b.priority));
-    } catch (error: any) {
+      const data = await apiAdmin<Provider[]>('/api/whatsapp/providers');
+      setProviders(data.sort((a: Provider, b: Provider) => a.priority - b.priority));
+    } catch (error: unknown) {
       console.error('Error fetching providers:', error);
-      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedFetchProviders') });
+      addToast({ type: 'error', title: 'Error!', description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedFetchProviders') });
     } finally {
       setLoading(false);
     }
@@ -141,8 +141,8 @@ export default function WhatsAppProvidersPage() {
       providers.map(async (provider) => {
         if (provider.type === 'mpwa' || provider.type === 'waha' || provider.type === 'gowa' || provider.type === 'baileys') {
           try {
-            const data = await apiAdmin(`/api/whatsapp/providers/${provider.id}/status`);
-            newStatuses[provider.id] = data as any;
+            const data = await apiAdmin<ProviderStatus>(`/api/whatsapp/providers/${provider.id}/status`);
+            newStatuses[provider.id] = data;
           } catch (error) {
             console.error(`Error fetching status for ${provider.name}:`, error);
           }
@@ -194,9 +194,9 @@ export default function WhatsAppProvidersPage() {
       addToast({ type: 'success', title: t('common.success'), description: t('whatsapp.providerSaved') });
       fetchProviders();
       resetForm();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error saving provider:', error);
-      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedSaveProvider') });
+      addToast({ type: 'error', title: 'Error!', description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedSaveProvider') });
     }
   };
 
@@ -209,9 +209,9 @@ export default function WhatsAppProvidersPage() {
 
       addToast({ type: 'success', title: t('common.success'), description: !currentStatus ? t('whatsapp.providerActivated') : t('whatsapp.providerDeactivated') });
       fetchProviders();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error toggling provider:', error);
-      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedToggleProvider') });
+      addToast({ type: 'error', title: 'Error!', description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedToggleProvider') });
     }
   };
 
@@ -231,9 +231,9 @@ export default function WhatsAppProvidersPage() {
 
       addToast({ type: 'success', title: t('common.deleted'), description: t('whatsapp.providerDeleted') });
       fetchProviders();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting provider:', error);
-      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedDeleteProvider') });
+      addToast({ type: 'error', title: 'Error!', description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedDeleteProvider') });
     }
   };
 
@@ -330,13 +330,13 @@ export default function WhatsAppProvidersPage() {
     stopQrPolling();
     const interval = setInterval(async () => {
       try {
-        const data = await apiAdmin(`/api/whatsapp/providers/${provider.id}/status`);
-        if ((data as any).connected) {
+        const data = await apiAdmin<ProviderStatus>(`/api/whatsapp/providers/${provider.id}/status`);
+        if (data.connected) {
           stopQrPolling();
           setQrConnected(true);
           setQrImage(null);
           // Update the status in the list immediately
-          setProviderStatuses(prev => ({ ...prev, [provider.id]: data as any }));
+          setProviderStatuses(prev => ({ ...prev, [provider.id]: data }));
         }
       } catch {
         // ignore polling errors

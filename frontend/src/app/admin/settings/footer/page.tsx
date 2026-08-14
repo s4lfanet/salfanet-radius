@@ -59,14 +59,14 @@ export default function FooterSettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    apiAdmin<Record<string, any>>('/api/company')
+    apiAdmin<Record<string, unknown>>('/api/company')
       .then(data => {
         if (data) {
           setSettings({
-            footerAdmin: data.footerAdmin || '',
-            footerCustomer: data.footerCustomer || '',
-            footerTechnician: data.footerTechnician || '',
-            footerAgent: data.footerAgent || '',
+            footerAdmin: String(data.footerAdmin ?? ''),
+            footerCustomer: String(data.footerCustomer ?? ''),
+            footerTechnician: String(data.footerTechnician ?? ''),
+            footerAgent: String(data.footerAgent ?? ''),
           });
         }
       })
@@ -79,7 +79,7 @@ export default function FooterSettingsPage() {
     setSaving(true);
     try {
       // Fetch current full company data first so we don't overwrite other fields
-      const current = await apiAdmin<Record<string, any>>('/api/company');
+      const current = await apiAdmin<Record<string, unknown>>('/api/company');
 
       await apiAdmin('/api/company', {
         method: 'POST',

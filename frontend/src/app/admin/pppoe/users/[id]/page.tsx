@@ -113,7 +113,7 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
       if ((userData as any).activeSession) setActiveSession((userData as any).activeSession);
       if ((invoicesData as any).invoices)  setInvoices((invoicesData as any).invoices);
       if ((sessionsData as any).sessions)  setSessions((sessionsData as any).sessions);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -144,8 +144,8 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
         body: JSON.stringify({ userIds: [user.id], notificationType: 'invoice', notificationMethod: 'whatsapp' }),
       });
       setWaResult('Notifikasi WA berhasil dikirim!');
-    } catch (e: any) {
-      setWaResult(e.message || 'Gagal mengirim WA');
+    } catch (e: unknown) {
+      setWaResult((e instanceof Error ? e.message : String(e)) || 'Gagal mengirim WA');
     } finally {
       setSendingWA(false);
       setTimeout(() => setWaResult(null), 4000);

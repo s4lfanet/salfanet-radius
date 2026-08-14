@@ -82,6 +82,27 @@ interface Broadcast {
   createdAt: string;
 }
 
+interface CompanyResponse {
+  success: boolean;
+  company?: { name: string };
+}
+
+interface PushStatsResponse {
+  success: boolean;
+  stats: Stats;
+}
+
+interface PushHistoryResponse {
+  success: boolean;
+  broadcasts: Broadcast[];
+}
+
+interface PushSendResponse {
+  success: boolean;
+  stats: { sent: number; failed: number; total: number };
+  error?: string;
+}
+
 type RecipientRole = 'customer' | 'agent' | 'technician' | 'all';
 
 const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; label: string; icon: React.ComponentType<any>; color: string; activeColor: string }>> = {
@@ -200,7 +221,7 @@ export default function PushNotificationsPage() {
   useEffect(() => {
     loadStats();
     loadHistory();
-    apiAdmin('/api/public/company').then((d: any) => {
+    apiAdmin<CompanyResponse>('/api/public/company').then((d) => {
       if (d.success && d.company?.name) setCompanyName(d.company.name);
     }).catch(() => {});
   }, []);
@@ -208,11 +229,11 @@ export default function PushNotificationsPage() {
   const loadStats = async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin('/api/push/send?action=stats');
-      if ((data as any).success) {
-        setStats((data as any).stats);
+      const data = await apiAdmin<PushStatsResponse>('/api/push/send?action=stats');
+      if (data.success) {
+        setStats(data.stats);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load stats error:', error);
     } finally {
       setLoading(false);
@@ -222,11 +243,11 @@ export default function PushNotificationsPage() {
   const loadHistory = async () => {
     setHistoryLoading(true);
     try {
-      const data = await apiAdmin('/api/push/send?limit=30');
-      if ((data as any).success) {
-        setBroadcasts((data as any).broadcasts);
+      const data = await apiAdmin<PushHistoryResponse>('/api/push/send?limit=30');
+      if (data.success) {
+        setBroadcasts(data.broadcasts);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load history error:', error);
     } finally {
       setHistoryLoading(false);
@@ -278,7 +299,7 @@ export default function PushNotificationsPage() {
     try {
       const targetIds = targetType === 'area' && selectedArea ? [selectedArea] : [];
 
-      const data = await apiAdmin('/api/push/send', {
+      const data = await apiAdmin<PushSendResponse>('/api/push/send', {
         method: 'POST',
         body: JSON.stringify({
           title: title.trim(),
@@ -292,10 +313,10 @@ export default function PushNotificationsPage() {
         }),
       });
 
-      if ((data as any).success) {
+      if (data.success) {
         showSuccess(
           t('pushNotif.sentSuccess'),
-          t('pushNotif.sentStats').replace('{sent}', (data as any).stats.sent).replace('{failed}', (data as any).stats.failed).replace('{total}', (data as any).stats.total)
+          t('pushNotif.sentStats').replace('{sent}', String(data.stats.sent)).replace('{failed}', String(data.stats.failed)).replace('{total}', String(data.stats.total))
         );
         setTitle('');
         setMessage('');
@@ -303,10 +324,10 @@ export default function PushNotificationsPage() {
         loadHistory();
         loadStats();
       } else {
-        showError((data as any).error || t('pushNotif.sendFailed'));
+        showError(data.error || t('pushNotif.sendFailed'));
       }
-    } catch (error: any) {
-      showError(error.message || t('pushNotif.sendError'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('pushNotif.sendError'));
     } finally {
       setSending(false);
     }

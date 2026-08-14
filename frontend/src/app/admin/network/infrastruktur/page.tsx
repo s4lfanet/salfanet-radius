@@ -93,9 +93,9 @@ function OTBTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await apiAdmin(`/api/network/otbs?page=${page}&limit=20&search=${encodeURIComponent(search)}`);
-      setItems((d as any).otbs || []);
-      setTotal((d as any).pagination?.total || 0);
+      const d = await apiAdmin<{ otbs?: OTB[]; pagination?: { total?: number } }>(`/api/network/otbs?page=${page}&limit=20&search=${encodeURIComponent(search)}`);
+      setItems(d.otbs || []);
+      setTotal(d.pagination?.total || 0);
     } finally {
       setLoading(false);
     }
@@ -111,8 +111,8 @@ function OTBTable({ search }: { search: string }) {
       await apiAdmin(`/api/network/otbs/${r.id}`, { method: 'DELETE' });
       setItems(prev => prev.filter(i => i.id !== r.id));
       setTotal(prev => prev - 1);
-    } catch (e: any) {
-      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
+    } catch (e: unknown) {
+      alert(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {
       setDeletingId(null);
     }
@@ -170,9 +170,9 @@ function JCTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await apiAdmin(`/api/network/joint-closures?search=${encodeURIComponent(search)}`);
-      setItems((d as any).data || []);
-      setTotal((d as any).count || 0);
+      const d = await apiAdmin<{ data?: JC[]; count?: number }>(`/api/network/joint-closures?search=${encodeURIComponent(search)}`);
+      setItems(d.data || []);
+      setTotal(d.count || 0);
     } finally {
       setLoading(false);
     }
@@ -187,8 +187,8 @@ function JCTable({ search }: { search: string }) {
       await apiAdmin(`/api/network/joint-closures/${r.id}`, { method: 'DELETE' });
       setItems(prev => prev.filter(i => i.id !== r.id));
       setTotal(prev => prev - 1);
-    } catch (e: any) {
-      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
+    } catch (e: unknown) {
+      alert(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {
       setDeletingId(null);
     }
@@ -238,8 +238,8 @@ function ODCTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await apiAdmin('/api/network/odcs');
-      const all: ODC[] = (d as any).odcs || [];
+      const d = await apiAdmin<{ odcs?: ODC[] }>('/api/network/odcs');
+      const all: ODC[] = d.odcs || [];
       const filtered = search
         ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
         : all;
@@ -259,8 +259,8 @@ function ODCTable({ search }: { search: string }) {
       await apiAdmin(`/api/network/odcs/${r.id}`, { method: 'DELETE' });
       setItems(prev => prev.filter(i => i.id !== r.id));
       setTotal(prev => prev - 1);
-    } catch (e: any) {
-      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
+    } catch (e: unknown) {
+      alert(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {
       setDeletingId(null);
     }
@@ -312,8 +312,8 @@ function ODPTable({ search }: { search: string }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const d = await apiAdmin('/api/network/odps?limit=500');
-      const all: ODP[] = (d as any).odps || (d as any).data || [];
+      const d = await apiAdmin<{ odps?: ODP[]; data?: ODP[] }>('/api/network/odps?limit=500');
+      const all: ODP[] = d.odps || d.data || [];
       const filtered = search
         ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
         : all;
@@ -333,8 +333,8 @@ function ODPTable({ search }: { search: string }) {
       await apiAdmin(`/api/network/odps/${r.id}`, { method: 'DELETE' });
       setItems(prev => prev.filter(i => i.id !== r.id));
       setTotal(prev => prev - 1);
-    } catch (e: any) {
-      alert(t('infrastruktur.deleteFailed', { error: e.message || 'Failed' }));
+    } catch (e: unknown) {
+      alert(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {
       setDeletingId(null);
     }

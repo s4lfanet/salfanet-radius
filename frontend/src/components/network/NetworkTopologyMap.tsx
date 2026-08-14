@@ -12,7 +12,8 @@ import { OLTDiagram, JointClosureDiagram, OTBDiagram, ODCDiagram, ODPDiagram } f
 import type { SplitterNode } from '@/components/network/SplitterDiagram/types';
 
 // Fix Leaflet default icon issue in Next.js
-delete (L.Icon.Default.prototype as any)._getIconUrl;
+// _getIconUrl is an internal Leaflet property not exposed in types
+delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: '/leaflet/marker-icon-2x.png',
   iconUrl: '/leaflet/marker-icon.png',
@@ -29,7 +30,7 @@ interface NetworkNode {
   address?: string;
   status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
   upstreamId?: string;
-  data?: any; // Additional node data
+  data?: Record<string, unknown>; // Additional node data
 }
 
 interface FiberPath {
@@ -307,7 +308,7 @@ export function NetworkTopologyMap({
             {/* Display appropriate diagram based on node type */}
             {selectedNode.type === 'OLT' && selectedNode.data && (
               <OLTDiagram
-                node={selectedNode.data as SplitterNode}
+                node={selectedNode.data as unknown as SplitterNode}
                 width={700}
                 height={600}
                 interactive={true}
@@ -316,7 +317,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'JC' && selectedNode.data && (
               <JointClosureDiagram
-                node={selectedNode.data as SplitterNode}
+                node={selectedNode.data as unknown as SplitterNode}
                 width={650}
                 height={500}
                 interactive={true}
@@ -325,7 +326,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'OTB' && selectedNode.data && (
               <OTBDiagram
-                node={selectedNode.data as SplitterNode}
+                node={selectedNode.data as unknown as SplitterNode}
                 width={650}
                 height={500}
                 interactive={true}
@@ -334,7 +335,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'ODC' && selectedNode.data && (
               <ODCDiagram
-                node={selectedNode.data as SplitterNode}
+                node={selectedNode.data as unknown as SplitterNode}
                 width={650}
                 height={450}
                 interactive={true}
@@ -343,7 +344,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'ODP' && selectedNode.data && (
               <ODPDiagram
-                node={selectedNode.data as SplitterNode}
+                node={selectedNode.data as unknown as SplitterNode}
                 width={600}
                 height={420}
                 interactive={true}

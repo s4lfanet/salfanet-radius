@@ -56,6 +56,11 @@ const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
 
 const fmt = (d: string) => formatWIB(d, 'dd MMM yyyy');
 
+interface SuspendRequestsListResponse {
+  rows?: SuspendRequest[];
+  total?: number;
+}
+
 export default function AdminSuspendRequestsPage() {
   const { t } = useTranslation();
   const [filter, setFilter] = useState('PENDING');
@@ -70,7 +75,7 @@ export default function AdminSuspendRequestsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin(`/api/admin/suspend-requests?status=${filter}&limit=200`) as any;
+      const data = await apiAdmin<SuspendRequestsListResponse>(`/api/admin/suspend-requests?status=${filter}&limit=200`);
       setRows(data.rows || []);
       setTotal(data.total || 0);
     } catch {
@@ -105,8 +110,8 @@ export default function AdminSuspendRequestsPage() {
       setSelected(null);
       setAction(null);
       await fetchData();
-    } catch (error: any) {
-      showError(error.message || 'Terjadi kesalahan jaringan');
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || 'Terjadi kesalahan jaringan');
     } finally {
       setProcessing(false);
     }

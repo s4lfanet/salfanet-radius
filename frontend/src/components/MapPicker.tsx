@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Layers, MapPin, Navigation } from 'lucide-react';
 import { showError } from '@/lib/sweetalert';
+import type { Map as LeafletMap, Marker as LeafletMarker, LeafletMouseEvent, Layer as LeafletLayer } from 'leaflet';
 
 interface MapPickerProps {
   isOpen: boolean;
@@ -25,8 +26,8 @@ export default function MapPicker({
   const [basemap, setBasemap] = useState<'street' | 'satellite'>('street');
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const markerRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
+  const markerRef = useRef<LeafletMarker | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -57,7 +58,8 @@ export default function MapPicker({
       }
 
       // Fix default marker icon (self-hosted)
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      // Leaflet's Icon.Default uses _getIconUrl internally; delete it so mergeOptions takes effect
+      delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
       L.Icon.Default.mergeOptions({
         iconRetinaUrl: '/leaflet/marker-icon-2x.png',
         iconUrl: '/leaflet/marker-icon.png',
@@ -98,7 +100,7 @@ export default function MapPicker({
       }
 
       // Handle map click
-      map.on('click', (e: any) => {
+      map.on('click', (e: LeafletMouseEvent) => {
         const newPos: [number, number] = [e.latlng.lat, e.latlng.lng];
         setPosition(newPos);
 
@@ -131,12 +133,13 @@ export default function MapPicker({
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
+    const map = mapRef.current;
     const L = require('leaflet');
 
     // Remove existing tile layers
-    mapRef.current.eachLayer((layer: any) => {
+    map.eachLayer((layer: LeafletLayer) => {
       if (layer instanceof L.TileLayer) {
-        mapRef.current.removeLayer(layer);
+        map.removeLayer(layer);
       }
     });
 
@@ -144,11 +147,11 @@ export default function MapPicker({
     if (basemap === 'street') {
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }).addTo(mapRef.current);
+      }).addTo(map);
     } else {
       L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: '&copy; <a href="https://www.esri.com">Esri</a>',
-      }).addTo(mapRef.current);
+      }).addTo(map);
     }
   }, [basemap, mapLoaded]);
 

@@ -162,8 +162,8 @@ export default function CustomerReferralPage() {
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-      } catch (err: any) {
-        if (err.name !== 'AbortError') {
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') {
           copyCode(referral.shareUrl);
         }
       }

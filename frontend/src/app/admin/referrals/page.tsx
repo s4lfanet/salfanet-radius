@@ -43,6 +43,19 @@ interface Stats {
   referredUsers: number;
 }
 
+interface ReferralsListResponse {
+  success: boolean;
+  rewards: ReferralReward[];
+  stats: Stats;
+  pagination: { totalPages: number };
+}
+
+interface ReferralActionResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
 export default function AdminReferralsPage() {
   const { addToast } = useToast();
   const { t } = useTranslation();
@@ -61,13 +74,13 @@ export default function AdminReferralsPage() {
       if (search) params.set('search', search);
       if (statusFilter) params.set('status', statusFilter);
 
-      const data = await apiAdmin(`/api/admin/referrals?${params}`);
-      if ((data as any).success) {
-        setRewards((data as any).rewards);
-        setStats((data as any).stats);
-        setTotalPages((data as any).pagination.totalPages);
+      const data = await apiAdmin<ReferralsListResponse>(`/api/admin/referrals?${params}`);
+      if (data.success) {
+        setRewards(data.rewards);
+        setStats(data.stats);
+        setTotalPages(data.pagination.totalPages);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load referrals error:', error);
     } finally {
       setLoading(false);
@@ -81,19 +94,19 @@ export default function AdminReferralsPage() {
   const processReward = async (rewardId: string, action: 'credit' | 'expire') => {
     setProcessing(rewardId);
     try {
-      const data = await apiAdmin(`/api/admin/referrals/${rewardId}`, {
+      const data = await apiAdmin<ReferralActionResponse>(`/api/admin/referrals/${rewardId}`, {
         method: 'POST',
         body: JSON.stringify({ action }),
       });
 
-      if ((data as any).success) {
-        addToast({ type: 'success', title: 'Berhasil!', description: (data as any).message });
+      if (data.success) {
+        addToast({ type: 'success', title: 'Berhasil!', description: data.message });
         loadData();
       } else {
-        addToast({ type: 'error', title: 'Error', description: (data as any).error });
+        addToast({ type: 'error', title: 'Error', description: data.error });
       }
-    } catch (e: any) {
-      addToast({ type: 'error', title: 'Error', description: e.message || t('referrals.errorProcess') });
+    } catch (e: unknown) {
+      addToast({ type: 'error', title: 'Error', description: (e instanceof Error ? e.message : String(e)) || t('referrals.errorProcess') });
     } finally {
       setProcessing(null);
     }

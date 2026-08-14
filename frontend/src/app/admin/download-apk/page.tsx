@@ -282,8 +282,8 @@ export default function DownloadApkPage() {
   const [logoError, setLogoError] = useState('');
 
   const fetchEnv = useCallback(() => {
-    apiAdmin('/api/admin/apk/trigger')
-      .then((data: any) => {
+    apiAdmin<EnvStatus & { defaultUrl?: string }>('/api/admin/apk/trigger')
+      .then((data) => {
         setEnv(data);
         if (data.defaultUrl && !customUrl) setCustomUrl(data.defaultUrl);
       })
@@ -292,8 +292,8 @@ export default function DownloadApkPage() {
   }, []);
 
   const fetchCompanyLogo = useCallback(() => {
-    apiAdmin('/api/company')
-      .then((data: any) => { if (data.logo) setCurrentLogo(data.logo); })
+    apiAdmin<{ logo?: string | null }>('/api/company')
+      .then((data) => { if (data.logo) setCurrentLogo(data.logo); })
       .catch(() => {});
   }, []);
 
@@ -305,20 +305,20 @@ export default function DownloadApkPage() {
     try {
       const form = new FormData();
       form.append('file', file);
-      const data = await apiAdmin('/api/upload/logo', { method: 'POST', body: form as any });
-      if ((data as any).success && (data as any).url) {
+      const data = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/logo', { method: 'POST', body: form });
+      if (data.success && data.url) {
         // Save logo URL to company settings
-        const company = await apiAdmin('/api/company');
+        const company = await apiAdmin<Record<string, unknown>>('/api/company');
         await apiAdmin('/api/company', {
           method: 'POST',
-          body: JSON.stringify({ ...(company as any), logo: (data as any).url }),
+          body: JSON.stringify({ ...company, logo: data.url }),
         });
-        setCurrentLogo((data as any).url);
+        setCurrentLogo(data.url);
       } else {
-        setLogoError((data as any).error || 'Upload gagal');
+        setLogoError(data.error || 'Upload gagal');
       }
-    } catch (e: any) {
-      setLogoError(e.message || 'Gagal menghubungi server');
+    } catch (e: unknown) {
+      setLogoError((e instanceof Error ? e.message : String(e)) || 'Gagal menghubungi server');
     } finally {
       setUploadingLogo(false);
       e.target.value = '';
@@ -327,9 +327,9 @@ export default function DownloadApkPage() {
 
   const fetchStatus = useCallback(async (role: RoleKey) => {
     try {
-      const data = await apiAdmin(`/api/admin/apk/status?role=${role}`);
-      setStatuses(prev => ({ ...prev, [role]: data as any }));
-      return data as any;
+      const data = await apiAdmin<BuildStatus>(`/api/admin/apk/status?role=${role}`);
+      setStatuses(prev => ({ ...prev, [role]: data }));
+      return data;
     } catch { return null; }
   }, []);
 
@@ -359,10 +359,10 @@ export default function DownloadApkPage() {
     try {
       const urlParam = customUrl.trim() ? `&url=${encodeURIComponent(customUrl.trim())}` : '';
       await apiAdmin(`/api/admin/apk/trigger?role=${role}${urlParam}`, { method: 'POST' });
-    } catch (e: any) {
-      setStatuses(prev => ({ ...prev, [role]: { status: 'failed', error: e.message || 'Gagal memulai build' } }));
+    } catch (e: unknown) {
+      setStatuses(prev => ({ ...prev, [role]: { status: 'failed', error: (e instanceof Error ? e.message : String(e)) || 'Gagal memulai build' } }));
       setBuilding(prev => { const s = new Set(prev); s.delete(role); return s; });
-      alert(e.message || 'Gagal memulai build');
+      alert((e instanceof Error ? e.message : String(e)) || 'Gagal memulai build');
     }
   }
 
