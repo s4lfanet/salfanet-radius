@@ -92,7 +92,6 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.manageAreas', href: '/admin/pppoe/areas', requiredPermission: 'customers.view' },
           { titleKey: 'nav.addons', href: '/admin/pppoe/addons', requiredPermission: 'customers.view' },
           { titleKey: 'nav.registrations', href: '/admin/pppoe/registrations', badge: 'pending', requiredPermission: 'registrations.view' },
-          { titleKey: 'nav.topupRequests', href: '/admin/topup-requests', requiredPermission: 'invoices.view' },
           { titleKey: 'nav.suspendRequests', href: '/admin/suspend-requests', requiredPermission: 'customers.view' },
         ],
       },
@@ -110,8 +109,11 @@ const menuGroups: MenuGroup[] = [
       {
         titleKey: 'nav.agent',
         icon: <UserCheck className="w-4 h-4" />,
-        href: '/admin/hotspot/agent',
         requiredPermission: 'hotspot.view',
+        children: [
+          { titleKey: 'nav.agentList', href: '/admin/hotspot/agent', requiredPermission: 'hotspot.view' },
+          { titleKey: 'nav.topupRequests', href: '/admin/topup-requests', requiredPermission: 'invoices.view' },
+        ],
       },
       {
         titleKey: 'nav.isolation',

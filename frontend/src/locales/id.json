@@ -332,6 +332,7 @@
     "rekapVoucher": "Rekap Voucher",
     "template": "Template Voucher",
     "agent": "Agen",
+    "agentList": "Daftar Agen",
     "evoucher": "E-Voucher",
     "invoices": "Tagihan",
     "agentDeposits": "Deposit Agen",
@@ -997,7 +998,7 @@
     "voucherLabel": "Voucher"
   },
   "agent": {
-    "title": "Manajemen Agen",
+    "title": "Daftar Agen",
     "subtitle": "Kelola agen & lacak penjualan",
     "addAgent": "Tambah Agen",
     "editAgent": "Edit Agen",
