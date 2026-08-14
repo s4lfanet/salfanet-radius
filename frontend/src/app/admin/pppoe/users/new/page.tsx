@@ -144,6 +144,8 @@ export default function NewPppoeUserPage() {
     if (formData.idCardNumber && !/^\d{16}$/.test(formData.idCardNumber.trim())) {
       showError('NIK harus tepat 16 digit angka'); return false;
     }
+    if (!formData.idCardPhoto) { showError('Foto KTP wajib diupload'); return false; }
+    if (!formData.latitude?.trim() || !formData.longitude?.trim()) { showError('GPS lokasi pelanggan wajib diisi. Klik tombol "Pakai GPS Saya" atau pilih di peta.'); return false; }
     return true;
   };
 
@@ -318,7 +320,7 @@ export default function NewPppoeUserPage() {
 
               {/* Foto KTP — dengan kamera HP */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">🪪 Foto KTP</p>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">🪪 Foto KTP <span className="text-destructive">*</span></p>
                 {formData.idCardPhoto ? (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -344,7 +346,7 @@ export default function NewPppoeUserPage() {
 
               {/* GPS Lokasi */}
               <div className="bg-card border border-border rounded-xl p-4 space-y-3">
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">📍 Lokasi Pelanggan</p>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">📍 Lokasi Pelanggan <span className="text-destructive">*</span></p>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <ModalLabel>Latitude</ModalLabel>
