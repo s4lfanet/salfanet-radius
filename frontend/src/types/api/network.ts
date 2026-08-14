@@ -45,11 +45,15 @@ export interface OLT {
   totalOnu: number;
 }
 
+// GET /api/network/olts returns { success: true, olts }
 export interface OLTListResponse {
+  success?: boolean;
   olts: OLT[];
 }
 
+// POST/PUT /api/network/olts returns { success: true, olt }
 export interface OLTResponse {
+  success?: boolean;
   olt: OLT;
 }
 
@@ -96,13 +100,19 @@ export interface VpnClient {
 }
 
 // === Router List Response ===
-
+// GET /api/network/routers returns { routers, vpnClients, radiusServerIp }
 export interface RouterListResponse {
   routers: Router[];
+  vpnClients?: VpnClient[];
+  radiusServerIp?: string;
 }
 
+// POST/PUT /api/network/routers returns { success, router, message? }
 export interface RouterResponse {
+  success?: boolean;
   router: Router;
+  message?: string;
+  vpnClientChanged?: boolean;
 }
 
 // === Radius Status ===

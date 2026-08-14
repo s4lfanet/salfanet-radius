@@ -13,6 +13,7 @@ import type {
   PppoeUserListResponse,
   PppoeUserResponse,
   PppoeUserCreateResponse,
+  PppoeUserDeleteResponse,
   PppoeProfile,
   PppoeProfileListResponse,
   PppoeProfileResponse,
@@ -21,6 +22,9 @@ import type {
   PppoeAreaResponse,
   PppoeOnlineStatusResponse,
   SyncPreviewResponse,
+  SyncMikrotikImportResponse,
+  UpdateUserStatusResponse,
+  BulkUpdateStatusResponse,
   Router,
 } from '@/types/api';
 
@@ -94,58 +98,58 @@ export const pppoeApi = {
   },
 
   /** Delete PPPoE user */
-  deleteUser(id: string): Promise<void> {
-    return apiAdmin(`/api/pppoe/users?id=${id}`, { method: 'DELETE' });
+  deleteUser(id: string): Promise<PppoeUserDeleteResponse> {
+    return apiAdmin<PppoeUserDeleteResponse>(`/api/pppoe/users?id=${id}`, { method: 'DELETE' });
   },
 
   /** Update user status (active, suspended, stop, etc.) */
-  updateStatus(userId: string, status: string): Promise<void> {
-    return apiAdmin('/api/pppoe/users/status', {
+  updateStatus(userId: string, status: string): Promise<UpdateUserStatusResponse> {
+    return apiAdmin<UpdateUserStatusResponse>('/api/pppoe/users/status', {
       method: 'PUT',
       body: JSON.stringify({ userId, status }),
     });
   },
 
   /** Bulk update status for multiple users */
-  bulkUpdateStatus(userIds: string[], status: string): Promise<void> {
-    return apiAdmin('/api/pppoe/users/bulk-status', {
+  bulkUpdateStatus(userIds: string[], status: string): Promise<BulkUpdateStatusResponse> {
+    return apiAdmin<BulkUpdateStatusResponse>('/api/pppoe/users/bulk-status', {
       method: 'PUT',
       body: JSON.stringify({ userIds, status }),
     });
   },
 
-  /** Bulk delete users (calls /api/pppoe/users/bulk-delete) */
+  /** Bulk delete users — NOTE: backend may not have this endpoint, falls back to individual deletes */
   bulkDelete(userIds: string[]): Promise<{ deleted: number }> {
-    return apiAdmin('/api/pppoe/users/bulk-delete', {
+    return apiAdmin<{ deleted: number }>('/api/pppoe/users/bulk-delete', {
       method: 'DELETE',
       body: JSON.stringify({ userIds }),
     });
   },
 
   /** Sync user to RADIUS */
-  syncRadius(userId: string): Promise<void> {
-    return apiAdmin(`/api/pppoe/users/${userId}/sync-radius`, { method: 'POST' });
+  syncRadius(userId: string): Promise<{ success: boolean; message?: string }> {
+    return apiAdmin<{ success: boolean; message?: string }>(`/api/pppoe/users/${userId}/sync-radius`, { method: 'POST' });
   },
 
   /** Mark user as paid */
-  markPaid(userId: string, payload?: Record<string, any>): Promise<void> {
-    return apiAdmin(`/api/pppoe/users/${userId}/mark-paid`, {
+  markPaid(userId: string, payload?: Record<string, unknown>): Promise<{ success: boolean; message?: string }> {
+    return apiAdmin<{ success: boolean; message?: string }>(`/api/pppoe/users/${userId}/mark-paid`, {
       method: 'POST',
       body: JSON.stringify(payload || {}),
     });
   },
 
   /** Extend user subscription */
-  extend(userId: string, payload: Record<string, any>): Promise<void> {
-    return apiAdmin(`/api/pppoe/users/${userId}/extend`, {
+  extend(userId: string, payload: Record<string, unknown>): Promise<{ success: boolean; message?: string }> {
+    return apiAdmin<{ success: boolean; message?: string }>(`/api/pppoe/users/${userId}/extend`, {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   },
 
   /** Send notification to user */
-  sendNotification(payload: Record<string, any>): Promise<void> {
-    return apiAdmin('/api/pppoe/users/send-notification', {
+  sendNotification(payload: Record<string, unknown>): Promise<{ success: boolean; message?: string }> {
+    return apiAdmin<{ success: boolean; message?: string }>('/api/pppoe/users/send-notification', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -156,12 +160,12 @@ export const pppoeApi = {
     return apiAdmin<PppoeOnlineStatusResponse>(`/api/pppoe/users/online-status?usernames=${encodeURIComponent(usernames)}`);
   },
 
-  /** Sync users from MikroTik router */
-  syncMikrotik(routerId?: string): Promise<void> {
+  /** Sync users from MikroTik router (GET = preview, POST = import) */
+  syncMikrotik(routerId?: string): Promise<SyncPreviewResponse | SyncMikrotikImportResponse> {
     if (routerId) {
-      return apiAdmin(`/api/pppoe/users/sync-mikrotik?routerId=${routerId}`);
+      return apiAdmin<SyncPreviewResponse>(`/api/pppoe/users/sync-mikrotik?routerId=${routerId}`);
     }
-    return apiAdmin('/api/pppoe/users/sync-mikrotik', { method: 'POST' });
+    return apiAdmin<SyncMikrotikImportResponse>('/api/pppoe/users/sync-mikrotik', { method: 'POST' });
   },
 
   /** Export users (returns blob) */
@@ -173,7 +177,7 @@ export const pppoeApi = {
   },
 
   /** Bulk operation (template upload, etc.) */
-  async bulkUpload(formData: FormData): Promise<any> {
+  async bulkUpload(formData: FormData): Promise<{ success: boolean; imported?: number; errors?: string[]; message?: string }> {
     const res = await fetch('/api/pppoe/users/bulk', {
       method: 'POST',
       body: formData,
@@ -219,19 +223,19 @@ export const pppoeApi = {
   },
 
   /** Sync profiles to MikroTik */
-  syncMikrotikProfiles(payload?: Record<string, any>): Promise<any> {
+  syncMikrotikProfiles(payload?: Record<string, unknown>): Promise<{ success: boolean; message?: string; synced?: number }> {
     if (payload) {
-      return apiAdmin('/api/pppoe/profiles/sync-mikrotik', {
+      return apiAdmin<{ success: boolean; message?: string; synced?: number }>('/api/pppoe/profiles/sync-mikrotik', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
     }
-    return apiAdmin('/api/pppoe/profiles/sync-mikrotik', { method: 'POST' });
+    return apiAdmin<{ success: boolean; message?: string; synced?: number }>('/api/pppoe/profiles/sync-mikrotik', { method: 'POST' });
   },
 
   /** Sync profiles to RADIUS */
-  syncRadiusProfiles(): Promise<any> {
-    return apiAdmin('/api/pppoe/profiles/sync-radius', { method: 'POST' });
+  syncRadiusProfiles(): Promise<{ success: boolean; message?: string; synced?: number }> {
+    return apiAdmin<{ success: boolean; message?: string; synced?: number }>('/api/pppoe/profiles/sync-radius', { method: 'POST' });
   },
 
   // ── Areas ──────────────────────────────────────────────────────────

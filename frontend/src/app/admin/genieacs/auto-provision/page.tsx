@@ -41,7 +41,7 @@ export default function AutoProvisionPage() {
     setLoading(true);
     setError(null);
     try {
-      const json = await apiAdmin('/api/genieacs/auto-provision');
+      const json = await apiAdmin<{ data?: { provision?: { script?: string } } }>('/api/genieacs/auto-provision');
       const { provision } = json.data ?? {};
       if (provision?.script) setCurrentScript(provision.script);
       else setCurrentScript(null);

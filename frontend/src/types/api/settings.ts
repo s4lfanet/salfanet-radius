@@ -25,9 +25,8 @@ export interface Company {
   updatedAt: ISODateString;
 }
 
-export interface CompanyResponse {
-  company: Company;
-}
+// GET /api/company returns raw company object (no wrapper)
+export type CompanyResponse = Company;
 
 // === Settings (key-value style) ===
 
@@ -56,7 +55,9 @@ export interface CronJob {
   nextRun: ISODateString | null;
 }
 
+// GET /api/cron/status returns { success: true, jobs }
 export interface CronStatusResponse {
+  success?: boolean;
   jobs: CronJob[];
 }
 
@@ -70,9 +71,10 @@ export interface CronHistoryEntry {
   error: string | null;
 }
 
+// GET /api/cron/history returns { success: true, history }
 export interface CronHistoryResponse {
+  success?: boolean;
   history: CronHistoryEntry[];
-  total?: number;
 }
 
 // === GenieACS Config ===

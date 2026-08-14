@@ -48,30 +48,37 @@ export type {
   PppoeUserListResponse,
   PppoeUserResponse,
   PppoeUserCreateResponse,
+  PppoeUserDeleteResponse,
   PppoeProfile,
   PppoeProfileListResponse,
   PppoeProfileResponse,
   PppoeArea,
   PppoeAreaListResponse,
   PppoeAreaResponse,
-  PppoeOnlineStatus,
   PppoeOnlineStatusResponse,
   SyncPreviewResponse,
+  SyncMikrotikImportResponse,
+  UpdateUserStatusResponse,
+  BulkUpdateStatusResponse,
   Router,
 } from './pppoe';
 
 // Billing
 export type {
   Invoice,
+  InvoiceListStats,
   InvoiceListResponse,
   InvoiceResponse,
+  InvoiceDeleteResponse,
   InvoiceGenerateResponse,
+  InvoiceSendReminderResponse,
   InvoicePdfResponse,
   ManualPayment,
   ManualPaymentListResponse,
   ManualPaymentResponse,
   Transaction,
   TransactionCategory,
+  TransactionStats,
   TransactionListResponse,
   TransactionResponse,
 } from './billing';
@@ -137,3 +144,30 @@ export type {
   ActivityLogListResponse,
   DashboardAnalytics,
 } from './dashboard';
+
+// Customer
+export type {
+  CustomerUser,
+  CustomerMeResponse,
+  CustomerInvoice,
+  CustomerInvoiceListResponse,
+  CustomerWifiInfo,
+  CustomerWifiResponse,
+  CustomerActionResponse,
+  CustomerRenewPayload,
+  CustomerUpgradePayload,
+  CustomerTopupDirectPayload,
+  CustomerTopupRequestPayload,
+  CustomerNotification,
+  CustomerNotificationListResponse,
+} from './customer';
+
+// Agent
+export type {
+  AgentProfile,
+  AgentDashboardResponse,
+  AgentVoucher,
+  AgentNotification,
+  AgentNotificationListResponse,
+  AgentNotificationActionResponse,
+} from './agent';

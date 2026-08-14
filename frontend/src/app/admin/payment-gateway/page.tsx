@@ -79,7 +79,7 @@ export default function PaymentGatewayPage() {
 
   const fetchConfigs = async () => {
     try {
-      const data = await apiAdmin('/api/payment-gateway/config');
+      const data = await apiAdmin<PaymentGateway[]>('/api/payment-gateway/config');
       setConfigs(data);
       
       const midtrans = data.find((c: PaymentGateway) => c.provider === 'midtrans');
@@ -169,7 +169,7 @@ export default function PaymentGatewayPage() {
       if (logsFilter.orderId) params.append('orderId', logsFilter.orderId);
       if (logsFilter.success) params.append('success', logsFilter.success);
       
-      const data = await apiAdmin(`/api/payment-gateway/webhook-logs?${params}`);
+      const data = await apiAdmin<{ logs: WebhookLog[]; pagination: { totalPages: number } }>(`/api/payment-gateway/webhook-logs?${params}`);
       
       setWebhookLogs(data.logs);
       setLogsTotalPages(data.pagination.totalPages);

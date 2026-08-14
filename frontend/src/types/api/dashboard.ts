@@ -9,15 +9,19 @@
 import type { ID, ISODateString } from './common';
 
 // === Dashboard Stats ===
-
+// GET /api/dashboard/stats returns large stats object (no success field)
 export interface DashboardStats {
   totalPppoeUsers: number;
   activePppoeUsers: number;
   isolatedUsers: number;
+  isolatedCount?: number;
   suspendedUsers: number;
+  suspendedCount?: number;
   blockedUsers: number;
   activePppoeSessions: number;
+  activeSessionsPPPoE?: number;
   activeHotspotSessions: number;
+  activeSessionsHotspot?: number;
   pendingRegistrations: number;
   unusedVouchers: number;
   pendingInvoices: number;
@@ -26,6 +30,9 @@ export interface DashboardStats {
   invoiceRevenue: number;
   voucherRevenue: number;
   monthlyRevenue: number;
+  monthlyNewUsers?: number;
+  recentActivities?: ActivityLog[];
+  [key: string]: unknown;
 }
 
 // === Activity Log ===
@@ -41,18 +48,24 @@ export interface ActivityLog {
   createdAt: ISODateString;
 }
 
+// GET /api/admin/activity-logs returns { success, activities, total, hasMore }
 export interface ActivityLogListResponse {
-  logs: ActivityLog[];
-  total?: number;
+  success?: boolean;
+  activities: ActivityLog[];
+  total: number;
+  hasMore?: boolean;
 }
 
 // === Dashboard Analytics ===
-
+// GET /api/dashboard/analytics returns { success, data: { revenue, users, hotspot, sessions, financial } }
 export interface DashboardAnalytics {
-  labels: string[];
-  datasets: Array<{
-    label: string;
-    data: number[];
-    color?: string;
-  }>;
+  success?: boolean;
+  data?: {
+    revenue?: { monthly: unknown[]; byCategory: unknown[] };
+    users?: { byStatus: unknown[]; growth: unknown[] };
+    hotspot?: { salesByProfile: unknown[]; byStatus: unknown[] };
+    sessions?: { hourly: unknown[]; bandwidth: unknown[] };
+    financial?: { incomeExpense: unknown[]; topSources: unknown[] };
+  };
+  [key: string]: unknown;
 }

@@ -221,11 +221,11 @@ export default function AdminDashboard() {
     setActivityLoading(true);
     try {
       const params = new URLSearchParams({ module, limit: '20', offset: String(offset) });
-      const data = await apiAdmin(`/api/admin/activity-logs?${params}`);
-      if ((data as any).success) {
-        setActivityLog(prev => append ? [...prev, ...(data as any).activities] : (data as any).activities);
-        setActivityTotal((data as any).total);
-        setActivityHasMore((data as any).hasMore);
+      const data = await apiAdmin<{ success: boolean; activities: typeof activityLog; total: number; hasMore: boolean }>(`/api/admin/activity-logs?${params}`);
+      if (data.success) {
+        setActivityLog(prev => append ? [...prev, ...data.activities] : data.activities);
+        setActivityTotal(data.total);
+        setActivityHasMore(data.hasMore);
       }
     } catch (e) {
       console.error('Failed to load activity log:', e);
@@ -237,16 +237,16 @@ export default function AdminDashboard() {
   const loadDashboardData = useCallback(async (month?: string) => {
     try {
       const m = month || dashboardMonth;
-      const data = await apiAdmin(`/api/dashboard/stats?month=${m}`);
-      if ((data as any).success) {
-        setStats((data as any).stats);
-        setActivities((data as any).activities || []);
-        setSystemStatus((data as any).systemStatus);
-        setAgentSales((data as any).agentSales || []);
-        setAgentSalesTotal((data as any).agentSalesTotal || { count: 0, revenue: 0 });
-        setRadiusAuthLog((data as any).radiusAuthLog || []);
-        setRadiusAuthStats((data as any).radiusAuthStats || { acceptToday: 0, rejectToday: 0 });
-        if ((data as any).periodLabel) setPeriodLabel((data as any).periodLabel);
+      const data = await apiAdmin<{ success: boolean; stats: typeof stats; activities: typeof activities; systemStatus: typeof systemStatus; agentSales: typeof agentSales; agentSalesTotal: typeof agentSalesTotal; radiusAuthLog: typeof radiusAuthLog; radiusAuthStats: typeof radiusAuthStats; periodLabel?: string }>(`/api/dashboard/stats?month=${m}`);
+      if (data.success) {
+        setStats(data.stats);
+        setActivities(data.activities || []);
+        setSystemStatus(data.systemStatus);
+        setAgentSales(data.agentSales || []);
+        setAgentSalesTotal(data.agentSalesTotal || { count: 0, revenue: 0 });
+        setRadiusAuthLog(data.radiusAuthLog || []);
+        setRadiusAuthStats(data.radiusAuthStats || { acceptToday: 0, rejectToday: 0 });
+        if (data.periodLabel) setPeriodLabel(data.periodLabel);
       }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -258,9 +258,9 @@ export default function AdminDashboard() {
   const loadAnalyticsData = useCallback(async () => {
     try {
       setAnalyticsLoading(true);
-      const data = await apiAdmin('/api/dashboard/analytics?type=all');
-      if ((data as any).success) {
-        setAnalyticsData((data as any).data);
+      const data = await apiAdmin<{ success: boolean; data: typeof analyticsData }>('/api/dashboard/analytics?type=all');
+      if (data.success) {
+        setAnalyticsData(data.data);
       }
     } catch (error) {
       console.error('Failed to load analytics data:', error);
@@ -271,8 +271,8 @@ export default function AdminDashboard() {
 
   const loadRadiusStatus = useCallback(async () => {
     try {
-      const data = await apiAdmin('/api/system/radius');
-      if ((data as any).success) {
+      const data = await apiAdmin<RadiusStatus>('/api/system/radius');
+      if ((data as { success?: boolean }).success) {
         setRadiusStatus(data);
       }
     } catch (error) {

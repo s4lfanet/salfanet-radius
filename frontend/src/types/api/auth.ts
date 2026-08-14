@@ -60,12 +60,15 @@ export interface AdminUser {
   twoFactorEnabled: boolean;
 }
 
+// GET /api/admin/users returns { success: true, users }
 export interface AdminUserListResponse {
+  success?: boolean;
   users: AdminUser[];
-  total?: number;
 }
 
+// POST/PUT /api/admin/users returns { success: true, user }
 export interface AdminUserResponse {
+  success?: boolean;
   user: AdminUser;
 }
 

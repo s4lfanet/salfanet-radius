@@ -8,6 +8,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useAppStore } from '@/lib/store';
 import { setCurrentTimezone } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import type { Company } from '@/types/api';
 
 interface BankAccount {
   bankName: string;
@@ -32,6 +33,30 @@ interface CompanySettings {
   footerAgent: string;
   invoiceGenerateDays: number;
   logo?: string;
+}
+
+type CompanySettingsResponse = Company & {
+  bankAccounts?: BankAccount[];
+  poweredBy?: string;
+  customerIdPrefix?: string;
+  footerAdmin?: string;
+  footerCustomer?: string;
+  footerTechnician?: string;
+  footerAgent?: string;
+  invoiceGenerateDays?: number;
+};
+
+interface LogoUploadResponse {
+  success: boolean;
+  url?: string;
+  error?: string;
+}
+
+interface RestartServicesResponse {
+  success: boolean;
+  autoRestarted?: boolean;
+  message?: string;
+  error?: string;
 }
 
 export default function CompanySettingsPage() {
@@ -67,29 +92,29 @@ export default function CompanySettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const data = await apiAdmin('/api/company');
+      const data = await apiAdmin<CompanySettingsResponse>('/api/company');
       if (data) {
         setSettings({
-          id: (data as any).id || '',
-          name: (data as any).name || '',
-          email: (data as any).email || '',
-          phone: (data as any).phone || '',
-          address: (data as any).address || '',
-          baseUrl: (data as any).baseUrl || '',
-          timezone: (data as any).timezone || 'Asia/Jakarta',
-          bankAccounts: (data as any).bankAccounts || [],
-          poweredBy: (data as any).poweredBy || 'SALFANET RADIUS',
-          customerIdPrefix: (data as any).customerIdPrefix || '',
-          footerAdmin: (data as any).footerAdmin || '',
-          footerCustomer: (data as any).footerCustomer || '',
-          footerTechnician: (data as any).footerTechnician || '',
-          footerAgent: (data as any).footerAgent || '',
-          invoiceGenerateDays: (data as any).invoiceGenerateDays || 7,
-          logo: (data as any).logo || '',
+          id: data.id || '',
+          name: data.name || '',
+          email: data.email || '',
+          phone: data.phone || '',
+          address: data.address || '',
+          baseUrl: data.baseUrl || '',
+          timezone: data.timezone || 'Asia/Jakarta',
+          bankAccounts: data.bankAccounts || [],
+          poweredBy: data.poweredBy || 'SALFANET RADIUS',
+          customerIdPrefix: data.customerIdPrefix || '',
+          footerAdmin: data.footerAdmin || '',
+          footerCustomer: data.footerCustomer || '',
+          footerTechnician: data.footerTechnician || '',
+          footerAgent: data.footerAgent || '',
+          invoiceGenerateDays: data.invoiceGenerateDays || 7,
+          logo: data.logo || '',
         });
-        setInitialTimezone((data as any).timezone || 'Asia/Jakarta');
+        setInitialTimezone(data.timezone || 'Asia/Jakarta');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
@@ -103,16 +128,16 @@ export default function CompanySettingsPage() {
     try {
       const form = new FormData();
       form.append('file', file);
-      const data = await apiAdmin('/api/upload/logo', { method: 'POST', body: form });
-      if ((data as any).success) {
-        setSettings(prev => ({ ...prev, logo: (data as any).url }));
-        setCompany({ logo: (data as any).url });
+      const data = await apiAdmin<LogoUploadResponse>('/api/upload/logo', { method: 'POST', body: form });
+      if (data.success) {
+        setSettings(prev => ({ ...prev, logo: data.url }));
+        setCompany({ logo: data.url });
         addToast({ type: 'success', title: 'Logo uploaded', description: 'Logo akan tampil setelah simpan.', duration: 3000 });
       } else {
-        addToast({ type: 'error', title: 'Upload gagal', description: (data as any).error || 'Gagal upload logo.', duration: 4000 });
+        addToast({ type: 'error', title: 'Upload gagal', description: data.error || 'Gagal upload logo.', duration: 4000 });
       }
-    } catch (error: any) {
-      addToast({ type: 'error', title: 'Upload gagal', description: error.message || 'Terjadi kesalahan saat upload.', duration: 4000 });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: 'Upload gagal', description: error instanceof Error ? error.message : 'Terjadi kesalahan saat upload.', duration: 4000 });
     } finally {
       setUploadingLogo(false);
       e.target.value = '';
@@ -126,13 +151,13 @@ export default function CompanySettingsPage() {
   const handleRestartServices = async () => {
     setRestarting(true);
     try {
-      const restartResult = await apiAdmin('/api/settings/restart-services', {
+      const restartResult = await apiAdmin<RestartServicesResponse>('/api/settings/restart-services', {
         method: 'POST',
         body: JSON.stringify({ services: 'all', delay: 2000 })
       });
 
-      if ((restartResult as any).success) {
-        if ((restartResult as any).autoRestarted) {
+      if (restartResult.success) {
+        if (restartResult.autoRestarted) {
           addToast({ type: 'success', title: t('settings.servicesRestarting') || 'Services Restarting', description: t('settings.pageWillReload') || 'Page will reload in 5 seconds...', duration: 5000 });
           setTimeout(() => { window.location.reload(); }, 5000);
         } else {
@@ -143,11 +168,11 @@ export default function CompanySettingsPage() {
         addToast({
           type: 'warning',
           title: 'Auto Restart Not Available',
-          description: `${(restartResult as any).message || ''} ${t('settings.restartManually') || 'Please restart manually: pm2 restart all'}`,
+          description: `${restartResult.message || ''} ${t('settings.restartManually') || 'Please restart manually: pm2 restart all'}`,
           duration: 8000
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Restart error:', error);
       addToast({
         type: 'error',
@@ -186,9 +211,9 @@ export default function CompanySettingsPage() {
 
       setSaving(false);
       await handleRestartServices();
-    } catch (error: any) {
+    } catch (error: unknown) {
       setSaving(false);
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('settings.saveSettingsFailed') });
+      addToast({ type: 'error', title: t('common.error'), description: error instanceof Error ? error.message : t('settings.saveSettingsFailed') });
     }
   };
 
@@ -219,8 +244,8 @@ export default function CompanySettingsPage() {
       setInitialTimezone(settings.timezone);
 
       addToast({ type: 'success', title: t('common.success'), description: t('settings.companySaved'), duration: 2000 });
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('settings.saveSettingsFailed') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: error instanceof Error ? error.message : t('settings.saveSettingsFailed') });
     } finally {
       setSaving(false);
     }

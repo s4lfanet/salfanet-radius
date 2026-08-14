@@ -2103,6 +2103,157 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+## Phase 6A — Full API Contract & Type-Safety Audit (14 Aug 2026) ✅
+
+### Tujuan
+Verifikasi bahwa Phase 5B API types benar-benar digunakan through complete data flow:
+```
+Backend API → API Response → apiAdmin() → Domain API module → Hook/Page → Component
+```
+
+### Hasil Audit
+
+#### API Modules Audited
+| Module | File | Status |
+|--------|------|--------|
+| pppoeApi | `lib/api/pppoe.ts` | ✅ Typed — all `any` removed |
+| invoiceApi | `lib/api/billing.ts` | ✅ Typed — endpoints fixed |
+| billingApi | `lib/api/billing.ts` | ✅ Typed — endpoints fixed |
+| networkApi | `lib/api/network.ts` | ✅ Typed |
+| dashboardApi | `lib/api/network.ts` | ✅ Typed |
+| settingsApi | `lib/api/settings.ts` | ✅ Typed — endpoints fixed |
+| adminApi | `lib/api/settings.ts` | ✅ Typed |
+| customerApi | `lib/api/customer.ts` | ✅ Typed — was fully `any`, now uses `@/types/api/customer` |
+| agentApi | `lib/api/agent.ts` | ✅ Typed — was fully `any`, now uses `@/types/api/agent` |
+
+#### `any` Usage Reduction
+| Metric | Before | After | Reduction |
+|--------|--------|-------|-----------|
+| Total `any` patterns | 1369 | 950 | 419 (31%) |
+| `(data as any)` casts | 616 | 318 | 298 (48%) |
+| `as unknown as` | 1 | 1 | 0 (legitimate Leaflet) |
+| `as Record` | 10 | 10 | 0 (all legitimate reduce initializers) |
+
+#### Type Definitions Fixed (matching actual backend responses)
+- `PppoeOnlineStatusResponse`: `{ users: [...] }` → `{ online: string[], onlineCount, total, timestamp }`
+- `ManualPaymentListResponse`: `{ payments, total? }` → `{ success, data: [...] }`
+- `CompanyResponse`: `{ company }` → raw `Company` (type alias)
+- `ActivityLogListResponse`: `{ logs }` → `{ success, activities, total, hasMore }`
+- `RouterListResponse`: added `vpnClients?` and `radiusServerIp?`
+- `InvoiceListResponse`: added `stats` field
+- `TransactionListResponse`: added `pagination` and `stats` fields
+- `DashboardStats`: added optional fields for backend extras
+- `DashboardAnalytics`: changed to `{ success, data: { revenue?, users?, ... } }`
+- `NotificationListResponse`: `{ notifications, total?, unread? }` → `{ success, notifications, unreadCount, categoryCounts }`
+- `PppoeProfileListResponse`/`PppoeAreaListResponse`: removed union with bare array
+- `CronStatusResponse`/`CronHistoryResponse`: added `success?` field
+- `AdminUserListResponse`/`AdminUserResponse`: added `success?` field
+
+#### New Type Files Created
+- `types/api/customer.ts` — Customer portal types (CustomerUser, CustomerInvoice, CustomerWifiInfo, etc.)
+- `types/api/agent.ts` — Agent portal types (AgentProfile, AgentVoucher, AgentNotification, etc.)
+
+#### New Response Types Added
+- `PppoeUserDeleteResponse`
+- `SyncMikrotikImportResponse`
+- `UpdateUserStatusResponse`
+- `BulkUpdateStatusResponse`
+- `InvoiceDeleteResponse`
+- `InvoiceSendReminderResponse`
+- `InvoiceListStats`
+- `TransactionStats`
+
+#### Endpoint Fixes (frontend → backend alignment)
+| API Method | Before | After | Reason |
+|-----------|--------|-------|--------|
+| `billingApi.approveManualPayment` | `POST /api/manual-payments/[id]/approve` | `PATCH /api/manual-payments/[id]` with `{ action: 'APPROVE' }` | Backend uses PATCH |
+| `billingApi.rejectManualPayment` | `POST /api/manual-payments/[id]/reject` | `PATCH /api/manual-payments/[id]` with `{ action: 'REJECT', rejectionReason }` | Backend uses PATCH |
+| `billingApi.listTransactions` | `/api/transactions` | `/api/keuangan/transactions` | Actual backend path |
+| `settingsApi.getSettings` | `/api/settings` | `/api/company` | No generic settings endpoint |
+| `settingsApi.updateSettings` | `PUT /api/settings` | `POST /api/company` | No generic settings endpoint |
+| `agentApi.me/vouchers/sessions` | `/api/agent/me`, `/api/agent/vouchers` | `/api/agent/dashboard` | Only dashboard endpoint exists |
+
+#### API Client Generic Fix
+- `apiCall<T = any>` → `apiCall<T = unknown>`
+- `apiAdmin<T = any>` → `apiAdmin<T = unknown>`
+- `apiCustomer<T = any>` → `apiCustomer<T = unknown>`
+- `apiAgent<T = any>` → `apiAgent<T = unknown>`
+- `apiFetchAuth<T = any>` → `apiFetchAuth<T = unknown>`
+- `apiFetch<T = any>` (server.ts) → `apiFetch<T = unknown>`
+
+This forces callers to specify types explicitly instead of silently getting `any`.
+
+#### Pages Fixed (top offenders — `(data as any)` casts removed)
+1. `admin/page.tsx` — dashboard, activity log, analytics, radius status
+2. `admin/pppoe/users/page.tsx` — full CRUD + sync + status + bulk operations
+3. `admin/network/vpn-client/page.tsx` — VPN client management
+4. `admin/network/vpn-server/page.tsx` — VPN server control
+5. `admin/genieacs/devices/page.tsx` — GenieACS device management
+6. `admin/invoices/page.tsx` — invoice list + actions
+7. `admin/settings/company/page.tsx` — company settings
+8. `admin/network/olts/page.tsx` — OLT management
+9. `admin/network/routers/page.tsx` — router management + connection test
+10. `admin/keuangan/page.tsx` — finance/transactions
+11. `admin/hotspot/voucher/page.tsx` — voucher generation
+12. `admin/pppoe/profiles/page.tsx` — profile management
+13. `admin/freeradius/radcheck/page.tsx` — FreeRADIUS radcheck
+14. `admin/freeradius/status/page.tsx` — FreeRADIUS status
+15. `admin/genieacs/auto-provision/page.tsx` — GenieACS auto-provision
+16. `admin/hotspot/agent/page.tsx` — hotspot agent
+17. `admin/payment-gateway/page.tsx` — payment gateway config
+18. `admin/settings/email/page.tsx` — email settings
+19. `admin/settings/isolation/templates/page.tsx` — isolation templates
+20. `admin/technicians/page.tsx` — technicians
+
+#### snake_case/camelCase Audit
+- **Result**: ✅ No issues. Backend uses camelCase consistently (Prisma schema).
+- Snake_case only appears in URL query params (`olt_id`, `dying_gasp`, `los`) — these are URL conventions, not response fields.
+
+#### Pagination Audit
+- **Result**: ✅ Consistent in frontend (`{ page, limit, total, totalPages }`).
+- Backend has 3 patterns but frontend types now match each endpoint's actual pattern.
+
+#### Error Contract Audit
+- **Result**: ✅ `apiAdmin()` handles both `{ error }` and `{ success: false, error }` via `error.message || error.error` fallback.
+- `ApiError` class provides structured error with `status`, `message`, `path`.
+
+#### HTTP Method Audit
+- **Result**: ✅ All API module methods verified against backend route implementations.
+- Fixed: manual payment approve/reject (POST → PATCH).
+
+#### JSON Safety Audit
+- **Result**: ✅ `apiAdmin()` handles:
+  - Non-2xx responses (throws `ApiError`)
+  - JSON parse errors (fallback to status text)
+  - 405 method not allowed (specific message)
+  - Auth headers (Bearer for customer/agent, cookies for admin)
+  - Content-Type header consistently applied
+
+#### Backend Issues Found (documented, NOT fixed)
+1. Missing: `DELETE /api/pppoe/users/bulk-delete`
+2. Missing: `GET /api/invoices/[id]/pdf`
+3. Missing: generic `/api/settings` endpoint
+4. Missing: `/api/agent/me` and `/api/agent/vouchers` endpoints
+5. Inconsistent response wrappers (`ok(data)` vs `{ success: true, data }`)
+6. Inconsistent error shapes (`{ error }` vs `{ success: false, error }`)
+7. Inconsistent pagination patterns (3 different shapes)
+
+Full details: `docs/FRONTEND_API_CONTRACT.md`
+
+#### Verification
+- TypeScript: ✅ PASS (0 errors)
+- Lint: ✅ PASS (0 errors, warnings are pre-existing unused imports/vars)
+- Build: ✅ PASS (with NEXTAUTH_SECRET env var set — local env issue, not code issue)
+- Production regression: ⏳ VPS not reachable from local machine — requires manual testing after deploy
+
+#### Remaining `any` Usage (950 total)
+- ~318 `(data as any)` casts in pages not yet fixed (lower priority pages)
+- ~26 `catch (e: any)` patterns (workaround — could be `unknown`)
+- ~600 `: any` in component props and local state (mix of legitimate dynamic and workaround)
+- These are documented for future phases, not blocking
+
+---
+
 ### Phase 2 Batch 67 — Settings Footer Page Migration (14 Aug 2026) ✅
 
 **Files migrated:**

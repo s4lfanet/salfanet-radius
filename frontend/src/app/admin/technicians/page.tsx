@@ -72,7 +72,7 @@ export default function TechniciansManagementPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (filterActive) params.append('isActive', filterActive);
 
-      const data = await apiAdmin(`/api/admin/technicians?${params}`);
+      const data = await apiAdmin<Technician[]>(`/api/admin/technicians?${params}`);
       setTechnicians(data);
     } catch (error) {
       await showError(t('common.error'));

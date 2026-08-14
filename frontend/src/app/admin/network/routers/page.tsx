@@ -175,17 +175,17 @@ export default function RouterPage() {
 
     try {
       if (isGateway) {
-        const result = await apiAdmin('/api/network/routers/test-gateway', {
+        const result = await apiAdmin<{ success: boolean; message: string; identity?: string; usedPort?: number; diagnosis?: string }>('/api/network/routers/test-gateway', {
           method: 'POST',
           body: JSON.stringify({ ipAddress: formData.ipAddress }),
         })
 
         setTestResult(result)
 
-        if ((result as any).success) {
-          showSuccess(t('network.gatewayReachableMsg').replace('{message}', (result as any).message))
+        if (result.success) {
+          showSuccess(t('network.gatewayReachableMsg').replace('{message}', result.message))
         } else {
-          showError((result as any).message)
+          showError(result.message)
         }
         return
       }
@@ -193,19 +193,19 @@ export default function RouterPage() {
       // Jika menggunakan VPN client, lakukan ping test terlebih dahulu
       // API test mungkin gagal jika MikroTik belum mengizinkan koneksi API dari VPN
       if (formData.vpnClientId) {
-        const pingResult = await apiAdmin('/api/network/routers/test-gateway', {
+        const pingResult = await apiAdmin<{ success: boolean; message: string; identity?: string; usedPort?: number; diagnosis?: string }>('/api/network/routers/test-gateway', {
           method: 'POST',
           body: JSON.stringify({ ipAddress: formData.ipAddress }),
         })
-        if (!(pingResult as any).success) {
-          setTestResult({ success: false, message: `VPN tidak terhubung: ${(pingResult as any).message}` })
+        if (!pingResult.success) {
+          setTestResult({ success: false, message: `VPN tidak terhubung: ${pingResult.message}` })
           showError(`VPN tidak terhubung ke ${formData.ipAddress}`)
           return
         }
         // Ping berhasil — lanjut test API, tapi error API tidak memblokir simpan
       }
 
-      const result = await apiAdmin('/api/network/routers/test', {
+      const result = await apiAdmin<{ success: boolean; message: string; identity?: string; usedPort?: number; diagnosis?: string }>('/api/network/routers/test', {
         method: 'POST',
         body: JSON.stringify({
           ipAddress: formData.ipAddress,
@@ -215,25 +215,25 @@ export default function RouterPage() {
         }),
       })
 
-      if ((result as any).success) {
+      if (result.success) {
         setTestResult(result)
-        const portInfo = ` (port ${(result as any).usedPort})`
-        showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', (result as any).identity) + portInfo)
+        const portInfo = ` (port ${result.usedPort})`
+        showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', result.identity ?? '') + portInfo)
       } else if (formData.vpnClientId) {
         // VPN client: ping sudah berhasil, API gagal = MikroTik firewall memblokir
         const apiPort = parseInt(formData.port) || 8728
         const firewallCmd = `/ip firewall filter add chain=input src-address=172.16.212.1 protocol=tcp dst-port=${apiPort} action=accept place-before=0 comment="Allow VPS API"`
-        setTestResult({ success: true, message: (result as any).message, identity: 'VPN (ping OK, API pending)' })
+        setTestResult({ success: true, message: result.message, identity: 'VPN (ping OK, API pending)' })
         showSuccess(`VPN terhubung ✓\n\nAPI port ${apiPort} diblokir firewall MikroTik. Jalankan perintah ini di terminal MikroTik:\n\n${firewallCmd}`)
       } else {
         setTestResult(result)
-        const diagMsg = (result as any).diagnosis === 'port_refused'
-          ? `${(result as any).message}\n\nPort ditolak (ECONNREFUSED) — pastikan /ip service api sudah enabled dan port benar.`
-          : (result as any).diagnosis === 'auth_failed'
-          ? `${(result as any).message}\n\nUsername/password salah — cek credentials di /ip service.`
-          : (result as any).diagnosis === 'firewall_block'
-          ? `${(result as any).message}\n\nKoneksi timeout — firewall memblokir port ini.`
-          : (result as any).message
+        const diagMsg = result.diagnosis === 'port_refused'
+          ? `${result.message}\n\nPort ditolak (ECONNREFUSED) — pastikan /ip service api sudah enabled dan port benar.`
+          : result.diagnosis === 'auth_failed'
+          ? `${result.message}\n\nUsername/password salah — cek credentials di /ip service.`
+          : result.diagnosis === 'firewall_block'
+          ? `${result.message}\n\nKoneksi timeout — firewall memblokir port ini.`
+          : result.message
         showError(diagMsg)
       }
     } catch (error: any) {

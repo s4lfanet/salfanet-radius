@@ -6,7 +6,9 @@ import type {
   Invoice,
   InvoiceListResponse,
   InvoiceResponse,
+  InvoiceDeleteResponse,
   InvoiceGenerateResponse,
+  InvoiceSendReminderResponse,
   InvoicePdfResponse,
   ManualPayment,
   ManualPaymentListResponse,
@@ -36,13 +38,13 @@ export const invoiceApi = {
   },
 
   /** Delete invoice */
-  delete(id: string): Promise<void> {
-    return apiAdmin<void>(`/api/invoices?id=${id}`, { method: 'DELETE' });
+  delete(id: string): Promise<InvoiceDeleteResponse & { error?: string }> {
+    return apiAdmin<InvoiceDeleteResponse & { error?: string }>(`/api/invoices?id=${id}`, { method: 'DELETE' });
   },
 
   /** Send invoice reminder */
-  sendReminder(payload: Record<string, unknown>): Promise<{ success: boolean }> {
-    return apiAdmin<{ success: boolean }>('/api/invoices/send-reminder', {
+  sendReminder(payload: Record<string, unknown>): Promise<InvoiceSendReminderResponse & { error?: string }> {
+    return apiAdmin<InvoiceSendReminderResponse & { error?: string }>('/api/invoices/send-reminder', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -54,8 +56,8 @@ export const invoiceApi = {
   },
 
   /** Generate invoices */
-  generate(payload: Record<string, unknown>): Promise<InvoiceGenerateResponse> {
-    return apiAdmin<InvoiceGenerateResponse>('/api/invoices/generate', {
+  generate(payload: Record<string, unknown>): Promise<InvoiceGenerateResponse & { error?: string }> {
+    return apiAdmin<InvoiceGenerateResponse & { error?: string }>('/api/invoices/generate', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
@@ -69,22 +71,25 @@ export const billingApi = {
     return apiAdmin<ManualPaymentListResponse>(`/api/manual-payments${query}`);
   },
 
-  /** Approve manual payment */
+  /** Approve manual payment — backend uses PATCH /api/manual-payments/[id] with { action: 'APPROVE' } */
   approveManualPayment(id: string): Promise<ManualPaymentResponse> {
-    return apiAdmin<ManualPaymentResponse>(`/api/manual-payments/${id}/approve`, { method: 'POST' });
-  },
-
-  /** Reject manual payment */
-  rejectManualPayment(id: string, reason?: string): Promise<ManualPaymentResponse> {
-    return apiAdmin<ManualPaymentResponse>(`/api/manual-payments/${id}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ reason }),
+    return apiAdmin<ManualPaymentResponse>(`/api/manual-payments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'APPROVE' }),
     });
   },
 
-  /** List transactions (keuangan) */
+  /** Reject manual payment — backend uses PATCH /api/manual-payments/[id] with { action: 'REJECT', rejectionReason } */
+  rejectManualPayment(id: string, reason?: string): Promise<ManualPaymentResponse> {
+    return apiAdmin<ManualPaymentResponse>(`/api/manual-payments/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ action: 'REJECT', rejectionReason: reason }),
+    });
+  },
+
+  /** List transactions (keuangan) — backend endpoint is /api/keuangan/transactions */
   listTransactions(params?: Record<string, string>): Promise<TransactionListResponse> {
     const query = params ? '?' + new URLSearchParams(params).toString() : '';
-    return apiAdmin<TransactionListResponse>(`/api/transactions${query}`);
+    return apiAdmin<TransactionListResponse>(`/api/keuangan/transactions${query}`);
   },
 };

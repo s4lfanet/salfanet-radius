@@ -20,7 +20,7 @@ function buildServerUrl(path: string): string {
  * Server-side fetch helper (for server components, layouts, generateMetadata).
  * Uses absolute URL to backend. No auth token.
  */
-export async function apiFetch<T = any>(
+export async function apiFetch<T = unknown>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {

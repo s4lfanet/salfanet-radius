@@ -20,10 +20,12 @@ export interface Notification {
   createdAt: ISODateString;
 }
 
+// GET /api/notifications returns { success, notifications, unreadCount, categoryCounts }
 export interface NotificationListResponse {
+  success?: boolean;
   notifications: Notification[];
-  total?: number;
-  unread?: number;
+  unreadCount?: number;
+  categoryCounts?: Record<string, number>;
 }
 
 // === Ticket ===

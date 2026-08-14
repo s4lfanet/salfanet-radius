@@ -62,10 +62,104 @@ interface Credentials {
   nasName?: string                  // Display name of the NAS (used for interface naming)
 }
 
+interface WgPeerInfo {
+  publicKey: string;
+  endpoint?: string;
+  allowedIps?: string;
+  lastHandshake?: string;
+}
+
+interface VpsWgServerInfoResponse {
+  installed: boolean;
+  publicIp?: string;
+  publicKey?: string;
+  listenPort?: number;
+  subnet?: string;
+  poolStart?: number | string;
+  poolEnd?: number | string;
+  gatewayIp?: string;
+  peers?: WgPeerInfo[];
+  message?: string;
+}
+
+interface VpsWgPeerMutateResponse {
+  success: boolean;
+  error?: string;
+  vpnIp?: string;
+  vpnSubnet?: string;
+  serverEndpoint?: string;
+  clientPrivateKey?: string;
+  serverPublicKey?: string;
+  wgPort?: number;
+  gatewayIp?: string;
+  allowedIps?: string;
+  nasSecret?: string;
+  apiUsername?: string;
+  apiPassword?: string;
+  routerosScript?: string;
+  poolStart?: number | string;
+  poolEnd?: number | string;
+  subnet?: string;
+}
+
+interface VpsL2tpInfoResponse {
+  installed: boolean;
+  publicIp?: string;
+  ipsecPsk?: string;
+  subnet?: string;
+  localIp?: string;
+  poolStart?: number | string;
+  poolEnd?: number | string;
+  gateway?: string;
+}
+
+interface VpsL2tpPeerMutateResponse {
+  success: boolean;
+  error?: string;
+  ipsecPsk?: string;
+  apiPassword?: string;
+  username?: string;
+  password?: string;
+  vpnIp?: string;
+  nasSecret?: string;
+  routerosScript?: string;
+  poolStart?: number | string;
+  poolEnd?: number | string;
+  gateway?: string;
+}
+
+interface VpnClientListResponse {
+  clients: VpnClient[];
+  vpnServers: VpnServer[];
+}
+
+interface VpnClientCreateResponse {
+  success: boolean;
+  credentials?: Credentials;
+  error?: string;
+}
+
+interface VpnClientPatchResponse {
+  success: boolean;
+  newIp?: string;
+  error?: string;
+}
+
+interface VpnRoutingResponse {
+  success: boolean;
+  output?: string;
+  message?: string;
+}
+
 /** Convert a NAS name to a safe MikroTik interface name segment (max 12 chars, alphanumeric + dash) */
 function toSafeIfaceName(prefix: string, name: string): string {
   const safe = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 12)
   return `${prefix}-${safe || 'vpn'}`
+}
+
+/** Extract error message from unknown catch value */
+function errMsg(e: unknown): string {
+  return e instanceof Error ? e.message : String(e);
 }
 
 /** @deprecated panel redundansi dihapus */
@@ -171,20 +265,20 @@ export default function VpnClientPage() {
     setApplyRoutingOutput('Menjalankan routing script...\n');
     try {
       const script = generateVpsRoutingScript(applyRoutingClient);
-      const result = await apiAdmin('/api/network/vpn-routing', {
+      const result = await apiAdmin<VpnRoutingResponse>('/api/network/vpn-routing', {
         method: 'POST',
         body: JSON.stringify({ host, port: parseInt(port) || 22, username, password, script }),
       });
-      if ((result as any).success) {
-        setApplyRoutingOutput((result as any).output || 'Selesai!');
+      if (result.success) {
+        setApplyRoutingOutput(result.output || 'Selesai!');
         showSuccess('Routing script berhasil diterapkan!');
       } else {
-        setApplyRoutingOutput('Error: ' + ((result as any).message || 'Gagal'));
-        showError((result as any).message || 'Gagal menerapkan routing');
+        setApplyRoutingOutput('Error: ' + (result.message || 'Gagal'));
+        showError(result.message || 'Gagal menerapkan routing');
       }
-    } catch (e: any) {
-      setApplyRoutingOutput('Error: ' + e.message);
-      showError('Gagal: ' + e.message);
+    } catch (e: unknown) {
+      setApplyRoutingOutput('Error: ' + errMsg(e));
+      showError('Gagal: ' + errMsg(e));
     } finally {
       setApplyRoutingRunning(false);
     }
@@ -194,15 +288,15 @@ export default function VpnClientPage() {
   const loadWgPeers = async () => {
     setWgLoading(true);
     try {
-      const data = await apiAdmin('/api/network/vps-wg-peer');
-      if ((data as any).installed) {
-        setWgPeers((data as any).peers || []);
+      const data = await apiAdmin<VpsWgServerInfoResponse>('/api/network/vps-wg-peer');
+      if (data.installed) {
+        setWgPeers(data.peers || []);
       } else {
         setWgPeers([]);
         showError('WireGuard server belum terinstall. Install dulu melalui menu VPN Server → WireGuard.');
       }
-    } catch (e: any) {
-      showError('Gagal muat peers WireGuard: ' + e.message);
+    } catch (e: unknown) {
+      showError('Gagal muat peers WireGuard: ' + errMsg(e));
     } finally {
       setWgLoading(false);
     }
@@ -212,45 +306,45 @@ export default function VpnClientPage() {
     if (!wgNewPeerName.trim()) { showError('Nama NAS wajib diisi'); return; }
     setWgAddingPeer(true);
     try {
-      const data = await apiAdmin('/api/network/vps-wg-peer', {
+      const data = await apiAdmin<VpsWgPeerMutateResponse>('/api/network/vps-wg-peer', {
         method: 'POST',
         body: JSON.stringify({ action: 'add', nasName: wgNewPeerName.trim() }),
       });
-      if (!(data as any).success) throw new Error((data as any).error || 'Gagal tambah peer');
+      if (!data.success) throw new Error(data.error || 'Gagal tambah peer');
       const script = `# WireGuard NAS Client Setup — ${wgNewPeerName.trim()}
 # Generated: ${new Date().toISOString().split('T')[0]}
 # Paste script ini ke terminal MikroTik (RouterOS 7+)
 # ──────────────────────────────────────────────────
-# NAS VPN IP  : ${(data as any).vpnIp}
-# VPN Subnet  : ${(data as any).vpnSubnet || '10.200.0.0/24'}
-# VPS Endpoint: ${(data as any).serverEndpoint}
+# NAS VPN IP  : ${data.vpnIp}
+# VPN Subnet  : ${data.vpnSubnet || '10.200.0.0/24'}
+# VPS Endpoint: ${data.serverEndpoint}
 # ──────────────────────────────────────────────────
 
 # 1. Buat WireGuard interface dengan private key NAS
-/interface/wireguard/add name=${toSafeIfaceName('wg', wgNewPeerName.trim())} private-key="${(data as any).clientPrivateKey || '<PRIVATE_KEY>'}"
+/interface/wireguard/add name=${toSafeIfaceName('wg', wgNewPeerName.trim())} private-key="${data.clientPrivateKey || '<PRIVATE_KEY>'}"
 
 # 2. Tambah peer — allowed-address = seluruh subnet VPN (bukan hanya gateway)
 /interface/wireguard/peers/add interface=${toSafeIfaceName('wg', wgNewPeerName.trim())} \\
-  public-key="${(data as any).serverPublicKey}" \\
-  endpoint-address="${(data as any).serverEndpoint?.split(':')[0]}" \\
-  endpoint-port=${(data as any).wgPort} \\
-  allowed-address="${(data as any).vpnSubnet || '10.200.0.0/24'}" \\
+  public-key="${data.serverPublicKey}" \\
+  endpoint-address="${data.serverEndpoint?.split(':')[0]}" \\
+  endpoint-port=${data.wgPort} \\
+  allowed-address="${data.vpnSubnet || '10.200.0.0/24'}" \\
   persistent-keepalive=25
 
 # 3. Assign IP address NAS ke interface WireGuard
 /ip/address/remove [find where interface=${toSafeIfaceName('wg', wgNewPeerName.trim())}]
-/ip/address/add address=${(data as any).vpnIp}/32 interface=${toSafeIfaceName('wg', wgNewPeerName.trim())}
+/ip/address/add address=${data.vpnIp}/32 interface=${toSafeIfaceName('wg', wgNewPeerName.trim())}
 
 # 4. Route seluruh subnet VPN melalui WireGuard
 /ip/route/remove [find where comment="SALFANET-VPN"]
-/ip/route/add dst-address=${(data as any).vpnSubnet || '10.200.0.0/24'} gateway=${toSafeIfaceName('wg', wgNewPeerName.trim())} comment="SALFANET-VPN"
+/ip/route/add dst-address=${data.vpnSubnet || '10.200.0.0/24'} gateway=${toSafeIfaceName('wg', wgNewPeerName.trim())} comment="SALFANET-VPN"
 
 # 5. RADIUS via WireGuard (server = VPS gateway IP di subnet VPN)
 /radius/remove [find where comment~"SALFANET"]
-/radius/add address=${(data as any).gatewayIp || (data as any).allowedIps?.split('/')[0]} \\
+/radius/add address=${data.gatewayIp || data.allowedIps?.split('/')[0]} \\
   secret=<RADIUS_SECRET> \\
   service=ppp,hotspot \\
-  src-address=${(data as any).vpnIp} \\
+  src-address=${data.vpnIp} \\
   authentication-port=1812 \\
   accounting-port=1813 \\
   timeout=3s \\
@@ -259,10 +353,10 @@ export default function VpnClientPage() {
 /radius/incoming/set accept=yes port=3799`;
       setWgGeneratedScript(script);
       setWgNewPeerName('');
-      showSuccess(`Peer "${wgNewPeerName}" berhasil ditambahkan! VPN IP: ${(data as any).vpnIp}`);
+      showSuccess(`Peer "${wgNewPeerName}" berhasil ditambahkan! VPN IP: ${data.vpnIp}`);
       loadWgPeers();
-    } catch (e: any) {
-      showError('Gagal tambah peer WireGuard: ' + e.message);
+    } catch (e: unknown) {
+      showError('Gagal tambah peer WireGuard: ' + errMsg(e));
     } finally {
       setWgAddingPeer(false);
     }
@@ -272,15 +366,15 @@ export default function VpnClientPage() {
     const confirmed = await showConfirm('Hapus peer WireGuard ini? Koneksi NAS akan terputus.', 'Hapus Peer WireGuard');
     if (!confirmed) return;
     try {
-      const data = await apiAdmin('/api/network/vps-wg-peer', {
+      const data = await apiAdmin<VpsWgPeerMutateResponse>('/api/network/vps-wg-peer', {
         method: 'POST',
         body: JSON.stringify({ action: 'remove', publicKey: pubKey }),
       });
-      if (!(data as any).success) throw new Error((data as any).error || 'Gagal hapus peer');
+      if (!data.success) throw new Error(data.error || 'Gagal hapus peer');
       showSuccess('Peer WireGuard dihapus');
       setWgPeers(prev => prev.filter(p => p.publicKey !== pubKey));
-    } catch (e: any) {
-      showError('Gagal hapus peer: ' + e.message);
+    } catch (e: unknown) {
+      showError('Gagal hapus peer: ' + errMsg(e));
     }
   };
   // ── End WireGuard handlers ──────────────────────────────────────────────
@@ -371,10 +465,10 @@ export default function VpnClientPage() {
 
   const loadClients = async () => {
     try {
-      const data = await apiAdmin('/api/network/vpn-client')
-      setClients((data as any).clients || [])
-      setVpnServers((data as any).vpnServers || [])
-    } catch (error: any) {
+      const data = await apiAdmin<VpnClientListResponse>('/api/network/vpn-client')
+      setClients(data.clients || [])
+      setVpnServers(data.vpnServers || [])
+    } catch (error: unknown) {
       console.error('Load error:', error)
     } finally {
       setLoading(false)
@@ -385,17 +479,17 @@ export default function VpnClientPage() {
     if (wgServerInfo !== null) return // already loaded
     setWgServerInfoLoading(true)
     try {
-      const data = await apiAdmin('/api/network/vps-wg-peer')
-      if ((data as any).installed) {
+      const data = await apiAdmin<VpsWgServerInfoResponse>('/api/network/vps-wg-peer')
+      if (data.installed) {
         setWgServerInfo({
           installed: true,
-          publicIp: (data as any).publicIp,
-          publicKey: (data as any).publicKey,
-          listenPort: (data as any).listenPort,
-          subnet: (data as any).subnet,
-          poolStart: (data as any).poolStart,
-          poolEnd: (data as any).poolEnd,
-          gatewayIp: (data as any).gatewayIp,
+          publicIp: data.publicIp,
+          publicKey: data.publicKey,
+          listenPort: data.listenPort,
+          subnet: data.subnet,
+          poolStart: data.poolStart,
+          poolEnd: data.poolEnd,
+          gatewayIp: data.gatewayIp,
         })
       } else {
         setWgServerInfo({ installed: false })
@@ -411,16 +505,16 @@ export default function VpnClientPage() {
     if (l2tpServerInfo !== null) return // already loaded
     setL2tpServerInfoLoading(true)
     try {
-      const data = await apiAdmin('/api/network/vps-l2tp-info')
-      setL2tpServerInfo((data as any).installed ? {
+      const data = await apiAdmin<VpsL2tpInfoResponse>('/api/network/vps-l2tp-info')
+      setL2tpServerInfo(data.installed ? {
         installed: true,
-        publicIp: (data as any).publicIp,
-        ipsecPsk: (data as any).ipsecPsk,
-        subnet: (data as any).subnet,
-        localIp: (data as any).localIp,
-        poolStart: (data as any).poolStart,
-        poolEnd: (data as any).poolEnd,
-        gateway: (data as any).gateway,
+        publicIp: data.publicIp,
+        ipsecPsk: data.ipsecPsk,
+        subnet: data.subnet,
+        localIp: data.localIp,
+        poolStart: data.poolStart,
+        poolEnd: data.poolEnd,
+        gateway: data.gateway,
       } : { installed: false })
     } catch {
       setL2tpServerInfo({ installed: false })
@@ -432,7 +526,7 @@ export default function VpnClientPage() {
   const handleWgSavePoolConfig = async () => {
     setWgPoolSaving(true);
     try {
-      const data = await apiAdmin('/api/network/vps-wg-peer', {
+      const data = await apiAdmin<VpsWgPeerMutateResponse>('/api/network/vps-wg-peer', {
         method: 'PATCH',
         body: JSON.stringify({
           poolStart: wgPoolForm.poolStart || undefined,
@@ -440,12 +534,12 @@ export default function VpnClientPage() {
           gatewayIp: wgPoolForm.gatewayIp || undefined,
         }),
       });
-      if (!(data as any).success) throw new Error((data as any).error || 'Gagal simpan');
-      setWgServerInfo(prev => prev ? { ...prev, poolStart: (data as any).poolStart, poolEnd: (data as any).poolEnd, gatewayIp: (data as any).gatewayIp, subnet: (data as any).subnet ?? prev.subnet } : prev);
+      if (!data.success) throw new Error(data.error || 'Gagal simpan');
+      setWgServerInfo(prev => prev ? { ...prev, poolStart: data.poolStart, poolEnd: data.poolEnd, gatewayIp: data.gatewayIp, subnet: data.subnet ?? prev.subnet } : prev);
       setWgPoolEdit(false);
       showSuccess('Konfigurasi pool WireGuard disimpan');
-    } catch (e: any) {
-      showError(e.message || 'Gagal simpan pool WireGuard');
+    } catch (e: unknown) {
+      showError(errMsg(e) || 'Gagal simpan pool WireGuard');
     } finally {
       setWgPoolSaving(false);
     }
@@ -454,7 +548,7 @@ export default function VpnClientPage() {
   const handleL2tpSavePoolConfig = async () => {
     setL2tpPoolSaving(true);
     try {
-      const data = await apiAdmin('/api/network/vps-l2tp-peer', {
+      const data = await apiAdmin<VpsL2tpPeerMutateResponse>('/api/network/vps-l2tp-peer', {
         method: 'PATCH',
         body: JSON.stringify({
           poolStart: l2tpPoolForm.poolStart || undefined,
@@ -462,12 +556,12 @@ export default function VpnClientPage() {
           gateway: l2tpPoolForm.gateway || undefined,
         }),
       });
-      if (!(data as any).success) throw new Error((data as any).error || 'Gagal simpan');
-      setL2tpServerInfo(prev => prev ? { ...prev, poolStart: (data as any).poolStart, poolEnd: (data as any).poolEnd, gateway: (data as any).gateway } : prev);
+      if (!data.success) throw new Error(data.error || 'Gagal simpan');
+      setL2tpServerInfo(prev => prev ? { ...prev, poolStart: data.poolStart, poolEnd: data.poolEnd, gateway: data.gateway } : prev);
       setL2tpPoolEdit(false);
       showSuccess('Konfigurasi pool L2TP disimpan');
-    } catch (e: any) {
-      showError(e.message || 'Gagal simpan pool L2TP');
+    } catch (e: unknown) {
+      showError(errMsg(e) || 'Gagal simpan pool L2TP');
     } finally {
       setL2tpPoolSaving(false);
     }
@@ -488,41 +582,41 @@ export default function VpnClientPage() {
       // Trigger add peer with the name from the form
       setCreating(true)
       try {
-        const data = await apiAdmin('/api/network/vps-wg-peer', {
+        const data = await apiAdmin<VpsWgPeerMutateResponse>('/api/network/vps-wg-peer', {
           method: 'POST',
           body: JSON.stringify({ action: 'add', nasName: peerName, localNetworks: localNetworks || undefined }),
         })
-        if ((data as any).success) {
-          setWgGeneratedScript((data as any).routerosScript || null)
+        if (data.success) {
+          setWgGeneratedScript(data.routerosScript || null)
           await loadWgPeers()
           showSuccess('WireGuard peer berhasil ditambahkan ke VPS', 'Peer Ditambahkan')
 
           // Auto-show credentials with generated script so user can copy it immediately
-          const wgSubnet = (data as any).vpnSubnet || wgServerInfo?.subnet || '10.200.0.0/24'
-          const wgGatewayIp = (data as any).gatewayIp || wgSubnet.replace(/\.\d+\/\d+$/, '.1')
+          const wgSubnet = data.vpnSubnet || wgServerInfo?.subnet || '10.200.0.0/24'
+          const wgGatewayIp = data.gatewayIp || wgSubnet.replace(/\.\d+\/\d+$/, '.1')
           setCredentials({
-            server: wgServerInfo?.publicIp || (data as any).serverEndpoint?.split(':')[0] || 'VPS',
-            serverHost: wgServerInfo?.publicIp || (data as any).serverEndpoint?.split(':')[0] || 'VPS',
+            server: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
+            serverHost: wgServerInfo?.publicIp || data.serverEndpoint?.split(':')[0] || 'VPS',
             username: peerName,
             nasName: peerName,
             password: '',
-            vpnIp: (data as any).vpnIp,
+            vpnIp: data.vpnIp || '',
             vpnType: 'wireguard',
-            clientPrivateKey: (data as any).clientPrivateKey || null,
-            serverPublicKey: (data as any).serverPublicKey || wgServerInfo?.publicKey || null,
-            wgPort: (data as any).wgPort || wgServerInfo?.listenPort || 51820,
+            clientPrivateKey: data.clientPrivateKey || null,
+            serverPublicKey: data.serverPublicKey || wgServerInfo?.publicKey || null,
+            wgPort: data.wgPort || wgServerInfo?.listenPort || 51820,
             wgSubnet,
             wgGatewayIp,
-            nasSecret: (data as any).nasSecret || undefined,
-            apiUsername: (data as any).apiUsername || undefined,
-            apiPassword: (data as any).apiPassword || undefined,
+            nasSecret: data.nasSecret || undefined,
+            apiUsername: data.apiUsername || undefined,
+            apiPassword: data.apiPassword || undefined,
             radiusServerIp: undefined, // VPS gateway is used as fallback in generateMikroTikScript
           })
           setSelectedVpnType('wireguard')
           setShowCredentials(true)
           loadClients()
         } else {
-          showError((data as any).error || 'Gagal menambahkan WireGuard peer ke VPS')
+          showError(data.error || 'Gagal menambahkan WireGuard peer ke VPS')
         }
       } catch {
         showError('Gagal menghubungi VPS')
@@ -537,39 +631,39 @@ export default function VpnClientPage() {
       if (!formData.name.trim()) return
       setCreating(true)
       try {
-        const data = await apiAdmin('/api/network/vps-l2tp-peer', {
+        const data = await apiAdmin<VpsL2tpPeerMutateResponse>('/api/network/vps-l2tp-peer', {
           method: 'POST',
           body: JSON.stringify({ action: 'add', label: formData.name.trim(), localNetworks: formData.localNetworks.trim() || undefined }),
         })
-        if ((data as any).success) {
+        if (data.success) {
           setShowModal(false)
-          const ipsecPsk = (data as any).ipsecPsk || l2tpServerInfo?.ipsecPsk || ''
+          const ipsecPsk = data.ipsecPsk || l2tpServerInfo?.ipsecPsk || ''
           const nasDisplayName = formData.name.trim()
           const safeApiUser = `api-${nasDisplayName.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
-          const safeApiPass = (data as any).apiPassword || Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10)
+          const safeApiPass = data.apiPassword || Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10)
           setCredentials({
             server: l2tpServerInfo?.publicIp || 'VPS',
             serverHost: l2tpServerInfo?.publicIp || 'VPS',
-            username: (data as any).username,
-            password: (data as any).password,
-            vpnIp: (data as any).vpnIp,
+            username: data.username || '',
+            password: data.password || '',
+            vpnIp: data.vpnIp || '',
             vpnType: 'l2tp',
             nasName: nasDisplayName,
             ipsecPsk,
             apiUsername: safeApiUser,
-            apiPassword: (data as any).apiPassword || safeApiPass,
-            nasSecret: (data as any).nasSecret || undefined,
+            apiPassword: data.apiPassword || safeApiPass,
+            nasSecret: data.nasSecret || undefined,
           })
           setSelectedVpnType('l2tp')
           setShowCredentials(true)
           // Store generated script in wgGeneratedScript state for display
-          setWgGeneratedScript((data as any).routerosScript || null)
+          setWgGeneratedScript(data.routerosScript || null)
           setShowWgSection(true)
           showSuccess('L2TP user berhasil ditambahkan ke VPS', 'Berhasil')
           setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
           loadClients()
         } else {
-          showError((data as any).error || 'Gagal menambahkan L2TP user ke VPS')
+          showError(data.error || 'Gagal menambahkan L2TP user ke VPS')
         }
       } catch {
         showError('Gagal menghubungi VPS')
@@ -582,14 +676,14 @@ export default function VpnClientPage() {
     setCreating(true)
 
     try {
-      const result = await apiAdmin('/api/network/vpn-client', {
+      const result = await apiAdmin<VpnClientCreateResponse>('/api/network/vpn-client', {
         method: 'POST',
         body: JSON.stringify(formData),
       })
 
-      if ((result as any).success) {
-        setCredentials((result as any).credentials);
-        const createdType = String((result as any).credentials?.vpnType || 'l2tp').toLowerCase();
+      if (result.success) {
+        setCredentials(result.credentials || null);
+        const createdType = String(result.credentials?.vpnType || 'l2tp').toLowerCase();
         setSelectedVpnType(createdType === 'pptp' || createdType === 'sstp' ? createdType : 'l2tp');
         setShowCredentials(true);
         setShowModal(false);
@@ -597,10 +691,10 @@ export default function VpnClientPage() {
         loadClients();
         showSuccess(t('network.clientCredentialsDisplayed'), t('network.vpnClientCreated'));
       } else {
-        showError((result as any).error || t('network.failedCreateClient'));
+        showError(result.error || t('network.failedCreateClient'));
       }
-    } catch (error: any) {
-      showError(error.message || t('network.anErrorOccurred'));
+    } catch (error: unknown) {
+      showError(errMsg(error) || t('network.anErrorOccurred'));
     } finally {
       setCreating(false)
     }
@@ -618,8 +712,8 @@ export default function VpnClientPage() {
       await apiAdmin(`/api/network/vpn-client?id=${id}`, { method: 'DELETE' })
       showSuccess(t('network.deleted'));
       loadClients();
-    } catch (error: any) {
-      showError(error.message || t('network.failedDeleteClient'));
+    } catch (error: unknown) {
+      showError(errMsg(error) || t('network.failedDeleteClient'));
     }
   }
 
@@ -631,8 +725,8 @@ export default function VpnClientPage() {
       })
       showSuccess(isRadiusServer ? t('network.setAsRadiusServerSuccess') : t('network.unsetRadiusServerSuccess'));
       loadClients();
-    } catch (error: any) {
-      showError(error.message || t('network.failedUpdateClient'));
+    } catch (error: unknown) {
+      showError(errMsg(error) || t('network.failedUpdateClient'));
     }
   }
 
@@ -640,16 +734,16 @@ export default function VpnClientPage() {
     if (!editingIpValue.trim()) return;
     setEditingIpLoading(true);
     try {
-      const data = await apiAdmin('/api/network/vpn-client', {
+      const data = await apiAdmin<VpnClientPatchResponse>('/api/network/vpn-client', {
         method: 'PATCH',
         body: JSON.stringify({ id: clientId, vpnIp: editingIpValue.trim() }),
       });
-      if ((data as any).success) {
-        showSuccess(`IP berhasil diubah ke ${(data as any).newIp}`);
+      if (data.success) {
+        showSuccess(`IP berhasil diubah ke ${data.newIp}`);
         setEditingIpClientId(null);
         loadClients();
       } else {
-        showError((data as any).error || 'Gagal mengubah IP');
+        showError(data.error || 'Gagal mengubah IP');
       }
     } catch {
       showError('Gagal menghubungi server');

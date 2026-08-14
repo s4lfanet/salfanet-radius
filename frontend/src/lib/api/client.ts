@@ -73,7 +73,7 @@ function getBearerToken(mode: AuthMode): string | null {
  * @param options  fetch options (method, body, etc.)
  * @param mode  Auth mode: 'admin' (cookies), 'customer' (Bearer), 'agent' (Bearer)
  */
-export async function apiCall<T = any>(
+export async function apiCall<T = unknown>(
   path: string,
   options?: RequestInit,
   mode: AuthMode = 'admin',
@@ -110,7 +110,7 @@ export async function apiCall<T = any>(
 /**
  * Admin API call (NextAuth cookies auth).
  */
-export async function apiAdmin<T = any>(
+export async function apiAdmin<T = unknown>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
@@ -120,7 +120,7 @@ export async function apiAdmin<T = any>(
 /**
  * Customer API call (Bearer token from localStorage).
  */
-export async function apiCustomer<T = any>(
+export async function apiCustomer<T = unknown>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
@@ -130,7 +130,7 @@ export async function apiCustomer<T = any>(
 /**
  * Agent API call (Bearer token from localStorage).
  */
-export async function apiAgent<T = any>(
+export async function apiAgent<T = unknown>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
@@ -141,7 +141,7 @@ export async function apiAgent<T = any>(
  * Legacy: Client-side API fetch with auth token.
  * Kept for backward compatibility — prefer apiAdmin/apiCustomer/apiAgent.
  */
-export async function apiFetchAuth<T = any>(
+export async function apiFetchAuth<T = unknown>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {

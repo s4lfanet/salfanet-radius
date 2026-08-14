@@ -38,7 +38,7 @@ export default function FreeRADIUSStatusPage() {
 
     const fetchStatus = useCallback(async () => {
         try {
-            const data = await apiAdmin('/api/freeradius/status');
+            const data = await apiAdmin<{ success: boolean; status: RadiusStatus }>(`/api/freeradius/status`);
             if (data.success) {
                 setStatus(data.status);
             }
@@ -79,7 +79,7 @@ export default function FreeRADIUSStatusPage() {
         })) return;
         setActionLoading(action);
             try {
-                const data = await apiAdmin(`/api/freeradius/${action}`, { method: 'POST' });
+                const data = await apiAdmin<{ success: boolean; message?: string; error?: string }>(`/api/freeradius/${action}`, { method: 'POST' });
 
                 if (data.success) {
                     addToast({ type: 'success', title: t('common.success'), description: msg.successText || data.message, duration: 2000 });
@@ -97,7 +97,7 @@ export default function FreeRADIUSStatusPage() {
     const handleCleanupStale = async () => {
         setActionLoading('cleanup');
         try {
-            const data = await apiAdmin('/api/freeradius/cleanup-stale', { method: 'POST' });
+            const data = await apiAdmin<{ success: boolean; message?: string; error?: string }>('/api/freeradius/cleanup-stale', { method: 'POST' });
             if (data.success) {
                 addToast({ type: 'success', title: t('common.success'), description: data.message, duration: 3000 });
                 setTimeout(fetchStatus, 1000);

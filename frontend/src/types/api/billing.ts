@@ -43,22 +43,56 @@ export interface Invoice {
   addonAmount: number;
 }
 
-export interface InvoiceListResponse {
-  invoices: Invoice[];
-  total?: number;
+// GET /api/invoices returns { invoices, stats }
+export interface InvoiceListStats {
+  total: number;
+  unpaid: number;
+  paid: number;
+  pending: number;
+  overdue: number;
+  totalUnpaidAmount: number;
+  totalPaidAmount: number;
 }
 
+export interface InvoiceListResponse {
+  invoices: Invoice[];
+  stats?: InvoiceListStats;
+}
+
+// POST/PUT /api/invoices returns { invoice } (no success field)
 export interface InvoiceResponse {
   success?: boolean;
   invoice: Invoice;
 }
 
-export interface InvoiceGenerateResponse {
+// DELETE /api/invoices returns { success, message, deletedCount }
+export interface InvoiceDeleteResponse {
   success: boolean;
-  generated?: number;
-  message?: string;
+  message: string;
+  deletedCount?: number;
 }
 
+// POST /api/invoices/generate returns { success, generated, skipped, errors, message }
+export interface InvoiceGenerateResponse {
+  success: boolean;
+  generated: number;
+  skipped: number;
+  errors: Array<{ username: string; error: string }>;
+  message: string;
+}
+
+// POST /api/invoices/send-reminder returns { success, message, results }
+export interface InvoiceSendReminderResponse {
+  success: boolean;
+  message: string;
+  results: {
+    whatsapp?: { success: boolean; error?: string };
+    email?: { success: boolean; error?: string };
+  };
+}
+
+// GET /api/invoices/[id]/pdf — endpoint does not exist in backend
+// This is a BACKEND ISSUE: frontend calls this but backend has no such route
 export interface InvoicePdfResponse {
   success: boolean;
   data: unknown;
@@ -80,14 +114,17 @@ export interface ManualPayment {
   updatedAt: ISODateString;
 }
 
+// GET /api/manual-payments returns { success: true, data: [...] }
 export interface ManualPaymentListResponse {
-  payments: ManualPayment[];
-  total?: number;
+  success: boolean;
+  data: ManualPayment[];
 }
 
+// PATCH /api/manual-payments/[id] with { action: 'APPROVE'|'REJECT' } returns updated payment
 export interface ManualPaymentResponse {
-  success?: boolean;
-  payment: ManualPayment;
+  success: boolean;
+  payment?: ManualPayment;
+  message?: string;
 }
 
 // === Transaction (Keuangan) ===
@@ -114,9 +151,32 @@ export interface Transaction {
   transaction_categories?: TransactionCategory;
 }
 
+// GET /api/keuangan/transactions returns { success, transactions, total, pagination, stats }
+export interface TransactionStats {
+  totalIncome: number;
+  totalExpense: number;
+  balance: number;
+  incomeCount: number;
+  expenseCount: number;
+  pppoeIncome: number;
+  pppoeCount: number;
+  hotspotIncome: number;
+  hotspotCount: number;
+  installIncome: number;
+  installCount: number;
+}
+
 export interface TransactionListResponse {
+  success: boolean;
   transactions: Transaction[];
-  total?: number;
+  total: number;
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+  stats: TransactionStats;
 }
 
 export interface TransactionResponse {
