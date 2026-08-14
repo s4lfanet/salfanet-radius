@@ -44,6 +44,12 @@ export async function POST(request: NextRequest) {
     if (!pppoeCustomerId && (!name || !phone)) {
       return badRequest('Nama dan No. HP wajib diisi jika tidak menghubungkan ke pelanggan');
     }
+    if (!body.idCardPhoto) {
+      return badRequest('Foto KTP wajib diupload');
+    }
+    if (!body.latitude || !body.longitude) {
+      return badRequest('GPS lokasi pelanggan wajib diisi');
+    }
 
     const result = await createPppoeUser(body, session, request);
     return created({ success: true, ...result });
