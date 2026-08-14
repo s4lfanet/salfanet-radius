@@ -1696,6 +1696,21 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 42 — PPPoE User Detail Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/users/[id]/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/pppoe/users/${id}')` + `fetch('/api/invoices?userId=...')` + `fetch('/api/pppoe/users/${id}/activity?...')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/pppoe/users/status', { method: 'PUT' })` (status change) → `apiAdmin(...)`
+  - `fetch('/api/pppoe/users/send-notification', { method: 'POST' })` (WA notification) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in pppoe/users/[id] page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Page loads. 3 console errors are 404s from non-existent test user ID "1" (expected — same 404 with original fetch)
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
