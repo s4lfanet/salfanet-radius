@@ -933,6 +933,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 3 — PPPoE Areas Page Migration (14 Aug 2026) ✅
+
+**API module updated:**
+- `frontend/src/lib/api/pppoe.ts` — Added `saveArea()` and `deleteArea()` methods
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/areas/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/pppoe/areas')` → `pppoeApi.listAreas()`
+  - `fetch('/api/pppoe/areas', { method: 'POST/PUT' })` → `pppoeApi.saveArea(payload)`
+  - `fetch('/api/pppoe/areas?id=...', { method: 'DELETE' })` → `pppoeApi.deleteArea(id)`
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Areas page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
