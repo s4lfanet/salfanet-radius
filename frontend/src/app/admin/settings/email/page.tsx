@@ -251,7 +251,7 @@ export default function EmailSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const data = await apiAdmin('/api/settings/email');
+      const data = await apiAdmin<EmailSettings>('/api/settings/email');
       setSettings(data);
       // Only fetch templates after settings loaded successfully
       await fetchTemplates();

@@ -292,7 +292,7 @@ export default function AgentPage() {
     if (!selectedAgent) return;
     setLoadingHistory(true);
     try {
-      const data = await apiAdmin(`/api/hotspot/agents/${selectedAgent.id}/history?year=${year}&month=${month}`);
+      const data = await apiAdmin<MonthDetail>(`/api/hotspot/agents/${selectedAgent.id}/history?year=${year}&month=${month}`);
       setSelectedMonthDetail(data);
     } catch (error: any) {
       console.error('Load month detail error:', error);

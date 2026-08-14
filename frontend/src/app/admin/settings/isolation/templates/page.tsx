@@ -92,7 +92,7 @@ export default function TemplatesPage() {
 
     setSaving(true);
     try {
-      const data = await apiAdmin(`/api/settings/isolation/templates/${editingTemplate.id}`, {
+      const data = await apiAdmin<{ success: boolean; message?: string }>(`/api/settings/isolation/templates/${editingTemplate.id}`, {
         method: 'PUT',
         body: JSON.stringify({
           name: editingTemplate.name,
