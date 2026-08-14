@@ -16,6 +16,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { apiAdmin } from '@/lib/api';
 
 interface Provider {
   id: string;
@@ -121,12 +122,11 @@ export default function WhatsAppProvidersPage() {
 
   const fetchProviders = async () => {
     try {
-      const res = await fetch('/api/whatsapp/providers');
-      const data = await res.json();
-      setProviders(data.sort((a: Provider, b: Provider) => a.priority - b.priority));
-    } catch (error) {
+      const data = await apiAdmin('/api/whatsapp/providers');
+      setProviders((data as any).sort((a: Provider, b: Provider) => a.priority - b.priority));
+    } catch (error: any) {
       console.error('Error fetching providers:', error);
-      addToast({ type: 'error', title: 'Error!', description: t('whatsapp.failedFetchProviders') });
+      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedFetchProviders') });
     } finally {
       setLoading(false);
     }
@@ -141,10 +141,8 @@ export default function WhatsAppProvidersPage() {
       providers.map(async (provider) => {
         if (provider.type === 'mpwa' || provider.type === 'waha' || provider.type === 'gowa' || provider.type === 'baileys') {
           try {
-            const res = await fetch(`/api/whatsapp/providers/${provider.id}/status`);
-            if (res.ok) {
-              newStatuses[provider.id] = await res.json();
-            }
+            const data = await apiAdmin(`/api/whatsapp/providers/${provider.id}/status`);
+            newStatuses[provider.id] = data as any;
           } catch (error) {
             console.error(`Error fetching status for ${provider.name}:`, error);
           }
@@ -183,9 +181,8 @@ export default function WhatsAppProvidersPage() {
         ? `/api/whatsapp/providers/${editingProvider.id}`
         : '/api/whatsapp/providers';
 
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method: editingProvider ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           // Ensure baileys has 'internal' for required fields if they are missing
@@ -194,37 +191,27 @@ export default function WhatsAppProvidersPage() {
         })
       });
 
-      if (res.ok) {
-        addToast({ type: 'success', title: t('common.success'), description: t('whatsapp.providerSaved') });
-        fetchProviders();
-        resetForm();
-      } else {
-        const data = await res.json();
-        addToast({ type: 'error', title: 'Error!', description: data.error || t('whatsapp.failedSaveProvider') });
-      }
-    } catch (error) {
+      addToast({ type: 'success', title: t('common.success'), description: t('whatsapp.providerSaved') });
+      fetchProviders();
+      resetForm();
+    } catch (error: any) {
       console.error('Error saving provider:', error);
-      addToast({ type: 'error', title: 'Error!', description: t('whatsapp.failedSaveProvider') });
+      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedSaveProvider') });
     }
   };
 
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
-      const res = await fetch(`/api/whatsapp/providers/${id}`, {
+      await apiAdmin(`/api/whatsapp/providers/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !currentStatus })
       });
 
-      if (res.ok) {
-        addToast({ type: 'success', title: t('common.success'), description: !currentStatus ? t('whatsapp.providerActivated') : t('whatsapp.providerDeactivated') });
-        fetchProviders();
-      } else {
-        addToast({ type: 'error', title: 'Error!', description: t('whatsapp.failedToggleProvider') });
-      }
-    } catch (error) {
+      addToast({ type: 'success', title: t('common.success'), description: !currentStatus ? t('whatsapp.providerActivated') : t('whatsapp.providerDeactivated') });
+      fetchProviders();
+    } catch (error: any) {
       console.error('Error toggling provider:', error);
-      addToast({ type: 'error', title: 'Error!', description: t('whatsapp.failedToggleProvider') });
+      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedToggleProvider') });
     }
   };
 
@@ -238,19 +225,15 @@ export default function WhatsAppProvidersPage() {
     })) return;
 
     try {
-      const res = await fetch(`/api/whatsapp/providers/${id}`, {
+      await apiAdmin(`/api/whatsapp/providers/${id}`, {
         method: 'DELETE'
       });
 
-      if (res.ok) {
-        addToast({ type: 'success', title: t('common.deleted'), description: t('whatsapp.providerDeleted') });
-        fetchProviders();
-      } else {
-        addToast({ type: 'error', title: 'Error!', description: t('whatsapp.failedDeleteProvider') });
-      }
-    } catch (error) {
+      addToast({ type: 'success', title: t('common.deleted'), description: t('whatsapp.providerDeleted') });
+      fetchProviders();
+    } catch (error: any) {
       console.error('Error deleting provider:', error);
-      addToast({ type: 'error', title: 'Error!', description: t('whatsapp.failedDeleteProvider') });
+      addToast({ type: 'error', title: 'Error!', description: error.message || t('whatsapp.failedDeleteProvider') });
     }
   };
 
@@ -308,15 +291,9 @@ export default function WhatsAppProvidersPage() {
     setRestartingProvider(provider.id);
 
     try {
-      const res = await fetch(`/api/whatsapp/providers/${provider.id}/restart`, {
+      const data = await apiAdmin(`/api/whatsapp/providers/${provider.id}/restart`, {
         method: 'POST'
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || data.details || 'Failed to restart session');
-      }
 
       addToast({ type: 'success', title: t('common.success'), description: t('whatsapp.sessionRestarted') });
       fetchAllStatuses();
@@ -353,16 +330,13 @@ export default function WhatsAppProvidersPage() {
     stopQrPolling();
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`/api/whatsapp/providers/${provider.id}/status`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.connected) {
-            stopQrPolling();
-            setQrConnected(true);
-            setQrImage(null);
-            // Update the status in the list immediately
-            setProviderStatuses(prev => ({ ...prev, [provider.id]: data }));
-          }
+        const data = await apiAdmin(`/api/whatsapp/providers/${provider.id}/status`);
+        if ((data as any).connected) {
+          stopQrPolling();
+          setQrConnected(true);
+          setQrImage(null);
+          // Update the status in the list immediately
+          setProviderStatuses(prev => ({ ...prev, [provider.id]: data as any }));
         }
       } catch {
         // ignore polling errors
@@ -383,7 +357,7 @@ export default function WhatsAppProvidersPage() {
     let retrying = false;
     try {
       const url = `/api/whatsapp/providers/${provider.id}/qr`;
-      const response = await fetch(url);
+      const response = await fetch(url, { credentials: 'include' });
 
       if (response.ok) {
         if (provider.type === 'mpwa' || provider.type === 'baileys') {
