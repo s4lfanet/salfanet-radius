@@ -156,19 +156,19 @@ export default function IPPoolPage() {
   };
 
   const handleDelete = async (poolName: string) => {
-    showConfirm(`Delete pool "${poolName}"?`, 'Only works if no IPs are allocated.', async () => {
-      try {
-        const data = await apiAdmin(`${API_BASE}?poolName=${encodeURIComponent(poolName)}`, { method: 'DELETE' });
-        if ((data as any).success) {
-          showSuccess(`Pool "${poolName}" deleted (${(data as any).data.deleted} IPs removed)`);
-          loadData();
-        } else {
-          showError((data as any).message || 'Failed to delete pool');
-        }
-      } catch (err: any) {
-        showError(err.message || 'Failed to delete pool');
+    const confirmed = await showConfirm(`Delete pool "${poolName}"?`, 'Only works if no IPs are allocated.');
+    if (!confirmed) return;
+    try {
+      const data = await apiAdmin(`${API_BASE}?poolName=${encodeURIComponent(poolName)}`, { method: 'DELETE' });
+      if ((data as any).success) {
+        showSuccess(`Pool "${poolName}" deleted (${(data as any).data.deleted} IPs removed)`);
+        loadData();
+      } else {
+        showError((data as any).message || 'Failed to delete pool');
       }
-    });
+    } catch (err: any) {
+      showError(err.message || 'Failed to delete pool');
+    }
   };
 
   const handleMap = async () => {
@@ -195,19 +195,19 @@ export default function IPPoolPage() {
   };
 
   const handleUnmap = async (id: number, groupname: string) => {
-    showConfirm(`Remove mapping for group "${groupname}"?`, '', async () => {
-      try {
-        const data = await apiAdmin(`${API_BASE}/mappings/${id}`, { method: 'DELETE' });
-        if ((data as any).success) {
-          showSuccess('Mapping removed');
-          loadData();
-        } else {
-          showError((data as any).message || 'Failed to remove mapping');
-        }
-      } catch (err: any) {
-        showError(err.message || 'Failed to remove mapping');
+    const confirmed = await showConfirm(`Remove mapping for group "${groupname}"?`);
+    if (!confirmed) return;
+    try {
+      const data = await apiAdmin(`${API_BASE}/mappings/${id}`, { method: 'DELETE' });
+      if ((data as any).success) {
+        showSuccess('Mapping removed');
+        loadData();
+      } else {
+        showError((data as any).message || 'Failed to remove mapping');
       }
-    });
+    } catch (err: any) {
+      showError(err.message || 'Failed to remove mapping');
+    }
   };
 
   if (loading) {

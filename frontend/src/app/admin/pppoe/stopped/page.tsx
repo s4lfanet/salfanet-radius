@@ -43,7 +43,7 @@ export default function StoppedSubscriptionsPage() {
     try {
       setLoading(true);
       const data = await pppoeApi.listUsers({ status: 'stop' });
-      setUsers(data.users || []);
+      setUsers((data.users as any) || []);
     } catch (error) {
       console.error('Load data error:', error);
     } finally {
