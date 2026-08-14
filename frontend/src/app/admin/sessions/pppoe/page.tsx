@@ -5,6 +5,7 @@ import { Power, RefreshCw, Wifi, Search, Download, Trash2, RotateCcw } from 'luc
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface Session {
   id: string;
@@ -94,15 +95,14 @@ export default function PPPoESessionsPage() {
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const res = await fetch(`/api/sessions?${params}`);
-      const data = await res.json();
-      setSessions(data.sessions || []);
+      const data = await apiAdmin(`/api/sessions?${params}`);
+      setSessions((data as any).sessions || []);
       setFetchedAt(Date.now());
-      setStats(data.stats);
-      if (data.pagination) {
-        setPagination(data.pagination);
+      setStats((data as any).stats);
+      if ((data as any).pagination) {
+        setPagination((data as any).pagination);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch sessions:', error);
     } finally {
       setLoading(false);
@@ -124,10 +124,9 @@ export default function PPPoESessionsPage() {
 
   const fetchRouters = async () => {
     try {
-      const res = await fetch('/api/network/routers');
-      const data = await res.json();
-      setRouters(data.routers || []);
-    } catch (error) {
+      const data = await apiAdmin('/api/network/routers');
+      setRouters((data as any).routers || []);
+    } catch (error: any) {
       console.error('Failed to fetch routers:', error);
     }
   };
@@ -175,21 +174,19 @@ export default function PPPoESessionsPage() {
 
     setDisconnecting(true);
     try {
-      const res = await fetch('/api/sessions/disconnect', {
+      const data = await apiAdmin('/api/sessions/disconnect', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionIds })
       });
-      const data = await res.json();
-      if (data.success) {
-        addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', data.disconnected) });
+      if ((data as any).success) {
+        addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', (data as any).disconnected) });
         setSelectedSessions(new Set());
         fetchSessions(pagination.page);
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: data.error || t('sessions.failedDisconnect') });
+        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || t('sessions.failedDisconnect') });
       }
-    } catch {
-      addToast({ type: 'error', title: t('common.error'), description: t('sessions.failedDisconnectSession') });
+    } catch (error: any) {
+      addToast({ type: 'error', title: t('common.error'), description: error.message || t('sessions.failedDisconnectSession') });
     } finally {
       setDisconnecting(false);
     }
@@ -198,11 +195,11 @@ export default function PPPoESessionsPage() {
   const handleSync = async () => {
     setSyncing(true);
     try {
-      await fetch('/api/sessions/sync?type=pppoe', { method: 'POST' });
+      await apiAdmin('/api/sessions/sync?type=pppoe', { method: 'POST' });
       await fetchSessions(1);
       addToast({ type: 'success', title: t('common.success'), description: t('sessions.syncComplete') });
-    } catch {
-      addToast({ type: 'error', title: t('common.error'), description: t('sessions.syncFailed') });
+    } catch (error: any) {
+      addToast({ type: 'error', title: t('common.error'), description: error.message || t('sessions.syncFailed') });
     } finally {
       setSyncing(false);
     }
@@ -215,7 +212,7 @@ export default function PPPoESessionsPage() {
       params.set('type', 'pppoe');
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('username', searchFilter);
-      const res = await fetch(`/api/sessions/export?${params}`);
+      const res = await fetch(`/api/sessions/export?${params}`, { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');

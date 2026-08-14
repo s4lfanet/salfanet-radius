@@ -1581,6 +1581,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 35 — Sessions PPPoE Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/sessions/pppoe/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/sessions?...')` (load sessions) → `apiAdmin(...)`
+  - `fetch('/api/network/routers')` (load routers) → `apiAdmin(...)`
+  - `fetch('/api/sessions/disconnect', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/sessions/sync?type=pppoe', { method: 'POST' })` → `apiAdmin(...)`
+  - 1 blob export fetch retained with `credentials: 'include'` (Excel download)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Sessions PPPoE page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
