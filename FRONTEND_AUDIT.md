@@ -1429,6 +1429,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 26 — Settings Email Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/email/page.tsx` — 6 fetch() calls replaced:
+  - `fetch('/api/settings/email')` (load settings) → `apiAdmin(...)`
+  - `fetch('/api/settings/email/templates')` (load templates) → `apiAdmin(...)`
+  - `fetch('/api/settings/email', { method: 'POST' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/settings/email/test', { method: 'POST' })` (test) → `apiAdmin(...)`
+  - `fetch('/api/settings/email/templates/${id}', { method: 'PUT' })` (update template) → `apiAdmin(...)`
+  - `fetch('/api/email/history?...')` (history) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in settings/email page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Settings email page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
