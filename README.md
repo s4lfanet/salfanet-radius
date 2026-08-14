@@ -123,33 +123,33 @@ File: `backend/src/server/cache/redis.ts`
 
 ---
 
-## � RADIUS Enhancements (v3.1.0)
+## 📡 RADIUS Enhancements (v3.1.0)
 
 Diadopsi dari FreeRADIUS 3.2.8 schema (`home.pmynet.id-main` project).
 
-## ?? Frontend Audit & Centralized API Migration (v4.4.0)
+## 📋 Frontend Audit & Centralized API Migration (v4.4.0)
 
-Migrasi frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Frontend sekarang **UI-only** � tidak ada direct Prisma/DB/MikroTik/SSH/FreeRADIUS access.
+Migrasi frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Frontend sekarang **UI-only** — tidak ada direct Prisma/DB/MikroTik/SSH/FreeRADIUS access.
 
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) � [`CHANGELOG.md`](CHANGELOG.md)
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
 
-### Phase 1 � Architectural Cleanup (Prasyarat)
+### Phase 1 — Architectural Cleanup (Prasyarat)
 
 | Phase | Deskripsi | Status |
 |-------|-----------|--------|
-| 1A | Dead code removal (import tidak terpakai, komponen yatim) | ? Done |
-| 1B | NextAuth refactor & Prisma removal dari frontend | ? Done |
-| 1C | Uploads serving dipindahkan ke Nginx (`/uploads/`) | ? Done |
+| 1A | Dead code removal (import tidak terpakai, komponen yatim) | ✅ Done |
+| 1B | NextAuth refactor & Prisma removal dari frontend | ✅ Done |
+| 1C | Uploads serving dipindahkan ke Nginx (`/uploads/`) | ✅ Done |
 
-### Phase 2 � Centralized API Client Migration (Batch 1�52)
+### Phase 2 — Centralized API Client Migration (Batch 1–52)
 
 **Total: 52 batch, 361 inline `fetch()` calls di-migrasi**
 
 | Batch Range | Halaman | Calls | Tanggal |
 |-------------|---------|-------|---------|
-| 1�8b | API client + pppoe/profiles, areas, users, invoices, dashboard, keuangan, ippool | 80 | 13 Aug |
+| 1–8b | API client + pppoe/profiles, areas, users, invoices, dashboard, keuangan, ippool | 80 | 13 Aug |
 | 9 | hotspot/voucher | 15 | 13 Aug |
-| 10�11 | vpn-server + vpn-client | 31 | 13 Aug |
+| 10–11 | vpn-server + vpn-client | 31 | 13 Aug |
 | 12 | genieacs/devices | 13 | 13 Aug |
 | 13 | network/diagrams | 10 | 13 Aug |
 | 14 | network/map | 9 | 13 Aug |
@@ -210,7 +210,7 @@ const result = await apiAdmin('/api/pppoe/users', {
 try {
   const data = await apiAdmin('/api/invoices');
 } catch (error) {
-  // error instanceof ApiError � non-2xx response
+  // error instanceof ApiError — non-2xx response
 }
 ```
 
@@ -225,12 +225,12 @@ try {
 ### Verification (per batch)
 
 Setiap batch diverifikasi dengan:
-1. ? Local build (`npm run build`) � exit code 0
-2. ? Deploy via `pscp` + remote build + `pm2 restart salfanet-frontend`
-3. ? Production page test via Playwright
-4. ? Browser console errors check (0 errors expected)
-5. ? Update `FRONTEND_AUDIT.md`
-6. ? Git commit + push
+1. ✅ Local build (`npm run build`) — exit code 0
+2. ✅ Deploy via `pscp` + remote build + `pm2 restart salfanet-frontend`
+3. ✅ Production page test via Playwright
+4. ✅ Browser console errors check (0 errors expected)
+5. ✅ Update `FRONTEND_AUDIT.md`
+6. ✅ Git commit + push
 
 ### Phase 2 Status
 
@@ -292,7 +292,7 @@ Persistent user tracking across sessions/NAS untuk billing & audit:
 
 ---
 
-## �🚀 Tech Stack
+## 🚀 Tech Stack
 
 | Component | Technology |
 |-----------|------------|
@@ -508,7 +508,7 @@ All jobs can be triggered manually from **Settings → Cron** in the admin panel
 
 ---
 
-## � Android APK Builder
+## 📱 Android APK Builder
 
 Buat APK Android (WebView wrapper) untuk 4 portal langsung di server VPS — tanpa GitHub Actions, tanpa Android Studio.
 
@@ -574,7 +574,7 @@ curl -OJ http://YOUR_VPS/api/admin/apk/file?role=customer \
 
 ---
 
-## �🛠️ Common Commands
+## 🛠️ Common Commands
 
 ```bash
 # PM2
@@ -724,7 +724,7 @@ Dashboard · PPPoE · Hotspot · Agent · Invoice · Payment · Keuangan · Sess
 
 ---
 
-## � Realtime Online/Offline Status
+## 🟢 Realtime Online/Offline Status
 
 Status online/offline pelanggan PPPoE di admin page (`/admin/pppoe/users`) diperbarui otomatis setiap **10 detik** tanpa reload halaman.
 
@@ -761,7 +761,7 @@ Saat pelanggan isolir dilunaskan (manual atau auto-renewal), sistem otomatis:
 
 ---
 
-## �📝 Changelog
+## 📝 Changelog
 
 Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di GitHub.
 
