@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, RefreshCw, Package, ToggleLeft, ToggleRight, X } 
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 interface AddonType {
   id: string;
@@ -29,9 +30,9 @@ export default function AddonTypesPage() {
   const fetchAddons = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/addon-types', { cache: 'no-store' });
-      if (res.ok) { const data = await res.json(); setAddons(data.addons || []); }
-    } catch (e) { console.error('Fetch addons error:', e); }
+      const data = await apiAdmin('/api/addon-types');
+      setAddons((data as any).addons || []);
+    } catch (e: any) { console.error('Fetch addons error:', e); }
     finally { setLoading(false); }
   }, []);
 
@@ -61,13 +62,10 @@ export default function AddonTypesPage() {
       };
       const url = editing ? `/api/addon-types/${editing.id}` : '/api/addon-types';
       const method = editing ? 'PUT' : 'POST';
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal');
       await showSuccess(editing ? 'Addon diperbarui' : 'Addon berhasil dibuat');
       setShowModal(false);
       fetchAddons();
@@ -77,23 +75,20 @@ export default function AddonTypesPage() {
 
   const handleToggleActive = async (addon: AddonType) => {
     try {
-      await fetch(`/api/addon-types/${addon.id}`, {
+      await apiAdmin(`/api/addon-types/${addon.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isActive: !addon.isActive }),
       });
       fetchAddons();
-    } catch (e) { await showError('Gagal mengubah status'); }
+    } catch (e: any) { await showError(e.message || 'Gagal mengubah status'); }
   };
 
   const handleDelete = async (addon: AddonType) => {
     const confirmed = await showConfirm(`Hapus layanan "${addon.name}"? Jika masih digunakan pelanggan aktif, addon akan dinonaktifkan.`);
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/addon-types/${addon.id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal');
-      await showSuccess(data.message);
+      const data = await apiAdmin(`/api/addon-types/${addon.id}`, { method: 'DELETE' });
+      await showSuccess((data as any).message);
       fetchAddons();
     } catch (err: any) { await showError(err.message); }
   };
