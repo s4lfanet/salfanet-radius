@@ -5,6 +5,7 @@ import { Edit, Plus, Trash2, Save, X, GripVertical, Eye, EyeOff, RotateCcw, Sett
 import { SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton, ModalInput, ModalLabel, ModalSelect, ModalTextarea } from '@/components/cyberpunk/SimpleModal';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm, showWarning } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 interface ParameterConfig {
   id: number;
@@ -48,12 +49,11 @@ export default function ParameterConfigPage() {
   // Fetch Virtual Parameters
   const fetchVirtualParameters = async () => {
     try {
-      const response = await fetch('/api/settings/genieacs/virtual-parameters');
-      const data = await response.json();
-      if (data.success) {
-        setVirtualParameters(data.data.filter((vp: VirtualParameter) => vp.isActive));
+      const data = await apiAdmin('/api/settings/genieacs/virtual-parameters');
+      if ((data as any).success) {
+        setVirtualParameters((data as any).data.filter((vp: VirtualParameter) => vp.isActive));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching virtual parameters:', error);
     }
   };
@@ -63,18 +63,17 @@ export default function ParameterConfigPage() {
     setLoading(true);
     try {
       console.log('Fetching configs for tab:', activeTab);
-      const response = await fetch(`/api/settings/genieacs/parameter-display?configType=${activeTab}`);
-      const data = await response.json();
+      const data = await apiAdmin(`/api/settings/genieacs/parameter-display?configType=${activeTab}`);
       console.log('Fetched configs:', data);
-      if (data.success) {
-        setConfigs(data.configs);
+      if ((data as any).success) {
+        setConfigs((data as any).configs);
       } else {
-        console.error('Failed to fetch configs:', data.error);
-        await showError(t('genieacs.failedLoadConfig') + ': ' + (data.error || 'Unknown error'));
+        console.error('Failed to fetch configs:', (data as any).error);
+        await showError(t('genieacs.failedLoadConfig') + ': ' + ((data as any).error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching configs:', error);
-      await showError(t('genieacs.failedLoadConfig') + ': ' + error);
+      await showError(t('genieacs.failedLoadConfig') + ': ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -90,25 +89,22 @@ export default function ParameterConfigPage() {
   const toggleEnabled = async (config: ParameterConfig) => {
     try {
       console.log('Toggling config:', config.id);
-      const response = await fetch(`/api/settings/genieacs/parameter-display/${config.id}`, {
+      const data = await apiAdmin(`/api/settings/genieacs/parameter-display/${config.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ enabled: !config.enabled })
       });
-
-      const data = await response.json();
       console.log('Toggle response:', data);
 
-      if (response.ok && data.success) {
-        setConfigs(configs.map(c => 
+      if ((data as any).success) {
+        setConfigs(configs.map(c =>
           c.id === config.id ? { ...c, enabled: !c.enabled } : c
         ));
       } else {
-        await showError(t('genieacs.failedToggle') + ': ' + (data.error || 'Unknown error'));
+        await showError(t('genieacs.failedToggle') + ': ' + ((data as any).error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling config:', error);
-      await showError(t('genieacs.failedToggle') + ': ' + error);
+      await showError(t('genieacs.failedToggle') + ': ' + error.message);
     }
   };
 
@@ -121,24 +117,21 @@ export default function ParameterConfigPage() {
         displayOrder: index + 1
       }));
 
-      const response = await fetch('/api/settings/genieacs/parameter-display', {
+      const data = await apiAdmin('/api/settings/genieacs/parameter-display', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ configs: updates })
       });
-
-      const data = await response.json();
       console.log('Save order response:', data);
 
-      if (response.ok && data.success) {
+      if ((data as any).success) {
         await showSuccess(t('genieacs.orderSaved'));
         fetchConfigs(); // Refresh to get updated data
       } else {
-        await showError(t('genieacs.failedSaveOrder') + ': ' + (data.error || 'Unknown error'));
+        await showError(t('genieacs.failedSaveOrder') + ': ' + ((data as any).error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving order:', error);
-      await showError(t('genieacs.failedSaveOrder') + ': ' + error);
+      await showError(t('genieacs.failedSaveOrder') + ': ' + error.message);
     }
   };
 
@@ -149,22 +142,20 @@ export default function ParameterConfigPage() {
 
     try {
       console.log('Deleting config:', id);
-      const response = await fetch(`/api/settings/genieacs/parameter-display/${id}`, {
+      const data = await apiAdmin(`/api/settings/genieacs/parameter-display/${id}`, {
         method: 'DELETE'
       });
-
-      const data = await response.json();
       console.log('Delete response:', data);
 
-      if (response.ok && data.success) {
+      if ((data as any).success) {
         setConfigs(configs.filter(c => c.id !== id));
         await showSuccess(t('genieacs.configDeleted'));
       } else {
-        await showError(t('genieacs.failedDeleteConfig') + ': ' + (data.error || 'Unknown error'));
+        await showError(t('genieacs.failedDeleteConfig') + ': ' + ((data as any).error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting config:', error);
-      await showError(t('genieacs.failedDeleteConfig') + ': ' + error);
+      await showError(t('genieacs.failedDeleteConfig') + ': ' + error.message);
     }
   };
 
@@ -226,34 +217,31 @@ export default function ParameterConfigPage() {
       console.log('Saving config:', editingConfig);
       
       const isNewConfig = editingConfig.id === 0;
-      const endpoint = isNewConfig 
+      const endpoint = isNewConfig
         ? '/api/settings/genieacs/parameter-display'
         : `/api/settings/genieacs/parameter-display/${editingConfig.id}`;
-      
-      const response = await fetch(endpoint, {
+
+      const data = await apiAdmin(endpoint, {
         method: isNewConfig ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingConfig)
       });
-
-      const data = await response.json();
       console.log('Save config response:', data);
 
-      if (response.ok && data.success) {
+      if ((data as any).success) {
         // Close modal first
         setIsModalOpen(false);
         setEditingConfig(null);
-        
+
         // Refresh data from server to get latest state
         await fetchConfigs();
-        
+
         await showSuccess(isNewConfig ? t('genieacs.paramCreated') : t('genieacs.configSaved'));
       } else {
-        await showError(t('genieacs.failedSaveConfig') + ': ' + (data.error || 'Unknown error'));
+        await showError(t('genieacs.failedSaveConfig') + ': ' + ((data as any).error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving config:', error);
-      await showError(t('genieacs.failedSaveConfig') + ': ' + error);
+      await showError(t('genieacs.failedSaveConfig') + ': ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -267,21 +255,19 @@ export default function ParameterConfigPage() {
     setSaving(true);
     try {
       // Call reset endpoint which will re-seed the data
-      const response = await fetch('/api/settings/genieacs/parameter-display/reset', {
+      const data = await apiAdmin('/api/settings/genieacs/parameter-display/reset', {
         method: 'POST'
       });
 
-      const data = await response.json();
-      
-      if (response.ok && data.success) {
+      if ((data as any).success) {
         await showSuccess(t('genieacs.resetSuccess'));
         fetchConfigs();
       } else {
-        await showError(t('genieacs.failedReset') + ': ' + (data.error || 'Unknown error'));
+        await showError(t('genieacs.failedReset') + ': ' + ((data as any).error || 'Unknown error'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error resetting configs:', error);
-      await showError(t('genieacs.failedReset') + ': ' + error);
+      await showError(t('genieacs.failedReset') + ': ' + error.message);
     } finally {
       setSaving(false);
     }
