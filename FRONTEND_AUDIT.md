@@ -861,6 +861,62 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 1 — Centralized API Client + Stopped Page Migration (14 Aug 2026) ✅
+
+**New API client modules created:**
+- `frontend/src/lib/api/client.ts` — Core client-side API functions (apiCall, apiAdmin, apiCustomer, apiAgent, ApiError)
+  - Client-side: relative path via nginx (NEXT_PUBLIC_API_URL, empty = relative)
+  - Auth modes: admin (cookies), customer (Bearer), agent (Bearer)
+- `frontend/src/lib/api/server.ts` — Server-only module (apiFetch, getCompanyInfo)
+  - Imports 'server-only' to prevent client bundle leakage
+  - Uses SERVER_API_URL/BACKEND_URL for absolute URL
+- `frontend/src/lib/api/pppoe.ts` — PPPoE API module (listUsers, createUser, updateUser, deleteUser, etc.)
+- `frontend/src/lib/api/billing.ts` — Invoice & billing API module
+- `frontend/src/lib/api/customer.ts` — Customer portal API module
+- `frontend/src/lib/api/agent.ts` — Agent portal API module
+- `frontend/src/lib/api/network.ts` — Network & dashboard API module
+- `frontend/src/lib/api/settings.ts` — Settings & admin API module
+- `frontend/src/lib/api/index.ts` — Barrel export (client-safe, no server-only imports)
+
+**Files removed:**
+- `frontend/src/lib/api-client.ts` — Old centralized client (replaced by new modules)
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/stopped/page.tsx` — All fetch() calls replaced with pppoeApi
+- `frontend/src/app/layout.tsx` — getCompanyInfo import updated
+- `frontend/src/app/admin/layout.tsx` — getCompanyInfo import updated
+- `frontend/src/app/customer/layout.tsx` — getCompanyInfo import updated
+- `frontend/src/app/agent/layout.tsx` — getCompanyInfo import updated
+- `frontend/src/app/technician/layout.tsx` — getCompanyInfo import updated
+
+**Production .env fixed:**
+- `NEXT_PUBLIC_API_URL` changed from `http://127.0.0.1:3001` to `""` (empty = relative path)
+- `DATABASE_URL` removed from frontend .env (not needed)
+- `SERVER_API_URL` added for server-side fetch
+
+**Bug fixed during migration:**
+- CSP violation: `NEXT_PUBLIC_API_URL="http://127.0.0.1:3001"` was inlined into client bundle, causing CSP violations. Fixed by setting it to empty string (relative path via nginx).
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test:
+  - ✅ Admin dashboard: zero errors
+  - ✅ PPPoE stopped page: zero errors (previously had CSP violations)
+  - ✅ All API calls use relative paths via nginx
+
+**Issues status update:**
+- H1 (Centralized API client) → ✅ Created (migration ongoing)
+- H2 (CSP violations from NEXT_PUBLIC_API_URL) → ✅ Fixed
+
+**Acceptance criteria update:**
+| Criteria | Before | After Phase 2 Batch 1 |
+|---|---|---|
+| Centralized API client | ❌ (old, barely used) | ✅ (new, 8 modules) |
+| Client-side API URL | http://127.0.0.1:3001 (CSP violation) | relative path (nginx) |
+| Stopped page fetch calls | 5 inline fetch() | 5 pppoeApi calls |
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

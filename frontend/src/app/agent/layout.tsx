@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import AgentLayoutClient from './AgentLayoutClient';
-import { getCompanyInfo } from '@/lib/api-client';
+import { getCompanyInfo } from '@/lib/api/server';
 
 export const dynamic = 'force-dynamic';
 
