@@ -1822,6 +1822,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 50 — Push Notifications Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/push-notifications/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/public/company')` (load company name) → `apiAdmin(...)`
+  - `fetch('/api/push/send?action=stats')` (load stats) → `apiAdmin(...)`
+  - `fetch('/api/push/send?limit=30')` (load history) → `apiAdmin(...)`
+  - `fetch('/api/push/send', { method: 'POST' })` (send broadcast) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in push-notifications page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Page loads (redirected to login due to session expiry), zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
