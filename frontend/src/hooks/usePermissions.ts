@@ -21,7 +21,7 @@ export function usePermissions() {
 
   useEffect(() => {
     if (session?.user) {
-      const userId = (session.user as any).id;
+      const userId = session.user.id;
       if (userId) {
         setLoading(true);
         apiAdmin<{ success?: boolean; permissions?: string[] }>(`/api/admin/users/${userId}/permissions`)

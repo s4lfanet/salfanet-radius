@@ -52,7 +52,7 @@ export default function ManagementPage() {
   const { addToast, confirm } = useToast();
   const { data: session } = useSession();
   const { hasPermission } = usePermissions();
-  const currentUserIsSuperAdmin = (session?.user as any)?.role === 'SUPER_ADMIN';
+  const currentUserIsSuperAdmin = session?.user?.role === 'SUPER_ADMIN';
   const [users, setUsers] = useState<User[]>([]);
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [roleTemplates, setRoleTemplates] = useState<Record<string, string[]>>({});
