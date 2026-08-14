@@ -1870,6 +1870,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 53 — GenieACS Presets Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/genieacs/presets/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/genieacs/presets', { cache: 'no-store' })` (load presets) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/backup', { method: 'POST' })` (restore presets) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/presets', { method: 'POST' })` or `fetch('/api/genieacs/presets/${id}', { method: 'PUT' })` (save preset) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/presets/${id}', { method: 'DELETE' })` (delete preset) → `apiAdmin(...)`
+  - `window.open('/api/genieacs/backup?type=presets')` (backup download) — retained as browser download
+  - Zero inline fetch() calls remaining in genieacs/presets page
+
+**Verification:**
+- Build: ✅ SUCCESS (with NEXTAUTH_SECRET env set)
+- Deploy: ⏳ VPS unreachable from local — deploy pending
+- Production test: ⏳ Pending deploy
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
