@@ -184,6 +184,36 @@ export const pppoeApi = {
     return apiAdmin('/api/pppoe/profiles');
   },
 
+  /** Create or update profile (PUT if id present, POST if new) */
+  saveProfile(payload: Record<string, any>): Promise<{ profile: PppoeProfile }> {
+    const method = payload.id ? 'PUT' : 'POST';
+    return apiAdmin('/api/pppoe/profiles', {
+      method,
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /** Delete profile */
+  deleteProfile(id: string): Promise<void> {
+    return apiAdmin(`/api/pppoe/profiles?id=${id}`, { method: 'DELETE' });
+  },
+
+  /** Sync profiles to MikroTik */
+  syncMikrotikProfiles(payload?: Record<string, any>): Promise<any> {
+    if (payload) {
+      return apiAdmin('/api/pppoe/profiles/sync-mikrotik', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+    }
+    return apiAdmin('/api/pppoe/profiles/sync-mikrotik', { method: 'POST' });
+  },
+
+  /** Sync profiles to RADIUS */
+  syncRadiusProfiles(): Promise<any> {
+    return apiAdmin('/api/pppoe/profiles/sync-radius', { method: 'POST' });
+  },
+
   // ── Areas ──────────────────────────────────────────────────────────
 
   /** List PPPoE areas */
