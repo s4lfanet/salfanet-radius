@@ -1681,6 +1681,21 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 41 — Network ODPs Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/odps/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/network/odps')` + `fetch('/api/network/olts')` + `fetch('/api/network/odcs')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/network/odps', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/network/odps', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/odps page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network ODPs page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

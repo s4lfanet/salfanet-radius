@@ -20,6 +20,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { apiAdmin } from '@/lib/api';
 
 interface ODP {
   id: string;
@@ -93,20 +94,15 @@ export default function ODPsPage() {
 
   const loadData = async () => {
     try {
-      const [odpsRes, oltsRes, odcsRes] = await Promise.all([
-        fetch('/api/network/odps'),
-        fetch('/api/network/olts'),
-        fetch('/api/network/odcs'),
-      ]);
       const [odpsData, oltsData, odcsData] = await Promise.all([
-        odpsRes.json(),
-        oltsRes.json(),
-        odcsRes.json(),
+        apiAdmin('/api/network/odps'),
+        apiAdmin('/api/network/olts'),
+        apiAdmin('/api/network/odcs'),
       ]);
-      setOdps(odpsData.odps || []);
-      setOlts(oltsData.olts || []);
-      setOdcs(odcsData.odcs || []);
-    } catch (error) {
+      setOdps((odpsData as any).odps || []);
+      setOlts((oltsData as any).olts || []);
+      setOdcs((odcsData as any).odcs || []);
+    } catch (error: any) {
       console.error('Load error:', error);
     } finally {
       setLoading(false);
@@ -158,25 +154,23 @@ export default function ODPsPage() {
         ...(editingOdp && { id: editingOdp.id }),
       };
 
-      const res = await fetch('/api/network/odps', {
+      const result = await apiAdmin('/api/network/odps', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
-      if (result.success) {
+      if ((result as any).success) {
         await showSuccess(editingOdp ? 'ODP updated!' : 'ODP created!');
         setIsDialogOpen(false);
         setEditingOdp(null);
         resetForm();
         loadData();
       } else {
-        await showError(result.error || t('common.failedSaveOdp'));
+        await showError((result as any).error || t('common.failedSaveOdp'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Submit error:', error);
-      await showError(t('common.failedSaveOdp'));
+      await showError(error.message || t('common.failedSaveOdp'));
     }
   };
 
@@ -188,21 +182,19 @@ export default function ODPsPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch('/api/network/odps', {
+      const result = await apiAdmin('/api/network/odps', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: odp.id }),
       });
 
-      const result = await res.json();
-      if (result.success) {
+      if ((result as any).success) {
         await showSuccess(t('common.odpDeleted'));
         loadData();
       } else {
-        await showError(result.error || t('common.failedDeleteOdp'));
+        await showError((result as any).error || t('common.failedDeleteOdp'));
       }
-    } catch (error) {
-      await showError(t('common.failedDeleteOdp'));
+    } catch (error: any) {
+      await showError(error.message || t('common.failedDeleteOdp'));
     }
   };
 
