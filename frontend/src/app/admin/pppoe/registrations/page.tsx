@@ -29,6 +29,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { apiAdmin } from '@/lib/api';
 
 interface Registration {
   id: string;
@@ -106,11 +107,10 @@ export default function RegistrationsPage() {
       if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const res = await fetch(`/api/admin/registrations?${params}`);
-      const data = await res.json();
-      setRegistrations(data.registrations || []);
-      setStats(data.stats);
-    } catch (error) {
+      const data = await apiAdmin(`/api/admin/registrations?${params}`);
+      setRegistrations((data as any).registrations || []);
+      setStats((data as any).stats);
+    } catch (error: any) {
       console.error('Failed to fetch registrations:', error);
     } finally {
       setLoading(false);
@@ -119,8 +119,8 @@ export default function RegistrationsPage() {
 
   useEffect(() => {
     fetchRegistrations();
-    fetch('/api/pppoe/areas').then(r => r.json()).then(d => setAreas(d.areas || [])).catch(() => {});
-    fetch('/api/pppoe/profiles/sync-mikrotik').then(r => r.json()).then(d => setRouters(d.routers || [])).catch(() => {});
+    apiAdmin('/api/pppoe/areas').then((d: any) => setAreas(d.areas || [])).catch(() => {});
+    apiAdmin('/api/pppoe/profiles/sync-mikrotik').then((d: any) => setRouters(d.routers || [])).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, searchFilter]);
 
@@ -138,9 +138,8 @@ export default function RegistrationsPage() {
     if (!selectedRegistration) return;
     setApproving(true);
     try {
-      const res = await fetch(`/api/admin/registrations/${selectedRegistration.id}/approve`, {
+      const data = await apiAdmin(`/api/admin/registrations/${selectedRegistration.id}/approve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           installationFee: installationFee ? parseFloat(installationFee) : 0,
           subscriptionType: subscriptionType,
@@ -149,23 +148,18 @@ export default function RegistrationsPage() {
           routerId: approveRouterId || null,
         }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        await showSuccess(
-          `Approved!\n` +
-          `Username: ${data.pppoeUser.username}\n` +
-          `Password: ${data.pppoeUser.password}\n\n` +
-          `Tagihan dibuat:\n` +
-          `${data.invoice.invoiceNumber}\n` +
-          `Total: Rp ${data.invoice.amount.toLocaleString('id-ID')}`
-        );
-        setApproveModalOpen(false);
-        fetchRegistrations();
-      } else {
-        await showError(data.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('pppoe.failedApprove'));
+      await showSuccess(
+        `Approved!\n` +
+        `Username: ${(data as any).pppoeUser.username}\n` +
+        `Password: ${(data as any).pppoeUser.password}\n\n` +
+        `Tagihan dibuat:\n` +
+        `${(data as any).invoice.invoiceNumber}\n` +
+        `Total: Rp ${(data as any).invoice.amount.toLocaleString('id-ID')}`
+      );
+      setApproveModalOpen(false);
+      fetchRegistrations();
+    } catch (error: any) {
+      await showError(error.message || t('pppoe.failedApprove'));
     } finally {
       setApproving(false);
     }
@@ -181,21 +175,15 @@ export default function RegistrationsPage() {
     if (!selectedRegistration || !rejectionReason) return;
     setRejecting(true);
     try {
-      const res = await fetch(`/api/admin/registrations/${selectedRegistration.id}/reject`, {
+      await apiAdmin(`/api/admin/registrations/${selectedRegistration.id}/reject`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: rejectionReason }),
       });
-      if (res.ok) {
-        await showSuccess(t('pppoe.rejected'));
-        setRejectModalOpen(false);
-        fetchRegistrations();
-      } else {
-        const data = await res.json();
-        await showError(data.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('pppoe.failedReject'));
+      await showSuccess(t('pppoe.rejected'));
+      setRejectModalOpen(false);
+      fetchRegistrations();
+    } catch (error: any) {
+      await showError(error.message || t('pppoe.failedReject'));
     } finally {
       setRejecting(false);
     }
@@ -204,18 +192,13 @@ export default function RegistrationsPage() {
   const handleMarkInstalled = async (registration: Registration) => {
     setMarking(true);
     try {
-      const res = await fetch(`/api/admin/registrations/${registration.id}/mark-installed`, {
+      const data = await apiAdmin(`/api/admin/registrations/${registration.id}/mark-installed`, {
         method: 'POST',
       });
-      const data = await res.json();
-      if (res.ok) {
-        await showSuccess(t('pppoe.installedWithInvoice').replace('{invoice}', data.invoice.invoiceNumber));
-        fetchRegistrations();
-      } else {
-        await showError(data.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('pppoe.failedMarkInstalled'));
+      await showSuccess(t('pppoe.installedWithInvoice').replace('{invoice}', (data as any).invoice.invoiceNumber));
+      fetchRegistrations();
+    } catch (error: any) {
+      await showError(error.message || t('pppoe.failedMarkInstalled'));
     } finally {
       setMarking(false);
     }
@@ -227,18 +210,13 @@ export default function RegistrationsPage() {
 
     setDeleting(registrationId);
     try {
-      const res = await fetch(`/api/admin/registrations/${registrationId}`, {
+      await apiAdmin(`/api/admin/registrations/${registrationId}`, {
         method: 'DELETE',
       });
-      const data = await res.json();
-      if (res.ok) {
-        await showSuccess(t('common.registrationDeleted'));
-        fetchRegistrations();
-      } else {
-        await showError(data.error || t('common.failedDelete'));
-      }
-    } catch (error) {
-      await showError(t('common.failedDeleteRegistration'));
+      await showSuccess(t('common.registrationDeleted'));
+      fetchRegistrations();
+    } catch (error: any) {
+      await showError(error.message || t('common.failedDeleteRegistration'));
     } finally {
       setDeleting(null);
     }
