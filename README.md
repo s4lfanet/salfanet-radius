@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.6.0 — Phase 6A complete (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 4.7.0 — Phase 6B complete (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -240,6 +240,42 @@ Setiap batch diverifikasi dengan:
 - **Migrated**: 52 batch, 361 fetch calls
 - **Remaining**: ~176 fetch calls di halaman admin lainnya
 - **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
+
+---
+
+## 🔒 Phase 6B — Frontend Type-Safety Hardening (v4.7.0)
+
+Pengurangan `any` secara signifikan tanpa memaksa `any = 0`. Membangun **safe type system** dengan explicit types, safe narrowing, dan response interfaces.
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+
+### Hasil
+
+| Metric | Before (6A) | After (6B) | Reduction |
+|--------|-------------|------------|-----------|
+| `: any` | 418 | 70 | 83% |
+| `as any` | 483 | 37 | 92% |
+| `(data as any)` | 272 | 0 | 100% |
+| `catch (e: any)` | 257 | 0 | 100% |
+| `Record<string, any>` | 6 | 0 | 100% |
+| TypeScript errors | 0 | 0 | — |
+| Build | ✅ | ✅ | — |
+
+### Yang Dikerjakan
+
+1. **257 `catch (e: any)` → `catch (e: unknown)`** di 88 files dengan safe narrowing (`e instanceof Error ? e.message : String(e)`)
+2. **272 `(data as any)` casts removed** di 40 files — setiap `apiAdmin()` call sekarang memiliki explicit type argument
+3. **6 `Record<string, any>` → `Record<string, unknown>`** — semua fixed
+4. **`Promise<any>` → `Promise<unknown>`** di rateLimiter.ts
+5. **`useState<any>` → proper interfaces** — EntityFormData, OnuDetailResponse, dll.
+6. **102 files modified** — type-only changes, no business logic changes
+
+### Sisa `any` yang Legitimate
+
+- `Promise<any>` di `midtrans-client.d.ts` (third-party declaration)
+- `<any>` di Leaflet map refs dan React.ComponentType untuk dynamic icons
+- `: any` di Recharts callbacks dan SplitterDiagram metadata
+- `as any` di network diagrams SplitterNode conversions
 
 ---
 

@@ -131,8 +131,8 @@ export default function TechniciansManagementPage() {
       setEditingTechnician(null);
       resetForm();
       loadTechnicians();
-    } catch (error: any) {
-      await showError(error.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 
@@ -151,8 +151,8 @@ export default function TechniciansManagementPage() {
 
       await showSuccess(t('technician.technicianDeleted'));
       loadTechnicians();
-    } catch (error: any) {
-      await showError(error.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 

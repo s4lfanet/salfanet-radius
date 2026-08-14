@@ -76,8 +76,8 @@ export default function RadiusConfigPage() {
             } else {
                 throw new Error(data.error || 'Failed to load file');
             }
-        } catch (error: any) {
-            addToast({ type: 'error', title: t('common.error'), description: error.message });
+        } catch (error: unknown) {
+            addToast({ type: 'error', title: t('common.error'), description: error instanceof Error ? error.message : String(error) });
             setContent('');
         } finally {
             setLoadingFile(false);
@@ -140,8 +140,8 @@ export default function RadiusConfigPage() {
             } else {
                 throw new Error(data.error || 'Failed to save');
             }
-        } catch (error: any) {
-            addToast({ type: 'error', title: t('common.error'), description: error.message });
+        } catch (error: unknown) {
+            addToast({ type: 'error', title: t('common.error'), description: error instanceof Error ? error.message : String(error) });
         } finally {
             setSaving(false);
         }

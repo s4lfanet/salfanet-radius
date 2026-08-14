@@ -68,7 +68,7 @@ export default function LaporanPage() {
   const [status, setStatus] = useState('all');
   const [loading, setLoading] = useState(false);
   const [exporting, setExporting] = useState<'excel' | 'pdf' | null>(null);
-  const [rows, setRows] = useState<Record<string, any>[]>([]);
+  const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -88,13 +88,13 @@ export default function LaporanPage() {
         dateTo,
         status,
       });
-      const data = await apiAdmin<{ rows: Record<string, any>[]; summary: Summary | null; error?: string }>(`/api/admin/laporan?${params}`);
+      const data = await apiAdmin<{ rows: Record<string, unknown>[]; summary: Summary | null; error?: string }>(`/api/admin/laporan?${params}`);
 
       setRows(data.rows || []);
       setSummary(data.summary || null);
       setLoaded(true);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -118,8 +118,8 @@ export default function LaporanPage() {
 
       const filename = `Laporan_${TYPE_LABELS[reportType]}_${dateFrom}_${dateTo}.xlsx`;
       XLSX.writeFile(wb, filename);
-    } catch (err: any) {
-      alert('Gagal export Excel: ' + err.message);
+    } catch (err: unknown) {
+      alert('Gagal export Excel: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setExporting(null);
     }
@@ -170,8 +170,8 @@ export default function LaporanPage() {
 
       const filename = `Laporan_${TYPE_LABELS[reportType]}_${dateFrom}_${dateTo}.pdf`;
       doc.save(filename);
-    } catch (err: any) {
-      alert('Gagal export PDF: ' + err.message);
+    } catch (err: unknown) {
+      alert('Gagal export PDF: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setExporting(null);
     }
@@ -384,7 +384,7 @@ export default function LaporanPage() {
                         title={col === 'Catatan' ? String(row[col] ?? '') : undefined}
                       >
                         {col === 'Status'
-                          ? <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(String(row[col]))}`}>{row[col]}</span>
+                          ? <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${getStatusBadge(String(row[col]))}`}>{String(row[col] ?? '-')}</span>
                           : String(row[col] ?? '-')
                         }
                       </td>

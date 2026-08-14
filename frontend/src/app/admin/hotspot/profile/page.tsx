@@ -265,8 +265,8 @@ export default function HotspotProfilePage() {
       resetForm()
       loadProfiles()
       await showSuccess(t('hotspot.profileSavedSuccess'))
-    } catch (error: any) {
-      await showError(t('hotspot.failedPrefix', { error: error?.message || '' }))
+    } catch (error: unknown) {
+      await showError(t('hotspot.failedPrefix', { error: error instanceof Error ? error.message : String(error) }))
     } finally {
       setSaving(false)
     }
@@ -278,8 +278,8 @@ export default function HotspotProfilePage() {
       await apiAdmin(`/api/hotspot/profiles?id=${deleteProfileId}`, { method: 'DELETE' })
       loadProfiles()
       await showSuccess(t('hotspot.profileDeletedSuccess'))
-    } catch (error: any) {
-      await showError(t('hotspot.failedPrefix', { error: error?.message || '' }))
+    } catch (error: unknown) {
+      await showError(t('hotspot.failedPrefix', { error: error instanceof Error ? error.message : String(error) }))
     } finally {
       setDeleteProfileId(null)
     }

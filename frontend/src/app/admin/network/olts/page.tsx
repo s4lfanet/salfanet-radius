@@ -10,6 +10,7 @@ import {
 import MapPicker from '@/components/MapPicker';
 import Link from 'next/link';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import type { OLTListResponse, RouterListResponse } from '@/types/api';
 
 // Vendor → available models (aligned with backend vendor libs + OIDs)
 const VENDOR_MODELS: Record<string, Array<{ value: string; label: string; ponType: string }>> = {
@@ -74,6 +75,9 @@ interface OLT {
   snmp_community?: string;
   sshEnabled?: boolean;
   telnetEnabled?: boolean;
+  sshPort?: number;
+  telnetPort?: number;
+  snmpPort?: number;
   latitude: number;
   longitude: number;
   status: string;
@@ -130,6 +134,29 @@ interface OLTProfile {
   is_active?: boolean;
 }
 
+interface ConnectionTestResult {
+  success?: boolean;
+  message?: string;
+  results?: {
+    tests: Array<{ method: string; success: boolean; message: string; time: number }>;
+  };
+  [key: string]: unknown;
+}
+
+interface ImportResult {
+  success?: boolean;
+  error?: string;
+  total?: number;
+  imported?: number;
+  failed?: number;
+  results?: { errors: Array<{ row: number; error: string }> };
+}
+
+interface OltSubmitResult {
+  success?: boolean;
+  error?: string;
+}
+
 export default function OLTsPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -141,7 +168,7 @@ export default function OLTsPage() {
   const [editingOlt, setEditingOlt] = useState<OLT | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
-  const [connectionTestResult, setConnectionTestResult] = useState<any>(null);
+  const [connectionTestResult, setConnectionTestResult] = useState<ConnectionTestResult | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -188,20 +215,20 @@ export default function OLTsPage() {
   const loadData = async () => {
     try {
       const [oltsData, routersData, profilesData] = await Promise.all([
-        apiAdmin('/api/network/olts'),
-        apiAdmin('/api/network/routers'),
-        apiAdmin('/api/admin/olt/model-profiles'),
+        apiAdmin<OLTListResponse>('/api/network/olts'),
+        apiAdmin<RouterListResponse>('/api/network/routers'),
+        apiAdmin<{ profiles: OLTProfile[] }>('/api/admin/olt/model-profiles'),
       ]);
-      const loadedOlts = (oltsData as any).olts || [];
+      const loadedOlts = (oltsData.olts || []) as unknown as OLT[];
       setOlts(loadedOlts);
-      setRouters((routersData as any).routers || []);
-      setOltProfiles((profilesData as any).profiles || []);
+      setRouters((routersData.routers || []) as unknown as Router[]);
+      setOltProfiles(profilesData.profiles || []);
 
       // Check OLT status
       if (loadedOlts.length > 0) {
         checkOLTsStatus(loadedOlts);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load error:', error);
     } finally {
       setLoading(false);
@@ -214,12 +241,12 @@ export default function OLTsPage() {
 
     try {
       const oltIds = oltsToCheck.map((o) => o.id);
-      const data = await apiAdmin('/api/network/olts/status', {
+      const data = await apiAdmin<{ statusMap: Record<string, OLTStatus> }>('/api/network/olts/status', {
         method: 'POST',
         body: JSON.stringify({ oltIds }),
       });
-      setOltStatusMap((data as any).statusMap || {});
-    } catch (error: any) {
+      setOltStatusMap(data.statusMap || {});
+    } catch (error: unknown) {
       console.error('Check OLT status error:', error);
     }
   };
@@ -258,7 +285,7 @@ export default function OLTsPage() {
     setConnectionTestResult(null);
 
     try {
-      const result = await apiAdmin('/api/olt/test-connection', {
+      const result = await apiAdmin<ConnectionTestResult>('/api/olt/test-connection', {
         method: 'POST',
         body: JSON.stringify({
           ipAddress: formData.ipAddress,
@@ -277,10 +304,10 @@ export default function OLTsPage() {
 
       setConnectionTestResult(result);
 
-      if ((result as any).success) {
+      if (result.success) {
         showSuccess(
           'Connection Test Successful!',
-          (result as any).results.tests.map((test: any) =>
+          (result.results?.tests ?? []).map((test) =>
             `${test.method}: ${test.success ? '✓' : '✗'} ${test.message} (${test.time}ms)`
           ).join('\n')
         );
@@ -291,14 +318,14 @@ export default function OLTsPage() {
       } else {
         showError(
           'Connection Test Failed',
-          (result as any).results.tests.map((test: any) =>
+          (result.results?.tests ?? []).map((test) =>
             `${test.method}: ${test.success ? '✓' : '✗'} ${test.message} (${test.time}ms)`
           ).join('\n')
         );
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Connection test error:', error);
-      showError('Error', error.message || 'Failed to test connection');
+      showError('Error', (error instanceof Error ? error.message : String(error)) || 'Failed to test connection');
     } finally {
       setTestingConnection(false);
     }
@@ -319,9 +346,9 @@ export default function OLTsPage() {
       snmpCommunity: community,
       sshEnabled: olt.sshEnabled !== undefined ? olt.sshEnabled : true,
       telnetEnabled: olt.telnetEnabled !== undefined ? olt.telnetEnabled : false,
-      sshPort: String((olt as any).sshPort || 22),
-      telnetPort: String((olt as any).telnetPort || 23),
-      snmpPort: String((olt as any).snmpPort || 161),
+      sshPort: String(olt.sshPort || 22),
+      telnetPort: String(olt.telnetPort || 23),
+      snmpPort: String(olt.snmpPort || 161),
       latitude: olt.latitude.toString(),
       longitude: olt.longitude.toString(),
       status: olt.status,
@@ -340,23 +367,23 @@ export default function OLTsPage() {
         ...(editingOlt && { id: editingOlt.id }),
       };
       
-      const result = await apiAdmin('/api/network/olts', {
+      const result = await apiAdmin<OltSubmitResult>('/api/network/olts', {
         method,
         body: JSON.stringify(payload),
       });
 
-      if ((result as any).success) {
+      if (result.success) {
         await showSuccess(editingOlt ? t('common.updated') : t('common.created'));
         setIsDialogOpen(false);
         setEditingOlt(null);
         resetForm();
         loadData();
       } else {
-        await showError((result as any).error || t('common.saveError'));
+        await showError(result.error || t('common.saveError'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      await showError(error.message || t('common.saveError'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.saveError'));
     }
   };
 
@@ -368,19 +395,19 @@ export default function OLTsPage() {
     if (!confirmed) return;
 
     try {
-      const result = await apiAdmin('/api/network/olts', {
+      const result = await apiAdmin<OltSubmitResult>('/api/network/olts', {
         method: 'DELETE',
         body: JSON.stringify({ id: olt.id }),
       });
 
-      if ((result as any).success) {
+      if (result.success) {
         await showSuccess(t('common.deleted'));
         loadData();
       } else {
-        await showError((result as any).error || t('common.deleteError'));
+        await showError(result.error || t('common.deleteError'));
       }
-    } catch (error: any) {
-      await showError(error.message || t('common.deleteError'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.deleteError'));
     }
   };
 
@@ -398,8 +425,8 @@ export default function OLTsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-    } catch (error: any) {
-      await showError(error.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 
@@ -412,24 +439,24 @@ export default function OLTsPage() {
     formData.append('file', file);
 
     try {
-      const result = await apiAdmin('/api/network/olts/import', {
+      const result = await apiAdmin<ImportResult>('/api/network/olts/import', {
         method: 'POST',
-        body: formData as any,
+        body: formData as unknown as BodyInit,
       });
 
-      if ((result as any).success) {
+      if (result.success) {
         let message = `Import completed!\n\n`;
-        message += `Total rows: ${(result as any).total}\n`;
-        message += `Imported: ${(result as any).imported}\n`;
-        message += `Failed: ${(result as any).failed}`;
+        message += `Total rows: ${result.total ?? 0}\n`;
+        message += `Imported: ${result.imported ?? 0}\n`;
+        message += `Failed: ${result.failed ?? 0}`;
 
-        if ((result as any).failed > 0) {
+        if ((result.failed ?? 0) > 0) {
           message += `\n\nErrors:\n`;
-          (result as any).results.errors.slice(0, 5).forEach((err: any) => {
+          (result.results?.errors ?? []).slice(0, 5).forEach((err) => {
             message += `Row ${err.row}: ${err.error}\n`;
           });
-          if ((result as any).results.errors.length > 5) {
-            message += `... and ${(result as any).results.errors.length - 5} more errors`;
+          if ((result.results?.errors?.length ?? 0) > 5) {
+            message += `... and ${(result.results?.errors?.length ?? 0) - 5} more errors`;
           }
         }
 
@@ -437,10 +464,10 @@ export default function OLTsPage() {
         loadData();
         setIsImportDialogOpen(false);
       } else {
-        await showError((result as any).error || t('common.importError'));
+        await showError(result.error || t('common.importError'));
       }
-    } catch (error: any) {
-      await showError(error.message || t('common.importError'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.importError'));
     } finally {
       setImporting(false);
       if (fileInputRef.current) {

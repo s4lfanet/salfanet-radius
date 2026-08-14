@@ -22,6 +22,36 @@ interface User {
   } | null;
 }
 
+interface UsersListResponse {
+  success: boolean;
+  users: User[];
+  filters: {
+    profiles: { id: string; name: string }[];
+    routers: { id: string; name: string }[];
+    statuses: string[];
+    odps: { id: string; name: string }[];
+  };
+}
+
+interface TemplatesListResponse {
+  success: boolean;
+  data: { id: string; name: string; message: string }[];
+}
+
+interface SendResponse {
+  success: boolean;
+  provider?: string;
+  error?: string;
+}
+
+interface BroadcastResponse {
+  success: boolean;
+  successCount?: number;
+  failCount?: number;
+  total?: number;
+  error?: string;
+}
+
 export default function SendMessagePage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
@@ -73,13 +103,13 @@ export default function SendMessagePage() {
       if (addressFilter) params.append('address', addressFilter);
       if (odpFilters.length > 0) params.append('odpIds', odpFilters.join(','));
 
-      const data = await apiAdmin(`/api/users/list?${params}`);
+      const data = await apiAdmin<UsersListResponse>(`/api/users/list?${params}`);
 
-      if ((data as any).success) {
-        setUsers((data as any).users);
-        setFilters((data as any).filters);
+      if (data.success) {
+        setUsers(data.users);
+        setFilters(data.filters);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load users error:', error);
     } finally {
       setLoadingUsers(false);
@@ -88,11 +118,11 @@ export default function SendMessagePage() {
 
   const loadTemplates = async () => {
     try {
-      const data = await apiAdmin('/api/whatsapp/templates');
-      if ((data as any).success) {
-        setTemplates((data as any).data);
+      const data = await apiAdmin<TemplatesListResponse>('/api/whatsapp/templates');
+      if (data.success) {
+        setTemplates(data.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load templates error:', error);
     }
   };
@@ -117,22 +147,23 @@ export default function SendMessagePage() {
     setResult(null);
 
     try {
-      const data = await apiAdmin('/api/whatsapp/send', {
+      const data = await apiAdmin<SendResponse>('/api/whatsapp/send', {
         method: 'POST',
         body: JSON.stringify({ phone: phoneNumber, message: singleMessage }),
       });
 
-      if ((data as any).success) {
-        addToast({ type: 'success', title: t('common.success'), description: t('whatsapp.messageSentVia').replace('{provider}', (data as any).provider) });
-        setResult({ success: true, provider: (data as any).provider });
+      if (data.success) {
+        addToast({ type: 'success', title: t('common.success'), description: t('whatsapp.messageSentVia').replace('{provider}', data.provider || '') });
+        setResult({ success: true, provider: data.provider });
         setSingleMessage('');
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || t('whatsapp.failedSendMessage') });
-        setResult({ success: false, error: (data as any).error });
+        addToast({ type: 'error', title: t('common.error'), description: data.error || t('whatsapp.failedSendMessage') });
+        setResult({ success: false, error: data.error });
       }
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('whatsapp.failedSendMessage') });
-      setResult({ success: false, error: error.message });
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : String(error);
+      addToast({ type: 'error', title: t('common.error'), description: errMsg || t('whatsapp.failedSendMessage') });
+      setResult({ success: false, error: errMsg });
     } finally {
       setSending(false);
     }
@@ -172,23 +203,23 @@ export default function SendMessagePage() {
 
       console.log('[Frontend] Sending payload:', payload);
 
-      const data = await apiAdmin('/api/whatsapp/broadcast', {
+      const data = await apiAdmin<BroadcastResponse>('/api/whatsapp/broadcast', {
         method: 'POST',
         body: JSON.stringify(payload),
       });
 
       console.log('[Frontend] Broadcast response:', data);
 
-      if ((data as any).success) {
-        addToast({ type: 'success', title: t('whatsapp.broadcastComplete'), description: `✅ ${t('whatsapp.success')}: ${(data as any).successCount} | ❌ ${t('whatsapp.failed')}: ${(data as any).failCount}` });
-        setBroadcastResult(data as any);
+      if (data.success) {
+        addToast({ type: 'success', title: t('whatsapp.broadcastComplete'), description: `✅ ${t('whatsapp.success')}: ${data.successCount || 0} | ❌ ${t('whatsapp.failed')}: ${data.failCount || 0}` });
+        setBroadcastResult({ total: data.total || 0, successCount: data.successCount || 0, failCount: data.failCount || 0 });
         setSelectedUsers(new Set());
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || t('whatsapp.broadcastFailed') });
+        addToast({ type: 'error', title: t('common.error'), description: data.error || t('whatsapp.broadcastFailed') });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Frontend] Broadcast error:', error);
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('whatsapp.failedSendBroadcast') });
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedSendBroadcast') });
     } finally {
       setBroadcasting(false);
     }

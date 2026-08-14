@@ -29,6 +29,17 @@ interface AgentDepositItem {
 
 type DepositFilter = 'ALL' | 'PENDING' | 'PAID' | 'CANCELLED';
 
+interface AgentDepositsListResponse {
+  success: boolean;
+  error?: string;
+  deposits?: AgentDepositItem[];
+}
+
+interface AgentDepositActionResponse {
+  success: boolean;
+  error?: string;
+}
+
 export default function AgentDepositsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -38,13 +49,13 @@ export default function AgentDepositsPage() {
   const loadDeposits = async (status: DepositFilter = filter) => {
     setLoading(true);
     try {
-      const data = await apiAdmin(`/api/admin/agent-deposits?status=${status}`) as any;
+      const data = await apiAdmin<AgentDepositsListResponse>(`/api/admin/agent-deposits?status=${status}`);
       if (!data.success) {
         throw new Error(data.error || 'Gagal memuat data deposit agent');
       }
       setDeposits(data.deposits || []);
-    } catch (error: any) {
-      await showError(error.message || 'Gagal memuat data deposit agent');
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || 'Gagal memuat data deposit agent');
     } finally {
       setLoading(false);
     }
@@ -69,10 +80,10 @@ export default function AgentDepositsPage() {
 
     setActionLoadingId(deposit.id);
     try {
-      const data = await apiAdmin('/api/admin/agent-deposits', {
+      const data = await apiAdmin<AgentDepositActionResponse>('/api/admin/agent-deposits', {
         method: 'PATCH',
         body: JSON.stringify({ depositId: deposit.id, action }),
-      }) as any;
+      });
 
       if (!data.success) {
         throw new Error(data.error || `Gagal ${textAction} deposit`);
@@ -80,8 +91,8 @@ export default function AgentDepositsPage() {
 
       await showSuccess(action === 'approve' ? 'Deposit berhasil disetujui' : 'Deposit berhasil ditolak');
       await loadDeposits(filter);
-    } catch (error: any) {
-      await showError(error.message || `Gagal ${textAction} deposit`);
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || `Gagal ${textAction} deposit`);
     } finally {
       setActionLoadingId(null);
     }

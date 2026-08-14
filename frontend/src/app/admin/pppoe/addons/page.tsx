@@ -30,9 +30,9 @@ export default function AddonTypesPage() {
   const fetchAddons = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin('/api/addon-types');
-      setAddons((data as any).addons || []);
-    } catch (e: any) { console.error('Fetch addons error:', e); }
+      const data = await apiAdmin<{ addons: AddonType[] }>('/api/addon-types');
+      setAddons(data.addons || []);
+    } catch (e: unknown) { console.error('Fetch addons error:', e); }
     finally { setLoading(false); }
   }, []);
 
@@ -69,7 +69,7 @@ export default function AddonTypesPage() {
       await showSuccess(editing ? 'Addon diperbarui' : 'Addon berhasil dibuat');
       setShowModal(false);
       fetchAddons();
-    } catch (err: any) { await showError(err.message); }
+    } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
     finally { setSaving(false); }
   };
 
@@ -80,17 +80,17 @@ export default function AddonTypesPage() {
         body: JSON.stringify({ isActive: !addon.isActive }),
       });
       fetchAddons();
-    } catch (e: any) { await showError(e.message || 'Gagal mengubah status'); }
+    } catch (e: unknown) { await showError((e instanceof Error ? e.message : String(e)) || 'Gagal mengubah status'); }
   };
 
   const handleDelete = async (addon: AddonType) => {
     const confirmed = await showConfirm(`Hapus layanan "${addon.name}"? Jika masih digunakan pelanggan aktif, addon akan dinonaktifkan.`);
     if (!confirmed) return;
     try {
-      const data = await apiAdmin(`/api/addon-types/${addon.id}`, { method: 'DELETE' });
-      await showSuccess((data as any).message);
+      const data = await apiAdmin<{ message: string }>(`/api/addon-types/${addon.id}`, { method: 'DELETE' });
+      await showSuccess(data.message);
       fetchAddons();
-    } catch (err: any) { await showError(err.message); }
+    } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
   };
 
   if (permLoading) return <div className="p-8 text-center text-muted-foreground">Loading...</div>;

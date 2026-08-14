@@ -110,12 +110,12 @@ export default function AgentPage() {
   const loadData = async () => {
     try {
       const [agentsData, routersData] = await Promise.all([
-        apiAdmin('/api/hotspot/agents'),
-        apiAdmin('/api/network/routers'),
+        apiAdmin<{ agents: Agent[] }>('/api/hotspot/agents'),
+        apiAdmin<{ routers: Router[] }>('/api/network/routers'),
       ]);
-      setAgents((agentsData as any).agents || []);
-      setRouters((routersData as any).routers || []);
-    } catch (error: any) {
+      setAgents(agentsData.agents || []);
+      setRouters(routersData.routers || []);
+    } catch (error: unknown) {
       console.error('Load data error:', error);
     } finally {
       setLoading(false);
@@ -137,8 +137,8 @@ export default function AgentPage() {
       resetForm();
       loadData();
       await showSuccess(editingAgent ? t('common.updated') : t('common.created'));
-    } catch (error: any) {
-      await showError(error.message || t('agent.failedSaveAgent'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('agent.failedSaveAgent'));
     }
   };
 
@@ -163,8 +163,8 @@ export default function AgentPage() {
       await apiAdmin(`/api/hotspot/agents?id=${deleteAgentId}`, { method: 'DELETE' });
       await showSuccess(t('agent.agentDeleted'));
       loadData();
-    } catch (error: any) {
-      await showError(error.message || t('agent.failedDeleteAgent'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('agent.failedDeleteAgent'));
     } finally {
       setDeleteAgentId(null);
     }
@@ -204,8 +204,8 @@ export default function AgentPage() {
       setSelectedAgents([]);
       setBulkDeleteOpen(false);
       loadData();
-    } catch (error: any) {
-      await showError(error.message || t('agent.someDeletionsFailed'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('agent.someDeletionsFailed'));
     }
   };
 
@@ -228,8 +228,8 @@ export default function AgentPage() {
       setSelectedAgents([]);
       setBulkStatusOpen(false);
       loadData();
-    } catch (error: any) {
-      await showError(error.message || t('agent.someUpdatesFailed'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('agent.someUpdatesFailed'));
     }
   };
 
@@ -261,8 +261,8 @@ export default function AgentPage() {
       setBalanceAmount('');
       setBalanceNote('');
       loadData();
-    } catch (error: any) {
-      await showError(error.message || t('common.failed'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failed'));
     }
   };
 
@@ -279,9 +279,9 @@ export default function AgentPage() {
     setHistoryModalOpen(true);
     setLoadingHistory(true);
     try {
-      const data = await apiAdmin(`/api/hotspot/agents/${agent.id}/history`);
-      setMonthlyHistory((data as any).history || []);
-    } catch (error: any) {
+      const data = await apiAdmin<{ history: MonthlyHistory[] }>(`/api/hotspot/agents/${agent.id}/history`);
+      setMonthlyHistory(data.history || []);
+    } catch (error: unknown) {
       console.error('Load history error:', error);
     } finally {
       setLoadingHistory(false);
@@ -294,7 +294,7 @@ export default function AgentPage() {
     try {
       const data = await apiAdmin<MonthDetail>(`/api/hotspot/agents/${selectedAgent.id}/history?year=${year}&month=${month}`);
       setSelectedMonthDetail(data);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load month detail error:', error);
     } finally {
       setLoadingHistory(false);

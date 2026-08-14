@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Filter,
   Trash2,
+  type LucideIcon,
 } from 'lucide-react';
 
 interface Order {
@@ -32,7 +33,7 @@ interface Order {
   createdAt: string;
   paidAt?: string;
   profile: { name: string };
-  vouchers: any[];
+  vouchers: Array<Record<string, unknown>>;
 }
 
 export default function EVoucherManagementPage() {
@@ -184,7 +185,7 @@ export default function EVoucherManagementPage() {
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
   const getStatusBadge = (status: string) => {
-    const cfg: Record<string, { bg: string; icon: any }> = {
+    const cfg: Record<string, { bg: string; icon: LucideIcon }> = {
       PENDING: { bg: 'bg-warning/20 text-warning dark:bg-yellow-900/30 dark:text-warning', icon: Clock },
       PAID: { bg: 'bg-success/20 text-success dark:bg-green-900/30 dark:text-success', icon: CheckCircle },
       CANCELLED: { bg: 'bg-destructive/20 text-destructive dark:bg-red-900/30 dark:text-destructive', icon: Ban },

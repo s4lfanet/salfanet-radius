@@ -78,6 +78,28 @@ interface Stats {
   rejected: number;
 }
 
+interface RegistrationsListResponse {
+  registrations: Registration[];
+  stats: Stats;
+}
+
+interface ApproveResponse {
+  pppoeUser: { username: string; password: string };
+  invoice: { invoiceNumber: string; amount: number };
+}
+
+interface MarkInstalledResponse {
+  invoice: { invoiceNumber: string };
+}
+
+interface AreasListResponse {
+  areas: Area[];
+}
+
+interface RoutersListResponse {
+  routers: Router[];
+}
+
 export default function RegistrationsPage() {
   const { t } = useTranslation();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
@@ -107,10 +129,10 @@ export default function RegistrationsPage() {
       if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const data = await apiAdmin(`/api/admin/registrations?${params}`);
-      setRegistrations((data as any).registrations || []);
-      setStats((data as any).stats);
-    } catch (error: any) {
+      const data = await apiAdmin<RegistrationsListResponse>(`/api/admin/registrations?${params}`);
+      setRegistrations(data.registrations || []);
+      setStats(data.stats);
+    } catch (error: unknown) {
       console.error('Failed to fetch registrations:', error);
     } finally {
       setLoading(false);
@@ -119,8 +141,8 @@ export default function RegistrationsPage() {
 
   useEffect(() => {
     fetchRegistrations();
-    apiAdmin('/api/pppoe/areas').then((d: any) => setAreas(d.areas || [])).catch(() => {});
-    apiAdmin('/api/pppoe/profiles/sync-mikrotik').then((d: any) => setRouters(d.routers || [])).catch(() => {});
+    apiAdmin<AreasListResponse>('/api/pppoe/areas').then((d) => setAreas(d.areas || [])).catch(() => {});
+    apiAdmin<RoutersListResponse>('/api/pppoe/profiles/sync-mikrotik').then((d) => setRouters(d.routers || [])).catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, searchFilter]);
 
@@ -138,7 +160,7 @@ export default function RegistrationsPage() {
     if (!selectedRegistration) return;
     setApproving(true);
     try {
-      const data = await apiAdmin(`/api/admin/registrations/${selectedRegistration.id}/approve`, {
+      const data = await apiAdmin<ApproveResponse>(`/api/admin/registrations/${selectedRegistration.id}/approve`, {
         method: 'POST',
         body: JSON.stringify({
           installationFee: installationFee ? parseFloat(installationFee) : 0,
@@ -150,16 +172,16 @@ export default function RegistrationsPage() {
       });
       await showSuccess(
         `Approved!\n` +
-        `Username: ${(data as any).pppoeUser.username}\n` +
-        `Password: ${(data as any).pppoeUser.password}\n\n` +
+        `Username: ${data.pppoeUser.username}\n` +
+        `Password: ${data.pppoeUser.password}\n\n` +
         `Tagihan dibuat:\n` +
-        `${(data as any).invoice.invoiceNumber}\n` +
-        `Total: Rp ${(data as any).invoice.amount.toLocaleString('id-ID')}`
+        `${data.invoice.invoiceNumber}\n` +
+        `Total: Rp ${data.invoice.amount.toLocaleString('id-ID')}`
       );
       setApproveModalOpen(false);
       fetchRegistrations();
-    } catch (error: any) {
-      await showError(error.message || t('pppoe.failedApprove'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedApprove'));
     } finally {
       setApproving(false);
     }
@@ -182,8 +204,8 @@ export default function RegistrationsPage() {
       await showSuccess(t('pppoe.rejected'));
       setRejectModalOpen(false);
       fetchRegistrations();
-    } catch (error: any) {
-      await showError(error.message || t('pppoe.failedReject'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedReject'));
     } finally {
       setRejecting(false);
     }
@@ -192,13 +214,13 @@ export default function RegistrationsPage() {
   const handleMarkInstalled = async (registration: Registration) => {
     setMarking(true);
     try {
-      const data = await apiAdmin(`/api/admin/registrations/${registration.id}/mark-installed`, {
+      const data = await apiAdmin<MarkInstalledResponse>(`/api/admin/registrations/${registration.id}/mark-installed`, {
         method: 'POST',
       });
-      await showSuccess(t('pppoe.installedWithInvoice').replace('{invoice}', (data as any).invoice.invoiceNumber));
+      await showSuccess(t('pppoe.installedWithInvoice').replace('{invoice}', data.invoice.invoiceNumber));
       fetchRegistrations();
-    } catch (error: any) {
-      await showError(error.message || t('pppoe.failedMarkInstalled'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedMarkInstalled'));
     } finally {
       setMarking(false);
     }
@@ -215,8 +237,8 @@ export default function RegistrationsPage() {
       });
       await showSuccess(t('common.registrationDeleted'));
       fetchRegistrations();
-    } catch (error: any) {
-      await showError(error.message || t('common.failedDeleteRegistration'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDeleteRegistration'));
     } finally {
       setDeleting(null);
     }

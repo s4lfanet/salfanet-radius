@@ -6,6 +6,7 @@ import { showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 import {
   RefreshCcw, Route, Link2, AlertTriangle, ChevronRight, MapPin, Cable, Box, GitBranch, Zap,
+  type LucideIcon,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +28,7 @@ interface NetworkNode {
 
 interface PathNode { type: string; id: string; name: string; order: number; coordinates: { lat: string; lng: string } | null; distance?: number; }
 interface PathSummary { totalNodes: number; totalDistance: number; estimatedLoss: number; status: string; redundancy: string; }
-interface LogicalTraceResult { success: boolean; path: PathNode[]; summary: PathSummary; alternatives?: any[]; }
+interface LogicalTraceResult { success: boolean; path: PathNode[]; summary: PathSummary; alternatives?: PathNode[][]; error?: string; }
 
 interface FiberTracePoint {
   type: 'core' | 'splice' | 'device';
@@ -54,14 +55,16 @@ function LogicalTraceTab() {
     (async () => {
       try {
         const [olts, jcs, odcs, odps] = await Promise.all([
-          apiAdmin('/api/network/olts'), apiAdmin('/api/network/joint-closures'),
-          apiAdmin('/api/network/odcs'), apiAdmin('/api/network/odps'),
+          apiAdmin<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/olts'),
+          apiAdmin<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/joint-closures'),
+          apiAdmin<{ odcs?: NetworkNode[] } | NetworkNode[]>('/api/network/odcs'),
+          apiAdmin<{ odps?: NetworkNode[]; data?: NetworkNode[] } | NetworkNode[]>('/api/network/odps'),
         ]);
         const allNodes: NetworkNode[] = [
-          ...((olts as any).data || []).map((n: any) => ({ ...n, type: 'OLT' as const })),
-          ...((jcs as any).data || []).map((n: any) => ({ ...n, type: 'JOINT_CLOSURE' as const })),
-          ...((odcs as any).odcs || []).map((n: any) => ({ ...n, type: 'ODC' as const })),
-          ...((odps as any).odps || (odps as any).data || []).map((n: any) => ({ ...n, type: 'ODP' as const })),
+          ...((olts as { data?: NetworkNode[] }).data || []).map((n) => ({ ...n, type: 'OLT' as const })),
+          ...((jcs as { data?: NetworkNode[] }).data || []).map((n) => ({ ...n, type: 'JOINT_CLOSURE' as const })),
+          ...((odcs as { odcs?: NetworkNode[] }).odcs || []).map((n) => ({ ...n, type: 'ODC' as const })),
+          ...((odps as { odps?: NetworkNode[] }).odps || (odps as { data?: NetworkNode[] }).data || []).map((n) => ({ ...n, type: 'ODP' as const })),
         ];
         setNodes(allNodes);
       } catch { /* silent */ }
@@ -71,10 +74,10 @@ function LogicalTraceTab() {
   const handleTrace = async (fromId: string, toId: string) => {
     setIsLoading(true); setError(null); setTraceResult(null);
     try {
-      const data = await apiAdmin(`/api/network/fiber-paths/trace?from=${fromId}&to=${toId}`);
-      if ((data as any).success) setTraceResult(data as any);
-      else setError((data as any).error || t('network.tracing.noPathFound'));
-    } catch (err: any) { setError(err.message || 'Failed to trace path'); }
+      const data = await apiAdmin<LogicalTraceResult>(`/api/network/fiber-paths/trace?from=${fromId}&to=${toId}`);
+      if (data.success) setTraceResult(data);
+      else setError(data.error || t('network.tracing.noPathFound'));
+    } catch (err: unknown) { setError((err instanceof Error ? err.message : String(err)) || 'Failed to trace path'); }
     finally { setIsLoading(false); }
   };
 
@@ -85,7 +88,7 @@ function LogicalTraceTab() {
       customersCount: node.type === 'ODP' ? Math.floor(Math.random() * 8) + 1 : undefined,
     }));
     const totalCustomers = affectedNodes.reduce((s, n) => s + (n.customersCount || 0), 0);
-    return { affectedNodes, totalCustomers, estimatedDowntime: 120, estimatedRevenueLoss: totalCustomers * 50000, alternatives: traceResult.alternatives || [] };
+    return { affectedNodes, totalCustomers, estimatedDowntime: 120, estimatedRevenueLoss: totalCustomers * 50000, alternatives: (traceResult.alternatives || []) as unknown as { id: string; path: string[]; quality: 'excellent' | 'good' | 'fair' | 'poor'; distance: number; loss: number }[] };
   };
 
   const impactData = getImpactAnalysis();
@@ -144,9 +147,9 @@ function PhysicalTraceTab() {
       const params = new URLSearchParams();
       if (searchType === 'core') params.append('coreId', coreId);
       else { params.append('deviceType', deviceType); params.append('deviceId', deviceId); }
-      const data = await apiAdmin(`/api/network/trace?${params}`);
-      setTraceResult(data as any);
-      if (!(data as any).path?.length) showError('No fiber path found');
+      const data = await apiAdmin<FiberTraceResult>(`/api/network/trace?${params}`);
+      setTraceResult(data);
+      if (!data.path?.length) showError('No fiber path found');
     } catch (error: unknown) {
       showError((error as Error).message || 'Failed to trace fiber path');
       setTraceResult(null);
@@ -287,11 +290,15 @@ function PhysicalTraceTab() {
             <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">How to Trace Fiber Paths</h3>
             <p className="text-gray-500 max-w-md mx-auto">Select a search type, enter the core ID or device details, and click Trace to visualize the complete fiber path.</p>
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
-              {[['By Core ID', 'Trace from a specific fiber core', Cable, 'text-blue-500'], ['By Device', 'Trace from ODP, OTB, or customer', Box, 'text-green-500'], ['View Splices', 'See all splice points in path', Link2, 'text-yellow-500']].map(([title, desc, Icon, cls]) => (
-                <div key={title as string} className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
-                  {React.createElement(Icon as any, { className: `h-8 w-8 ${cls} mx-auto mb-2` })}
-                  <p className="text-sm font-medium">{title as string}</p>
-                  <p className="text-xs text-gray-500">{desc as string}</p>
+              {([
+                ['By Core ID', 'Trace from a specific fiber core', Cable, 'text-blue-500'],
+                ['By Device', 'Trace from ODP, OTB, or customer', Box, 'text-green-500'],
+                ['View Splices', 'See all splice points in path', Link2, 'text-yellow-500'],
+              ] as Array<[string, string, LucideIcon, string]>).map(([title, desc, Icon, cls]) => (
+                <div key={title} className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+                  {React.createElement(Icon, { className: `h-8 w-8 ${cls} mx-auto mb-2` })}
+                  <p className="text-sm font-medium">{title}</p>
+                  <p className="text-xs text-gray-500">{desc}</p>
                 </div>
               ))}
             </div>

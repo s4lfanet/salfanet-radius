@@ -349,34 +349,37 @@ export default function NetworkMapPage() {
     setLoading(true);
     try {
       const [oltsData, odcsData, odpsData, customersData, profilesData, routersData] = await Promise.all([
-        apiAdmin('/api/network/olts'),
-        apiAdmin('/api/network/odcs'),
-        apiAdmin('/api/network/odps'),
-        apiAdmin('/api/pppoe/users?limit=5000'),
-        apiAdmin('/api/pppoe/profiles'),
-        apiAdmin('/api/network/routers'),
+        apiAdmin<{ olts?: OLT[] } | OLT[]>('/api/network/olts'),
+        apiAdmin<{ odcs?: ODC[] } | ODC[]>('/api/network/odcs'),
+        apiAdmin<{ odps?: ODP[] } | ODP[]>('/api/network/odps'),
+        apiAdmin<{ users?: Customer[] } | Customer[]>('/api/pppoe/users?limit=5000'),
+        apiAdmin<{ profiles?: Profile[] } | Profile[]>('/api/pppoe/profiles'),
+        apiAdmin<{ routers?: Router[] } | Router[]>('/api/network/routers'),
       ]);
 
-      setOlts((oltsData as any).olts || oltsData);
-      setOdcs((odcsData as any).odcs || odcsData);
-      setOdps((odpsData as any).odps || odpsData);
-      const customersWithGps = ((customersData as any).users || customersData).filter((c: Customer) => c.latitude && c.longitude);
+      const oltsArr = (oltsData as { olts?: OLT[] }).olts || (oltsData as OLT[]);
+      setOlts(oltsArr);
+      const odcsArr = (odcsData as { odcs?: ODC[] }).odcs || (odcsData as ODC[]);
+      setOdcs(odcsArr);
+      const odpsArr = (odpsData as { odps?: ODP[] }).odps || (odpsData as ODP[]);
+      setOdps(odpsArr);
+      const customersWithGps = ((customersData as { users?: Customer[] }).users || (customersData as Customer[])).filter((c) => c.latitude && c.longitude);
       setCustomers(customersWithGps);
-      setProfiles((profilesData as any).profiles || profilesData);
+      setProfiles((profilesData as { profiles?: Profile[] }).profiles || (profilesData as Profile[]));
 
-      const routersList = (routersData as any).routers || routersData;
+      const routersList = (routersData as { routers?: Router[] }).routers || (routersData as Router[]);
       setRouterList(routersList);
 
       // Fetch uplink connections for routers with GPS
-      const routersWithGps = routersList.filter((r: Router) => r.latitude && r.longitude);
-      const connectionPromises = routersWithGps.map(async (r: Router) => {
+      const routersWithGps = routersList.filter((r) => r.latitude && r.longitude);
+      const connectionPromises = routersWithGps.map(async (r) => {
         try {
-          const connData = await apiAdmin(`/api/network/routers/${r.id}/uplinks`);
-          return { routerId: r.id, connections: (connData as any).connections || [] };
+          const connData = await apiAdmin<{ connections?: RouterOltConnection[] }>(`/api/network/routers/${r.id}/uplinks`);
+          return { routerId: r.id, connections: connData.connections || [] };
         } catch (e) {
           console.error(`Failed to fetch uplinks for router ${r.id}:`, e);
         }
-        return { routerId: r.id, connections: [] };
+        return { routerId: r.id, connections: [] as RouterOltConnection[] };
       });
 
       const connectionResults = await Promise.all(connectionPromises);
@@ -385,9 +388,9 @@ export default function NetworkMapPage() {
         connMap[routerId] = connections;
       });
       setRouterOltConnections(connMap);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching data:', error);
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('network.map.failedLoadNetwork') });
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('network.map.failedLoadNetwork') });
     } finally {
       setLoading(false);
     }
@@ -396,17 +399,17 @@ export default function NetworkMapPage() {
   // Ping OLT from router
   const pingOltFromRouter = async (routerId: string) => {
     try {
-      const data = await apiAdmin(`/api/network/routers/${routerId}/ping-olt`, {
+      const data = await apiAdmin<{ results: PingResult[] }>(`/api/network/routers/${routerId}/ping-olt`, {
         method: 'POST',
         body: JSON.stringify({ count: 3, timeout: 500 }),
       });
 
       setRouterPingStatus(prev => ({
         ...prev,
-        [routerId]: (data as any).results || []
+        [routerId]: data.results || []
       }));
-      return (data as any).results;
-    } catch (error: any) {
+      return data.results;
+    } catch (error: unknown) {
       console.error('Ping error:', error);
     }
     return [];

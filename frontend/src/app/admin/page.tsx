@@ -334,20 +334,20 @@ export default function AdminDashboard() {
 
     setRestarting(true);
     try {
-      const data = await apiAdmin('/api/system/radius', {
+      const data = await apiAdmin<{ success: boolean; error?: string }>('/api/system/radius', {
         method: 'POST',
         body: JSON.stringify({ action: 'restart' }),
       });
 
-      if ((data as any).success) {
+      if (data.success) {
         addToast({ type: 'success', title: t('notifications.success'), description: t('notifications.radiusRestarted') });
         loadRadiusStatus();
         loadDashboardData();
       } else {
-        addToast({ type: 'error', title: t('notifications.error'), description: (data as any).error || t('errors.restartFailed') });
+        addToast({ type: 'error', title: t('notifications.error'), description: data.error || t('errors.restartFailed') });
       }
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('notifications.error'), description: error.message || t('errors.restartFailed') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('notifications.error'), description: (error instanceof Error ? error.message : String(error)) || t('errors.restartFailed') });
     } finally {
       setRestarting(false);
     }

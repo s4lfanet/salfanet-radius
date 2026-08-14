@@ -59,6 +59,37 @@ interface Router {
   name: string;
 }
 
+interface SessionsResponse {
+  sessions: Session[];
+  stats: Stats | null;
+  allTimeStats: AllTimeStats | null;
+  pagination?: Pagination;
+}
+
+interface RoutersResponse {
+  routers: Router[];
+}
+
+interface PdfSummaryEntry {
+  label: string;
+  value: string;
+}
+
+interface PdfExportResponse {
+  pdfData?: {
+    title: string;
+    generatedAt: string;
+    headers: string[];
+    rows: string[][];
+    summary?: PdfSummaryEntry[];
+  };
+}
+
+interface DisconnectResponse {
+  success: boolean;
+  summary?: { successful: number; failed: number };
+}
+
 export default function SessionsPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
@@ -116,15 +147,15 @@ export default function SessionsPage() {
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const data = await apiAdmin(`/api/sessions?${params}`);
-      setSessions((data as any).sessions || []);
-      setStats((data as any).stats);
-      setAllTimeStats((data as any).allTimeStats);
-      if ((data as any).pagination) {
-        setPagination((data as any).pagination);
-        setCurrentPage((data as any).pagination.page);
+      const data = await apiAdmin<SessionsResponse>(`/api/sessions?${params}`);
+      setSessions(data.sessions || []);
+      setStats(data.stats);
+      setAllTimeStats(data.allTimeStats);
+      if (data.pagination) {
+        setPagination(data.pagination);
+        setCurrentPage(data.pagination.page);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch sessions:', error);
     } finally {
       setLoading(false);
@@ -139,9 +170,9 @@ export default function SessionsPage() {
 
   const fetchRouters = async () => {
     try {
-      const data = await apiAdmin('/api/network/routers');
-      setRouters((data as any).routers || []);
-    } catch (error: any) {
+      const data = await apiAdmin<RoutersResponse>('/api/network/routers');
+      setRouters(data.routers || []);
+    } catch (error: unknown) {
       console.error('Failed to fetch routers:', error);
     }
   };
@@ -182,7 +213,7 @@ export default function SessionsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `Sessions-Active-${new Date().toISOString().split('T')[0]}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
-    } catch (error: any) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: error.message || t('sessions.exportFailed') }); }
+    } catch (error: unknown) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: (error instanceof Error ? error.message : String(error)) || t('sessions.exportFailed') }); }
   };
 
   const handleExportHistoryExcel = () => {
@@ -204,7 +235,7 @@ export default function SessionsPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `Sessions-History-${exportStartDate}-${exportEndDate}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
-    } catch (error: any) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: error.message || t('sessions.exportFailed') }); }
+    } catch (error: unknown) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: (error instanceof Error ? error.message : String(error)) || t('sessions.exportFailed') }); }
   };
 
   const handleExportPDF = async () => {
@@ -214,18 +245,18 @@ export default function SessionsPage() {
       params.set('mode', 'active');
       if (typeFilter) params.set('type', typeFilter);
       if (routerFilter) params.set('routerId', routerFilter);
-      const data = await apiAdmin(`/api/sessions/export?${params}`);
-      if ((data as any).pdfData) {
+      const data = await apiAdmin<PdfExportResponse>(`/api/sessions/export?${params}`);
+      if (data.pdfData) {
         const jsPDF = (await import('jspdf')).default;
         const autoTable = (await import('jspdf-autotable')).default;
         const doc = new jsPDF({ orientation: 'landscape' });
-        doc.setFontSize(14); doc.text((data as any).pdfData.title, 14, 15);
-        doc.setFontSize(8); doc.text(`Generated: ${(data as any).pdfData.generatedAt}`, 14, 21);
-        autoTable(doc, { head: [(data as any).pdfData.headers], body: (data as any).pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
-        if ((data as any).pdfData.summary) {
+        doc.setFontSize(14); doc.text(data.pdfData.title, 14, 15);
+        doc.setFontSize(8); doc.text(`Generated: ${data.pdfData.generatedAt}`, 14, 21);
+        autoTable(doc, { head: [data.pdfData.headers], body: data.pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
+        if (data.pdfData.summary) {
           const finalY = (doc as any).lastAutoTable.finalY + 8;
           doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-          (data as any).pdfData.summary.forEach((s: any, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
+          data.pdfData.summary.forEach((s, i) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
         }
         doc.save(`Sessions-Active-${new Date().toISOString().split('T')[0]}.pdf`);
       }
@@ -261,13 +292,13 @@ export default function SessionsPage() {
 
     setDisconnecting(true);
     try {
-      const data = await apiAdmin('/api/sessions/disconnect', {
+      const data = await apiAdmin<DisconnectResponse>('/api/sessions/disconnect', {
         method: 'POST',
         body: JSON.stringify({ sessionIds }),
       });
 
-      if ((data as any).success) {
-        addToast({ type: 'success', title: t('notifications.success'), description: `${t('sessions.disconnect')}: ${(data as any).summary.successful}` });
+      if (data.success) {
+        addToast({ type: 'success', title: t('notifications.success'), description: `${t('sessions.disconnect')}: ${data.summary?.successful ?? 0}` });
         setSelectedSessions(new Set());
         await fetchSessions();
       } else {

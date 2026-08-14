@@ -65,6 +65,12 @@ interface Assignment {
   odp: ODP;
 }
 
+interface UsersSearchResponse {
+  users: Customer[];
+}
+
+type NearestOdpsResponse = ODP[] | { error: string };
+
 export default function CustomerAssignmentPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -99,7 +105,7 @@ export default function CustomerAssignmentPage() {
     try {
       const data = await apiAdmin('/api/network/customers/assign');
       setAssignments(Array.isArray(data) ? data : []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load error:', error);
     } finally {
       setLoading(false);
@@ -114,12 +120,12 @@ export default function CustomerAssignmentPage() {
 
     setIsSearching(true);
     try {
-      const data = await apiAdmin(`/api/pppoe/users?search=${encodeURIComponent(query)}&limit=10`);
+      const data = await apiAdmin<UsersSearchResponse>(`/api/pppoe/users?search=${encodeURIComponent(query)}&limit=10`);
       // Filter out customers that are already assigned
       const assignedIds = assignments.map(a => a.customerId);
-      const available = ((data as any).users || []).filter((u: Customer) => !assignedIds.includes(u.id));
+      const available = (data.users || []).filter((u: Customer) => !assignedIds.includes(u.id));
       setSearchResults(available);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Search error:', error);
     } finally {
       setIsSearching(false);
@@ -129,14 +135,14 @@ export default function CustomerAssignmentPage() {
   const loadNearestOdps = async (customerId: string) => {
     setLoadingNearestOdps(true);
     try {
-      const data = await apiAdmin(`/api/network/customers/assign?customerId=${customerId}`);
+      const data = await apiAdmin<NearestOdpsResponse>(`/api/network/customers/assign?customerId=${customerId}`);
       if (Array.isArray(data)) {
-        setNearestOdps(data as any);
+        setNearestOdps(data);
       } else {
-        await showError((data as any).error || 'Failed to load nearest ODPs');
+        await showError(data.error || 'Failed to load nearest ODPs');
         setNearestOdps([]);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load nearest ODPs error:', error);
       setNearestOdps([]);
     } finally {
@@ -217,9 +223,9 @@ export default function CustomerAssignmentPage() {
       setEditingAssignment(null);
       resetForm();
       loadAssignments();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      await showError(error.message || t('common.failedSaveAssignment'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedSaveAssignment'));
     }
   };
 
@@ -237,8 +243,8 @@ export default function CustomerAssignmentPage() {
 
       await showSuccess(t('common.assignmentRemoved'));
       loadAssignments();
-    } catch (error: any) {
-      await showError(error.message || t('common.failedRemoveAssignment'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedRemoveAssignment'));
       await showError(t('common.failedRemoveAssignment'));
     }
   };

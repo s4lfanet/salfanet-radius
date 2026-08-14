@@ -129,8 +129,8 @@ export default function SuppliersPage() {
       setEditingSupplier(null);
       resetForm();
       loadSuppliers();
-    } catch (error: any) {
-      await showError(error?.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 
@@ -149,8 +149,8 @@ export default function SuppliersPage() {
 
       await showSuccess(t('inventory.supplierDeleted'));
       loadSuppliers();
-    } catch (error: any) {
-      await showError(error?.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 

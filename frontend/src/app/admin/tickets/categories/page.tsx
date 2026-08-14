@@ -150,9 +150,9 @@ export default function TicketCategoriesPage() {
       fetchCategories();
       handleCloseModal();
       await showSuccess(editingCategory ? t('ticket.categoryUpdated') : t('ticket.categoryCreated'));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to save category:', error);
-      await showError(error?.message || t('ticket.saveFailed'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.saveFailed'));
     }
   };
 
@@ -172,9 +172,9 @@ export default function TicketCategoriesPage() {
 
       fetchCategories();
       await showSuccess(t('ticket.categoryDeleted') || 'Category deleted');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to delete category:', error);
-      await showError(error?.message || t('ticket.deleteFailed'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('ticket.deleteFailed'));
     }
   };
 

@@ -17,7 +17,7 @@ interface JointClosureData {
   hasSplitter: boolean;
   splitterRatio?: string | null;
   installDate?: Date | null;
-  connections?: any;
+  connections?: unknown;
 }
 
 interface ODCData {

@@ -115,11 +115,11 @@ export default function ManualPaymentsPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (paymentMonth) params.set('month', paymentMonth);
-      const data = await apiAdmin(`/api/manual-payments?${params}`);
-      setPayments((data as any).data || []);
-    } catch (error: any) {
+      const data = await apiAdmin<{ data: ManualPayment[] }>(`/api/manual-payments?${params}`);
+      setPayments(data.data || []);
+    } catch (error: unknown) {
       console.error('Error fetching payments:', error);
-      showError(error.message || t('common.failedLoadPayments'));
+      showError((error instanceof Error ? error.message : String(error)) || t('common.failedLoadPayments'));
     } finally {
       setLoading(false);
     }
@@ -166,9 +166,9 @@ export default function ManualPaymentsPage() {
       setShowApproveDialog(false);
       setSelectedPayment(null);
       fetchPayments();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error approving payment:', error);
-      showError(error.message || t('manualPayment.failedApprove'));
+      showError((error instanceof Error ? error.message : String(error)) || t('manualPayment.failedApprove'));
     } finally {
       setProcessing(false);
     }
@@ -196,9 +196,9 @@ export default function ManualPaymentsPage() {
       setSelectedPayment(null);
       setRejectionReason('');
       fetchPayments();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error rejecting payment:', error);
-      showError(error.message || t('manualPayment.failedReject'));
+      showError((error instanceof Error ? error.message : String(error)) || t('manualPayment.failedReject'));
     } finally {
       setProcessing(false);
     }
@@ -215,7 +215,7 @@ export default function ManualPaymentsPage() {
 
       showSuccess(t('manualPayment.deleteSuccess'));
       fetchPayments();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error deleting payment:', error);
       showError(t('manualPayment.failedDelete'));
     }

@@ -14,6 +14,17 @@ interface Fault {
   retries?: number;
 }
 
+interface FaultsListResponse {
+  success: boolean;
+  error?: string;
+  data?: Fault[];
+}
+
+interface FaultDeleteResponse {
+  success: boolean;
+  error?: string;
+}
+
 export default function GenieACSFaultsPage() {
   const [items, setItems] = useState<Fault[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +38,7 @@ export default function GenieACSFaultsPage() {
       const url = filter
         ? `/api/genieacs/faults?device=${encodeURIComponent(filter)}`
         : '/api/genieacs/faults';
-      const json = await apiAdmin(url, { cache: 'no-store' }) as any;
+      const json = await apiAdmin<FaultsListResponse>(url, { cache: 'no-store' });
       if (!json.success) throw new Error(json.error || 'Failed to load');
       setItems(json.data || []);
     } catch (e) {
@@ -44,10 +55,10 @@ export default function GenieACSFaultsPage() {
   const remove = async (id: string) => {
     if (!confirm(`Delete fault "${id}"?`)) return;
     try {
-      const json = await apiAdmin('/api/genieacs/faults', {
+      const json = await apiAdmin<FaultDeleteResponse>('/api/genieacs/faults', {
         method: 'DELETE',
         body: JSON.stringify({ id }),
-      }) as any;
+      });
       if (!json.success) throw new Error(json.error || 'Delete failed');
       await load();
     } catch (e) {

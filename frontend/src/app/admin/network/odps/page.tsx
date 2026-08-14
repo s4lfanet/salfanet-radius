@@ -102,7 +102,7 @@ export default function ODPsPage() {
       setOdps((odpsData as any).odps || []);
       setOlts((oltsData as any).olts || []);
       setOdcs((odcsData as any).odcs || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load error:', error);
     } finally {
       setLoading(false);
@@ -168,9 +168,9 @@ export default function ODPsPage() {
       } else {
         await showError((result as any).error || t('common.failedSaveOdp'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      await showError(error.message || t('common.failedSaveOdp'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedSaveOdp'));
     }
   };
 
@@ -193,8 +193,8 @@ export default function ODPsPage() {
       } else {
         await showError((result as any).error || t('common.failedDeleteOdp'));
       }
-    } catch (error: any) {
-      await showError(error.message || t('common.failedDeleteOdp'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDeleteOdp'));
     }
   };
 
