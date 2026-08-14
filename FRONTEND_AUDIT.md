@@ -1790,6 +1790,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 48 — Data Usage Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/data-usage/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/admin/data-usage/top?...')` (top consumers) → `apiAdmin(...)`
+  - `fetch('/api/admin/data-usage/monthly')` (monthly summary) → `apiAdmin(...)`
+  - `fetch('/api/admin/data-usage?...')` (user usage) → `apiAdmin(...)`
+  - `fetch('/api/admin/data-usage/aggregate', { method: 'POST' })` (trigger aggregate) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in data-usage page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Page loads (redirected to login due to session expiry), zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
