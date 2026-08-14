@@ -1727,6 +1727,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 44 — Settings Security (2FA) Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/security/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/admin/profile/2fa')` (load status) → `apiAdmin(...)`
+  - `fetch('/api/admin/profile/2fa?action=setup')` (setup QR) → `apiAdmin(...)`
+  - `fetch('/api/admin/profile/2fa', { method: 'POST' })` (verify & enable) → `apiAdmin(...)`
+  - `fetch('/api/admin/profile/2fa', { method: 'DELETE' })` (disable) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in settings/security page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Settings security page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
