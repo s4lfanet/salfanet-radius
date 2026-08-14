@@ -116,7 +116,7 @@ export default function FiberCoresPage() {
 
   const loadCables = useCallback(async () => {
     try {
-      const data = await apiAdmin<{ cables?: Cable[] }>('/api/network/cables');
+      const data = await apiAdmin<{ cables?: FiberCable[] }>('/api/network/cables');
       setCables(data.cables || []);
     } catch (error) {
       console.error('Failed to load cables:', error);

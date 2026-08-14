@@ -74,7 +74,7 @@ export default function OLTMonitoringPage() {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
       if (statusFilter !== 'all') params.set('status', statusFilter);
-      const data = await apiAdmin<{ olts?: OLTInfo[] }>(`/api/olt/monitoring?${params}`);
+      const data = await apiAdmin<{ olts?: OLT[] }>(`/api/olt/monitoring?${params}`);
       setOlts(data.olts ?? []);
     } catch (e) {
       console.error('Failed to fetch OLTs', e);

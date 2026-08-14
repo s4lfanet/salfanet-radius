@@ -699,9 +699,9 @@ function AdminLayoutContent({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: (session.user as any).id,
-            username: (session.user as any).username,
-            role: (session.user as any).role,
+            userId: session.user.id,
+            username: session.user.username,
+            role: session.user.role,
           }),
         });
       } catch (error) {
@@ -745,7 +745,7 @@ function AdminLayoutContent({
   useEffect(() => {
     if (status !== 'authenticated' || !session?.user) return;
 
-    const userId = (session.user as any).id;
+    const userId = session.user.id;
     if (userId) {
       fetch(`/api/admin/users/${userId}/permissions`)
         .then((res) => res.json())
@@ -1047,7 +1047,7 @@ function AdminLayoutContent({
                     {session?.user?.name || 'Admin'}
                   </p>
                   <p className="text-[10px] text-brand-600 dark:text-brand-400 truncate font-medium tracking-wider capitalize">
-                    {(session?.user as any)?.role || 'admin'}
+                    {session?.user?.role || 'admin'}
                   </p>
                 </div>
                 <ChevronDown className={cn('w-3.5 h-3.5 text-muted-foreground group-hover:text-brand-400 transition-all duration-300', showUserMenu && 'rotate-180')} />
@@ -1059,7 +1059,7 @@ function AdminLayoutContent({
                   <div className="p-3 border-b border-sidebar-border bg-sidebar-accent/50">
                     <p className="text-[9px] text-muted-foreground uppercase tracking-[0.2em] font-medium">{t('auth.signedInAs')}</p>
                     <p className="text-xs font-bold text-brand-600 dark:text-brand-400 truncate mt-1">
-                      {(session?.user as any)?.username}
+                      {session?.user?.username}
                     </p>
                   </div>
                   <button
