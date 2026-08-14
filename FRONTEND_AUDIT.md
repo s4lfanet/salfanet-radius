@@ -1081,6 +1081,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 8b — Type Safety Fixes (14 Aug 2026) ✅
+
+**Type errors fixed:**
+- `frontend/src/lib/api/pppoe.ts` — Made `profile` optional in `CreatePppoeUserPayload`, added `profileId` field (form data uses `profileId`, not `profile`)
+- `frontend/src/lib/api/billing.ts` — Added missing `getPdf(id)` and `generate(payload)` methods to `invoiceApi`
+- `frontend/src/app/admin/invoices/page.tsx` — Cast `setGenResult(data as any)` to match state type
+- `frontend/src/app/admin/pppoe/stopped/page.tsx` — Cast `setUsers((data.users as any) || [])` for StoppedUser[] compatibility
+- `frontend/src/app/admin/ippool/page.tsx` — Fixed 2 pre-existing `showConfirm` callback bugs (showConfirm returns `Promise<boolean>`, not callback-based); converted to `const confirmed = await showConfirm(...)` pattern
+
+**Verification:**
+- tsc: ✅ Zero migration-related errors (remaining errors are pre-existing: charts formatter, ippool "ghost" variant)
+- Build: ✅ SUCCESS
+- Production deploy: ✅ Frontend restarted successfully
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
