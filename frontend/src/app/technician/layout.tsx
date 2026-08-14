@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { getCompanyInfo } from '@/lib/api-client';
+import { getCompanyInfo } from '@/lib/api/server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const company = await getCompanyInfo();

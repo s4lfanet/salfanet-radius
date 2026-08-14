@@ -7,6 +7,7 @@ import {
   Users, Trash2, Download, Search, RefreshCcw, Plus, Shield, FileText,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { pppoeApi } from '@/lib/api';
 
 interface StoppedUser {
   id: string;
@@ -41,8 +42,7 @@ export default function StoppedSubscriptionsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/pppoe/users?status=stop', { cache: 'no-store' });
-      const data = await res.json();
+      const data = await pppoeApi.listUsers({ status: 'stop' });
       setUsers(data.users || []);
     } catch (error) {
       console.error('Load data error:', error);
@@ -53,23 +53,14 @@ export default function StoppedSubscriptionsPage() {
 
   const handleExport = async () => {
     try {
-      const params = new URLSearchParams();
-      params.set('status', 'stop');
-      params.set('format', 'excel');
-      
-      const res = await fetch(`/api/pppoe/users/export?${params.toString()}`);
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `berhenti-langganan-${new Date().toISOString().split('T')[0]}.xlsx`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-        await showSuccess(t('common.success'));
-      } else {
-        await showError(t('common.failed'));
-      }
+      const blob = await pppoeApi.exportUsers({ status: 'stop', format: 'excel' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `berhenti-langganan-${new Date().toISOString().split('T')[0]}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      await showSuccess(t('common.success'));
     } catch (error) {
       console.error('Export error:', error);
       await showError(t('common.failed'));
@@ -91,24 +82,13 @@ export default function StoppedSubscriptionsPage() {
     setSelectedUsers(new Set());
 
     try {
-      const res = await fetch('/api/pppoe/users/bulk-delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userIds: Array.from(deletedIds) }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        await showSuccess(`${result.deleted || deletedIds.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
-      } else {
-        // Rollback if API failed
-        setUsers(prev => [...prev, ...usersToRestore]);
-        await showError(result.error || t('common.failedDelete'));
-      }
-    } catch (error) {
-      // Rollback if network error
+      const result = await pppoeApi.bulkDelete(Array.from(deletedIds));
+      await showSuccess(`${result.deleted || deletedIds.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
+    } catch (error: any) {
+      // Rollback if API failed
       setUsers(prev => [...prev, ...usersToRestore]);
       console.error('Bulk delete error:', error);
-      await showError(t('common.failedDelete'));
+      await showError(error.message || t('common.failedDelete'));
     }
   };
 
@@ -123,28 +103,15 @@ export default function StoppedSubscriptionsPage() {
     setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
 
     try {
-      const res = await fetch('/api/pppoe/users/status', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, status: 'active' }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        await showSuccess(t('common.customerReactivated'));
-      } else {
-        // Rollback: add user back to list if API failed
-        if (userToRestore) {
-          setUsers(prev => [...prev, userToRestore]);
-        }
-        await showError(result.error || t('common.failedActivate'));
-      }
-    } catch (error) {
-      // Rollback: add user back to list if network error
+      await pppoeApi.updateStatus(userId, 'active');
+      await showSuccess(t('common.customerReactivated'));
+    } catch (error: any) {
+      // Rollback: add user back to list if API failed
       if (userToRestore) {
         setUsers(prev => [...prev, userToRestore]);
       }
       console.error('Reactivate error:', error);
-      await showError(t('common.failedActivate'));
+      await showError(error.message || t('common.failedActivate'));
     }
   };
 
@@ -158,24 +125,15 @@ export default function StoppedSubscriptionsPage() {
     setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
 
     try {
-      const res = await fetch(`/api/pppoe/users?id=${userId}`, { method: 'DELETE' });
-      const result = await res.json();
-      if (res.ok) {
-        await showSuccess(t('common.customerDeleted'));
-      } else {
-        // Rollback if API failed
-        if (userToRestore) {
-          setUsers(prev => [...prev, userToRestore]);
-        }
-        await showError(result.error || t('common.failedDelete'));
-      }
-    } catch (error) {
-      // Rollback if network error
+      await pppoeApi.deleteUser(userId);
+      await showSuccess(t('common.customerDeleted'));
+    } catch (error: any) {
+      // Rollback if API failed
       if (userToRestore) {
         setUsers(prev => [...prev, userToRestore]);
       }
       console.error('Delete error:', error);
-      await showError(t('common.failedDelete'));
+      await showError(error.message || t('common.failedDelete'));
     }
   };
 
