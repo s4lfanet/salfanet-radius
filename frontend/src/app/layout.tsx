@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/components/client-providers";
-import { getCompanyInfo } from "@/lib/api-client";
+import { getCompanyInfo } from "@/lib/api/server";
 
 export const dynamic = 'force-dynamic';
 

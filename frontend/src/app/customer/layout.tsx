@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import CustomerClientLayout from './CustomerClientLayout';
-import { getCompanyInfo } from '@/lib/api-client';
+import { getCompanyInfo } from '@/lib/api/server';
 
 export const dynamic = 'force-dynamic';
 
