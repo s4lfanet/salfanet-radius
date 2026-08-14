@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Map, Eye, EyeOff, Loader2, X, ChevronRight, ChevronL
 import MapPicker from '@/components/MapPicker';
 import { ModalInput, ModalSelect, ModalLabel } from '@/components/cyberpunk';
 import { todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
+import { pppoeApi, networkApi } from '@/lib/api';
 
 interface Profile { id: string; name: string; groupName: string; price: number; }
 interface Router { id: string; name: string; nasname: string; ipAddress: string; authMode?: string; }
@@ -65,13 +66,13 @@ export default function NewPppoeUserPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch('/api/pppoe/profiles').then(r => r.json()),
-      fetch('/api/network/routers').then(r => r.json()),
-      fetch('/api/pppoe/areas').then(r => r.json()),
+      pppoeApi.listProfiles(),
+      networkApi.listRouters(),
+      pppoeApi.listAreas(),
     ]).then(([profilesData, routersData, areasData]) => {
-      setProfiles(profilesData.profiles || []);
-      setRouters(routersData.routers || []);
-      setAreas(areasData.areas || []);
+      setProfiles((profilesData as any).profiles || []);
+      setRouters((routersData as any).routers || []);
+      setAreas((areasData as any).areas || []);
     }).catch(console.error);
   }, []);
 
@@ -84,8 +85,7 @@ export default function NewPppoeUserPage() {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/pppoe/users?search=${encodeURIComponent(formData.idCardNumber)}`, { signal: controller.signal });
-        const data = await res.json();
+        const data = await pppoeApi.listUsers({ search: formData.idCardNumber });
         const found = (data.users || []).find((u: any) => u.idCardNumber === formData.idCardNumber);
         setFormWarnings(w => ({ ...w, nik: found ? `⚠️ NIK sudah terdaftar: ${found.name}` : '' }));
       } catch { /* ignore */ }
@@ -101,8 +101,7 @@ export default function NewPppoeUserPage() {
     const controller = new AbortController();
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/pppoe/users?search=${encodeURIComponent(formData.phone)}`, { signal: controller.signal });
-        const data = await res.json();
+        const data = await pppoeApi.listUsers({ search: formData.phone });
         const found = (data.users || []).find((u: any) => u.phone === formData.phone);
         setFormWarnings(w => ({ ...w, phone: found ? `⚠️ No HP sudah terdaftar: ${found.name}` : '' }));
       } catch { /* ignore */ }
@@ -196,17 +195,12 @@ export default function NewPppoeUserPage() {
           })()
         }),
       };
-      const res = await fetch('/api/pppoe/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      try {
+        await pppoeApi.createUser(payload);
         await showSuccess('Pelanggan berhasil ditambahkan');
         router.push('/admin/pppoe/users');
-      } else {
-        await showError(data.error || 'Gagal menyimpan pelanggan');
+      } catch (error: any) {
+        await showError(error.message || 'Gagal menyimpan pelanggan');
       }
     } catch { await showError('Gagal menyimpan pelanggan'); }
     finally { setSaving(false); }
