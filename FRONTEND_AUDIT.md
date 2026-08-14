@@ -1051,6 +1051,36 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 8 — Keuangan + IPPool Pages Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/keuangan/page.tsx` — 8 fetch() calls replaced:
+  - `fetch('/api/keuangan/transactions?...')` + `fetch('/api/keuangan/categories')` → `apiAdmin(...)`
+  - `fetch('/api/keuangan/transactions', { method: 'POST/PUT' })` → `apiAdmin(...)`
+  - `fetch('/api/keuangan/transactions?id=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/keuangan/transactions?ids=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/keuangan/transactions?filterDelete=true...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/keuangan/categories', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch(url)` (PDF export) → `apiAdmin(url)`
+  - 1 blob download fetch call retained with `credentials: 'include'` (Excel export)
+
+- `frontend/src/app/admin/ippool/page.tsx` — 9 fetch() calls replaced:
+  - `fetch('/api/admin/ippool')` + `/stats` + `/mappings/list` → `apiAdmin(...)`
+  - `fetch('/api/admin/ippool/${poolName}')` → `apiAdmin(...)`
+  - `fetch('/api/admin/ippool', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/admin/ippool/expand', { method: 'PUT' })` → `apiAdmin(...)`
+  - `fetch('/api/admin/ippool?poolName=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/admin/ippool/mappings', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/admin/ippool/mappings/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in ippool page
+
+**Verification:**
+- Build: ✅ SUCCESS (fixed duplicate API_BASE declaration in ippool)
+- Production test: ✅ Keuangan page loads, zero console errors
+- Zero inline fetch() calls remaining in ippool page
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

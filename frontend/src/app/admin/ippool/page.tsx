@@ -14,6 +14,9 @@ import {
   ModalButton,
   ModalLabel,
 } from '@/components/cyberpunk';
+import { apiAdmin } from '@/lib/api';
+
+const API_BASE = '/api/admin/ippool';
 
 interface Pool {
   pool_name: string;
@@ -50,8 +53,6 @@ interface PoolStats {
   utilization: string;
 }
 
-const API_BASE = '/api/admin/ippool';
-
 export default function IPPoolPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -74,19 +75,16 @@ export default function IPPoolPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [poolsRes, statsRes, mapRes] = await Promise.all([
-        fetch(`${API_BASE}`),
-        fetch(`${API_BASE}/stats`),
-        fetch(`${API_BASE}/mappings/list`),
+      const [poolsData, statsData, mapData] = await Promise.all([
+        apiAdmin(`${API_BASE}`),
+        apiAdmin(`${API_BASE}/stats`),
+        apiAdmin(`${API_BASE}/mappings/list`),
       ]);
-      const poolsData = await poolsRes.json();
-      const statsData = await statsRes.json();
-      const mapData = await mapRes.json();
-      setPools(poolsData.data || []);
-      setStats(statsData.data || null);
-      setMappings(mapData.data || []);
-    } catch (err) {
-      showError('Failed to load IP pool data');
+      setPools((poolsData as any).data || []);
+      setStats((statsData as any).data || null);
+      setMappings((mapData as any).data || []);
+    } catch (err: any) {
+      showError(err.message || 'Failed to load IP pool data');
     } finally {
       setLoading(false);
     }
@@ -94,11 +92,10 @@ export default function IPPoolPage() {
 
   const loadDetails = async (poolName: string) => {
     try {
-      const res = await fetch(`${API_BASE}/${encodeURIComponent(poolName)}`);
-      const data = await res.json();
-      setDetails(data.data || null);
+      const data = await apiAdmin(`${API_BASE}/${encodeURIComponent(poolName)}`);
+      setDetails((data as any).data || null);
       setSelectedPool(poolName);
-    } catch (err) {
+    } catch (err: any) {
       showError('Failed to load pool details');
     }
   };
@@ -109,9 +106,8 @@ export default function IPPoolPage() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}`, {
+      const data = await apiAdmin(`${API_BASE}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pool_name: formData.pool_name,
           network: formData.network,
@@ -119,17 +115,16 @@ export default function IPPoolPage() {
           end: parseInt(formData.end),
         }),
       });
-      const data = await res.json();
-      if (data.success) {
-        showSuccess(`Pool "${formData.pool_name}" created with ${data.data.total_ips} IPs`);
+      if ((data as any).success) {
+        showSuccess(`Pool "${formData.pool_name}" created with ${(data as any).data.total_ips} IPs`);
         setIsCreateOpen(false);
         setFormData({ pool_name: '', network: '', start: '2', end: '254' });
         loadData();
       } else {
-        showError(data.message || 'Failed to create pool');
+        showError((data as any).message || 'Failed to create pool');
       }
-    } catch (err) {
-      showError('Failed to create pool');
+    } catch (err: any) {
+      showError(err.message || 'Failed to create pool');
     }
   };
 
@@ -139,9 +134,8 @@ export default function IPPoolPage() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/expand`, {
+      const data = await apiAdmin(`${API_BASE}/expand`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           pool_name: expandData.pool_name,
           network: expandData.network,
@@ -149,32 +143,30 @@ export default function IPPoolPage() {
           end: parseInt(expandData.end),
         }),
       });
-      const data = await res.json();
-      if (data.success) {
-        showSuccess(`Pool expanded: ${data.data.added} new IPs added (total: ${data.data.total_ips})`);
+      if ((data as any).success) {
+        showSuccess(`Pool expanded: ${(data as any).data.added} new IPs added (total: ${(data as any).data.total_ips})`);
         setIsExpandOpen(false);
         loadData();
       } else {
-        showError(data.message || 'Failed to expand pool');
+        showError((data as any).message || 'Failed to expand pool');
       }
-    } catch (err) {
-      showError('Failed to expand pool');
+    } catch (err: any) {
+      showError(err.message || 'Failed to expand pool');
     }
   };
 
   const handleDelete = async (poolName: string) => {
     showConfirm(`Delete pool "${poolName}"?`, 'Only works if no IPs are allocated.', async () => {
       try {
-        const res = await fetch(`${API_BASE}?poolName=${encodeURIComponent(poolName)}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (data.success) {
-          showSuccess(`Pool "${poolName}" deleted (${data.data.deleted} IPs removed)`);
+        const data = await apiAdmin(`${API_BASE}?poolName=${encodeURIComponent(poolName)}`, { method: 'DELETE' });
+        if ((data as any).success) {
+          showSuccess(`Pool "${poolName}" deleted (${(data as any).data.deleted} IPs removed)`);
           loadData();
         } else {
-          showError(data.message || 'Failed to delete pool');
+          showError((data as any).message || 'Failed to delete pool');
         }
-      } catch (err) {
-        showError('Failed to delete pool');
+      } catch (err: any) {
+        showError(err.message || 'Failed to delete pool');
       }
     });
   };
@@ -185,38 +177,35 @@ export default function IPPoolPage() {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/mappings`, {
+      const data = await apiAdmin(`${API_BASE}/mappings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(mapData),
       });
-      const data = await res.json();
-      if (data.success) {
+      if ((data as any).success) {
         showSuccess(`Mapped group "${mapData.groupname}" → pool "${mapData.pool_name}"`);
         setIsMapOpen(false);
         setMapData({ groupname: '', pool_name: '' });
         loadData();
       } else {
-        showError(data.message || 'Failed to map pool');
+        showError((data as any).message || 'Failed to map pool');
       }
-    } catch (err) {
-      showError('Failed to map pool');
+    } catch (err: any) {
+      showError(err.message || 'Failed to map pool');
     }
   };
 
   const handleUnmap = async (id: number, groupname: string) => {
     showConfirm(`Remove mapping for group "${groupname}"?`, '', async () => {
       try {
-        const res = await fetch(`${API_BASE}/mappings/${id}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (data.success) {
+        const data = await apiAdmin(`${API_BASE}/mappings/${id}`, { method: 'DELETE' });
+        if ((data as any).success) {
           showSuccess('Mapping removed');
           loadData();
         } else {
-          showError(data.message || 'Failed to remove mapping');
+          showError((data as any).message || 'Failed to remove mapping');
         }
-      } catch (err) {
-        showError('Failed to remove mapping');
+      } catch (err: any) {
+        showError(err.message || 'Failed to remove mapping');
       }
     });
   };
