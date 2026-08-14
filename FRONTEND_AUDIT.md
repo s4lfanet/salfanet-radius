@@ -1229,6 +1229,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 15 — Network OLTs Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/olts/page.tsx` — 8 fetch() calls replaced:
+  - `fetch('/api/network/olts')` + `fetch('/api/network/routers')` + `fetch('/api/admin/olt/model-profiles')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/network/olts/status', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/olt/test-connection', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/network/olts', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/network/olts', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/network/olts/import', { method: 'POST', body: FormData })` → `apiAdmin(..., { body: fd })`
+  - 1 blob download fetch call retained with `credentials: 'include'` (template download)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network OLTs page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
