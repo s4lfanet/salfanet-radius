@@ -1012,6 +1012,28 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 6 — Invoices Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/invoices/page.tsx` — 11 fetch() calls replaced:
+  - `fetch('/api/invoices?...')` → `invoiceApi.list(params)`
+  - `fetch('/api/invoices', { method: 'PUT' })` → `invoiceApi.update(payload)`
+  - `fetch('/api/invoices/send-reminder', { method: 'POST' })` → `invoiceApi.sendReminder(payload)`
+  - `fetch('/api/whatsapp/broadcast-invoice', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/invoices?id=...', { method: 'DELETE' })` → `invoiceApi.delete(id)`
+  - `fetch('/api/invoices/export?format=pdf...')` → `apiAdmin(...)` (PDF data)
+  - `fetch('/api/invoices/${id}/pdf')` (3x) → `invoiceApi.getPdf(id)`
+  - `fetch('/api/pppoe/users?status=active')` → `pppoeApi.listUsers({ status: 'active' })`
+  - `fetch('/api/invoices/generate', { method: 'POST' })` → `invoiceApi.generate(payload)`
+  - 1 blob download fetch call retained with `credentials: 'include'` (Excel export)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Invoices page loads, zero console errors
+- Only 1 blob download fetch call remains (intentional — Excel export needs raw fetch)
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
