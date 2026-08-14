@@ -6,6 +6,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 interface TopUpRequest {
   id: string;
@@ -39,10 +40,7 @@ export default function TopUpRequestsPage() {
   const loadRequests = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/topup-requests');
-      if (!response.ok) throw new Error('Failed to load requests');
-      
-      const data = await response.json();
+      const data = await apiAdmin<{ requests?: TopUpRequest[] }>('/api/admin/topup-requests');
       setRequests(data.requests || []);
     } catch (error: any) {
       showError(error.message || t('topup.failedLoadRequests'));
@@ -62,14 +60,9 @@ export default function TopUpRequestsPage() {
 
     try {
       setProcessing(requestId);
-      const response = await fetch(`/api/admin/topup-requests/${requestId}/approve`, {
+      await apiAdmin(`/api/admin/topup-requests/${requestId}/approve`, {
         method: 'POST',
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || t('topup.failedApprove'));
-      }
 
       showSuccess(t('topup.approveSuccess'));
       loadRequests();
@@ -92,14 +85,9 @@ export default function TopUpRequestsPage() {
 
     try {
       setProcessing(requestId);
-      const response = await fetch(`/api/admin/topup-requests/${requestId}/reject`, {
+      await apiAdmin(`/api/admin/topup-requests/${requestId}/reject`, {
         method: 'POST',
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || t('topup.failedReject'));
-      }
 
       showSuccess(t('topup.rejectSuccess'));
       loadRequests();

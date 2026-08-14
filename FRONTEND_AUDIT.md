@@ -2135,6 +2135,135 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 69 — Hotspot Profile Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/hotspot/profile/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/hotspot/profiles')` (load) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/profiles', { method: 'POST' })` or `fetch('/api/hotspot/profiles/${id}', { method: 'PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/profiles?id=${id}', { method: 'DELETE' })` (delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 70 — Hotspot Rekap Voucher Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/hotspot/rekap-voucher/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/hotspot/rekap-voucher?${params}')` (load) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/rekap-voucher/export?${params}')` (Excel export) → `fetch(buildUrl(...), { credentials: 'include' })` (blob download)
+  - `fetch('/api/hotspot/voucher?${params}')` (load vouchers modal) → `apiAdmin(...)`
+  - 1 legitimate blob download fetch remains (uses `buildUrl()` + credentials)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 71 — GenieACS Tasks Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/genieacs/tasks/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/genieacs/tasks')` (load) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/tasks/${id}', { method: 'DELETE' })` (delete) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/tasks/${id}/retry', { method: 'POST' })` (retry) → `apiAdmin(...)`
+  - Also fixed duplicate catch block left from refactor
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 72 — OLT Monitoring Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/olt/monitoring/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/olt/monitoring?${params}')` (load) → `apiAdmin(...)`
+  - `fetch('/api/olt/monitoring', { method: 'POST' })` (manual poll) → `apiAdmin(...)`
+  - `fetch('/api/olt/monitoring', { method: 'POST' })` (poll all, Promise.allSettled) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 73 — OLT Alerts Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/olt/alerts/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/olt/alerts?${params}')` (load) → `apiAdmin(...)`
+  - `fetch('/api/olt/alerts/${id}', { method: 'PUT' })` (resolve) → `apiAdmin(...)`
+  - `fetch('/api/olt/alerts/${id}', { method: 'PUT' })` (resolve all, Promise.allSettled) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 74 — Network Fiber Cores Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/fiber-cores/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/network/cores?${params}')` (load cores) → `apiAdmin(...)`
+  - `fetch('/api/network/cables')` (load cables for filter) → `apiAdmin(...)`
+  - `fetch('/api/network/cores', { method: 'POST' })` (bulk action) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 75 — Hotspot Voucher Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/hotspot/voucher/page.tsx` — 3 fetch() calls migrated to `buildUrl()` pattern:
+  - `fetch('/api/hotspot/voucher/bulk?type=template')` (CSV template download) → `fetch(buildUrl(...), { credentials: 'include' })`
+  - `fetch('/api/hotspot/voucher/bulk?type=export')` (CSV data export) → `fetch(buildUrl(...), { credentials: 'include' })`
+  - `fetch('/api/hotspot/voucher/export?${params}')` (Excel export) → `fetch(buildUrl(...), { credentials: 'include' })`
+  - 3 remaining fetch() calls are legitimate blob/binary downloads using `buildUrl()` + credentials
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 76 — Topup Requests Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/topup-requests/page.tsx` — 3 fetch() calls replaced:
+  - `fetch('/api/admin/topup-requests')` (load) → `apiAdmin(...)`
+  - `fetch('/api/admin/topup-requests/${id}/approve', { method: 'POST' })` (approve) → `apiAdmin(...)`
+  - `fetch('/api/admin/topup-requests/${id}/reject', { method: 'POST' })` (reject) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

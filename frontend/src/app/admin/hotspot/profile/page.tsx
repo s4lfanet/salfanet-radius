@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight } from "lucide-react"
 import { useTranslation } from '@/hooks/useTranslation'
 import { showSuccess, showError } from '@/lib/sweetalert'
+import { apiAdmin } from '@/lib/api'
 import {
   SimpleModal,
   ModalHeader,
@@ -79,8 +80,7 @@ export default function HotspotProfilePage() {
 
   const loadProfiles = async () => {
     try {
-      const res = await fetch('/api/hotspot/profiles')
-      const data = await res.json()
+      const data = await apiAdmin<{ profiles?: HotspotProfile[] }>('/api/hotspot/profiles')
       setProfiles(data.profiles || [])
     } catch (error) {
       console.error('Load profiles error:', error)
@@ -257,22 +257,16 @@ export default function HotspotProfilePage() {
         usageDuration: usageDurationMinutes,
       }
 
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
-      if (res.ok) {
-        setIsDialogOpen(false)
-        resetForm()
-        loadProfiles()
-        await showSuccess(t('hotspot.profileSavedSuccess'))
-      } else {
-        const error = await res.json()
-        await showError(t('hotspot.failedPrefix', { error: error.error }))
-      }
-    } catch (error) {
-      await showError(t('hotspot.failedSaveProfile'))
+      setIsDialogOpen(false)
+      resetForm()
+      loadProfiles()
+      await showSuccess(t('hotspot.profileSavedSuccess'))
+    } catch (error: any) {
+      await showError(t('hotspot.failedPrefix', { error: error?.message || '' }))
     } finally {
       setSaving(false)
     }
@@ -281,16 +275,11 @@ export default function HotspotProfilePage() {
   const handleDelete = async () => {
     if (!deleteProfileId) return
     try {
-      const res = await fetch(`/api/hotspot/profiles?id=${deleteProfileId}`, { method: 'DELETE' })
-      if (res.ok) {
-        loadProfiles()
-        await showSuccess(t('hotspot.profileDeletedSuccess'))
-      } else {
-        const error = await res.json()
-        await showError(t('hotspot.failedPrefix', { error: error.error }))
-      }
-    } catch (error) {
-      await showError(t('hotspot.failedDeleteProfile'))
+      await apiAdmin(`/api/hotspot/profiles?id=${deleteProfileId}`, { method: 'DELETE' })
+      loadProfiles()
+      await showSuccess(t('hotspot.profileDeletedSuccess'))
+    } catch (error: any) {
+      await showError(t('hotspot.failedPrefix', { error: error?.message || '' }))
     } finally {
       setDeleteProfileId(null)
     }
