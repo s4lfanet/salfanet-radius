@@ -1481,6 +1481,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 29 — Settings Database Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/database/page.tsx` — 6 fetch() calls replaced:
+  - `fetch('/api/backup/history')` (load history) → `apiAdmin(...)`
+  - `fetch('/api/backup/health')` (load health) → `apiAdmin(...)`
+  - `fetch('/api/backup/create', { method: 'POST' })` (create backup) → `apiAdmin(...)`
+  - `fetch('/api/backup/restore', { method: 'POST', body: FormData })` (restore) → `apiAdmin(...)`
+  - `fetch('/api/backup/delete/${id}', { method: 'DELETE' })` (bulk delete) → `apiAdmin(...)`
+  - `fetch('/api/backup/delete/${id}', { method: 'DELETE' })` (single delete) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in settings/database page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Settings database page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
