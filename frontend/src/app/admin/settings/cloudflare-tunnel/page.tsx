@@ -121,7 +121,7 @@ export default function CloudflareTunnelPage() {
         body: JSON.stringify({ action, ...extra }),
       });
       if (data.success !== false) {
-        showToast('success', data.message || data.success || 'Berhasil');
+        showToast('success', data.message || 'Berhasil');
         await loadStatus();
       } else {
         showToast('error', data.error || 'Gagal');

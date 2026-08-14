@@ -351,7 +351,7 @@ export default function LaporanAnalitikPage() {
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} domain={[0, 'auto']}
                   tickFormatter={v => `${v}%`} width={40} />
                 <Tooltip
-                  formatter={(v: number | undefined) => [`${v ?? 0}%`, 'Churn Rate']}
+                  formatter={(v: any) => [`${v ?? 0}%`, 'Churn Rate']}
                   labelFormatter={label => label}
                 />
                 <Line
@@ -405,7 +405,7 @@ export default function LaporanAnalitikPage() {
                         <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v: number | undefined, _n, p) => [(v ?? 0) + ' pelanggan', p.payload.profile]} />
+                    <Tooltip formatter={(v: any, _n: any, p: any) => [(v ?? 0) + ' pelanggan', p.payload.profile]} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex-1 space-y-2 min-w-0">
