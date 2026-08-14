@@ -1806,6 +1806,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 49 — WhatsApp Send Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/whatsapp/send/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/users/list?...')` (load users) → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/templates')` (load templates) → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/send', { method: 'POST' })` (single send) → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/broadcast', { method: 'POST' })` (broadcast) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in whatsapp/send page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Page loads (redirected to login due to session expiry), zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
