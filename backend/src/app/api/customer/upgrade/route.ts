@@ -4,6 +4,7 @@ import { createMidtransPayment } from '@/server/services/payment/midtrans.servic
 import { createXenditInvoice } from '@/server/services/payment/xendit.service';
 import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
+import { nowWIB } from '@/lib/timezone';
 
 // Helper to verify customer token (same as topup-direct)
 async function verifyCustomerToken(request: NextRequest) {
@@ -75,8 +76,8 @@ export async function POST(request: NextRequest) {
     const paymentToken = `PAY-${Date.now()}-${Math.random().toString(36).substring(7).toUpperCase()}`;
 
     // Calculate due date (7 days from now)
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 7);
+    const dueDate = nowWIB();
+    dueDate.setUTCDate(dueDate.getUTCDate() + 7);
 
     // Calculate PPN if enabled on profile
     const upgradeBaseAmount = newProfile.price;

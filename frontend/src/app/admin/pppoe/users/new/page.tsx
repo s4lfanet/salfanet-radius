@@ -5,6 +5,7 @@ import { showSuccess, showError } from '@/lib/sweetalert';
 import { ArrowLeft, MapPin, Map, Eye, EyeOff, Loader2, X, ChevronRight, ChevronLeft, CheckCircle, Camera, Wifi, WifiOff } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import { ModalInput, ModalSelect, ModalLabel } from '@/components/cyberpunk';
+import { todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 
 interface Profile { id: string; name: string; groupName: string; price: number; }
 interface Router { id: string; name: string; nasname: string; ipAddress: string; authMode?: string; }
@@ -54,7 +55,7 @@ export default function NewPppoeUserPage() {
     installationPhotos: [] as string[],
     followRoad: false,
     comment: '',
-    registeredAt: new Date().toISOString().slice(0, 10),
+    registeredAt: todayWIBStr(),
     autoIsolationEnabled: true,
     odp: '',
     discount: '',
@@ -232,15 +233,14 @@ export default function NewPppoeUserPage() {
     const profile = profiles.find(p => p.id === formData.profileId);
     if (!profile) return null;
     const billingDay = parseInt(formData.billingDay) || 1;
-    const today = formData.registeredAt ? new Date(formData.registeredAt + 'T00:00:00') : new Date();
-    today.setHours(0, 0, 0, 0);
-    const year = today.getFullYear(); const month = today.getMonth(); const currentDay = today.getDate();
+    const today = formData.registeredAt ? parseDateAsWIB(formData.registeredAt) : new Date();
+    const year = today.getUTCFullYear(); const month = today.getUTCMonth(); const currentDay = today.getUTCDate();
     let nextBilling: Date;
-    if (currentDay < billingDay) { nextBilling = new Date(year, month, billingDay); }
-    else { nextBilling = new Date(year, month + 1, billingDay); }
+    if (currentDay < billingDay) { nextBilling = new Date(Date.UTC(year, month, billingDay)); }
+    else { nextBilling = new Date(Date.UTC(year, month + 1, billingDay)); }
     const msPerDay = 1000 * 60 * 60 * 24;
     const daysActive = Math.max(1, Math.ceil((nextBilling.getTime() - today.getTime()) / msPerDay));
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
     const basePrice = profile.price - (formData.discount ? parseInt(formData.discount) : 0);
     const prorateAmount = Math.ceil((daysActive / daysInMonth) * basePrice);
     return { daysActive, daysInMonth, nextBilling, prorateAmount, fullPrice: basePrice, profileName: profile.name, isFullMonth: daysActive >= daysInMonth };

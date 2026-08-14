@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { formatWIB } from "@/lib/timezone"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -14,13 +15,7 @@ export function formatCurrency(amount: number): string {
 }
 
 export function formatDate(dateStr: string | Date): string {
-  const date = typeof dateStr === 'string' ? new Date(dateStr) : dateStr
-  return date.toLocaleDateString('id-ID', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
+  return formatWIB(dateStr, 'EEEE, d MMMM yyyy')
 }
 
 // Generate random 8-digit customer ID string (numeric, leading non-zero)

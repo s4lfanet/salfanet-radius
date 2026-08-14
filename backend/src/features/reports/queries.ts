@@ -8,11 +8,12 @@
 
 import { prisma } from '@/server/db/client'
 import { paymentRepository } from '@/server/db/repositories'
+import { nowWIB } from '@/lib/timezone'
 
 /** Get revenue totals grouped by month for the past N months */
 export async function getMonthlyRevenue(months = 12) {
-  const from = new Date()
-  from.setMonth(from.getMonth() - months)
+  const from = nowWIB()
+  from.setUTCMonth(from.getUTCMonth() - months)
 
   const payments = await prisma.payment.findMany({
     where: { createdAt: { gte: from } },
@@ -32,8 +33,8 @@ export async function getMonthlyRevenue(months = 12) {
 
 /** Count active/inactive/isolated users over time */
 export async function getUserGrowth(days = 30) {
-  const from = new Date()
-  from.setDate(from.getDate() - days)
+  const from = nowWIB()
+  from.setUTCDate(from.getUTCDate() - days)
 
   const users = await prisma.pppoeUser.findMany({
     where: { createdAt: { gte: from } },

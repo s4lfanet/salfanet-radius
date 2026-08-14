@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Bell, Check, CheckCheck, Trash2, X, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, nowWIB } from '@/lib/timezone';
 import Link from 'next/link';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 
@@ -100,7 +100,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
           isFirstLoadRef.current = false;
         } else if (isFirstLoadRef.current) {
           // On first load: show toasts for RECENT unread notifications (created in last 15 min)
-          const recentThreshold = new Date(Date.now() - 15 * 60 * 1000);
+          const recentThreshold = new Date(nowWIB().getTime() - 15 * 60 * 1000);
           const recentUnread = (data.notifications as Notification[]).filter(
             (n) => !n.isRead && new Date(n.createdAt) > recentThreshold
           );

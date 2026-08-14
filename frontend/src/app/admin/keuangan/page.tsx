@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError, showConfirm } from "@/lib/sweetalert";
-import { formatWIB } from "@/lib/timezone";
+import { formatWIB, nowWIB } from "@/lib/timezone";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
   Dialog,
@@ -397,20 +397,20 @@ export default function KeuanganPage() {
   };
 
   const setQuickDate = (type: "thisMonth" | "lastMonth" | "thisYear") => {
-    const now = new Date();
+    const now = nowWIB();
     let start: Date, end: Date;
     if (type === "thisMonth") {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
     } else if (type === "lastMonth") {
-      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      end = new Date(now.getFullYear(), now.getMonth(), 0);
+      start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+      end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
     } else {
-      start = new Date(now.getFullYear(), 0, 1);
-      end = new Date(now.getFullYear(), 11, 31);
+      start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+      end = new Date(Date.UTC(now.getUTCFullYear(), 11, 31));
     }
-    setStartDate(formatDateLocal(start));
-    setEndDate(formatDateLocal(end));
+    setStartDate(formatWIB(start, 'yyyy-MM-dd'));
+    setEndDate(formatWIB(end, 'yyyy-MM-dd'));
   };
 
   const handleExport = async (format: "excel" | "pdf") => {

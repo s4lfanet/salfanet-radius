@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { nowWIB } from '@/lib/timezone';
 
 export async function GET(request: NextRequest) {
   try {
@@ -44,8 +45,8 @@ export async function GET(request: NextRequest) {
     });
 
     // Get provider stats (count per provider from last 24 hours)
-    const last24Hours = new Date();
-    last24Hours.setHours(last24Hours.getHours() - 24);
+    const last24Hours = nowWIB();
+    last24Hours.setUTCHours(last24Hours.getUTCHours() - 24);
 
     const recentStats = await prisma.whatsapp_history.groupBy({
       by: ['status'],

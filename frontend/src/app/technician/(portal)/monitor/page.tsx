@@ -105,7 +105,7 @@ export default function TechnicianMonitorPage() {
             Status online/offline pelanggan · Auto-refresh 30d
             {lastRefresh && (
               <span className="ml-1.5 text-[#00f7ff]/60">
-                (Terakhir: {lastRefresh.toLocaleTimeString('id-ID')})
+                (Terakhir: {formatWIB(lastRefresh, 'HH:mm')})
               </span>
             )}
           </p>

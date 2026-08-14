@@ -9,7 +9,7 @@ import { sendPushToUser } from '@/server/services/notifications/push-templates.s
 import { EmailService } from '@/server/services/notifications/email.service';
 import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from '@/lib/timezone';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB } from '@/lib/timezone';
 import { ok, created, badRequest, unauthorized, notFound, serverError } from '@/lib/api-response';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
@@ -311,7 +311,7 @@ export async function PUT(request: NextRequest) {
         // Calculate new expiredAt
         // Base: use current expiredAt if still in the future, otherwise use now (payment date)
         // Both PREPAID and POSTPAID get a full validity period after each payment
-        const now = new Date();
+        const now = nowWIB();
         let baseDate = user.expiredAt ? new Date(user.expiredAt) : now;
         if (baseDate < now) {
           baseDate = now; // Expired already → start fresh from payment date
@@ -357,7 +357,7 @@ export async function PUT(request: NextRequest) {
         }
 
         // For package change: preserve existing expiredAt, do NOT extend
-        const finalExpiry = isPackageChange ? (user.expiredAt || new Date()) : newExpiry;
+        const finalExpiry = isPackageChange ? (user.expiredAt || now) : toUTC(newExpiry);
 
         // Update user expiredAt, activate if isolated/suspended/expired, and update profileId if package changed
         const shouldActivate = ['isolated', 'suspended', 'expired'].includes(user.status);
