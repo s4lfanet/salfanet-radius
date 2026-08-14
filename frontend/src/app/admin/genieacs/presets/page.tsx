@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Loader2, Plus, Trash2, Save, RefreshCw, Download, Upload } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface Preset {
   _id: string;
@@ -36,8 +37,7 @@ export default function GenieACSPresetsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/genieacs/presets', { cache: 'no-store' });
-      const json = await res.json();
+      const json = await apiAdmin<{ success: boolean; data?: Preset[]; error?: string }>('/api/genieacs/presets', { cache: 'no-store' });
       if (!json.success) throw new Error(json.error || 'Failed to load');
       setItems(json.data || []);
     } catch (e) {
@@ -67,12 +67,10 @@ export default function GenieACSPresetsPage() {
         setError('File tidak valid: tidak ada data presets ditemukan');
         return;
       }
-      const res = await fetch('/api/genieacs/backup', {
+      const json = await apiAdmin<{ success: boolean; error?: string; results?: { presets?: { ok?: number; errors?: unknown[] } } }>('/api/genieacs/backup', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ presets }),
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Restore gagal');
       const r = json.results?.presets;
       flash(`Restore selesai: ${r?.ok ?? 0} preset dipulihkan${r?.errors?.length ? `, ${r.errors.length} error` : ''}`);
@@ -107,12 +105,10 @@ export default function GenieACSPresetsPage() {
       const url = isNew
         ? '/api/genieacs/presets'
         : `/api/genieacs/presets/${encodeURIComponent(body._id)}`;
-      const res = await fetch(url, {
+      const json = await apiAdmin<{ success: boolean; error?: string }>(url, {
         method: isNew ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Save failed');
       setEditing(null);
       flash(`Preset "${body._id}" tersimpan`);
@@ -127,10 +123,9 @@ export default function GenieACSPresetsPage() {
   const remove = async (id: string) => {
     if (!confirm(`Delete preset "${id}"?`)) return;
     try {
-      const res = await fetch(`/api/genieacs/presets/${encodeURIComponent(id)}`, {
+      const json = await apiAdmin<{ success: boolean; error?: string }>(`/api/genieacs/presets/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Delete failed');
       flash(`Preset "${id}" dihapus`);
       await load();
