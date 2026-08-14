@@ -1664,6 +1664,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 40 — Tickets Detail Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/tickets/[id]/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/tickets?id=...')` (load ticket) → `apiAdmin(...)`
+  - `fetch('/api/tickets/messages?ticketId=...&includeInternal=true')` (load messages) → `apiAdmin(...)`
+  - `fetch('/api/tickets/messages', { method: 'POST' })` (reply) → `apiAdmin(...)`
+  - `fetch('/api/tickets', { method: 'PUT' })` (update status) → `apiAdmin(...)`
+  - `fetch('/api/tickets', { method: 'PUT' })` (update priority) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in tickets/[id] page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Tickets detail page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
