@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AlertCircle, CheckCircle, RefreshCw, Wifi, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface Alert {
   id: string;
@@ -58,11 +59,8 @@ export default function OLTAlertsPage() {
       if (typeFilter !== 'all') params.set('type', typeFilter);
       params.set('limit', '100');
 
-      const res = await fetch(`/api/olt/alerts?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setAlerts(data.alerts ?? []);
-      }
+      const data = await apiAdmin<{ alerts?: Alert[] }>(`/api/olt/alerts?${params}`);
+      setAlerts(data.alerts ?? []);
     } catch (e) {
       console.error('Failed to fetch alerts', e);
     } finally {
@@ -77,16 +75,14 @@ export default function OLTAlertsPage() {
   const handleResolve = async (alertId: string) => {
     setResolving(alertId);
     try {
-      const res = await fetch(`/api/olt/alerts/${alertId}`, { method: 'PUT' });
-      if (res.ok) {
-        setAlerts((prev) =>
-          prev.map((a) =>
-            a.id === alertId
-              ? { ...a, isResolved: true, resolvedAt: new Date().toISOString() }
-              : a
-          )
-        );
-      }
+      await apiAdmin(`/api/olt/alerts/${alertId}`, { method: 'PUT' });
+      setAlerts((prev) =>
+        prev.map((a) =>
+          a.id === alertId
+            ? { ...a, isResolved: true, resolvedAt: new Date().toISOString() }
+            : a
+        )
+      );
     } catch (e) {
       console.error('Failed to resolve alert', e);
     } finally {
@@ -99,7 +95,7 @@ export default function OLTAlertsPage() {
     if (!unresolved.length) return;
     setResolvingAll(true);
     await Promise.allSettled(
-      unresolved.map((a) => fetch(`/api/olt/alerts/${a.id}`, { method: 'PUT' }))
+      unresolved.map((a) => apiAdmin(`/api/olt/alerts/${a.id}`, { method: 'PUT' }))
     );
     setAlerts((prev) =>
       prev.map((a) => ({ ...a, isResolved: true, resolvedAt: new Date().toISOString() }))

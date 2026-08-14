@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
-  RefreshCcw, Circle, Check, X, AlertTriangle, 
+  RefreshCcw, Circle, Check, X, AlertTriangle,
   Bookmark, Cable, Filter, Eye, Tag, Layers, Activity
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 // Fiber color coding (TIA-598-D standard)
 const FIBER_COLORS: Record<string, string> = {
@@ -96,12 +97,8 @@ export default function FiberCoresPage() {
       if (filterCable) params.append('cableId', filterCable);
       if (filterStatus) params.append('status', filterStatus);
 
-      const res = await fetch(`/api/network/cores?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ cores?: FiberCore[]; pagination?: { total?: number; totalPages?: number }; error?: string }>(`/api/network/cores?${params}`);
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load cores');
-      }
       setCores(data.cores || []);
       setPagination(prev => ({
         ...prev,
@@ -119,8 +116,7 @@ export default function FiberCoresPage() {
 
   const loadCables = useCallback(async () => {
     try {
-      const res = await fetch('/api/network/cables');
-      const data = await res.json();
+      const data = await apiAdmin<{ cables?: Cable[] }>('/api/network/cables');
       setCables(data.cables || []);
     } catch (error) {
       console.error('Failed to load cables:', error);
@@ -189,17 +185,10 @@ export default function FiberCoresPage() {
         body.reason = actionReason;
       }
 
-      const res = await fetch('/api/network/cores', {
+      const data = await apiAdmin<{ message?: string; error?: string }>('/api/network/cores', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || t('common.failed'));
-      }
 
       showSuccess(data.message || t('common.success'));
       setIsActionDialogOpen(false);

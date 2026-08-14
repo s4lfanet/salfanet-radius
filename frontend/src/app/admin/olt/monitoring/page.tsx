@@ -7,6 +7,7 @@ import {
   Thermometer, Clock, Search, Settings, Users, ChevronDown,
   ArrowUpDown, Zap,
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface OLT {
   id: string;
@@ -73,11 +74,8 @@ export default function OLTMonitoringPage() {
       const params = new URLSearchParams();
       if (searchTerm) params.set('search', searchTerm);
       if (statusFilter !== 'all') params.set('status', statusFilter);
-      const res = await fetch(`/api/olt/monitoring?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setOlts(data.olts ?? []);
-      }
+      const data = await apiAdmin<{ olts?: OLTInfo[] }>(`/api/olt/monitoring?${params}`);
+      setOlts(data.olts ?? []);
     } catch (e) {
       console.error('Failed to fetch OLTs', e);
     } finally {
@@ -104,9 +102,8 @@ export default function OLTMonitoringPage() {
   const handleManualPoll = async (oltId: string) => {
     setPolling((prev) => new Set(prev).add(oltId));
     try {
-      await fetch('/api/olt/monitoring', {
+      await apiAdmin('/api/olt/monitoring', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ oltId }),
       });
       await fetchOLTs(true);
@@ -122,9 +119,8 @@ export default function OLTMonitoringPage() {
     const enabledOlts = olts.filter((o) => o.monitoringEnabled);
     await Promise.allSettled(
       enabledOlts.map((o) =>
-        fetch('/api/olt/monitoring', {
+        apiAdmin('/api/olt/monitoring', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ oltId: o.id }),
         })
       )

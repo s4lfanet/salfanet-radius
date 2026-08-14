@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BarChart3, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
+import { apiAdmin, buildUrl } from '@/lib/api';
 
 interface RekapVoucher {
   batchCode: string;
@@ -144,8 +145,7 @@ export default function RekapVoucherPage() {
       if (filterProfile && filterProfile !== 'all') params.set('profileId', filterProfile);
       buildPeriodParams(params);
 
-      const res = await fetch(`/api/hotspot/rekap-voucher?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ rekap?: RekapVoucher[]; agents?: any[]; profiles?: any[] }>(`/api/hotspot/rekap-voucher?${params}`);
       setRekap(data.rekap || []);
       setAgents(data.agents || []);
       setProfiles(data.profiles || []);
@@ -162,7 +162,7 @@ export default function RekapVoucherPage() {
       if (filterProfile && filterProfile !== 'all') params.set('profileId', filterProfile);
       buildPeriodParams(params);
 
-      const res = await fetch(`/api/hotspot/rekap-voucher/export?${params}`);
+      const res = await fetch(buildUrl(`/api/hotspot/rekap-voucher/export?${params}`), { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -183,8 +183,7 @@ export default function RekapVoucherPage() {
       const params = new URLSearchParams({ batchCode, limit: '500' });
       // For SOLD (Terjual), fetch all then filter client-side to ACTIVE+EXPIRED
       if (statusFilter && statusFilter !== 'SOLD') params.set('status', statusFilter);
-      const res = await fetch(`/api/hotspot/voucher?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ vouchers?: VoucherItem[] }>(`/api/hotspot/voucher?${params}`);
       let vouchers = (data.vouchers || []) as VoucherItem[];
       if (statusFilter === 'SOLD') vouchers = vouchers.filter(v => v.status !== 'WAITING');
       setVoucherModal(prev => ({ ...prev, loading: false, vouchers }));

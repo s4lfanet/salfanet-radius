@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { ListTodo, RefreshCw, Loader2, Trash2, CheckCircle, XCircle, Clock, Search, AlertCircle, X, Activity } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface GenieACSTask {
   _id: string;
@@ -31,11 +32,8 @@ export default function GenieACSTasksPage() {
 
   const fetchTasks = useCallback(async () => {
     try {
-      const response = await fetch('/api/genieacs/tasks');
-      if (response.ok) {
-        const data = await response.json();
-        setTasks(data.tasks || []);
-      }
+      const data = await apiAdmin<{ tasks?: GenieACSTask[] }>('/api/genieacs/tasks');
+      setTasks(data.tasks || []);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     } finally {
@@ -77,15 +75,11 @@ export default function GenieACSTasksPage() {
       variant: 'danger',
     })) {
       try {
-        const response = await fetch(`/api/genieacs/tasks/${encodeURIComponent(taskId)}`, { 
+        await apiAdmin(`/api/genieacs/tasks/${encodeURIComponent(taskId)}`, { 
           method: 'DELETE' 
         });
-        if (response.ok) {
-          setTasks(tasks.filter(t => t._id !== taskId));
-          addToast({ type: 'success', title: t('common.success'), description: t('common.taskDeleted'), duration: 2000 });
-        } else {
-          throw new Error(t('genieacs.failedDeleteTask'));
-        }
+        setTasks(tasks.filter(t => t._id !== taskId));
+        addToast({ type: 'success', title: t('common.success'), description: t('common.taskDeleted'), duration: 2000 });
       } catch (error) {
         addToast({ type: 'error', title: t('common.error'), description: t('genieacs.failedDeleteTask') });
       }
@@ -94,15 +88,11 @@ export default function GenieACSTasksPage() {
 
   const handleRetryTask = async (taskId: string) => {
     try {
-      const response = await fetch(`/api/genieacs/tasks/${encodeURIComponent(taskId)}/retry`, { 
+      await apiAdmin(`/api/genieacs/tasks/${encodeURIComponent(taskId)}/retry`, { 
         method: 'POST' 
       });
-      if (response.ok) {
-        addToast({ type: 'success', title: t('common.success'), description: t('genieacs.taskWillBeRetried'), duration: 2000 });
-        handleRefresh();
-      } else {
-        throw new Error(t('genieacs.failedRetryTask'));
-      }
+      addToast({ type: 'success', title: t('common.success'), description: t('genieacs.taskWillBeRetried'), duration: 2000 });
+      handleRefresh();
     } catch (error) {
       addToast({ type: 'error', title: t('common.error'), description: t('genieacs.failedRetryTask') });
     }
