@@ -1285,6 +1285,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 18 — WhatsApp Providers Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/whatsapp/providers/page.tsx` — 7 fetch() calls replaced:
+  - `fetch('/api/whatsapp/providers')` (load) → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/providers/${id}/status')` (fetchAllStatuses + QR polling) → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/providers', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/providers/${id}', { method: 'PUT' })` (toggleActive) → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/providers/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/whatsapp/providers/${id}/restart', { method: 'POST' })` → `apiAdmin(...)`
+  - 1 QR fetch retained with `credentials: 'include'` (handles 202/422 status codes + JSON/blob response types)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ WhatsApp providers page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
