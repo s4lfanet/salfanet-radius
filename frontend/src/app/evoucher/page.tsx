@@ -3,6 +3,7 @@ import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Wifi, ShoppingCart, Loader2, CheckCircle, Zap, Clock, Phone, User, ChevronLeft, Mail, Bell } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface Profile {
   id: string;
@@ -75,7 +76,6 @@ export default function EVoucherPage() {
     } finally { setPurchasing(false); }
   };
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
   const formatValidity = (value: number, unit: string) => {
     const unitMap: { [key: string]: string } = { MINUTES: 'Menit', HOURS: 'Jam', DAYS: 'Hari', MONTHS: 'Bulan' };

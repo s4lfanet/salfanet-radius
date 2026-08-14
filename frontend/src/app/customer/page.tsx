@@ -9,6 +9,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 export const dynamic = 'force-dynamic';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { formatWIB, nowWIB } from '@/lib/timezone';
+import { formatCurrency } from '@/lib/utils';
 
 // Hardcoded Indonesian translations
 const translations: Record<string, string> = {
@@ -329,7 +330,6 @@ export default function CustomerDashboard() {
     finally { setLoadingOnt(false); }
   };
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
   const handleUpdateWifi = async () => {
     if (!wifiForm.ssid) { 

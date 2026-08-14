@@ -8,50 +8,55 @@
  */
 
 import { apiAdmin } from './client';
+import type {
+  PppoeUser,
+  PppoeUserListResponse,
+  PppoeUserResponse,
+  PppoeUserCreateResponse,
+  PppoeProfile,
+  PppoeProfileListResponse,
+  PppoeProfileResponse,
+  PppoeArea,
+  PppoeAreaListResponse,
+  PppoeAreaResponse,
+  PppoeOnlineStatusResponse,
+  SyncPreviewResponse,
+  Router,
+} from '@/types/api';
 
-// ─── Types ──────────────────────────────────────────────────────────
-
-export interface PppoeUser {
-  id: string;
-  username: string;
-  password?: string;
-  profile: string;
-  status: string;
-  routerId?: string;
-  areaId?: string;
-  registeredAt?: string;
-  expiresAt?: string;
-  paymentStatus?: string;
-  [key: string]: any;
-}
-
-export interface PppoeProfile {
-  id: string;
-  name: string;
-  rateLimit?: string;
-  price?: number;
-  [key: string]: any;
-}
-
-export interface PppoeArea {
-  id: string;
-  name: string;
-  [key: string]: any;
-}
+// Re-export types for backward compatibility
+export type {
+  PppoeUser,
+  PppoeProfile,
+  PppoeArea,
+};
 
 export interface CreatePppoeUserPayload {
-  username: string;
-  password: string;
+  username?: string;
+  password?: string;
   profile?: string;
   profileId?: string;
   routerId?: string;
   areaId?: string;
   registeredAt?: string;
-  [key: string]: any;
+  name?: string;
+  phone?: string;
+  pppoeCustomerId?: string;
+  noPppoeAccount?: boolean;
+  idCardPhoto?: string;
+  latitude?: number | string;
+  longitude?: number | string;
+  expiredAt?: string;
+  firstInvoice?: 'none' | 'full' | 'prorate';
+  createPppSecret?: boolean;
+  discount?: number;
+  connectionType?: 'PPPOE' | 'HOTSPOT' | 'STATIC_IP';
+  [key: string]: unknown;
 }
 
 export interface UpdatePppoeUserPayload {
-  [key: string]: any;
+  id: string;
+  [key: string]: unknown;
 }
 
 // ─── API ────────────────────────────────────────────────────────────
@@ -60,29 +65,29 @@ export const pppoeApi = {
   // ── Users ──────────────────────────────────────────────────────────
 
   /** List PPPoE users with optional filters */
-  listUsers(params?: Record<string, string | undefined>): Promise<{ users: PppoeUser[]; total?: number }> {
+  listUsers(params?: Record<string, string | undefined>): Promise<PppoeUserListResponse> {
     const query = params ? '?' + new URLSearchParams(
       Object.entries(params).filter(([, v]) => v != null) as [string, string][]
     ).toString() : '';
-    return apiAdmin(`/api/pppoe/users${query}`);
+    return apiAdmin<PppoeUserListResponse>(`/api/pppoe/users${query}`);
   },
 
   /** Get single PPPoE user by ID */
-  getUser(id: string): Promise<{ user: PppoeUser }> {
-    return apiAdmin(`/api/pppoe/users/${id}`);
+  getUser(id: string): Promise<PppoeUserResponse> {
+    return apiAdmin<PppoeUserResponse>(`/api/pppoe/users/${id}`);
   },
 
   /** Create new PPPoE user */
-  createUser(payload: CreatePppoeUserPayload): Promise<{ user: PppoeUser }> {
-    return apiAdmin('/api/pppoe/users', {
+  createUser(payload: CreatePppoeUserPayload): Promise<PppoeUserCreateResponse> {
+    return apiAdmin<PppoeUserCreateResponse>('/api/pppoe/users', {
       method: 'POST',
       body: JSON.stringify(payload),
     });
   },
 
   /** Update PPPoE user */
-  updateUser(payload: UpdatePppoeUserPayload): Promise<{ user: PppoeUser }> {
-    return apiAdmin('/api/pppoe/users', {
+  updateUser(payload: UpdatePppoeUserPayload): Promise<PppoeUserResponse> {
+    return apiAdmin<PppoeUserResponse>('/api/pppoe/users', {
       method: 'PUT',
       body: JSON.stringify(payload),
     });
@@ -147,8 +152,8 @@ export const pppoeApi = {
   },
 
   /** Get online status for multiple users */
-  getOnlineStatus(usernames: string): Promise<{ users: any[] }> {
-    return apiAdmin(`/api/pppoe/users/online-status?usernames=${encodeURIComponent(usernames)}`);
+  getOnlineStatus(usernames: string): Promise<PppoeOnlineStatusResponse> {
+    return apiAdmin<PppoeOnlineStatusResponse>(`/api/pppoe/users/online-status?usernames=${encodeURIComponent(usernames)}`);
   },
 
   /** Sync users from MikroTik router */
@@ -195,14 +200,14 @@ export const pppoeApi = {
   // ── Profiles ───────────────────────────────────────────────────────
 
   /** List PPPoE profiles */
-  listProfiles(): Promise<{ profiles: PppoeProfile[] } | PppoeProfile[]> {
-    return apiAdmin('/api/pppoe/profiles');
+  listProfiles(): Promise<PppoeProfileListResponse> {
+    return apiAdmin<PppoeProfileListResponse>('/api/pppoe/profiles');
   },
 
   /** Create or update profile (PUT if id present, POST if new) */
-  saveProfile(payload: Record<string, any>): Promise<{ profile: PppoeProfile }> {
+  saveProfile(payload: Record<string, unknown>): Promise<PppoeProfileResponse> {
     const method = payload.id ? 'PUT' : 'POST';
-    return apiAdmin('/api/pppoe/profiles', {
+    return apiAdmin<PppoeProfileResponse>('/api/pppoe/profiles', {
       method,
       body: JSON.stringify(payload),
     });
@@ -232,14 +237,14 @@ export const pppoeApi = {
   // ── Areas ──────────────────────────────────────────────────────────
 
   /** List PPPoE areas */
-  listAreas(): Promise<{ areas: PppoeArea[] } | PppoeArea[]> {
-    return apiAdmin('/api/pppoe/areas');
+  listAreas(): Promise<PppoeAreaListResponse> {
+    return apiAdmin<PppoeAreaListResponse>('/api/pppoe/areas');
   },
 
   /** Create or update area (PUT if id present, POST if new) */
-  saveArea(payload: Record<string, any>): Promise<{ area: PppoeArea }> {
+  saveArea(payload: Record<string, unknown>): Promise<PppoeAreaResponse> {
     const method = payload.id ? 'PUT' : 'POST';
-    return apiAdmin('/api/pppoe/areas', {
+    return apiAdmin<PppoeAreaResponse>('/api/pppoe/areas', {
       method,
       body: JSON.stringify(payload),
     });

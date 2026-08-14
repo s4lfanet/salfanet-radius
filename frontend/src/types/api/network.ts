@@ -1,0 +1,115 @@
+/**
+ * Network & Router API types.
+ *
+ * @see backend/src/app/api/network/routers/route.ts
+ * @see backend/src/app/api/network/olts/route.ts
+ * @see backend/prisma/schema.prisma (models: nas, network_olts, vpn_servers, vpn_clients)
+ */
+
+import type { ID, ISODateString } from './common';
+import type { Router } from './pppoe';
+
+// Re-export Router (NAS) for network module
+export type { Router };
+
+// === OLT ===
+
+export interface OLT {
+  id: ID;
+  name: string;
+  ipAddress: string;
+  latitude: number;
+  longitude: number;
+  status: string;
+  followRoad: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+  vendor: string | null;
+  model: string | null;
+  firmwareVersion: string | null;
+  snmpEnabled: boolean;
+  snmpCommunity: string;
+  snmpPort: number;
+  telnetEnabled: boolean;
+  telnetPort: number;
+  sshEnabled: boolean;
+  sshPort: number;
+  username: string | null;
+  password: string | null;
+  monitoringEnabled: boolean;
+  pollingInterval: number;
+  lastPollAt: ISODateString | null;
+  isOnline: boolean;
+  uptime: number;
+  temperature: number | null;
+  totalOnu: number;
+}
+
+export interface OLTListResponse {
+  olts: OLT[];
+}
+
+export interface OLTResponse {
+  olt: OLT;
+}
+
+// === ONU Status ===
+
+export interface OnuStatus {
+  id: ID;
+  oltId: ID;
+  onuIndex: string;
+  status: 'online' | 'offline';
+  rxPower: number | null;
+  txPower: number | null;
+  temperature: number | null;
+  uptime: number | null;
+  lastUpdated: ISODateString | null;
+}
+
+// === VPN Server ===
+
+export interface VpnServer {
+  id: ID;
+  name: string;
+  type: string;
+  ipAddress: string;
+  port: number;
+  username: string | null;
+  password: string | null;
+  isActive: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+// === VPN Client ===
+
+export interface VpnClient {
+  id: ID;
+  name: string;
+  serverId: ID;
+  localIp: string | null;
+  remoteIp: string | null;
+  isActive: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+}
+
+// === Router List Response ===
+
+export interface RouterListResponse {
+  routers: Router[];
+}
+
+export interface RouterResponse {
+  router: Router;
+}
+
+// === Radius Status ===
+
+export interface RadiusStatus {
+  running: boolean;
+  uptime: number | null;
+  version: string | null;
+  pid: number | null;
+}

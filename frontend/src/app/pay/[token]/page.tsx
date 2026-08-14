@@ -4,6 +4,7 @@ import { formatWIB } from '@/lib/timezone';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Wifi, CheckCircle, Clock, AlertCircle, CreditCard, Building2, Loader2, User, Phone, Package, Calendar, MapPin, Router, Network, Mail, Hash, Zap } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface Invoice {
   id: string;
@@ -77,7 +78,6 @@ export default function PaymentPage() {
     }
   };
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
   const formatDate = (dateStr: string) => formatWIB(dateStr, 'd MMM yyyy');
 
   const getStatusBadge = (status: string) => {
