@@ -1213,6 +1213,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 14 — Network Map Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/map/page.tsx` — 9 fetch() calls replaced:
+  - `fetch('/api/network/olts')` + `fetch('/api/network/odcs')` + `fetch('/api/network/odps')` + `fetch('/api/pppoe/users?limit=5000')` + `fetch('/api/pppoe/profiles')` + `fetch('/api/network/routers')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/network/routers/${id}/uplinks')` (per-router uplink fetch) → `apiAdmin(...)`
+  - `fetch('/api/network/routers/${id}/ping-olt', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/pppoe/users/${id}', { method: 'PUT' })` (update customer) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/map page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network map page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
