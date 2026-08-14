@@ -3,6 +3,7 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 import {
   ArrowLeft, User, Wifi, WifiOff, Shield, ShieldOff, Ban, CheckCircle2,
   Phone, Mail, MapPin, Calendar, CreditCard, Copy, ExternalLink, RefreshCw,
@@ -103,19 +104,16 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [userRes, invoicesRes, sessionsRes] = await Promise.all([
-        fetch(`/api/pppoe/users/${id}`, { cache: 'no-store' }),
-        fetch(`/api/invoices?userId=${id}&limit=20`, { cache: 'no-store' }),
-        fetch(`/api/pppoe/users/${id}/activity?type=sessions&limit=10`, { cache: 'no-store' }),
+      const [userData, invoicesData, sessionsData] = await Promise.all([
+        apiAdmin(`/api/pppoe/users/${id}`),
+        apiAdmin(`/api/invoices?userId=${id}&limit=20`),
+        apiAdmin(`/api/pppoe/users/${id}/activity?type=sessions&limit=10`),
       ]);
-      const userData     = await userRes.json();
-      const invoicesData = await invoicesRes.json();
-      const sessionsData = await sessionsRes.json();
-      if (userData.user)          setUser(userData.user);
-      if (userData.activeSession) setActiveSession(userData.activeSession);
-      if (invoicesData.invoices)  setInvoices(invoicesData.invoices);
-      if (sessionsData.sessions)  setSessions(sessionsData.sessions);
-    } catch (e) {
+      if ((userData as any).user)          setUser((userData as any).user);
+      if ((userData as any).activeSession) setActiveSession((userData as any).activeSession);
+      if ((invoicesData as any).invoices)  setInvoices((invoicesData as any).invoices);
+      if ((sessionsData as any).sessions)  setSessions((sessionsData as any).sessions);
+    } catch (e: any) {
       console.error(e);
     } finally {
       setLoading(false);
@@ -126,12 +124,11 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
     if (!user) return;
     setChangingStatus(true);
     try {
-      const res = await fetch('/api/pppoe/users/status', {
+      await apiAdmin('/api/pppoe/users/status', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, status: newStatus }),
       });
-      if (res.ok) setUser({ ...user, status: newStatus });
+      setUser({ ...user, status: newStatus });
     } finally {
       setChangingStatus(false);
     }
@@ -142,15 +139,13 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
     setSendingWA(true);
     setWaResult(null);
     try {
-      const res = await fetch('/api/pppoe/users/send-notification', {
+      const data = await apiAdmin('/api/pppoe/users/send-notification', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userIds: [user.id], notificationType: 'invoice', notificationMethod: 'whatsapp' }),
       });
-      const data = await res.json();
-      setWaResult(res.ok ? 'Notifikasi WA berhasil dikirim!' : (data.error || 'Gagal mengirim WA'));
-    } catch {
-      setWaResult('Gagal terhubung ke server');
+      setWaResult('Notifikasi WA berhasil dikirim!');
+    } catch (e: any) {
+      setWaResult(e.message || 'Gagal mengirim WA');
     } finally {
       setSendingWA(false);
       setTimeout(() => setWaResult(null), 4000);
