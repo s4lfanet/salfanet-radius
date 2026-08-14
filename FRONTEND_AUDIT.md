@@ -975,6 +975,43 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 5 — PPPoE Users Main Page Migration (14 Aug 2026) ✅
+
+**API module updated:**
+- `frontend/src/lib/api/pppoe.ts` — Added `uploadFile()` for FormData uploads
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/users/page.tsx` — 24 fetch() calls replaced:
+  - `fetch('/api/pppoe/users', { method: 'POST' })` → `pppoeApi.createUser(payload)`
+  - `fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd })` (3x) → `pppoeApi.uploadFile(fd)`
+  - `fetch('/api/pppoe/users/online-status?...')` → `pppoeApi.getOnlineStatus(usernames)`
+  - `fetch('/api/pppoe/users')` + profiles + routers + areas → `pppoeApi.listUsers()` + `listProfiles()` + `networkApi.listRouters()` + `listAreas()`
+  - `fetch('/api/invoices/counts?...')` → `apiAdmin('/api/invoices/counts?...')`
+  - `fetch('/api/pppoe/users', { method: 'PUT' })` → `pppoeApi.updateUser(data)`
+  - `fetch('/api/invoices/${id}/pdf')` (2x) → `apiAdmin('/api/invoices/${id}/pdf')`
+  - `fetch('/api/invoices?userId=...')` → `invoiceApi.list({ userId, limit })`
+  - `fetch('/api/pppoe/users?id=...', { method: 'DELETE' })` → `pppoeApi.deleteUser(id)`
+  - `fetch('/api/pppoe/users/status', { method: 'PUT' })` → `pppoeApi.updateStatus(userId, status)`
+  - `fetch('/api/pppoe/users/${id}/sync-radius', { method: 'POST' })` → `pppoeApi.syncRadius(id)`
+  - `fetch('/api/pppoe/users/${id}/mark-paid', { method: 'POST' })` → `pppoeApi.markPaid(userId)`
+  - `fetch('/api/pppoe/users/${id}/extend', { method: 'POST' })` → `pppoeApi.extend(id, payload)`
+  - `fetch('/api/pppoe/users/bulk-status', { method: 'PUT' })` → `pppoeApi.bulkUpdateStatus(userIds, status)`
+  - `fetch('/api/pppoe/users?id=...', { method: 'DELETE' })` (bulk) → `pppoeApi.deleteUser(id)` per user
+  - `fetch('/api/pppoe/users/send-notification', { method: 'POST' })` → `pppoeApi.sendNotification(payload)`
+  - `fetch('/api/pppoe/users/${id}')` → `pppoeApi.getUser(id)`
+  - `fetch('/api/pppoe/users/sync-mikrotik?routerId=...')` → `pppoeApi.syncMikrotik(routerId)`
+  - `fetch('/api/pppoe/users/sync-mikrotik', { method: 'POST' })` → `pppoeApi.syncMikrotikProfiles(payload)`
+  - `fetch('/api/pppoe/users/bulk', { method: 'POST', body: formData })` → `pppoeApi.bulkUpload(formData)`
+  - `fetch('/api/pppoe/users/export?...')` (PDF) → `apiAdmin('/api/pppoe/users/export?...')`
+  - 3 blob download fetch calls retained with `credentials: 'include'` (template, export CSV, export Excel)
+
+**Verification:**
+- Build: ✅ SUCCESS (fixed 2 duplicate catch block syntax errors during migration)
+- Production test: ✅ PPPoE users page loads, zero console errors
+- Only 3 blob download fetch calls remain (intentional — blob responses need raw fetch)
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

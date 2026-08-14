@@ -177,6 +177,20 @@ export const pppoeApi = {
     return res.json();
   },
 
+  /** Upload PPPoE customer file (id card, installation photo) */
+  async uploadFile(formData: FormData): Promise<{ url: string }> {
+    const res = await fetch('/api/upload/pppoe-customer', {
+      method: 'POST',
+      body: formData,
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Upload failed' }));
+      throw new Error(err.message || `Upload failed: ${res.status}`);
+    }
+    return res.json();
+  },
+
   // ── Profiles ───────────────────────────────────────────────────────
 
   /** List PPPoE profiles */
