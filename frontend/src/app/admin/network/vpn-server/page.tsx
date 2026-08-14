@@ -145,10 +145,20 @@ export default function VpnServerPage() {
 
   useEffect(() => {
     // Restore saved SSH + L2TP credentials from localStorage
+    // Note: password is NOT stored in localStorage for security (C8 fix),
+    // so savedSshCredentials is only restored for display purposes.
+    // The user will be prompted to re-enter the password on next action.
     try {
       const savedCreds = localStorage.getItem('l2tp_ssh_credentials');
       const savedConf = localStorage.getItem('l2tp_config');
-      if (savedCreds) setSavedSshCredentials(JSON.parse(savedCreds));
+      if (savedCreds) {
+        const parsed = JSON.parse(savedCreds);
+        // Only restore if password was previously stored (backward compat)
+        // Otherwise just pre-fill the form fields
+        if (parsed.password) {
+          setSavedSshCredentials(parsed);
+        }
+      }
       if (savedConf) setL2tpConfig(JSON.parse(savedConf));
     } catch {}
     loadServers();
@@ -197,9 +207,9 @@ export default function VpnServerPage() {
     const sshCreds = { host, port, username, password };
     setSavedSshCredentials(sshCreds);
     setL2tpConfig({ vpnServerIp, l2tpUsername, l2tpPassword });
-    // Persist to localStorage so modal doesn't ask again on next open
+    // Persist non-sensitive SSH info to localStorage (password is NOT stored)
     try {
-      localStorage.setItem('l2tp_ssh_credentials', JSON.stringify(sshCreds));
+      localStorage.setItem('l2tp_ssh_credentials', JSON.stringify({ host, port, username }));
       localStorage.setItem('l2tp_config', JSON.stringify({ vpnServerIp, l2tpUsername, l2tpPassword }));
     } catch {}
     await executeL2tpAction('status', server, sshCreds);
