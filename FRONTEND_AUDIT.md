@@ -1774,6 +1774,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 47 — PPPoE Addons Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/addons/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/addon-types')` (load addons) → `apiAdmin(...)`
+  - `fetch('/api/addon-types/${id}', { method: 'PUT/POST' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/addon-types/${id}', { method: 'PUT' })` (toggle active) → `apiAdmin(...)`
+  - `fetch('/api/addon-types/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in pppoe/addons page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Page loads (redirected to login due to session expiry), zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
