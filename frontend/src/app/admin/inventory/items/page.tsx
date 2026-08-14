@@ -29,6 +29,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { apiAdmin } from '@/lib/api';
 
 interface Category {
   id: string;
@@ -97,17 +98,17 @@ export default function InventoryItemsPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [itemsRes, categoriesRes, suppliersRes] = await Promise.all([
-        fetch('/api/inventory/items'),
-        fetch('/api/inventory/categories'),
-        fetch('/api/inventory/suppliers'),
+      const [itemsData, categoriesData, suppliersData] = await Promise.all([
+        apiAdmin('/api/inventory/items'),
+        apiAdmin('/api/inventory/categories'),
+        apiAdmin('/api/inventory/suppliers'),
       ]);
 
-      if (itemsRes.ok) setItems(await itemsRes.json());
-      if (categoriesRes.ok) setCategories(await categoriesRes.json());
-      if (suppliersRes.ok) setSuppliers(await suppliersRes.json());
-    } catch (error) {
-      await showError(t('common.error'));
+      setItems(itemsData as any);
+      setCategories(categoriesData as any);
+      setSuppliers(suppliersData as any);
+    } catch (error: any) {
+      await showError(error.message || t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -165,27 +166,20 @@ export default function InventoryItemsPage() {
         ? { ...formData, id: editingItem.id }
         : formData;
 
-      const res = await fetch('/api/inventory/items', {
+      await apiAdmin('/api/inventory/items', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
-
-      if (res.ok) {
-        await showSuccess(
-          editingItem ? t('inventory.itemUpdated') : t('inventory.itemCreated')
-        );
-        setIsDialogOpen(false);
-        setEditingItem(null);
-        resetForm();
-        loadData();
-      } else {
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(
+        editingItem ? t('inventory.itemUpdated') : t('inventory.itemCreated')
+      );
+      setIsDialogOpen(false);
+      setEditingItem(null);
+      resetForm();
+      loadData();
+    } catch (error: any) {
+      await showError(error.message || t('common.error'));
     }
   };
 
@@ -198,19 +192,14 @@ export default function InventoryItemsPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/inventory/items?id=${item.id}`, {
+      await apiAdmin(`/api/inventory/items?id=${item.id}`, {
         method: 'DELETE',
       });
 
-      if (res.ok) {
-        await showSuccess(t('inventory.itemDeleted'));
-        loadData();
-      } else {
-        const result = await res.json();
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(t('inventory.itemDeleted'));
+      loadData();
+    } catch (error: any) {
+      await showError(error.message || t('common.error'));
     }
   };
 
