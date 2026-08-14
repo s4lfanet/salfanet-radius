@@ -1463,6 +1463,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 28 — Notifications Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/notifications/page.tsx` — 6 fetch() calls replaced:
+  - `fetch('/api/notifications?...')` (load) → `apiAdmin(...)`
+  - `fetch('/api/notifications', { method: 'PUT' })` (markAsRead) → `apiAdmin(...)`
+  - `fetch('/api/notifications', { method: 'PUT' })` (markAllAsRead) → `apiAdmin(...)`
+  - `fetch('/api/notifications?id=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/notifications?ids=...', { method: 'DELETE' })` (deleteSelected) → `apiAdmin(...)`
+  - `fetch('/api/notifications', { method: 'PUT' })` (markSelectedAsRead) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in notifications page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Notifications page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

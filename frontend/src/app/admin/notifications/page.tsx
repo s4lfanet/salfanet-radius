@@ -6,6 +6,7 @@ import { Bell, Check, CheckCheck, Trash2, Loader2, Filter, AlertCircle, UserPlus
 import { formatWIB } from '@/lib/timezone';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
+import { apiAdmin } from '@/lib/api';
 
 interface Notification {
   id: string;
@@ -65,17 +66,16 @@ export default function NotificationsPage() {
         url += `&type=${categoryFilter}`;
       }
       
-      const res = await fetch(url);
-      const data = await res.json();
-      
-      if (data.success) {
-        setNotifications(data.notifications);
-        setUnreadCount(data.unreadCount);
-        if (data.categoryCounts) {
-          setCategoryCounts(data.categoryCounts);
+      const data = await apiAdmin(url);
+
+      if ((data as any).success) {
+        setNotifications((data as any).notifications);
+        setUnreadCount((data as any).unreadCount);
+        if ((data as any).categoryCounts) {
+          setCategoryCounts((data as any).categoryCounts);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load notifications error:', error);
     } finally {
       setLoading(false);
@@ -84,19 +84,18 @@ export default function NotificationsPage() {
 
   const markAsRead = async (notificationIds: string[]) => {
     try {
-      await fetch('/api/notifications', {
+      await apiAdmin('/api/notifications', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationIds }),
       });
-      
+
       toast({
         title: "✅ " + t('notifications.markedAsRead'),
         description: `${notificationIds.length} ${t('notifications.notificationMarked')}`,
       });
-      
+
       loadNotifications();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Mark as read error:', error);
       toast({
         variant: "destructive",
@@ -108,19 +107,18 @@ export default function NotificationsPage() {
 
   const markAllAsRead = async () => {
     try {
-      await fetch('/api/notifications', {
+      await apiAdmin('/api/notifications', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAll: true }),
       });
-      
+
       toast({
         title: "✅ " + t('notifications.allMarkedAsRead'),
         description: t('notifications.allNotificationsMarked'),
       });
-      
+
       loadNotifications();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Mark all as read error:', error);
       toast({
         variant: "destructive",
@@ -132,17 +130,17 @@ export default function NotificationsPage() {
 
   const deleteNotification = async (id: string) => {
     try {
-      await fetch(`/api/notifications?id=${id}`, {
+      await apiAdmin(`/api/notifications?id=${id}`, {
         method: 'DELETE',
       });
-      
+
       toast({
         title: "🗑️ " + t('notifications.deleted'),
         description: t('notifications.notificationDeleted'),
       });
-      
+
       loadNotifications();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Delete notification error:', error);
       toast({
         variant: "destructive",
@@ -156,18 +154,18 @@ export default function NotificationsPage() {
     if (selectedIds.length === 0) return;
 
     try {
-      await fetch(`/api/notifications?ids=${selectedIds.join(',')}`, {
+      await apiAdmin(`/api/notifications?ids=${selectedIds.join(',')}`, {
         method: 'DELETE',
       });
-      
+
       toast({
         title: "🗑️ " + t('notifications.deleted'),
         description: `${selectedIds.length} ${t('notifications.notificationsDeleted')}`,
       });
-      
+
       setSelectedIds([]);
       loadNotifications();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Delete selected error:', error);
       toast({
         variant: "destructive",
@@ -181,9 +179,8 @@ export default function NotificationsPage() {
     if (selectedIds.length === 0) return;
 
     try {
-      await fetch('/api/notifications', {
+      await apiAdmin('/api/notifications', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationIds: selectedIds }),
       });
       
