@@ -10,6 +10,7 @@ import {
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 interface TelegramSettings {
   enabled: boolean;
@@ -49,12 +50,11 @@ export default function TelegramSettingsPage() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/telegram/settings');
-      const data = await res.json();
-      if (data && !data.error) {
-        setTelegramSettings(data);
+      const data = await apiAdmin('/api/telegram/settings');
+      if (data && !(data as any).error) {
+        setTelegramSettings(data as any);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load telegram settings error:', error);
     } finally {
       setLoading(false);
@@ -63,29 +63,25 @@ export default function TelegramSettingsPage() {
 
   const handleSaveTelegramSettings = async () => {
     try {
-      const res = await fetch('/api/telegram/settings', {
+      const data = await apiAdmin('/api/telegram/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(telegramSettings),
       });
 
-      const data = await res.json();
-
-      if (data.success) {
+      if ((data as any).success) {
         // Restart cron jobs to apply new settings
-        await fetch('/api/cron/telegram', {
+        await apiAdmin('/api/cron/telegram', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'restart', job: 'all' }),
         });
 
         await showSuccess(t('settings.telegramTestSuccess'));
         loadSettings();
       } else {
-        await showError(data.error || t('common.saveFailed'));
+        await showError((data as any).error || t('common.saveFailed'));
       }
-    } catch (error) {
-      await showError(t('common.failedSave') + ': ' + error);
+    } catch (error: any) {
+      await showError(t('common.failedSave') + ': ' + error.message);
     }
   };
 
@@ -97,9 +93,8 @@ export default function TelegramSettingsPage() {
 
     setTesting(true);
     try {
-      const res = await fetch('/api/telegram/test', {
+      const data = await apiAdmin('/api/telegram/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           botToken: telegramSettings.botToken,
           chatId: telegramSettings.chatId,
@@ -108,15 +103,13 @@ export default function TelegramSettingsPage() {
         }),
       });
 
-      const data = await res.json();
-
-      if (data.success) {
+      if ((data as any).success) {
         await showSuccess(t('settings.telegramTestSuccess'));
       } else {
-        await showError(data.error || t('settings.telegramTestFailed'));
+        await showError((data as any).error || t('settings.telegramTestFailed'));
       }
-    } catch (error) {
-      await showError(t('settings.failedTest') + ': ' + error);
+    } catch (error: any) {
+      await showError(t('settings.failedTest') + ': ' + error.message);
     } finally {
       setTesting(false);
     }
@@ -131,19 +124,17 @@ export default function TelegramSettingsPage() {
     // Must save settings first before test backup (API loads from DB)
     setTestingBackup(true);
     try {
-      const res = await fetch('/api/telegram/test-backup', {
+      const data = await apiAdmin('/api/telegram/test-backup', {
         method: 'POST',
       });
 
-      const data = await res.json();
-
-      if (data.success) {
-        await showSuccess(`Backup berhasil dikirim ke Telegram!\nFile: ${data.filename}`);
+      if ((data as any).success) {
+        await showSuccess(`Backup berhasil dikirim ke Telegram!\nFile: ${(data as any).filename}`);
       } else {
-        await showError(data.error || 'Gagal mengirim backup ke Telegram');
+        await showError((data as any).error || 'Gagal mengirim backup ke Telegram');
       }
-    } catch (error) {
-      await showError('Gagal test backup: ' + error);
+    } catch (error: any) {
+      await showError('Gagal test backup: ' + error.message);
     } finally {
       setTestingBackup(false);
     }
