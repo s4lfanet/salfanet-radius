@@ -1196,6 +1196,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 13 — Network Diagrams Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/diagrams/page.tsx` — 10 fetch() calls replaced:
+  - `fetch('/api/network/otbs?limit=100')` + `fetch('/api/network/joint-closures')` + `fetch('/api/network/odcs')` + `fetch('/api/network/odps')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/network/otbs/${id}')` (OTB detail + 2 refreshes) → `apiAdmin(...)`
+  - `fetch('/api/network/joint-closures/${id}')` (JC detail) → `apiAdmin(...)`
+  - `fetch('/api/network/otbs/${id}/segments', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/network/otbs/${id}/segments?segmentId=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/diagrams page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network diagrams page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
