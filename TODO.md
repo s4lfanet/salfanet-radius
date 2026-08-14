@@ -15,6 +15,9 @@ Dokumen ini dibuat pada: 2026-08-14
 | **Phase 1C** | ✅ Selesai | Uploads serving dipindahkan ke Nginx (`/uploads/`) |
 | **Phase 2** | ✅ Selesai | 111 batch, ~510 fetch calls migrated to `apiAdmin()`. 55 fetch calls tersisa (semua legitimate blob/FormData/streaming) |
 | **Phase 3** | ✅ Selesai | middleware.ts, error.tsx, loading.tsx, permissions.ts, usePermissions migration, C8 SSH credential fix |
+| **Phase 4.1** | ✅ Selesai | NextAuth session types — hapus semua `(session.user as any)` casts |
+| **Phase 4.5** | ✅ Selesai | Enable TypeScript build checks + fix 8 pre-existing TS errors |
+| **Deploy** | ✅ Selesai | VPS `192.168.54.129` — git pull, build, PM2 restart, health check OK |
 
 ---
 
@@ -45,11 +48,9 @@ Dokumen ini dibuat pada: 2026-08-14
 ## Phase 4 — Type Safety & Performance
 
 ### 4.1 — Define NextAuth Session Types
-- **Status**: ❌ Belum dikerjakan
-- **Deskripsi**: NextAuth session masih pakai `(session.user as any).id` — tidak typed
-- **File**: `frontend/src/types/next-auth.d.ts`, `frontend/src/server/auth/config.ts`
-- **Solusi**: Define proper `Session` interface dengan `user.id`, `user.username`, `user.role`
-- **Prioritas**: Medium
+- **Status**: ✅ Selesai
+- **Deskripsi**: Hapus semua `(session.user as any)` casts, gunakan typed session
+- **Files fixed**: `usePermissions.ts`, `server/auth/config.ts`, `AdminClientLayout.tsx`, `push-notifications/page.tsx`, `management/page.tsx`
 
 ### 4.2 — API Contract Types
 - **Status**: ❌ Belum dikerjakan
@@ -70,10 +71,9 @@ Dokumen ini dibuat pada: 2026-08-14
 - **Prioritas**: Low (performance optimization)
 
 ### 4.5 — Enable TypeScript Build Checks
-- **Status**: ❌ Belum dikerjakan
-- **Deskripsi**: Build saat ini ignore TypeScript errors (`typescript: false` di `next.config.ts` mungkin)
-- **Solusi**: Fix semua TS errors, enable `typescript: true` di Next.js config
-- **Prioritas**: Medium
+- **Status**: ✅ Selesai
+- **Deskripsi**: Enable `typescript.ignoreBuildErrors: false` di `next.config.ts`
+- **8 TS errors fixed**: ippool (3), fiber-cores (1), olt/monitoring (1), charts (3)
 
 ---
 
@@ -94,10 +94,13 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 ## Deployment & Production Testing
 
 ### VPS Deployment
-- **Status**: ⏳ Pending
-- **Deskripsi**: VPS unreachable, tidak bisa deploy untuk production testing
-- **Solusi**: Tunggu VPS available, jalankan `updater.sh` di VPS
-- **Prioritas**: High (saat VPS available)
+- **Status**: ✅ Selesai (14 Aug 2026)
+- **VPS**: `192.168.54.129` (local)
+- **Production dir**: `/var/www/salfanet-radius/`
+- **Deploy method**: git pull + pnpm install + next build + PM2 restart
+- **Commit deployed**: `cbc2fdbc`
+- **PM2 processes**: All 4 online (frontend, backend, cron, wa)
+- **Health check**: Backend `{"status":"ok"}`, Frontend 200, Nginx 200
 
 ### Production Testing
 - **Status**: ⏳ Pending
@@ -125,12 +128,15 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 
 | Prioritas | Item | Phase |
 |-----------|------|-------|
-| **High** | VPS Deployment & Production Testing | Deploy |
-| **Medium** | NextAuth Session Types | Phase 4.1 |
+| **High** | Production Testing (test semua halaman admin) | Deploy |
 | **Medium** | API Contract Types | Phase 4.2 |
-| **Medium** | Enable TypeScript Build Checks | Phase 4.5 |
 | **Low** | Dark Mode Inconsistencies | Phase 3.6 |
 | **Low** | Consolidate Duplicate Utilities | Phase 3.7 |
 | **Low** | React Query | Phase 4.3 |
 | **Low** | Server vs Client Component Audit | Phase 4.4 |
-| **Low** | Pre-existing TS Errors (ippool button variant) | Bug fix |
+
+### Sudah Selesai
+- ✅ VPS Deployment (14 Aug 2026)
+- ✅ NextAuth Session Types (Phase 4.1)
+- ✅ Enable TypeScript Build Checks (Phase 4.5)
+- ✅ Pre-existing TS Errors — semua fixed
