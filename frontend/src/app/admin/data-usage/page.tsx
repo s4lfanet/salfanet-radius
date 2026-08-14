@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { RefreshCw, BarChart3, TrendingUp, Download, Upload, Users, Calendar, Zap } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 interface UsageRecord {
   username: string;
@@ -61,10 +62,9 @@ export default function DataUsagePage() {
   const loadTop = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/top?days=${topDays}&limit=${topLimit}`);
-      const data = await res.json();
-      setTopConsumers(data.data || null);
-    } catch (err) {
+      const data = await apiAdmin(`${API_BASE}/top?days=${topDays}&limit=${topLimit}`);
+      setTopConsumers((data as any).data || null);
+    } catch (err: any) {
       console.error('Failed to load top consumers', err);
     } finally {
       setLoading(false);
@@ -74,10 +74,9 @@ export default function DataUsagePage() {
   const loadMonthly = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/monthly`);
-      const data = await res.json();
-      setMonthly(data.data || null);
-    } catch (err) {
+      const data = await apiAdmin(`${API_BASE}/monthly`);
+      setMonthly((data as any).data || null);
+    } catch (err: any) {
       console.error('Failed to load monthly summary', err);
     } finally {
       setLoading(false);
@@ -89,10 +88,9 @@ export default function DataUsagePage() {
     try {
       const params = new URLSearchParams();
       if (searchUser) params.set('username', searchUser);
-      const res = await fetch(`${API_BASE}?${params.toString()}`);
-      const data = await res.json();
-      setUserUsage(data.data || []);
-    } catch (err) {
+      const data = await apiAdmin(`${API_BASE}?${params.toString()}`);
+      setUserUsage((data as any).data || []);
+    } catch (err: any) {
       console.error('Failed to load user usage', err);
     } finally {
       setLoading(false);
@@ -101,15 +99,14 @@ export default function DataUsagePage() {
 
   const triggerAggregate = async () => {
     try {
-      const res = await fetch(`${API_BASE}/aggregate`, { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        alert(`Aggregation complete: ${data.data.processed} users processed`);
+      const data = await apiAdmin(`${API_BASE}/aggregate`, { method: 'POST' });
+      if ((data as any).success) {
+        alert(`Aggregation complete: ${(data as any).data.processed} users processed`);
         if (tab === 'top') loadTop();
         else if (tab === 'monthly') loadMonthly();
         else loadUserUsage();
       }
-    } catch (err) {
+    } catch (err: any) {
       alert('Failed to trigger aggregation');
     }
   };
