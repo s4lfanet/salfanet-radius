@@ -19,6 +19,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface GenieACSDevice {
   _id: string;
@@ -180,21 +181,14 @@ export default function GenieACSDevicesPage() {
 
   const fetchDevices = useCallback(async () => {
     try {
-      const [devicesRes, settingsRes] = await Promise.all([
-        fetch('/api/settings/genieacs/devices'),
-        fetch('/api/settings/genieacs')
+      const [devicesData, settingsData] = await Promise.all([
+        apiAdmin('/api/settings/genieacs/devices'),
+        apiAdmin('/api/settings/genieacs')
       ]);
 
-      if (settingsRes.ok) {
-        const data = await settingsRes.json();
-        setIsConfigured(!!data?.settings?.host);
-      }
-
-      if (devicesRes.ok) {
-        const data = await devicesRes.json();
-        setDevices(data.devices || []);
-      }
-    } catch (error) {
+      setIsConfigured(!!(settingsData as any)?.settings?.host);
+      setDevices((devicesData as any).devices || []);
+    } catch (error: any) {
       console.error('Error fetching devices:', error);
     } finally {
       setLoading(false);
@@ -220,12 +214,11 @@ export default function GenieACSDevicesPage() {
       variant: 'warning',
     })) return;
     try {
-      const response = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/reboot`, { method: 'POST' });
-      const data = await response.json();
-      if (response.ok && data.success) {
+      const data = await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/reboot`, { method: 'POST' });
+      if ((data as any).success) {
         addToast({ type: 'success', title: t('common.success'), description: t('genieacs.rebootSent'), duration: 3000 });
       } else {
-        throw new Error(data.error || t('genieacs.failedSendCommand'));
+        throw new Error((data as any).error || t('genieacs.failedSendCommand'));
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedSendCommand');
@@ -236,16 +229,15 @@ export default function GenieACSDevicesPage() {
   // Force connection request to execute pending tasks
   const handleForceSync = async (deviceId: string) => {
     try {
-      const response = await fetch(`/api/genieacs/devices/${encodeURIComponent(deviceId)}/connection-request`, {
+      const data = await apiAdmin(`/api/genieacs/devices/${encodeURIComponent(deviceId)}/connection-request`, {
         method: 'POST'
       });
-      const data = await response.json();
 
-      if (response.ok && data.success) {
+      if ((data as any).success) {
         addToast({ type: 'success', title: t('common.success'), description: t('genieacs.connectionRequestSent'), duration: 3000 });
         setTimeout(() => handleRefresh(), 3000);
       } else {
-        throw new Error(data.error || t('genieacs.failedSyncDevice'));
+        throw new Error((data as any).error || t('genieacs.failedSyncDevice'));
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedSyncDevice');
@@ -262,13 +254,9 @@ export default function GenieACSDevicesPage() {
       variant: 'danger',
     })) return;
     try {
-      const response = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' });
-      if (response.ok) {
-        setDevices(devices.filter(d => d._id !== deviceId));
-        addToast({ type: 'success', title: t('common.success'), description: t('genieacs.deviceDeleted'), duration: 2000 });
-      } else {
-        throw new Error(t('genieacs.failedDeleteDevice'));
-      }
+      await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' });
+      setDevices(devices.filter(d => d._id !== deviceId));
+      addToast({ type: 'success', title: t('common.success'), description: t('genieacs.deviceDeleted'), duration: 2000 });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedDeleteDevice');
       addToast({ type: 'error', title: t('common.error'), description: msg });
@@ -284,13 +272,12 @@ export default function GenieACSDevicesPage() {
       variant: 'info',
     })) return;
     try {
-      const response = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/refresh`, { method: 'POST' });
-      const data = await response.json();
-      if (response.ok && data.success) {
+      const data = await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/refresh`, { method: 'POST' });
+      if ((data as any).success) {
         addToast({ type: 'success', title: t('common.success'), description: t('genieacs.refreshTaskSent'), duration: 2000 });
         setTimeout(() => handleRefresh(), 2000);
       } else {
-        throw new Error(data.error || t('genieacs.failedSendTask'));
+        throw new Error((data as any).error || t('genieacs.failedSendTask'));
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedSendRefresh');
@@ -302,17 +289,16 @@ export default function GenieACSDevicesPage() {
     setLoadingDetail(true);
     setShowDetailModal(true);
     try {
-      const response = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/detail`);
-      const data = await response.json();
-      if (response.ok && data.success && data.device) {
-        setSelectedDevice(data.device);
+      const data = await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/detail`);
+      if ((data as any).success && (data as any).device) {
+        setSelectedDevice((data as any).device);
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: data.error || t('genieacs.failedGetDetail') });
+        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || t('genieacs.failedGetDetail') });
         setShowDetailModal(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching device detail:', error);
-      addToast({ type: 'error', title: t('common.error'), description: t('genieacs.failedGetDetail') });
+      addToast({ type: 'error', title: t('common.error'), description: error.message || t('genieacs.failedGetDetail') });
       setShowDetailModal(false);
     } finally {
       setLoadingDetail(false);
@@ -330,12 +316,11 @@ export default function GenieACSDevicesPage() {
     setParamSearch('');
     setParamBrowserData([]);
     try {
-      const res = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/parameters`);
-      const data = await res.json();
-      if (data.success) {
-        setParamBrowserData(data.parameters);
+      const data = await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/parameters`);
+      if ((data as any).success) {
+        setParamBrowserData((data as any).parameters);
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: data.error || 'Failed to load parameters' });
+        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || 'Failed to load parameters' });
         setShowParamBrowser(false);
       }
     } catch {
@@ -452,9 +437,8 @@ export default function GenieACSDevicesPage() {
     setSavingWifi(true);
     try {
       const isAddMode = wifiModalMode === 'add';
-      const response = await fetch(`/api/genieacs/devices/${encodeURIComponent(editWifiData.deviceId)}/wifi`, {
+      const data = await apiAdmin(`/api/genieacs/devices/${encodeURIComponent(editWifiData.deviceId)}/wifi`, {
         method: isAddMode ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(isAddMode ? {
           ssid: editWifiData.ssid,
           password: trimmedPassword.length > 0 ? trimmedPassword : undefined,
@@ -470,13 +454,12 @@ export default function GenieACSDevicesPage() {
           securityMode: editWifiData.securityMode,
         })
       });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        const isExecuted = data.taskStatus && data.taskStatus !== 'pending';
+      if ((data as any).success) {
+        const isExecuted = (data as any).taskStatus && (data as any).taskStatus !== 'pending';
         addToast({
           type: isExecuted ? 'success' : 'info',
           title: isExecuted ? t('common.success') : t('genieacs.taskSent'),
-          description: data.message || t('genieacs.wifiConfigSent'),
+          description: (data as any).message || t('genieacs.wifiConfigSent'),
           duration: isExecuted ? 3000 : 5000,
         });
         if (!isExecuted && !isAddMode) {
@@ -487,7 +470,7 @@ export default function GenieACSDevicesPage() {
           setTimeout(() => handleViewDetail(selectedDevice._id), isExecuted ? 3000 : 5000);
         }
       } else {
-        throw new Error(data.error || 'Gagal update WiFi config');
+        throw new Error((data as any).error || 'Gagal update WiFi config');
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedUpdateWifi');
@@ -547,15 +530,14 @@ export default function GenieACSDevicesPage() {
         };
         if (editWanData.vlanId) { body.vlanId = editWanData.vlanId; body.vlanPriority = editWanData.vlanPriority; }
         if (editWanData.connectionType === 'PPPoE') { body.username = editWanData.username; body.password = editWanData.password; }
-        const res = await fetch(`/api/genieacs/devices/${encodeURIComponent(selectedDevice._id)}/wan`, {
-          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        const data = await apiAdmin(`/api/genieacs/devices/${encodeURIComponent(selectedDevice._id)}/wan`, {
+          method: 'PUT', body: JSON.stringify(body),
         });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          addToast({ type: 'success', title: 'WAN Added', description: data.message || 'WAN connection added', duration: 4000 });
+        if ((data as any).success) {
+          addToast({ type: 'success', title: 'WAN Added', description: (data as any).message || 'WAN connection added', duration: 4000 });
           setShowWanModal(false);
           setTimeout(() => handleViewDetail(selectedDevice._id), 3000);
-        } else { throw new Error(data.error || 'Failed to add WAN'); }
+        } else { throw new Error((data as any).error || 'Failed to add WAN'); }
       } else {
         const body: Record<string, unknown> = {
           connectionPath: editWanData.connectionPath,
@@ -567,15 +549,14 @@ export default function GenieACSDevicesPage() {
           serviceList: editWanData.serviceList,
         };
         if (editWanData.connectionType === 'PPPoE') { if (editWanData.username) body.username = editWanData.username; if (editWanData.password) body.password = editWanData.password; }
-        const res = await fetch(`/api/genieacs/devices/${encodeURIComponent(selectedDevice._id)}/wan`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+        const data = await apiAdmin(`/api/genieacs/devices/${encodeURIComponent(selectedDevice._id)}/wan`, {
+          method: 'POST', body: JSON.stringify(body),
         });
-        const data = await res.json();
-        if (res.ok && data.success) {
-          addToast({ type: 'success', title: t('common.success'), description: data.message || 'WAN config updated', duration: 4000 });
+        if ((data as any).success) {
+          addToast({ type: 'success', title: t('common.success'), description: (data as any).message || 'WAN config updated', duration: 4000 });
           setShowWanModal(false);
           setTimeout(() => handleViewDetail(selectedDevice._id), 3000);
-        } else { throw new Error(data.error || 'Failed to update WAN'); }
+        } else { throw new Error((data as any).error || 'Failed to update WAN'); }
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Failed to update WAN config';
@@ -595,15 +576,14 @@ export default function GenieACSDevicesPage() {
       variant: 'danger',
     })) return;
     try {
-      const res = await fetch(`/api/genieacs/devices/${encodeURIComponent(selectedDevice._id)}/wan`, {
-        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+      const data = await apiAdmin(`/api/genieacs/devices/${encodeURIComponent(selectedDevice._id)}/wan`, {
+        method: 'DELETE',
         body: JSON.stringify({ connectionPath: wan.path }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        addToast({ type: 'success', title: 'WAN Deleted', description: data.message, duration: 3000 });
+      if ((data as any).success) {
+        addToast({ type: 'success', title: 'WAN Deleted', description: (data as any).message, duration: 3000 });
         setTimeout(() => handleViewDetail(selectedDevice._id), 2000);
-      } else { throw new Error(data.error || 'Failed to delete WAN'); }
+      } else { throw new Error((data as any).error || 'Failed to delete WAN'); }
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: error instanceof Error ? error.message : 'Failed to delete WAN' });
     }
@@ -1835,13 +1815,11 @@ export default function GenieACSDevicesPage() {
                     const endpoint = genTarget === 'vp'
                       ? '/api/genieacs/virtual-parameters'
                       : '/api/genieacs/provisions';
-                    const res = await fetch(endpoint, {
+                    const json = await apiAdmin(endpoint, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ _id: genName.trim(), script: genScript }),
                     });
-                    const json = await res.json();
-                    if (!json.success) throw new Error(json.error ?? 'Gagal menyimpan');
+                    if (!(json as any).success) throw new Error((json as any).error ?? 'Gagal menyimpan');
                     addToast({ type: 'success', title: 'Tersimpan', description: `${genTarget === 'vp' ? 'VP' : 'Provision'} "${genName}" disimpan & sync ke GenieACS`, duration: 3000 });
                     setShowGenModal(false);
                   } catch (e) {
