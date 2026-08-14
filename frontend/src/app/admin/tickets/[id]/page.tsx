@@ -21,6 +21,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { ArrowLeft, Send, User, Clock, Lock, MessageCircle, Edit2, Save } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -84,16 +85,13 @@ export default function AdminTicketDetailPage() {
 
   const fetchTicket = async () => {
     try {
-      const res = await fetch(`/api/tickets?id=${ticketId}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.length > 0) {
-          setTicket(data[0]);
-          setSelectedStatus(data[0].status);
-          setSelectedPriority(data[0].priority);
-        }
+      const data = await apiAdmin(`/api/tickets?id=${ticketId}`);
+      if (Array.isArray(data) && (data as any[]).length > 0) {
+        setTicket((data as any[])[0]);
+        setSelectedStatus((data as any[])[0].status);
+        setSelectedPriority((data as any[])[0].priority);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch ticket:', error);
     } finally {
       setLoading(false);
@@ -102,12 +100,9 @@ export default function AdminTicketDetailPage() {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`/api/tickets/messages?ticketId=${ticketId}&includeInternal=true`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data);
-      }
-    } catch (error) {
+      const data = await apiAdmin(`/api/tickets/messages?ticketId=${ticketId}&includeInternal=true`);
+      setMessages(data as any);
+    } catch (error: any) {
       console.error('Failed to fetch messages:', error);
     }
   };
@@ -119,9 +114,8 @@ export default function AdminTicketDetailPage() {
 
     setSending(true);
     try {
-      const res = await fetch('/api/tickets/messages', {
+      await apiAdmin('/api/tickets/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticketId,
           senderType: 'ADMIN',
@@ -131,18 +125,14 @@ export default function AdminTicketDetailPage() {
         }),
       });
 
-      if (res.ok) {
-        setReplyText('');
-        setIsInternal(false);
-        fetchMessages();
-        fetchTicket(); // Update lastResponseAt
-        await showSuccess(t('ticket.replySent') || 'Reply sent successfully');
-      } else {
-        await showError(t('ticket.replyFailed'));
-      }
-    } catch (error) {
+      setReplyText('');
+      setIsInternal(false);
+      fetchMessages();
+      fetchTicket(); // Update lastResponseAt
+      await showSuccess(t('ticket.replySent') || 'Reply sent successfully');
+    } catch (error: any) {
       console.error('Failed to send reply:', error);
-      await showError(t('ticket.replyFailed'));
+      await showError(error.message || t('ticket.replyFailed'));
     } finally {
       setSending(false);
     }
@@ -150,49 +140,39 @@ export default function AdminTicketDetailPage() {
 
   const handleUpdateStatus = async () => {
     try {
-      const res = await fetch('/api/tickets', {
+      await apiAdmin('/api/tickets', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: ticketId,
           status: selectedStatus,
         }),
       });
 
-      if (res.ok) {
-        fetchTicket();
-        setEditingStatus(false);
-        await showSuccess(t('ticket.statusUpdated') || 'Status updated successfully');
-      } else {
-        await showError(t('ticket.updateFailed'));
-      }
-    } catch (error) {
+      fetchTicket();
+      setEditingStatus(false);
+      await showSuccess(t('ticket.statusUpdated') || 'Status updated successfully');
+    } catch (error: any) {
       console.error('Failed to update status:', error);
-      await showError(t('ticket.updateFailed'));
+      await showError(error.message || t('ticket.updateFailed'));
     }
   };
 
   const handleUpdatePriority = async () => {
     try {
-      const res = await fetch('/api/tickets', {
+      await apiAdmin('/api/tickets', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: ticketId,
           priority: selectedPriority,
         }),
       });
 
-      if (res.ok) {
-        fetchTicket();
-        setEditingPriority(false);
-        await showSuccess(t('ticket.priorityUpdated') || 'Priority updated successfully');
-      } else {
-        await showError(t('ticket.updateFailed'));
-      }
-    } catch (error) {
+      fetchTicket();
+      setEditingPriority(false);
+      await showSuccess(t('ticket.priorityUpdated') || 'Priority updated successfully');
+    } catch (error: any) {
       console.error('Failed to update priority:', error);
-      await showError(t('ticket.updateFailed'));
+      await showError(error.message || t('ticket.updateFailed'));
     }
   };
 
