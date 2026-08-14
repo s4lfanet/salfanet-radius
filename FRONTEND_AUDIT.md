@@ -1565,6 +1565,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 34 — Settings Cron Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/cron/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/cron/status')` + `fetch('/api/cron/schedules')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/cron', { method: 'POST' })` (trigger manual) → `apiAdmin(...)`
+  - `fetch('/api/cron/schedules', { method: 'PUT' })` (save schedule) → `apiAdmin(...)`
+  - `fetch('/api/cron/schedules?jobType=...', { method: 'DELETE' })` (reset) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in settings/cron page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Settings cron page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
