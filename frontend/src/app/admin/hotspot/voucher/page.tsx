@@ -16,7 +16,7 @@ import { renderVoucherTemplate, getPrintableHtml } from '@/lib/utils/templateRen
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from '@/hooks/useTranslation'
 import { useSSE } from '@/hooks/useSSE'
-import { apiAdmin, networkApi } from '@/lib/api'
+import { apiAdmin, networkApi, buildUrl } from '@/lib/api'
 
 interface Voucher {
   id: string; code: string; password: string | null; batchCode: string | null;
@@ -326,8 +326,8 @@ export default function HotspotVoucherPage() {
     setIsPrintDialogOpen(false); setSelectedVouchers([]);
   }
 
-  const handleDownloadTemplate = async () => { try { const res = await fetch('/api/hotspot/voucher/bulk?type=template', { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'voucher-template.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (e) { console.error(e); await showError(t('common.failed')); } }
-  const handleExportData = async () => { try { const res = await fetch('/api/hotspot/voucher/bulk?type=export', { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `vouchers-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (e) { console.error(e); await showError(t('common.failed')); } }
+  const handleDownloadTemplate = async () => { try { const res = await fetch(buildUrl('/api/hotspot/voucher/bulk?type=template'), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'voucher-template.csv'; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (e) { console.error(e); await showError(t('common.failed')); } }
+  const handleExportData = async () => { try { const res = await fetch(buildUrl('/api/hotspot/voucher/bulk?type=export'), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `vouchers-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (e) { console.error(e); await showError(t('common.failed')); } }
   
   const handleExportExcel = async () => {
     try {
@@ -338,7 +338,7 @@ export default function HotspotVoucherPage() {
       if (filterStatus && filterStatus !== 'all') params.set('status', filterStatus);
       if (filterRouter && filterRouter !== 'all') params.set('routerId', filterRouter);
       if (filterAgent && filterAgent !== 'all') params.set('agentId', filterAgent);
-      const res = await fetch(`/api/hotspot/voucher/export?${params}`, { credentials: 'include' });
+      const res = await fetch(buildUrl(`/api/hotspot/voucher/export?${params}`), { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `Vouchers-${new Date().toISOString().split('T')[0]}.xlsx`;
