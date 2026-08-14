@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError, showConfirm } from "@/lib/sweetalert";
 import { formatWIB, nowWIB } from "@/lib/timezone";
 import { useTranslation } from "@/hooks/useTranslation";
+import { apiAdmin } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -180,17 +181,15 @@ export default function KeuanganPage() {
       if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
 
-      const [transRes, catRes] = await Promise.all([fetch(url), fetch("/api/keuangan/categories")]);
-      const transData = await transRes.json();
-      const catData = await catRes.json();
+      const [transData, catData] = await Promise.all([apiAdmin(url), apiAdmin("/api/keuangan/categories")]);
 
-      if (transData.success) {
-        if (reset) { setTransactions(transData.transactions); } else { setTransactions((prev) => [...prev, ...transData.transactions]); }
-        setStats(transData.stats);
-        setTotal(transData.total || 0);
-        setHasMore(transData.transactions.length === 50);
+      if ((transData as any).success) {
+        if (reset) { setTransactions((transData as any).transactions); } else { setTransactions((prev) => [...prev, ...(transData as any).transactions]); }
+        setStats((transData as any).stats);
+        setTotal((transData as any).total || 0);
+        setHasMore((transData as any).transactions.length === 50);
       }
-      if (catData.success) setCategories(catData.categories);
+      if ((catData as any).success) setCategories((catData as any).categories);
     } catch (error) {
       await showError(t('keuangan.failedLoadData'));
     } finally {
@@ -244,25 +243,23 @@ export default function KeuanganPage() {
     try {
       const method = editingTransaction ? "PUT" : "POST";
       const body = editingTransaction ? { id: editingTransaction.id, ...transactionForm } : transactionForm;
-      const res = await fetch("/api/keuangan/transactions", {
+      const data = await apiAdmin("/api/keuangan/transactions", {
         method,
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
 
-      if (data.success) {
-        await showSuccess(data.message);
+      if ((data as any).success) {
+        await showSuccess((data as any).message);
         setIsTransactionDialogOpen(false);
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError(data.error);
+        await showError((data as any).error);
       }
-    } catch (error) {
-      await showError(t('keuangan.failedSaveTransaction'));
+    } catch (error: any) {
+      await showError(error.message || t('keuangan.failedSaveTransaction'));
     } finally {
       setProcessing(false);
     }
@@ -273,21 +270,20 @@ export default function KeuanganPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/keuangan/transactions?id=${transaction.id}`, { method: "DELETE" });
-      const data = await res.json();
+      const data = await apiAdmin(`/api/keuangan/transactions?id=${transaction.id}`, { method: "DELETE" });
 
-      if (data.success) {
-        await showSuccess(data.message);
+      if ((data as any).success) {
+        await showSuccess((data as any).message);
         clearSelection();
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError(data.error);
+        await showError((data as any).error);
       }
-    } catch (error) {
-      await showError(t('keuangan.failedDeleteTransaction'));
+    } catch (error: any) {
+      await showError(error.message || t('keuangan.failedDeleteTransaction'));
     }
   };
 
@@ -297,20 +293,19 @@ export default function KeuanganPage() {
     if (!confirmed) return;
     try {
       const ids = Array.from(selectedIds).join(",");
-      const res = await fetch(`/api/keuangan/transactions?ids=${encodeURIComponent(ids)}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        await showSuccess(data.message);
+      const data = await apiAdmin(`/api/keuangan/transactions?ids=${encodeURIComponent(ids)}`, { method: "DELETE" });
+      if ((data as any).success) {
+        await showSuccess((data as any).message);
         clearSelection();
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError(data.error);
+        await showError((data as any).error);
       }
-    } catch (error) {
-      await showError(t('keuangan.failedDeleteTransaction'));
+    } catch (error: any) {
+      await showError(error.message || t('keuangan.failedDeleteTransaction'));
     }
   };
 
@@ -321,10 +316,9 @@ export default function KeuanganPage() {
       let url = `/api/keuangan/transactions?filterDelete=true&type=${filterType}&categoryId=${filterCategory}`;
       if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
-      const res = await fetch(url, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        await showSuccess(data.message);
+      const data = await apiAdmin(url, { method: "DELETE" });
+      if ((data as any).success) {
+        await showSuccess((data as any).message);
         clearSelection();
         setPage(1);
         setTransactions([]);
@@ -352,25 +346,23 @@ export default function KeuanganPage() {
 
     setProcessing(true);
     try {
-      const res = await fetch("/api/keuangan/categories", {
+      const data = await apiAdmin("/api/keuangan/categories", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(categoryForm),
       });
-      const data = await res.json();
 
-      if (data.success) {
-        await showSuccess(data.message);
+      if ((data as any).success) {
+        await showSuccess((data as any).message);
         setIsCategoryDialogOpen(false);
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError(data.error);
+        await showError((data as any).error);
       }
-    } catch (error) {
-      await showError(t('keuangan.failedSaveCategory'));
+    } catch (error: any) {
+      await showError(error.message || t('keuangan.failedSaveCategory'));
     } finally {
       setProcessing(false);
     }
@@ -421,7 +413,7 @@ export default function KeuanganPage() {
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
 
       if (format === "excel") {
-        const res = await fetch(url);
+        const res = await fetch(url, { credentials: 'include' });
         if (!res.ok) { await showError(t('keuangan.exportFailed')); return; }
         const blob = await res.blob();
         const a = document.createElement("a");
@@ -431,13 +423,12 @@ export default function KeuanganPage() {
         a.click();
         URL.revokeObjectURL(a.href);
       } else {
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data.transactions) generatePDF(data.transactions, data.stats);
+        const data = await apiAdmin(url);
+        if ((data as any).transactions) generatePDF((data as any).transactions, (data as any).stats);
         else await showError(t('keuangan.exportFailed'));
       }
-    } catch (error) {
-      await showError(t('keuangan.exportFailed'));
+    } catch (error: any) {
+      await showError(error.message || t('keuangan.exportFailed'));
     }
   };
 
