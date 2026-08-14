@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.5.0 — Phase 2 complete (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 4.6.0 — Phase 6A complete (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -196,19 +196,21 @@ Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`
 
 ```typescript
 import { apiAdmin } from '@/lib/api';
+import type { PppoeUserListResponse } from '@/types/api';
 
-// GET
-const data = await apiAdmin('/api/pppoe/users');
+// GET — typed response
+const data = await apiAdmin<PppoeUserListResponse>('/api/pppoe/users');
+// data.users, data.count — fully typed
 
 // POST/PUT/DELETE
-const result = await apiAdmin('/api/pppoe/users', {
+const result = await apiAdmin<{ success: boolean; message?: string }>('/api/pppoe/users', {
   method: 'POST',
   body: JSON.stringify(payload),
 });
 
 // Error handling otomatis via ApiError
 try {
-  const data = await apiAdmin('/api/invoices');
+  const data = await apiAdmin<PppoeUserListResponse>('/api/invoices');
 } catch (error) {
   // error instanceof ApiError — non-2xx response
 }
@@ -220,7 +222,8 @@ try {
 - Auto `Content-Type: application/json` header
 - Throw `ApiError` untuk non-2xx responses
 - Multipart & blob download support
-- Typed method arguments
+- **Generic typed** — `apiAdmin<T = unknown>` (Phase 6A: default `unknown` forces explicit typing)
+- 3 auth modes: `apiAdmin` (cookies), `apiCustomer` (Bearer), `apiAgent` (Bearer)
 
 ### Verification (per batch)
 
@@ -237,6 +240,51 @@ Setiap batch diverifikasi dengan:
 - **Migrated**: 52 batch, 361 fetch calls
 - **Remaining**: ~176 fetch calls di halaman admin lainnya
 - **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
+
+---
+
+## 🔒 Phase 6A — Full API Contract & Type-Safety Audit (v4.6.0)
+
+Verifikasi bahwa Phase 5B API types benar-benar digunakan through complete data flow:
+`Backend API → API Response → apiAdmin() → Domain API module → Hook/Page → Component`
+
+Dokumentasi lengkap: [`docs/FRONTEND_API_CONTRACT.md`](docs/FRONTEND_API_CONTRACT.md) · [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+
+### Hasil Audit
+
+| Metric | Before | After | Reduction |
+|--------|--------|-------|-----------|
+| Total `any` patterns | 1369 | 950 | 31% |
+| `(data as any)` casts | 616 | 318 | 48% |
+| TypeScript errors | 0 | 0 | — |
+| Lint errors | 0 | 0 | — |
+
+### Yang Dikerjakan
+
+1. **Type definitions updated** — semua type di `frontend/src/types/api/` di-validasi terhadap actual backend route responses
+2. **2 new type files** — `types/api/customer.ts` (Customer portal) dan `types/api/agent.ts` (Agent portal)
+3. **API client generic fix** — `apiAdmin<T = any>` → `apiAdmin<T = unknown>` (force explicit typing)
+4. **Endpoint fixes** — manual payment approve/reject (POST→PATCH), transactions path, settings endpoint, agent endpoints
+5. **Top 20 pages fixed** — `(data as any)` casts removed dari dashboard, PPPoE, VPN, GenieACS, invoices, company, OLT, routers, keuangan, voucher, profiles, FreeRADIUS, payment-gateway, email settings, technicians
+6. **API contract documentation** — `docs/FRONTEND_API_CONTRACT.md` dengan 34 endpoint documented
+
+### Backend Issues Found (documented, NOT fixed)
+
+7 backend issues ditemukan dan didocument di `docs/FRONTEND_API_CONTRACT.md`:
+1. Missing: `DELETE /api/pppoe/users/bulk-delete`
+2. Missing: `GET /api/invoices/[id]/pdf`
+3. Missing: generic `/api/settings` endpoint
+4. Missing: `/api/agent/me` and `/api/agent/vouchers` endpoints
+5. Inconsistent response wrappers (`ok(data)` vs `{ success: true, data }`)
+6. Inconsistent error shapes (`{ error }` vs `{ success: false, error }`)
+7. Inconsistent pagination patterns (3 different shapes)
+
+### Deployment
+
+- **Commit**: `95bfa7e8`
+- **VPS**: `192.168.54.129` — `https://radius.salfa.my.id`
+- **PM2**: All 4 processes online (frontend, backend, cron, wa)
+- **Health check**: Backend OK, Frontend 200, API 200 via domain
 
 ---
 

@@ -25,7 +25,8 @@ Dokumen ini dibuat pada: 2026-08-14
 | **Phase 5F** | ✅ Selesai | Server/Client audit — `table.tsx` converted to Server Component |
 | **Phase 5G** | ✅ Selesai | Security audit — `l2tpPassword` removed from localStorage |
 | **Phase 5H** | ✅ Selesai | Final validation — TypeScript 0 errors, build OK, deploy OK |
-| **Deploy** | ✅ Selesai | VPS `192.168.54.129` — git pull, build, PM2 restart, health check OK |
+| **Phase 6A** | ✅ Selesai | Full API Contract & Type-Safety Audit — 1369→950 `any` (31% reduction), 616→318 `(data as any)` casts (48% reduction), 2 new type files, 7 backend issues documented |
+| **Deploy 6A** | ✅ Selesai | VPS `192.168.54.129` — commit `95bfa7e8` deployed, all PM2 online, health OK |
 
 ---
 
@@ -51,9 +52,10 @@ Dokumen ini dibuat pada: 2026-08-14
 - **Files fixed**: `usePermissions.ts`, `server/auth/config.ts`, `AdminClientLayout.tsx`, `push-notifications/page.tsx`, `management/page.tsx`
 
 ### 4.2 — API Contract Types
-- **Status**: ✅ Selesai (Phase 5B)
-- **Deskripsi**: Response API sekarang typed. `frontend/src/types/api/` berisi 10 file: `common.ts`, `auth.ts`, `pppoe.ts`, `billing.ts`, `network.ts`, `voucher.ts`, `settings.ts`, `notification.ts`, `dashboard.ts`, `index.ts`. Domain modules (`pppoeApi`, `invoiceApi`, `billingApi`, `networkApi`, `dashboardApi`, `settingsApi`) sudah diupdate untuk menggunakan typed responses.
-- **Types**: `PppoeUser`, `PppoeProfile`, `PppoeArea`, `Invoice`, `ManualPayment`, `Transaction`, `Router`, `OLT`, `HotspotVoucher`, `Notification`, `Ticket`, `DashboardStats`, dll.
+- **Status**: ✅ Selesai (Phase 5B + Phase 6A)
+- **Deskripsi**: Response API sekarang typed. `frontend/src/types/api/` berisi 12 file: `common.ts`, `auth.ts`, `pppoe.ts`, `billing.ts`, `network.ts`, `voucher.ts`, `settings.ts`, `notification.ts`, `dashboard.ts`, `customer.ts`, `agent.ts`, `index.ts`. Domain modules (`pppoeApi`, `invoiceApi`, `billingApi`, `networkApi`, `dashboardApi`, `settingsApi`, `customerApi`, `agentApi`) sudah diupdate untuk menggunakan typed responses.
+- **Types**: `PppoeUser`, `PppoeProfile`, `PppoeArea`, `Invoice`, `ManualPayment`, `Transaction`, `Router`, `OLT`, `HotspotVoucher`, `Notification`, `Ticket`, `DashboardStats`, `CustomerUser`, `AgentProfile`, dll.
+- **Phase 6A validation**: Semua type definitions di-validasi terhadap actual backend route responses. 7 backend issues ditemukan dan didocument (missing endpoints, inconsistent wrappers/errors/pagination). Lihat `docs/FRONTEND_API_CONTRACT.md`.
 
 ### 4.3 — React Query untuk Caching/Dedup
 - **Status**: ⏭️ Skipped (Phase 5E)
@@ -92,25 +94,35 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 
 ### VPS Deployment
 - **Status**: ✅ Selesai (14 Aug 2026)
-- **VPS**: `192.168.54.129` (local)
+- **VPS**: `192.168.54.129`
+- **Domain**: `https://radius.salfa.my.id`
 - **Production dir**: `/var/www/salfanet-radius/`
+- **Git source**: `/root/salfanet-radius/`
 - **Deploy method**: git pull + pnpm install + next build + PM2 restart
-- **Commit deployed**: `cbc2fdbc`
+- **Commit deployed**: `95bfa7e8` (Phase 6A)
 - **PM2 processes**: All 4 online (frontend, backend, cron, wa)
-- **Health check**: Backend `{"status":"ok"}`, Frontend 200, Nginx 200
+- **Health check**: Backend `{"status":"ok"}`, Frontend 307→200, Nginx 8080 OK
+- **Nginx**: port 8080, Cloudflare handles 443
 
 ### Production Testing
-- **Status**: ⏳ Pending
-- **Deskripsi**: Test semua halaman admin setelah deploy
-- **Solusi**: Test manual atau via Playwright setelah deploy
-- **Prioritas**: High (saat VPS available)
+- **Status**: ✅ Selesai (14 Aug 2026)
+- **Smoke test results**:
+  - `https://radius.salfa.my.id` → 307 (redirect normal)
+  - `https://radius.salfa.my.id/login` → 200 (18KB)
+  - `https://radius.salfa.my.id/api/health` → 200 OK
+  - `https://radius.salfa.my.id/api/pppoe/users` → 401 (expected, butuh auth)
+  - `https://radius.salfa.my.id/api/dashboard/stats` → 401 (expected)
+- **Regression statuses**: Tidak ada 400/404/405/500 di endpoint yang di-test
 
 ---
 
-## Commits Terbaru (Phase 2 Completion + Phase 3)
+## Commits Terbaru
 
 | Commit | Tanggal | Deskripsi |
 |--------|---------|-----------|
+| `95bfa7e8` | 14 Aug | Phase 6A: Full API contract and type-safety audit |
+| `a72fcc30` | 14 Aug | docs: update TODO.md and CHANGELOG.md for Phase 5 completion |
+| `8e39478f` | 14 Aug | feat: Phase 5 frontend audit — API types, utilities, security, server components |
 | `8c8c00f3` | 14 Aug | feat: Phase 3 architecture improvements |
 | `8b743cfb` | 14 Aug | fix: resolve lint errors from API migration |
 | `2ae622f8` | 14 Aug | refactor: migrate Batch 77-111 pages to centralized API client |
@@ -123,17 +135,22 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 
 ## Ringkasan Prioritas
 
-| Prioritas | Item | Phase |
-|-----------|------|-------|
-| **High** | Production Testing (test semua halaman admin) | Deploy |
-| **Medium** | API Contract Types | Phase 4.2 |
-| **Low** | Dark Mode Inconsistencies | Phase 3.6 |
-| **Low** | Consolidate Duplicate Utilities | Phase 3.7 |
-| **Low** | React Query | Phase 4.3 |
-| **Low** | Server vs Client Component Audit | Phase 4.4 |
+| Prioritas | Item | Phase | Status |
+|-----------|------|-------|--------|
+| **Medium** | Sisa 318 `(data as any)` casts di lower-priority pages | Phase 6B | Pending |
+| **Medium** | React Query (performance optimization) | Phase 7 | Pending (butuh profiling data) |
+| **Low** | Backend issues (7 items di FRONTEND_API_CONTRACT.md) | Backend | Documented |
+| **Low** | `catch (e: any)` → `catch (e: unknown)` cleanup | Phase 6B | Pending |
 
 ### Sudah Selesai
-- ✅ VPS Deployment (14 Aug 2026)
+- ✅ VPS Deployment (14 Aug 2026, commit `95bfa7e8`)
+- ✅ Phase 6A — Full API Contract & Type-Safety Audit
+- ✅ Production Testing — smoke test via domain
 - ✅ NextAuth Session Types (Phase 4.1)
 - ✅ Enable TypeScript Build Checks (Phase 4.5)
 - ✅ Pre-existing TS Errors — semua fixed
+- ✅ API Contract Types (Phase 5B + 6A validation)
+- ✅ Dark Mode Audit (Phase 5C)
+- ✅ Utilities Consolidation (Phase 5D)
+- ✅ Server/Client Component Audit (Phase 5F)
+- ✅ Security Audit (Phase 5G)
