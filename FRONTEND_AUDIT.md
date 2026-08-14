@@ -1396,6 +1396,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 24 — Management Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/management/page.tsx` — 6 fetch() calls replaced:
+  - `fetch('/api/admin/users')` (load users) → `apiAdmin(...)`
+  - `fetch('/api/permissions')` (load permissions) → `apiAdmin(...)`
+  - `fetch('/api/permissions/role-templates')` (load templates) → `apiAdmin(...)`
+  - `fetch('/api/admin/users', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/admin/users/${id}/permissions')` (user permissions) → `apiAdmin(...)`
+  - `fetch('/api/admin/users/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in management page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Management page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

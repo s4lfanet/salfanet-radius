@@ -17,6 +17,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface User {
   id: string;
@@ -75,13 +76,10 @@ export default function ManagementPage() {
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/admin/users');
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users || data);
-      }
-    } catch {
-      console.error('Failed to fetch users');
+      const data = await apiAdmin('/api/admin/users');
+      setUsers((data as any).users || data);
+    } catch (e: any) {
+      console.error('Failed to fetch users:', e.message);
     } finally {
       setLoading(false);
     }
@@ -89,34 +87,28 @@ export default function ManagementPage() {
 
   const fetchPermissions = async () => {
     try {
-      const res = await fetch('/api/permissions');
-      if (res.ok) {
-        const data = await res.json();
-        // API returns grouped object: { category1: [...], category2: [...] }
-        // Convert to flat array for state
-        if (data.success && data.permissions) {
-          const flatPermissions = Object.values(data.permissions).flat();
-          setPermissions(flatPermissions as Permission[]);
-        } else if (Array.isArray(data)) {
-          setPermissions(data);
-        }
+      const data = await apiAdmin('/api/permissions');
+      // API returns grouped object: { category1: [...], category2: [...] }
+      // Convert to flat array for state
+      if ((data as any).success && (data as any).permissions) {
+        const flatPermissions = Object.values((data as any).permissions).flat();
+        setPermissions(flatPermissions as Permission[]);
+      } else if (Array.isArray(data)) {
+        setPermissions(data as any);
       }
-    } catch {
-      console.error('Failed to fetch permissions');
+    } catch (e: any) {
+      console.error('Failed to fetch permissions:', e.message);
     }
   };
 
   const fetchRoleTemplates = async () => {
     try {
-      const res = await fetch('/api/permissions/role-templates');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.templates) {
-          setRoleTemplates(data.templates);
-        }
+      const data = await apiAdmin('/api/permissions/role-templates');
+      if ((data as any).success && (data as any).templates) {
+        setRoleTemplates((data as any).templates);
       }
-    } catch {
-      console.error('Failed to fetch role templates');
+    } catch (e: any) {
+      console.error('Failed to fetch role templates:', e.message);
     }
   };
 
@@ -134,55 +126,36 @@ export default function ManagementPage() {
         delete (submitData as { password?: string }).password;
       }
 
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(submitData),
       });
 
-      if (res.ok) {
-        addToast({ type: 'success', title: t('common.success'), description: editingUser ? t('management.userUpdated') : t('management.userCreated'), duration: 2000 });
-        setShowModal(false);
-        resetForm();
-        fetchUsers();
-      } else {
-        const error = await res.json();
-        addToast({ type: 'error', title: t('common.error'), description: error.error || t('management.failedSaveUser') });
-      }
-    } catch {
-      addToast({ type: 'error', title: t('common.error'), description: t('management.failedSaveUser') });
+      addToast({ type: 'success', title: t('common.success'), description: editingUser ? t('management.userUpdated') : t('management.userCreated'), duration: 2000 });
+      setShowModal(false);
+      resetForm();
+      fetchUsers();
+    } catch (e: any) {
+      addToast({ type: 'error', title: t('common.error'), description: e.message || t('management.failedSaveUser') });
     }
   };
 
   const handleEdit = async (user: User) => {
     setEditingUser(user);
-    
+
     // Load user's actual permissions from API
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/permissions`);
-      if (res.ok) {
-        const data = await res.json();
-        const userPermissionIds = data.permissions || [];
-        
-        setFormData({
-          username: user.username,
-          email: user.email,
-          phone: user.phone || '',
-          password: '',
-          role: user.role,
-          permissions: userPermissionIds,
-        });
-      } else {
-        // Fallback to cached data if API fails
-        setFormData({
-          username: user.username,
-          email: user.email,
-          phone: user.phone || '',
-          password: '',
-          role: user.role,
-          permissions: user.permissions || [],
-        });
-      }
+      const data = await apiAdmin(`/api/admin/users/${user.id}/permissions`);
+      const userPermissionIds = (data as any).permissions || [];
+
+      setFormData({
+        username: user.username,
+        email: user.email,
+        phone: user.phone || '',
+        password: '',
+        role: user.role,
+        permissions: userPermissionIds,
+      });
     } catch (error) {
       console.error('Failed to load user permissions:', error);
       // Fallback to cached data
@@ -195,7 +168,7 @@ export default function ManagementPage() {
         permissions: user.permissions || [],
       });
     }
-    
+
     setShowModal(true);
   };
 
@@ -208,18 +181,14 @@ export default function ManagementPage() {
       variant: 'danger',
     })) {
       try {
-        const res = await fetch(`/api/admin/users/${user.id}`, {
+        await apiAdmin(`/api/admin/users/${user.id}`, {
           method: 'DELETE',
         });
 
-        if (res.ok) {
-          addToast({ type: 'success', title: t('common.success'), description: t('management.userDeleted'), duration: 2000 });
-          fetchUsers();
-        } else {
-          const error = await res.json();
-          addToast({ type: 'error', title: t('common.error'), description: error.error || t('management.failedSaveUser') });
-        }
-      } catch {
+        addToast({ type: 'success', title: t('common.success'), description: t('management.userDeleted'), duration: 2000 });
+        fetchUsers();
+      } catch (e: any) {
+        addToast({ type: 'error', title: t('common.error'), description: e.message || t('management.failedSaveUser') });
         addToast({ type: 'error', title: t('common.error'), description: t('management.failedSaveUser') });
       }
     }
