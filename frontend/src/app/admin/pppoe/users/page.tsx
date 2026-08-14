@@ -28,6 +28,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { pppoeApi, invoiceApi, networkApi, apiAdmin } from '@/lib/api';
 
 interface PppoeUser {
   id: string; username: string; name: string; phone: string; email: string | null;
@@ -106,14 +107,11 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
         ...formData,
         ...(formData.expiredAt && { expiredAt: endOfDayWIBtoUTC(formData.expiredAt).toISOString() }),
       };
-      const res = await fetch('/api/pppoe/users', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      const result = await res.json();
-      if (res.ok) {
-        onClose();
-        onSuccess();
-        await showSuccess(t('management.userCreated'));
-      } else { await showError(result.error || t('common.failed')); }
-    } catch (error) { console.error('Submit error:', error); await showError(t('management.failedSaveUser')); }
+      await pppoeApi.createUser(payload);
+      onClose();
+      onSuccess();
+      await showSuccess(t('management.userCreated'));
+    } catch (error: any) { console.error('Submit error:', error); await showError(error.message || t('management.failedSaveUser')); }
   };
 
   const handleUploadInstallation = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,11 +120,10 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
     setUploadingInstallation(true);
     try {
       const fd = new FormData(); fd.append('file', file); fd.append('type', 'installation');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-      const result = await res.json();
-      if (result.success) { setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url] })); }
-      else { await showError(result.error || 'Upload foto instalasi gagal'); }
-    } catch { await showError('Upload foto instalasi gagal'); }
+      const result = await pppoeApi.uploadFile(fd);
+      if ((result as any).success) { setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, (result as any).url] })); }
+      else { await showError((result as any).error || 'Upload foto instalasi gagal'); }
+    } catch (e: any) { await showError(e.message || 'Upload foto instalasi gagal'); }
     finally { setUploadingInstallation(false); }
   };
 
@@ -134,16 +131,15 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
     setUploadingInstallation(true);
     try {
       const fd = new FormData(); fd.append('file', file); fd.append('type', 'installation');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-      const result = await res.json();
-      if (result.success) {
-        setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url] }));
+      const result = await pppoeApi.uploadFile(fd);
+      if ((result as any).success) {
+        setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, (result as any).url] }));
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((p) => {
             setFormData(prev => ({ ...prev, latitude: p.coords.latitude.toFixed(6), longitude: p.coords.longitude.toFixed(6) }));
           }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
         }
-      } else { await showError(result.error || 'Upload foto instalasi gagal'); }
+      } else { await showError((result as any).error || 'Upload foto instalasi gagal'); }
     } catch { await showError('Upload foto instalasi gagal'); }
     finally { setUploadingInstallation(false); }
   };
@@ -243,11 +239,10 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
                     setUploadingIdCard(true);
                     try {
                       const fd = new FormData(); fd.append('file', file); fd.append('type', 'idCard');
-                      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-                      const result = await res.json();
-                      if (result.success) { setFormData(prev => ({ ...prev, idCardPhoto: result.url })); return result.url; }
-                      await showError(result.error || 'Upload KTP gagal'); return null;
-                    } catch { await showError('Upload KTP gagal'); return null; }
+                      const result = await pppoeApi.uploadFile(fd);
+                      if ((result as any).success) { setFormData(prev => ({ ...prev, idCardPhoto: (result as any).url })); return (result as any).url; }
+                      await showError((result as any).error || 'Upload KTP gagal'); return null;
+                    } catch (e: any) { await showError(e.message || 'Upload KTP gagal'); return null; }
                     finally { setUploadingIdCard(false); }
                   }}
                   theme="light"
@@ -387,11 +382,9 @@ export default function PppoeUsersPage() {
     const pollOnlineStatus = async () => {
       try {
         const usernames = users.map(u => u.username).join(',');
-        const res = await fetch(`/api/pppoe/users/online-status?usernames=${encodeURIComponent(usernames)}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (cancelled || !data.online) return;
-        const onlineSet = new Set(data.online as string[]);
+        const data = await pppoeApi.getOnlineStatus(usernames);
+        if (cancelled || !(data as any).online) return;
+        const onlineSet = new Set((data as any).online as string[]);
         setUsers(prev => {
           // Only update if there's an actual change to avoid unnecessary re-renders
           let changed = false;
@@ -414,23 +407,21 @@ export default function PppoeUsersPage() {
 
   const loadData = async () => {
     try {
-      const [usersRes, profilesRes, routersRes, areasRes] = await Promise.all([
-        fetch('/api/pppoe/users', { cache: 'no-store' }), fetch('/api/pppoe/profiles', { cache: 'no-store' }), fetch('/api/network/routers', { cache: 'no-store' }), fetch('/api/pppoe/areas', { cache: 'no-store' }),
+      const [usersData, profilesData, routersData, areasData] = await Promise.all([
+        pppoeApi.listUsers(), pppoeApi.listProfiles(), networkApi.listRouters(), pppoeApi.listAreas(),
       ]);
-      const [usersData, profilesData, routersData, areasData] = await Promise.all([usersRes.json(), profilesRes.json(), routersRes.json(), areasRes.json()]);
-      const loadedUsers = usersData.users || [];
+      const loadedUsers = (usersData as any).users || [];
       setUsers(loadedUsers);
-      setProfiles(profilesData.profiles || []);
-      setRouters(routersData.routers || []);
-      setAreas(areasData.areas || []);
+      setProfiles((profilesData as any).profiles || []);
+      setRouters((routersData as any).routers || []);
+      setAreas((areasData as any).areas || []);
 
       // Load invoice counts for all users
       if (loadedUsers.length > 0) {
         const userIds = loadedUsers.map((u: PppoeUser) => u.id).join(',');
-        const invoiceRes = await fetch(`/api/invoices/counts?userIds=${userIds}`, { cache: 'no-store' });
-        const invoiceData = await invoiceRes.json();
-        if (invoiceData.success) {
-          setInvoiceCounts(invoiceData.counts || {});
+        const invoiceData = await apiAdmin(`/api/invoices/counts?userIds=${userIds}`);
+        if ((invoiceData as any).success) {
+          setInvoiceCounts((invoiceData as any).counts || {});
         }
       }
     } catch (error) { console.error('Load data error:', error); }
@@ -439,19 +430,16 @@ export default function PppoeUsersPage() {
 
   const handleSaveUser = async (data: any) => {
     try {
-      const res = await fetch('/api/pppoe/users', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      const result = await res.json();
-      if (res.ok) { await loadData(); await showSuccess(t('management.userUpdated')); }
-      else { await showError(result.error || t('common.failed')); throw new Error(result.error); }
-    } catch (error) { console.error('Save user error:', error); await showError(t('management.failedSaveUser')); throw error; }
+      await pppoeApi.updateUser(data);
+      await loadData(); await showSuccess(t('management.userUpdated'));
+    } catch (error: any) { console.error('Save user error:', error); await showError(error.message || t('management.failedSaveUser')); throw error; }
   };
 
   const handlePrintStandard = async (invoice: { id: string }) => {
     try {
-      const res = await fetch(`/api/invoices/${invoice.id}/pdf`);
-      const data = await res.json();
-      if (!data.success || !data.data) { await showError('Gagal mengambil data tagihan'); return; }
-      const inv = data.data;
+      const data = await apiAdmin(`/api/invoices/${invoice.id}/pdf`);
+      if (!(data as any).success || !(data as any).data) { await showError('Gagal mengambil data tagihan'); return; }
+      const inv = (data as any).data;
       const fmtCurr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
       const win = window.open('', '_blank', 'width=850,height=1100');
       if (!win) return;
@@ -640,10 +628,9 @@ export default function PppoeUsersPage() {
 
   const handlePrintThermal = async (invoice: { id: string }) => {
     try {
-      const res = await fetch(`/api/invoices/${invoice.id}/pdf`);
-      const data = await res.json();
-      if (!data.success || !data.data) { await showError('Gagal mengambil data tagihan'); return; }
-      const inv = data.data;
+      const data = await apiAdmin(`/api/invoices/${invoice.id}/pdf`);
+      if (!(data as any).success || !(data as any).data) { await showError('Gagal mengambil data tagihan'); return; }
+      const inv = (data as any).data;
       const fmtCurr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
       const win = window.open('', '_blank', 'width=400,height=650');
       if (!win) return;
@@ -720,17 +707,16 @@ export default function PppoeUsersPage() {
 
   const handlePrintFromUser = async (user: PppoeUser, type: 'standard' | 'thermal') => {
     try {
-      const res = await fetch(`/api/invoices?userId=${user.id}&limit=1`);
-      const data = await res.json();
-      if (data.invoices?.length > 0) {
+      const data = await invoiceApi.list({ userId: user.id, limit: '1' });
+      if ((data as any).invoices?.length > 0) {
         setPrintDialogUser(null);
-        const inv = data.invoices[0];
+        const inv = (data as any).invoices[0];
         if (type === 'standard') handlePrintStandard({ id: inv.id });
         else handlePrintThermal({ id: inv.id });
       } else {
         await showError('Tidak ada tagihan untuk pelanggan ini');
       }
-    } catch { await showError('Gagal memuat data tagihan'); }
+    } catch (e: any) { await showError(e.message || 'Gagal memuat data tagihan'); }
   };
 
   const handleEdit = (user: PppoeUser) => {
@@ -745,21 +731,12 @@ export default function PppoeUsersPage() {
     if (!deletePassword.trim()) { await showError('Masukkan password superadmin untuk konfirmasi hapus pelanggan.'); return; }
     setDeleting(true);
     try {
-      const res = await fetch(`/api/pppoe/users?id=${deleteUserId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ confirmPassword: deletePassword }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        await showSuccess(t('management.userDeleted'));
-        loadData();
-      } else {
-        await showError(result.error || t('common.failed'));
-      }
-    } catch (error) {
+      await pppoeApi.deleteUser(deleteUserId);
+      await showSuccess(t('management.userDeleted'));
+      loadData();
+    } catch (error: any) {
       console.error('Delete error:', error);
-      await showError(t('common.failed'));
+      await showError(error.message || t('common.failed'));
     } finally {
       setDeleting(false);
       setDeleteUserId(null);
@@ -769,26 +746,20 @@ export default function PppoeUsersPage() {
 
   const handleStatusChange = async (userId: string, newStatus: string) => {
     try {
-      const res = await fetch('/api/pppoe/users/status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, status: newStatus }) });
-      const result = await res.json();
-      if (res.ok) {
-        // Optimistic update: update user status in list immediately
-        setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
-        await showSuccess(`Status: ${newStatus}`);
-        loadData();
-        setActionMenuOpen(null);
-      }
-      else { await showError(result.error || t('common.failed')); }
-    } catch (error) { console.error('Status error:', error); await showError(t('common.failed')); }
+      await pppoeApi.updateStatus(userId, newStatus);
+      // Optimistic update: update user status in list immediately
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+      await showSuccess(`Status: ${newStatus}`);
+      loadData();
+      setActionMenuOpen(null);
+    } catch (error: any) { console.error('Status error:', error); await showError(error.message || t('common.failed')); }
   };
 
   const handleSyncToRadius = async (user: PppoeUser) => {
     try {
-      const res = await fetch(`/api/pppoe/users/${user.id}/sync-radius`, { method: 'POST' });
-      const result = await res.json();
-      if (res.ok) { await showSuccess(`${user.username} berhasil di-sync ke RADIUS`); loadData(); }
-      else { await showError(result.error || 'Gagal sync ke RADIUS'); }
-    } catch { await showError('Gagal sync ke RADIUS'); }
+      await pppoeApi.syncRadius(user.id);
+      await showSuccess(`${user.username} berhasil di-sync ke RADIUS`); loadData();
+    } catch (e: any) { await showError(e.message || 'Gagal sync ke RADIUS'); }
   };
 
   const handleMarkAllPaid = async (userId: string, userName: string) => {
@@ -800,24 +771,15 @@ export default function PppoeUsersPage() {
 
     setMarkingPaid(userId);
     try {
-      const res = await fetch(`/api/pppoe/users/${userId}/mark-paid`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const result = await res.json();
-
-      if (res.ok) {
-        await showSuccess(
-          t('pppoe.invoicesMarkedPaid').replace('{count}', result.invoicesCount).replace('{amount}', result.totalAmount.toLocaleString('id-ID')),
-          t('common.success')
-        );
-        loadData();
-      } else {
-        await showError(result.error || t('pppoe.failedMarkPaid'));
-      }
-    } catch (error) {
+      const result = await pppoeApi.markPaid(userId);
+      await showSuccess(
+        t('pppoe.invoicesMarkedPaid').replace('{count}', (result as any).invoicesCount).replace('{amount}', (result as any).totalAmount.toLocaleString('id-ID')),
+        t('common.success')
+      );
+      loadData();
+    } catch (error: any) {
       console.error('Mark paid error:', error);
-      await showError(t('pppoe.failedMarkPaid'));
+      await showError(error.message || t('pppoe.failedMarkPaid'));
     } finally {
       setMarkingPaid(null);
     }
@@ -834,27 +796,16 @@ export default function PppoeUsersPage() {
 
     setExtending(selectedUserForExtend.id);
     try {
-      const res = await fetch(`/api/pppoe/users/${selectedUserForExtend.id}/extend`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId: selectedProfileForExtend }),
-      });
-      const result = await res.json();
-
-      if (res.ok) {
-        const profileChanged = result.profileChanged ? t('pppoe.profileChanged') : '';
-        await showSuccess(
-          `${t('pppoe.validityExtended').replace('{period}', result.extended)}${profileChanged}\n${t('pppoe.paymentRecorded').replace('{amount}', result.amount.toLocaleString('id-ID'))}`,
-          t('common.success')
-        );
-        setIsExtendModalOpen(false);
-        loadData();
-      } else {
-        await showError(result.error || t('pppoe.failedExtendValidity'));
-      }
-    } catch (error) {
-      console.error('Extend error:', error);
-      await showError(t('pppoe.failedExtendValidity'));
+      const result = await pppoeApi.extend(selectedUserForExtend.id, { profileId: selectedProfileForExtend });
+      const profileChanged = (result as any).profileChanged ? t('pppoe.profileChanged') : '';
+      await showSuccess(
+        `${t('pppoe.validityExtended').replace('{period}', (result as any).extended)}${profileChanged}\n${t('pppoe.paymentRecorded').replace('{amount}', (result as any).amount.toLocaleString('id-ID'))}`,
+        t('common.success')
+      );
+      setIsExtendModalOpen(false);
+      loadData();
+    } catch (error: any) {
+      await showError(error.message || t('pppoe.failedExtendValidity'));
     } finally {
       setExtending(null);
     }
@@ -865,11 +816,9 @@ export default function PppoeUsersPage() {
     const confirmed = await showConfirm(t('pppoe.updateConfirmUsers').replace('{count}', String(selectedUsers.size)).replace('{status}', newStatus));
     if (!confirmed) return;
     try {
-      const res = await fetch('/api/pppoe/users/bulk-status', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userIds: Array.from(selectedUsers), status: newStatus }) });
-      const result = await res.json();
-      if (res.ok) { await showSuccess(t('pppoe.usersUpdated').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); loadData(); }
-      else { await showError(result.error || t('common.failed')); }
-    } catch (error) { console.error('Bulk error:', error); await showError(t('common.failed')); }
+      await pppoeApi.bulkUpdateStatus(Array.from(selectedUsers), newStatus);
+      await showSuccess(t('pppoe.usersUpdated').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); loadData();
+    } catch (error: any) { console.error('Bulk error:', error); await showError(error.message || t('common.failed')); }
   };
 
   const toggleSelectUser = (userId: string) => { const n = new Set(selectedUsers); if (n.has(userId)) { n.delete(userId); } else { n.add(userId); } setSelectedUsers(n); };
@@ -889,9 +838,9 @@ export default function PppoeUsersPage() {
     const confirmed = await showConfirm(t('pppoe.deleteConfirmUsers').replace('{count}', String(selectedUsers.size)));
     if (!confirmed) return;
     try {
-      await Promise.all(Array.from(selectedUsers).map(id => fetch(`/api/pppoe/users?id=${id}`, { method: 'DELETE' })));
+      await Promise.all(Array.from(selectedUsers).map(id => pppoeApi.deleteUser(id)));
       await showSuccess(t('pppoe.usersDeleted').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); loadData();
-    } catch (error) { console.error('Bulk delete error:', error); await showError(t('common.failed')); }
+    } catch (error: any) { console.error('Bulk delete error:', error); await showError(error.message || t('common.failed')); }
   };
 
   const handleOpenNotificationMenu = (type: 'outage' | 'invoice' | 'payment') => {
@@ -940,39 +889,30 @@ export default function PppoeUsersPage() {
 
     setSendingBroadcast(true);
     try {
-      const res = await fetch('/api/pppoe/users/send-notification', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userIds: Array.from(selectedUsers),
-          notificationType: notificationType,
-          issueType: broadcastData.issueType,
-          description: broadcastData.description,
-          estimatedTime: broadcastData.estimatedTime,
-          affectedArea: broadcastData.affectedArea,
-          status: broadcastData.status,
-          notificationMethod: broadcastData.notificationMethod,
-        }),
+      const data = await pppoeApi.sendNotification({
+        userIds: Array.from(selectedUsers),
+        notificationType: notificationType,
+        issueType: broadcastData.issueType,
+        description: broadcastData.description,
+        estimatedTime: broadcastData.estimatedTime,
+        affectedArea: broadcastData.affectedArea,
+        status: broadcastData.status,
+        notificationMethod: broadcastData.notificationMethod,
       });
 
-      const data = await res.json();
-      if (res.ok) {
-        await showSuccess(data.message || t('common.success'));
-        setIsBroadcastDialogOpen(false);
-        setBroadcastData({
-          issueType: 'Gangguan Jaringan',
-          description: '',
-          estimatedTime: '',
-          affectedArea: '',
-          status: 'in_progress',
-          notificationMethod: 'both',
-        });
-        setSelectedUsers(new Set());
-      } else {
-        await showError(data.error || t('pppoe.failedSend'));
-      }
-    } catch (error) {
-      await showError(t('pppoe.failedSend'));
+      await showSuccess((data as any).message || t('common.success'));
+      setIsBroadcastDialogOpen(false);
+      setBroadcastData({
+        issueType: 'Gangguan Jaringan',
+        description: '',
+        estimatedTime: '',
+        affectedArea: '',
+        status: 'in_progress',
+        notificationMethod: 'both',
+      });
+      setSelectedUsers(new Set());
+    } catch (error: any) {
+      await showError(error.message || t('pppoe.failedSend'));
     } finally {
       setSendingBroadcast(false);
     }
@@ -983,7 +923,7 @@ export default function PppoeUsersPage() {
     try {
       const selectedUsersData = users.filter(u => selectedUsers.has(u.id));
       const usersWithPasswords = await Promise.all(selectedUsersData.map(async (u) => {
-        try { const res = await fetch(`/api/pppoe/users/${u.id}`); const data = await res.json(); return { ...u, password: data.user?.password || '' }; }
+        try { const data = await pppoeApi.getUser(u.id); return { ...u, password: (data as any).user?.password || '' }; }
         catch { return { ...u, password: '' }; }
       }));
       const csvContent = [['Username', 'Password', 'Name', 'Phone', 'Email', 'Address', 'IP', 'Profile', 'Router', 'Status', 'Expired'].join(','),
@@ -996,7 +936,7 @@ export default function PppoeUsersPage() {
 
   const handleDownloadTemplate = async (format: 'csv' | 'xlsx' = 'xlsx') => {
     try {
-      const res = await fetch(`/api/pppoe/users/bulk?type=template&format=${format}`);
+      const res = await fetch(`/api/pppoe/users/bulk?type=template&format=${format}`, { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1011,7 +951,7 @@ export default function PppoeUsersPage() {
       await showError(t('pppoe.downloadTemplateFailed'));
     }
   };
-  const handleExportData = async () => { try { const exportParams = new URLSearchParams({ type: 'export' }); if (filterPaymentStatus) exportParams.set('paymentStatus', filterPaymentStatus); const res = await fetch(`/api/pppoe/users/bulk?${exportParams}`); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
+  const handleExportData = async () => { try { const exportParams = new URLSearchParams({ type: 'export' }); if (filterPaymentStatus) exportParams.set('paymentStatus', filterPaymentStatus); const res = await fetch(`/api/pppoe/users/bulk?${exportParams}`, { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
 
   const handleExportExcel = async () => {
     try {
@@ -1021,7 +961,7 @@ export default function PppoeUsersPage() {
       if (filterRouter) params.set('routerId', filterRouter);
       if (filterStatus) params.set('status', filterStatus);
       if (filterPaymentStatus) params.set('paymentStatus', filterPaymentStatus);
-      const res = await fetch(`/api/pppoe/users/export?${params}`);
+      const res = await fetch(`/api/pppoe/users/export?${params}`, { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `PPPoE-Users-${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -1037,20 +977,19 @@ export default function PppoeUsersPage() {
       if (filterRouter) params.set('routerId', filterRouter);
       if (filterStatus) params.set('status', filterStatus);
       if (filterPaymentStatus) params.set('paymentStatus', filterPaymentStatus);
-      const res = await fetch(`/api/pppoe/users/export?${params}`);
-      const data = await res.json();
-      if (data.pdfData) {
+      const data = await apiAdmin(`/api/pppoe/users/export?${params}`);
+      if ((data as any).pdfData) {
         const jsPDF = (await import('jspdf')).default;
         const autoTable = (await import('jspdf-autotable')).default;
         const doc = new jsPDF({ orientation: 'landscape' });
-        doc.setFontSize(14); doc.text(data.pdfData.title, 14, 15);
-        if (data.pdfData.subtitle) { doc.setFontSize(10); doc.text(data.pdfData.subtitle, 14, 21); }
-        doc.setFontSize(8); doc.text(`Generated: ${data.pdfData.generatedAt}`, 14, 27);
-        autoTable(doc, { head: [data.pdfData.headers], body: data.pdfData.rows, startY: 32, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
-        if (data.pdfData.summary) {
+        doc.setFontSize(14); doc.text((data as any).pdfData.title, 14, 15);
+        if ((data as any).pdfData.subtitle) { doc.setFontSize(10); doc.text((data as any).pdfData.subtitle, 14, 21); }
+        doc.setFontSize(8); doc.text(`Generated: ${(data as any).pdfData.generatedAt}`, 14, 27);
+        autoTable(doc, { head: [(data as any).pdfData.headers], body: (data as any).pdfData.rows, startY: 32, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
+        if ((data as any).pdfData.summary) {
           const finalY = (doc as any).lastAutoTable.finalY + 8;
           doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-          data.pdfData.summary.forEach((s: any, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
+          (data as any).pdfData.summary.forEach((s: any, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
         }
         doc.save(`PPPoE-Users-${new Date().toISOString().split('T')[0]}.pdf`);
       }
@@ -1062,17 +1001,16 @@ export default function PppoeUsersPage() {
     if (!syncRouterId) { await showError(t('pppoe.selectRouterFirst')); return; }
     setSyncLoading(true); setSyncPreview(null); setSyncSelectedUsers(new Set()); setSyncResult(null);
     try {
-      const res = await fetch(`/api/pppoe/users/sync-mikrotik?routerId=${syncRouterId}`);
-      const data = await res.json();
-      if (data.success) {
+      const data = await pppoeApi.syncMikrotik(syncRouterId);
+      if ((data as any).success) {
         setSyncPreview(data);
         // Auto-select all new users
-        const newUsers = data.data.secrets.filter((s: any) => s.isNew && !s.disabled);
+        const newUsers = (data as any).data.secrets.filter((s: any) => s.isNew && !s.disabled);
         setSyncSelectedUsers(new Set(newUsers.map((s: any) => s.username)));
       } else {
-        await showError(data.error || t('pppoe.failedFetchMikrotik'));
+        await showError((data as any).error || t('pppoe.failedFetchMikrotik'));
       }
-    } catch (error) { console.error('Sync preview error:', error); await showError(t('pppoe.failedConnectMikrotik')); }
+    } catch (error: any) { console.error('Sync preview error:', error); await showError(error.message || t('pppoe.failedConnectMikrotik')); }
     finally { setSyncLoading(false); }
   };
 
@@ -1083,28 +1021,23 @@ export default function PppoeUsersPage() {
     }
     setSyncing(true); setSyncResult(null);
     try {
-      const res = await fetch('/api/pppoe/users/sync-mikrotik', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          routerId: syncRouterId,
-          profileId: syncProfileId,
-          selectedUsernames: Array.from(syncSelectedUsers),
-          syncToRadius: true,
-          defaultPhone: '08',
-        }),
+      const data = await pppoeApi.syncMikrotikProfiles({
+        routerId: syncRouterId,
+        profileId: syncProfileId,
+        selectedUsernames: Array.from(syncSelectedUsers),
+        syncToRadius: true,
+        defaultPhone: '08',
       });
-      const data = await res.json();
-      if (data.success) {
+      if ((data as any).success) {
         setSyncResult(data);
         loadData();
-        if (data.stats.failed === 0) {
+        if ((data as any).stats.failed === 0) {
           await showSuccess(t('common.success'));
         }
       } else {
-        await showError(data.error || t('pppoe.failedImportUsers'));
+        await showError((data as any).error || t('pppoe.failedImportUsers'));
       }
-    } catch (error) { console.error('Sync import error:', error); await showError(t('pppoe.failedImportUsers')); }
+    } catch (error: any) { console.error('Sync import error:', error); await showError(error.message || t('pppoe.failedImportUsers')); }
     finally { setSyncing(false); }
   };
 
@@ -1130,11 +1063,9 @@ export default function PppoeUsersPage() {
     setImporting(true); setImportResult(null);
     try {
       const formData = new FormData(); formData.append('file', importFile);
-      const res = await fetch('/api/pppoe/users/bulk', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok) { setImportResult(data.results); loadData(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }, 3000); }
-      else { await showError(t('pppoe.importFailed') + ': ' + data.error); }
-    } catch (error) { console.error('Import error:', error); await showError(t('pppoe.importFailed')); }
+      const data = await pppoeApi.bulkUpload(formData);
+      setImportResult((data as any).results); loadData(); if ((data as any).results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }, 3000);
+    } catch (error: any) { console.error('Import error:', error); await showError(t('pppoe.importFailed') + ': ' + (error.message || '')); }
     finally { setImporting(false); }
   };
 
