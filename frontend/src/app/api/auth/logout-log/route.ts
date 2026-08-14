@@ -1,7 +1,8 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { logActivity } from '@/server/services/activity-log.service';
+
+const BACKEND_URL = process.env.SERVER_API_URL || process.env.BACKEND_URL || 'http://localhost:3001';
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,16 +20,21 @@ export async function POST(request: NextRequest) {
 
     const sessionRole = session.user.role;
 
-    await logActivity({
-      userId,
-      username,
-      userRole: sessionRole,
-      action: 'LOGOUT',
-      description: `User logged out: ${username} (${sessionRole})`,
-      module: 'auth',
-      status: 'success',
-      request,
+    // Forward to backend activity log API
+    const res = await fetch(`${BACKEND_URL}/api/admin/auth/logout-log`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        username,
+        userRole: sessionRole,
+      }),
     });
+
+    if (!res.ok) {
+      console.error('[LOGOUT-LOG] Backend error:', res.status);
+      // Don't fail logout if logging fails
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
