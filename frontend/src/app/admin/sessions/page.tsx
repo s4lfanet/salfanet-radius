@@ -6,6 +6,7 @@ import { Activity, Filter, Power, RefreshCw, Wifi, WifiOff, Search, Download } f
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface Session {
   id: string;
@@ -115,16 +116,15 @@ export default function SessionsPage() {
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const res = await fetch(`/api/sessions?${params}`);
-      const data = await res.json();
-      setSessions(data.sessions || []);
-      setStats(data.stats);
-      setAllTimeStats(data.allTimeStats);
-      if (data.pagination) {
-        setPagination(data.pagination);
-        setCurrentPage(data.pagination.page);
+      const data = await apiAdmin(`/api/sessions?${params}`);
+      setSessions((data as any).sessions || []);
+      setStats((data as any).stats);
+      setAllTimeStats((data as any).allTimeStats);
+      if ((data as any).pagination) {
+        setPagination((data as any).pagination);
+        setCurrentPage((data as any).pagination.page);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch sessions:', error);
     } finally {
       setLoading(false);
@@ -139,10 +139,9 @@ export default function SessionsPage() {
 
   const fetchRouters = async () => {
     try {
-      const res = await fetch('/api/network/routers');
-      const data = await res.json();
-      setRouters(data.routers || []);
-    } catch (error) {
+      const data = await apiAdmin('/api/network/routers');
+      setRouters((data as any).routers || []);
+    } catch (error: any) {
       console.error('Failed to fetch routers:', error);
     }
   };
@@ -178,12 +177,12 @@ export default function SessionsPage() {
       if (typeFilter) params.set('type', typeFilter);
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('username', searchFilter);
-      const res = await fetch(`/api/sessions/export?${params}`);
+      const res = await fetch(`/api/sessions/export?${params}`, { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `Sessions-Active-${new Date().toISOString().split('T')[0]}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
-    } catch (error) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: t('sessions.exportFailed') }); }
+    } catch (error: any) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: error.message || t('sessions.exportFailed') }); }
   };
 
   const handleExportHistoryExcel = () => {
@@ -200,12 +199,12 @@ export default function SessionsPage() {
       params.set('endDate', exportEndDate);
       if (typeFilter) params.set('type', typeFilter);
       if (routerFilter) params.set('routerId', routerFilter);
-      const res = await fetch(`/api/sessions/export?${params}`);
+      const res = await fetch(`/api/sessions/export?${params}`, { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `Sessions-History-${exportStartDate}-${exportEndDate}.xlsx`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
-    } catch (error) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: t('sessions.exportFailed') }); }
+    } catch (error: any) { console.error('Export error:', error); addToast({ type: 'error', title: 'Error', description: error.message || t('sessions.exportFailed') }); }
   };
 
   const handleExportPDF = async () => {
@@ -215,19 +214,18 @@ export default function SessionsPage() {
       params.set('mode', 'active');
       if (typeFilter) params.set('type', typeFilter);
       if (routerFilter) params.set('routerId', routerFilter);
-      const res = await fetch(`/api/sessions/export?${params}`);
-      const data = await res.json();
-      if (data.pdfData) {
+      const data = await apiAdmin(`/api/sessions/export?${params}`);
+      if ((data as any).pdfData) {
         const jsPDF = (await import('jspdf')).default;
         const autoTable = (await import('jspdf-autotable')).default;
         const doc = new jsPDF({ orientation: 'landscape' });
-        doc.setFontSize(14); doc.text(data.pdfData.title, 14, 15);
-        doc.setFontSize(8); doc.text(`Generated: ${data.pdfData.generatedAt}`, 14, 21);
-        autoTable(doc, { head: [data.pdfData.headers], body: data.pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
-        if (data.pdfData.summary) {
+        doc.setFontSize(14); doc.text((data as any).pdfData.title, 14, 15);
+        doc.setFontSize(8); doc.text(`Generated: ${(data as any).pdfData.generatedAt}`, 14, 21);
+        autoTable(doc, { head: [(data as any).pdfData.headers], body: (data as any).pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
+        if ((data as any).pdfData.summary) {
           const finalY = (doc as any).lastAutoTable.finalY + 8;
           doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-          data.pdfData.summary.forEach((s: any, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
+          (data as any).pdfData.summary.forEach((s: any, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
         }
         doc.save(`Sessions-Active-${new Date().toISOString().split('T')[0]}.pdf`);
       }
@@ -263,16 +261,13 @@ export default function SessionsPage() {
 
     setDisconnecting(true);
     try {
-      const res = await fetch('/api/sessions/disconnect', {
+      const data = await apiAdmin('/api/sessions/disconnect', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionIds }),
       });
 
-      const data = await res.json();
-      
-      if (data.success) {
-        addToast({ type: 'success', title: t('notifications.success'), description: `${t('sessions.disconnect')}: ${data.summary.successful}` });
+      if ((data as any).success) {
+        addToast({ type: 'success', title: t('notifications.success'), description: `${t('sessions.disconnect')}: ${(data as any).summary.successful}` });
         setSelectedSessions(new Set());
         await fetchSessions();
       } else {
