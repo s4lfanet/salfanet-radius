@@ -1759,6 +1759,21 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 46 — Settings GenieACS Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/genieacs/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/settings/genieacs')` + `fetch('/api/settings/genieacs/devices')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs', { method: 'POST' })` (save settings) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/test', { method: 'POST' })` (test connection) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in settings/genieacs page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Settings GenieACS page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

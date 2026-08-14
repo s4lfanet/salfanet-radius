@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Server, Loader2, Zap, Save, CheckCircle, Info, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface GenieACSSettings {
   id?: string;
@@ -34,30 +35,24 @@ export default function GenieACSSettingsPage() {
 
   const fetchData = async () => {
     try {
-      const [settingsRes, devicesRes] = await Promise.all([
-        fetch('/api/settings/genieacs'),
-        fetch('/api/settings/genieacs/devices')
+      const [settingsData, devicesData] = await Promise.all([
+        apiAdmin('/api/settings/genieacs'),
+        apiAdmin('/api/settings/genieacs/devices')
       ]);
 
-      if (settingsRes.ok) {
-        const data = await settingsRes.json();
-        if (data?.settings) {
-          setSettings({
-            id: data.settings.id ?? '',
-            host: data.settings.host ?? '',
-            username: data.settings.username ?? '',
-            password: '',
-            isActive: data.settings.isActive ?? false,
-            hasPassword: data.settings.hasPassword ?? false
-          });
-        }
+      if ((settingsData as any)?.settings) {
+        setSettings({
+          id: (settingsData as any).settings.id ?? '',
+          host: (settingsData as any).settings.host ?? '',
+          username: (settingsData as any).settings.username ?? '',
+          password: '',
+          isActive: (settingsData as any).settings.isActive ?? false,
+          hasPassword: (settingsData as any).settings.hasPassword ?? false
+        });
       }
 
-      if (devicesRes.ok) {
-        const data = await devicesRes.json();
-        setDeviceCount(data.devices?.length || 0);
-      }
-    } catch (error) {
+      setDeviceCount((devicesData as any).devices?.length || 0);
+    } catch (error: any) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -77,18 +72,12 @@ export default function GenieACSSettingsPage() {
         username: settings.username,
       };
       if (settings.password) payload.password = settings.password;
-      const response = await fetch('/api/settings/genieacs', {
+      await apiAdmin('/api/settings/genieacs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      const data = await response.json();
-      if (response.ok) {
-        setSettings(prev => ({ ...prev, hasPassword: true, password: '', isActive: true }));
-        addToast({ type: 'success', title: t('common.success'), description: t('genieacs.settingsSaved'), duration: 2000 });
-      } else {
-        throw new Error(data.error || t('common.failed'));
-      }
+      setSettings(prev => ({ ...prev, hasPassword: true, password: '', isActive: true }));
+      addToast({ type: 'success', title: t('common.success'), description: t('genieacs.settingsSaved'), duration: 2000 });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.saveFailed');
       addToast({ type: 'error', title: t('common.error'), description: msg });
@@ -104,16 +93,14 @@ export default function GenieACSSettingsPage() {
     }
     setTesting(true);
     try {
-      const response = await fetch('/api/settings/genieacs/test', {
+      const data = await apiAdmin('/api/settings/genieacs/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ host: settings.host, username: settings.username, password: settings.password })
       });
-      const data = await response.json();
-      if (response.ok && data.success) {
-        addToast({ type: 'success', title: t('genieacs.connectionSuccess'), description: t('genieacs.serverReachable').replace('{count}', String(data.deviceCount || 0)), duration: 3000 });
+      if ((data as any).success) {
+        addToast({ type: 'success', title: t('genieacs.connectionSuccess'), description: t('genieacs.serverReachable').replace('{count}', String((data as any).deviceCount || 0)), duration: 3000 });
       } else {
-        throw new Error(data.error || t('genieacs.connectionFailed'));
+        throw new Error((data as any).error || t('genieacs.connectionFailed'));
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedToConnect');
