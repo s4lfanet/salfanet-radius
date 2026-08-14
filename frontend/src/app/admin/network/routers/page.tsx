@@ -6,6 +6,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, Settings, X, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface Router {
   id: string
@@ -108,15 +109,14 @@ export default function RouterPage() {
 
   const loadRouters = async () => {
     try {
-      const response = await fetch('/api/network/routers')
-      const data = await response.json()
-      setRouters(data.routers || [])
-      setVpnClients(data.vpnClients || [])
+      const data = await apiAdmin('/api/network/routers')
+      setRouters((data as any).routers || [])
+      setVpnClients((data as any).vpnClients || [])
 
-      if (data.routers && data.routers.length > 0) {
-        checkRoutersStatus(data.routers.map((r: Router) => r.id))
+      if ((data as any).routers && (data as any).routers.length > 0) {
+        checkRoutersStatus((data as any).routers.map((r: Router) => r.id))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load routers:', error)
     } finally {
       setLoading(false)
@@ -125,17 +125,12 @@ export default function RouterPage() {
 
   const checkRoutersStatus = async (routerIds: string[]) => {
     try {
-      const response = await fetch('/api/network/routers/status', {
+      const data = await apiAdmin('/api/network/routers/status', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ routerIds }),
       })
-
-      if (response.ok) {
-        const data = await response.json()
-        setStatusMap(data.statusMap || {})
-      }
-    } catch (error) {
+      setStatusMap((data as any).statusMap || {})
+    } catch (error: any) {
       console.error('Check status error:', error)
     }
   }
@@ -180,19 +175,17 @@ export default function RouterPage() {
 
     try {
       if (isGateway) {
-        const response = await fetch('/api/network/routers/test-gateway', {
+        const result = await apiAdmin('/api/network/routers/test-gateway', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ipAddress: formData.ipAddress }),
         })
 
-        const result = await response.json()
         setTestResult(result)
 
-        if (result.success) {
-          showSuccess(t('network.gatewayReachableMsg').replace('{message}', result.message))
+        if ((result as any).success) {
+          showSuccess(t('network.gatewayReachableMsg').replace('{message}', (result as any).message))
         } else {
-          showError(result.message)
+          showError((result as any).message)
         }
         return
       }
@@ -200,23 +193,20 @@ export default function RouterPage() {
       // Jika menggunakan VPN client, lakukan ping test terlebih dahulu
       // API test mungkin gagal jika MikroTik belum mengizinkan koneksi API dari VPN
       if (formData.vpnClientId) {
-        const pingRes = await fetch('/api/network/routers/test-gateway', {
+        const pingResult = await apiAdmin('/api/network/routers/test-gateway', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ipAddress: formData.ipAddress }),
         })
-        const pingResult = await pingRes.json()
-        if (!pingResult.success) {
-          setTestResult({ success: false, message: `VPN tidak terhubung: ${pingResult.message}` })
+        if (!(pingResult as any).success) {
+          setTestResult({ success: false, message: `VPN tidak terhubung: ${(pingResult as any).message}` })
           showError(`VPN tidak terhubung ke ${formData.ipAddress}`)
           return
         }
         // Ping berhasil — lanjut test API, tapi error API tidak memblokir simpan
       }
 
-      const response = await fetch('/api/network/routers/test', {
+      const result = await apiAdmin('/api/network/routers/test', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ipAddress: formData.ipAddress,
           username: formData.username,
@@ -225,27 +215,25 @@ export default function RouterPage() {
         }),
       })
 
-      const result = await response.json()
-
-      if (result.success) {
+      if ((result as any).success) {
         setTestResult(result)
-        const portInfo = ` (port ${result.usedPort})`
-        showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', result.identity) + portInfo)
+        const portInfo = ` (port ${(result as any).usedPort})`
+        showSuccess(t('network.connectionSuccessfulTo').replace('{identity}', (result as any).identity) + portInfo)
       } else if (formData.vpnClientId) {
         // VPN client: ping sudah berhasil, API gagal = MikroTik firewall memblokir
         const apiPort = parseInt(formData.port) || 8728
         const firewallCmd = `/ip firewall filter add chain=input src-address=172.16.212.1 protocol=tcp dst-port=${apiPort} action=accept place-before=0 comment="Allow VPS API"`
-        setTestResult({ success: true, message: result.message, identity: 'VPN (ping OK, API pending)' })
+        setTestResult({ success: true, message: (result as any).message, identity: 'VPN (ping OK, API pending)' })
         showSuccess(`VPN terhubung ✓\n\nAPI port ${apiPort} diblokir firewall MikroTik. Jalankan perintah ini di terminal MikroTik:\n\n${firewallCmd}`)
       } else {
         setTestResult(result)
-        const diagMsg = result.diagnosis === 'port_refused'
-          ? `${result.message}\n\nPort ditolak (ECONNREFUSED) — pastikan /ip service api sudah enabled dan port benar.`
-          : result.diagnosis === 'auth_failed'
-          ? `${result.message}\n\nUsername/password salah — cek credentials di /ip service.`
-          : result.diagnosis === 'firewall_block'
-          ? `${result.message}\n\nKoneksi timeout — firewall memblokir port ini.`
-          : result.message
+        const diagMsg = (result as any).diagnosis === 'port_refused'
+          ? `${(result as any).message}\n\nPort ditolak (ECONNREFUSED) — pastikan /ip service api sudah enabled dan port benar.`
+          : (result as any).diagnosis === 'auth_failed'
+          ? `${(result as any).message}\n\nUsername/password salah — cek credentials di /ip service.`
+          : (result as any).diagnosis === 'firewall_block'
+          ? `${(result as any).message}\n\nKoneksi timeout — firewall memblokir port ini.`
+          : (result as any).message
         showError(diagMsg)
       }
     } catch (error: any) {
@@ -271,27 +259,20 @@ export default function RouterPage() {
       const method = editingRouter ? 'PUT' : 'POST'
       const body = editingRouter ? { ...formData, id: editingRouter.id } : formData
 
-      const response = await fetch(url, {
+      const data = await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        showSuccess(editingRouter ? t('network.routerUpdated') : t('network.routerCreated'))
-        setShowModal(false)
-        setEditingRouter(null)
-        resetForm()
-        loadRouters()
-        // Auto-tampilkan RADIUS script yang sudah di-update
-        const savedRouterId = data.router?.id || (editingRouter?.id)
-        if (savedRouterId) {
-          handleSetupRadius(savedRouterId)
-        }
-      } else {
-        showError(data.error || t('network.failedSaveRouter'))
+      showSuccess(editingRouter ? t('network.routerUpdated') : t('network.routerCreated'))
+      setShowModal(false)
+      setEditingRouter(null)
+      resetForm()
+      loadRouters()
+      // Auto-tampilkan RADIUS script yang sudah di-update
+      const savedRouterId = (data as any).router?.id || (editingRouter?.id)
+      if (savedRouterId) {
+        handleSetupRadius(savedRouterId)
       }
     } catch (error: any) {
       showError(error.message || t('network.failedSaveRouter'))
@@ -331,16 +312,11 @@ export default function RouterPage() {
     if (!confirmed) return
 
     try {
-      const response = await fetch(`/api/network/routers?id=${id}`, { method: 'DELETE' })
-
-      if (response.ok) {
-        showSuccess(t('network.routerDeleted'))
-        loadRouters()
-      } else {
-        showError(t('network.failedDeleteRouter'))
-      }
-    } catch (error) {
-      showError(t('network.failedDeleteRouter'))
+      await apiAdmin(`/api/network/routers?id=${id}`, { method: 'DELETE' })
+      showSuccess(t('network.routerDeleted'))
+      loadRouters()
+    } catch (error: any) {
+      showError(error.message || t('network.failedDeleteRouter'))
     }
   }
 
@@ -350,19 +326,14 @@ export default function RouterPage() {
     setSettingUpRadius(routerId)
 
     try {
-      const response = await fetch(`/api/network/routers/${routerId}/setup-radius`, { method: 'POST' })
-      const result = await response.json()
+      const result = await apiAdmin(`/api/network/routers/${routerId}/setup-radius`, { method: 'POST' })
 
-      if (response.ok) {
-        setScriptModalData({ script: result.script, scriptRos6: result.scriptRos6, scriptRos7: result.scriptRos7, config: result.config })
-        setScriptRosTab(7)
-        setShowScriptModal(true)
-      } else {
-        showError(result.error + (result.details ? '\n' + result.details : ''))
-      }
-    } catch (error) {
+      setScriptModalData({ script: (result as any).script, scriptRos6: (result as any).scriptRos6, scriptRos7: (result as any).scriptRos7, config: (result as any).config })
+      setScriptRosTab(7)
+      setShowScriptModal(true)
+    } catch (error: any) {
       console.error('Setup RADIUS error:', error)
-      showError(t('network.failedGenerateRadiusScript'))
+      showError(error.message || t('network.failedGenerateRadiusScript'))
     } finally {
       setSettingUpRadius(null)
     }
