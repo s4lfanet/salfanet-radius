@@ -197,7 +197,7 @@ export default function HotspotSessionsPage() {
         body: JSON.stringify({ sessionIds })
       });
       if (data.success) {
-        addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', data.disconnected) });
+        addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', String(data.disconnected ?? 0)) });
         setSelectedSessions(new Set());
         fetchSessions(pagination.page);
       } else {

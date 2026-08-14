@@ -187,7 +187,7 @@ export default function FiberCablesPage() {
   const viewDetails = async (cable: FiberCable) => {
     try {
       const data = await apiAdmin<{ cable?: FiberCable; error?: string }>(`/api/network/cables/${cable.id}`);
-      setSelectedCable(data.cable);
+      setSelectedCable(data.cable ?? null);
       setExpandedTubes(new Set());
       setIsDetailDialogOpen(true);
     } catch (error: any) {
