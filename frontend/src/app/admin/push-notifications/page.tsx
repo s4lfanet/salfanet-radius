@@ -287,7 +287,7 @@ export default function PushNotificationsPage() {
           recipientRole,
           targetType,
           targetIds,
-          sentBy: (session?.user as any)?.username || 'admin',
+          sentBy: session?.user?.username || 'admin',
           data: extraLink ? { link: extraLink } : {},
         }),
       });

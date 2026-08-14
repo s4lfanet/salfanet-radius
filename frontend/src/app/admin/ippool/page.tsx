@@ -436,7 +436,7 @@ export default function IPPoolPage() {
           </div>
         </ModalBody>
         <ModalFooter>
-          <ModalButton variant="ghost" onClick={() => setIsCreateOpen(false)}>Cancel</ModalButton>
+          <ModalButton variant="secondary" onClick={() => setIsCreateOpen(false)}>Cancel</ModalButton>
           <ModalButton variant="primary" onClick={handleCreate}>Create Pool</ModalButton>
         </ModalFooter>
       </SimpleModal>
@@ -466,7 +466,7 @@ export default function IPPoolPage() {
           </div>
         </ModalBody>
         <ModalFooter>
-          <ModalButton variant="ghost" onClick={() => setIsExpandOpen(false)}>Cancel</ModalButton>
+          <ModalButton variant="secondary" onClick={() => setIsExpandOpen(false)}>Cancel</ModalButton>
           <ModalButton variant="primary" onClick={handleExpand}>Expand Pool</ModalButton>
         </ModalFooter>
       </SimpleModal>
@@ -499,7 +499,7 @@ export default function IPPoolPage() {
           </div>
         </ModalBody>
         <ModalFooter>
-          <ModalButton variant="ghost" onClick={() => setIsMapOpen(false)}>Cancel</ModalButton>
+          <ModalButton variant="secondary" onClick={() => setIsMapOpen(false)}>Cancel</ModalButton>
           <ModalButton variant="primary" onClick={handleMap}>Map</ModalButton>
         </ModalFooter>
       </SimpleModal>

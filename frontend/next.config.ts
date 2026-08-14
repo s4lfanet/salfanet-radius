@@ -9,9 +9,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
   typescript: {
-    // Skip TS type-checking during build to avoid OOM on low-RAM VPS (4GB)
-    // Type errors are caught in development; CI/lint checks should run separately
-    ignoreBuildErrors: true,
+    // Type-check during build — catch type errors before deploy
+    ignoreBuildErrors: false,
   },
   // Optimize for low-resource VPS (2GB RAM)
   output: 'standalone', // Minimal deployment bundle — only includes required files
