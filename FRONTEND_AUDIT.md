@@ -1414,6 +1414,21 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 25 — Network Trace Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/trace/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/network/olts')` + `fetch('/api/network/joint-closures')` + `fetch('/api/network/odcs')` + `fetch('/api/network/odps')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/network/fiber-paths/trace?from=...&to=...')` → `apiAdmin(...)`
+  - `fetch('/api/network/trace?...')` (trace query) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/trace page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network trace page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
