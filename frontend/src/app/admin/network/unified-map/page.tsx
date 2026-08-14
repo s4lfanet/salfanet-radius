@@ -10,6 +10,7 @@ import FilterPanel from '@/components/network/FilterPanel';
 import NetworkNodePanel, { type MapEntity } from '@/components/network/NetworkNodePanel';
 import type { ConnectionLine } from '@/components/network/UnifiedNetworkMap';
 import Swal from 'sweetalert2';
+import { apiAdmin } from '@/lib/api';
 
 // Dynamic imports (client-side only) — prevents Lucide icon hydration mismatch
 const UnifiedNetworkMap = dynamic(
@@ -86,27 +87,23 @@ export default function UnifiedMapPage() {
   // ── Load entities ──────────────────────────────────────────────────────
   const loadEntities = useCallback(async () => {
     try {
-      const [nodesRes, customersRes] = await Promise.all([
-        fetch('/api/network/nodes?limit=2000'),
-        fetch('/api/customers/with-location?limit=2000'),
+      const [nodesData, customersData] = await Promise.all([
+        apiAdmin('/api/network/nodes?limit=2000'),
+        apiAdmin('/api/customers/with-location?limit=2000'),
       ]);
-      if (nodesRes.ok && customersRes.ok) {
-        const nodesData = await nodesRes.json();
-        const customersData = await customersRes.json();
-        setEntities([
-          ...(nodesData.data || []).map((n: any) => ({
-            id: n.id, type: n.type, code: n.code, name: n.name,
-            latitude: parseFloat(n.latitude), longitude: parseFloat(n.longitude),
-            status: n.status, metadata: n.metadata,
-          })),
-          ...(customersData.data || []).map((c: any) => ({
-            id: c.id, type: 'CUSTOMER' as const, code: c.username, name: c.name,
-            latitude: parseFloat(c.latitude), longitude: parseFloat(c.longitude),
-            status: c.status, metadata: c,
-          })),
-        ]);
-      }
-    } catch (e) { console.error('Error loading entities:', e); }
+      setEntities([
+        ...((nodesData as any).data || []).map((n: any) => ({
+          id: n.id, type: n.type, code: n.code, name: n.name,
+          latitude: parseFloat(n.latitude), longitude: parseFloat(n.longitude),
+          status: n.status, metadata: n.metadata,
+        })),
+        ...((customersData as any).data || []).map((c: any) => ({
+          id: c.id, type: 'CUSTOMER' as const, code: c.username, name: c.name,
+          latitude: parseFloat(c.latitude), longitude: parseFloat(c.longitude),
+          status: c.status, metadata: c,
+        })),
+      ]);
+    } catch (e: any) { console.error('Error loading entities:', e); }
   }, []);
 
   useEffect(() => { loadEntities(); }, [loadEntities, refreshKey]);
@@ -114,12 +111,9 @@ export default function UnifiedMapPage() {
   // ── Load connections ───────────────────────────────────────────────────
   const loadConnections = useCallback(async () => {
     try {
-      const res = await fetch('/api/network/connections');
-      if (res.ok) {
-        const data = await res.json();
-        setConnections(data.connections || []);
-      }
-    } catch (e) { console.error('Error loading connections:', e); }
+      const data = await apiAdmin('/api/network/connections');
+      setConnections((data as any).connections || []);
+    } catch (e: any) { console.error('Error loading connections:', e); }
   }, []);
 
   useEffect(() => { loadConnections(); }, [loadConnections, refreshKey]);
@@ -209,9 +203,8 @@ export default function UnifiedMapPage() {
     if (!connectSource || !connectTarget) return;
     setConnecting(true);
     try {
-      const res = await fetch('/api/network/auto-connect', {
+      const data = await apiAdmin('/api/network/auto-connect', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sourceId: connectSource.id,
           sourceType: connectSource.type,
@@ -219,13 +212,11 @@ export default function UnifiedMapPage() {
           targetType: connectTarget.type,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
 
       Swal.fire({
         icon: 'success',
         title: 'Koneksi Berhasil!',
-        html: `<div class="text-sm text-left">${data.summary}</div>`,
+        html: `<div class="text-sm text-left">${(data as any).summary}</div>`,
         timer: 3000,
         showConfirmButton: false,
       });
@@ -254,9 +245,7 @@ export default function UnifiedMapPage() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const res = await fetch(`/api/network/connections?from=${fromId}&to=${toId}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed');
+      await apiAdmin(`/api/network/connections?from=${fromId}&to=${toId}`, { method: 'DELETE' });
       Swal.fire({ icon: 'success', title: 'Koneksi dihapus', timer: 1500, showConfirmButton: false });
       setRefreshKey(k => k + 1);
     } catch (err: any) {

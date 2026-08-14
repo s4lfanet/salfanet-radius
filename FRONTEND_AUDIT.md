@@ -1597,6 +1597,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 36 — Network Unified Map Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/network/unified-map/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/network/nodes?limit=2000')` + `fetch('/api/customers/with-location?limit=2000')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/network/connections')` (load connections) → `apiAdmin(...)`
+  - `fetch('/api/network/auto-connect', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/network/connections?from=...&to=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in network/unified-map page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Network unified map page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
