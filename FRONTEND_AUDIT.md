@@ -1647,6 +1647,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 39 — FreeRADIUS Backup Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/freeradius/backup/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/admin/system/freeradius-backup')` (load) → `apiAdmin(...)`
+  - `fetch('/api/admin/system/freeradius-backup', { method: 'POST' })` (create) → `apiAdmin(...)`
+  - `fetch('/api/admin/system/freeradius-backup/restore', { method: 'POST' })` (restore) → `apiAdmin(...)`
+  - `fetch('/api/admin/system/freeradius-backup/upload', { method: 'POST' })` (upload) → `apiAdmin(...)`
+  - `fetch('/api/admin/system/freeradius-backup/restore', { method: 'POST' })` (restore after upload) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in freeradius/backup page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ FreeRADIUS backup page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
