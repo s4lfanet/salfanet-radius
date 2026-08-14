@@ -767,6 +767,98 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v4.4.0 — 2026-08-14 — Frontend Centralized API Migration (Phase 2 Batch 1–52)
+
+#### Overview — Frontend Audit & Centralized API Client Migration
+Migrasi massif frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Frontend sekarang **UI-only** — tidak ada direct Prisma/DB/MikroTik/SSH/FreeRADIUS access.
+
+**Total: 52 batch, 361 inline `fetch()` calls di-migrasi.**
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
+
+#### Phase 1 — Architectural Cleanup (Prasyarat)
+- **1A** — Dead code removal (import tidak terpakai, komponen yatim)
+- **1B** — NextAuth refactor & Prisma removal dari frontend
+- **1C** — Uploads serving dipindahkan ke Nginx (`/uploads/`)
+
+#### Phase 2 — Centralized API Client Migration (Batch 1–52)
+| Batch | Halaman | Calls | Tanggal |
+|-------|---------|-------|---------|
+| 1–8b | API client + pppoe/profiles, areas, users, invoices, dashboard, keuangan, ippool | 80 | 13 Aug |
+| 9 | hotspot/voucher | 15 | 13 Aug |
+| 10–11 | vpn-server + vpn-client | 31 | 13 Aug |
+| 12–24 | genieacs, network, whatsapp, download-apk, pppoe, management | 88 | 13 Aug |
+| 25–40 | network/trace, settings, sessions, notifications, tickets, inventory, cron, freeradius | 78 | 13 Aug |
+| 41–52 | network/odps, pppoe/users/[id], manual-payments, settings/security, isolation, genieacs, addons, data-usage, whatsapp/send, push-notifications, referrals, templates | 49 | 14 Aug |
+
+#### Centralized API Client (`@/lib/api`)
+- `apiAdmin()` — auth-aware, auto JSON parsing, auto `Content-Type` header
+- Throw `ApiError` untuk non-2xx responses
+- Multipart & blob download support
+
+#### Phase 2 Status
+- **Migrated**: 52 batch, 361 fetch calls
+- **Remaining**: ~176 fetch calls di halaman admin lainnya
+- **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
+
+---
+
+### v4.3.0 — 2026-08-14 — Add-ons System + Janji Bayar + GPS Maps + Diskon + Teknisi Tracking
+
+#### Added — Layanan Add-ons (Add-on Services)
+- **Prisma models**: `addonType`, `customerAddon`, `invoiceAddon` — mendukung recurring (bulanan) & one-time (sekali bayar)
+- **API endpoints**: `GET/POST /api/addon-types`, `PUT/DELETE /api/addon-types/[id]`, `GET/POST /api/pppoe/users/[id]/addons`, `DELETE /api/customer-addons/[id]`
+- **Invoice integration**: addon recurring otomatis ditambahkan ke invoice bulanan saat cron generate
+- **Frontend admin page**: `/admin/pppoe/addons` — kelola jenis layanan tambahan (CRUD + toggle active)
+- **UserDetailModal**: tab "📦 Add-ons" — lihat addon aktif & riwayat, tambah/hentikan addon dengan price override
+
+#### Added — Janji Bayar (Promise to Pay)
+- **Prisma model**: `paymentPromise` — status `active`/`fulfilled`/`broken`
+- **API endpoints**: `GET/POST/DELETE /api/pppoe/users/[id]/promise`
+- **Behavior**: membuat janji bayar akan membuka isolir pelanggan hingga tanggal janji; membatalkan akan mengisolir kembali
+- **UserDetailModal**: tab "🤝 Janji Bayar" — buat janji bayar dengan tanggal & catatan, lihat riwayat
+
+#### Added — GPS Maps di Customer Detail
+- **Embedded OpenStreetMap iframe** di tab Info Pengguna — menampilkan lokasi GPS pelanggan
+- **Google Maps link** — tombol "Google Maps ↗" untuk buka koordinat di Google Maps
+
+#### Added — Diskon Tagihan di Customer Detail
+- **Field diskon** (`discount` & `discountNote`) sekarang bisa di-edit dari UserDetailModal tab Info
+- **Invoice generation fix**: cron `invoice-jobs.ts` sekarang mengurangi `discount` dari `baseAmount` saat generate invoice bulanan
+
+#### Added — Teknisi Pemasang Tracking
+- **Field baru**: `registeredByTechnicianId` di `pppoeUser` model (nullable, relation ke `technician`)
+- **Display**: UserDetailModal tab Info menampilkan nama teknisi yang mendaftarkan pelanggan + tanggal registrasi
+- Legacy customers tanpa teknisi menampilkan "System / Admin"
+
+#### Fixed — Invoice Generation
+- **Bug**: field `discount` di `pppoeUser` tidak digunakan saat generate invoice bulanan
+- **Fix**: `baseAmount = Math.max(0, user.profile.price - (user.discount || 0))` + tambah recurring addons
+- **Invoice addon records**: `invoiceAddon` records dibuat untuk setiap recurring addon aktif
+
+---
+
+### v4.2.0 — 2026-08-13 — Redis Cache + Realtime UI Fixes + RADIUS Script IP Fix + Auth Mode Cleanup
+
+#### Added — Redis Cache untuk Data Non-Realtime
+- **Cache endpoint**: `GET /api/pppoe/profiles`, `GET /api/pppoe/areas`, `GET /api/network/routers` — TTL 5 menit
+- **Graceful degradation**: jika Redis unavailable, fallback ke database langsung
+- File: `backend/src/server/cache/redis.ts`
+
+#### Fixed — Realtime UI Fixes
+- **Online/offline status**: polling 10 detik, hanya trigger re-render jika ada perubahan status
+- **Badge "Live"** dengan indikator pulse di filter Sesi
+
+#### Fixed — RADIUS Script IP Fix
+- **Auto-generated RouterOS script** pakai **IP asli VPS** (bukan domain/Cloudflare proxy)
+- VPN-specific address selection
+
+#### Fixed — Auth Mode Cleanup
+- **`hybrid` mode obsolete** — hanya `local` (MikroTik primary) dan `radius` (FreeRADIUS primary)
+- PPP secret backup disabled saat `auth_mode='radius'`
+
+---
+
 ### v4.1.0 — 2026-08-13
 
 ### Added — PSB Wizard 3-Step untuk Tambah Pelanggan
@@ -906,7 +998,7 @@ Sebelumnya 4 cron jobs hanya return "not yet implemented". Sekarang sudah diimpl
 
 <!-- AUTO-CHANGELOG:END -->
 
-See full changelog: [docs/getting-started/CHANGELOG.md](docs/getting-started/CHANGELOG.md)
+See full changelog: [CHANGELOG.md](CHANGELOG.md)
 
 ## 📚 Documentation
 
