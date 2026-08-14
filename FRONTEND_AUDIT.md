@@ -1743,6 +1743,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 45 — Settings Isolation Templates Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/isolation/templates/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/settings/isolation')` (load isolation settings) → `apiAdmin(...)`
+  - `fetch('/api/public/company')` (load company name) → `apiAdmin(...)`
+  - `fetch('/api/settings/isolation/templates')` (load templates) → `apiAdmin(...)`
+  - `fetch('/api/settings/isolation/templates/${id}', { method: 'PUT' })` (save template) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in settings/isolation/templates page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Isolation templates page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
