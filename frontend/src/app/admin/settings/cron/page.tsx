@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Clock, Play, RefreshCw, CheckCircle, XCircle, Loader2, Activity, Settings2, RotateCcw, Pencil, X } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface CronJob {
   type: string;
@@ -193,16 +194,14 @@ export default function CronSettingsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [statusRes, schedulesRes] = await Promise.all([
-        fetch('/api/cron/status'),
-        fetch('/api/cron/schedules'),
+      const [statusData, schedulesData] = await Promise.all([
+        apiAdmin('/api/cron/status'),
+        apiAdmin('/api/cron/schedules'),
       ]);
-      const statusData = await statusRes.json();
-      const schedulesData = await schedulesRes.json();
 
-      if (statusData.success) {
-        setJobs(statusData.jobs || []);
-        const allHistory = statusData.jobs.flatMap((job: any) =>
+      if ((statusData as any).success) {
+        setJobs((statusData as any).jobs || []);
+        const allHistory = (statusData as any).jobs.flatMap((job: any) =>
           (job.recentHistory || []).map((h: any) => ({
             id: h.id, type: job.type,
             startedAt: h.startedAt, completedAt: h.completedAt,
@@ -213,8 +212,8 @@ export default function CronSettingsPage() {
           new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
         ).slice(0, 50));
       }
-      if (schedulesData.success) setSchedules(schedulesData.schedules || []);
-    } catch (error) {
+      if ((schedulesData as any).success) setSchedules((schedulesData as any).schedules || []);
+    } catch (error: any) {
       console.error('Load cron data error:', error);
     } finally {
       setLoading(false);
@@ -230,20 +229,18 @@ export default function CronSettingsPage() {
   const triggerManual = async (jobType: string) => {
     setTriggering(jobType);
     try {
-      const res = await fetch('/api/cron', {
+      const data = await apiAdmin('/api/cron', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type: jobType, ...(jobType === 'invoice_generate' ? { force: true } : {}) })
       });
-      const data = await res.json();
-      if (data.success) {
-        addToast({ type: 'success', title: t('common.success'), description: data.message || 'Job triggered successfully', duration: 2000 });
+      if ((data as any).success) {
+        addToast({ type: 'success', title: t('common.success'), description: (data as any).message || 'Job triggered successfully', duration: 2000 });
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: data.error || t('common.failed') });
+        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || t('common.failed') });
       }
       loadData();
-    } catch (error) {
-      addToast({ type: 'error', title: t('common.error'), description: t('settings.failedTriggerJob') });
+    } catch (error: any) {
+      addToast({ type: 'error', title: t('common.error'), description: error.message || t('settings.failedTriggerJob') });
     } finally {
       setTriggering(null);
     }
@@ -251,30 +248,28 @@ export default function CronSettingsPage() {
 
   const saveSchedule = async (jobType: string, schedule: string, enabled: boolean) => {
     try {
-      const res = await fetch('/api/cron/schedules', {
+      const data = await apiAdmin('/api/cron/schedules', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobType, schedule, enabled }),
       });
-      const data = await res.json();
-      if (data.success) {
+      if ((data as any).success) {
         addToast({ type: 'success', title: 'Schedule updated', description: `${jobType} schedule saved. Restart cron runner to apply.`, duration: 4000 });
         await loadData();
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: data.error });
+        addToast({ type: 'error', title: t('common.error'), description: (data as any).error });
       }
-    } catch {
-      addToast({ type: 'error', title: t('common.error'), description: 'Failed to save schedule' });
+    } catch (error: any) {
+      addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to save schedule' });
     }
   };
 
   const resetSchedule = async (jobType: string) => {
     try {
-      await fetch(`/api/cron/schedules?jobType=${encodeURIComponent(jobType)}`, { method: 'DELETE' });
+      await apiAdmin(`/api/cron/schedules?jobType=${encodeURIComponent(jobType)}`, { method: 'DELETE' });
       addToast({ type: 'success', title: 'Reset to default', description: `${jobType} reverted to default schedule.`, duration: 3000 });
       await loadData();
-    } catch {
-      addToast({ type: 'error', title: t('common.error'), description: 'Failed to reset schedule' });
+    } catch (error: any) {
+      addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to reset schedule' });
     }
   };
 
