@@ -28,7 +28,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
-import { pppoeApi, invoiceApi, networkApi, apiAdmin } from '@/lib/api';
+import { pppoeApi, invoiceApi, networkApi, apiAdmin, buildUrl } from '@/lib/api';
 
 interface PppoeUser {
   id: string; username: string; name: string; phone: string; email: string | null;
@@ -936,7 +936,7 @@ export default function PppoeUsersPage() {
 
   const handleDownloadTemplate = async (format: 'csv' | 'xlsx' = 'xlsx') => {
     try {
-      const res = await fetch(`/api/pppoe/users/bulk?type=template&format=${format}`, { credentials: 'include' });
+      const res = await fetch(buildUrl(`/api/pppoe/users/bulk?type=template&format=${format}`), { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -951,7 +951,7 @@ export default function PppoeUsersPage() {
       await showError(t('pppoe.downloadTemplateFailed'));
     }
   };
-  const handleExportData = async () => { try { const exportParams = new URLSearchParams({ type: 'export' }); if (filterPaymentStatus) exportParams.set('paymentStatus', filterPaymentStatus); const res = await fetch(`/api/pppoe/users/bulk?${exportParams}`, { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
+  const handleExportData = async () => { try { const exportParams = new URLSearchParams({ type: 'export' }); if (filterPaymentStatus) exportParams.set('paymentStatus', filterPaymentStatus); const res = await fetch(buildUrl(`/api/pppoe/users/bulk?${exportParams}`), { credentials: 'include' }); const blob = await res.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `pppoe-export-${new Date().toISOString().split('T')[0]}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url); } catch (error) { console.error('Export error:', error); await showError(t('pppoe.exportFailed')); } };
 
   const handleExportExcel = async () => {
     try {
@@ -961,7 +961,7 @@ export default function PppoeUsersPage() {
       if (filterRouter) params.set('routerId', filterRouter);
       if (filterStatus) params.set('status', filterStatus);
       if (filterPaymentStatus) params.set('paymentStatus', filterPaymentStatus);
-      const res = await fetch(`/api/pppoe/users/export?${params}`, { credentials: 'include' });
+      const res = await fetch(buildUrl(`/api/pppoe/users/export?${params}`), { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `PPPoE-Users-${new Date().toISOString().split('T')[0]}.xlsx`;

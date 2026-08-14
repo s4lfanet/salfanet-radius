@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface IsolationSettings {
   isolationIpPool: string;
@@ -43,8 +44,7 @@ export default function MikroTikSetupPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/settings/isolation');
-      const data = await response.json();
+      const data = await apiAdmin<{ success: boolean; data: IsolationSettings }>('/api/settings/isolation');
 
       if (data.success) {
         setSettings({

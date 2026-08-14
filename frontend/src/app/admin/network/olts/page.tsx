@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import Link from 'next/link';
-import { apiAdmin } from '@/lib/api';
+import { apiAdmin, buildUrl } from '@/lib/api';
 
 // Vendor → available models (aligned with backend vendor libs + OIDs)
 const VENDOR_MODELS: Record<string, Array<{ value: string; label: string; ponType: string }>> = {
@@ -386,7 +386,7 @@ export default function OLTsPage() {
 
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('/api/network/olts/template', { credentials: 'include' });
+      const response = await fetch(buildUrl('/api/network/olts/template'), { credentials: 'include' });
       if (!response.ok) throw new Error('Failed to download template');
 
       const blob = await response.blob();

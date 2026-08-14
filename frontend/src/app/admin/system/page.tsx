@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 interface SystemInfo {
   version: string;
@@ -66,8 +67,10 @@ export default function SystemPage() {
 
   const fetchInfo = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/system/info');
-      if (res.ok) setInfo(await res.json());
+      const data = await apiAdmin<SystemInfo>('/api/admin/system/info');
+      setInfo(data);
+    } catch {
+      // ignore
     } finally {
       setLoading(false);
     }

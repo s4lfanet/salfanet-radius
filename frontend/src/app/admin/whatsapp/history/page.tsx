@@ -7,6 +7,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatDistanceToNow } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface HistoryItem {
   id: string;
@@ -63,8 +64,7 @@ export default function WhatsAppHistoryPage() {
         search: searchQuery,
       });
 
-      const res = await fetch(`/api/whatsapp/history?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; data: HistoryItem[]; stats: Stats; pagination: { totalPages: number } }>(`/api/whatsapp/history?${params}`);
 
       if (data.success) {
         setHistory(data.data);
