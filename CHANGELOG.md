@@ -245,6 +245,96 @@ Setiap halaman mengikuti pola berikut:
 
 ---
 
+## [4.5.0] — 2026-08-14 — Phase 2 Completion (Batch 53–111) + Phase 3 Architecture Improvements
+
+### Overview — Phase 2 Completion & Phase 3 Architecture
+
+Melanjutkan migrasi API client dari Batch 53 sampai Batch 111 (selesai), dilanjutkan dengan Phase 3 architecture improvements (middleware, error boundaries, permission constants, security fix).
+
+**Total Phase 2: 111 batch, ~510 fetch calls di-migrasi, 55 fetch calls tersisa (semua legitimate blob/FormData/streaming downloads).**
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+
+### Phase 2 — Batch 53–111 (Remaining Pages Migration)
+
+#### Batch 53–60 — 8 Pages (Commit `2f117d71`)
+- `genieacs/presets`, `network/fiber-cables`, `genieacs/provisions`, `hotspot/evoucher`, `genieacs/virtual-parameters`, `network/odcs`, `sessions/hotspot`, `freeradius/config`
+
+#### Batch 61–68 — 8 Pages
+- `inventory/movements`, `inventory/suppliers`, `payment/bank-accounts`, `hotspot/template`, `inventory/categories`, `tickets/categories`, `settings/footer`, `network/fiber-joint-closures`
+
+#### Batch 69–76 — 8 Pages (Commit `6e88dda0`)
+- `network/fiber-cores`, `technicians`, `olt/monitoring`, `olt/alerts`, `genieacs/auto-provision`, `freeradius/status`, `freeradius/radcheck`, `topup-requests`
+- Added `buildUrl` export to API barrel (`frontend/src/lib/api/index.ts`)
+
+#### Batch 77–84 — 8 Pages with 3 fetch calls each (Commit `2ae622f8`)
+- `genieacs/files` (1 FormData upload retained), `genieacs/config`, `pppoe/users` (3 blob downloads), `payment-gateway`, `technicians`, `genieacs/auto-provision`, `freeradius/radcheck`, `freeradius/status`
+
+#### Batch 85–90 — 6 Pages with 2 fetch calls each (Commit `2ae622f8`)
+- `settings/isolation`, `settings/cloudflare-tunnel`, `admin/login`, `pppoe/users/new` (2 FormData uploads retained), `sessions` (2 blob downloads), `suspend-requests`
+
+#### Batch 91–93 — 3 Pages with 2 fetch calls each (Commit `2ae622f8`)
+- `whatsapp/notifications`, `hotspot/agent/deposits`, `genieacs/faults`
+
+#### Batch 94–111 — 18 Pages with 1 fetch call each (Commit `2ae622f8`)
+- JSON → apiAdmin (11 pages): `auth/two-factor`, `freeradius/logs`, `freeradius/radtest`, `isolated-users`, `laporan`, `laporan/analitik`, `logs/activity`, `settings/isolation/mikrotik`, `settings/subdomain`, `system`, `whatsapp/history`
+- Blob/FormData/Streaming → buildUrl (7 pages): `invoices`, `invoices/import`, `keuangan`, `network/olts`, `network/vpn-server`, `sessions/pppoe`, `whatsapp/providers`
+
+#### Lint Fixes (Commit `8b743cfb`)
+- `settings/cloudflare-tunnel`: remove boolean from `showToast` string argument
+- `laporan/analitik`: use `any` type for recharts formatter params (pre-existing recharts ValueType incompatibility)
+
+### Phase 2 Final Status: ✅ COMPLETE
+
+- **Total batches**: 111
+- **Total fetch calls migrated to apiAdmin**: ~510
+- **Remaining fetch() calls**: 55 (all legitimate)
+  - Blob/binary downloads (Excel, CSV, PDF exports)
+  - FormData uploads (file uploads)
+  - Streaming responses (SSE, chunked)
+  - Mixed response types (JSON or blob)
+- All remaining use `fetch(buildUrl(...), { credentials: 'include' })`
+
+### Phase 3 — Architecture Improvements (Commit `8c8c00f3`)
+
+#### Phase 3.1 — middleware.ts for Admin Route Protection
+- **File**: `frontend/src/middleware.ts`
+- Protects all `/admin/*` routes (except `/admin/login`) with NextAuth JWT check
+- Redirects unauthenticated users to `/admin/login?callbackUrl=...`
+- Public routes skipped: `/admin/login`, `/login`, `/daftar`, `/evoucher`, `/pay`, `/pay-manual`, `/payment`, `/offline`, `/isolated`, `/docs`, `/download-apk`
+- Agent/customer/technician portals use client-side token auth, NOT enforced by middleware
+
+#### Phase 3.2 — error.tsx and loading.tsx for Admin Route Segment
+- **Files**: `frontend/src/app/admin/error.tsx`, `frontend/src/app/admin/loading.tsx`
+- Route-level error boundary with "Coba Lagi" and "Ke Dashboard" buttons
+- Route-level loading UI with spinner during page transitions
+
+#### Phase 3.3 — Migrate usePermissions.ts to apiAdmin
+- **File**: `frontend/src/hooks/usePermissions.ts`
+- Replaced inline `fetch()` with `apiAdmin()` from `@/lib/api`
+
+#### Phase 3.4 — Permission Constants File
+- **File**: `frontend/src/lib/permissions.ts`
+- Centralized permission key constants (`PERMISSIONS.DASHBOARD_VIEW`, etc.)
+- Role constants (`ROLES.SUPER_ADMIN`, `ROLES.FINANCE`, etc.)
+- Helper functions: `isStaffRole()`, `isSuperAdmin()`
+- Type exports: `PermissionKey`, `RoleKey`
+
+#### Phase 3.5 — Remove SSH Credentials from localStorage (C8 Fix)
+- **File**: `frontend/src/app/admin/network/vpn-server/page.tsx`
+- SSH password no longer stored in `localStorage` — only `{ host, port, username }`
+- User prompted to re-enter password on next action after page reload
+- `vpn-client/page.tsx` already only stored non-sensitive info — no change needed
+
+### Phase 3 Status: ✅ COMPLETE (Items 8–14 from audit plan)
+
+### Verification
+- ✅ Build: SUCCESS (exit code 0, middleware proxy active)
+- ⏳ Deploy: Pending (VPS unreachable)
+- ⏳ Production test: Pending deploy
+
+---
+
 ## [4.3.0] — 2026-08-14 — Add-ons System + Janji Bayar + GPS Maps + Diskon + Teknisi Tracking
 
 ### Added — Layanan Add-ons (Add-on Services)
