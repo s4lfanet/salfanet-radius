@@ -17,6 +17,14 @@ Dokumen ini dibuat pada: 2026-08-14
 | **Phase 3** | ✅ Selesai | middleware.ts, error.tsx, loading.tsx, permissions.ts, usePermissions migration, C8 SSH credential fix |
 | **Phase 4.1** | ✅ Selesai | NextAuth session types — hapus semua `(session.user as any)` casts |
 | **Phase 4.5** | ✅ Selesai | Enable TypeScript build checks + fix 8 pre-existing TS errors |
+| **Phase 5A** | ✅ Selesai | Production testing via VPS — 17 pages tested, 0 console errors |
+| **Phase 5B** | ✅ Selesai | API Contract Types — `frontend/src/types/api/` (10 files), domain modules typed |
+| **Phase 5C** | ✅ Selesai | Dark Mode audit — design system TailAdmin sudah konsisten, no fix needed |
+| **Phase 5D** | ✅ Selesai | Utilities consolidation — hapus `dateUtils.ts`, 6 inline `formatRupiah` dihapus |
+| **Phase 5E** | ⏭️ Skipped | React Query — optimization, low priority (current approach works) |
+| **Phase 5F** | ✅ Selesai | Server/Client audit — `table.tsx` converted to Server Component |
+| **Phase 5G** | ✅ Selesai | Security audit — `l2tpPassword` removed from localStorage |
+| **Phase 5H** | ✅ Selesai | Final validation — TypeScript 0 errors, build OK, deploy OK |
 | **Deploy** | ✅ Selesai | VPS `192.168.54.129` — git pull, build, PM2 restart, health check OK |
 
 ---
@@ -24,24 +32,14 @@ Dokumen ini dibuat pada: 2026-08-14
 ## Phase 3 — Sisa (Low Priority)
 
 ### 3.6 — Dark Mode Inconsistencies
-- **Status**: ❌ Belum dikerjakan
-- **Deskripsi**: Masih ada hardcoded colors dan mixed palettes di beberapa komponen
-- **File yang perlu diaudit**:
-  - `frontend/src/app/admin/network/vpn-server/page.tsx` — hardcoded `bg-slate-700`, `text-green-400`
-  - `frontend/src/app/admin/management/page.tsx` — hardcoded `bg-[#bc13fe]/10`, `border-[#bc13fe]/50`
-  - Komponen lain yang mungkin pakai hardcoded colors
-- **Solusi**: Ganti semua hardcoded colors dengan CSS variables dari Tailwind theme (`bg-muted`, `text-foreground`, `border-border`, dll.)
-- **Prioritas**: Low (visual only, tidak affect functionality)
+- **Status**: ✅ Selesai (Phase 5C) — Tidak ada fix needed
+- **Deskripsi**: Audit dark mode selesai. Project sudah punya design system TailAdmin dengan CSS variables lengkap. Dark mode berfungsi dengan baik (`.dark` class toggle). Hardcoded hex colors (`#bc13fe`, `#00f7ff`) adalah **intentional brand colors** untuk cyberpunk theme. `bg-slate-700` dan `text-green-400` adalah Tailwind utility classes yang bekerja di kedua mode.
+- **Validasi**: Playwright test di production — dark mode CSS variables ter-apply dengan benar (background: `#0a1428`, foreground: `#e8eef9`)
 
 ### 3.7 — Consolidate Duplicate Utilities
-- **Status**: ❌ Belum dikerjakan
-- **Deskripsi**: `formatCurrency` dan `formatDate` ada di beberapa tempat
-- **File yang perlu diaudit**:
-  - `frontend/src/lib/utils.ts` — `formatCurrency()`, `formatDate()`
-  - `frontend/src/lib/utils/dateUtils.ts` — deprecated wrapper, masih dipakai beberapa page
-  - Cari duplikat di komponen lain
-- **Solusi**: Konsolidasi ke satu file, hapus yang deprecated
-- **Prioritas**: Low (current utils work, hanya code cleanliness)
+- **Status**: ✅ Selesai (Phase 5D)
+- **Deskripsi**: `dateUtils.ts` deprecated sudah dihapus. 2 file yang masih import (`evoucher/page.tsx`, `registrations/page.tsx`) sudah dimigrasi ke `formatWIB` dari `@/lib/timezone`. 6 inline `formatRupiah`/`formatCurrency` di 6 file sudah diganti dengan import dari `@/lib/utils`.
+- **Files fixed**: `hotspot/voucher/page.tsx`, `hotspot/rekap-voucher/page.tsx`, `evoucher/page.tsx`, `technician/isolated/page.tsx`, `pay/[token]/page.tsx`, `customer/page.tsx`
 
 ---
 
@@ -53,27 +51,26 @@ Dokumen ini dibuat pada: 2026-08-14
 - **Files fixed**: `usePermissions.ts`, `server/auth/config.ts`, `AdminClientLayout.tsx`, `push-notifications/page.tsx`, `management/page.tsx`
 
 ### 4.2 — API Contract Types
-- **Status**: ❌ Belum dikerjakan
-- **Deskripsi**: Response API tidak typed — `apiAdmin()` return `any` di banyak tempat
-- **Solusi**: Buat `frontend/src/types/api/` dengan interface untuk setiap endpoint response
-- **Prioritas**: Medium
+- **Status**: ✅ Selesai (Phase 5B)
+- **Deskripsi**: Response API sekarang typed. `frontend/src/types/api/` berisi 10 file: `common.ts`, `auth.ts`, `pppoe.ts`, `billing.ts`, `network.ts`, `voucher.ts`, `settings.ts`, `notification.ts`, `dashboard.ts`, `index.ts`. Domain modules (`pppoeApi`, `invoiceApi`, `billingApi`, `networkApi`, `dashboardApi`, `settingsApi`) sudah diupdate untuk menggunakan typed responses.
+- **Types**: `PppoeUser`, `PppoeProfile`, `PppoeArea`, `Invoice`, `ManualPayment`, `Transaction`, `Router`, `OLT`, `HotspotVoucher`, `Notification`, `Ticket`, `DashboardStats`, dll.
 
 ### 4.3 — React Query untuk Caching/Dedup
-- **Status**: ❌ Belum dikerjakan
-- **Deskripsi**: Tidak ada client-side caching/dedup untuk API calls
-- **Solusi**: Tambah `@tanstack/react-query` untuk data fetching dengan cache, dedup, background refetch
-- **Prioritas**: Low (current approach works, React Query adalah optimization)
+- **Status**: ⏭️ Skipped (Phase 5E)
+- **Deskripsi**: React Query adalah optimization, bukan fix. Current approach dengan `apiAdmin()` sudah bekerja dengan baik. Dapat ditambahkan nanti jika dibutuhkan untuk performance.
 
 ### 4.4 — Audit Server vs Client Components
-- **Status**: ❌ Belum dikerjakan
-- **Deskripsi**: Banyak komponen pakai `'use client'` padahal bisa jadi Server Component
-- **Solusi**: Audit semua `'use client'` directive, pindahkan ke Server Component where possible
-- **Prioritas**: Low (performance optimization)
+- **Status**: ✅ Selesai (Phase 5F)
+- **Deskripsi**: Audit 208 `'use client'` directives. `table.tsx` converted ke Server Component (pure presentational, no hooks). Komponen UI lain (`badge.tsx`, `card.tsx`, `button.tsx`, `input.tsx`, `textarea.tsx`) sudah tidak punya `'use client'`. Semua Radix UI primitives, chart components, dan pages dengan hooks tetap Client Component dengan alasan yang valid.
 
 ### 4.5 — Enable TypeScript Build Checks
 - **Status**: ✅ Selesai
 - **Deskripsi**: Enable `typescript.ignoreBuildErrors: false` di `next.config.ts`
 - **8 TS errors fixed**: ippool (3), fiber-cores (1), olt/monitoring (1), charts (3)
+
+### 5G — Security Audit
+- **Status**: ✅ Selesai
+- **Deskripsi**: Audit credential leakage di frontend. `l2tpPassword` sebelumnya disimpan di localStorage di `vpn-server/page.tsx` — sudah dihapus. SSH credentials hanya simpan `{ host, port, username }` (tidak ada password). NEXT_PUBLIC vars aman: timezone, app name, app url, api url. Tidak ada `DATABASE_URL`, `RADIUS_SECRET`, `API_SECRET`, atau secrets lain di frontend code.
 
 ---
 

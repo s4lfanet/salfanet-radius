@@ -6,6 +6,81 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.6.0] — 2026-08-14 — Frontend Audit Phase 5 (API Types, Utilities, Security)
+
+### Overview — Frontend Audit Phase 5
+
+Lanjutan frontend audit setelah Phase 1–4 dan deployment. Phase 5 mencakup production testing, API contract types, dark mode audit, utilities consolidation, server/client component audit, dan security audit.
+
+**Commit**: `8e39478f` — `feat: Phase 5 frontend audit — API types, utilities, security, server components`
+
+### Phase 5A — Production Testing
+- Test 17 halaman admin via VPS dengan Playwright
+- Login, dashboard, PPPoE, billing, network, settings, cron, GenieACS
+- 0 console errors, 0 warnings
+- Dokumentasi: `docs/FRONTEND_PRODUCTION_TEST.md`
+
+### Phase 5B — API Contract Types
+- Buat `frontend/src/types/api/` dengan 10 file typed contracts
+- `common.ts`, `auth.ts`, `pppoe.ts`, `billing.ts`, `network.ts`, `voucher.ts`, `settings.ts`, `notification.ts`, `dashboard.ts`, `index.ts`
+- Update domain modules: `pppoeApi`, `invoiceApi`, `billingApi`, `networkApi`, `dashboardApi`, `settingsApi`
+- Types berdasarkan actual Prisma schema dan backend route responses
+- Build: TypeScript 0 errors
+
+### Phase 5C — Dark Mode Audit
+- Audit dark mode consistency
+- Project sudah punya design system TailAdmin dengan CSS variables lengkap
+- Dark mode berfungsi dengan baik (`.dark` class toggle)
+- Hardcoded hex colors (`#bc13fe`, `#00f7ff`) adalah intentional brand colors
+- Tidak ada fix needed
+
+### Phase 5D — Utilities Consolidation
+- Hapus `frontend/src/lib/utils/dateUtils.ts` (deprecated wrapper)
+- Migrasi 2 file (`evoucher/page.tsx`, `registrations/page.tsx`) ke `formatWIB` dari `@/lib/timezone`
+- Hapus 6 inline `formatRupiah`/`formatCurrency` di 6 file, ganti dengan import dari `@/lib/utils`
+
+### Phase 5E — React Query (Skipped)
+- React Query adalah optimization, bukan fix
+- Current approach dengan `apiAdmin()` sudah bekerja dengan baik
+- Dapat ditambahkan nanti jika dibutuhkan
+
+### Phase 5F — Server/Client Component Audit
+- Audit 208 `'use client'` directives
+- `components/ui/table.tsx` converted ke Server Component (pure presentational)
+- Komponen UI lain sudah tidak punya `'use client'`
+- Semua Radix UI primitives, charts, dan pages dengan hooks tetap Client Component
+
+### Phase 5G — Security Audit
+- **Fix**: `l2tpPassword` sebelumnya disimpan di localStorage di `vpn-server/page.tsx` — sudah dihapus
+- SSH credentials hanya simpan `{ host, port, username }` (tidak ada password)
+- NEXT_PUBLIC vars aman: timezone, app name, app url, api url
+- Tidak ada `DATABASE_URL`, `RADIUS_SECRET`, `API_SECRET`, atau secrets lain di frontend code
+
+### Phase 5H — Final Validation
+- TypeScript: 0 errors
+- Build: ✓ Compiled successfully
+- Lint: 1 error fixed (`<a>` → `<Link>` di genieacs settings), 425 warnings (pre-existing, unused vars)
+- Deploy: VPS `192.168.54.129` — PM2 all online, health check OK, frontend 200, nginx 200
+
+---
+
+## [4.5.0] — 2026-08-14 — Phase 4 Type Safety + VPS Deployment
+
+### Phase 4.1 — NextAuth Session Types
+- Hapus semua `(session.user as any)` casts
+- Typed session: `id`, `username`, `role`, `name`, `email`
+
+### Phase 4.5 — TypeScript Build Checks
+- Enable `typescript.ignoreBuildErrors: false` di `next.config.ts`
+- Fix 8 pre-existing TS errors (ippool, fiber-cores, olt/monitoring, charts)
+
+### Deployment
+- VPS `192.168.54.129` — git pull, build, PM2 restart
+- Health check: `{"status":"ok"}`
+- Frontend: HTTP 200, Nginx: HTTP 200
+
+---
+
 ## [4.4.0] — 2026-08-14 — Frontend Centralized API Migration (Phase 2 Batch 1–52)
 
 ### Overview — Frontend Audit & Centralized API Client Migration
