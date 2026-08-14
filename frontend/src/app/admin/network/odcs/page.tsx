@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 import {
   Plus, Pencil, Trash2, Server, MapPin, Map, X, RefreshCcw,
   Activity, Box, HardDrive,
@@ -75,11 +76,10 @@ export default function ODCsPage() {
 
   const loadData = async () => {
     try {
-      const [odcsRes, oltsRes] = await Promise.all([
-        fetch('/api/network/odcs'),
-        fetch('/api/network/olts'),
+      const [odcsData, oltsData] = await Promise.all([
+        apiAdmin<{ odcs?: ODC[] }>('/api/network/odcs'),
+        apiAdmin<{ olts?: OLT[] }>('/api/network/olts'),
       ]);
-      const [odcsData, oltsData] = await Promise.all([odcsRes.json(), oltsRes.json()]);
       setOdcs(odcsData.odcs || []);
       setOlts(oltsData.olts || []);
     } catch (error) {
@@ -126,13 +126,11 @@ export default function ODCsPage() {
         ...(editingOdc && { id: editingOdc.id }),
       };
 
-      const res = await fetch('/api/network/odcs', {
+      const result = await apiAdmin<{ success: boolean; error?: string }>('/api/network/odcs', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
       if (result.success) {
         await showSuccess(editingOdc ? t('common.updated') : t('common.created'));
         setIsDialogOpen(false);
@@ -156,13 +154,11 @@ export default function ODCsPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch('/api/network/odcs', {
+      const result = await apiAdmin<{ success: boolean; error?: string }>('/api/network/odcs', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: odc.id }),
       });
 
-      const result = await res.json();
       if (result.success) {
         await showSuccess(t('common.odcDeleted'));
         loadData();

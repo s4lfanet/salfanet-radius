@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatToWIB } from '@/lib/utils/dateUtils';
+import { apiAdmin } from '@/lib/api';
 import {
   ShoppingCart,
   Search,
@@ -64,11 +65,10 @@ export default function EVoucherManagementPage() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/evoucher/orders');
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; orders?: Order[] }>('/api/admin/evoucher/orders');
       if (data.success) {
-        setOrders(data.orders);
-        calculateStats(data.orders);
+        setOrders(data.orders || []);
+        calculateStats(data.orders || []);
       }
     } catch (error) {
       showError(t('evoucher.failedLoadOrders'));
@@ -109,8 +109,7 @@ export default function EVoucherManagementPage() {
     const confirmed = await showConfirm(t('hotspot.cancelOrderConfirm', { number: orderNumber }));
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/admin/evoucher/orders/${orderId}/cancel`, { method: 'POST' });
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/admin/evoucher/orders/${orderId}/cancel`, { method: 'POST' });
       if (data.success) {
         showSuccess(t('evoucher.orderCancelled'));
         loadOrders();
@@ -126,8 +125,7 @@ export default function EVoucherManagementPage() {
     const confirmed = await showConfirm(t('hotspot.resendVouchersConfirm', { number: orderNumber }));
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/admin/evoucher/orders/${orderId}/resend`, { method: 'POST' });
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/admin/evoucher/orders/${orderId}/resend`, { method: 'POST' });
       if (data.success) {
         showSuccess(t('evoucher.orderResent'));
       } else {
@@ -165,13 +163,11 @@ export default function EVoucherManagementPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch('/api/admin/evoucher/orders/bulk-delete', {
+      const data = await apiAdmin<{ success: boolean; deleted?: number; error?: string }>('/api/admin/evoucher/orders/bulk-delete', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderIds: selectedOrders }),
       });
 
-      const data = await res.json();
       if (data.success) {
         await showSuccess(t('evoucher.ordersDeleted').replace('{count}', String(data.deleted)));
         setSelectedOrders([]);
