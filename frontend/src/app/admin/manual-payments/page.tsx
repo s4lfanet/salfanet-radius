@@ -36,7 +36,7 @@ import {
 import { CheckCircle, XCircle, Eye, Trash2, Search, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, nowWIB } from '@/lib/timezone';
 
 interface ManualPayment {
   id: string;
@@ -93,10 +93,10 @@ export default function ManualPaymentsPage() {
     return `${MONTH_NAMES_ID[m - 1]} ${y}`;
   };
   const shiftPaymentMonth = (delta: number) => {
-    const base = paymentMonth || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
+    const base = paymentMonth || formatWIB(nowWIB(), 'yyyy-MM');
     const [y, m] = base.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    setPaymentMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+    setPaymentMonth(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`);
   };
 
   useEffect(() => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { differenceInMinutes } from 'date-fns';
+import { nowWIB } from '@/lib/timezone';
 
 interface Props {
   lastInform?: string;
@@ -22,7 +23,7 @@ export function DeviceStatusBadge({ lastInform, thresholdMinutes = 15 }: Props) 
     );
   }
 
-  const minutesAgo = differenceInMinutes(new Date(), new Date(lastInform));
+  const minutesAgo = differenceInMinutes(nowWIB(), new Date(lastInform));
   const isOnline = minutesAgo <= thresholdMinutes;
 
   return (

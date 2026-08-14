@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { randomBytes, randomUUID } from 'crypto';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { toUTC, nowWIB } from '@/lib/timezone';
 
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -51,7 +52,7 @@ export async function POST(
       amount = Math.round(basePrice + (basePrice * renewalTaxRate / 100));
     }
 
-    const now = new Date();
+    const now = nowWIB();
     const expiredAt = user.expiredAt ? new Date(user.expiredAt) : null;
 
     // Calculate new expired date (30 days from now or from current expiredAt if not yet expired)
@@ -124,7 +125,7 @@ export async function POST(
             amount,
             baseAmount: basePrice,
             ...(renewalTaxRate !== null && { taxRate: renewalTaxRate }),
-            dueDate: newExpiredDate,
+            dueDate: toUTC(newExpiredDate),
             status: 'PENDING',
             paymentToken,
             paymentLink,

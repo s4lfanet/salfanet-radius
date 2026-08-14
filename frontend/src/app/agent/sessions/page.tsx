@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { nowWIB } from '@/lib/timezone';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   Wifi,
@@ -148,7 +149,7 @@ export default function AgentSessionsPage() {
     if (!date) return '-';
     try {
       const d = typeof date === 'string' ? new Date(date) : date;
-      return format(d, formatStr);
+      return formatInTimeZone(d, 'UTC', formatStr);
     } catch {
       return '-';
     }

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatWIB, nowWIB, todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 
 interface RekapVoucher {
   batchCode: string;
@@ -59,10 +60,7 @@ export default function RekapVoucherPage() {
   const [profiles, setProfiles] = useState<{ id: string; name: string }[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [periodMode, setPeriodMode] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('monthly');
-  const [periodValue, setPeriodValue] = useState<string>(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  });
+  const [periodValue, setPeriodValue] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
   const [voucherModal, setVoucherModal] = useState<{
     open: boolean;
     batchCode: string;
@@ -75,20 +73,14 @@ export default function RekapVoucherPage() {
   const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const DAY_NAMES_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
-  const todayStr = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  };
-  const currentMonthStr = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-  };
+  const todayStr = () => todayWIBStr();
+  const currentMonthStr = () => formatWIB(nowWIB(), 'yyyy-MM');
   const getWeekMonday = (dateStr: string) => {
-    const d = new Date(dateStr + 'T00:00:00');
-    const day = d.getDay();
+    const d = parseDateAsWIB(dateStr);
+    const day = d.getUTCDay();
     const diff = day === 0 ? -6 : 1 - day;
-    d.setDate(d.getDate() + diff);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const monday = new Date(d.getTime() + diff * 86400000);
+    return formatWIB(monday, 'yyyy-MM-dd');
   };
   const switchPeriodMode = (mode: 'all' | 'daily' | 'weekly' | 'monthly') => {
     setPeriodMode(mode);

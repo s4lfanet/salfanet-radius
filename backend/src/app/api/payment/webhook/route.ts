@@ -3,7 +3,7 @@ import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
 import { sendPaymentSuccess, sendVoucherPurchaseSuccess } from '@/server/services/notifications/whatsapp-templates.service';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, toUTC, nowWIB } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
@@ -1320,7 +1320,7 @@ async function handleInvoicePayment(
 
       if (user && user.profile) {
         const profile = user.profile;
-        const now = new Date();
+        const now = nowWIB();
         const normalizedStatus = (user.status || '').toLowerCase();
 
         // PREPAID vs POSTPAID logic
@@ -1375,7 +1375,7 @@ async function handleInvoicePayment(
         }
 
         // For package change: keep existing expiredAt, do NOT extend
-        const finalExpiredAt = isPackageChange ? user.expiredAt : newExpiredAt;
+        const finalExpiredAt = isPackageChange ? user.expiredAt : toUTC(newExpiredAt);
 
         // Update user
         await prisma.pppoeUser.update({

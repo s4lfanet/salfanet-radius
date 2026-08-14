@@ -204,8 +204,8 @@ export async function cleanOldActivities(daysToKeep: number = 30) {
   });
 
   try {
-    const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+    const cutoffDate = nowWIB();
+    cutoffDate.setUTCDate(cutoffDate.getUTCDate() - daysToKeep);
 
     const result = await prisma.activityLog.deleteMany({
       where: {

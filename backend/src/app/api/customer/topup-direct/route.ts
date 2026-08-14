@@ -4,6 +4,7 @@ import { createMidtransPayment } from '@/server/services/payment/midtrans.servic
 import { createXenditInvoice } from '@/server/services/payment/xendit.service';
 import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
+import { nowWIB } from '@/lib/timezone';
 
 // Helper to verify customer token
 async function verifyCustomerToken(request: NextRequest) {
@@ -86,8 +87,8 @@ export async function POST(request: NextRequest) {
     const invoiceCount = await prisma.invoice.count();
     const invoiceNumber = `TOPUP-${Date.now()}-${(invoiceCount + 1).toString().padStart(5, '0')}`;
     const paymentToken = `pay-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 1);
+    const dueDate = nowWIB();
+    dueDate.setUTCDate(dueDate.getUTCDate() + 1);
 
     const invoice = await prisma.invoice.create({
       data: {

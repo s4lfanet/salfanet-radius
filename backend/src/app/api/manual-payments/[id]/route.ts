@@ -8,7 +8,7 @@ import { addMonths } from 'date-fns';
 import { generateTransactionId } from '@/server/services/billing/invoice.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
-import { nowWIB } from '@/lib/timezone';
+import { toUTC, nowWIB } from '@/lib/timezone';
 
 function formatBankAccountsWA(bankAccounts: any): string {
   if (!bankAccounts) return '';
@@ -195,7 +195,7 @@ export async function PATCH(
       }
 
       // For package change: preserve existing expiredAt, do NOT extend
-      const finalExpiry = isPackageChange ? currentExpiry : newExpiry;
+      const finalExpiry = isPackageChange ? currentExpiry : toUTC(newExpiry);
       const paymentId = await generateTransactionId();
       const approvedAt = new Date();
 

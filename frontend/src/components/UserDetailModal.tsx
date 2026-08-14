@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Camera, ImageIcon, ZoomIn } from 'lucide-react';
-import { formatWIB, formatLocalDate } from '@/lib/timezone';
+import { formatWIB, formatLocalDate, todayWIBStr, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showWarning, showConfirm } from '@/lib/sweetalert';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
@@ -161,7 +161,7 @@ export default function UserDetailModal({
         idCardPhoto: user.idCardPhoto || '',
         installationPhotos: user.installationPhotos || [],
         autoIsolationEnabled: user.autoIsolationEnabled !== false,
-        registeredAt: user.createdAt ? new Date(user.createdAt).toISOString().split('T')[0] : '',
+        registeredAt: user.createdAt ? formatWIB(user.createdAt, 'yyyy-MM-dd') : '',
         discount: user.discount || 0,
         discountNote: user.discountNote || '',
       });
@@ -1124,7 +1124,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ addonTypeId: '', priceOverride: '', startDate: new Date().toISOString().split('T')[0], notes: '' });
+  const [form, setForm] = useState({ addonTypeId: '', priceOverride: '', startDate: todayWIBStr(), notes: '' });
 
   const loadAddons = async () => {
     try {
@@ -1161,7 +1161,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
       if (!res.ok) throw new Error(data.error || 'Gagal');
       await showSuccess('Layanan tambahan berhasil ditambahkan');
       setShowModal(false);
-      setForm({ addonTypeId: '', priceOverride: '', startDate: new Date().toISOString().split('T')[0], notes: '' });
+      setForm({ addonTypeId: '', priceOverride: '', startDate: todayWIBStr(), notes: '' });
       loadAddons();
     } catch (err: any) { await showError(err.message); }
     finally { setSaving(false); }
@@ -1207,7 +1207,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
               <div>
                 <div className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">{a.addonType?.name || a.addonName}</div>
                 <div className="text-xs text-muted-foreground">
-                  {a.addonType?.isRecurring ? 'Bulanan' : 'Sekali'} · Mulai {a.startDate ? new Date(a.startDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                  {a.addonType?.isRecurring ? 'Bulanan' : 'Sekali'} · Mulai {a.startDate ? formatWIB(a.startDate, 'd MMM yyyy') : '-'}
                   {a.notes ? ` · ${a.notes}` : ''}
                 </div>
                 {a.priceOverride != null && (
@@ -1235,7 +1235,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
             {past.map(a => (
               <div key={a.id} className="flex justify-between p-2 bg-muted/20 rounded text-xs opacity-60">
                 <span>{a.addonType?.name || a.addonName}</span>
-                <span className="text-muted-foreground">Berakhir {a.endDate ? new Date(a.endDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}</span>
+                <span className="text-muted-foreground">Berakhir {a.endDate ? formatWIB(a.endDate, 'd MMM yyyy') : '-'}</span>
               </div>
             ))}
           </div>
@@ -1370,9 +1370,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
         {!activePromise && (
           <button
             onClick={() => {
-              const tomorrow = new Date();
-              tomorrow.setDate(tomorrow.getDate() + 1);
-              setPromiseDate(tomorrow.toISOString().split('T')[0]);
+              setPromiseDate(formatWIB(new Date(nowWIB().getTime() + 86400000), 'yyyy-MM-dd'));
               setShowModal(true);
             }}
             className="inline-flex items-center px-3 py-1.5 text-xs bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition"
@@ -1389,14 +1387,14 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
               <div className="flex items-center gap-2 mb-2">
                 <span className="inline-flex items-center px-2 py-0.5 text-[10px] font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 rounded">AKTIF</span>
                 <span className="text-sm font-medium text-foreground dark:text-[#e0d0ff]">
-                  Janji bayar hingga {new Date(activePromise.promiseDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  Janji bayar hingga {formatWIB(activePromise.promiseDate, 'd MMMM yyyy')}
                 </span>
               </div>
               {activePromise.notes && (
                 <p className="text-xs text-muted-foreground mb-2">📝 {activePromise.notes}</p>
               )}
               <p className="text-[10px] text-muted-foreground">
-                Dibuat: {activePromise.createdAt ? new Date(activePromise.createdAt).toLocaleDateString('id-ID') : '-'}
+                Dibuat: {activePromise.createdAt ? formatWIB(activePromise.createdAt, 'd MMM yyyy') : '-'}
               </p>
             </div>
             <button
@@ -1420,7 +1418,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
             {promises.map(p => (
               <div key={p.id} className="flex justify-between items-center p-2 bg-muted/20 rounded text-xs">
                 <span>
-                  {new Date(p.promiseDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {formatWIB(p.promiseDate, 'd MMM yyyy')}
                 </span>
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
                   p.status === 'active' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
@@ -1448,7 +1446,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
                   type="date"
                   value={promiseDate}
                   onChange={e => setPromiseDate(e.target.value)}
-                  min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                  min={formatWIB(new Date(nowWIB().getTime() + 86400000), 'yyyy-MM-dd')}
                   className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
                 />
               </div>

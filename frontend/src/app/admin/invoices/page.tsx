@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { showSuccess, showError, showConfirm, showToast } from '@/lib/sweetalert';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   Dialog,
@@ -98,9 +98,7 @@ export default function InvoicesPage() {
   // Generate Invoice dialog
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
   const [generating, setGenerating] = useState(false);
-  const [genMonth, setGenMonth] = useState<string>(() => {
-    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [genMonth, setGenMonth] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
   const [genScope, setGenScope] = useState<'all' | 'single'>('all');
   const [genUserId, setGenUserId] = useState('');
   const [genUserSearch, setGenUserSearch] = useState('');
@@ -117,10 +115,10 @@ export default function InvoicesPage() {
     return `${MONTH_NAMES_ID[m - 1]} ${y}`;
   };
   const shiftInvoiceMonth = (delta: number) => {
-    const base = invoiceMonth || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
+    const base = invoiceMonth || formatWIB(nowWIB(), 'yyyy-MM');
     const [y, m] = base.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    setInvoiceMonth(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+    setInvoiceMonth(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`);
   };
 
   useEffect(() => {

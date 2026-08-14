@@ -18,7 +18,7 @@ import { CheckCircle, Upload, AlertTriangle, Loader2 } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
-import { formatWIB, nowWIB, todayWIBStr } from '@/lib/timezone';
+import { formatWIB, nowWIB, todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 
 interface BankAccount {
   name: string;
@@ -168,7 +168,7 @@ function PayManualPageContent() {
           userId: invoice.userId,
           invoiceId: invoice.id,
           amount: Number(amount),
-          paymentDate: new Date(paymentDate).toISOString(),
+          paymentDate: parseDateAsWIB(paymentDate).toISOString(),
           bankName: selectedBank,
           accountName: accountName.trim(),
           receiptImage: filename,

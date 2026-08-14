@@ -5,6 +5,7 @@ import { prisma } from '@/server/db/client';
 import { RouterOSAPI } from 'node-routeros';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
+import { nowWIB } from '@/lib/timezone';
 
 async function generateCustomerId(): Promise<string> {
   const co = await prisma.company.findFirst({ select: { customerIdPrefix: true } });
@@ -229,11 +230,11 @@ export async function POST(request: NextRequest) {
 
     // Calculate expiry date based on profile validity
     const calculateExpiry = () => {
-      const now = new Date();
+      const now = nowWIB();
       if (profile.validityUnit === 'MONTHS') {
-        now.setMonth(now.getMonth() + profile.validityValue);
+        now.setUTCMonth(now.getUTCMonth() + profile.validityValue);
       } else {
-        now.setDate(now.getDate() + profile.validityValue);
+        now.setUTCDate(now.getUTCDate() + profile.validityValue);
       }
       return now;
     };

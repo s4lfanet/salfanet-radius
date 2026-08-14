@@ -84,10 +84,10 @@ export const NotificationService = {
    */
   async checkExpiredUsers() {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = nowWIB();
+      today.setUTCHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
       const expiredUsers = await prisma.pppoeUser.findMany({
         where: {

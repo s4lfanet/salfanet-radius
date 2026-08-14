@@ -14,7 +14,7 @@ import MapPicker from '@/components/MapPicker';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
 import UserDetailModal from '@/components/UserDetailModal';
-import { formatWIB, isExpiredWIB as isExpired, endOfDayWIBtoUTC } from '@/lib/timezone';
+import { formatWIB, isExpiredWIB as isExpired, endOfDayWIBtoUTC, nowWIB, todayWIBStr } from '@/lib/timezone';
 import {
   SimpleModal,
   ModalHeader,
@@ -81,7 +81,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
     idCardNumber: '', idCardPhoto: '',
     installationPhotos: [] as string[],
     followRoad: false,
-    registeredAt: new Date().toISOString().slice(0, 10),
+    registeredAt: todayWIBStr(),
   });
   const [showPassword, setShowPassword] = useState(false);
   const [uploadingIdCard, setUploadingIdCard] = useState(false);
@@ -93,7 +93,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
   const prevIsOpen = useRef(isOpen);
   useEffect(() => {
     if (prevIsOpen.current && !isOpen) {
-      setFormData({ username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '', email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '', subscriptionType: 'POSTPAID', billingDay: '1', macAddress: '', comment: '', referralCode: '', idCardNumber: '', idCardPhoto: '', installationPhotos: [], followRoad: false, registeredAt: new Date().toISOString().slice(0, 10) });
+      setFormData({ username: '', password: '', profileId: '', routerId: '', areaId: '', name: '', phone: '', email: '', address: '', latitude: '', longitude: '', ipAddress: '', expiredAt: '', subscriptionType: 'POSTPAID', billingDay: '1', macAddress: '', comment: '', referralCode: '', idCardNumber: '', idCardPhoto: '', installationPhotos: [], followRoad: false, registeredAt: todayWIBStr() });
       setShowPassword(false);
     }
     prevIsOpen.current = isOpen;
@@ -1212,8 +1212,8 @@ export default function PppoeUsersPage() {
   });
 
   // Calculate stats
-  const now = new Date();
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const now = nowWIB();
+  const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const registrationsThisMonth = users.filter((u) => new Date(u.createdAt) >= startOfMonth).length;
   const renewalsThisMonth = users.filter((u) => {
     const updated = new Date(u.updatedAt);

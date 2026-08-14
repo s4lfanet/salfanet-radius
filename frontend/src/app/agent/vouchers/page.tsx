@@ -1,6 +1,7 @@
 ﻿'use client';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -79,7 +80,7 @@ export default function AgentVouchersPage() {
     if (!date) return '-';
     try {
       const d = typeof date === 'string' ? new Date(date) : date;
-      return format(d, formatStr);
+      return formatInTimeZone(d, 'UTC', formatStr);
     } catch {
       return '-';
     }
