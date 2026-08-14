@@ -1097,6 +1097,34 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 9 — Hotspot Voucher Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/hotspot/voucher/page.tsx` — 15 fetch() calls replaced:
+  - `fetch('/api/public/company')` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/profiles')` → `apiAdmin(...)`
+  - `fetch('/api/network/routers')` → `networkApi.listRouters()`
+  - `fetch('/api/hotspot/agents')` → `apiAdmin(...)`
+  - `fetch('/api/voucher-templates')` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher?...')` (list) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher', { method: 'POST' })` (generate chunks) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher?batchCode=...', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher/delete-multiple', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher/send-whatsapp', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher/export?...')` (PDF) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher/bulk', { method: 'POST', body: fd })` (import) → `apiAdmin(..., { body: fd })`
+  - `fetch('/api/hotspot/voucher', { method: 'PATCH' })` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/voucher/delete-expired', { method: 'POST' })` → `apiAdmin(...)`
+  - 3 blob download fetch calls retained with `credentials: 'include'` (template, export CSV, export Excel)
+
+**Verification:**
+- Build: ✅ SUCCESS (fixed 1 duplicate catch block syntax error during migration)
+- Production test: ✅ Hotspot voucher page loads, zero console errors
+- Only 3 blob download fetch calls remain (intentional)
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
