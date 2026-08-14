@@ -19,6 +19,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { apiAdmin } from '@/lib/api';
 
 interface Customer {
   id: string;
@@ -96,10 +97,9 @@ export default function CustomerAssignmentPage() {
 
   const loadAssignments = async () => {
     try {
-      const res = await fetch('/api/network/customers/assign');
-      const data = await res.json();
+      const data = await apiAdmin('/api/network/customers/assign');
       setAssignments(Array.isArray(data) ? data : []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load error:', error);
     } finally {
       setLoading(false);
@@ -114,13 +114,12 @@ export default function CustomerAssignmentPage() {
 
     setIsSearching(true);
     try {
-      const res = await fetch(`/api/pppoe/users?search=${encodeURIComponent(query)}&limit=10`);
-      const data = await res.json();
+      const data = await apiAdmin(`/api/pppoe/users?search=${encodeURIComponent(query)}&limit=10`);
       // Filter out customers that are already assigned
       const assignedIds = assignments.map(a => a.customerId);
-      const available = (data.users || []).filter((u: Customer) => !assignedIds.includes(u.id));
+      const available = ((data as any).users || []).filter((u: Customer) => !assignedIds.includes(u.id));
       setSearchResults(available);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Search error:', error);
     } finally {
       setIsSearching(false);
@@ -130,15 +129,14 @@ export default function CustomerAssignmentPage() {
   const loadNearestOdps = async (customerId: string) => {
     setLoadingNearestOdps(true);
     try {
-      const res = await fetch(`/api/network/customers/assign?customerId=${customerId}`);
-      const data = await res.json();
+      const data = await apiAdmin(`/api/network/customers/assign?customerId=${customerId}`);
       if (Array.isArray(data)) {
-        setNearestOdps(data);
+        setNearestOdps(data as any);
       } else {
-        await showError(data.error || 'Failed to load nearest ODPs');
+        await showError((data as any).error || 'Failed to load nearest ODPs');
         setNearestOdps([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load nearest ODPs error:', error);
       setNearestOdps([]);
     } finally {
@@ -209,25 +207,19 @@ export default function CustomerAssignmentPage() {
         notes: notes || null,
       };
 
-      const res = await fetch('/api/network/customers/assign', {
+      await apiAdmin('/api/network/customers/assign', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
-      if (res.ok) {
-        await showSuccess(editingAssignment ? t('common.updated') : t('common.created'));
-        setIsDialogOpen(false);
-        setEditingAssignment(null);
-        resetForm();
-        loadAssignments();
-      } else {
-        await showError(result.error || t('common.failedSaveAssignment'));
-      }
-    } catch (error) {
+      await showSuccess(editingAssignment ? t('common.updated') : t('common.created'));
+      setIsDialogOpen(false);
+      setEditingAssignment(null);
+      resetForm();
+      loadAssignments();
+    } catch (error: any) {
       console.error('Submit error:', error);
-      await showError(t('common.failedSaveAssignment'));
+      await showError(error.message || t('common.failedSaveAssignment'));
     }
   };
 
@@ -239,18 +231,14 @@ export default function CustomerAssignmentPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/network/customers/assign?id=${assignment.id}`, {
+      await apiAdmin(`/api/network/customers/assign?id=${assignment.id}`, {
         method: 'DELETE',
       });
 
-      const result = await res.json();
-      if (res.ok) {
-        await showSuccess(t('common.assignmentRemoved'));
-        loadAssignments();
-      } else {
-        await showError(result.error || t('common.failedRemoveAssignment'));
-      }
-    } catch (error) {
+      await showSuccess(t('common.assignmentRemoved'));
+      loadAssignments();
+    } catch (error: any) {
+      await showError(error.message || t('common.failedRemoveAssignment'));
       await showError(t('common.failedRemoveAssignment'));
     }
   };
