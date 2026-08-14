@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 import { Loader2 } from 'lucide-react';
 
 interface Template {
@@ -184,19 +185,18 @@ export default function WhatsAppTemplatesPage() {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/whatsapp/templates');
-      const data = await res.json();
+      const data = await apiAdmin('/api/whatsapp/templates');
 
-      if (data.success) {
+      if ((data as any).success) {
         const templatesMap: Record<string, Template> = {};
-        data.data.forEach((t: Template) => {
+        (data as any).data.forEach((t: Template) => {
           templatesMap[t.type] = t;
         });
         setTemplates(templatesMap);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Fetch templates error:', error);
-      showError(t('whatsapp.failedLoadTemplate'));
+      showError(error.message || t('whatsapp.failedLoadTemplate'));
     } finally {
       setLoading(false);
     }
@@ -208,23 +208,20 @@ export default function WhatsAppTemplatesPage() {
 
     setSaving(type);
     try {
-      const res = await fetch(`/api/whatsapp/templates/${template.id}`, {
+      const data = await apiAdmin(`/api/whatsapp/templates/${template.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message }),
       });
 
-      const data = await res.json();
-
-      if (data.success) {
+      if ((data as any).success) {
         showSuccess(t('whatsapp.templateUpdated'));
         fetchTemplates();
       } else {
-        showError(data.error || t('whatsapp.failedUpdateTemplate'));
+        showError((data as any).error || t('whatsapp.failedUpdateTemplate'));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update template error:', error);
-      showError(t('whatsapp.failedUpdateTemplate'));
+      showError(error.message || t('whatsapp.failedUpdateTemplate'));
     } finally {
       setSaving(null);
     }
