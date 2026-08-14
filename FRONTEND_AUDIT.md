@@ -950,6 +950,31 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 4 — PPPoE Profiles Page Migration (14 Aug 2026) ✅
+
+**API module updated:**
+- `frontend/src/lib/api/pppoe.ts` — Added `saveProfile()`, `deleteProfile()`, `syncMikrotikProfiles()`, `syncRadiusProfiles()`
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/profiles/page.tsx` — 10 fetch() calls replaced:
+  - `fetch('/api/pppoe/profiles')` → `pppoeApi.listProfiles()`
+  - `fetch('/api/admin/ippool')` → `apiAdmin('/api/admin/ippool')`
+  - `fetch('/api/pppoe/profiles/sync-mikrotik')` (GET) → `apiAdmin('/api/pppoe/profiles/sync-mikrotik')`
+  - `fetch('/api/pppoe/profiles', { method: 'POST/PUT' })` → `pppoeApi.saveProfile(payload)`
+  - `fetch('/api/pppoe/profiles?id=...', { method: 'DELETE' })` → `pppoeApi.deleteProfile(id)`
+  - `fetch('/api/pppoe/profiles/sync-radius', { method: 'POST' })` → `pppoeApi.syncRadiusProfiles()`
+  - `fetch('/api/pppoe/profiles/sync-mikrotik', { method: 'POST' })` → `pppoeApi.syncMikrotikProfiles(payload)`
+  - `fetch('/api/pppoe/profiles/sync-mikrotik', { method: 'PUT' })` → `apiAdmin(..., { method: 'PUT' })`
+  - `fetch('/api/pppoe/profiles/sync-mikrotik')` (reload routers) → `apiAdmin(...)`
+  - `fetch('/api/pppoe/profiles', { method: 'POST' })` (import) → `pppoeApi.saveProfile(...)`
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Profiles page loads, zero console errors
+- Zero inline fetch() calls remaining in profiles page
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
