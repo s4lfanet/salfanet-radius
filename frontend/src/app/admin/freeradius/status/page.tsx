@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface RadiusStatus {
     running: boolean;
@@ -37,9 +38,8 @@ export default function FreeRADIUSStatusPage() {
 
     const fetchStatus = useCallback(async () => {
         try {
-            const response = await fetch('/api/freeradius/status');
-            const data = await response.json();
-            if (response.ok && data.success) {
+            const data = await apiAdmin('/api/freeradius/status');
+            if (data.success) {
                 setStatus(data.status);
             }
         } catch (error) {
@@ -79,10 +79,9 @@ export default function FreeRADIUSStatusPage() {
         })) return;
         setActionLoading(action);
             try {
-                const response = await fetch(`/api/freeradius/${action}`, { method: 'POST' });
-                const data = await response.json();
+                const data = await apiAdmin(`/api/freeradius/${action}`, { method: 'POST' });
 
-                if (response.ok && data.success) {
+                if (data.success) {
                     addToast({ type: 'success', title: t('common.success'), description: msg.successText || data.message, duration: 2000 });
                     setTimeout(fetchStatus, 2000);
                 } else {
@@ -98,9 +97,8 @@ export default function FreeRADIUSStatusPage() {
     const handleCleanupStale = async () => {
         setActionLoading('cleanup');
         try {
-            const response = await fetch('/api/freeradius/cleanup-stale', { method: 'POST' });
-            const data = await response.json();
-            if (response.ok && data.success) {
+            const data = await apiAdmin('/api/freeradius/cleanup-stale', { method: 'POST' });
+            if (data.success) {
                 addToast({ type: 'success', title: t('common.success'), description: data.message, duration: 3000 });
                 setTimeout(fetchStatus, 1000);
             } else {

@@ -7,6 +7,7 @@ import {
     Shield, RefreshCw, Terminal, Copy, Clock
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface RadTestResult {
     success: boolean;
@@ -39,9 +40,8 @@ export default function RadTestPage() {
         setResult(null);
 
         try {
-            const response = await fetch('/api/freeradius/radtest', {
+            const data = await apiAdmin<{ result: RadTestResult; error?: string }>('/api/freeradius/radtest', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username,
                     password,
@@ -51,13 +51,7 @@ export default function RadTestPage() {
                 })
             });
 
-            const data = await response.json();
-
-            if (response.ok) {
-                setResult(data.result);
-            } else {
-                throw new Error(data.error || 'Test failed');
-            }
+            setResult(data.result);
         } catch (error: any) {
             addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to run radtest' });
         } finally {

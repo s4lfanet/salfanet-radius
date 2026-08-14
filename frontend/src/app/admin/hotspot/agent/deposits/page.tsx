@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { showConfirm, showError, showSuccess } from '@/lib/sweetalert';
 import { RefreshCw } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface AgentDepositItem {
   id: string;
@@ -37,9 +38,8 @@ export default function AgentDepositsPage() {
   const loadDeposits = async (status: DepositFilter = filter) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/agent-deposits?status=${status}`);
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      const data = await apiAdmin(`/api/admin/agent-deposits?status=${status}`) as any;
+      if (!data.success) {
         throw new Error(data.error || 'Gagal memuat data deposit agent');
       }
       setDeposits(data.deposits || []);
@@ -69,14 +69,12 @@ export default function AgentDepositsPage() {
 
     setActionLoadingId(deposit.id);
     try {
-      const res = await fetch('/api/admin/agent-deposits', {
+      const data = await apiAdmin('/api/admin/agent-deposits', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ depositId: deposit.id, action }),
-      });
+      }) as any;
 
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error || `Gagal ${textAction} deposit`);
       }
 

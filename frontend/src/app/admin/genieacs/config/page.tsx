@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, RefreshCw, Save, Trash2, Plus } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface ConfigItem {
   _id: string;
@@ -20,8 +21,7 @@ export default function GenieACSConfigPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/genieacs/config', { cache: 'no-store' });
-      const json = await res.json();
+      const json = await apiAdmin<{ success: boolean; data?: ConfigItem[]; error?: string }>('/api/genieacs/config', { cache: 'no-store' });
       if (!json.success) throw new Error(json.error || 'Failed to load');
       setItems(json.data || []);
       const map: Record<string, string> = {};
@@ -41,12 +41,10 @@ export default function GenieACSConfigPage() {
   const saveOne = async (id: string, value: string) => {
     setError(null);
     try {
-      const res = await fetch('/api/genieacs/config', {
+      const json = await apiAdmin<{ success: boolean; error?: string }>('/api/genieacs/config', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id, value }),
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Save failed');
       await load();
     } catch (e) {
@@ -57,12 +55,10 @@ export default function GenieACSConfigPage() {
   const remove = async (id: string) => {
     if (!confirm(`Delete config "${id}"?`)) return;
     try {
-      const res = await fetch('/api/genieacs/config', {
+      const json = await apiAdmin<{ success: boolean; error?: string }>('/api/genieacs/config', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
-      const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Delete failed');
       await load();
     } catch (e) {

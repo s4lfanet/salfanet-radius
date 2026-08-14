@@ -9,6 +9,7 @@ import {
   ChevronDown, ChevronUp, Copy, ExternalLink, Check, CreditCard, Eye,
   FileText, Clock, Ban, MapPin, Hash,
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface UnpaidInvoice {
   id: string;
@@ -64,8 +65,7 @@ export default function IsolatedUsersMonitorPage() {
     try {
       if (!silent) setLoading(true);
       else setRefreshing(true);
-      const res = await fetch('/api/admin/isolated-users');
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; data: IsolatedUser[]; stats: Stats }>('/api/admin/isolated-users');
       if (data.success) {
         setUsers(data.data);
         setStats(data.stats);

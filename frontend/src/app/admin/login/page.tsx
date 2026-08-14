@@ -6,6 +6,7 @@ import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Loader2, Shield, Smartphone, User, Lock, Clock, LogIn, ArrowLeft, KeyRound } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 type Step = 'credentials' | 'twoFactor';
 
@@ -57,8 +58,7 @@ function LoginForm() {
 
   // Load company branding
   useEffect(() => {
-    fetch('/api/public/company')
-      .then(res => res.json())
+    apiAdmin<{ success: boolean; company: any }>('/api/public/company')
       .then(data => {
         if (data.success && data.company.name) setCompanyName(data.company.name);
         if (data.success && data.company.logo) setCompanyLogo(data.company.logo);
@@ -95,18 +95,10 @@ function LoginForm() {
     try {
       // Use pre-login API because NextAuth v4 sanitizes authorize() errors
       // to "CredentialsSignin" — custom error messages never reach the client.
-      const res = await fetch('/api/admin/auth/pre-login', {
+      const data = await apiAdmin<{ error?: string; requires2FA?: boolean; token?: string }>('/api/admin/auth/pre-login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: formData.username, password: formData.password }),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || t('auth.loginFailed'));
-        return;
-      }
 
       if (data.requires2FA && data.token) {
         // Show 2FA step inline — no page redirect, no race conditions

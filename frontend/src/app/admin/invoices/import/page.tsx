@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { buildUrl } from '@/lib/api';
 
 interface ImportResult {
   row: number;
@@ -134,9 +135,10 @@ export default function ImportInvoicePage() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const res = await fetch('/api/admin/invoices/import', {
+      const res = await fetch(buildUrl('/api/admin/invoices/import'), {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
       const data: ImportResponse = await res.json();

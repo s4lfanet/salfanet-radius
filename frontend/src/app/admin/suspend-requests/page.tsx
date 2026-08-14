@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { PauseCircle, CheckCircle2, XCircle, Clock, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 interface SuspendUser {
   id: string;
@@ -69,8 +70,7 @@ export default function AdminSuspendRequestsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/suspend-requests?status=${filter}&limit=200`);
-      const data = await res.json();
+      const data = await apiAdmin(`/api/admin/suspend-requests?status=${filter}&limit=200`) as any;
       setRows(data.rows || []);
       setTotal(data.total || 0);
     } catch {
@@ -92,13 +92,10 @@ export default function AdminSuspendRequestsPage() {
     if (!selected || !action) return;
     setProcessing(true);
     try {
-      const res = await fetch(`/api/admin/suspend-requests/${selected.id}`, {
+      await apiAdmin(`/api/admin/suspend-requests/${selected.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, adminNotes }),
       });
-      const data = await res.json();
-      if (!res.ok) { showError(data.error || 'Gagal memproses'); return; }
 
       showSuccess(
         action === 'APPROVE'
@@ -108,8 +105,8 @@ export default function AdminSuspendRequestsPage() {
       setSelected(null);
       setAction(null);
       await fetchData();
-    } catch {
-      showError('Terjadi kesalahan jaringan');
+    } catch (error: any) {
+      showError(error.message || 'Terjadi kesalahan jaringan');
     } finally {
       setProcessing(false);
     }

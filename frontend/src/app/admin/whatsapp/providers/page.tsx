@@ -16,7 +16,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
-import { apiAdmin } from '@/lib/api';
+import { apiAdmin, buildUrl } from '@/lib/api';
 
 interface Provider {
   id: string;
@@ -357,7 +357,7 @@ export default function WhatsAppProvidersPage() {
     let retrying = false;
     try {
       const url = `/api/whatsapp/providers/${provider.id}/qr`;
-      const response = await fetch(url, { credentials: 'include' });
+      const response = await fetch(buildUrl(url), { credentials: 'include' });
 
       if (response.ok) {
         if (provider.type === 'mpwa' || provider.type === 'baileys') {

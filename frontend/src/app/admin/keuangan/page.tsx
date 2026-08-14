@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { showSuccess, showError, showConfirm } from "@/lib/sweetalert";
 import { formatWIB, nowWIB } from "@/lib/timezone";
 import { useTranslation } from "@/hooks/useTranslation";
-import { apiAdmin } from "@/lib/api";
+import { apiAdmin, buildUrl } from "@/lib/api";
 import {
   Dialog,
   DialogContent,
@@ -413,7 +413,7 @@ export default function KeuanganPage() {
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
 
       if (format === "excel") {
-        const res = await fetch(url, { credentials: 'include' });
+        const res = await fetch(buildUrl(url), { credentials: 'include' });
         if (!res.ok) { await showError(t('keuangan.exportFailed')); return; }
         const blob = await res.blob();
         const a = document.createElement("a");

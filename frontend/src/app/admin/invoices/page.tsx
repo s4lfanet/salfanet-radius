@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/table';
 import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, ChevronLeft, ChevronRight, PlusSquare, Users, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
-import { invoiceApi, pppoeApi, apiAdmin } from '@/lib/api';
+import { invoiceApi, pppoeApi, apiAdmin, buildUrl } from '@/lib/api';
 
 interface Invoice {
   id: string;
@@ -301,7 +301,7 @@ export default function InvoicesPage() {
       let url = `/api/invoices/export?format=excel&status=${status}`;
       if (exportDateFrom) url += `&startDate=${exportDateFrom}`;
       if (exportDateTo) url += `&endDate=${exportDateTo}`;
-      const res = await fetch(url, { credentials: 'include' });
+      const res = await fetch(buildUrl(url), { credentials: 'include' });
       const blob = await res.blob();
       const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob);
       const dateSuffix = exportDateFrom && exportDateTo ? `${exportDateFrom}_to_${exportDateTo}` : new Date().toISOString().split('T')[0];

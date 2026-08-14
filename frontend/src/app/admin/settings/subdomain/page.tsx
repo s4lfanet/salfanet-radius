@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 import { Globe, Copy, CheckCircle, AlertCircle, Info, Wifi, Shield } from 'lucide-react';
 
 interface CompanySettings {
@@ -90,9 +91,9 @@ export default function SubdomainSettingsPage() {
   const [domain, setDomain] = useState('example.com');
 
   useEffect(() => {
-    fetch('/api/settings/company')
-      .then(r => r.json())
-      .then(data => {
+    (async () => {
+      try {
+        const data = await apiAdmin<{ data?: { baseUrl?: string }; baseUrl?: string }>('/api/settings/company');
         const url = data?.data?.baseUrl || data?.baseUrl || '';
         setSettings({ baseUrl: url });
         if (url) {
@@ -107,9 +108,12 @@ export default function SubdomainSettingsPage() {
             }
           } catch { /* keep default */ }
         }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const vpsIp = (() => {

@@ -8,6 +8,7 @@ import {
     Loader2, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface RadCheckItem {
     id: number;
@@ -39,10 +40,9 @@ export default function RadCheckPage() {
     const fetchItems = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`/api/freeradius/radcheck?page=${page}&limit=10&search=${search}`);
-            const data = await response.json();
+            const data = await apiAdmin(`/api/freeradius/radcheck?page=${page}&limit=10&search=${search}`);
 
-            if (response.ok && data.success) {
+            if (data.success) {
                 setItems(data.data);
                 setTotalPages(Math.ceil((data.total || 0) / 10));
                 if (data.error && data.error.includes('mock')) {
@@ -70,13 +70,9 @@ export default function RadCheckPage() {
             variant: 'danger',
         })) {
             try {
-                const res = await fetch(`/api/freeradius/radcheck?id=${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    addToast({ type: 'success', title: 'Deleted!', description: 'Item has been deleted.' });
-                    fetchItems();
-                } else {
-                    throw new Error('Failed to delete');
-                }
+                await apiAdmin(`/api/freeradius/radcheck?id=${id}`, { method: 'DELETE' });
+                addToast({ type: 'success', title: 'Deleted!', description: 'Item has been deleted.' });
+                fetchItems();
             } catch (err) {
                 addToast({ type: 'error', title: 'Error', description: 'Failed to delete item' });
             }
@@ -90,20 +86,15 @@ export default function RadCheckPage() {
         }
 
         try {
-            const res = await fetch('/api/freeradius/radcheck', {
+            await apiAdmin('/api/freeradius/radcheck', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newItem)
             });
 
-            if (res.ok) {
-                addToast({ type: 'success', title: t('common.success'), description: t('radius.createSuccess') });
-                setShowAdd(false);
-                setNewItem({ username: '', attribute: 'Cleartext-Password', op: ':=', value: '' });
-                fetchItems();
-            } else {
-                throw new Error('Failed to create');
-            }
+            addToast({ type: 'success', title: t('common.success'), description: t('radius.createSuccess') });
+            setShowAdd(false);
+            setNewItem({ username: '', attribute: 'Cleartext-Password', op: ':=', value: '' });
+            fetchItems();
         } catch (err) {
             addToast({ type: 'error', title: 'Error', description: 'Failed to create item' });
         }

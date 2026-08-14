@@ -6,7 +6,7 @@ import { Activity, Filter, Power, RefreshCw, Wifi, WifiOff, Search, Download } f
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr } from '@/lib/timezone';
-import { apiAdmin } from '@/lib/api';
+import { apiAdmin, buildUrl } from '@/lib/api';
 
 interface Session {
   id: string;
@@ -177,7 +177,7 @@ export default function SessionsPage() {
       if (typeFilter) params.set('type', typeFilter);
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('username', searchFilter);
-      const res = await fetch(`/api/sessions/export?${params}`, { credentials: 'include' });
+      const res = await fetch(buildUrl(`/api/sessions/export?${params}`), { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `Sessions-Active-${new Date().toISOString().split('T')[0]}.xlsx`;
@@ -199,7 +199,7 @@ export default function SessionsPage() {
       params.set('endDate', exportEndDate);
       if (typeFilter) params.set('type', typeFilter);
       if (routerFilter) params.set('routerId', routerFilter);
-      const res = await fetch(`/api/sessions/export?${params}`, { credentials: 'include' });
+      const res = await fetch(buildUrl(`/api/sessions/export?${params}`), { credentials: 'include' });
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `Sessions-History-${exportStartDate}-${exportEndDate}.xlsx`;

@@ -8,6 +8,7 @@ import {
   Loader2, CreditCard, Wallet, Save, Eye, EyeOff, CheckCircle2, AlertCircle, 
   Copy, Check, List, RefreshCw, Search, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface PaymentGateway {
   id: string;
@@ -78,8 +79,7 @@ export default function PaymentGatewayPage() {
 
   const fetchConfigs = async () => {
     try {
-      const res = await fetch('/api/payment-gateway/config');
-      const data = await res.json();
+      const data = await apiAdmin('/api/payment-gateway/config');
       setConfigs(data);
       
       const midtrans = data.find((c: PaymentGateway) => c.provider === 'midtrans');
@@ -133,21 +133,15 @@ export default function PaymentGatewayPage() {
   const saveGateway = async (provider: string, data: any) => {
     setSaving(true);
     try {
-      const res = await fetch('/api/payment-gateway/config', {
+      await apiAdmin('/api/payment-gateway/config', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider, ...data })
       });
 
-      if (res.ok) {
-        await showSuccess(`${provider.charAt(0).toUpperCase() + provider.slice(1)} ${t('paymentGateway.configSaved')}`);
-        fetchConfigs();
-      } else {
-        const result = await res.json();
-        await showError(result.error || t('paymentGateway.failedToSave'));
-      }
-    } catch (error) {
-      await showError(t('paymentGateway.failedToSave'));
+      await showSuccess(`${provider.charAt(0).toUpperCase() + provider.slice(1)} ${t('paymentGateway.configSaved')}`);
+      fetchConfigs();
+    } catch (error: any) {
+      await showError(error.message || t('paymentGateway.failedToSave'));
     } finally {
       setSaving(false);
     }
@@ -175,13 +169,10 @@ export default function PaymentGatewayPage() {
       if (logsFilter.orderId) params.append('orderId', logsFilter.orderId);
       if (logsFilter.success) params.append('success', logsFilter.success);
       
-      const res = await fetch(`/api/payment-gateway/webhook-logs?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin(`/api/payment-gateway/webhook-logs?${params}`);
       
-      if (res.ok) {
-        setWebhookLogs(data.logs);
-        setLogsTotalPages(data.pagination.totalPages);
-      }
+      setWebhookLogs(data.logs);
+      setLogsTotalPages(data.pagination.totalPages);
     } catch (error) {
       console.error('Failed to fetch webhook logs:', error);
     } finally {

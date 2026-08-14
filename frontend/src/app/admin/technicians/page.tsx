@@ -27,6 +27,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface Technician {
   id: string;
@@ -71,10 +72,8 @@ export default function TechniciansManagementPage() {
       if (searchTerm) params.append('search', searchTerm);
       if (filterActive) params.append('isActive', filterActive);
 
-      const res = await fetch(`/api/admin/technicians?${params}`);
-      if (res.ok) {
-        setTechnicians(await res.json());
-      }
+      const data = await apiAdmin(`/api/admin/technicians?${params}`);
+      setTechnicians(data);
     } catch (error) {
       await showError(t('common.error'));
     } finally {
@@ -118,29 +117,22 @@ export default function TechniciansManagementPage() {
         ? { ...formData, id: editingTechnician.id }
         : formData;
 
-      const res = await fetch('/api/admin/technicians', {
+      await apiAdmin('/api/admin/technicians', {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
-
-      if (res.ok) {
-        await showSuccess(
-          editingTechnician
-            ? t('technician.technicianUpdated')
-            : t('technician.technicianCreated')
-        );
-        setIsDialogOpen(false);
-        setEditingTechnician(null);
-        resetForm();
-        loadTechnicians();
-      } else {
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(
+        editingTechnician
+          ? t('technician.technicianUpdated')
+          : t('technician.technicianCreated')
+      );
+      setIsDialogOpen(false);
+      setEditingTechnician(null);
+      resetForm();
+      loadTechnicians();
+    } catch (error: any) {
+      await showError(error.message || t('common.error'));
     }
   };
 
@@ -153,19 +145,14 @@ export default function TechniciansManagementPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/admin/technicians?id=${technician.id}`, {
+      await apiAdmin(`/api/admin/technicians?id=${technician.id}`, {
         method: 'DELETE',
       });
 
-      if (res.ok) {
-        await showSuccess(t('technician.technicianDeleted'));
-        loadTechnicians();
-      } else {
-        const result = await res.json();
-        await showError(result.error || t('common.error'));
-      }
-    } catch (error) {
-      await showError(t('common.error'));
+      await showSuccess(t('technician.technicianDeleted'));
+      loadTechnicians();
+    } catch (error: any) {
+      await showError(error.message || t('common.error'));
     }
   };
 

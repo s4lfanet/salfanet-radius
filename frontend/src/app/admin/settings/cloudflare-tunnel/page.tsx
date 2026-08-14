@@ -25,6 +25,7 @@ import {
   Wifi,
   WifiOff,
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface TunnelStatus {
   baseUrl: string;
@@ -87,8 +88,7 @@ export default function CloudflareTunnelPage() {
   const loadStatus = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/cloudflare-tunnel');
-      const data = await res.json();
+      const data = await apiAdmin<any>('/api/admin/cloudflare-tunnel');
       setStatus(data);
       if (data.baseUrl) {
         setTunnelDomain(data.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''));
@@ -116,13 +116,11 @@ export default function CloudflareTunnelPage() {
   const doAction = async (action: string, extra?: Record<string, unknown>) => {
     setActionLoading(action);
     try {
-      const res = await fetch('/api/admin/cloudflare-tunnel', {
+      const data = await apiAdmin<{ success?: boolean; message?: string; error?: string }>('/api/admin/cloudflare-tunnel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action, ...extra }),
       });
-      const data = await res.json();
-      if (res.ok && data.success !== false) {
+      if (data.success !== false) {
         showToast('success', data.message || data.success || 'Berhasil');
         await loadStatus();
       } else {

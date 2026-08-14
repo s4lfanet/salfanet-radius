@@ -2264,6 +2264,111 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 77-84 — 8 Pages with 3 fetch calls each (14 Aug 2026) ✅
+
+**Files migrated (24 fetch calls total):**
+- Batch 77: `genieacs/files/page.tsx` — 3 fetch calls (1 FormData upload uses buildUrl, 2 JSON → apiAdmin)
+- Batch 78: `genieacs/config/page.tsx` — 3 fetch calls (all JSON → apiAdmin)
+- Batch 79: `pppoe/users/page.tsx` — 3 fetch calls (all blob downloads → buildUrl + credentials)
+- Batch 80: `payment-gateway/page.tsx` — 3 fetch calls (all JSON → apiAdmin)
+- Batch 81: `technicians/page.tsx` — 3 fetch calls (all JSON → apiAdmin)
+- Batch 82: `genieacs/auto-provision/page.tsx` — 3 fetch calls (all JSON → apiAdmin)
+- Batch 83: `freeradius/radcheck/page.tsx` — 3 fetch calls (all JSON → apiAdmin)
+- Batch 84: `freeradius/status/page.tsx` — 3 fetch calls (all JSON → apiAdmin)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 85-90 — 6 Pages with 2 fetch calls each (14 Aug 2026) ✅
+
+**Files migrated (12 fetch calls total):**
+- Batch 85: `settings/isolation/page.tsx` — 2 fetch calls (all JSON → apiAdmin)
+- Batch 86: `settings/cloudflare-tunnel/page.tsx` — 2 fetch calls (all JSON → apiAdmin)
+- Batch 87: `login/page.tsx` — 2 fetch calls (all JSON → apiAdmin)
+- Batch 88: `pppoe/users/new/page.tsx` — 2 fetch calls (FormData uploads → buildUrl + credentials)
+- Batch 89: `sessions/page.tsx` — 2 fetch calls (blob downloads → buildUrl + credentials)
+- Batch 90: `suspend-requests/page.tsx` — 2 fetch calls (all JSON → apiAdmin)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 91-93 — 3 More Pages with 2 fetch calls each (14 Aug 2026) ✅
+
+**Files migrated (6 fetch calls total):**
+- Batch 91: `whatsapp/notifications/page.tsx` — 2 fetch calls (all JSON → apiAdmin)
+- Batch 92: `hotspot/agent/deposits/page.tsx` — 2 fetch calls (all JSON → apiAdmin)
+- Batch 93: `genieacs/faults/page.tsx` — 2 fetch calls (all JSON → apiAdmin)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+### Phase 2 Batch 94-111 — 18 Pages with 1 fetch call each (14 Aug 2026) ✅
+
+**Files migrated (18 fetch calls total):**
+
+JSON API calls → `apiAdmin()` (11 files):
+- Batch 94: `auth/two-factor/page.tsx` — 1 fetch call → apiAdmin
+- Batch 95: `freeradius/logs/page.tsx` — 1 fetch call → apiAdmin
+- Batch 96: `freeradius/radtest/page.tsx` — 1 fetch call → apiAdmin
+- Batch 97: `isolated-users/page.tsx` — 1 fetch call → apiAdmin
+- Batch 98: `laporan/page.tsx` — 1 fetch call → apiAdmin
+- Batch 99: `laporan/analitik/page.tsx` — 1 fetch call → apiAdmin
+- Batch 100: `logs/activity/page.tsx` — 1 fetch call → apiAdmin
+- Batch 101: `settings/isolation/mikrotik/page.tsx` — 1 fetch call → apiAdmin
+- Batch 102: `settings/subdomain/page.tsx` — 1 fetch call → apiAdmin
+- Batch 103: `system/page.tsx` — 1 fetch call → apiAdmin
+- Batch 104: `whatsapp/history/page.tsx` — 1 fetch call → apiAdmin
+
+Blob/FormData/Streaming downloads → `fetch(buildUrl(...), { credentials: 'include' })` (7 files):
+- Batch 105: `invoices/page.tsx` — 1 fetch call (blob download → buildUrl)
+- Batch 106: `invoices/import/page.tsx` — 1 fetch call (FormData upload → buildUrl)
+- Batch 107: `keuangan/page.tsx` — 1 fetch call (blob download → buildUrl)
+- Batch 108: `network/olts/page.tsx` — 1 fetch call (blob download → buildUrl)
+- Batch 109: `network/vpn-server/page.tsx` — 1 fetch call (streaming response → buildUrl)
+- Batch 110: `sessions/pppoe/page.tsx` — 1 fetch call (blob download → buildUrl)
+- Batch 111: `whatsapp/providers/page.tsx` — 1 fetch call (mixed JSON/blob → buildUrl)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Deploy: ⏳ Pending
+- Production test: ⏳ Pending deploy
+
+---
+
+## Phase 2 Migration Summary (Final)
+
+### Total Progress
+- **Batches completed**: 1-111
+- **Total fetch calls migrated to apiAdmin**: ~510
+- **Remaining fetch() calls**: 55 (all legitimate blob/FormData/streaming downloads using `buildUrl()` + `credentials: 'include'`)
+- **Pages with zero inline JSON fetch()**: All admin pages now use `apiAdmin()` for JSON API calls
+
+### Remaining fetch() calls are legitimate:
+All 55 remaining `fetch()` calls in `frontend/src/app/admin/` are one of:
+1. **Blob/binary downloads** (Excel, CSV, PDF exports) — use `fetch(buildUrl(...), { credentials: 'include' })`
+2. **FormData uploads** (file uploads, image uploads) — use `fetch(buildUrl(...), { method: 'POST', body: formData, credentials: 'include' })`
+3. **Streaming responses** (SSE, chunked responses) — use `fetch(buildUrl(...), { credentials: 'include' })` with manual reader/decoder
+4. **Mixed response types** (JSON or blob depending on status) — use `fetch(buildUrl(...), { credentials: 'include' })` with manual handling
+
+None of these can use `apiAdmin()` because `apiAdmin()` calls `res.json()` which would break blob/streaming/FormData responses.
+
+### Phase 2 Status: ✅ COMPLETE
+
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
