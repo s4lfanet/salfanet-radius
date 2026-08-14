@@ -25,6 +25,7 @@ import {
 import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, ChevronLeft, ChevronRight, PlusSquare, Users, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { invoiceApi, pppoeApi, apiAdmin, buildUrl } from '@/lib/api';
+import type { InvoiceListResponse, InvoiceDeleteResponse, InvoiceGenerateResponse, InvoiceSendReminderResponse, InvoicePdfResponse } from '@/types/api';
 
 interface Invoice {
   id: string;
@@ -67,6 +68,60 @@ interface Stats {
   totalPaidAmount: number;
 }
 
+interface InvoicePdfData {
+  company: {
+    name: string;
+    address: string | null;
+    phone: string | null;
+    email: string | null;
+    logo: string | null;
+    poweredBy: string | null;
+    bankAccounts: { bankName: string; accountNumber: string; accountName: string }[];
+  };
+  invoice: {
+    number: string;
+    date: string;
+    dueDate: string;
+    status: string;
+    paidAt: string | null;
+  };
+  customer: {
+    name: string;
+    phone: string | null;
+    username: string | null;
+    customerId: string | null;
+    area: string | null;
+  };
+  items: { description: string; quantity: number; price: number; total: number }[];
+  additionalFees?: { name: string; amount: number }[];
+  tax?: {
+    hasTax: boolean;
+    baseAmount: number;
+    taxRate: number;
+    taxAmount: number;
+  } | null;
+  amountFormatted: string;
+  paymentLink: string | null;
+  paidVia: string | null;
+}
+
+interface BroadcastResponse {
+  success: boolean;
+  successCount?: number;
+  failCount?: number;
+  error?: string;
+}
+
+interface PdfExportResponse {
+  pdfData?: {
+    title: string;
+    generatedAt: string;
+    headers: string[];
+    rows: string[][];
+    summary?: { label: string; value: string }[];
+  };
+}
+
 export default function InvoicesPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -107,7 +162,7 @@ export default function InvoicesPage() {
   const [genLoadingUsers, setGenLoadingUsers] = useState(false);
   const [genSkipExisting, setGenSkipExisting] = useState(true);
   const [genSendWa, setGenSendWa] = useState(false);
-  const [genResult, setGenResult] = useState<{ generated: number; skipped: number; errors: { username: string; error: string }[]; message: string } | null>(null);
+  const [genResult, setGenResult] = useState<InvoiceGenerateResponse | null>(null);
 
   const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const getMonthLabel = (ym: string) => {
@@ -134,8 +189,8 @@ export default function InvoicesPage() {
       const params: Record<string, string> = { status };
       if (invoiceMonth) params.month = invoiceMonth;
       const data = await invoiceApi.list(params);
-      setInvoices((data as any).invoices || []);
-      setStats((data as any).stats || stats);
+      setInvoices((data.invoices as unknown as Invoice[]) || []);
+      setStats(data.stats || stats);
     } catch (error) {
       console.error('Load invoices error:', error);
     } finally {
@@ -169,8 +224,8 @@ export default function InvoicesPage() {
       setIsPaymentDialogOpen(false);
       loadInvoices();
       showToast(t('invoices.markedAsPaid'), 'success');
-    } catch (error: any) {
-      await showError(error.message || t('invoices.failedToMarkPaid'));
+    } catch (error: unknown) {
+      await showError(error instanceof Error ? error.message : t('invoices.failedToMarkPaid'));
     } finally {
       setProcessing(false);
     }
@@ -207,13 +262,13 @@ export default function InvoicesPage() {
     setSendingWA(invoice.id);
     try {
       const data = await invoiceApi.sendReminder({ invoiceId: invoice.id });
-      if ((data as any).success) {
+      if (data.success) {
         await showSuccess(t('invoices.whatsappReminderSent'));
       } else {
-        await showError((data as any).error || t('invoices.failedToSend'));
+        await showError(data.error || t('invoices.failedToSend'));
       }
-    } catch (error: any) {
-      await showError(error.message || t('invoices.failedToSendWhatsApp'));
+    } catch (error: unknown) {
+      await showError(error instanceof Error ? error.message : t('invoices.failedToSendWhatsApp'));
     } finally {
       setSendingWA(null);
     }
@@ -252,20 +307,20 @@ export default function InvoicesPage() {
 
     setBroadcasting(true);
     try {
-      const data = await apiAdmin('/api/whatsapp/broadcast-invoice', {
+      const data = await apiAdmin<BroadcastResponse>('/api/whatsapp/broadcast-invoice', {
         method: 'POST',
         body: JSON.stringify({ invoiceIds: Array.from(selectedInvoices) }),
       });
 
-      if ((data as any).success) {
-        await showSuccess(`Broadcast ${t('common.success').toLowerCase()}!\n✅ ${t('whatsapp.sent')}: ${(data as any).successCount}\n❌ ${t('whatsapp.failed')}: ${(data as any).failCount}`);
+      if (data.success) {
+        await showSuccess(`Broadcast ${t('common.success').toLowerCase()}!\n✅ ${t('whatsapp.sent')}: ${data.successCount}\n❌ ${t('whatsapp.failed')}: ${data.failCount}`);
         setSelectedInvoices(new Set());
       } else {
-        await showError((data as any).error || t('whatsapp.broadcastFailed'));
+        await showError(data.error || t('whatsapp.broadcastFailed'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Broadcast error:', error);
-      await showError(error.message || t('common.failedSendBroadcast'));
+      await showError(error instanceof Error ? error.message : t('common.failedSendBroadcast'));
     } finally {
       setBroadcasting(false);
     }
@@ -281,14 +336,14 @@ export default function InvoicesPage() {
     setDeleting(invoice.id);
     try {
       const data = await invoiceApi.delete(invoice.id);
-      if ((data as any).success) {
+      if (data.success) {
         loadInvoices();
         showToast(t('invoices.invoiceDeleted'), 'success');
       } else {
-        await showError((data as any).error || t('common.failedDelete'));
+        await showError(data.error || t('common.failedDelete'));
       }
-    } catch (error: any) {
-      await showError(error.message || t('invoices.failedDeleteInvoice'));
+    } catch (error: unknown) {
+      await showError(error instanceof Error ? error.message : t('invoices.failedDeleteInvoice'));
     } finally {
       setDeleting(null);
     }
@@ -316,18 +371,18 @@ export default function InvoicesPage() {
       let url = `/api/invoices/export?format=pdf&status=${status}`;
       if (exportDateFrom) url += `&startDate=${exportDateFrom}`;
       if (exportDateTo) url += `&endDate=${exportDateTo}`;
-      const data = await apiAdmin(url);
-      if ((data as any).pdfData) {
+      const data = await apiAdmin<PdfExportResponse>(url);
+      if (data.pdfData) {
         const jsPDF = (await import('jspdf')).default;
         const autoTable = (await import('jspdf-autotable')).default;
         const doc = new jsPDF({ orientation: 'landscape' });
-        doc.setFontSize(14); doc.text((data as any).pdfData.title, 14, 15);
-        doc.setFontSize(8); doc.text(`Generated: ${(data as any).pdfData.generatedAt}`, 14, 21);
-        autoTable(doc, { head: [(data as any).pdfData.headers], body: (data as any).pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
-        if ((data as any).pdfData.summary) {
-          const finalY = (doc as any).lastAutoTable.finalY + 8;
+        doc.setFontSize(14); doc.text(data.pdfData.title, 14, 15);
+        doc.setFontSize(8); doc.text(`Generated: ${data.pdfData.generatedAt}`, 14, 21);
+        autoTable(doc, { head: [data.pdfData.headers], body: data.pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
+        if (data.pdfData.summary) {
+          const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
           doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-          (data as any).pdfData.summary.forEach((s: any, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
+          data.pdfData.summary.forEach((s: { label: string; value: string }, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
         }
         const dateSuffix = exportDateFrom && exportDateTo ? `${exportDateFrom}_to_${exportDateTo}` : new Date().toISOString().split('T')[0];
         doc.save(`Invoices-${dateSuffix}.pdf`);
@@ -338,8 +393,8 @@ export default function InvoicesPage() {
   const handlePrintInvoice = async (invoice: Invoice) => {
     try {
       const data = await invoiceApi.getPdf(invoice.id);
-      if (!(data as any).success || !(data as any).data) { await showError(t('invoices.failedGetInvoiceData')); return; }
-      const inv = (data as any).data;
+      if (!data.success || !data.data) { await showError(t('invoices.failedGetInvoiceData')); return; }
+      const inv = data.data as InvoicePdfData;
 
       const jsPDF = (await import('jspdf')).default;
       const doc = new jsPDF();
@@ -373,13 +428,13 @@ export default function InvoicesPage() {
       const autoTable = (await import('jspdf-autotable')).default;
       autoTable(doc, {
         head: [[t('invoices.pdfHeaderDesc'), t('invoices.pdfHeaderQty'), t('invoices.pdfHeaderPrice'), t('invoices.pdfHeaderTotal')]],
-        body: inv.items.map((item: any) => [item.description, item.quantity, formatCurrency(item.price), formatCurrency(item.total)]),
+        body: inv.items.map((item: { description: string; quantity: number; price: number; total: number }) => [item.description, item.quantity, formatCurrency(item.price), formatCurrency(item.total)]),
         startY: 85,
         headStyles: { fillColor: [13, 148, 136] },
         styles: { fontSize: 10 }
       });
 
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
       doc.setFontSize(12); doc.setFont('helvetica', 'bold');
       doc.text(`Total: ${inv.amountFormatted}`, 196, finalY, { align: 'right' });
 
@@ -396,8 +451,8 @@ export default function InvoicesPage() {
   const handlePrintStandard = async (invoice: Invoice) => {
     try {
       const data = await invoiceApi.getPdf(invoice.id);
-      if (!(data as any).success || !(data as any).data) { await showError(t('invoices.failedGetInvoiceData')); return; }
-      const inv = (data as any).data;
+      if (!data.success || !data.data) { await showError(t('invoices.failedGetInvoiceData')); return; }
+      const inv = data.data as InvoicePdfData;
       const fmtCurr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
       const win = window.open('', '_blank', 'width=850,height=1100');
       if (!win) return;
@@ -589,8 +644,8 @@ export default function InvoicesPage() {
   const handlePrintThermal = async (invoice: Invoice) => {
     try {
       const data = await invoiceApi.getPdf(invoice.id);
-      if (!(data as any).success || !(data as any).data) { await showError(t('invoices.failedGetInvoiceData')); return; }
-      const inv = (data as any).data;
+      if (!data.success || !data.data) { await showError(t('invoices.failedGetInvoiceData')); return; }
+      const inv = data.data as InvoicePdfData;
       const fmtCurr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
       const win = window.open('', '_blank', 'width=400,height=650');
       if (!win) return;
@@ -671,7 +726,13 @@ export default function InvoicesPage() {
     setGenLoadingUsers(true);
     try {
       const data = await pppoeApi.listUsers({ status: 'active' });
-      const all = ((data as any).users || []) as { id: string; name: string; username: string; phone: string; profile: { name: string } | null }[];
+      const all = data.users.map(u => ({
+        id: u.id,
+        name: u.name,
+        username: u.username,
+        phone: u.phone,
+        profile: u.pppoe_profiles ? { name: u.pppoe_profiles.name } : null,
+      }));
       const filtered = all.filter(u =>
         u.name?.toLowerCase().includes(q.toLowerCase()) ||
         u.username?.toLowerCase().includes(q.toLowerCase()) ||
@@ -694,11 +755,11 @@ export default function InvoicesPage() {
         skipExisting: genSkipExisting,
         sendWa: genSendWa,
       });
-      if ((data as any).success) {
-        setGenResult(data as any);
+      if (data.success) {
+        setGenResult(data);
         loadInvoices();
       } else {
-        await showError((data as any).error || 'Gagal generate tagihan');
+        await showError(data.error || 'Gagal generate tagihan');
       }
     } catch { await showError('Gagal generate tagihan'); }
     finally { setGenerating(false); }

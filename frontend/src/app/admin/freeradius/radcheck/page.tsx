@@ -40,7 +40,7 @@ export default function RadCheckPage() {
     const fetchItems = async () => {
         setLoading(true);
         try {
-            const data = await apiAdmin(`/api/freeradius/radcheck?page=${page}&limit=10&search=${search}`);
+            const data = await apiAdmin<{ success: boolean; data: RadCheckItem[]; total?: number; error?: string }>(`/api/freeradius/radcheck?page=${page}&limit=10&search=${search}`);
 
             if (data.success) {
                 setItems(data.data);

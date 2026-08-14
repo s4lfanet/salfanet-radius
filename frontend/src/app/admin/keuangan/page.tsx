@@ -316,9 +316,9 @@ export default function KeuanganPage() {
       let url = `/api/keuangan/transactions?filterDelete=true&type=${filterType}&categoryId=${filterCategory}`;
       if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
-      const data = await apiAdmin(url, { method: "DELETE" });
-      if ((data as any).success) {
-        await showSuccess((data as any).message);
+      const data = await apiAdmin<{ success: boolean; message: string; error: string }>(url, { method: "DELETE" });
+      if (data.success) {
+        await showSuccess(data.message);
         clearSelection();
         setPage(1);
         setTransactions([]);

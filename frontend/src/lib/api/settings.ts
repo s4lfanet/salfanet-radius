@@ -4,7 +4,6 @@
 import { apiAdmin } from './client';
 import type {
   CompanyResponse,
-  SettingsResponse,
   SettingsUpdateResponse,
   AdminUserListResponse,
   AdminUserResponse,
@@ -19,15 +18,15 @@ export const settingsApi = {
     return apiAdmin<CompanyResponse>('/api/company');
   },
 
-  /** Get company settings (admin) */
-  getSettings(): Promise<SettingsResponse> {
-    return apiAdmin<SettingsResponse>('/api/settings');
+  /** Get company settings (admin) — uses /api/company (same as getCompanyInfo but with admin auth) */
+  getSettings(): Promise<CompanyResponse> {
+    return apiAdmin<CompanyResponse>('/api/company');
   },
 
-  /** Update settings */
+  /** Update settings — uses /api/company POST */
   updateSettings(payload: Record<string, unknown>): Promise<SettingsUpdateResponse> {
-    return apiAdmin<SettingsUpdateResponse>('/api/settings', {
-      method: 'PUT',
+    return apiAdmin<SettingsUpdateResponse>('/api/company', {
+      method: 'POST',
       body: JSON.stringify(payload),
     });
   },
