@@ -7,7 +7,7 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { sendAdminCreateUser } from '@/server/services/notifications/whatsapp-templates.service';
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
-import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { invalidateKey, invalidatePattern, CACHE_KEYS } from '@/server/cache/redis';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
@@ -841,11 +841,65 @@ export async function deletePppoeUser(
   const user = await prisma.pppoeUser.findUnique({ where: { id } });
   if (!user) throw Object.assign(new Error('User not found'), { code: 'NOT_FOUND' });
 
-  // RADIUS cleanup
+  // 1. Kick active PPPoE session(s) on MikroTik (so the connection drops immediately)
+  try {
+    if (user.routerId) {
+      const kicked = await kickPppoeSession(user.routerId, user.username);
+      if (kicked > 0) {
+        console.log(`[DELETE] Kicked ${kicked} active session(s) for ${user.username} on router ${user.routerId}`);
+      }
+    } else {
+      // No specific router — try all active routers
+      const activeRouters = await prisma.router.findMany({
+        where: { isActive: true },
+        select: { id: true },
+      });
+      for (const r of activeRouters) {
+        try {
+          const kicked = await kickPppoeSession(r.id, user.username);
+          if (kicked > 0) {
+            console.log(`[DELETE] Kicked ${kicked} active session(s) for ${user.username} on router ${r.id}`);
+          }
+        } catch (e) {
+          console.error(`[DELETE] Kick error on router ${r.id}:`, e);
+        }
+      }
+    }
+  } catch (kickError) {
+    console.error('[DELETE] Kick active session error:', kickError);
+  }
+
+  // 2. Delete PPP secret from MikroTik (if router assigned)
+  try {
+    if (user.routerId) {
+      await managePppSecret(user.routerId, 'delete', { username: user.username });
+    } else {
+      const activeRouters = await prisma.router.findMany({
+        where: { isActive: true },
+        select: { id: true },
+      });
+      for (const r of activeRouters) {
+        try {
+          await managePppSecret(r.id, 'delete', { username: user.username });
+        } catch (e) {
+          console.error(`[DELETE] PPP secret delete error on router ${r.id}:`, e);
+        }
+      }
+    }
+  } catch (secretError) {
+    console.error('[DELETE] PPP secret cleanup error:', secretError);
+  }
+
+  // 3. RADIUS DB cleanup (radcheck, radreply, radusergroup, radacct)
   try {
     await prisma.radcheck.deleteMany({ where: { username: user.username } });
     await prisma.radreply.deleteMany({ where: { username: user.username } });
     await prisma.radusergroup.deleteMany({ where: { username: user.username } });
+    // Stop any open accounting sessions and mark them terminated
+    await prisma.radacct.updateMany({
+      where: { username: user.username, acctstoptime: null },
+      data: { acctstoptime: new Date() },
+    });
   } catch (syncError) {
     console.error('RADIUS cleanup error:', syncError);
   }
