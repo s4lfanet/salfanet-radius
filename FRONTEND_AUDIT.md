@@ -1340,6 +1340,25 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 21 — GenieACS Parameter Config Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/genieacs/parameter-config/page.tsx` — 7 fetch() calls replaced:
+  - `fetch('/api/settings/genieacs/virtual-parameters')` (VP load) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/parameter-display?configType=...')` (config load) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/parameter-display/${id}', { method: 'PUT' })` (toggle) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/parameter-display', { method: 'PUT' })` (reorder) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/parameter-display/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/parameter-display', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/settings/genieacs/parameter-display/reset', { method: 'POST' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in genieacs/parameter-config page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ GenieACS parameter-config page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
