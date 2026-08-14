@@ -8,6 +8,7 @@ import {
   Zap, Activity, AlertTriangle, Settings, Circle
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 // Fiber color coding (TIA-598-D standard)
 const FIBER_COLORS: Record<string, string> = {
@@ -119,14 +120,9 @@ export default function SplicePointsPage() {
       const params = new URLSearchParams();
       if (filterType) params.append('spliceType', filterType);
 
-      const res = await fetch(`/api/network/splices?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin(`/api/network/splices?${params}`);
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to load splice points');
-      }
-
-      setSplicePoints(data.splices || []);
+      setSplicePoints((data as any).splices || []);
     } catch (error: unknown) {
       const err = error as Error;
       showError(err.message || t('splicePoint.loadFailed'));
@@ -138,25 +134,23 @@ export default function SplicePointsPage() {
 
   const loadCables = useCallback(async () => {
     try {
-      const res = await fetch('/api/network/cables');
-      const data = await res.json();
-      setCables(data.cables || []);
-    } catch (error) {
+      const data = await apiAdmin('/api/network/cables');
+      setCables((data as any).cables || []);
+    } catch (error: any) {
       console.error('Failed to load cables:', error);
     }
   }, []);
 
   const loadCoresForCable = async (cableId: string, target: 'A' | 'B') => {
     try {
-      const res = await fetch(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
-      const data = await res.json();
+      const data = await apiAdmin(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
 
       if (target === 'A') {
-        setCoresForCableA(data.cores || []);
+        setCoresForCableA((data as any).cores || []);
       } else {
-        setCoresForCableB(data.cores || []);
+        setCoresForCableB((data as any).cores || []);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load cores:', error);
     }
   };
@@ -217,17 +211,10 @@ export default function SplicePointsPage() {
         notes: formData.notes || null,
       };
 
-      const res = await fetch('/api/network/splices', {
+      await apiAdmin('/api/network/splices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || t('splicePoint.createFailed'));
-      }
 
       showSuccess(t('splicePoint.createdSuccess'));
       setIsCreateDialogOpen(false);
@@ -249,11 +236,7 @@ export default function SplicePointsPage() {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/network/splices/${splice.id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || t('splicePoint.deleteFailed'));
-      }
+      await apiAdmin(`/api/network/splices/${splice.id}`, { method: 'DELETE' });
       showSuccess(t('splicePoint.deletedSuccess'));
       loadSplicePoints();
     } catch (error: unknown) {
