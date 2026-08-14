@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -113,8 +114,8 @@ export default function AdminTicketsPage() {
   const loadDispatchData = useCallback(async (search = '') => {
     setDispatchDataLoading(true);
     try {
-      const res = await fetch(`/api/tickets/dispatch-data${search ? `?customerSearch=${encodeURIComponent(search)}` : ''}`);
-      if (res.ok) setDispatchData(await res.json());
+      const data = await apiAdmin(`/api/tickets/dispatch-data${search ? `?customerSearch=${encodeURIComponent(search)}` : ''}`);
+      setDispatchData(data as any);
     } catch { /* ignore */ } finally {
       setDispatchDataLoading(false);
     }
@@ -133,8 +134,8 @@ export default function AdminTicketsPage() {
     setCustomerSearchLoading(true);
     searchDebounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/tickets/dispatch-data?customerSearch=${encodeURIComponent(value)}`);
-        if (res.ok) setDispatchData(await res.json());
+        const data = await apiAdmin(`/api/tickets/dispatch-data?customerSearch=${encodeURIComponent(value)}`);
+        setDispatchData(data as any);
       } catch { /* ignore */ } finally {
         setCustomerSearchLoading(false);
       }
@@ -167,14 +168,11 @@ export default function AdminTicketsPage() {
     }
     setDispatchLoading(true);
     try {
-      const res = await fetch('/api/tickets/dispatch', {
+      const data = await apiAdmin('/api/tickets/dispatch', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal');
-      showSuccess('Tiket Terkirim', `#${data.ticket.ticketNumber} dikirim ke ${data.notified} teknisi`);
+      showSuccess('Tiket Terkirim', `#${(data as any).ticket.ticketNumber} dikirim ke ${(data as any).notified} teknisi`);
       setShowDispatch(false);
       setForm({ customerId: null, customerName: '', customerPhone: '', customerAddress: '', subject: '', description: '', categoryId: '', priority: 'MEDIUM', routerId: '', oltId: '', odcId: '', odpId: '' });
       setCustomerSearch('');
@@ -197,12 +195,9 @@ export default function AdminTicketsPage() {
 
   const fetchStats = async () => {
     try {
-      const res = await fetch('/api/tickets/stats');
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
-    } catch (error) {
+      const data = await apiAdmin('/api/tickets/stats');
+      setStats(data as any);
+    } catch (error: any) {
       console.error('Failed to fetch stats:', error);
     }
   };
@@ -215,12 +210,9 @@ export default function AdminTicketsPage() {
       if (filters.priority) params.append('priority', filters.priority);
       if (filters.search) params.append('search', filters.search);
 
-      const res = await fetch(`/api/tickets?${params.toString()}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data);
-      }
-    } catch (error) {
+      const data = await apiAdmin(`/api/tickets?${params.toString()}`);
+      setTickets(data as any);
+    } catch (error: any) {
       console.error('Failed to fetch tickets:', error);
     } finally {
       setLoading(false);
