@@ -9,6 +9,7 @@ import { sendAdminCreateUser } from '@/server/services/notifications/whatsapp-te
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
 import { managePppSecret, shouldCreatePppSecret, getMikrotikProfileName, batchListPppActive, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 import { invalidateKey, invalidatePattern, CACHE_KEYS } from '@/server/cache/redis';
+import { toUTC } from '@/lib/timezone';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
@@ -237,7 +238,7 @@ export async function createPppoeUser(
   const profile = await prisma.pppoeProfile.findUnique({ where: { id: profileId } });
   if (!profile) throw Object.assign(new Error('Profile not found'), { code: 'NOT_FOUND' });
 
-  // Calculate expiredAt
+  // Calculate expiredAt — must be in WIB-as-UTC format (same as nowWIB()) for correct cron comparison
   const now = new Date();
   let finalExpiredAt: Date;
   if (subscriptionType === 'POSTPAID') {
@@ -246,6 +247,7 @@ export async function createPppoeUser(
     const validBillingDay = billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 31) : 1;
     finalExpiredAt.setDate(validBillingDay);
     finalExpiredAt.setHours(23, 59, 59, 999);
+    finalExpiredAt = toUTC(finalExpiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
   } else {
     if (expiredAt) {
       finalExpiredAt = new Date(expiredAt);
@@ -257,6 +259,7 @@ export async function createPppoeUser(
         finalExpiredAt.setDate(finalExpiredAt.getDate() + profile.validityValue);
       }
       finalExpiredAt.setHours(23, 59, 59, 999);
+      finalExpiredAt = toUTC(finalExpiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
     }
   }
 
@@ -410,7 +413,10 @@ export async function createPppoeUser(
   const firstInvoice = (data as any).firstInvoice as 'none' | 'prorate' | 'full' | undefined;
   if (firstInvoice && firstInvoice !== 'none') {
     try {
-      let invoiceAmount = profile.price;
+      // Apply discount to base price (same logic as cron invoice-jobs)
+      const userDiscount = typeof data.discount === 'number' ? data.discount : (parseInt(String(data.discount)) || 0);
+      const baseAmount = Math.max(0, profile.price - userDiscount);
+      let invoiceAmount = baseAmount;
       if (firstInvoice === 'prorate' && subscriptionType !== 'PREPAID') {
         // Calculate prorate: days from today to next billing date
         const registrationDate = registeredAt ? new Date(registeredAt + 'T00:00:00') : new Date();
@@ -425,7 +431,13 @@ export async function createPppoeUser(
         const msPerDay = 1000 * 60 * 60 * 24;
         const daysActive = Math.max(1, Math.ceil((nextBilling.getTime() - registrationDate.getTime()) / msPerDay));
         const daysInMonth = new Date(year, month + 1, 0).getDate();
-        invoiceAmount = Math.ceil((daysActive / daysInMonth) * profile.price);
+        invoiceAmount = Math.ceil((daysActive / daysInMonth) * baseAmount);
+      }
+      // Apply PPN if active on profile
+      let taxRate: number | null = null;
+      if (profile.ppnActive && profile.ppnRate > 0) {
+        taxRate = Number(profile.ppnRate);
+        invoiceAmount = Math.round(invoiceAmount + (invoiceAmount * taxRate / 100));
       }
       const invoiceId = crypto.randomUUID();
       const invoiceNumber = generateInvoiceNumber();
@@ -439,7 +451,8 @@ export async function createPppoeUser(
           invoiceNumber,
           userId: user.id,
           amount: invoiceAmount,
-          baseAmount: invoiceAmount,
+          baseAmount,
+          ...(taxRate !== null && { taxRate }),
           dueDate: finalExpiredAt,
           status: 'PENDING',
           invoiceType: 'MONTHLY',
