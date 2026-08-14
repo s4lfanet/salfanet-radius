@@ -105,7 +105,7 @@ interface PushSendResponse {
 
 type RecipientRole = 'customer' | 'agent' | 'technician' | 'all';
 
-const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; label: string; icon: React.ComponentType<any>; color: string; activeColor: string }>> = {
+const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string }>> = {
   customer: [
     { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
     { value: 'tagihan', label: 'Tagihan', icon: ReceiptText, color: 'bg-orange-500/10 text-orange-600 border-orange-500/30', activeColor: 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25' },
@@ -138,7 +138,7 @@ const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; l
   ],
 };
 
-const QUICK_TEMPLATES_BY_ROLE: Record<RecipientRole, Array<{ key: string; icon: React.ComponentType<any>; label: string; color: string }>> = {
+const QUICK_TEMPLATES_BY_ROLE: Record<RecipientRole, Array<{ key: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string }>> = {
   customer: [
     { key: 'cust_broadcast', icon: Megaphone, label: 'Pengumuman Umum', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
     { key: 'cust_tagihan', icon: ReceiptText, label: 'Tagihan Jatuh Tempo', color: 'text-orange-500 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300' },
@@ -480,7 +480,7 @@ export default function PushNotificationsPage() {
                   { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'terdaftar' },
                   { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
-                ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<any>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
+                ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
                   const RoleIcon = role.icon;
                   const active = recipientRole === role.value;
                   return (

@@ -35,6 +35,19 @@ function buildUrl(path: string): string {
 export type AuthMode = 'admin' | 'customer' | 'agent';
 
 /**
+ * Backend error response shapes (compatible with all known backend error formats).
+ * Some routes return `{ error: string }`, others `{ success: false, error: string }`,
+ * others `{ message: string }`. This union covers all cases.
+ */
+interface ApiErrorResponse {
+  error?: string;
+  message?: string;
+  code?: string;
+  details?: unknown;
+  success?: boolean;
+}
+
+/**
  * API error class — thrown by all apiCall variants.
  */
 export class ApiError extends Error {
@@ -69,6 +82,12 @@ function getBearerToken(mode: AuthMode): string | null {
  * Core API call function (client-side).
  * Uses relative path — nginx routes /api/* to backend.
  *
+ * Content-Type handling:
+ *   - FormData: browser sets multipart/form-data; boundary automatically — do NOT override
+ *   - Blob / ArrayBuffer / ReadableStream: binary — do NOT set Content-Type
+ *   - string (JSON): set Content-Type: application/json
+ *   - no body (GET/DELETE): do NOT set Content-Type
+ *
  * @param path  API path (e.g. '/api/pppoe/users')
  * @param options  fetch options (method, body, etc.)
  * @param mode  Auth mode: 'admin' (cookies), 'customer' (Bearer), 'agent' (Bearer)
@@ -81,27 +100,60 @@ export async function apiCall<T = unknown>(
   const url = buildUrl(path);
   const token = getBearerToken(mode);
 
+  // Build headers — only set Content-Type for JSON string bodies.
+  // FormData, Blob, ArrayBuffer, and ReadableStream must NOT have
+  // Content-Type forced, otherwise the browser cannot set the correct
+  // multipart boundary or binary MIME type.
+  const headers: Record<string, string> = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const body = options?.body;
+  const isJsonBody = typeof body === 'string';
+  if (isJsonBody) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  // Merge caller-provided headers (caller can override Content-Type if needed)
+  if (options?.headers) {
+    const callerHeaders = options.headers as Record<string, string>;
+    for (const [key, value] of Object.entries(callerHeaders)) {
+      headers[key] = value;
+    }
+  }
+
   const res = await fetch(url, {
     ...options,
     credentials: mode === 'admin' ? 'include' : 'same-origin',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options?.headers,
-    },
+    headers,
   });
 
   if (!res.ok) {
     let message = `API fetch failed: ${res.status} ${res.statusText}`;
     try {
-      const error = await res.json();
+      const error: ApiErrorResponse = await res.json();
       message = error.message || error.error || message;
     } catch {
-      if (res.status === 405) {
+      // Response body is not JSON (e.g. HTML error page, empty body)
+      if (res.status === 401) {
+        message = 'Unauthorized — please log in again';
+      } else if (res.status === 403) {
+        message = 'Forbidden — insufficient permissions';
+      } else if (res.status === 404) {
+        message = `Not found: ${path}`;
+      } else if (res.status === 405) {
         message = `Method not allowed for ${path}`;
+      } else if (res.status === 429) {
+        message = 'Too many requests — please slow down';
+      } else if (res.status >= 500) {
+        message = `Server error (${res.status}) — please try again later`;
       }
     }
     throw new ApiError(res.status, message, path);
+  }
+
+  // Handle 204 No Content or empty body — return null for void responses
+  if (res.status === 204 || res.headers.get('content-length') === '0') {
+    return null as T;
   }
 
   return res.json();

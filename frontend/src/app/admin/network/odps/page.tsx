@@ -95,13 +95,13 @@ export default function ODPsPage() {
   const loadData = async () => {
     try {
       const [odpsData, oltsData, odcsData] = await Promise.all([
-        apiAdmin('/api/network/odps'),
-        apiAdmin('/api/network/olts'),
-        apiAdmin('/api/network/odcs'),
+        apiAdmin<{ odps?: ODP[] }>('/api/network/odps'),
+        apiAdmin<{ olts?: OLT[] }>('/api/network/olts'),
+        apiAdmin<{ odcs?: ODC[] }>('/api/network/odcs'),
       ]);
-      setOdps((odpsData as any).odps || []);
-      setOlts((oltsData as any).olts || []);
-      setOdcs((odcsData as any).odcs || []);
+      setOdps(odpsData.odps || []);
+      setOlts(oltsData.olts || []);
+      setOdcs(odcsData.odcs || []);
     } catch (error: unknown) {
       console.error('Load error:', error);
     } finally {
@@ -154,19 +154,19 @@ export default function ODPsPage() {
         ...(editingOdp && { id: editingOdp.id }),
       };
 
-      const result = await apiAdmin('/api/network/odps', {
+      const result = await apiAdmin<{ success?: boolean; error?: string }>('/api/network/odps', {
         method,
         body: JSON.stringify(payload),
       });
 
-      if ((result as any).success) {
+      if (result.success) {
         await showSuccess(editingOdp ? 'ODP updated!' : 'ODP created!');
         setIsDialogOpen(false);
         setEditingOdp(null);
         resetForm();
         loadData();
       } else {
-        await showError((result as any).error || t('common.failedSaveOdp'));
+        await showError(result.error || t('common.failedSaveOdp'));
       }
     } catch (error: unknown) {
       console.error('Submit error:', error);
@@ -182,16 +182,16 @@ export default function ODPsPage() {
     if (!confirmed) return;
 
     try {
-      const result = await apiAdmin('/api/network/odps', {
+      const result = await apiAdmin<{ success?: boolean; error?: string }>('/api/network/odps', {
         method: 'DELETE',
         body: JSON.stringify({ id: odp.id }),
       });
 
-      if ((result as any).success) {
+      if (result.success) {
         await showSuccess(t('common.odpDeleted'));
         loadData();
       } else {
-        await showError((result as any).error || t('common.failedDeleteOdp'));
+        await showError(result.error || t('common.failedDeleteOdp'));
       }
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDeleteOdp'));

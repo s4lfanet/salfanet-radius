@@ -2903,3 +2903,138 @@ Setiap `apiAdmin('/api/...')` call yang sebelumnya menggunakan `(data as any).pr
 - `as unknown as` meningkat dari 6 → 24 karena beberapa konversi tipe memerlukan double-cast yang aman (e.g., API OLT type → local OLT type, Record<string, unknown> → SplitterNode)
 - React Query **tidak diimplementasikan** di phase ini, sesuai instruksi
 - Backend issues yang ditemukan di Phase 6A tetap dilaporkan, tidak diperbaiki
+
+---
+
+## Phase 6C — Frontend API Client Correctness & Type-Safety Hardening
+
+> Tanggal: 14 Agustus 2026
+> Status: **SELESAI**
+> Typecheck: ✅ 0 errors
+> Build: ✅ Sukses
+
+### Tujuan
+
+1. **Perbaiki centralized API client** — `apiAdmin()` tidak boleh memaksakan `Content-Type: application/json` untuk FormData, Blob, atau request tanpa body.
+2. **Audit sisa `any`** — kurangi ke minimum, dokumentasikan yang legitimate.
+3. **Audit `as unknown as`** — pastikan semua legitimate atau documented.
+4. **Sinkronkan dokumentasi** — TODO.md, FRONTEND_AUDIT.md, CHANGELOG.md.
+
+### 6C.1 — API Client Content-Type Fix (CRITICAL)
+
+**File:** `frontend/src/lib/api/client.ts`
+
+**Before:** `apiAdmin()` selalu set `Content-Type: application/json` untuk semua request, termasuk FormData. Ini akan merusak upload file karena browser tidak bisa set `multipart/form-data; boundary=...` secara manual.
+
+**After:** Content-Type hanya di-set untuk JSON string body. FormData, Blob, ArrayBuffer, dan ReadableStream dibiarkan tanpa Content-Type (browser akan set secara otomatis).
+
+```ts
+const isJsonBody = typeof body === 'string';
+if (isJsonBody) {
+  headers['Content-Type'] = 'application/json';
+}
+```
+
+**Juga diperbaiki:**
+- `server.ts` — same Content-Type logic untuk server-side fetch
+- Error handling — tambah handling untuk 401, 403, 404, 429, 500+
+- 204 No Content — return `null` instead of calling `res.json()`
+- `ApiErrorResponse` interface — typed error response parsing
+
+### 6C.2 — FormData Audit
+
+22 files menggunakan FormData. Semua sudah benar — FormData dilewatkan sebagai `body` langsung ke `apiAdmin()` atau `fetch()`. Tidak ada yang membungkus FormData dalam `JSON.stringify()` atau set Content-Type manual.
+
+### 6C.3 — Blob/Stream Audit
+
+15 binary download locations menggunakan `fetch()` dengan `credentials: 'include'` dan `res.blob()`. Semua benar — tidak menggunakan `apiAdmin()` (yang memanggil `res.json()`).
+
+### 6C.4 — Error Handling
+
+API client sekarang menangani:
+- 401: "Unauthorized — please log in again"
+- 403: "Forbidden — insufficient permissions"
+- 404: "Not found: {path}"
+- 405: "Method not allowed for {path}"
+- 429: "Too many requests — please slow down"
+- 500+: "Server error ({status}) — please try again later"
+- 204: return null (no content)
+- Non-JSON error body: fallback to status-based message
+
+### 6C.5 — Typed API Responses
+
+45 `apiAdmin()` calls tanpa type argument — semua adalah fire-and-forget mutations (POST/PUT/DELETE) di mana response tidak digunakan. Tidak ada yang perlu diperbaiki.
+
+### 6C.6-6C.11 — Remaining `any` Audit
+
+| Pattern | Before (6B) | After (6C) | Reduction |
+|---------|-------------|------------|-----------|
+| `: any` | 70 | 2 | 97% |
+| `as any` | 37 | 0 | 100% |
+| `(data as any)` | 0 | 0 | — |
+| `catch (e: any)` | 0 | 0 | — |
+| `Record<string, any>` | 0 | 0 | — |
+| `Promise<any>` | 5 | 5 | — (third-party) |
+| `<any>` | 9 | 5 | 44% |
+| `as unknown as` | 24 | 24 | — (all documented) |
+
+**Sisa `any` (2 — both third-party):**
+- `midtrans-client.d.ts` — `parameter?: any` dan `notificationJson: any` (Midtrans API declaration)
+
+**Sisa `<any>` (5 — all third-party):**
+- `midtrans-client.d.ts` — 4 `Promise<any>` (Midtrans API declaration)
+
+**Sisa `as unknown as` (24 — all documented):**
+- 4 Leaflet `_getIconUrl` (third-party)
+- 6 jsPDF AutoTable `lastAutoTable` (third-party)
+- 5 API type → local type boundary (internal — documented)
+- 6 SplitterNode dynamic data (internal — documented)
+- 2 Custom DOM property `touchStartX` (internal — documented)
+- 1 `incomingCable` extra fields (internal — documented)
+
+Lihat: [`docs/TYPE_SAFETY_EXCEPTIONS.md`](docs/TYPE_SAFETY_EXCEPTIONS.md) untuk detail lengkap.
+
+### Files Changed (6C.6-6C.11)
+
+**SplitterDiagram:**
+- `types.ts` — `metadata?: any` → `PortMetadata` / `SplitterNodeMetadata` interfaces
+- `OTBDiagramV2.tsx`, `OTBDiagram.tsx`, `OLTDiagram.tsx`, `ODPDiagramV2.tsx` — `status as any` → `status as PortStatus`
+
+**AddNodePanel:**
+- 8 new interfaces (OltOption, CableOption, EntityOption, NodeFormData, etc.)
+- 20 `: any` → proper types
+
+**Network components:**
+- `NetworkTopologyMap.tsx` — documented 5 `as unknown as SplitterNode` casts
+- `MapPicker.tsx` — already clean (uses Leaflet types)
+- `UnifiedNetworkMap.tsx` — already clean
+- `NetworkNodePanel.tsx` — already clean
+
+**Recharts:**
+- `laporan/analitik/page.tsx` — 4 `: any` → `TooltipPayloadEntry`, `TooltipValueType` from recharts
+
+**Admin pages:**
+- 20+ files — `: any` → proper interfaces, `as any` → typed responses
+- `olt/[id]/page.tsx` — 9 `: any` → `OltAlert`, `OltMonitoringLog`, `ServicePort` interfaces
+- `customer/page.tsx` — `WlanConfig`, `ConnectedDevice`, `PaymentGatewayInfo` interfaces
+- `network/odps/page.tsx` — 7 `as any` → typed `apiAdmin<T>()` calls
+- `pppoe/users/[id]/page.tsx` — 4 `as any` → typed `apiAdmin<T>()` calls
+- `whatsapp/notifications/page.tsx` — `apiAdmin(...) as any` → `apiAdmin<ReminderSettings>(...)`
+
+**Hooks:**
+- `useTranslation.ts` — `obj: any` → `obj: unknown` with safe narrowing
+- `useSSE.ts` — `event: any` → `event: MessageEvent`
+
+**Other:**
+- `network/map/page.tsx` — `useRef<any>` → `useRef<LeafletMap>`
+- `push-notifications/page.tsx` — `React.ComponentType<any>` → `React.ComponentType<{ className?: string }>`
+- `AdminClientLayout.tsx` — `(e.currentTarget as any).touchStartX` → `as unknown as HTMLDivElement & { touchStartX: number }`
+
+### Verification
+
+- `npx tsc --noEmit`: ✅ 0 errors
+- `npx next build`: ✅ Sukses
+- Tidak ada perubahan business logic, API endpoints, atau HTTP methods
+- Tidak ada perubahan UI behavior
+- Semua `as unknown as` memiliki inline comment penjelasan
+- React Query **tidak diimplementasikan** di phase ini

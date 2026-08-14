@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { JointClosureDiagram, JointClosureDiagramV2, ODCDiagram, ODPDiagram } from '@/components/network/SplitterDiagram';
 import OTBDiagramV2 from '@/components/network/SplitterDiagram/OTBDiagramV2';
-import { SplitterNode, Port, FiberConnection } from '@/components/network/SplitterDiagram/types';
+import { SplitterNode, Port, FiberConnection, FeederCableAssignment } from '@/components/network/SplitterDiagram/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import Link from 'next/link';
 import { apiAdmin } from '@/lib/api';
@@ -51,7 +51,7 @@ interface OtbDetail {
   id: string; code: string; name: string; latitude?: number; longitude?: number;
   address?: string; portCount?: number; status?: string; spliceTrayCount?: number;
   network_olts?: { id: string; name: string };
-  feederCableAssignments?: unknown[];
+  feederCableAssignments?: FeederCableAssignment[];
   outputSegments?: OtbOutputSegment[];
   incomingCable?: OtbIncomingCable;
 }
@@ -612,6 +612,7 @@ export default function NetworkDiagramsPage() {
                                         cores: coresList,
                                       };
                                     }),
+                                  // Object has extra fields (cableType, assignedToId) and wider status type vs SplitterNode['incomingCable']
                                   } as unknown as SplitterNode['incomingCable'])
                                 : undefined,
                             }}

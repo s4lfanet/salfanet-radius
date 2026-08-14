@@ -104,7 +104,7 @@ interface ActivityLogEntry {
   createdAt: string;
 }
 
-const MODULE_CONFIG: Record<string, { label: string; color: string; Icon: any }> = {
+const MODULE_CONFIG: Record<string, { label: string; color: string; Icon: React.ComponentType<{ className?: string }> }> = {
   auth:        { label: 'Login',     color: 'text-blue-400 bg-blue-500/20 border-blue-500/30',        Icon: LogIn },
   payment:     { label: 'Bayar',     color: 'text-emerald-400 bg-emerald-500/20 border-emerald-500/30', Icon: CreditCard },
   pppoe:       { label: 'PPPoE',     color: 'text-cyan-400 bg-cyan-500/20 border-cyan-500/30',         Icon: Network },

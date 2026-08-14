@@ -11,18 +11,18 @@ const translations = {
 type TranslationKeys = typeof idTranslations;
 
 // Helper to get nested value
-function getNestedValue(obj: any, path: string): string {
+function getNestedValue(obj: unknown, path: string): string {
   const keys = path.split('.');
-  let result = obj;
-  
+  let result: unknown = obj;
+
   for (const key of keys) {
     if (result && typeof result === 'object' && key in result) {
-      result = result[key];
+      result = (result as Record<string, unknown>)[key];
     } else {
       return path;
     }
   }
-  
+
   return typeof result === 'string' ? result : path;
 }
 

@@ -39,7 +39,7 @@ export default function NotificationSettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const data = await apiAdmin('/api/whatsapp/reminder-settings') as any;
+      const data = await apiAdmin<{ success?: boolean; settings?: ReminderSettings }>('/api/whatsapp/reminder-settings');
 
       if (data.success && data.settings) {
         setSettings(data.settings);
@@ -96,7 +96,7 @@ export default function NotificationSettingsPage() {
 
     setSaving(true);
     try {
-      const data = await apiAdmin('/api/whatsapp/reminder-settings', {
+      const data = await apiAdmin<{ success?: boolean; error?: string; settings?: ReminderSettings }>('/api/whatsapp/reminder-settings', {
         method: 'PUT',
         body: JSON.stringify({
           enabled,
@@ -108,7 +108,7 @@ export default function NotificationSettingsPage() {
           batchDelay,
           randomize
         })
-      }) as any;
+      });
 
       if (data.success) {
         await showSuccess(t('whatsapp.settingsSavedSuccess'));

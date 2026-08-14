@@ -58,7 +58,7 @@ function LoginForm() {
 
   // Load company branding
   useEffect(() => {
-    apiAdmin<{ success: boolean; company: any }>('/api/public/company')
+    apiAdmin<{ success: boolean; company: { name?: string; logo?: string; footerAdmin?: string; poweredBy?: string } }>('/api/public/company')
       .then(data => {
         if (data.success && data.company.name) setCompanyName(data.company.name);
         if (data.success && data.company.logo) setCompanyLogo(data.company.logo);

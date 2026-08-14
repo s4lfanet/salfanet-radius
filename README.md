@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.7.0 — Phase 6B complete (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 4.8.0 — Phase 6C complete (API Client Correctness & Type-Safety Hardening) + Phase 6B (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -240,6 +240,43 @@ Setiap batch diverifikasi dengan:
 - **Migrated**: 52 batch, 361 fetch calls
 - **Remaining**: ~176 fetch calls di halaman admin lainnya
 - **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
+
+---
+
+## 🔒 Phase 6C — API Client Correctness & Type-Safety Hardening (v4.8.0)
+
+Perbaikan critical API client + pengurangan `any` ke minimum + dokumentasi semua exceptions.
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`docs/TYPE_SAFETY_EXCEPTIONS.md`](docs/TYPE_SAFETY_EXCEPTIONS.md)
+
+### Hasil
+
+| Metric | Before (6B) | After (6C) | Reduction |
+|--------|-------------|------------|-----------|
+| `: any` | 70 | 2 | **97%** |
+| `as any` | 37 | 0 | **100%** |
+| `<any>` | 9 | 5 | **44%** |
+| `(data as any)` | 0 | 0 | — |
+| `catch (e: any)` | 0 | 0 | — |
+| `as unknown as` | 24 | 24 | — (all documented) |
+| TypeScript errors | 0 | 0 | — |
+| Build | ✅ | ✅ | — |
+
+### Yang Dikerjakan
+
+1. **API Client Content-Type fix (CRITICAL)** — `apiAdmin()` tidak lagi memaksakan `Content-Type: application/json` untuk FormData/Blob/binary. Hanya JSON string body yang dapat Content-Type.
+2. **Error handling** — 401/403/404/405/429/500+ messages, 204 No Content handling, `ApiErrorResponse` interface
+3. **SplitterDiagram** — `metadata?: any` → `PortMetadata` / `SplitterNodeMetadata` interfaces
+4. **AddNodePanel** — 20 `: any` → 8 new interfaces
+5. **Recharts** — 4 `: any` → `TooltipPayloadEntry`, `TooltipValueType` from recharts
+6. **Admin pages** — 20+ files, `as any` → typed `apiAdmin<T>()` calls
+7. **Hooks** — `useTranslation.ts`, `useSSE.ts` — `any` → `unknown` / `MessageEvent`
+8. **`as unknown as` audit** — all 24 documented with inline comments (Leaflet, jsPDF, API type boundaries, SplitterNode, custom DOM)
+9. **Type Safety Exceptions** — `docs/TYPE_SAFETY_EXCEPTIONS.md` created
+
+### Sisa `any` (2 — all third-party)
+
+- `midtrans-client.d.ts` — Midtrans API declaration (no types available)
 
 ---
 

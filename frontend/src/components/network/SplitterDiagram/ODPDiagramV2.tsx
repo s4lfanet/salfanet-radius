@@ -4,6 +4,7 @@ import React from 'react';
 import { 
   DiagramProps, 
   Port, 
+  PortStatus,
   DEFAULT_COLORS, 
   PORT_STATUS_LABELS, 
   FIBER_COLORS as UI_FIBER_COLORS,
@@ -582,7 +583,7 @@ export function ODPDiagramV2({
             const y = Math.floor(index / 3) * 20 + 20;
             return (
               <g key={status} transform={`translate(${x}, ${y})`}>
-                <circle cx={6} cy={-3} r={6} fill={getPortColor({ status: status as any } as Port)} />
+                <circle cx={6} cy={-3} r={6} fill={getPortColor({ status: status as PortStatus } as Port)} />
                 <text x={18} y={0} className="text-xs fill-gray-600 dark:fill-gray-400">{label}</text>
               </g>
             );

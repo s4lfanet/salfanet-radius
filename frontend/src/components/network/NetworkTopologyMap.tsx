@@ -306,8 +306,12 @@ export function NetworkTopologyMap({
           </div>
           <div className="p-4">
             {/* Display appropriate diagram based on node type */}
+            {/* NOTE: selectedNode.data is Record<string, unknown> from the API; diagram
+                components require SplitterNode. The cast is necessary because the API
+                response shape is not statically known at this layer. */}
             {selectedNode.type === 'OLT' && selectedNode.data && (
               <OLTDiagram
+                // selectedNode.data is Record<string, unknown> from API; cast to SplitterNode for diagram
                 node={selectedNode.data as unknown as SplitterNode}
                 width={700}
                 height={600}
@@ -317,6 +321,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'JC' && selectedNode.data && (
               <JointClosureDiagram
+                // selectedNode.data is Record<string, unknown> from API; cast to SplitterNode for diagram
                 node={selectedNode.data as unknown as SplitterNode}
                 width={650}
                 height={500}
@@ -326,6 +331,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'OTB' && selectedNode.data && (
               <OTBDiagram
+                // selectedNode.data is Record<string, unknown> from API; cast to SplitterNode for diagram
                 node={selectedNode.data as unknown as SplitterNode}
                 width={650}
                 height={500}
@@ -335,6 +341,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'ODC' && selectedNode.data && (
               <ODCDiagram
+                // selectedNode.data is Record<string, unknown> from API; cast to SplitterNode for diagram
                 node={selectedNode.data as unknown as SplitterNode}
                 width={650}
                 height={450}
@@ -344,6 +351,7 @@ export function NetworkTopologyMap({
             )}
             {selectedNode.type === 'ODP' && selectedNode.data && (
               <ODPDiagram
+                // selectedNode.data is Record<string, unknown> from API; cast to SplitterNode for diagram
                 node={selectedNode.data as unknown as SplitterNode}
                 width={600}
                 height={420}

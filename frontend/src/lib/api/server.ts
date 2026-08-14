@@ -19,18 +19,34 @@ function buildServerUrl(path: string): string {
 /**
  * Server-side fetch helper (for server components, layouts, generateMetadata).
  * Uses absolute URL to backend. No auth token.
+ *
+ * Content-Type handling:
+ *   - FormData: browser/Node sets multipart boundary automatically — do NOT override
+ *   - Blob / ArrayBuffer / ReadableStream: binary — do NOT set Content-Type
+ *   - string (JSON): set Content-Type: application/json
+ *   - no body (GET/DELETE): do NOT set Content-Type
  */
 export async function apiFetch<T = unknown>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
   const url = buildServerUrl(path);
+
+  const headers: Record<string, string> = {};
+  const body = options?.body;
+  if (typeof body === 'string') {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (options?.headers) {
+    const callerHeaders = options.headers as Record<string, string>;
+    for (const [key, value] of Object.entries(callerHeaders)) {
+      headers[key] = value;
+    }
+  }
+
   const res = await fetch(url, {
     ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
+    headers,
     cache: options?.cache ?? 'no-store',
   });
 

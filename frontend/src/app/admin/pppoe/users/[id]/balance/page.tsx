@@ -497,7 +497,7 @@ export default function BalanceManagementPage() {
             </div>
             <div>
               <ModalLabel required>{t('pppoe.paymentMethod')}</ModalLabel>
-              <ModalSelect value={topUpData.paymentMethod} onChange={(e) => setTopUpData({ ...topUpData, paymentMethod: e.target.value as any })}>
+              <ModalSelect value={topUpData.paymentMethod} onChange={(e) => setTopUpData({ ...topUpData, paymentMethod: e.target.value as 'CASH' | 'TRANSFER' | 'EWALLET' })}>
                 <option value="CASH" className="dark:bg-[#0a0520]">{t('pppoe.cash')}</option>
                 <option value="TRANSFER" className="dark:bg-[#0a0520]">{t('pppoe.bankTransfer')}</option>
                 <option value="EWALLET" className="dark:bg-[#0a0520]">{t('pppoe.eWallet')}</option>

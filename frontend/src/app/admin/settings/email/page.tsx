@@ -269,7 +269,7 @@ export default function EmailSettingsPage() {
   const [templates, setTemplates] = useState<Record<string, EmailTemplate>>({});
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [savingTemplate, setSavingTemplate] = useState<string | null>(null);
-  const [activeTemplateTab, setActiveTemplateTab] = useState<keyof typeof templateConfig>('registration-approval');
+  const [activeTemplateTab, setActiveTemplateTab] = useState<string>('registration-approval');
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string>('');
 
@@ -838,6 +838,21 @@ export default function EmailSettingsPage() {
 }
 
 // Templates Tab Component
+interface TemplateConfigEntry {
+  title: string;
+  description: string;
+  variables: string[];
+}
+
+interface TemplatesTabProps {
+  templates: Record<string, EmailTemplate>;
+  loadingTemplates: boolean;
+  savingTemplate: string | null;
+  activeTemplateTab: string;
+  setActiveTemplateTab: (tab: string) => void;
+  handleUpdateTemplate: (type: string, subject: string, htmlBody: string) => Promise<void>;
+}
+
 function TemplatesTab({
   templates,
   loadingTemplates,
@@ -845,7 +860,7 @@ function TemplatesTab({
   activeTemplateTab,
   setActiveTemplateTab,
   handleUpdateTemplate,
-}: any) {
+}: TemplatesTabProps) {
   const { t } = useTranslation();
   const [previewHtml, setPreviewHtml] = useState('');
   const [showPreview, setShowPreview] = useState(false);
@@ -1040,7 +1055,16 @@ function TemplatesTab({
 }
 
 // Template Editor Component
-function TemplateEditor({ type, template, config, savingTemplate, handleUpdateTemplate, onPreview }: any) {
+interface TemplateEditorProps {
+  type: string;
+  template: EmailTemplate | undefined;
+  config: TemplateConfigEntry;
+  savingTemplate: string | null;
+  handleUpdateTemplate: (type: string, subject: string, htmlBody: string) => Promise<void>;
+  onPreview: (htmlBody: string) => void;
+}
+
+function TemplateEditor({ type, template, config, savingTemplate, handleUpdateTemplate, onPreview }: TemplateEditorProps) {
   const { t } = useTranslation();
   const [subject, setSubject] = useState('');
   const [htmlBody, setHtmlBody] = useState('');

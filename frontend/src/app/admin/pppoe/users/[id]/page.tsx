@@ -105,14 +105,14 @@ export default function PppoeUserDetailPage({ params }: { params: Promise<{ id: 
     setLoading(true);
     try {
       const [userData, invoicesData, sessionsData] = await Promise.all([
-        apiAdmin(`/api/pppoe/users/${id}`),
-        apiAdmin(`/api/invoices?userId=${id}&limit=20`),
-        apiAdmin(`/api/pppoe/users/${id}/activity?type=sessions&limit=10`),
+        apiAdmin<{ user?: PppoeUserDetail; activeSession?: ActiveSession }>(`/api/pppoe/users/${id}`),
+        apiAdmin<{ invoices?: Invoice[] }>(`/api/invoices?userId=${id}&limit=20`),
+        apiAdmin<{ sessions?: SessionRecord[] }>(`/api/pppoe/users/${id}/activity?type=sessions&limit=10`),
       ]);
-      if ((userData as any).user)          setUser((userData as any).user);
-      if ((userData as any).activeSession) setActiveSession((userData as any).activeSession);
-      if ((invoicesData as any).invoices)  setInvoices((invoicesData as any).invoices);
-      if ((sessionsData as any).sessions)  setSessions((sessionsData as any).sessions);
+      if (userData.user)          setUser(userData.user);
+      if (userData.activeSession) setActiveSession(userData.activeSession);
+      if (invoicesData.invoices)  setInvoices(invoicesData.invoices);
+      if (sessionsData.sessions)  setSessions(sessionsData.sessions);
     } catch (e: unknown) {
       console.error(e);
     } finally {

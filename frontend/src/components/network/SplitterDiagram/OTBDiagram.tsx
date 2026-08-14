@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { DiagramProps, Port, DEFAULT_COLORS, PORT_STATUS_LABELS, FIBER_COLORS } from './types';
+import { DiagramProps, Port, PortStatus, DEFAULT_COLORS, PORT_STATUS_LABELS, FIBER_COLORS } from './types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 
@@ -348,7 +348,7 @@ export function OTBDiagram({
                   cx={0}
                   cy={-3}
                   r={6}
-                  fill={getPortColor({ status: status as any } as Port)}
+                  fill={getPortColor({ status: status as PortStatus } as Port)}
                 />
                 <text x={12} y={0} className="text-xs fill-gray-300">
                   {t(`network.diagram.status.${status.toLowerCase()}`)}

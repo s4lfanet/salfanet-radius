@@ -208,7 +208,7 @@ export default function HotspotVoucherPage() {
   }, [filterProfile, filterBatch, filterStatus, filterRouter, filterAgent, currentPage, pageSize])
 
   const loadProfiles = async () => { try { const data = await apiAdmin<ProfilesResponse>('/api/hotspot/profiles'); setProfiles(data.profiles || []); } catch (e) { console.error(e); } }
-  const loadRouters = async () => { try { const data = await networkApi.listRouters(); setRouters((data.routers as unknown as RouterItem[]) || []); } catch (e) { console.error(e); } }
+  const loadRouters = async () => { try { const data = await networkApi.listRouters(); setRouters(data.routers || []); } catch (e) { console.error(e); } }
   const loadAgents = async () => { try { const data = await apiAdmin<AgentsResponse>('/api/hotspot/agents'); setAgents(data.agents || []); } catch (e) { console.error(e); } }
   const loadTemplates = async () => { try { const data = await apiAdmin<VoucherTemplate[]>('/api/voucher-templates'); setTemplates(data.filter((t: VoucherTemplate) => t.isActive)); const def = data.find((t: VoucherTemplate) => t.isDefault); if (def) setSelectedTemplate(def.id); } catch (e) { console.error(e); } }
   const loadVouchers = async () => {
@@ -469,7 +469,7 @@ export default function HotspotVoucherPage() {
     setImporting(true); setImportResult(null);
     try {
       const fd = new FormData(); fd.append('file', importFile); fd.append('profileId', importProfileId); if (importBatchCode) fd.append('batchCode', importBatchCode);
-      const data = await apiAdmin<VoucherImportResponse>('/api/hotspot/voucher/bulk', { method: 'POST', body: fd as any });
+      const data = await apiAdmin<VoucherImportResponse>('/api/hotspot/voucher/bulk', { method: 'POST', body: fd });
       setImportResult(data.results); loadVouchers(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportProfileId(''); setImportBatchCode(''); setImportResult(null); }, 3000);
     } catch (e: unknown) { console.error(e); await showError((e instanceof Error ? e.message : String(e)) || t('common.failed')); } finally { setImporting(false); }
   }

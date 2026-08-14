@@ -215,7 +215,7 @@ export default function PPPoEProfilesPage() {
       const rateLimit = buildRateLimit(formData, showBurst);
       const dlMbps = speedToMbps(formData.downloadSpeed, formData.speedUnit);
       const ulMbps = speedToMbps(formData.uploadSpeed, formData.speedUnit);
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         ...(editingProfile && { id: editingProfile.id }),
         name: formData.name,
         description: formData.description || undefined,
@@ -339,6 +339,7 @@ export default function PPPoEProfilesPage() {
     const target = syncMikrotikTarget;
     setSyncingMikrotikId(target.id);
     try {
+      // API type lacks savedProfile/debug fields that the backend actually returns
       const result = await pppoeApi.syncMikrotikProfiles({ id: target.id, routerIds: selectedRouterIds, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim(), poolRanges: syncPoolRanges.trim() }) as unknown as SyncMikrotikResult;
       // Immediately update profiles state + modal fields so next open pre-fills correctly
       if (result.savedProfile) {

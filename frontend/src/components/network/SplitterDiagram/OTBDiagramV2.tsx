@@ -4,11 +4,14 @@ import React from 'react';
 import { 
   DiagramProps, 
   Port, 
+  PortStatus,
   DEFAULT_COLORS, 
   PORT_STATUS_LABELS, 
   FIBER_COLORS as UI_FIBER_COLORS,
   TubeVisualization,
   CoreVisualization,
+  FeederCableAssignment,
+  OutputSegment,
 } from './types';
 import { FIBER_COLORS, getFiberColor, getFullCoreIdentifier } from '@/lib/network/fiber-core-types';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -164,13 +167,13 @@ export function OTBDiagramV2({
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Tubes / Cores</p>
             <p className="font-medium text-gray-900 dark:text-white">
-              {tubes.length} / {totalCores || ((incomingCable as any)?.tubeCount ?? 0) * ((incomingCable as any)?.coresPerTube ?? 0)}
+              {tubes.length} / {totalCores || (incomingCable?.tubeCount ?? 0) * (incomingCable?.coresPerTube ?? 0)}
             </p>
           </div>
           <div>
             <p className="text-xs text-gray-500 dark:text-gray-400">Utilisasi</p>
             <p className="font-medium text-gray-900 dark:text-white">
-              {usedCores} / {totalCores || ((incomingCable as any)?.tubeCount ?? 0) * ((incomingCable as any)?.coresPerTube ?? 0)} ({utilizationPercent}%)
+              {usedCores} / {totalCores || (incomingCable?.tubeCount ?? 0) * (incomingCable?.coresPerTube ?? 0)} ({utilizationPercent}%)
             </p>
           </div>
         </div>
@@ -317,9 +320,9 @@ export function OTBDiagramV2({
         {/* OLT Input Section — supports multiple OLTs */}
         {(() => {
           // Determine OLT sources: from feeder cable assignments or single upstream
-          const feederAssignments: any[] = node.metadata?.feederCableAssignments ?? [];
-          const outputSegs: any[] = node.metadata?.outputSegments ?? [];
-          const cableCoreCount = totalCores || ((incomingCable as any)?.tubeCount ?? 0) * ((incomingCable as any)?.coresPerTube ?? 0);
+          const feederAssignments: FeederCableAssignment[] = node.metadata?.feederCableAssignments ?? [];
+          const outputSegs: OutputSegment[] = node.metadata?.outputSegments ?? [];
+          const cableCoreCount = totalCores || (incomingCable?.tubeCount ?? 0) * (incomingCable?.coresPerTube ?? 0);
           const jcCount = outputSegs.length;
 
           return (
@@ -370,7 +373,7 @@ export function OTBDiagramV2({
               {/* Output lines to JCs */}
               {jcCount > 0 && (
                 <g transform={`translate(500, 50)`}>
-                  {outputSegs.slice(0, 6).map((seg: any, i: number) => {
+                  {outputSegs.slice(0, 6).map((seg: OutputSegment, i: number) => {
                     const yOff = i * 22;
                     return (
                       <g key={seg.id || i}>
@@ -466,7 +469,7 @@ export function OTBDiagramV2({
             const y = Math.floor(index / 3) * 20 + 20;
             return (
               <g key={status} transform={`translate(${x}, ${y})`}>
-                <circle cx={6} cy={-3} r={6} fill={getPortColor({ status: status as any } as Port)} />
+                <circle cx={6} cy={-3} r={6} fill={getPortColor({ status: status as PortStatus } as Port)} />
                 <text x={18} y={0} className="text-xs fill-gray-600 dark:fill-gray-400">{label}</text>
               </g>
             );

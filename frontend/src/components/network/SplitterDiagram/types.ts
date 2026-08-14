@@ -6,6 +6,49 @@ export type NodeType = 'OLT' | 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'CUSTOM
 
 export type PortStatus = 'AVAILABLE' | 'ASSIGNED' | 'RESERVED' | 'DAMAGED' | 'MAINTENANCE';
 
+/** Feeder cable assignment entry stored in SplitterNode.metadata.feederCableAssignments */
+export interface FeederCableAssignment {
+  cableId?: string;
+  cable?: {
+    id: string;
+    name: string;
+    code?: string;
+    tubes?: TubeVisualization[];
+    totalCores?: number;
+    tubeCount?: number;
+    coresPerTube?: number;
+  };
+  portFrom?: number;
+  portTo?: number;
+}
+
+/** Output segment entry stored in SplitterNode.metadata.outputSegments */
+export interface OutputSegment {
+  id?: string;
+  fromPort?: number;
+  toDeviceId?: string;
+  toDevice?: { id?: string; name?: string; code?: string };
+}
+
+/** Metadata for a SplitterNode (OLT/OTB/ODC/ODP/JC diagrams) */
+export interface SplitterNodeMetadata {
+  feederCable?: string;
+  splitterRatio?: string;
+  vendor?: string;
+  model?: string;
+  feederCableAssignments?: FeederCableAssignment[];
+  outputSegments?: OutputSegment[];
+  [key: string]: unknown;
+}
+
+/** Metadata for a Port */
+export interface PortMetadata {
+  downstreamNode?: string;
+  cableType?: string;
+  customerName?: string;
+  [key: string]: unknown;
+}
+
 // Tube-Core visualization types
 export interface TubeVisualization {
   id: string;
@@ -35,7 +78,7 @@ export interface Port {
   assignedId?: string;
   signalStrength?: number; // dBm
   notes?: string;
-  metadata?: any;
+  metadata?: PortMetadata;
   installedAt?: Date | string;
   // New core-level fields
   tubeNumber?: number;
@@ -88,7 +131,7 @@ export interface SplitterNode {
   status: 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
   installDate?: Date;
   lastMaintenance?: Date;
-  metadata?: any;
+  metadata?: SplitterNodeMetadata;
 
   // New fiber core fields
   incomingCable?: {
@@ -96,6 +139,9 @@ export interface SplitterNode {
     code: string;
     name: string;
     tubes?: TubeVisualization[];
+    totalCores?: number;
+    tubeCount?: number;
+    coresPerTube?: number;
   };
   spliceTrayCount?: number;
   totalSpliceCapacity?: number;

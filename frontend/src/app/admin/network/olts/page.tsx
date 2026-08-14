@@ -219,9 +219,11 @@ export default function OLTsPage() {
         apiAdmin<RouterListResponse>('/api/network/routers'),
         apiAdmin<{ profiles: OLTProfile[] }>('/api/admin/olt/model-profiles'),
       ]);
+      // API OLT type has different fields than local OLT (e.g. isOnline, monitoringEnabled vs routers, _count)
       const loadedOlts = (oltsData.olts || []) as unknown as OLT[];
       setOlts(loadedOlts);
-      setRouters((routersData.routers || []) as unknown as Router[]);
+      // API Router is structurally compatible with local Router (superset of fields)
+      setRouters(routersData.routers || []);
       setOltProfiles(profilesData.profiles || []);
 
       // Check OLT status
@@ -441,7 +443,7 @@ export default function OLTsPage() {
     try {
       const result = await apiAdmin<ImportResult>('/api/network/olts/import', {
         method: 'POST',
-        body: formData as unknown as BodyInit,
+        body: formData,
       });
 
       if (result.success) {

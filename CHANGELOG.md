@@ -6,6 +6,62 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.8.0] — 2026-08-14 — Phase 6C: API Client Correctness & Type-Safety Hardening
+
+### Critical Fix
+- **API Client Content-Type** — `apiAdmin()` tidak lagi memaksakan `Content-Type: application/json` untuk FormData, Blob, ArrayBuffer, atau request tanpa body. Sebelumnya, ini berpotensi merusak semua upload file (logo, APK, payment proof, backup restore, import file) karena browser tidak bisa set `multipart/form-data; boundary=...` secara manual.
+
+### Type-Safety Improvements
+- `: any` reduced from 70 → 2 (97% reduction) — sisa hanya di `midtrans-client.d.ts` (third-party)
+- `as any` reduced from 37 → 0 (100% reduction)
+- `<any>` reduced from 9 → 5 (44% reduction) — sisa hanya di `midtrans-client.d.ts` (third-party)
+- `as unknown as` — all 24 usages documented with inline comments (Leaflet, jsPDF, API type boundaries, SplitterNode, custom DOM)
+- `metadata?: any` on SplitterDiagram → `PortMetadata` / `SplitterNodeMetadata` interfaces
+- AddNodePanel — 20 `: any` → 8 new interfaces
+- Recharts — 4 `: any` → `TooltipPayloadEntry`, `TooltipValueType` from recharts
+- `useTranslation.ts` — `obj: any` → `obj: unknown` with safe narrowing
+- `useSSE.ts` — `event: any` → `event: MessageEvent`
+- `network/map/page.tsx` — `useRef<any>` → `useRef<LeafletMap>`
+
+### API Client Improvements
+- Error handling: 401, 403, 404, 405, 429, 500+ with user-friendly messages
+- 204 No Content: return `null` instead of calling `res.json()`
+- `ApiErrorResponse` interface for typed error parsing
+- `server.ts` — same Content-Type logic for server-side fetch
+
+### Documentation
+- `docs/TYPE_SAFETY_EXCEPTIONS.md` — all remaining `any` and `as unknown as` documented with reasons, risk levels, and future solutions
+- `FRONTEND_AUDIT.md` — Phase 6C section added
+- `TODO.md` — Phase 6C marked as completed
+- `README.md` — version bumped to 4.8.0
+
+### Verification
+- `npx tsc --noEmit`: 0 errors
+- `npx next build`: success
+- No business logic, API endpoint, or HTTP method changes
+- No UI behavior changes
+- React Query not implemented (deferred to Phase 7)
+
+---
+
+## [4.7.0] — 2026-08-14 — Phase 6B: Frontend Type-Safety Hardening
+
+### Type-Safety Improvements
+- `catch (e: any)` → `catch (e: unknown)` with safe narrowing — 257 occurrences in 88 files
+- `(data as any)` casts removed — 272 occurrences in 40 files, replaced with explicit `apiAdmin<T>()` type arguments
+- `Record<string, any>` → `Record<string, unknown>` — 6 occurrences
+- `Promise<any>` → `Promise<unknown>` in rateLimiter.ts
+- 40+ inline response interfaces defined
+- `EntityFormData`, `OnuDetailResponse` interfaces for state typing
+
+### Metrics
+- `: any` reduced from 418 → 70 (83%)
+- `as any` reduced from 483 → 37 (92%)
+- `(data as any)` reduced from 272 → 0 (100%)
+- `catch (e: any)` reduced from 257 → 0 (100%)
+
+---
+
 ## [4.6.0] — 2026-08-14 — Frontend Audit Phase 5 (API Types, Utilities, Security)
 
 ### Overview — Frontend Audit Phase 5

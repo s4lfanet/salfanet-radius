@@ -88,6 +88,7 @@ function LogicalTraceTab() {
       customersCount: node.type === 'ODP' ? Math.floor(Math.random() * 8) + 1 : undefined,
     }));
     const totalCustomers = affectedNodes.reduce((s, n) => s + (n.customersCount || 0), 0);
+    // alternatives is PathNode[][] from API but ImpactAnalysis expects a different shape
     return { affectedNodes, totalCustomers, estimatedDowntime: 120, estimatedRevenueLoss: totalCustomers * 50000, alternatives: (traceResult.alternatives || []) as unknown as { id: string; path: string[]; quality: 'excellent' | 'good' | 'fair' | 'poor'; distance: number; loss: number }[] };
   };
 

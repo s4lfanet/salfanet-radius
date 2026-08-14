@@ -479,6 +479,7 @@ export default function PppoeUsersPage() {
       const [usersData, profilesData, routersData, areasData] = await Promise.all([
         pppoeApi.listUsers(), pppoeApi.listProfiles(), networkApi.listRouters(), pppoeApi.listAreas(),
       ]);
+      // API PppoeUser uses pppoe_profiles/nas/pppoe_areas; local PppoeUser uses profile/router/area
       const loadedUsers = usersData.users as unknown as PppoeUser[];
       setUsers(loadedUsers);
       setProfiles(profilesData.profiles || []);
@@ -1056,6 +1057,7 @@ export default function PppoeUsersPage() {
         doc.setFontSize(8); doc.text(`Generated: ${data.pdfData.generatedAt}`, 14, 27);
         autoTable(doc, { head: [data.pdfData.headers], body: data.pdfData.rows, startY: 32, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
         if (data.pdfData.summary) {
+          // jspdf-autotable adds lastAutoTable to the doc instance at runtime
           const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
           doc.setFontSize(9); doc.setFont('helvetica', 'bold');
           data.pdfData.summary.forEach((s: { label: string; value: string }, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
