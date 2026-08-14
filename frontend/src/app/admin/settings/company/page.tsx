@@ -7,6 +7,7 @@ import { Building2, Mail, Phone, MapPin, Globe, Save, Loader2, RotateCcw, Upload
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useAppStore } from '@/lib/store';
 import { setCurrentTimezone } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 
 interface BankAccount {
   bankName: string;
@@ -66,32 +67,29 @@ export default function CompanySettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const response = await fetch('/api/company');
-      if (response.ok) {
-        const data = await response.json();
-        if (data) {
-          setSettings({
-            id: data.id || '',
-            name: data.name || '',
-            email: data.email || '',
-            phone: data.phone || '',
-            address: data.address || '',
-            baseUrl: data.baseUrl || '',
-            timezone: data.timezone || 'Asia/Jakarta',
-            bankAccounts: data.bankAccounts || [],
-            poweredBy: data.poweredBy || 'SALFANET RADIUS',
-            customerIdPrefix: data.customerIdPrefix || '',
-            footerAdmin: data.footerAdmin || '',
-            footerCustomer: data.footerCustomer || '',
-            footerTechnician: data.footerTechnician || '',
-            footerAgent: data.footerAgent || '',
-            invoiceGenerateDays: data.invoiceGenerateDays || 7,
-            logo: data.logo || '',
-          });
-          setInitialTimezone(data.timezone || 'Asia/Jakarta');
-        }
+      const data = await apiAdmin('/api/company');
+      if (data) {
+        setSettings({
+          id: (data as any).id || '',
+          name: (data as any).name || '',
+          email: (data as any).email || '',
+          phone: (data as any).phone || '',
+          address: (data as any).address || '',
+          baseUrl: (data as any).baseUrl || '',
+          timezone: (data as any).timezone || 'Asia/Jakarta',
+          bankAccounts: (data as any).bankAccounts || [],
+          poweredBy: (data as any).poweredBy || 'SALFANET RADIUS',
+          customerIdPrefix: (data as any).customerIdPrefix || '',
+          footerAdmin: (data as any).footerAdmin || '',
+          footerCustomer: (data as any).footerCustomer || '',
+          footerTechnician: (data as any).footerTechnician || '',
+          footerAgent: (data as any).footerAgent || '',
+          invoiceGenerateDays: (data as any).invoiceGenerateDays || 7,
+          logo: (data as any).logo || '',
+        });
+        setInitialTimezone((data as any).timezone || 'Asia/Jakarta');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching settings:', error);
     } finally {
       setLoading(false);
@@ -105,17 +103,16 @@ export default function CompanySettingsPage() {
     try {
       const form = new FormData();
       form.append('file', file);
-      const res = await fetch('/api/upload/logo', { method: 'POST', body: form });
-      const data = await res.json();
-      if (data.success) {
-        setSettings(prev => ({ ...prev, logo: data.url }));
-        setCompany({ logo: data.url });
+      const data = await apiAdmin('/api/upload/logo', { method: 'POST', body: form });
+      if ((data as any).success) {
+        setSettings(prev => ({ ...prev, logo: (data as any).url }));
+        setCompany({ logo: (data as any).url });
         addToast({ type: 'success', title: 'Logo uploaded', description: 'Logo akan tampil setelah simpan.', duration: 3000 });
       } else {
-        addToast({ type: 'error', title: 'Upload gagal', description: data.error || 'Gagal upload logo.', duration: 4000 });
+        addToast({ type: 'error', title: 'Upload gagal', description: (data as any).error || 'Gagal upload logo.', duration: 4000 });
       }
-    } catch {
-      addToast({ type: 'error', title: 'Upload gagal', description: 'Terjadi kesalahan saat upload.', duration: 4000 });
+    } catch (error: any) {
+      addToast({ type: 'error', title: 'Upload gagal', description: error.message || 'Terjadi kesalahan saat upload.', duration: 4000 });
     } finally {
       setUploadingLogo(false);
       e.target.value = '';
@@ -129,16 +126,13 @@ export default function CompanySettingsPage() {
   const handleRestartServices = async () => {
     setRestarting(true);
     try {
-      const restartResponse = await fetch('/api/settings/restart-services', {
+      const restartResult = await apiAdmin('/api/settings/restart-services', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ services: 'all', delay: 2000 })
       });
 
-      const restartResult = await restartResponse.json();
-
-      if (restartResult.success) {
-        if (restartResult.autoRestarted) {
+      if ((restartResult as any).success) {
+        if ((restartResult as any).autoRestarted) {
           addToast({ type: 'success', title: t('settings.servicesRestarting') || 'Services Restarting', description: t('settings.pageWillReload') || 'Page will reload in 5 seconds...', duration: 5000 });
           setTimeout(() => { window.location.reload(); }, 5000);
         } else {
@@ -149,11 +143,11 @@ export default function CompanySettingsPage() {
         addToast({
           type: 'warning',
           title: 'Auto Restart Not Available',
-          description: `${restartResult.message || ''} ${t('settings.restartManually') || 'Please restart manually: pm2 restart all'}`,
+          description: `${(restartResult as any).message || ''} ${t('settings.restartManually') || 'Please restart manually: pm2 restart all'}`,
           duration: 8000
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Restart error:', error);
       addToast({
         type: 'error',
@@ -172,34 +166,29 @@ export default function CompanySettingsPage() {
     setSaving(true);
 
     try {
-      const response = await fetch('/api/company', {
+      await apiAdmin('/api/company', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       });
 
-      if (response.ok) {
-        setCompany({
-          name: settings.name,
-          email: settings.email,
-          phone: settings.phone,
-          address: settings.address,
-          baseUrl: settings.baseUrl,
-          timezone: settings.timezone,
-          poweredBy: settings.poweredBy,
-          logo: settings.logo,
-        });
-        setCurrentTimezone(settings.timezone);
-        setInitialTimezone(settings.timezone);
+      setCompany({
+        name: settings.name,
+        email: settings.email,
+        phone: settings.phone,
+        address: settings.address,
+        baseUrl: settings.baseUrl,
+        timezone: settings.timezone,
+        poweredBy: settings.poweredBy,
+        logo: settings.logo,
+      });
+      setCurrentTimezone(settings.timezone);
+      setInitialTimezone(settings.timezone);
 
-        setSaving(false);
-        await handleRestartServices();
-      } else {
-        throw new Error('Save failed');
-      }
-    } catch (error) {
       setSaving(false);
-      addToast({ type: 'error', title: t('common.error'), description: t('settings.saveSettingsFailed') });
+      await handleRestartServices();
+    } catch (error: any) {
+      setSaving(false);
+      addToast({ type: 'error', title: t('common.error'), description: error.message || t('settings.saveSettingsFailed') });
     }
   };
 
@@ -208,35 +197,30 @@ export default function CompanySettingsPage() {
     setSaving(true);
 
     try {
-      const response = await fetch('/api/company', {
+      await apiAdmin('/api/company', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings)
       });
 
-      if (response.ok) {
-        // Update global store with new settings (including timezone)
-        setCompany({
-          name: settings.name,
-          email: settings.email,
-          phone: settings.phone,
-          address: settings.address,
-          baseUrl: settings.baseUrl,
-          timezone: settings.timezone,
-          poweredBy: settings.poweredBy,
-          logo: settings.logo,
-        });
+      // Update global store with new settings (including timezone)
+      setCompany({
+        name: settings.name,
+        email: settings.email,
+        phone: settings.phone,
+        address: settings.address,
+        baseUrl: settings.baseUrl,
+        timezone: settings.timezone,
+        poweredBy: settings.poweredBy,
+        logo: settings.logo,
+      });
 
-        // Update timezone library
-        setCurrentTimezone(settings.timezone);
-        setInitialTimezone(settings.timezone);
+      // Update timezone library
+      setCurrentTimezone(settings.timezone);
+      setInitialTimezone(settings.timezone);
 
-        addToast({ type: 'success', title: t('common.success'), description: t('settings.companySaved'), duration: 2000 });
-      } else {
-        throw new Error(t('common.saveFailed'));
-      }
-    } catch (error) {
-      addToast({ type: 'error', title: t('common.error'), description: t('settings.saveSettingsFailed') });
+      addToast({ type: 'success', title: t('common.success'), description: t('settings.companySaved'), duration: 2000 });
+    } catch (error: any) {
+      addToast({ type: 'error', title: t('common.error'), description: error.message || t('settings.saveSettingsFailed') });
     } finally {
       setSaving(false);
     }
