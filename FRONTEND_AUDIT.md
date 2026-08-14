@@ -1447,6 +1447,22 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 27 — Sessions Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/sessions/page.tsx` — 4 fetch() calls replaced:
+  - `fetch('/api/sessions?...')` (load sessions) → `apiAdmin(...)`
+  - `fetch('/api/network/routers')` (load routers) → `apiAdmin(...)`
+  - `fetch('/api/sessions/export?...', { format: 'pdf' })` (PDF JSON) → `apiAdmin(...)`
+  - `fetch('/api/sessions/disconnect', { method: 'POST' })` → `apiAdmin(...)`
+  - 2 blob export fetches retained with `credentials: 'include'` (Excel active + Excel history downloads)
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Sessions page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
