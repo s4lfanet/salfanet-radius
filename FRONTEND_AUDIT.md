@@ -1516,6 +1516,23 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 31 — Settings Telegram Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/settings/telegram/page.tsx` — 5 fetch() calls replaced:
+  - `fetch('/api/telegram/settings')` (load) → `apiAdmin(...)`
+  - `fetch('/api/telegram/settings', { method: 'POST' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/cron/telegram', { method: 'POST' })` (restart cron) → `apiAdmin(...)`
+  - `fetch('/api/telegram/test', { method: 'POST' })` (test) → `apiAdmin(...)`
+  - `fetch('/api/telegram/test-backup', { method: 'POST' })` (test backup) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in settings/telegram page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Settings telegram page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
