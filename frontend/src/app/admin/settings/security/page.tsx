@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Shield, Smartphone, QrCode, KeyRound, AlertTriangle, CheckCircle, Loader2, Eye, EyeOff, X } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 type Phase = 'status' | 'setup-qr' | 'setup-verify' | 'disable-confirm';
 
@@ -25,9 +26,8 @@ export default function SecuritySettingsPage() {
   const [showDisablePassword, setShowDisablePassword] = useState(false);
 
   useEffect(() => {
-    fetch('/api/admin/profile/2fa')
-      .then(r => r.json())
-      .then(d => { setEnabled(d.enabled); setLoading(false); })
+    apiAdmin('/api/admin/profile/2fa')
+      .then((d: any) => { setEnabled(d.enabled); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -35,15 +35,14 @@ export default function SecuritySettingsPage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/profile/2fa?action=setup');
-      const data = await res.json();
-      if (data.qrCode) {
-        setQrCode(data.qrCode);
-        setSecret(data.secret);
+      const data = await apiAdmin('/api/admin/profile/2fa?action=setup');
+      if ((data as any).qrCode) {
+        setQrCode((data as any).qrCode);
+        setSecret((data as any).secret);
         setPhase('setup-qr');
       }
-    } catch {
-      setError('Failed to generate QR code. Please try again.');
+    } catch (e: any) {
+      setError(e.message || 'Failed to generate QR code. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -55,23 +54,21 @@ export default function SecuritySettingsPage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/profile/2fa', {
+      const data = await apiAdmin('/api/admin/profile/2fa', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ secret, code: cleanCode }),
       });
-      const data = await res.json();
-      if (data.success) {
+      if ((data as any).success) {
         setEnabled(true);
         setPhase('status');
-        setSuccess(data.message);
+        setSuccess((data as any).message);
         setSetupCode('');
         setTimeout(() => setSuccess(''), 5000);
       } else {
-        setError(data.error || 'Verification failed');
+        setError((data as any).error || 'Verification failed');
       }
-    } catch {
-      setError('Request failed. Please try again.');
+    } catch (e: any) {
+      setError(e.message || 'Request failed. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -85,21 +82,19 @@ export default function SecuritySettingsPage() {
     setSubmitting(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/profile/2fa', {
+      const data = await apiAdmin('/api/admin/profile/2fa', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: disablePassword, code: disableCode.replace(/\s/g, '') }),
       });
-      const data = await res.json();
-      if (data.success) {
+      if ((data as any).success) {
         setEnabled(false);
         setPhase('status');
-        setSuccess(data.message);
+        setSuccess((data as any).message);
         setDisablePassword('');
         setDisableCode('');
         setTimeout(() => setSuccess(''), 5000);
       } else {
-        setError(data.error || 'Failed to disable 2FA');
+        setError((data as any).error || 'Failed to disable 2FA');
       }
     } catch {
       setError('Request failed. Please try again.');
