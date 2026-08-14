@@ -125,7 +125,7 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
           customerUsername: user.username,
           paymentToken,
           paymentLink,
-          createdAt: new Date(),
+          createdAt: now,
           // Create invoiceAddon records for each recurring addon
           invoiceAddons: addonCharges.length > 0
             ? {

@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { randomBytes, randomUUID } from 'crypto';
+import { toUTC, nowWIB } from '@/lib/timezone';
 
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -62,7 +63,7 @@ export async function POST(request: NextRequest) {
     console.log('🏢 Company settings loaded');
 
     // Renewal is always allowed regardless of expiry date
-    const now = new Date();
+    const now = nowWIB();
     const expiredAt = user.expiredAt ? new Date(user.expiredAt) : null;
 
     if (!expiredAt) {
@@ -206,7 +207,7 @@ export async function POST(request: NextRequest) {
             amount,
             baseAmount: baseAmount,
             ...(renewTaxRate !== null && { taxRate: renewTaxRate }),
-            dueDate: newExpiredDate,
+            dueDate: toUTC(newExpiredDate),
             status: 'PENDING',
             paymentToken,
             paymentLink,

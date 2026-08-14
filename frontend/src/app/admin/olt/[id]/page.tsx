@@ -21,6 +21,7 @@ import {
   Power, Download, CheckCircle, Signal, Plus, X, Cpu, Zap,
   Eye, UserPlus, Trash2,
 } from 'lucide-react';
+import { formatWIB } from '@/lib/timezone';
 
 interface ONU {
   id: string;
@@ -609,7 +610,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                 <Server className="h-4 w-4 text-green-400" />
                 <span className="font-semibold text-sm text-slate-900 dark:text-white">ZTE C320 Rack Diagram</span>
               </div>
-              <div className="text-[11px] text-slate-500 mt-1">Updated: {olt.lastPollAt ? new Date(olt.lastPollAt).toLocaleTimeString('id-ID') : '—'}</div>
+              <div className="text-[11px] text-slate-500 mt-1">Updated: {olt.lastPollAt ? formatWIB(olt.lastPollAt, 'HH:mm') : '—'}</div>
             </div>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
               <span className="text-xs text-slate-500 font-mono">{olt.ipAddress}</span>
@@ -2032,7 +2033,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               {olt.isOnline ? 'Online' : 'Offline'}
             </div>
             <div className="text-xs text-gray-400 mt-0.5">
-              {olt.lastPollAt ? `Polled ${new Date(olt.lastPollAt).toLocaleTimeString('id-ID')}` : 'Not polled yet'}
+              {olt.lastPollAt ? `Polled ${formatWIB(olt.lastPollAt, 'HH:mm')}` : 'Not polled yet'}
             </div>
           </CardContent>
         </Card>

@@ -4,7 +4,7 @@ import { prisma } from '@/server/db/client'
 
 export interface PppSecretParams {
   username: string
-  password: string
+  password?: string  // required for create/update, optional for delete/enable/disable
   profile?: string | null
   disabled?: boolean  // true = disabled, false = enabled
   service?: string    // default 'pppoe'

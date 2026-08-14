@@ -9,6 +9,7 @@
 
 import { pppoeRepository } from '@/server/db/repositories'
 import type { PppoeUserListQuery } from './schemas'
+import { nowWIB } from '@/lib/timezone'
 
 export async function getPppoeUsers(params: PppoeUserListQuery) {
   return pppoeRepository.findPaginated(params)
@@ -33,9 +34,9 @@ export async function getPppoeStats() {
     pppoeRepository.count({ subscriptionType: 'POSTPAID' }),
   ])
 
-  const now = new Date()
+  const now = nowWIB()
   const endOfDay = new Date(now)
-  endOfDay.setHours(23, 59, 59, 999)
+  endOfDay.setUTCHours(23, 59, 59, 999)
 
   const expiredToday = await pppoeRepository.count({
     expiredAt: { gte: now, lte: endOfDay },

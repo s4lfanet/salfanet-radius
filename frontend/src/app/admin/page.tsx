@@ -211,10 +211,7 @@ export default function AdminDashboard() {
   const [radiusStatus, setRadiusStatus] = useState<RadiusStatus | null>(null);
   const [restarting, setRestarting] = useState(false);
   // Month filter for revenue stats
-  const [dashboardMonth, setDashboardMonth] = useState<string>(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-  });
+  const [dashboardMonth, setDashboardMonth] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
   const [periodLabel, setPeriodLabel] = useState<string>('');
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
@@ -322,8 +319,8 @@ export default function AdminDashboard() {
   // Navigate months
   const shiftMonth = (delta: number) => {
     const [y, m] = dashboardMonth.split('-').map(Number);
-    const d = new Date(y, m - 1 + delta, 1);
-    const next = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+    const next = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
     setDashboardMonth(next);
     setLoading(true);
     loadDashboardData(next);
@@ -504,7 +501,7 @@ export default function AdminDashboard() {
               </span>
               <button
                 onClick={() => shiftMonth(1)}
-                disabled={dashboardMonth >= (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`; })()}
+                disabled={dashboardMonth >= formatWIB(nowWIB(), 'yyyy-MM')}
                 className="p-1 rounded hover:bg-[#00f7ff]/15 text-[#00f7ff]/70 hover:text-[#00f7ff] transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                 title={t('dashboard.nextMonth')}
               >

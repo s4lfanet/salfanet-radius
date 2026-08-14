@@ -117,8 +117,8 @@ export async function POST(request: NextRequest) {
     const invoiceNumber = `INV/${year}/${month}/${day}/${String(sequence).padStart(4, '0')}`;
 
     // Calculate due date (7 days from now)
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 7);
+    const dueDate = nowWIB();
+    dueDate.setUTCDate(dueDate.getUTCDate() + 7);
 
     // Generate payment token for Tripay webhook compatibility
     const paymentTokenString = `${invoiceNumber}-${Date.now()}`;
