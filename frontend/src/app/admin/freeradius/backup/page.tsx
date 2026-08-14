@@ -7,6 +7,7 @@ import {
     Upload, Server,
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface BackupFile {
     name: string;
@@ -44,15 +45,12 @@ export default function FreeRADIUSBackupPage() {
 
     const fetchData = useCallback(async () => {
         try {
-            const res = await fetch('/api/admin/system/freeradius-backup');
-            const data = await res.json();
-            if (res.ok) {
-                if (data.log !== undefined) setLog(data.log);
-                if (data.backups) setBackups(data.backups);
-                requestAnimationFrame(() => {
-                    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-                });
-            }
+            const data = await apiAdmin('/api/admin/system/freeradius-backup');
+            if ((data as any).log !== undefined) setLog((data as any).log);
+            if ((data as any).backups) setBackups((data as any).backups);
+            requestAnimationFrame(() => {
+                if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+            });
         } catch { /* ignore */ }
     }, []);
 
@@ -92,17 +90,11 @@ export default function FreeRADIUSBackupPage() {
         setRunning(true);
         setLog('');
         try {
-            const res = await fetch('/api/admin/system/freeradius-backup', { method: 'POST' });
-            const data = await res.json();
-            if (!res.ok) {
-                addToast({ type: 'error', title: 'Gagal', description: data.error || 'Tidak dapat memulai backup' });
-                setRunning(false);
-                return;
-            }
+            await apiAdmin('/api/admin/system/freeradius-backup', { method: 'POST' });
             startPolling();
             addToast({ type: 'info', title: 'Backup dimulai', description: 'Log tampil di bawah...', duration: 2000 });
         } catch (e: any) {
-            addToast({ type: 'error', title: 'Error', description: e.message });
+            addToast({ type: 'error', title: 'Gagal', description: e.message || 'Tidak dapat memulai backup' });
             setRunning(false);
         }
     };
@@ -123,17 +115,15 @@ export default function FreeRADIUSBackupPage() {
         setRestoring(file);
         setRestoreLog(null);
         try {
-            const res = await fetch('/api/admin/system/freeradius-backup/restore', {
+            const data = await apiAdmin('/api/admin/system/freeradius-backup/restore', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ file }),
             });
-            const data = await res.json();
-            setRestoreLog({ file, log: data.log || data.error || '—', ok: res.ok && data.success });
-            if (res.ok && data.success) {
-                addToast({ type: 'success', title: 'Restore berhasil', description: `${data.restored} file dipulihkan`, duration: 4000 });
+            setRestoreLog({ file, log: (data as any).log || (data as any).error || '—', ok: (data as any).success });
+            if ((data as any).success) {
+                addToast({ type: 'success', title: 'Restore berhasil', description: `${(data as any).restored} file dipulihkan`, duration: 4000 });
             } else {
-                addToast({ type: 'error', title: 'Restore gagal', description: data.error || 'Lihat log di bawah' });
+                addToast({ type: 'error', title: 'Restore gagal', description: (data as any).error || 'Lihat log di bawah' });
             }
         } catch (e: any) {
             setRestoreLog({ file, log: e.message, ok: false });
@@ -159,32 +149,25 @@ export default function FreeRADIUSBackupPage() {
             // Step 1: upload
             const form = new FormData();
             form.append('file', uploadFile);
-            const upRes = await fetch('/api/admin/system/freeradius-backup/upload', {
+            const upData = await apiAdmin('/api/admin/system/freeradius-backup/upload', {
                 method: 'POST',
                 body: form,
             });
-            const upData = await upRes.json();
-            if (!upRes.ok) {
-                addToast({ type: 'error', title: 'Upload gagal', description: upData.error });
-                return;
-            }
-            const savedAs: string = upData.savedAs;
+            const savedAs: string = (upData as any).savedAs;
             addToast({ type: 'info', title: 'Upload selesai', description: `Disimpan sebagai ${savedAs}`, duration: 2000 });
 
             // Step 2: restore
-            const restRes = await fetch('/api/admin/system/freeradius-backup/restore', {
+            const restData = await apiAdmin('/api/admin/system/freeradius-backup/restore', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ file: savedAs }),
             });
-            const restData = await restRes.json();
-            setRestoreLog({ file: savedAs, log: restData.log || restData.error || '—', ok: restRes.ok && restData.success });
-            if (restRes.ok && restData.success) {
-                addToast({ type: 'success', title: 'Restore berhasil', description: `${restData.restored} file dipulihkan`, duration: 4000 });
+            setRestoreLog({ file: savedAs, log: (restData as any).log || (restData as any).error || '—', ok: (restData as any).success });
+            if ((restData as any).success) {
+                addToast({ type: 'success', title: 'Restore berhasil', description: `${(restData as any).restored} file dipulihkan`, duration: 4000 });
                 setUploadFile(null);
                 fetchData();
             } else {
-                addToast({ type: 'error', title: 'Restore gagal', description: restData.error || 'Lihat log di bawah' });
+                addToast({ type: 'error', title: 'Restore gagal', description: (restData as any).error || 'Lihat log di bawah' });
             }
         } catch (e: any) {
             addToast({ type: 'error', title: 'Error', description: e.message });
