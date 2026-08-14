@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api';
 import { CyberCard, CyberButton, CyberBadge } from '@/components/cyberpunk';
 import {
   Gift, Users, Wallet, Clock, CheckCircle, XCircle, Search,
@@ -60,14 +61,13 @@ export default function AdminReferralsPage() {
       if (search) params.set('search', search);
       if (statusFilter) params.set('status', statusFilter);
 
-      const res = await fetch(`/api/admin/referrals?${params}`);
-      const data = await res.json();
-      if (data.success) {
-        setRewards(data.rewards);
-        setStats(data.stats);
-        setTotalPages(data.pagination.totalPages);
+      const data = await apiAdmin(`/api/admin/referrals?${params}`);
+      if ((data as any).success) {
+        setRewards((data as any).rewards);
+        setStats((data as any).stats);
+        setTotalPages((data as any).pagination.totalPages);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load referrals error:', error);
     } finally {
       setLoading(false);
@@ -81,21 +81,19 @@ export default function AdminReferralsPage() {
   const processReward = async (rewardId: string, action: 'credit' | 'expire') => {
     setProcessing(rewardId);
     try {
-      const res = await fetch(`/api/admin/referrals/${rewardId}`, {
+      const data = await apiAdmin(`/api/admin/referrals/${rewardId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
       });
 
-      const data = await res.json();
-      if (data.success) {
-        addToast({ type: 'success', title: 'Berhasil!', description: data.message });
+      if ((data as any).success) {
+        addToast({ type: 'success', title: 'Berhasil!', description: (data as any).message });
         loadData();
       } else {
-        addToast({ type: 'error', title: 'Error', description: data.error });
+        addToast({ type: 'error', title: 'Error', description: (data as any).error });
       }
-    } catch {
-      addToast({ type: 'error', title: 'Error', description: t('referrals.errorProcess') });
+    } catch (e: any) {
+      addToast({ type: 'error', title: 'Error', description: e.message || t('referrals.errorProcess') });
     } finally {
       setProcessing(null);
     }
