@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { toUTC } from '@/lib/timezone';
 
 // Helper to generate username from name and phone
 function generateUsername(name: string, phone: string): string {
@@ -105,6 +106,7 @@ export async function POST(
       expiredAt.setMonth(expiredAt.getMonth() + 1); // Next month
       expiredAt.setDate(validBillingDay); // Set to billing day
       expiredAt.setHours(23, 59, 59, 999);
+      expiredAt = toUTC(expiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
     } else {
       // PREPAID: expiredAt = now + validity dari profile
       expiredAt = new Date(now);
@@ -114,6 +116,7 @@ export async function POST(
         expiredAt.setDate(expiredAt.getDate() + registration.profile.validityValue);
       }
       expiredAt.setHours(23, 59, 59, 999);
+      expiredAt = toUTC(expiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
     }
 
     // Resolve referral code to referrer ID
