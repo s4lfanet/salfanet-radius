@@ -6,6 +6,7 @@ import OTBDiagramV2 from '@/components/network/SplitterDiagram/OTBDiagramV2';
 import { SplitterNode, Port } from '@/components/network/SplitterDiagram/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import Link from 'next/link';
+import { apiAdmin } from '@/lib/api';
 
 export default function NetworkDiagramsPage() {
   const [selectedTab, setSelectedTab] = React.useState<'otb' | 'jc' | 'odc' | 'odp'>('otb');
@@ -45,41 +46,34 @@ export default function NetworkDiagramsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [otbRes, jcRes, odcRes, odpRes] = await Promise.all([
-        fetch('/api/network/otbs?limit=100'),
-        fetch('/api/network/joint-closures'),
-        fetch('/api/network/odcs'),
-        fetch('/api/network/odps'),
-      ]);
-
       const [otbData, jcData, odcData, odpData] = await Promise.all([
-        otbRes.json(),
-        jcRes.json(),
-        odcRes.json(),
-        odpRes.json(),
+        apiAdmin('/api/network/otbs?limit=100'),
+        apiAdmin('/api/network/joint-closures'),
+        apiAdmin('/api/network/odcs'),
+        apiAdmin('/api/network/odps'),
       ]);
 
-      if (otbData.otbs) {
-        setOtbList(otbData.otbs);
-        if (otbData.otbs.length > 0) setSelectedOTB(otbData.otbs[0].id);
+      if ((otbData as any).otbs) {
+        setOtbList((otbData as any).otbs);
+        if ((otbData as any).otbs.length > 0) setSelectedOTB((otbData as any).otbs[0].id);
       }
 
-      if (jcData.success && jcData.data) {
-        setJcList(jcData.data);
-        setJcListAll(jcData.data);
-        if (jcData.data.length > 0) setSelectedJC(jcData.data[0].id);
+      if ((jcData as any).success && (jcData as any).data) {
+        setJcList((jcData as any).data);
+        setJcListAll((jcData as any).data);
+        if ((jcData as any).data.length > 0) setSelectedJC((jcData as any).data[0].id);
       }
 
-      if (odcData.odcs) {
-        setOdcList(odcData.odcs);
-        if (odcData.odcs.length > 0) setSelectedODC(odcData.odcs[0].id);
+      if ((odcData as any).odcs) {
+        setOdcList((odcData as any).odcs);
+        if ((odcData as any).odcs.length > 0) setSelectedODC((odcData as any).odcs[0].id);
       }
 
-      if (odpData.odps) {
-        setOdpList(odpData.odps);
-        if (odpData.odps.length > 0) setSelectedODP(odpData.odps[0].id);
+      if ((odpData as any).odps) {
+        setOdpList((odpData as any).odps);
+        if ((odpData as any).odps.length > 0) setSelectedODP((odpData as any).odps[0].id);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to load network data:', error);
     } finally {
       setLoading(false);
@@ -91,9 +85,8 @@ export default function NetworkDiagramsPage() {
     if (!selectedOTB) return;
     setOtbDetail(null);
     setOtbDetailLoading(true);
-    fetch(`/api/network/otbs/${selectedOTB}`)
-      .then(r => r.json())
-      .then(d => setOtbDetail(d))
+    apiAdmin(`/api/network/otbs/${selectedOTB}`)
+      .then((d: any) => setOtbDetail(d))
       .catch(console.error)
       .finally(() => setOtbDetailLoading(false));
   }, [selectedOTB]);
@@ -103,9 +96,8 @@ export default function NetworkDiagramsPage() {
     if (!selectedJC) return;
     setJcDetail(null);
     setJcDetailLoading(true);
-    fetch(`/api/network/joint-closures/${selectedJC}`)
-      .then(r => r.json())
-      .then(d => setJcDetail(d.data ?? d))
+    apiAdmin(`/api/network/joint-closures/${selectedJC}`)
+      .then((d: any) => setJcDetail(d.data ?? d))
       .catch(console.error)
       .finally(() => setJcDetailLoading(false));
   }, [selectedJC]);
@@ -115,15 +107,12 @@ export default function NetworkDiagramsPage() {
     if (!assignTube || !assignJc || !selectedOTB) return;
     setAssignSaving(true);
     try {
-      const res = await fetch(`/api/network/otbs/${selectedOTB}/segments`, {
+      await apiAdmin(`/api/network/otbs/${selectedOTB}/segments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tubeNumber: parseInt(assignTube), jcId: assignJc, lengthMeters: assignLength || undefined }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal menyimpan');
       // Re-fetch enriched OTB
-      const refreshed = await fetch(`/api/network/otbs/${selectedOTB}`).then(r => r.json());
+      const refreshed = await apiAdmin(`/api/network/otbs/${selectedOTB}`);
       setOtbDetail(refreshed);
       setAssignTube('');
       setAssignJc('');
@@ -139,9 +128,8 @@ export default function NetworkDiagramsPage() {
   const handleRemoveSegment = async (segmentId: string) => {
     if (!confirm('Hapus penugasan tabung ini?')) return;
     try {
-      const res = await fetch(`/api/network/otbs/${selectedOTB}/segments?segmentId=${segmentId}`, { method: 'DELETE' });
-      if (!res.ok) { const d = await res.json(); throw new Error(d.error); }
-      const refreshed = await fetch(`/api/network/otbs/${selectedOTB}`).then(r => r.json());
+      await apiAdmin(`/api/network/otbs/${selectedOTB}/segments?segmentId=${segmentId}`, { method: 'DELETE' });
+      const refreshed = await apiAdmin(`/api/network/otbs/${selectedOTB}`);
       setOtbDetail(refreshed);
     } catch (err: any) { alert(err.message); }
   };
