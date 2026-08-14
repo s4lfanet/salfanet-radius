@@ -1247,6 +1247,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 16 — Hotspot Agent Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/hotspot/agent/page.tsx` — 9 fetch() calls replaced:
+  - `fetch('/api/hotspot/agents')` + `fetch('/api/network/routers')` (Promise.all) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/agents', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/agents?id=...', { method: 'DELETE' })` (single + bulk) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/agents', { method: 'PUT' })` (bulk status) → `apiAdmin(...)`
+  - `fetch('/api/hotspot/agents/balance', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/hotspot/agents/${id}/history')` (2 calls: list + month detail) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in hotspot/agent page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ Hotspot agent page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)

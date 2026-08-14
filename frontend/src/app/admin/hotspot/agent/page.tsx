@@ -17,6 +17,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
+import { apiAdmin } from '@/lib/api';
 import { formatWIB } from '@/lib/timezone';
 
 interface Router {
@@ -108,15 +109,13 @@ export default function AgentPage() {
 
   const loadData = async () => {
     try {
-      const [agentsRes, routersRes] = await Promise.all([
-        fetch('/api/hotspot/agents'),
-        fetch('/api/network/routers'),
+      const [agentsData, routersData] = await Promise.all([
+        apiAdmin('/api/hotspot/agents'),
+        apiAdmin('/api/network/routers'),
       ]);
-      const agentsData = await agentsRes.json();
-      const routersData = await routersRes.json();
-      setAgents(agentsData.agents || []);
-      setRouters(routersData.routers || []);
-    } catch (error) {
+      setAgents((agentsData as any).agents || []);
+      setRouters((routersData as any).routers || []);
+    } catch (error: any) {
       console.error('Load data error:', error);
     } finally {
       setLoading(false);
@@ -129,23 +128,17 @@ export default function AgentPage() {
       const url = '/api/hotspot/agents';
       const method = editingAgent ? 'PUT' : 'POST';
       const payload = { ...formData, ...(editingAgent && { id: editingAgent.id }) };
-      const res = await fetch(url, {
+      await apiAdmin(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const result = await res.json();
-      if (res.ok) {
-        setIsDialogOpen(false);
-        setEditingAgent(null);
-        resetForm();
-        loadData();
-        await showSuccess(editingAgent ? t('common.updated') : t('common.created'));
-      } else {
-        await showError(result.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('agent.failedSaveAgent'));
+      setIsDialogOpen(false);
+      setEditingAgent(null);
+      resetForm();
+      loadData();
+      await showSuccess(editingAgent ? t('common.updated') : t('common.created'));
+    } catch (error: any) {
+      await showError(error.message || t('agent.failedSaveAgent'));
     }
   };
 
@@ -167,16 +160,11 @@ export default function AgentPage() {
     const confirmed = await showConfirm(t('hotspot.deleteAgentConfirm'));
     if (!confirmed) { setDeleteAgentId(null); return; }
     try {
-      const res = await fetch(`/api/hotspot/agents?id=${deleteAgentId}`, { method: 'DELETE' });
-      if (res.ok) {
-        await showSuccess(t('agent.agentDeleted'));
-        loadData();
-      } else {
-        const result = await res.json();
-        await showError(result.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('agent.failedDeleteAgent'));
+      await apiAdmin(`/api/hotspot/agents?id=${deleteAgentId}`, { method: 'DELETE' });
+      await showSuccess(t('agent.agentDeleted'));
+      loadData();
+    } catch (error: any) {
+      await showError(error.message || t('agent.failedDeleteAgent'));
     } finally {
       setDeleteAgentId(null);
     }
@@ -207,22 +195,17 @@ export default function AgentPage() {
     const confirmed = await showConfirm(t('hotspot.deleteAgentsConfirm', { count: selectedAgents.length }));
     if (!confirmed) return;
     try {
-      const results = await Promise.all(
+      await Promise.all(
         selectedAgents.map(id =>
-          fetch(`/api/hotspot/agents?id=${id}`, { method: 'DELETE' })
+          apiAdmin(`/api/hotspot/agents?id=${id}`, { method: 'DELETE' })
         )
       );
-      const allSuccess = results.every(r => r.ok);
-      if (allSuccess) {
-        await showSuccess(t('agent.agentsDeleted'));
-        setSelectedAgents([]);
-        setBulkDeleteOpen(false);
-        loadData();
-      } else {
-        await showError(t('agent.someDeletionsFailed'));
-      }
-    } catch (error) {
-      await showError(t('agent.failedDeleteAgent'));
+      await showSuccess(t('agent.agentsDeleted'));
+      setSelectedAgents([]);
+      setBulkDeleteOpen(false);
+      loadData();
+    } catch (error: any) {
+      await showError(error.message || t('agent.someDeletionsFailed'));
     }
   };
 
@@ -233,26 +216,20 @@ export default function AgentPage() {
     );
     if (!confirmed) return;
     try {
-      const results = await Promise.all(
+      await Promise.all(
         selectedAgents.map(id =>
-          fetch('/api/hotspot/agents', {
+          apiAdmin('/api/hotspot/agents', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ id, isActive: bulkStatusValue }),
           })
         )
       );
-      const allSuccess = results.every(r => r.ok);
-      if (allSuccess) {
-        await showSuccess(t('agent.statusUpdated'));
-        setSelectedAgents([]);
-        setBulkStatusOpen(false);
-        loadData();
-      } else {
-        await showError(t('agent.someUpdatesFailed'));
-      }
-    } catch (error) {
-      await showError(t('agent.failedUpdateStatus'));
+      await showSuccess(t('agent.statusUpdated'));
+      setSelectedAgents([]);
+      setBulkStatusOpen(false);
+      loadData();
+    } catch (error: any) {
+      await showError(error.message || t('agent.someUpdatesFailed'));
     }
   };
 
@@ -269,9 +246,8 @@ export default function AgentPage() {
     const confirmed = await showConfirm(t('hotspot.agentBalanceConfirm', { action: balanceType === 'add' ? t('common.add') : t('common.subtract'), amount: formatCurrency(amount), name: selectedAgentForBalance.name }));
     if (!confirmed) return;
     try {
-      const res = await fetch('/api/hotspot/agents/balance', {
+      await apiAdmin('/api/hotspot/agents/balance', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           agentId: selectedAgentForBalance.id,
           amount,
@@ -279,19 +255,14 @@ export default function AgentPage() {
           note: balanceNote || null,
         }),
       });
-      const result = await res.json();
-      if (res.ok) {
-        await showSuccess(t('agent.balanceUpdated'));
-        setBalanceModalOpen(false);
-        setSelectedAgentForBalance(null);
-        setBalanceAmount('');
-        setBalanceNote('');
-        loadData();
-      } else {
-        await showError(result.error || t('common.failed'));
-      }
-    } catch (error) {
-      await showError(t('common.failed'));
+      await showSuccess(t('agent.balanceUpdated'));
+      setBalanceModalOpen(false);
+      setSelectedAgentForBalance(null);
+      setBalanceAmount('');
+      setBalanceNote('');
+      loadData();
+    } catch (error: any) {
+      await showError(error.message || t('common.failed'));
     }
   };
 
@@ -308,10 +279,9 @@ export default function AgentPage() {
     setHistoryModalOpen(true);
     setLoadingHistory(true);
     try {
-      const res = await fetch(`/api/hotspot/agents/${agent.id}/history`);
-      const data = await res.json();
-      setMonthlyHistory(data.history || []);
-    } catch (error) {
+      const data = await apiAdmin(`/api/hotspot/agents/${agent.id}/history`);
+      setMonthlyHistory((data as any).history || []);
+    } catch (error: any) {
       console.error('Load history error:', error);
     } finally {
       setLoadingHistory(false);
@@ -322,10 +292,9 @@ export default function AgentPage() {
     if (!selectedAgent) return;
     setLoadingHistory(true);
     try {
-      const res = await fetch(`/api/hotspot/agents/${selectedAgent.id}/history?year=${year}&month=${month}`);
-      const data = await res.json();
+      const data = await apiAdmin(`/api/hotspot/agents/${selectedAgent.id}/history?year=${year}&month=${month}`);
       setSelectedMonthDetail(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load month detail error:', error);
     } finally {
       setLoadingHistory(false);
