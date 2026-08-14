@@ -61,8 +61,8 @@ export default function TopUpRequestPage() {
       );
 
       router.push('/customer');
-    } catch (error: any) {
-      showError(error.message || t('customer.requestError'), t('common.failed'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('customer.requestError'), t('common.failed'));
     } finally {
       setSubmitting(false);
     }

@@ -76,10 +76,10 @@ export default function ManagementPage() {
 
   const fetchUsers = async () => {
     try {
-      const data = await apiAdmin('/api/admin/users');
-      setUsers((data as any).users || data);
-    } catch (e: any) {
-      console.error('Failed to fetch users:', e.message);
+      const data = await apiAdmin<{ users: User[] } | User[]>('/api/admin/users');
+      setUsers(Array.isArray(data) ? data : (data.users || []));
+    } catch (e: unknown) {
+      console.error('Failed to fetch users:', e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -87,28 +87,28 @@ export default function ManagementPage() {
 
   const fetchPermissions = async () => {
     try {
-      const data = await apiAdmin('/api/permissions');
+      const data = await apiAdmin<{ success: boolean; permissions: Record<string, Permission[]> } | Permission[]>('/api/permissions');
       // API returns grouped object: { category1: [...], category2: [...] }
       // Convert to flat array for state
-      if ((data as any).success && (data as any).permissions) {
-        const flatPermissions = Object.values((data as any).permissions).flat();
+      if (!Array.isArray(data) && data.success && data.permissions) {
+        const flatPermissions = Object.values(data.permissions).flat();
         setPermissions(flatPermissions as Permission[]);
       } else if (Array.isArray(data)) {
-        setPermissions(data as any);
+        setPermissions(data);
       }
-    } catch (e: any) {
-      console.error('Failed to fetch permissions:', e.message);
+    } catch (e: unknown) {
+      console.error('Failed to fetch permissions:', e instanceof Error ? e.message : String(e));
     }
   };
 
   const fetchRoleTemplates = async () => {
     try {
-      const data = await apiAdmin('/api/permissions/role-templates');
-      if ((data as any).success && (data as any).templates) {
-        setRoleTemplates((data as any).templates);
+      const data = await apiAdmin<{ success: boolean; templates: Record<string, string[]> }>('/api/permissions/role-templates');
+      if (data.success && data.templates) {
+        setRoleTemplates(data.templates);
       }
-    } catch (e: any) {
-      console.error('Failed to fetch role templates:', e.message);
+    } catch (e: unknown) {
+      console.error('Failed to fetch role templates:', e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -135,8 +135,8 @@ export default function ManagementPage() {
       setShowModal(false);
       resetForm();
       fetchUsers();
-    } catch (e: any) {
-      addToast({ type: 'error', title: t('common.error'), description: e.message || t('management.failedSaveUser') });
+    } catch (e: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (e instanceof Error ? e.message : String(e)) || t('management.failedSaveUser') });
     }
   };
 
@@ -145,8 +145,8 @@ export default function ManagementPage() {
 
     // Load user's actual permissions from API
     try {
-      const data = await apiAdmin(`/api/admin/users/${user.id}/permissions`);
-      const userPermissionIds = (data as any).permissions || [];
+      const data = await apiAdmin<{ permissions: string[] }>(`/api/admin/users/${user.id}/permissions`);
+      const userPermissionIds = data.permissions || [];
 
       setFormData({
         username: user.username,
@@ -187,8 +187,8 @@ export default function ManagementPage() {
 
         addToast({ type: 'success', title: t('common.success'), description: t('management.userDeleted'), duration: 2000 });
         fetchUsers();
-      } catch (e: any) {
-        addToast({ type: 'error', title: t('common.error'), description: e.message || t('management.failedSaveUser') });
+      } catch (e: unknown) {
+        addToast({ type: 'error', title: t('common.error'), description: (e instanceof Error ? e.message : String(e)) || t('management.failedSaveUser') });
         addToast({ type: 'error', title: t('common.error'), description: t('management.failedSaveUser') });
       }
     }

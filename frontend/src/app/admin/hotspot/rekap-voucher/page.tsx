@@ -146,7 +146,7 @@ export default function RekapVoucherPage() {
       if (filterProfile && filterProfile !== 'all') params.set('profileId', filterProfile);
       buildPeriodParams(params);
 
-      const data = await apiAdmin<{ rekap?: RekapVoucher[]; agents?: any[]; profiles?: any[] }>(`/api/hotspot/rekap-voucher?${params}`);
+      const data = await apiAdmin<{ rekap?: RekapVoucher[]; agents?: { id: string; name: string }[]; profiles?: { id: string; name: string }[] }>(`/api/hotspot/rekap-voucher?${params}`);
       setRekap(data.rekap || []);
       setAgents(data.agents || []);
       setProfiles(data.profiles || []);

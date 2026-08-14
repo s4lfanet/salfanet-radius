@@ -15,7 +15,7 @@ interface RateLimitConfig {
 interface MessageToSend {
   phone: string;
   message: string;
-  data?: any; // Additional data to pass through
+  data?: unknown; // Additional data to pass through
 }
 
 interface RateLimitResult {
@@ -27,7 +27,7 @@ interface RateLimitResult {
     phone: string;
     success: boolean;
     error?: string;
-    data?: any;
+    data?: unknown;
   }>;
 }
 
@@ -43,14 +43,14 @@ const DEFAULT_CONFIG: RateLimitConfig = {
  * Splits messages into batches and adds delays to prevent API rate limits
  * 
  * @param messages Array of messages to send
- * @param sendFunction Function that sends a single message (must return Promise<any>)
+ * @param sendFunction Function that sends a single message (must return Promise<unknown>)
  * @param config Optional rate limit configuration
  * @param onProgress Optional callback for progress updates
  * @returns Result with success/failure counts
  */
 export async function sendWithRateLimit(
   messages: MessageToSend[],
-  sendFunction: (message: MessageToSend) => Promise<any>,
+  sendFunction: (message: MessageToSend) => Promise<unknown>,
   config: Partial<RateLimitConfig> = {},
   onProgress?: (progress: { current: number; total: number; batch: number; totalBatches: number }) => void
 ): Promise<RateLimitResult> {
@@ -109,16 +109,16 @@ export async function sendWithRateLimit(
           await delay(delayBetweenMessages);
         }
 
-      } catch (error: any) {
+      } catch (error: unknown) {
         results.push({
           phone: message.phone,
           success: false,
-          error: error.message || 'Failed to send',
+          error: (error instanceof Error ? error.message : String(error)) || 'Failed to send',
           data: message.data,
         });
         failedCount++;
 
-        console.error(`[RateLimiter] ❌ Failed ${currentIndex + 1}/${messages.length}: ${message.phone}`, error.message);
+        console.error(`[RateLimiter] ❌ Failed ${currentIndex + 1}/${messages.length}: ${message.phone}`, error instanceof Error ? error.message : String(error));
       }
     }
 

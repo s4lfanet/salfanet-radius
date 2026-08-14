@@ -23,7 +23,28 @@ interface CronJob {
     error?: string;
   };
   nextRun: string;
-  recentHistory?: any[];
+  recentHistory?: CronHistory[];
+}
+
+interface CronStatusResponse {
+  success: boolean;
+  jobs: CronJob[];
+}
+
+interface CronSchedulesResponse {
+  success: boolean;
+  schedules: ScheduleConfig[];
+}
+
+interface CronTriggerResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+interface CronSaveScheduleResponse {
+  success: boolean;
+  error?: string;
 }
 
 interface ScheduleConfig {
@@ -195,14 +216,14 @@ export default function CronSettingsPage() {
   const loadData = useCallback(async () => {
     try {
       const [statusData, schedulesData] = await Promise.all([
-        apiAdmin('/api/cron/status'),
-        apiAdmin('/api/cron/schedules'),
+        apiAdmin<CronStatusResponse>('/api/cron/status'),
+        apiAdmin<CronSchedulesResponse>('/api/cron/schedules'),
       ]);
 
-      if ((statusData as any).success) {
-        setJobs((statusData as any).jobs || []);
-        const allHistory = (statusData as any).jobs.flatMap((job: any) =>
-          (job.recentHistory || []).map((h: any) => ({
+      if (statusData.success) {
+        setJobs(statusData.jobs || []);
+        const allHistory = statusData.jobs.flatMap((job) =>
+          (job.recentHistory || []).map((h) => ({
             id: h.id, type: job.type,
             startedAt: h.startedAt, completedAt: h.completedAt,
             status: h.status, result: h.result, error: h.error,
@@ -212,8 +233,8 @@ export default function CronSettingsPage() {
           new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
         ).slice(0, 50));
       }
-      if ((schedulesData as any).success) setSchedules((schedulesData as any).schedules || []);
-    } catch (error: any) {
+      if (schedulesData.success) setSchedules(schedulesData.schedules || []);
+    } catch (error: unknown) {
       console.error('Load cron data error:', error);
     } finally {
       setLoading(false);
@@ -229,18 +250,18 @@ export default function CronSettingsPage() {
   const triggerManual = async (jobType: string) => {
     setTriggering(jobType);
     try {
-      const data = await apiAdmin('/api/cron', {
+      const data = await apiAdmin<CronTriggerResponse>('/api/cron', {
         method: 'POST',
         body: JSON.stringify({ type: jobType, ...(jobType === 'invoice_generate' ? { force: true } : {}) })
       });
-      if ((data as any).success) {
-        addToast({ type: 'success', title: t('common.success'), description: (data as any).message || 'Job triggered successfully', duration: 2000 });
+      if (data.success) {
+        addToast({ type: 'success', title: t('common.success'), description: data.message || 'Job triggered successfully', duration: 2000 });
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || t('common.failed') });
+        addToast({ type: 'error', title: t('common.error'), description: data.error || t('common.failed') });
       }
       loadData();
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('settings.failedTriggerJob') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('settings.failedTriggerJob') });
     } finally {
       setTriggering(null);
     }
@@ -248,18 +269,18 @@ export default function CronSettingsPage() {
 
   const saveSchedule = async (jobType: string, schedule: string, enabled: boolean) => {
     try {
-      const data = await apiAdmin('/api/cron/schedules', {
+      const data = await apiAdmin<CronSaveScheduleResponse>('/api/cron/schedules', {
         method: 'PUT',
         body: JSON.stringify({ jobType, schedule, enabled }),
       });
-      if ((data as any).success) {
+      if (data.success) {
         addToast({ type: 'success', title: 'Schedule updated', description: `${jobType} schedule saved. Restart cron runner to apply.`, duration: 4000 });
         await loadData();
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: (data as any).error });
+        addToast({ type: 'error', title: t('common.error'), description: data.error });
       }
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to save schedule' });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to save schedule' });
     }
   };
 
@@ -268,8 +289,8 @@ export default function CronSettingsPage() {
       await apiAdmin(`/api/cron/schedules?jobType=${encodeURIComponent(jobType)}`, { method: 'DELETE' });
       addToast({ type: 'success', title: 'Reset to default', description: `${jobType} reverted to default schedule.`, duration: 3000 });
       await loadData();
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to reset schedule' });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to reset schedule' });
     }
   };
 

@@ -21,6 +21,7 @@ const AddNodePanel = dynamic(
   () => import('@/components/network/AddNodePanel'),
   { ssr: false, loading: () => null }
 );
+import type { AddNodeType } from '@/components/network/AddNodePanel';
 
 // ─── Type labels ────────────────────────────────────────────────────────────
 const TYPE_LABEL: Record<string, string> = {
@@ -88,22 +89,22 @@ export default function UnifiedMapPage() {
   const loadEntities = useCallback(async () => {
     try {
       const [nodesData, customersData] = await Promise.all([
-        apiAdmin('/api/network/nodes?limit=2000'),
-        apiAdmin('/api/customers/with-location?limit=2000'),
+        apiAdmin<{ data: Array<Record<string, unknown>> }>('/api/network/nodes?limit=2000'),
+        apiAdmin<{ data: Array<Record<string, unknown>> }>('/api/customers/with-location?limit=2000'),
       ]);
       setEntities([
-        ...((nodesData as any).data || []).map((n: any) => ({
-          id: n.id, type: n.type, code: n.code, name: n.name,
-          latitude: parseFloat(n.latitude), longitude: parseFloat(n.longitude),
-          status: n.status, metadata: n.metadata,
+        ...(nodesData.data || []).map((n) => ({
+          id: String(n.id), type: String(n.type) as MapEntity['type'], code: String(n.code ?? ''), name: String(n.name ?? ''),
+          latitude: parseFloat(String(n.latitude ?? 0)), longitude: parseFloat(String(n.longitude ?? 0)),
+          status: String(n.status ?? ''), metadata: (n.metadata ?? {}) as Record<string, unknown>,
         })),
-        ...((customersData as any).data || []).map((c: any) => ({
-          id: c.id, type: 'CUSTOMER' as const, code: c.username, name: c.name,
-          latitude: parseFloat(c.latitude), longitude: parseFloat(c.longitude),
-          status: c.status, metadata: c,
+        ...(customersData.data || []).map((c) => ({
+          id: String(c.id), type: 'CUSTOMER' as const, code: String(c.username ?? ''), name: String(c.name ?? ''),
+          latitude: parseFloat(String(c.latitude)), longitude: parseFloat(String(c.longitude)),
+          status: String(c.status), metadata: c,
         })),
       ]);
-    } catch (e: any) { console.error('Error loading entities:', e); }
+    } catch (e: unknown) { console.error('Error loading entities:', e); }
   }, []);
 
   useEffect(() => { loadEntities(); }, [loadEntities, refreshKey]);
@@ -111,9 +112,9 @@ export default function UnifiedMapPage() {
   // ── Load connections ───────────────────────────────────────────────────
   const loadConnections = useCallback(async () => {
     try {
-      const data = await apiAdmin('/api/network/connections');
-      setConnections((data as any).connections || []);
-    } catch (e: any) { console.error('Error loading connections:', e); }
+      const data = await apiAdmin<{ connections: ConnectionLine[] }>('/api/network/connections');
+      setConnections(data.connections || []);
+    } catch (e: unknown) { console.error('Error loading connections:', e); }
   }, []);
 
   useEffect(() => { loadConnections(); }, [loadConnections, refreshKey]);
@@ -159,7 +160,7 @@ export default function UnifiedMapPage() {
     setAddMode(false);
   };
 
-  const handleNodeCreated = (newEntity: any) => {
+  const handleNodeCreated = (newEntity: Record<string, unknown>) => {
     setAddCoords(null);
     setInitialNodeType(null);
     setPendingNodeType(null);
@@ -203,7 +204,7 @@ export default function UnifiedMapPage() {
     if (!connectSource || !connectTarget) return;
     setConnecting(true);
     try {
-      const data = await apiAdmin('/api/network/auto-connect', {
+      const data = await apiAdmin<{ summary: string }>('/api/network/auto-connect', {
         method: 'POST',
         body: JSON.stringify({
           sourceId: connectSource.id,
@@ -216,7 +217,7 @@ export default function UnifiedMapPage() {
       Swal.fire({
         icon: 'success',
         title: 'Koneksi Berhasil!',
-        html: `<div class="text-sm text-left">${(data as any).summary}</div>`,
+        html: `<div class="text-sm text-left">${data.summary}</div>`,
         timer: 3000,
         showConfirmButton: false,
       });
@@ -225,8 +226,8 @@ export default function UnifiedMapPage() {
       setConnectSource(null);
       setConnectTarget(null);
       setRefreshKey(k => k + 1);
-    } catch (err: any) {
-      Swal.fire({ icon: 'error', title: 'Gagal Menghubungkan', text: err.message });
+    } catch (err: unknown) {
+      Swal.fire({ icon: 'error', title: 'Gagal Menghubungkan', text: err instanceof Error ? err.message : String(err) });
     } finally {
       setConnecting(false);
     }
@@ -248,8 +249,8 @@ export default function UnifiedMapPage() {
       await apiAdmin(`/api/network/connections?from=${fromId}&to=${toId}`, { method: 'DELETE' });
       Swal.fire({ icon: 'success', title: 'Koneksi dihapus', timer: 1500, showConfirmButton: false });
       setRefreshKey(k => k + 1);
-    } catch (err: any) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    } catch (err: unknown) {
+      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -558,7 +559,7 @@ export default function UnifiedMapPage() {
             lng={addCoords.lng}
             onClose={() => { setAddCoords(null); setInitialNodeType(null); setPendingNodeType(null); }}
             onCreated={handleNodeCreated}
-            initialNodeType={initialNodeType as any ?? undefined}
+            initialNodeType={(initialNodeType as AddNodeType | null) ?? undefined}
             onTypeChange={(type) => setPendingNodeType(type)}
           />
         )}

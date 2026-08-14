@@ -52,8 +52,8 @@ export default function RadTestPage() {
             });
 
             setResult(data.result);
-        } catch (error: any) {
-            addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to run radtest' });
+        } catch (error: unknown) {
+            addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to run radtest' });
         } finally {
             setTesting(false);
         }

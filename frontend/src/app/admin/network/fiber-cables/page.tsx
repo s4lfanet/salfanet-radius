@@ -150,8 +150,8 @@ export default function FiberCablesPage() {
       setIsDialogOpen(false);
       resetForm();
       loadCables();
-    } catch (error: any) {
-      await showError(error.message || t('fiberCable.saveFailed'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('fiberCable.saveFailed'));
     }
   };
 
@@ -179,8 +179,8 @@ export default function FiberCablesPage() {
       await apiAdmin(`/api/network/cables/${cable.id}`, { method: 'DELETE' });
       await showSuccess(t('fiberCable.deletedSuccess'));
       loadCables();
-    } catch (error: any) {
-      await showError(error.message || t('fiberCable.deleteFailed'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('fiberCable.deleteFailed'));
     }
   };
 
@@ -190,8 +190,8 @@ export default function FiberCablesPage() {
       setSelectedCable(data.cable ?? null);
       setExpandedTubes(new Set());
       setIsDetailDialogOpen(true);
-    } catch (error: any) {
-      await showError(error.message || t('fiberCable.loadFailed'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('fiberCable.loadFailed'));
     }
   };
 

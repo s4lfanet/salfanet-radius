@@ -16,6 +16,20 @@ interface GenieACSSettings {
   hasPassword?: boolean;
 }
 
+interface GenieACSSettingsResponse {
+  settings?: GenieACSSettings;
+}
+
+interface GenieACSDevicesResponse {
+  devices?: unknown[];
+}
+
+interface GenieACSTestResponse {
+  success: boolean;
+  deviceCount?: number;
+  error?: string;
+}
+
 export default function GenieACSSettingsPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
@@ -37,23 +51,23 @@ export default function GenieACSSettingsPage() {
   const fetchData = async () => {
     try {
       const [settingsData, devicesData] = await Promise.all([
-        apiAdmin('/api/settings/genieacs'),
-        apiAdmin('/api/settings/genieacs/devices')
+        apiAdmin<GenieACSSettingsResponse>('/api/settings/genieacs'),
+        apiAdmin<GenieACSDevicesResponse>('/api/settings/genieacs/devices')
       ]);
 
-      if ((settingsData as any)?.settings) {
+      if (settingsData?.settings) {
         setSettings({
-          id: (settingsData as any).settings.id ?? '',
-          host: (settingsData as any).settings.host ?? '',
-          username: (settingsData as any).settings.username ?? '',
+          id: settingsData.settings.id ?? '',
+          host: settingsData.settings.host ?? '',
+          username: settingsData.settings.username ?? '',
           password: '',
-          isActive: (settingsData as any).settings.isActive ?? false,
-          hasPassword: (settingsData as any).settings.hasPassword ?? false
+          isActive: settingsData.settings.isActive ?? false,
+          hasPassword: settingsData.settings.hasPassword ?? false
         });
       }
 
-      setDeviceCount((devicesData as any).devices?.length || 0);
-    } catch (error: any) {
+      setDeviceCount(devicesData.devices?.length || 0);
+    } catch (error: unknown) {
       console.error('Error:', error);
     } finally {
       setLoading(false);
@@ -94,14 +108,14 @@ export default function GenieACSSettingsPage() {
     }
     setTesting(true);
     try {
-      const data = await apiAdmin('/api/settings/genieacs/test', {
+      const data = await apiAdmin<GenieACSTestResponse>('/api/settings/genieacs/test', {
         method: 'POST',
         body: JSON.stringify({ host: settings.host, username: settings.username, password: settings.password })
       });
-      if ((data as any).success) {
-        addToast({ type: 'success', title: t('genieacs.connectionSuccess'), description: t('genieacs.serverReachable').replace('{count}', String((data as any).deviceCount || 0)), duration: 3000 });
+      if (data.success) {
+        addToast({ type: 'success', title: t('genieacs.connectionSuccess'), description: t('genieacs.serverReachable').replace('{count}', String(data.deviceCount || 0)), duration: 3000 });
       } else {
-        throw new Error((data as any).error || t('genieacs.connectionFailed'));
+        throw new Error(data.error || t('genieacs.connectionFailed'));
       }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedToConnect');

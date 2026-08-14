@@ -3,10 +3,81 @@
 import React, { useEffect, useState } from 'react';
 import { JointClosureDiagram, JointClosureDiagramV2, ODCDiagram, ODPDiagram } from '@/components/network/SplitterDiagram';
 import OTBDiagramV2 from '@/components/network/SplitterDiagram/OTBDiagramV2';
-import { SplitterNode, Port } from '@/components/network/SplitterDiagram/types';
+import { SplitterNode, Port, FiberConnection } from '@/components/network/SplitterDiagram/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import Link from 'next/link';
 import { apiAdmin } from '@/lib/api';
+
+// ─── Network diagram entity types ────────────────────────────────────────────
+interface OtbListItem { id: string; name: string; code: string; }
+interface JcListItem {
+  id: string; name: string; code: string;
+  latitude?: number; longitude?: number; address?: string;
+  hasSplitter?: boolean; fiberCount?: number; splitterRatio?: string;
+  metadata?: { ports?: unknown[] } | null;
+  connections?: unknown[];
+  status: string; installDate?: string;
+}
+interface OdcListItem {
+  id: string; name: string;
+  latitude?: number; longitude?: number;
+  portCount?: number; status: string;
+  olt?: { id: string; name: string } | null;
+}
+interface OdpListItem {
+  id: string; name?: string; code?: string;
+  latitude?: number; longitude?: number;
+  portCount?: number; status: string;
+  odc?: { id: string; name: string } | null;
+}
+
+interface OtbCore {
+  id: string; coreNumber: number; colorCode?: string; colorHex?: string;
+  status?: string; assignedToType?: string; assignedToId?: string;
+}
+interface OtbTube {
+  id: string; tubeNumber: number; colorCode?: string; colorHex?: string;
+  coreCount?: number; cores?: OtbCore[];
+}
+interface OtbIncomingCable {
+  id: string; code: string; name: string; cableType: string;
+  tubeCount: number; coresPerTube: number; tubes?: OtbTube[];
+}
+interface OtbOutputSegment {
+  id: string; fromPort: number; toDeviceId?: string;
+  toDevice?: { name: string }; status: string;
+}
+interface OtbDetail {
+  id: string; code: string; name: string; latitude?: number; longitude?: number;
+  address?: string; portCount?: number; status?: string; spliceTrayCount?: number;
+  network_olts?: { id: string; name: string };
+  feederCableAssignments?: unknown[];
+  outputSegments?: OtbOutputSegment[];
+  incomingCable?: OtbIncomingCable;
+}
+
+interface JcSplicePoint {
+  id: string; spliceType?: string; insertionLoss?: number; status?: string;
+  incomingCore?: { coreNumber?: number; tube?: { tubeNumber?: number; cable?: { code?: string } } };
+  outgoingCore?: { coreNumber?: number; tube?: { tubeNumber?: number; cable?: { code?: string } } };
+}
+interface JcSegment {
+  id: string; fromPort?: number; cableId?: string; fromDeviceId?: string;
+  fromDevice?: { name: string }; toDeviceId?: string; toDevice?: { name: string };
+  toDeviceType?: string; fiber_cables?: {
+    id: string; code?: string; name?: string; tubeCount?: number; coresPerTube?: number;
+  };
+}
+interface JcCable {
+  id: string; cableCode?: string; cableName?: string; direction: 'UPSTREAM' | 'DOWNSTREAM';
+  tubeCount: number; coresPerTube: number; tubeNumbers?: number[];
+}
+interface JcDetail {
+  id: string; code: string; name: string; latitude?: number; longitude?: number;
+  address?: string; status?: string; closureType?: string; spliceTrayCount?: number;
+  fiberCount?: number; connections?: unknown[]; totalSpliceCapacity?: number;
+  inputSegments?: JcSegment[]; outputSegments?: JcSegment[]; splicePoints?: JcSplicePoint[];
+}
 
 export default function NetworkDiagramsPage() {
   const [selectedTab, setSelectedTab] = React.useState<'otb' | 'jc' | 'odc' | 'odp'>('otb');
@@ -15,28 +86,28 @@ export default function NetworkDiagramsPage() {
 
   // State for real data
   const [loading, setLoading] = useState(true);
-  const [otbList, setOtbList] = useState<any[]>([]);
-  const [jcList, setJcList] = useState<any[]>([]);
-  const [odcList, setOdcList] = useState<any[]>([]);
-  const [odpList, setOdpList] = useState<any[]>([]);
+  const [otbList, setOtbList] = useState<OtbListItem[]>([]);
+  const [jcList, setJcList] = useState<JcListItem[]>([]);
+  const [odcList, setOdcList] = useState<OdcListItem[]>([]);
+  const [odpList, setOdpList] = useState<OdpListItem[]>([]);
   const [selectedOTB, setSelectedOTB] = useState<string>('');
   const [selectedJC, setSelectedJC] = useState<string>('');
   const [selectedODC, setSelectedODC] = useState<string>('');
   const [selectedODP, setSelectedODP] = useState<string>('');
 
   // OTB enriched detail (with incomingCable + outputSegments)
-  const [otbDetail, setOtbDetail] = useState<any | null>(null);
+  const [otbDetail, setOtbDetail] = useState<OtbDetail | null>(null);
   const [otbDetailLoading, setOtbDetailLoading] = useState(false);
 
   // OTB tube→JC assignment form state
-  const [jcListAll, setJcListAll] = useState<any[]>([]);
+  const [jcListAll, setJcListAll] = useState<JcListItem[]>([]);
   const [assignTube, setAssignTube] = useState('');
   const [assignJc, setAssignJc] = useState('');
   const [assignLength, setAssignLength] = useState('');
   const [assignSaving, setAssignSaving] = useState(false);
 
   // JC enriched detail (with inputSegments + outputSegments + splicePoints)
-  const [jcDetail, setJcDetail] = useState<any | null>(null);
+  const [jcDetail, setJcDetail] = useState<JcDetail | null>(null);
   const [jcDetailLoading, setJcDetailLoading] = useState(false);
 
   useEffect(() => {
@@ -47,33 +118,33 @@ export default function NetworkDiagramsPage() {
     try {
       setLoading(true);
       const [otbData, jcData, odcData, odpData] = await Promise.all([
-        apiAdmin('/api/network/otbs?limit=100'),
-        apiAdmin('/api/network/joint-closures'),
-        apiAdmin('/api/network/odcs'),
-        apiAdmin('/api/network/odps'),
+        apiAdmin<{ otbs?: OtbListItem[] }>('/api/network/otbs?limit=100'),
+        apiAdmin<{ success?: boolean; data?: JcListItem[] }>('/api/network/joint-closures'),
+        apiAdmin<{ odcs?: OdcListItem[] }>('/api/network/odcs'),
+        apiAdmin<{ odps?: OdpListItem[] }>('/api/network/odps'),
       ]);
 
-      if ((otbData as any).otbs) {
-        setOtbList((otbData as any).otbs);
-        if ((otbData as any).otbs.length > 0) setSelectedOTB((otbData as any).otbs[0].id);
+      if (otbData.otbs) {
+        setOtbList(otbData.otbs);
+        if (otbData.otbs.length > 0) setSelectedOTB(otbData.otbs[0].id);
       }
 
-      if ((jcData as any).success && (jcData as any).data) {
-        setJcList((jcData as any).data);
-        setJcListAll((jcData as any).data);
-        if ((jcData as any).data.length > 0) setSelectedJC((jcData as any).data[0].id);
+      if (jcData.success && jcData.data) {
+        setJcList(jcData.data);
+        setJcListAll(jcData.data);
+        if (jcData.data.length > 0) setSelectedJC(jcData.data[0].id);
       }
 
-      if ((odcData as any).odcs) {
-        setOdcList((odcData as any).odcs);
-        if ((odcData as any).odcs.length > 0) setSelectedODC((odcData as any).odcs[0].id);
+      if (odcData.odcs) {
+        setOdcList(odcData.odcs);
+        if (odcData.odcs.length > 0) setSelectedODC(odcData.odcs[0].id);
       }
 
-      if ((odpData as any).odps) {
-        setOdpList((odpData as any).odps);
-        if ((odpData as any).odps.length > 0) setSelectedODP((odpData as any).odps[0].id);
+      if (odpData.odps) {
+        setOdpList(odpData.odps);
+        if (odpData.odps.length > 0) setSelectedODP(odpData.odps[0].id);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load network data:', error);
     } finally {
       setLoading(false);
@@ -85,8 +156,8 @@ export default function NetworkDiagramsPage() {
     if (!selectedOTB) return;
     setOtbDetail(null);
     setOtbDetailLoading(true);
-    apiAdmin(`/api/network/otbs/${selectedOTB}`)
-      .then((d: any) => setOtbDetail(d))
+    apiAdmin<OtbDetail>(`/api/network/otbs/${selectedOTB}`)
+      .then((d) => setOtbDetail(d))
       .catch(console.error)
       .finally(() => setOtbDetailLoading(false));
   }, [selectedOTB]);
@@ -96,8 +167,8 @@ export default function NetworkDiagramsPage() {
     if (!selectedJC) return;
     setJcDetail(null);
     setJcDetailLoading(true);
-    apiAdmin(`/api/network/joint-closures/${selectedJC}`)
-      .then((d: any) => setJcDetail(d.data ?? d))
+    apiAdmin<{ data?: JcDetail } | JcDetail>(`/api/network/joint-closures/${selectedJC}`)
+      .then((d) => setJcDetail((d as { data?: JcDetail }).data ?? (d as JcDetail)))
       .catch(console.error)
       .finally(() => setJcDetailLoading(false));
   }, [selectedJC]);
@@ -112,13 +183,13 @@ export default function NetworkDiagramsPage() {
         body: JSON.stringify({ tubeNumber: parseInt(assignTube), jcId: assignJc, lengthMeters: assignLength || undefined }),
       });
       // Re-fetch enriched OTB
-      const refreshed = await apiAdmin(`/api/network/otbs/${selectedOTB}`);
+      const refreshed = await apiAdmin<OtbDetail>(`/api/network/otbs/${selectedOTB}`);
       setOtbDetail(refreshed);
       setAssignTube('');
       setAssignJc('');
       setAssignLength('');
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : String(err));
     } finally {
       setAssignSaving(false);
     }
@@ -129,9 +200,9 @@ export default function NetworkDiagramsPage() {
     if (!confirm('Hapus penugasan tabung ini?')) return;
     try {
       await apiAdmin(`/api/network/otbs/${selectedOTB}/segments?segmentId=${segmentId}`, { method: 'DELETE' });
-      const refreshed = await apiAdmin(`/api/network/otbs/${selectedOTB}`);
+      const refreshed = await apiAdmin<OtbDetail>(`/api/network/otbs/${selectedOTB}`);
       setOtbDetail(refreshed);
-    } catch (err: any) { alert(err.message); }
+    } catch (err: unknown) { alert(err instanceof Error ? err.message : String(err)); }
   };
 
   // Transform JC data to SplitterNode format
@@ -151,9 +222,9 @@ export default function NetworkDiagramsPage() {
       outputPorts: jc.fiberCount || 16,
       splittingRatio: jc.splitterRatio || `1:${jc.fiberCount || 16}`,
       fiberCount: jc.fiberCount || 0,
-      ports: jc.metadata?.ports || [],
-      connections: jc.connections || [],
-      status: jc.status.toUpperCase(),
+      ports: (jc.metadata?.ports || []) as Port[],
+      connections: (jc.connections || []) as FiberConnection[],
+      status: jc.status.toUpperCase() as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
       installDate: jc.installDate ? new Date(jc.installDate) : undefined,
     };
   };
@@ -181,7 +252,7 @@ export default function NetworkDiagramsPage() {
       } : undefined,
       ports: [],
       connections: [],
-      status: odc.status.toUpperCase(),
+      status: odc.status.toUpperCase() as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
     };
   };
 
@@ -208,7 +279,7 @@ export default function NetworkDiagramsPage() {
       } : undefined,
       ports: [],
       connections: [],
-      status: odp.status.toUpperCase(),
+      status: odp.status.toUpperCase() as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
     };
   };
 
@@ -503,7 +574,7 @@ export default function NetworkDiagramsPage() {
                               splittingRatio: 'Patch-through',
                               ports: [],
                               connections: [],
-                              status: (otbDetail.status || 'ACTIVE').toUpperCase(),
+                              status: (otbDetail.status || 'ACTIVE').toUpperCase() as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
                               hasSplitter: false,
                               spliceTrayCount: otbDetail.spliceTrayCount ?? 1,
                               upstreamNode: otbDetail.network_olts
@@ -514,15 +585,15 @@ export default function NetworkDiagramsPage() {
                                 outputSegments: otbDetail.outputSegments ?? [],
                               },
                               incomingCable: otbDetail.incomingCable
-                                ? {
+                                ? ({
                                     id: otbDetail.incomingCable.id,
                                     code: otbDetail.incomingCable.code,
                                     name: otbDetail.incomingCable.name,
                                     cableType: otbDetail.incomingCable.cableType,
                                     tubeCount: otbDetail.incomingCable.tubeCount,
                                     coresPerTube: otbDetail.incomingCable.coresPerTube,
-                                    tubes: (otbDetail.incomingCable.tubes ?? []).map((tube: any) => {
-                                      const coresList = (tube.cores ?? []).map((core: any) => ({
+                                    tubes: (otbDetail.incomingCable.tubes ?? []).map((tube) => {
+                                      const coresList = (tube.cores ?? []).map((core) => ({
                                         id: core.id,
                                         coreNumber: core.coreNumber,
                                         colorCode: core.colorCode || '',
@@ -537,11 +608,11 @@ export default function NetworkDiagramsPage() {
                                         colorCode: tube.colorCode || '',
                                         colorHex: tube.colorHex || '',
                                         totalCores: coresList.length || tube.coreCount || 0,
-                                        usedCores: coresList.filter((c: any) => c.status !== 'AVAILABLE').length,
+                                        usedCores: coresList.filter((c) => c.status !== 'AVAILABLE').length,
                                         cores: coresList,
                                       };
                                     }),
-                                  }
+                                  } as unknown as SplitterNode['incomingCable'])
                                 : undefined,
                             }}
                             showTubeDetail
@@ -560,7 +631,7 @@ export default function NetworkDiagramsPage() {
                         <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Penugasan Tabung → JC</h3>
 
                         {/* Assignment table */}
-                        {otbDetail?.outputSegments?.length > 0 ? (
+                        {(otbDetail?.outputSegments?.length ?? 0) > 0 ? (
                           <div className="overflow-x-auto">
                             <table className="w-full text-xs">
                               <thead>
@@ -572,7 +643,7 @@ export default function NetworkDiagramsPage() {
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
-                                {otbDetail.outputSegments.map((seg: any) => (
+                                {otbDetail?.outputSegments?.map((seg) => (
                                   <tr key={seg.id}>
                                     <td className="py-1.5 font-mono text-gray-700 dark:text-gray-300">T{seg.fromPort}</td>
                                     <td className="py-1.5 text-gray-700 dark:text-gray-300">
@@ -687,13 +758,13 @@ export default function NetworkDiagramsPage() {
 
                         {!jcDetailLoading && jcDetail && (() => {
                           // Group input segments by cable ID to avoid duplicates (tubes from same cable)
-                          const inputCableMap = new Map<string, any>();
+                          const inputCableMap = new Map<string, JcCable>();
                           for (const seg of (jcDetail.inputSegments ?? [])) {
-                            const cableId = seg.fiber_cables?.id ?? seg.cableId;
+                            const cableId = seg.fiber_cables?.id ?? seg.cableId ?? '';
                             if (!inputCableMap.has(cableId)) {
                               inputCableMap.set(cableId, {
                                 id: cableId,
-                                cableCode: seg.fiber_cables?.code ?? seg.cableId,
+                                cableCode: seg.fiber_cables?.code ?? seg.cableId ?? '',
                                 cableName: seg.fiber_cables?.name,
                                 direction: 'UPSTREAM' as const,
                                 tubeCount: seg.fiber_cables?.tubeCount ?? 1,
@@ -701,16 +772,16 @@ export default function NetworkDiagramsPage() {
                                 tubeNumbers: [] as number[],
                               });
                             }
-                            if (seg.fromPort) inputCableMap.get(cableId).tubeNumbers.push(seg.fromPort);
+                            if (seg.fromPort) { const entry = inputCableMap.get(cableId); if (entry) (entry.tubeNumbers ??= []).push(seg.fromPort); }
                           }
                           // Group output segments by cable ID
-                          const outputCableMap = new Map<string, any>();
+                          const outputCableMap = new Map<string, JcCable>();
                           for (const seg of (jcDetail.outputSegments ?? [])) {
-                            const cableId = seg.fiber_cables?.id ?? seg.cableId;
+                            const cableId = seg.fiber_cables?.id ?? seg.cableId ?? '';
                             if (!outputCableMap.has(cableId)) {
                               outputCableMap.set(cableId, {
                                 id: cableId,
-                                cableCode: seg.fiber_cables?.code ?? seg.cableId,
+                                cableCode: seg.fiber_cables?.code ?? seg.cableId ?? '',
                                 cableName: seg.fiber_cables?.name,
                                 direction: 'DOWNSTREAM' as const,
                                 tubeCount: seg.fiber_cables?.tubeCount ?? 1,
@@ -720,7 +791,7 @@ export default function NetworkDiagramsPage() {
                           }
                           const cables = [...inputCableMap.values(), ...outputCableMap.values()];
                           // Build splices[] for JointClosureDiagramV2
-                          const splices = (jcDetail.splicePoints ?? []).map((sp: any) => ({
+                          const splices = (jcDetail.splicePoints ?? []).map((sp) => ({
                             id: sp.id,
                             fromTube: sp.incomingCore?.tube?.tubeNumber ?? 1,
                             fromCore: sp.incomingCore?.coreNumber ?? 1,
@@ -747,13 +818,11 @@ export default function NetworkDiagramsPage() {
                                   outputPorts: jcDetail.fiberCount || 16,
                                   splittingRatio: `1:${jcDetail.fiberCount || 16}`,
                                   ports: [],
-                                  connections: jcDetail.connections || [],
-                                  status: (jcDetail.status || 'active').toUpperCase(),
-                                  closureType: jcDetail.closureType,
+                                  connections: (jcDetail.connections || []) as FiberConnection[],
+                                  status: (jcDetail.status || 'active').toUpperCase() as 'ACTIVE' | 'MAINTENANCE' | 'INACTIVE',
                                   spliceTrayCount: jcDetail.spliceTrayCount,
-                                  cables,
-                                  splices,
-                                }}
+                                  metadata: { closureType: jcDetail.closureType, cables, splices },
+                                } as SplitterNode}
                                 showSpliceDetail
                               />
                             </div>
@@ -770,16 +839,16 @@ export default function NetworkDiagramsPage() {
                             <p className="text-xs text-gray-400 dark:text-gray-500">Belum ada kabel yang masuk.</p>
                           ) : (() => {
                             // Group by cable
-                            const grouped = new Map<string, { cable: any; segments: any[] }>();
-                            for (const seg of jcDetail.inputSegments) {
-                              const cid = seg.fiber_cables?.id ?? seg.cableId;
+                            const grouped = new Map<string, { cable: JcSegment['fiber_cables']; segments: JcSegment[] }>();
+                            for (const seg of (jcDetail?.inputSegments ?? [])) {
+                              const cid = seg.fiber_cables?.id ?? seg.cableId ?? '';
                               if (!grouped.has(cid)) grouped.set(cid, { cable: seg.fiber_cables, segments: [] });
                               grouped.get(cid)!.segments.push(seg);
                             }
                             return (
                               <div className="space-y-2">
                                 {[...grouped.entries()].map(([cid, { cable, segments }]) => {
-                                  const tubeNums = segments.map((s: any) => s.fromPort).filter(Boolean).sort((a: number, b: number) => a - b);
+                                  const tubeNums = segments.map((s) => s.fromPort).filter(Boolean).sort((a?: number, b?: number) => (a ?? 0) - (b ?? 0));
                                    const tubes = cable?.tubeCount ?? (tubeNums.length || 1);
                                   const cores = cable?.coresPerTube ?? 12;
                                   const fromDevice = segments[0]?.fromDevice;
@@ -793,7 +862,7 @@ export default function NetworkDiagramsPage() {
                                       </p>
                                       {tubeNums.length > 0 && (
                                         <p className="text-gray-400 dark:text-gray-500">
-                                          Tabung: {tubeNums.map((n: number) => `T${n}`).join(', ')}
+                                          Tabung: {tubeNums.map((n?: number) => `T${n}`).join(', ')}
                                         </p>
                                       )}
                                       <p className="text-gray-400 dark:text-gray-500">
@@ -813,9 +882,9 @@ export default function NetworkDiagramsPage() {
                           {(jcDetail?.outputSegments?.length ?? 0) === 0 ? (
                             <p className="text-xs text-gray-400 dark:text-gray-500">Belum ada kabel yang keluar.</p>
                           ) : (() => {
-                            const grouped = new Map<string, { cable: any; segments: any[] }>();
-                            for (const seg of jcDetail.outputSegments) {
-                              const cid = seg.fiber_cables?.id ?? seg.cableId;
+                            const grouped = new Map<string, { cable: JcSegment['fiber_cables']; segments: JcSegment[] }>();
+                            for (const seg of (jcDetail?.outputSegments ?? [])) {
+                              const cid = seg.fiber_cables?.id ?? seg.cableId ?? '';
                               if (!grouped.has(cid)) grouped.set(cid, { cable: seg.fiber_cables, segments: [] });
                               grouped.get(cid)!.segments.push(seg);
                             }
@@ -852,7 +921,7 @@ export default function NetworkDiagramsPage() {
                           </p>
                           {(jcDetail?.spliceTrayCount ?? 0) > 0 && (
                             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                              Tray: {jcDetail.spliceTrayCount} | Kapasitas: {jcDetail.totalSpliceCapacity}
+                              Tray: {jcDetail?.spliceTrayCount} | Kapasitas: {jcDetail?.totalSpliceCapacity}
                             </p>
                           )}
                         </div>

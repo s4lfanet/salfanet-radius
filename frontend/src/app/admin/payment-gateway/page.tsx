@@ -140,8 +140,8 @@ export default function PaymentGatewayPage() {
 
       await showSuccess(`${provider.charAt(0).toUpperCase() + provider.slice(1)} ${t('paymentGateway.configSaved')}`);
       fetchConfigs();
-    } catch (error: any) {
-      await showError(error.message || t('paymentGateway.failedToSave'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('paymentGateway.failedToSave'));
     } finally {
       setSaving(false);
     }

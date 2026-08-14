@@ -52,6 +52,26 @@ interface VpnClient {
   resolvedPassword?: string | null
 }
 
+interface RoutersListResponse {
+  routers: Router[]
+  vpnClients: VpnClient[]
+}
+
+interface RoutersStatusResponse {
+  statusMap: Record<string, RouterStatus>
+}
+
+interface RouterSaveResponse {
+  router?: { id: string }
+}
+
+interface RadiusSetupResponse {
+  script: string
+  scriptRos6?: string
+  scriptRos7?: string
+  config: Record<string, unknown>
+}
+
 export default function RouterPage() {
   const { t } = useTranslation()
   const { addToast } = useToast();
@@ -109,14 +129,14 @@ export default function RouterPage() {
 
   const loadRouters = async () => {
     try {
-      const data = await apiAdmin('/api/network/routers')
-      setRouters((data as any).routers || [])
-      setVpnClients((data as any).vpnClients || [])
+      const data = await apiAdmin<RoutersListResponse>('/api/network/routers')
+      setRouters(data.routers || [])
+      setVpnClients(data.vpnClients || [])
 
-      if ((data as any).routers && (data as any).routers.length > 0) {
-        checkRoutersStatus((data as any).routers.map((r: Router) => r.id))
+      if (data.routers && data.routers.length > 0) {
+        checkRoutersStatus(data.routers.map((r) => r.id))
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load routers:', error)
     } finally {
       setLoading(false)
@@ -125,12 +145,12 @@ export default function RouterPage() {
 
   const checkRoutersStatus = async (routerIds: string[]) => {
     try {
-      const data = await apiAdmin('/api/network/routers/status', {
+      const data = await apiAdmin<RoutersStatusResponse>('/api/network/routers/status', {
         method: 'POST',
         body: JSON.stringify({ routerIds }),
       })
-      setStatusMap((data as any).statusMap || {})
-    } catch (error: any) {
+      setStatusMap(data.statusMap || {})
+    } catch (error: unknown) {
       console.error('Check status error:', error)
     }
   }
@@ -236,9 +256,9 @@ export default function RouterPage() {
           : result.message
         showError(diagMsg)
       }
-    } catch (error: any) {
-      showError(error.message || t('network.failedTestConnection'))
-      setTestResult({ success: false, message: error.message || t('network.failedTestConnection') })
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('network.failedTestConnection'))
+      setTestResult({ success: false, message: (error instanceof Error ? error.message : String(error)) || t('network.failedTestConnection') })
     } finally {
       setTesting(false)
     }
@@ -259,7 +279,7 @@ export default function RouterPage() {
       const method = editingRouter ? 'PUT' : 'POST'
       const body = editingRouter ? { ...formData, id: editingRouter.id } : formData
 
-      const data = await apiAdmin(url, {
+      const data = await apiAdmin<RouterSaveResponse>(url, {
         method,
         body: JSON.stringify(body),
       })
@@ -270,12 +290,12 @@ export default function RouterPage() {
       resetForm()
       loadRouters()
       // Auto-tampilkan RADIUS script yang sudah di-update
-      const savedRouterId = (data as any).router?.id || (editingRouter?.id)
+      const savedRouterId = data.router?.id || (editingRouter?.id)
       if (savedRouterId) {
         handleSetupRadius(savedRouterId)
       }
-    } catch (error: any) {
-      showError(error.message || t('network.failedSaveRouter'))
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('network.failedSaveRouter'))
     } finally {
       setCreating(false)
     }
@@ -315,8 +335,8 @@ export default function RouterPage() {
       await apiAdmin(`/api/network/routers?id=${id}`, { method: 'DELETE' })
       showSuccess(t('network.routerDeleted'))
       loadRouters()
-    } catch (error: any) {
-      showError(error.message || t('network.failedDeleteRouter'))
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('network.failedDeleteRouter'))
     }
   }
 
@@ -326,14 +346,14 @@ export default function RouterPage() {
     setSettingUpRadius(routerId)
 
     try {
-      const result = await apiAdmin(`/api/network/routers/${routerId}/setup-radius`, { method: 'POST' })
+      const result = await apiAdmin<RadiusSetupResponse>(`/api/network/routers/${routerId}/setup-radius`, { method: 'POST' })
 
-      setScriptModalData({ script: (result as any).script, scriptRos6: (result as any).scriptRos6, scriptRos7: (result as any).scriptRos7, config: (result as any).config })
+      setScriptModalData({ script: result.script, scriptRos6: result.scriptRos6, scriptRos7: result.scriptRos7, config: result.config })
       setScriptRosTab(7)
       setShowScriptModal(true)
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Setup RADIUS error:', error)
-      showError(error.message || t('network.failedGenerateRadiusScript'))
+      showError((error instanceof Error ? error.message : String(error)) || t('network.failedGenerateRadiusScript'))
     } finally {
       setSettingUpRadius(null)
     }

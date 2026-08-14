@@ -66,16 +66,16 @@ export default function NotificationsPage() {
         url += `&type=${categoryFilter}`;
       }
       
-      const data = await apiAdmin(url);
+      const data = await apiAdmin<{ success: boolean; notifications: Notification[]; unreadCount: number; categoryCounts?: Record<string, number> }>(url);
 
-      if ((data as any).success) {
-        setNotifications((data as any).notifications);
-        setUnreadCount((data as any).unreadCount);
-        if ((data as any).categoryCounts) {
-          setCategoryCounts((data as any).categoryCounts);
+      if (data.success) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+        if (data.categoryCounts) {
+          setCategoryCounts(data.categoryCounts);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load notifications error:', error);
     } finally {
       setLoading(false);
@@ -95,7 +95,7 @@ export default function NotificationsPage() {
       });
 
       loadNotifications();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Mark as read error:', error);
       toast({
         variant: "destructive",
@@ -118,7 +118,7 @@ export default function NotificationsPage() {
       });
 
       loadNotifications();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Mark all as read error:', error);
       toast({
         variant: "destructive",
@@ -140,7 +140,7 @@ export default function NotificationsPage() {
       });
 
       loadNotifications();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete notification error:', error);
       toast({
         variant: "destructive",
@@ -165,7 +165,7 @@ export default function NotificationsPage() {
 
       setSelectedIds([]);
       loadNotifications();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete selected error:', error);
       toast({
         variant: "destructive",

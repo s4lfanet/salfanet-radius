@@ -17,6 +17,30 @@ interface VpScript {
   syncError?: string | null;
 }
 
+interface VpListResponse {
+  success: boolean;
+  error?: string;
+  data?: VpScript[];
+}
+
+interface VpSaveResponse {
+  success: boolean;
+  error?: string;
+  data?: { syncError?: string | null };
+}
+
+interface VpSyncAllResponse {
+  success: boolean;
+  error?: string;
+  data?: { virtualParameters?: { success?: number; failed?: number } };
+}
+
+interface VpRestoreResponse {
+  success: boolean;
+  error?: string;
+  results?: { vpScripts?: { ok?: number; errors?: string[] } };
+}
+
 const SAMPLE_SCRIPT = `// Virtual Parameter script
 // args[0] is the current value declared from GenieACS
 // Return the computed value for this virtual parameter
@@ -67,11 +91,11 @@ export default function VpScriptsPage() {
     setLoading(true);
     setError(null);
     try {
-      const json = await apiAdmin('/api/genieacs/virtual-parameters');
-      if (!(json as any).success) throw new Error((json as any).error || 'Failed to load');
-      setItems((json as any).data || []);
-    } catch (e: any) {
-      setError(e.message);
+      const json = await apiAdmin<VpListResponse>('/api/genieacs/virtual-parameters');
+      if (!json.success) throw new Error(json.error || 'Failed to load');
+      setItems(json.data || []);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setLoading(false);
     }
@@ -97,20 +121,20 @@ export default function VpScriptsPage() {
       const url = isNew
         ? '/api/genieacs/virtual-parameters'
         : `/api/genieacs/virtual-parameters/${encodeURIComponent(name)}`;
-      const json = await apiAdmin(url, {
+      const json = await apiAdmin<VpSaveResponse>(url, {
         method: isNew ? 'POST' : 'PUT',
         body: JSON.stringify({ _id: name, script: editing.script, description: editing.description }),
       });
-      if (!(json as any).success) throw new Error((json as any).error || 'Gagal menyimpan');
-      if ((json as any).data?.syncError) {
-        flash(`Tersimpan di Prisma, tapi sync GenieACS gagal: ${(json as any).data.syncError}`);
+      if (!json.success) throw new Error(json.error || 'Gagal menyimpan');
+      if (json.data?.syncError) {
+        flash(`Tersimpan di Prisma, tapi sync GenieACS gagal: ${json.data.syncError}`);
       } else {
         flash(`VP "${name}" berhasil disimpan dan disinkronkan ke GenieACS`);
       }
       setEditing(null);
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
     }
@@ -120,14 +144,14 @@ export default function VpScriptsPage() {
     if (!confirm(`Hapus VP script "${id}"? Ini juga akan menghapusnya dari GenieACS.`)) return;
     setError(null);
     try {
-      const json = await apiAdmin(`/api/genieacs/virtual-parameters/${encodeURIComponent(id)}`, {
+      const json = await apiAdmin<VpSaveResponse>(`/api/genieacs/virtual-parameters/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
-      if (!(json as any).success) throw new Error((json as any).error || 'Gagal menghapus');
+      if (!json.success) throw new Error(json.error || 'Gagal menghapus');
       flash(`VP "${id}" berhasil dihapus`);
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   };
 
@@ -137,19 +161,19 @@ export default function VpScriptsPage() {
     try {
       const item = items.find((x) => x._id === id);
       if (!item) return;
-      const json = await apiAdmin(`/api/genieacs/virtual-parameters/${encodeURIComponent(id)}`, {
+      const json = await apiAdmin<VpSaveResponse>(`/api/genieacs/virtual-parameters/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify({ script: item.script, description: item.description }),
       });
-      if (!(json as any).success) throw new Error((json as any).error || 'Gagal sync');
-      if ((json as any).data?.syncError) {
-        setError(`Sync gagal untuk "${id}": ${(json as any).data.syncError}`);
+      if (!json.success) throw new Error(json.error || 'Gagal sync');
+      if (json.data?.syncError) {
+        setError(`Sync gagal untuk "${id}": ${json.data.syncError}`);
       } else {
         flash(`VP "${id}" berhasil disinkronkan`);
       }
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSyncing(null);
     }
@@ -159,16 +183,16 @@ export default function VpScriptsPage() {
     setSyncingAll(true);
     setError(null);
     try {
-      const json = await apiAdmin('/api/genieacs/sync', {
+      const json = await apiAdmin<VpSyncAllResponse>('/api/genieacs/sync', {
         method: 'POST',
         body: JSON.stringify({ types: ['virtualParameters'] }),
       });
-      if (!(json as any).success) throw new Error((json as any).error || 'Sync gagal');
-      const r = (json as any).data?.virtualParameters;
+      if (!json.success) throw new Error(json.error || 'Sync gagal');
+      const r = json.data?.virtualParameters;
       flash(`Sync selesai: ${r?.success ?? 0} berhasil, ${r?.failed ?? 0} gagal`);
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSyncingAll(false);
     }
@@ -189,16 +213,16 @@ export default function VpScriptsPage() {
         setError('File tidak valid: tidak ada data vpScripts ditemukan');
         return;
       }
-      const json = await apiAdmin('/api/genieacs/backup', {
+      const json = await apiAdmin<VpRestoreResponse>('/api/genieacs/backup', {
         method: 'POST',
         body: JSON.stringify({ vpScripts }),
       });
-      if (!(json as any).success) throw new Error((json as any).error || 'Restore gagal');
-      const r = (json as any).results?.vpScripts;
+      if (!json.success) throw new Error(json.error || 'Restore gagal');
+      const r = json.results?.vpScripts;
       flash(`Restore selesai: ${r?.ok ?? 0} VP berhasil dipulihkan${r?.errors?.length ? `, ${r.errors.length} error` : ''}`);
       await load();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setRestoring(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

@@ -15,6 +15,16 @@ interface Template {
   isActive: boolean;
 }
 
+interface TemplatesResponse {
+  success: boolean;
+  data: Template[];
+}
+
+interface TemplateUpdateResponse {
+  success: boolean;
+  error?: string;
+}
+
 const templateConfig = {
   'registration-confirmation': {
     title: '✅ Konfirmasi Pendaftaran',
@@ -185,18 +195,18 @@ export default function WhatsAppTemplatesPage() {
   const fetchTemplates = async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin('/api/whatsapp/templates');
+      const data = await apiAdmin<TemplatesResponse>('/api/whatsapp/templates');
 
-      if ((data as any).success) {
+      if (data.success) {
         const templatesMap: Record<string, Template> = {};
-        (data as any).data.forEach((t: Template) => {
+        data.data.forEach((t: Template) => {
           templatesMap[t.type] = t;
         });
         setTemplates(templatesMap);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Fetch templates error:', error);
-      showError(error.message || t('whatsapp.failedLoadTemplate'));
+      showError((error instanceof Error ? error.message : String(error)) || t('whatsapp.failedLoadTemplate'));
     } finally {
       setLoading(false);
     }
@@ -208,20 +218,20 @@ export default function WhatsAppTemplatesPage() {
 
     setSaving(type);
     try {
-      const data = await apiAdmin(`/api/whatsapp/templates/${template.id}`, {
+      const data = await apiAdmin<TemplateUpdateResponse>(`/api/whatsapp/templates/${template.id}`, {
         method: 'PUT',
         body: JSON.stringify({ message }),
       });
 
-      if ((data as any).success) {
+      if (data.success) {
         showSuccess(t('whatsapp.templateUpdated'));
         fetchTemplates();
       } else {
-        showError((data as any).error || t('whatsapp.failedUpdateTemplate'));
+        showError(data.error || t('whatsapp.failedUpdateTemplate'));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Update template error:', error);
-      showError(error.message || t('whatsapp.failedUpdateTemplate'));
+      showError((error instanceof Error ? error.message : String(error)) || t('whatsapp.failedUpdateTemplate'));
     } finally {
       setSaving(null);
     }

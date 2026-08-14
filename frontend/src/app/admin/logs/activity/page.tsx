@@ -72,8 +72,8 @@ export default function ActivityLogsPage() {
       } else {
         setError(data.error || 'Gagal memuat log aktivitas');
       }
-    } catch (e: any) {
-      setError(e.message || 'Terjadi kesalahan');
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : String(e)) || 'Terjadi kesalahan');
     } finally {
       setLoading(false);
     }

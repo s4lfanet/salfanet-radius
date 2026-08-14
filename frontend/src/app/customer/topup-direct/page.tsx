@@ -213,7 +213,7 @@ export default function TopUpDirectPage() {
 
         router.push('/customer');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Top-Up Direct Frontend] Fetch error:', error);
 
       showError(t('customer.failedContactServer'), t('customer.connectionError'));

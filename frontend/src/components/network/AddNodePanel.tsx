@@ -530,7 +530,7 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
       const jcObj = jcs.find(j => j.id === jcId);
       setExisting(prev => [...prev.filter(s => s.fromPort !== tubeNum), { ...data, fromPort: tubeNum, toDevice: jcObj ?? { name: jcId } }]);
       setPendingJC(prev => { const n = { ...prev }; delete n[tubeKey]; return n; });
-    } catch (err: any) { alert(err.message); }
+    } catch (err: unknown) { alert(err instanceof Error ? err.message : String(err)); }
     finally { setSaving(null); }
   };
 
@@ -650,8 +650,8 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
       Swal.fire({ icon: 'success', title: `OLT "${olt.name}" ditempatkan`, timer: 1500, showConfirmButton: false });
       onCreated({ ...olt, latitude: lat, longitude: lng, type: 'OLT' });
       onClose();
-    } catch (err: any) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    } catch (err: unknown) {
+      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }
@@ -705,8 +705,8 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
         Swal.fire({ icon: 'success', title: 'Node berhasil ditambahkan', text: selectedType === 'JOINT_CLOSURE' ? 'Gunakan 🔗 Hubungkan di peta untuk menghubungkan ke device lain' : undefined, timer: 2000, showConfirmButton: false });
         onClose();
       }
-    } catch (err: any) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    } catch (err: unknown) {
+      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
     } finally {
       setLoading(false);
     }

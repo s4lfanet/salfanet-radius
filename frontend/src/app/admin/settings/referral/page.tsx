@@ -18,6 +18,12 @@ interface ReferralConfig {
   referredAmount: number;
 }
 
+interface ReferralConfigResponse {
+  success: boolean;
+  config: ReferralConfig;
+  error?: string;
+}
+
 export default function ReferralSettingsPage() {
   const { addToast } = useToast();
   const { t } = useTranslation();
@@ -37,11 +43,11 @@ export default function ReferralSettingsPage() {
 
   const fetchConfig = async () => {
     try {
-      const data = await apiAdmin('/api/admin/referrals/config');
-      if ((data as any).success) {
-        setConfig((data as any).config);
+      const data = await apiAdmin<ReferralConfigResponse>('/api/admin/referrals/config');
+      if (data.success) {
+        setConfig(data.config);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Fetch config error:', error);
     } finally {
       setLoading(false);
@@ -51,19 +57,19 @@ export default function ReferralSettingsPage() {
   const saveConfig = async () => {
     setSaving(true);
     try {
-      const data = await apiAdmin('/api/admin/referrals/config', {
+      const data = await apiAdmin<ReferralConfigResponse>('/api/admin/referrals/config', {
         method: 'PUT',
         body: JSON.stringify(config),
       });
 
-      if ((data as any).success) {
+      if (data.success) {
         addToast({ type: 'success', title: 'Berhasil!', description: t('referrals.saveSuccess') });
-        setConfig((data as any).config);
+        setConfig(data.config);
       } else {
-        addToast({ type: 'error', title: 'Error', description: (data as any).error || t('referrals.saveError') });
+        addToast({ type: 'error', title: 'Error', description: data.error || t('referrals.saveError') });
       }
-    } catch (e: any) {
-      addToast({ type: 'error', title: 'Error', description: e.message || t('referrals.saveError') });
+    } catch (e: unknown) {
+      addToast({ type: 'error', title: 'Error', description: (e instanceof Error ? e.message : String(e)) || t('referrals.saveError') });
     } finally {
       setSaving(false);
     }

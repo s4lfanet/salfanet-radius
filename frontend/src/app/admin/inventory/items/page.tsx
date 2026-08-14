@@ -99,16 +99,16 @@ export default function InventoryItemsPage() {
     setLoading(true);
     try {
       const [itemsData, categoriesData, suppliersData] = await Promise.all([
-        apiAdmin('/api/inventory/items'),
-        apiAdmin('/api/inventory/categories'),
-        apiAdmin('/api/inventory/suppliers'),
+        apiAdmin<Item[]>('/api/inventory/items'),
+        apiAdmin<Category[]>('/api/inventory/categories'),
+        apiAdmin<Supplier[]>('/api/inventory/suppliers'),
       ]);
 
-      setItems(itemsData as any);
-      setCategories(categoriesData as any);
-      setSuppliers(suppliersData as any);
-    } catch (error: any) {
-      await showError(error.message || t('common.error'));
+      setItems(itemsData);
+      setCategories(categoriesData);
+      setSuppliers(suppliersData);
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -178,8 +178,8 @@ export default function InventoryItemsPage() {
       setEditingItem(null);
       resetForm();
       loadData();
-    } catch (error: any) {
-      await showError(error.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 
@@ -198,8 +198,8 @@ export default function InventoryItemsPage() {
 
       await showSuccess(t('inventory.itemDeleted'));
       loadData();
-    } catch (error: any) {
-      await showError(error.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 

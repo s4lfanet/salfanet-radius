@@ -95,14 +95,14 @@ export default function PPPoESessionsPage() {
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const data = await apiAdmin(`/api/sessions?${params}`);
-      setSessions((data as any).sessions || []);
+      const data = await apiAdmin<{ sessions: Session[]; stats: Stats; pagination: Pagination }>(`/api/sessions?${params}`);
+      setSessions(data.sessions || []);
       setFetchedAt(Date.now());
-      setStats((data as any).stats);
-      if ((data as any).pagination) {
-        setPagination((data as any).pagination);
+      setStats(data.stats);
+      if (data.pagination) {
+        setPagination(data.pagination);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch sessions:', error);
     } finally {
       setLoading(false);
@@ -124,9 +124,9 @@ export default function PPPoESessionsPage() {
 
   const fetchRouters = async () => {
     try {
-      const data = await apiAdmin('/api/network/routers');
-      setRouters((data as any).routers || []);
-    } catch (error: any) {
+      const data = await apiAdmin<{ routers: Router[] }>('/api/network/routers');
+      setRouters(data.routers || []);
+    } catch (error: unknown) {
       console.error('Failed to fetch routers:', error);
     }
   };
@@ -174,19 +174,19 @@ export default function PPPoESessionsPage() {
 
     setDisconnecting(true);
     try {
-      const data = await apiAdmin('/api/sessions/disconnect', {
+      const data = await apiAdmin<{ success: boolean; disconnected: number; error?: string }>('/api/sessions/disconnect', {
         method: 'POST',
         body: JSON.stringify({ sessionIds })
       });
-      if ((data as any).success) {
-        addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', (data as any).disconnected) });
+      if (data.success) {
+        addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', String(data.disconnected)) });
         setSelectedSessions(new Set());
         fetchSessions(pagination.page);
       } else {
-        addToast({ type: 'error', title: t('common.error'), description: (data as any).error || t('sessions.failedDisconnect') });
+        addToast({ type: 'error', title: t('common.error'), description: data.error || t('sessions.failedDisconnect') });
       }
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('sessions.failedDisconnectSession') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('sessions.failedDisconnectSession') });
     } finally {
       setDisconnecting(false);
     }
@@ -198,8 +198,8 @@ export default function PPPoESessionsPage() {
       await apiAdmin('/api/sessions/sync?type=pppoe', { method: 'POST' });
       await fetchSessions(1);
       addToast({ type: 'success', title: t('common.success'), description: t('sessions.syncComplete') });
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.error'), description: error.message || t('sessions.syncFailed') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('sessions.syncFailed') });
     } finally {
       setSyncing(false);
     }

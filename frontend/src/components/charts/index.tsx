@@ -5,6 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   Area, AreaChart
 } from 'recharts';
+import type { TooltipPayloadEntry, PieLabelRenderProps } from 'recharts';
 import { Loader2 } from 'lucide-react';
 
 // Color palettes
@@ -58,12 +59,20 @@ const formatCurrency = (value: number) => {
 };
 
 // Custom tooltip
-const CustomTooltip = ({ active, payload, label, valuePrefix = '', valueSuffix = '' }: any) => {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: ReadonlyArray<TooltipPayloadEntry>;
+  label?: string | number;
+  valuePrefix?: string;
+  valueSuffix?: string;
+}
+
+const CustomTooltip = ({ active, payload, label, valuePrefix = '', valueSuffix = '' }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-card border border-border rounded-lg shadow-lg p-2">
         <p className="text-xs font-medium text-foreground mb-1">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: TooltipPayloadEntry, index: number) => (
           <p key={index} className="text-xs" style={{ color: entry.color }}>
             {entry.name}: {valuePrefix}{typeof entry.value === 'number' ? entry.value.toLocaleString('id-ID') : entry.value}{valueSuffix}
           </p>
@@ -162,14 +171,14 @@ export function UserStatusPieChart({ data, loading, height = 200 }: UserStatusPi
           paddingAngle={2}
           dataKey="value"
           nameKey="name"
-          label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+          label={({ name, percent }: PieLabelRenderProps) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
           labelLine={false}
         >
           {data.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value: any) => [(Number(value) ?? 0).toLocaleString('id-ID'), 'User']} />
+        <Tooltip formatter={(value) => [(Number(value) ?? 0).toLocaleString('id-ID'), 'User']} />
       </PieChart>
     </ResponsiveContainer>
   );
@@ -261,7 +270,7 @@ export function VoucherStatusPieChart({ data, loading, height = 200 }: VoucherSt
             <Cell key={`cell-${index}`} fill={statusColors[entry.name as string] || PIE_COLORS[index % PIE_COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip formatter={(value: any) => [(Number(value) ?? 0).toLocaleString('id-ID'), 'Voucher']} />
+        <Tooltip formatter={(value) => [(Number(value) ?? 0).toLocaleString('id-ID'), 'Voucher']} />
         <Legend 
           layout="horizontal" 
           verticalAlign="bottom" 
@@ -333,7 +342,7 @@ export function BandwidthChart({ data, loading, height = 200 }: BandwidthChartPr
         <CartesianGrid strokeDasharray="3 3" stroke="#9ca3af" opacity={0.3} vertical={false} />
         <XAxis dataKey="time" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
         <YAxis tickFormatter={formatBandwidth} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-        <Tooltip formatter={(value: any) => [formatBandwidth(Number(value) ?? 0), '']} />
+        <Tooltip formatter={(value) => [formatBandwidth(Number(value) ?? 0), '']} />
         <Area type="monotone" dataKey="upload" stroke={COLORS.success} fill="url(#uploadGradient)" strokeWidth={3} name="Upload" />
         <Area type="monotone" dataKey="download" stroke={COLORS.info} fill="url(#downloadGradient)" strokeWidth={3} name="Download" />
         <Legend wrapperStyle={{ fontSize: '10px' }} />

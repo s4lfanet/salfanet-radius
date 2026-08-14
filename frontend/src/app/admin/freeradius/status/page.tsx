@@ -87,8 +87,8 @@ export default function FreeRADIUSStatusPage() {
                 } else {
                     throw new Error(data.error || 'Action failed');
                 }
-            } catch (error: any) {
-                addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to execute action' });
+            } catch (error: unknown) {
+                addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to execute action' });
             } finally {
                 setActionLoading(null);
             }
@@ -104,8 +104,8 @@ export default function FreeRADIUSStatusPage() {
             } else {
                 throw new Error(data.error || 'Cleanup failed');
             }
-        } catch (error: any) {
-            addToast({ type: 'error', title: t('common.error'), description: error.message || 'Failed to cleanup' });
+        } catch (error: unknown) {
+            addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to cleanup' });
         } finally {
             setActionLoading(null);
         }

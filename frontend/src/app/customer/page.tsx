@@ -124,7 +124,15 @@ export default function CustomerDashboard() {
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [ontDevice, setOntDevice] = useState<any>(null);
+  const [ontDevice, setOntDevice] = useState<{
+    _id?: string;
+    manufacturer?: string;
+    model?: string;
+    status?: string;
+    signalStrength?: { rxPower?: string | number };
+    connectedHosts?: unknown[];
+    wlanConfigs?: { index: number; ssid?: string; [k: string]: unknown }[];
+  } | null>(null);
   const [loadingOnt, setLoadingOnt] = useState(true);
   const [editingWifi, setEditingWifi] = useState<number | null>(null); // WLAN index being edited
   const [wifiForm, setWifiForm] = useState({ ssid: '', password: '' });

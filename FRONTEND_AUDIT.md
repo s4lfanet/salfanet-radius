@@ -2818,3 +2818,88 @@ Dead code (OLT, GenieACS, WireGuard libraries) mudah dihapus karena tidak diimpo
 - Phase 2 (API Client): Buat centralized client + migrate fetch calls
 - Phase 3 (Architecture): Middleware, error boundaries, theme fix
 - Phase 4 (Type Safety): Fix TS errors, API types, enable type checking
+
+---
+
+## Phase 6B — Frontend Type-Safety Hardening
+
+> Tanggal: 14 Agustus 2026
+> Status: **SELESAI**
+> Typecheck: ✅ 0 errors
+> Build: ✅ Sukses
+
+### Tujuan
+
+Mengurangi penggunaan `any` secara signifikan tanpa memaksa `any = 0`. Membangun **safe type system** dengan:
+- Mengganti `catch (e: any)` → `catch (e: unknown)` dengan safe narrowing
+- Menghapus `(data as any)` casts dengan menambahkan explicit type arguments ke `apiAdmin<T>()`
+- Mengganti `Record<string, any>` → `Record<string, unknown>`
+- Mengganti `Promise<any>` → `Promise<unknown>` dimana memungkinkan
+- Mendefinisikan interface untuk form data, API responses, dan state
+
+### Metrik Before/After
+
+| Pattern | Before (6A) | After (6B) | Reduction |
+|---------|-------------|------------|-----------|
+| `: any` | 418 | 70 | 83% |
+| `as any` | 483 | 37 | 92% |
+| `(data as any)` | 272 | 0 | 100% |
+| `catch (e: any)` | 257 | 0 | 100% |
+| `Record<string, any>` | 6 | 0 | 100% |
+| `Promise<any>` | 7 | 5 | 29% |
+| `<any>` | 21 | 9 | 57% |
+| `as unknown as` | 6 | 24 | (naik: legitimate casts) |
+| `@ts-ignore` | 0 | 0 | — |
+| `@ts-expect-error` | 0 | 0 | — |
+
+### Sisa `any` yang Legitimate
+
+1. **`Promise<any>` (5)** — `midtrans-client.d.ts` third-party declaration boundary
+2. **`<any>` (9)** — Leaflet map refs, React.ComponentType untuk dynamic icons, third-party library boundaries
+3. **`: any` (70)** — Sebagian besar di:
+   - `metadata?: any` di SplitterDiagram types (third-party shape)
+   - Recharts tooltip/formatter callbacks
+   - Leaflet event handlers
+   - Beberapa parameter di AddNodePanel yang akan diperbaiki di phase berikutnya
+4. **`as any` (37)** — Sebagian besar di:
+   - Network diagrams page (SplitterNode conversions)
+   - Network olts page (OLT type conversions)
+   - GenieACS VP scripts
+   - Beberapa cast di komponen network
+
+### Files Changed (102 files total)
+
+#### 6B.2: catch (e: any) → catch (e: unknown) — 88 files
+Semua `catch (e/error/err: any)` diubah ke `catch (e/error/err: unknown)` dengan safe narrowing:
+- `e instanceof Error ? e.message : String(e)`
+- `console.error(e)` (sudah accepts unknown)
+- Type-only changes untuk catch blocks yang hanya log
+
+#### 6B.3: (data as any) → typed apiAdmin<T>() — 40 files
+Setiap `apiAdmin('/api/...')` call yang sebelumnya menggunakan `(data as any).property` sekarang memiliki explicit type argument:
+- `apiAdmin<VoucherListResponse>('/api/hotspot/vouchers')`
+- `apiAdmin<TransactionsListResponse>('/api/keuangan/transactions')`
+- `apiAdmin<PoolListResponse>('/api/ippool')`
+- dll. (40+ inline response interfaces didefinisikan)
+
+#### 6B.4-6B.6: Record<string, any>, Promise<any>, <any>, : any — 20+ files
+- `Record<string, any>` → `Record<string, unknown>` (6 occurrences, all fixed)
+- `Promise<any>` → `Promise<unknown>` di rateLimiter.ts
+- `useState<any>` → `useState<unknown>` atau proper interface
+- `EntityFormData` interface didefinisikan untuk NetworkNodePanel
+- `OnuDetailResponse` interface untuk OLT detail modal
+- Proper types untuk customer ONT device state
+
+### Verification
+
+- `npx tsc --noEmit`: ✅ 0 errors
+- `npx next build`: ✅ Sukses (dengan NEXTAUTH_SECRET set)
+- ESLint: 0 errors, 428 warnings (pre-existing unused vars + no-explicit-any)
+- Tidak ada perubahan business logic, API endpoints, atau HTTP methods
+- Tidak ada perubahan UI behavior
+
+### Catatan
+
+- `as unknown as` meningkat dari 6 → 24 karena beberapa konversi tipe memerlukan double-cast yang aman (e.g., API OLT type → local OLT type, Record<string, unknown> → SplitterNode)
+- React Query **tidak diimplementasikan** di phase ini, sesuai instruksi
+- Backend issues yang ditemukan di Phase 6A tetap dilaporkan, tidak diperbaiki

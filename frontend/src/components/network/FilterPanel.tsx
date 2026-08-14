@@ -10,7 +10,7 @@ interface FilterPanelProps {
     status: string[];
     search: string;
   };
-  onFilterChange: (filters: any) => void;
+  onFilterChange: (filters: { types: string[]; status: string[]; search: string }) => void;
   statistics: {
     olt: number;
     otb: number;

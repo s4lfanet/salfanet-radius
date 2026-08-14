@@ -23,6 +23,26 @@ interface TelegramSettings {
   keepLastN: number;
 }
 
+interface TelegramSettingsResponse extends TelegramSettings {
+  error?: string;
+}
+
+interface TelegramSaveResponse {
+  success: boolean;
+  error?: string;
+}
+
+interface TelegramTestResponse {
+  success: boolean;
+  error?: string;
+}
+
+interface TelegramTestBackupResponse {
+  success: boolean;
+  filename?: string;
+  error?: string;
+}
+
 export default function TelegramSettingsPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
@@ -50,11 +70,11 @@ export default function TelegramSettingsPage() {
   const loadSettings = async () => {
     setLoading(true);
     try {
-      const data = await apiAdmin('/api/telegram/settings');
-      if (data && !(data as any).error) {
-        setTelegramSettings(data as any);
+      const data = await apiAdmin<TelegramSettingsResponse>('/api/telegram/settings');
+      if (data && !data.error) {
+        setTelegramSettings(data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load telegram settings error:', error);
     } finally {
       setLoading(false);
@@ -63,12 +83,12 @@ export default function TelegramSettingsPage() {
 
   const handleSaveTelegramSettings = async () => {
     try {
-      const data = await apiAdmin('/api/telegram/settings', {
+      const data = await apiAdmin<TelegramSaveResponse>('/api/telegram/settings', {
         method: 'POST',
         body: JSON.stringify(telegramSettings),
       });
 
-      if ((data as any).success) {
+      if (data.success) {
         // Restart cron jobs to apply new settings
         await apiAdmin('/api/cron/telegram', {
           method: 'POST',
@@ -78,10 +98,10 @@ export default function TelegramSettingsPage() {
         await showSuccess(t('settings.telegramTestSuccess'));
         loadSettings();
       } else {
-        await showError((data as any).error || t('common.saveFailed'));
+        await showError(data.error || t('common.saveFailed'));
       }
-    } catch (error: any) {
-      await showError(t('common.failedSave') + ': ' + error.message);
+    } catch (error: unknown) {
+      await showError(t('common.failedSave') + ': ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -93,7 +113,7 @@ export default function TelegramSettingsPage() {
 
     setTesting(true);
     try {
-      const data = await apiAdmin('/api/telegram/test', {
+      const data = await apiAdmin<TelegramTestResponse>('/api/telegram/test', {
         method: 'POST',
         body: JSON.stringify({
           botToken: telegramSettings.botToken,
@@ -103,13 +123,13 @@ export default function TelegramSettingsPage() {
         }),
       });
 
-      if ((data as any).success) {
+      if (data.success) {
         await showSuccess(t('settings.telegramTestSuccess'));
       } else {
-        await showError((data as any).error || t('settings.telegramTestFailed'));
+        await showError(data.error || t('settings.telegramTestFailed'));
       }
-    } catch (error: any) {
-      await showError(t('settings.failedTest') + ': ' + error.message);
+    } catch (error: unknown) {
+      await showError(t('settings.failedTest') + ': ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setTesting(false);
     }
@@ -124,17 +144,17 @@ export default function TelegramSettingsPage() {
     // Must save settings first before test backup (API loads from DB)
     setTestingBackup(true);
     try {
-      const data = await apiAdmin('/api/telegram/test-backup', {
+      const data = await apiAdmin<TelegramTestBackupResponse>('/api/telegram/test-backup', {
         method: 'POST',
       });
 
-      if ((data as any).success) {
-        await showSuccess(`Backup berhasil dikirim ke Telegram!\nFile: ${(data as any).filename}`);
+      if (data.success) {
+        await showSuccess(`Backup berhasil dikirim ke Telegram!\nFile: ${data.filename}`);
       } else {
-        await showError((data as any).error || 'Gagal mengirim backup ke Telegram');
+        await showError(data.error || 'Gagal mengirim backup ke Telegram');
       }
-    } catch (error: any) {
-      await showError('Gagal test backup: ' + error.message);
+    } catch (error: unknown) {
+      await showError('Gagal test backup: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setTestingBackup(false);
     }

@@ -131,8 +131,8 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
       } else {
         throw new Error(data.error || 'Upload failed');
       }
-    } catch (error: any) {
-      showError(error.message || 'Gagal upload bukti transfer', 'Upload Gagal');
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || 'Gagal upload bukti transfer', 'Upload Gagal');
     } finally {
       setUploadingImage(false);
     }
@@ -179,9 +179,9 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
       } else {
         throw new Error(data.error || 'Failed to submit payment');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit payment error:', error);
-      showError(error.message || 'Terjadi kesalahan saat submit pembayaran', 'Gagal Submit');
+      showError((error instanceof Error ? error.message : String(error)) || 'Terjadi kesalahan saat submit pembayaran', 'Gagal Submit');
     } finally {
       setSubmitting(false);
     }

@@ -145,6 +145,7 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 ### Sudah Selesai
 - ✅ VPS Deployment (14 Aug 2026, commit `95bfa7e8`)
 - ✅ Phase 6A — Full API Contract & Type-Safety Audit
+- ✅ Phase 6B — Frontend Type-Safety Hardening (14 Aug 2026)
 - ✅ Production Testing — smoke test via domain
 - ✅ NextAuth Session Types (Phase 4.1)
 - ✅ Enable TypeScript Build Checks (Phase 4.5)

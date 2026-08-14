@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showWarning, showConfirm } from '@/lib/sweetalert';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
+import type { PppoeProfile, PppoeArea, Router } from '@/types/api/pppoe';
 
 interface User {
   id: string;
@@ -78,10 +79,10 @@ interface UserDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
-  onSave: (data: any) => Promise<void>;
-  profiles: any[];
-  routers: any[];
-  areas?: any[];
+  onSave: (data: Record<string, unknown>) => Promise<void>;
+  profiles: Pick<PppoeProfile, 'id' | 'name'>[];
+  routers: Pick<Router, 'id' | 'name'>[];
+  areas?: Pick<PppoeArea, 'id' | 'name'>[];
   currentLatLng?: { lat: string; lng: string };
   onLatLngChange?: (lat: string, lng: string) => void;
 }
@@ -1163,7 +1164,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
       setShowModal(false);
       setForm({ addonTypeId: '', priceOverride: '', startDate: todayWIBStr(), notes: '' });
       loadAddons();
-    } catch (err: any) { await showError(err.message); }
+    } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
     finally { setSaving(false); }
   };
 
@@ -1175,7 +1176,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
       if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Gagal'); }
       await showSuccess('Layanan tambahan dihentikan');
       loadAddons();
-    } catch (err: any) { await showError(err.message); }
+    } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
   };
 
   const active = addons.filter(a => !a.endDate || new Date(a.endDate) >= new Date());
@@ -1343,7 +1344,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
       setPromiseDate('');
       setPromiseNotes('');
       loadPromises();
-    } catch (err: any) { await showError(err.message); }
+    } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
     finally { setSaving(false); }
   };
 
@@ -1356,7 +1357,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
       if (!res.ok) throw new Error(data.error || 'Gagal');
       await showSuccess(data.message || 'Janji bayar dibatalkan. Pelanggan diisolir kembali.');
       loadPromises();
-    } catch (err: any) { await showError(err.message); }
+    } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
   };
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Memuat data janji bayar...</div>;

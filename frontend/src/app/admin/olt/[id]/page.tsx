@@ -139,13 +139,13 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
       const json = await res.json();
       if (json.success) setTabData(json.data);
       else setError(json.error ?? 'Failed to load');
-    } catch (e: any) { setError(e.message); }
+    } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
   }, [oltId, port]);
 
   useEffect(() => { fetchTab(activeTab); }, [activeTab, fetchTab]);
 
-  const doAction = async (action: string, extra: Record<string, any> = {}) => {
+  const doAction = async (action: string, extra: Record<string, unknown> = {}) => {
     setActionLoading(true); setActionMsg(null);
     try {
       const res = await fetch(`/api/olt/${oltId}/uplink`, {
@@ -156,7 +156,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
       const json = await res.json();
       setActionMsg(json.success ? '✓ Success' : `Error: ${json.error}`);
       if (json.success) fetchTab(activeTab);
-    } catch (e: any) { setActionMsg(`Error: ${e.message}`); }
+    } catch (e: unknown) { setActionMsg(`Error: ${e instanceof Error ? e.message : String(e)}`); }
     finally { setActionLoading(false); }
   };
 
@@ -890,8 +890,8 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
       } else {
         setResult({ ok: false, msg: data.error ?? 'Registration failed' });
       }
-    } catch (e: any) {
-      setResult({ ok: false, msg: e.message });
+    } catch (e: unknown) {
+      setResult({ ok: false, msg: e instanceof Error ? e.message : String(e) });
     } finally {
       setLoading(false);
     }
@@ -1413,10 +1413,31 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
   );
 }
 
+interface OnuDetailResponse {
+  success?: boolean;
+  telnet?: {
+    interface?: string;
+    detail?: { parsed?: Record<string, unknown>; summary?: Record<string, unknown>; raw?: string };
+    config?: { summary?: Record<string, unknown>; raw?: string };
+    optical?: { raw?: string };
+  };
+  onu?: {
+    customer?: {
+      name?: string;
+      username?: string;
+      phone?: string | null;
+      profile?: { name?: string } | null;
+      area?: { name?: string } | null;
+      odpAssignment?: { odp?: { name?: string }; portNumber?: number | string | null } | null;
+      status?: string;
+    } | null;
+  };
+}
+
 function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [detail, setDetail] = useState<any>(null);
+  const [detail, setDetail] = useState<OnuDetailResponse | null>(null);
 
   useEffect(() => {
     setLoading(true);
@@ -1424,9 +1445,9 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
       .then(async (res) => {
         const json = await res.json();
         if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to load ONU detail');
-        setDetail(json);
+        setDetail(json as OnuDetailResponse);
       })
-      .catch((e: any) => setError(e.message))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
   }, [oltId, onu.id]);
 
@@ -1434,32 +1455,32 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
   const detailSummary = detail?.telnet?.detail?.summary ?? {};
   const configSummary = detail?.telnet?.config?.summary ?? {};
   const customer = detail?.onu?.customer;
-  const detailItems = [
-    ['Interface', detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`],
-    ['Serial Number', parsed['Serial number'] ?? onu.serialNumber ?? 'N/A'],
-    ['Name', parsed.Name ?? onu.description ?? 'N/A'],
-    ['Type', parsed.Type ?? 'N/A'],
-    ['ONT Vendor', detailSummary.vendor ?? 'N/A'],
-    ['State', parsed.State ?? onu.status],
-    ['Phase', parsed['Phase state'] ?? 'N/A'],
-    ['Config', parsed['Config state'] ?? 'N/A'],
-    ['Distance', parsed['ONU Distance'] ?? (onu.distance !== null ? `${onu.distance}m` : 'N/A')],
-    ['Online Duration', parsed['Online Duration'] ?? 'N/A'],
+  const detailItems: [string, string][] = [
+    ['Interface', String(detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`)],
+    ['Serial Number', String(parsed['Serial number'] ?? onu.serialNumber ?? 'N/A')],
+    ['Name', String(parsed.Name ?? onu.description ?? 'N/A')],
+    ['Type', String(parsed.Type ?? 'N/A')],
+    ['ONT Vendor', String(detailSummary.vendor ?? 'N/A')],
+    ['State', String(parsed.State ?? onu.status ?? 'N/A')],
+    ['Phase', String(parsed['Phase state'] ?? 'N/A')],
+    ['Config', String(parsed['Config state'] ?? 'N/A')],
+    ['Distance', String(parsed['ONU Distance'] ?? (onu.distance !== null ? `${onu.distance}m` : 'N/A'))],
+    ['Online Duration', String(parsed['Online Duration'] ?? 'N/A')],
     ['RX Power', onu.rxPower !== null ? `${onu.rxPower.toFixed(2)} dBm` : 'N/A'],
   ];
-  const technicalItems = [
-    ['Auth Mode', detailSummary.authenticationMode ?? 'N/A'],
-    ['SN Bind', detailSummary.snBind ?? 'N/A'],
-    ['Admin State', detailSummary.adminState ?? 'N/A'],
-    ['Current Channel', detailSummary.currentChannel ?? 'N/A'],
-    ['Configured Channel', detailSummary.configuredChannel ?? 'N/A'],
-    ['DBA Mode', detailSummary.dbaMode ?? 'N/A'],
-    ['Vport Mode', detailSummary.vportMode ?? 'N/A'],
-    ['Line Profile', detailSummary.lineProfile ?? 'N/A'],
-    ['Service Profile', detailSummary.serviceProfile ?? 'N/A'],
-    ['OMCI BW Profile', detailSummary.omciBwProfile ?? 'N/A'],
-    ['Description', detailSummary.description ?? 'N/A'],
-    ['Serial Prefix', detailSummary.serialPrefix ?? 'N/A'],
+  const technicalItems: [string, string][] = [
+    ['Auth Mode', String(detailSummary.authenticationMode ?? 'N/A')],
+    ['SN Bind', String(detailSummary.snBind ?? 'N/A')],
+    ['Admin State', String(detailSummary.adminState ?? 'N/A')],
+    ['Current Channel', String(detailSummary.currentChannel ?? 'N/A')],
+    ['Configured Channel', String(detailSummary.configuredChannel ?? 'N/A')],
+    ['DBA Mode', String(detailSummary.dbaMode ?? 'N/A')],
+    ['Vport Mode', String(detailSummary.vportMode ?? 'N/A')],
+    ['Line Profile', String(detailSummary.lineProfile ?? 'N/A')],
+    ['Service Profile', String(detailSummary.serviceProfile ?? 'N/A')],
+    ['OMCI BW Profile', String(detailSummary.omciBwProfile ?? 'N/A')],
+    ['Description', String(detailSummary.description ?? 'N/A')],
+    ['Serial Prefix', String(detailSummary.serialPrefix ?? 'N/A')],
   ];
   const serviceVlans = Array.isArray(configSummary.serviceVlans) && configSummary.serviceVlans.length > 0
     ? configSummary.serviceVlans.join(', ')
@@ -1565,8 +1586,8 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <pre className="text-[11px] font-mono bg-gray-950 text-green-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet.detail.raw || 'No detail output'}</pre>
-                <pre className="text-[11px] font-mono bg-gray-950 text-blue-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet.config.raw || detail.telnet.optical.raw || 'No config/optical output'}</pre>
+                <pre className="text-[11px] font-mono bg-gray-950 text-green-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet?.detail?.raw || 'No detail output'}</pre>
+                <pre className="text-[11px] font-mono bg-gray-950 text-blue-300 rounded-lg p-3 overflow-auto max-h-64 whitespace-pre-wrap">{detail.telnet?.config?.raw || detail.telnet?.optical?.raw || 'No config/optical output'}</pre>
               </div>
             </>
           )}
@@ -1612,8 +1633,8 @@ function ONUAssignModal({ oltId, onu, onClose, onSuccess }: { oltId: string; onu
       if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to assign customer');
       await onSuccess();
       onClose();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setSaving(false);
     }
@@ -1876,8 +1897,8 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         const res = await fetch(`/api/olt/${id}/onus/${onuId}/reboot`, { method: 'POST' });
         const data = await res.json();
         results.push({ serialNumber: onu?.serialNumber ?? onuId, success: res.ok, error: !res.ok ? data.error : undefined });
-      } catch (e: any) {
-        results.push({ serialNumber: onu?.serialNumber ?? onuId, success: false, error: e.message });
+      } catch (e: unknown) {
+        results.push({ serialNumber: onu?.serialNumber ?? onuId, success: false, error: e instanceof Error ? e.message : String(e) });
       }
       setBatchProgress({ current: i + 1, total: ids.length, results: [...results] });
     }

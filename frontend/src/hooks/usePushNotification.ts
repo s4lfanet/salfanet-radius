@@ -146,8 +146,8 @@ export function usePushNotification() {
 
       setIsSubscribed(true);
       return true;
-    } catch (subscribeError: any) {
-      setError(subscribeError.message || 'Failed to enable push notifications.');
+    } catch (subscribeError: unknown) {
+      setError((subscribeError instanceof Error ? subscribeError.message : String(subscribeError)) || 'Failed to enable push notifications.');
       setIsSubscribed(false);
       return false;
     } finally {
@@ -195,8 +195,8 @@ export function usePushNotification() {
 
       setIsSubscribed(false);
       return true;
-    } catch (unsubscribeError: any) {
-      setError(unsubscribeError.message || 'Failed to disable push notifications.');
+    } catch (unsubscribeError: unknown) {
+      setError((unsubscribeError instanceof Error ? unsubscribeError.message : String(unsubscribeError)) || 'Failed to disable push notifications.');
       return false;
     } finally {
       setIsLoading(false);

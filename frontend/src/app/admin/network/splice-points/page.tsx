@@ -75,6 +75,18 @@ interface FiberCore {
   };
 }
 
+interface SplicesResponse {
+  splices: SplicePoint[];
+}
+
+interface CablesResponse {
+  cables: FiberCable[];
+}
+
+interface CoresResponse {
+  cores: FiberCore[];
+}
+
 const SPLICE_TYPES = [
   { value: 'FUSION', label: 'Fusion', icon: Zap, color: 'blue' },
   { value: 'MECHANICAL', label: 'Mechanical', icon: Settings, color: 'orange' },
@@ -120,9 +132,9 @@ export default function SplicePointsPage() {
       const params = new URLSearchParams();
       if (filterType) params.append('spliceType', filterType);
 
-      const data = await apiAdmin(`/api/network/splices?${params}`);
+      const data = await apiAdmin<SplicesResponse>(`/api/network/splices?${params}`);
 
-      setSplicePoints((data as any).splices || []);
+      setSplicePoints(data.splices || []);
     } catch (error: unknown) {
       const err = error as Error;
       showError(err.message || t('splicePoint.loadFailed'));
@@ -134,23 +146,23 @@ export default function SplicePointsPage() {
 
   const loadCables = useCallback(async () => {
     try {
-      const data = await apiAdmin('/api/network/cables');
-      setCables((data as any).cables || []);
-    } catch (error: any) {
+      const data = await apiAdmin<CablesResponse>('/api/network/cables');
+      setCables(data.cables || []);
+    } catch (error: unknown) {
       console.error('Failed to load cables:', error);
     }
   }, []);
 
   const loadCoresForCable = async (cableId: string, target: 'A' | 'B') => {
     try {
-      const data = await apiAdmin(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
+      const data = await apiAdmin<CoresResponse>(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
 
       if (target === 'A') {
-        setCoresForCableA((data as any).cores || []);
+        setCoresForCableA(data.cores || []);
       } else {
-        setCoresForCableB((data as any).cores || []);
+        setCoresForCableB(data.cores || []);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to load cores:', error);
     }
   };

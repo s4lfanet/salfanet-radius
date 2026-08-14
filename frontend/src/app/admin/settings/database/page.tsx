@@ -66,19 +66,19 @@ export default function DatabaseSettingsPage() {
     setLoading(true);
     try {
       // Load backup history
-      const historyData = await apiAdmin('/api/backup/history');
-      if ((historyData as any).success) {
-        setBackupHistory((historyData as any).history);
+      const historyData = await apiAdmin<{ success: boolean; history: BackupHistory[] }>('/api/backup/history');
+      if (historyData.success) {
+        setBackupHistory(historyData.history);
       }
 
       // Load DB health
-      const healthData = await apiAdmin('/api/backup/health');
-      if ((healthData as any).success) {
-        setDbHealth((healthData as any).health);
+      const healthData = await apiAdmin<{ success: boolean; health: DatabaseHealth }>('/api/backup/health');
+      if (healthData.success) {
+        setDbHealth(healthData.health);
       }
 
 
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Load data error:', error);
     } finally {
       setLoading(false);
@@ -91,24 +91,24 @@ export default function DatabaseSettingsPage() {
 
     setBacking(true);
     try {
-      const data = await apiAdmin('/api/backup/create', { method: 'POST' });
+      const data = await apiAdmin<{ success: boolean; downloadUrl?: string; filename?: string; error?: string }>('/api/backup/create', { method: 'POST' });
 
-      if ((data as any).success) {
+      if (data.success) {
         await showSuccess(t('settings.backupCreated'));
         loadData();
 
         // Download file
-        if ((data as any).downloadUrl) {
+        if (data.downloadUrl) {
           const link = document.createElement('a');
-          link.href = (data as any).downloadUrl;
-          link.download = (data as any).filename;
+          link.href = data.downloadUrl;
+          link.download = data.filename || '';
           link.click();
         }
       } else {
-        await showError((data as any).error || t('settings.backupFailed'));
+        await showError(data.error || t('settings.backupFailed'));
       }
-    } catch (error: any) {
-      await showError(t('settings.createBackupFailed') + ': ' + error.message);
+    } catch (error: unknown) {
+      await showError(t('settings.createBackupFailed') + ': ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setBacking(false);
     }
@@ -136,19 +136,19 @@ export default function DatabaseSettingsPage() {
       const formData = new FormData();
       formData.append('file', restoreFile);
 
-      const data = await apiAdmin('/api/backup/restore', {
+      const data = await apiAdmin<{ success: boolean; error?: string }>('/api/backup/restore', {
         method: 'POST',
         body: formData,
       });
 
-      if ((data as any).success) {
+      if (data.success) {
         await showSuccess(t('settings.restorePageReload'));
         setTimeout(() => window.location.reload(), 2000);
       } else {
-        await showError((data as any).error || t('settings.restoreFailed'));
+        await showError(data.error || t('settings.restoreFailed'));
       }
-    } catch (error: any) {
-      await showError(t('settings.failedRestore') + ': ' + error.message);
+    } catch (error: unknown) {
+      await showError(t('settings.failedRestore') + ': ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setRestoring(false);
     }
@@ -182,8 +182,8 @@ export default function DatabaseSettingsPage() {
     let failCount = 0;
     for (const id of selectedIds) {
       try {
-        const data = await apiAdmin(`/api/backup/delete/${id}`, { method: 'DELETE' });
-        if ((data as any).success) successCount++; else failCount++;
+        const data = await apiAdmin<{ success: boolean }>(`/api/backup/delete/${id}`, { method: 'DELETE' });
+        if (data.success) successCount++; else failCount++;
       } catch {
         failCount++;
       }
@@ -203,16 +203,16 @@ export default function DatabaseSettingsPage() {
     if (!confirmed) return;
 
     try {
-      const data = await apiAdmin(`/api/backup/delete/${id}`, { method: 'DELETE' });
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/backup/delete/${id}`, { method: 'DELETE' });
 
-      if ((data as any).success) {
+      if (data.success) {
         await showSuccess(t('settings.backupDeleted'));
         loadData();
       } else {
-        await showError((data as any).error || t('settings.deleteFailed'));
+        await showError(data.error || t('settings.deleteFailed'));
       }
-    } catch (error: any) {
-      await showError(t('settings.deleteBackupFailed') + ': ' + error.message);
+    } catch (error: unknown) {
+      await showError(t('settings.deleteBackupFailed') + ': ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 

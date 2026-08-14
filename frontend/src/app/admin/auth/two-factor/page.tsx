@@ -55,8 +55,8 @@ function TwoFactorForm() {
         router.push('/admin');
         router.refresh();
       }
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : String(err)) || 'Verification failed');
     } finally {
       setLoading(false);
     }

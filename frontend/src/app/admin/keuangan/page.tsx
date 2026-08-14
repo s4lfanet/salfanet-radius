@@ -82,6 +82,29 @@ interface Stats {
   installCount?: number;
 }
 
+interface TransactionsListResponse {
+  success: boolean;
+  transactions: Transaction[];
+  stats: Stats;
+  total?: number;
+}
+
+interface CategoriesListResponse {
+  success: boolean;
+  categories: Category[];
+}
+
+interface KeuanganActionResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+interface KeuanganExportResponse {
+  transactions?: Transaction[];
+  stats?: Stats;
+}
+
 export default function KeuanganPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
@@ -181,15 +204,15 @@ export default function KeuanganPage() {
       if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
       if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
 
-      const [transData, catData] = await Promise.all([apiAdmin(url), apiAdmin("/api/keuangan/categories")]);
+      const [transData, catData] = await Promise.all([apiAdmin<TransactionsListResponse>(url), apiAdmin<CategoriesListResponse>("/api/keuangan/categories")]);
 
-      if ((transData as any).success) {
-        if (reset) { setTransactions((transData as any).transactions); } else { setTransactions((prev) => [...prev, ...(transData as any).transactions]); }
-        setStats((transData as any).stats);
-        setTotal((transData as any).total || 0);
-        setHasMore((transData as any).transactions.length === 50);
+      if (transData.success) {
+        if (reset) { setTransactions(transData.transactions); } else { setTransactions((prev) => [...prev, ...transData.transactions]); }
+        setStats(transData.stats);
+        setTotal(transData.total || 0);
+        setHasMore(transData.transactions.length === 50);
       }
-      if ((catData as any).success) setCategories((catData as any).categories);
+      if (catData.success) setCategories(catData.categories);
     } catch (error) {
       await showError(t('keuangan.failedLoadData'));
     } finally {
@@ -243,23 +266,23 @@ export default function KeuanganPage() {
     try {
       const method = editingTransaction ? "PUT" : "POST";
       const body = editingTransaction ? { id: editingTransaction.id, ...transactionForm } : transactionForm;
-      const data = await apiAdmin("/api/keuangan/transactions", {
+      const data = await apiAdmin<KeuanganActionResponse>("/api/keuangan/transactions", {
         method,
         body: JSON.stringify(body),
       });
 
-      if ((data as any).success) {
-        await showSuccess((data as any).message);
+      if (data.success) {
+        await showSuccess(data.message || '');
         setIsTransactionDialogOpen(false);
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError((data as any).error);
+        await showError(data.error || '');
       }
-    } catch (error: any) {
-      await showError(error.message || t('keuangan.failedSaveTransaction'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('keuangan.failedSaveTransaction'));
     } finally {
       setProcessing(false);
     }
@@ -270,20 +293,20 @@ export default function KeuanganPage() {
     if (!confirmed) return;
 
     try {
-      const data = await apiAdmin(`/api/keuangan/transactions?id=${transaction.id}`, { method: "DELETE" });
+      const data = await apiAdmin<KeuanganActionResponse>(`/api/keuangan/transactions?id=${transaction.id}`, { method: "DELETE" });
 
-      if ((data as any).success) {
-        await showSuccess((data as any).message);
+      if (data.success) {
+        await showSuccess(data.message || '');
         clearSelection();
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError((data as any).error);
+        await showError(data.error || '');
       }
-    } catch (error: any) {
-      await showError(error.message || t('keuangan.failedDeleteTransaction'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('keuangan.failedDeleteTransaction'));
     }
   };
 
@@ -293,19 +316,19 @@ export default function KeuanganPage() {
     if (!confirmed) return;
     try {
       const ids = Array.from(selectedIds).join(",");
-      const data = await apiAdmin(`/api/keuangan/transactions?ids=${encodeURIComponent(ids)}`, { method: "DELETE" });
-      if ((data as any).success) {
-        await showSuccess((data as any).message);
+      const data = await apiAdmin<KeuanganActionResponse>(`/api/keuangan/transactions?ids=${encodeURIComponent(ids)}`, { method: "DELETE" });
+      if (data.success) {
+        await showSuccess(data.message || '');
         clearSelection();
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError((data as any).error);
+        await showError(data.error || '');
       }
-    } catch (error: any) {
-      await showError(error.message || t('keuangan.failedDeleteTransaction'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('keuangan.failedDeleteTransaction'));
     }
   };
 
@@ -346,23 +369,23 @@ export default function KeuanganPage() {
 
     setProcessing(true);
     try {
-      const data = await apiAdmin("/api/keuangan/categories", {
+      const data = await apiAdmin<KeuanganActionResponse>("/api/keuangan/categories", {
         method: "POST",
         body: JSON.stringify(categoryForm),
       });
 
-      if ((data as any).success) {
-        await showSuccess((data as any).message);
+      if (data.success) {
+        await showSuccess(data.message || '');
         setIsCategoryDialogOpen(false);
         setPage(1);
         setTransactions([]);
         setHasMore(true);
         loadData(1, true);
       } else {
-        await showError((data as any).error);
+        await showError(data.error || '');
       }
-    } catch (error: any) {
-      await showError(error.message || t('keuangan.failedSaveCategory'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('keuangan.failedSaveCategory'));
     } finally {
       setProcessing(false);
     }
@@ -423,16 +446,16 @@ export default function KeuanganPage() {
         a.click();
         URL.revokeObjectURL(a.href);
       } else {
-        const data = await apiAdmin(url);
-        if ((data as any).transactions) generatePDF((data as any).transactions, (data as any).stats);
+        const data = await apiAdmin<KeuanganExportResponse>(url);
+        if (data.transactions && data.stats) generatePDF(data.transactions, data.stats);
         else await showError(t('keuangan.exportFailed'));
       }
-    } catch (error: any) {
-      await showError(error.message || t('keuangan.exportFailed'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('keuangan.exportFailed'));
     }
   };
 
-  const generatePDF = async (transactions: any[], stats: any) => {
+  const generatePDF = async (transactions: Transaction[], stats: Stats) => {
     const jsPDF = (await import("jspdf")).default;
     const autoTable = (await import("jspdf-autotable")).default;
     const doc = new jsPDF();
@@ -442,10 +465,11 @@ export default function KeuanganPage() {
     doc.setFontSize(9);
     doc.text(`Periode: ${formatDate(startDate)} - ${formatDate(endDate)}`, 14, 21);
 
-    const tableData = transactions.map((tx: any) => [formatDate(tx.date), tx.description, tx.category.name, tx.type, formatCurrency(tx.amount)]);
+    const tableData = transactions.map((tx) => [formatDate(tx.date), tx.description, tx.category.name, tx.type, formatCurrency(tx.amount)]);
     autoTable(doc, { head: [[t('keuangan.pdfDate'), t('keuangan.pdfDescription'), t('keuangan.pdfCategory'), t('keuangan.pdfType'), t('keuangan.pdfAmount')]], body: tableData, startY: 26, styles: { fontSize: 8 } });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 8;
+    // jspdf-autotable adds lastAutoTable to the doc instance at runtime
+    const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.text(`${t('keuangan.pdfIncome')} ${formatCurrency(stats.totalIncome)}`, 14, finalY);
@@ -565,7 +589,7 @@ export default function KeuanganPage() {
           {["thisMonth", "lastMonth", "thisYear"].map((tp) => (
             <button
               key={tp}
-              onClick={() => setQuickDate(tp as any)}
+              onClick={() => setQuickDate(tp as "thisMonth" | "lastMonth" | "thisYear")}
               className="px-2 py-1 text-[10px] bg-muted hover:bg-muted/80 rounded"
             >
               {tp === "thisMonth" ? t('time.thisMonth') : tp === "lastMonth" ? t('time.lastMonth') : t('time.thisYear')}

@@ -199,8 +199,8 @@ export default function NewPppoeUserPage() {
         await pppoeApi.createUser(payload);
         await showSuccess('Pelanggan berhasil ditambahkan');
         router.push('/admin/pppoe/users');
-      } catch (error: any) {
-        await showError(error.message || 'Gagal menyimpan pelanggan');
+      } catch (error: unknown) {
+        await showError((error instanceof Error ? error.message : String(error)) || 'Gagal menyimpan pelanggan');
       }
     } catch { await showError('Gagal menyimpan pelanggan'); }
     finally { setSaving(false); }

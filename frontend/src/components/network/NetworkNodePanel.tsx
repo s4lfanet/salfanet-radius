@@ -12,7 +12,7 @@ export interface MapEntity {
   latitude: number;
   longitude: number;
   status: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface Props {
@@ -109,7 +109,39 @@ function FieldSelect({ label, name, value, onChange, options }: {
 }
 
 // ─── Edit forms per type ──────────────────────────────────────────────────────
-function OLTEditForm({ data, onChange }: { data: any; onChange: (n: string, v: string) => void }) {
+
+/** Minimal entity shape for dropdown selectors (OLT/ODC lists) */
+interface DropdownEntity {
+  id: string;
+  name: string;
+}
+
+/** Entity form/detail data with known fields + index signature for dynamic properties */
+interface EntityFormData {
+  name?: string;
+  ipAddress?: string;
+  brand?: string;
+  model?: string;
+  status?: string;
+  latitude?: number | string;
+  longitude?: number | string;
+  type?: string;
+  portCount?: number | string;
+  address?: string;
+  closureType?: string;
+  spliceCapacity?: number | string;
+  oltId?: string;
+  odcId?: string;
+  ponPort?: number | string;
+  splitterRatio?: string;
+  network_olts?: { name?: string } | null;
+  network_odcs?: { name?: string; length?: number } | null;
+  _count?: { network_odps?: number; odp_customer_assignments?: number } | null;
+  metadata?: { username?: string; package?: string; address?: string } | null;
+  [key: string]: unknown;
+}
+
+function OLTEditForm({ data, onChange }: { data: EntityFormData; onChange: (n: string, v: string) => void }) {
   return (
     <div className="space-y-3">
       <FieldInput label="Name" name="name" value={data.name || ''} onChange={onChange} required />
@@ -125,7 +157,7 @@ function OLTEditForm({ data, onChange }: { data: any; onChange: (n: string, v: s
   );
 }
 
-function OTBEditForm({ data, onChange }: { data: any; onChange: (n: string, v: string) => void }) {
+function OTBEditForm({ data, onChange }: { data: EntityFormData; onChange: (n: string, v: string) => void }) {
   return (
     <div className="space-y-3">
       <FieldInput label="Name" name="name" value={data.name || ''} onChange={onChange} required />
@@ -141,7 +173,7 @@ function OTBEditForm({ data, onChange }: { data: any; onChange: (n: string, v: s
   );
 }
 
-function JCEditForm({ data, onChange }: { data: any; onChange: (n: string, v: string) => void }) {
+function JCEditForm({ data, onChange }: { data: EntityFormData; onChange: (n: string, v: string) => void }) {
   return (
     <div className="space-y-3">
       <FieldInput label="Name" name="name" value={data.name || ''} onChange={onChange} required />
@@ -156,7 +188,7 @@ function JCEditForm({ data, onChange }: { data: any; onChange: (n: string, v: st
   );
 }
 
-function ODCEditForm({ data, onChange, olts }: { data: any; onChange: (n: string, v: string) => void; olts: any[] }) {
+function ODCEditForm({ data, onChange, olts }: { data: EntityFormData; onChange: (n: string, v: string) => void; olts: DropdownEntity[] }) {
   return (
     <div className="space-y-3">
       <FieldInput label="Name" name="name" value={data.name || ''} onChange={onChange} required />
@@ -179,7 +211,7 @@ function ODCEditForm({ data, onChange, olts }: { data: any; onChange: (n: string
   );
 }
 
-function ODPEditForm({ data, onChange, odcs }: { data: any; onChange: (n: string, v: string) => void; odcs: any[] }) {
+function ODPEditForm({ data, onChange, odcs }: { data: EntityFormData; onChange: (n: string, v: string) => void; odcs: DropdownEntity[] }) {
   return (
     <div className="space-y-3">
       <FieldInput label="Name" name="name" value={data.name || ''} onChange={onChange} required />
@@ -203,7 +235,7 @@ function ODPEditForm({ data, onChange, odcs }: { data: any; onChange: (n: string
 }
 
 // ─── Detail views per type ────────────────────────────────────────────────────
-function NodeDetails({ detail, type }: { detail: any; type: MapEntity['type'] }) {
+function NodeDetails({ detail, type }: { detail: EntityFormData; type: MapEntity['type'] }) {
   if (!detail) return null;
   if (type === 'OLT') return (<>
     <DetailRow label="IP Address" value={detail.ipAddress} mono />
@@ -257,12 +289,12 @@ function NodeDetails({ detail, type }: { detail: any; type: MapEntity['type'] })
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated }: Props) {
   const [mode, setMode] = useState<'view' | 'edit'>('view');
-  const [detail, setDetail] = useState<any>(null);
+  const [detail, setDetail] = useState<EntityFormData | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [formData, setFormData] = useState<any>({});
-  const [olts, setOlts] = useState<any[]>([]);
-  const [odcs, setOdcs] = useState<any[]>([]);
+  const [formData, setFormData] = useState<EntityFormData>({});
+  const [olts, setOlts] = useState<DropdownEntity[]>([]);
+  const [odcs, setOdcs] = useState<DropdownEntity[]>([]);
 
   // Load detail when entity changes
   useEffect(() => {
@@ -283,7 +315,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
     fetch(url)
       .then(r => r.json())
       .then(data => {
-        const d = data.otb || data.odc || data.odp || data.jc || data.olt || data;
+        const d = (data.otb || data.odc || data.odp || data.jc || data.olt || data) as EntityFormData;
         setDetail(d);
         setFormData(d);
       })
@@ -305,7 +337,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
   }, [entity?.type]);
 
   const handleChange = (name: string, value: string) => {
-    setFormData((prev: any) => ({ ...prev, [name]: value }));
+    setFormData((prev: EntityFormData) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
@@ -334,7 +366,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
 
       if (!res.ok || data.error) throw new Error(data.error || 'Failed to save');
 
-      const updated = data.otb || data.odc || data.odp || data.olt || data;
+      const updated = (data.otb || data.odc || data.odp || data.olt || data) as EntityFormData;
       setDetail(updated);
       setFormData(updated);
       setMode('view');
@@ -343,13 +375,13 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
         ...entity,
         name: updated.name || entity.name,
         status: updated.status || entity.status,
-        latitude: parseFloat(updated.latitude) || entity.latitude,
-        longitude: parseFloat(updated.longitude) || entity.longitude,
+        latitude: parseFloat(String(updated.latitude)) || entity.latitude,
+        longitude: parseFloat(String(updated.longitude)) || entity.longitude,
       });
 
       Swal.fire({ icon: 'success', title: 'Saved', timer: 1200, showConfirmButton: false });
-    } catch (err: any) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    } catch (err: unknown) {
+      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
     } finally {
       setSaving(false);
     }
@@ -386,8 +418,8 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
       Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false });
       onDeleted(entity.id);
       onClose();
-    } catch (err: any) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+    } catch (err: unknown) {
+      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
     }
   };
 
@@ -439,7 +471,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
           </div>
         ) : mode === 'view' ? (
           <div className="space-y-1">
-            <NodeDetails detail={detail || entity} type={entity.type} />
+            <NodeDetails detail={(detail || entity) as EntityFormData} type={entity.type} />
             {entity.type === 'CUSTOMER' && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <a href={`/admin/customers?search=${entity.code}`} target="_blank" rel="noreferrer"
@@ -487,7 +519,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Changes
           </button>
-          <button onClick={() => { setMode('view'); setFormData(detail); }}
+          <button onClick={() => { setMode('view'); setFormData(detail ?? {}); }}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors">
             <XCircle className="w-4 h-4" />
           </button>

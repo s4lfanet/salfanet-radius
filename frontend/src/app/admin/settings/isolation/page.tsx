@@ -65,7 +65,7 @@ export default function IsolationSettingsPage() {
 
   const fetchSettings = async () => {
     try {
-      const data = await apiAdmin<{ success: boolean; data: any }>('/api/settings/isolation');
+      const data = await apiAdmin<{ success: boolean; data: Partial<IsolationSettings> }>('/api/settings/isolation');
 
       if (data.success) {
         setSettings({
@@ -104,8 +104,8 @@ export default function IsolationSettingsPage() {
       } else {
         throw new Error(data.error);
       }
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.failed'), description: error.message || t('isolation.failedSave') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.failed'), description: (error instanceof Error ? error.message : String(error)) || t('isolation.failedSave') });
     } finally {
       setSaving(false);
     }

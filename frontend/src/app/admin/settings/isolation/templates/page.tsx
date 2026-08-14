@@ -30,11 +30,27 @@ interface IsolationTemplate {
   name: string;
   subject?: string;
   message: string;
-  variables: any;
+  variables: string[];
   isActive: boolean;
 }
 
 type ViewMode = 'desktop' | 'tablet' | 'mobile';
+
+interface IsolationSettingsResponse {
+  success: boolean;
+  data?: { baseUrl?: string };
+}
+
+interface CompanyInfoResponse {
+  success: boolean;
+  company?: { name?: string };
+}
+
+interface TemplatesListResponse {
+  success: boolean;
+  data: IsolationTemplate[];
+  message?: string;
+}
 
 export default function TemplatesPage() {
   const { t } = useTranslation();
@@ -51,31 +67,31 @@ export default function TemplatesPage() {
 
   useEffect(() => {
     fetchTemplates();
-    apiAdmin('/api/settings/isolation')
-      .then((d: any) => { if (d.success && d.data?.baseUrl) setCompanyBaseUrl(d.data.baseUrl.replace(/\/$/, '')); })
+    apiAdmin<IsolationSettingsResponse>('/api/settings/isolation')
+      .then((d) => { if (d.success && d.data?.baseUrl) setCompanyBaseUrl(d.data.baseUrl.replace(/\/$/, '')); })
       .catch(() => {});
-    apiAdmin('/api/public/company')
-      .then((d: any) => { if (d.success && d.company?.name) setCompanyName(d.company.name); })
+    apiAdmin<CompanyInfoResponse>('/api/public/company')
+      .then((d) => { if (d.success && d.company?.name) setCompanyName(d.company.name); })
       .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchTemplates = async () => {
     try {
-      const data = await apiAdmin('/api/settings/isolation/templates');
+      const data = await apiAdmin<TemplatesListResponse>('/api/settings/isolation/templates');
 
       console.log('Templates API response:', data);
 
-      if ((data as any).success) {
-        console.log('Templates data:', (data as any).data);
-        setTemplates((data as any).data);
+      if (data.success) {
+        console.log('Templates data:', data.data);
+        setTemplates(data.data);
       } else {
-        console.error('API returned error:', (data as any).message);
-        addToast({ type: 'error', title: t('common.failed'), description: (data as any).message || t('isolation.failedLoadTemplates') });
+        console.error('API returned error:', data.message);
+        addToast({ type: 'error', title: t('common.failed'), description: data.message || t('isolation.failedLoadTemplates') });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to fetch templates:', error);
-      addToast({ type: 'error', title: t('common.failed'), description: error.message || t('isolation.failedLoadTemplates') });
+      addToast({ type: 'error', title: t('common.failed'), description: (error instanceof Error ? error.message : String(error)) || t('isolation.failedLoadTemplates') });
     } finally {
       setLoading(false);
     }
@@ -111,8 +127,8 @@ export default function TemplatesPage() {
       } else {
         throw new Error(data.message);
       }
-    } catch (error: any) {
-      addToast({ type: 'error', title: t('common.failed'), description: error.message || t('isolation.failedSaveTemplate') });
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.failed'), description: (error instanceof Error ? error.message : String(error)) || t('isolation.failedSaveTemplate') });
     } finally {
       setSaving(false);
     }

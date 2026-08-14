@@ -15,7 +15,7 @@ interface TopUpRequest {
   description: string;
   status: 'PENDING' | 'SUCCESS' | 'FAILED';
   createdAt: string;
-  metadata: any;
+  metadata: { note?: string; proofPath?: string } | null;
   user: {
     id: string;
     username: string;
@@ -42,8 +42,8 @@ export default function TopUpRequestsPage() {
       setLoading(true);
       const data = await apiAdmin<{ requests?: TopUpRequest[] }>('/api/admin/topup-requests');
       setRequests(data.requests || []);
-    } catch (error: any) {
-      showError(error.message || t('topup.failedLoadRequests'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('topup.failedLoadRequests'));
     } finally {
       setLoading(false);
     }
@@ -66,8 +66,8 @@ export default function TopUpRequestsPage() {
 
       showSuccess(t('topup.approveSuccess'));
       loadRequests();
-    } catch (error: any) {
-      showError(error.message || t('topup.failedProcess'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('topup.failedProcess'));
     } finally {
       setProcessing(null);
     }
@@ -91,8 +91,8 @@ export default function TopUpRequestsPage() {
 
       showSuccess(t('topup.rejectSuccess'));
       loadRequests();
-    } catch (error: any) {
-      showError(error.message || t('topup.failedProcess'));
+    } catch (error: unknown) {
+      showError((error instanceof Error ? error.message : String(error)) || t('topup.failedProcess'));
     } finally {
       setProcessing(null);
     }
@@ -236,7 +236,7 @@ export default function TopUpRequestsPage() {
                     {/* Proof Image */}
                     {req.metadata?.proofPath && (
                       <button
-                        onClick={() => setSelectedImage(req.metadata.proofPath)}
+                        onClick={() => setSelectedImage(req.metadata?.proofPath ?? null)}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-muted hover:bg-muted/80 text-sm rounded transition-colors"
                       >
                         <Eye className="w-4 h-4" />

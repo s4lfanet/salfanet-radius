@@ -85,9 +85,9 @@ function PayManualPageContent() {
       
       // Pre-fill amount with invoice amount
       setAmount(data.invoice.amount.toString());
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error fetching payment info:', error);
-      showError(error.message || 'Gagal memuat informasi pembayaran');
+      showError((error instanceof Error ? error.message : String(error)) || 'Gagal memuat informasi pembayaran');
     } finally {
       setLoading(false);
     }
@@ -183,9 +183,9 @@ function PayManualPageContent() {
 
       showSuccess('Pembayaran berhasil diajukan');
       setSubmitted(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error submitting payment:', error);
-      showError(error.message || 'Gagal mengajukan pembayaran');
+      showError((error instanceof Error ? error.message : String(error)) || 'Gagal mengajukan pembayaran');
     } finally {
       setSubmitting(false);
     }

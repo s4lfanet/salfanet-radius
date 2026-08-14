@@ -135,8 +135,8 @@ export default function VoucherTemplatesPage() {
       await showSuccess(editingTemplate ? t('common.updated') : t('common.created'));
       await fetchTemplates();
       handleCloseDialog();
-    } catch (error: any) {
-      await showError(error?.message || t('hotspot.failedSaveTemplate'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('hotspot.failedSaveTemplate'));
     }
   };
 
@@ -147,8 +147,8 @@ export default function VoucherTemplatesPage() {
       await apiAdmin(`/api/voucher-templates/${id}`, { method: 'DELETE' });
       await showSuccess(t('hotspot.templateDeleted'));
       await fetchTemplates();
-    } catch (error: any) {
-      await showError(error?.message || t('hotspot.failedDeleteTemplate'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('hotspot.failedDeleteTemplate'));
     }
   };
 

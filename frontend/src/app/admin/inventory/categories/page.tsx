@@ -96,8 +96,8 @@ export default function CategoriesPage() {
       setEditingCategory(null);
       resetForm();
       loadCategories();
-    } catch (error: any) {
-      await showError(error?.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 
@@ -116,8 +116,8 @@ export default function CategoriesPage() {
 
       await showSuccess(t('inventory.categoryDeleted'));
       loadCategories();
-    } catch (error: any) {
-      await showError(error?.message || t('common.error'));
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
   };
 

@@ -561,8 +561,8 @@ export default function AgentDashboardPage() {
       if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
       setProofPreviewUrl(null);
       await loadDashboard();
-    } catch (error: any) {
-      await showError(error.message || 'Gagal membuat permintaan deposit manual');
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || 'Gagal membuat permintaan deposit manual');
     } finally {
       setUploadingProof(false);
       setCreatingManualDeposit(false);

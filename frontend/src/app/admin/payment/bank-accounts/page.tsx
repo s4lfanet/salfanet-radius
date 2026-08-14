@@ -55,7 +55,7 @@ export default function BankAccountsPage() {
     setSaving(true);
     try {
       // First fetch current company data so we don't overwrite other fields
-      const current = await apiAdmin<Record<string, any>>('/api/company');
+      const current = await apiAdmin<Record<string, unknown>>('/api/company');
 
       await apiAdmin('/api/company', {
         method: 'POST',

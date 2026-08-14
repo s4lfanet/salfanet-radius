@@ -124,8 +124,8 @@ function LoginForm() {
         window.location.href = callbackUrl;
         return; // prevent finally from calling setLoading(false) before navigation
       }
-    } catch (err: any) {
-      setError(err.message || t('auth.loginFailed'));
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : String(err)) || t('auth.loginFailed'));
     } finally {
       setLoading(false);
     }
@@ -158,8 +158,8 @@ function LoginForm() {
         window.location.href = callbackUrl;
         return;
       }
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
+    } catch (err: unknown) {
+      setError((err instanceof Error ? err.message : String(err)) || 'Verification failed');
     } finally {
       setLoading(false);
     }

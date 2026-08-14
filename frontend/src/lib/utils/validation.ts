@@ -227,7 +227,7 @@ export function validateDateRange(
  * @throws Error if not in whitelist
  */
 export function validateEnum<T>(
-  value: any,
+  value: unknown,
   allowedValues: readonly T[],
   fieldName: string = 'value'
 ): boolean {

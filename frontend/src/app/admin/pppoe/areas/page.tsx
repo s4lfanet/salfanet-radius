@@ -24,7 +24,7 @@ interface Area {
   name: string;
   description: string | null;
   isActive: boolean;
-  userCount: number;
+  userCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,7 +51,7 @@ export default function AreasPage() {
   const loadData = async () => {
     try {
       const data = await pppoeApi.listAreas();
-      setAreas((data as any).areas || []);
+      setAreas(data.areas || []);
     } catch (error) {
       console.error('Load areas error:', error);
     } finally {
@@ -69,9 +69,9 @@ export default function AreasPage() {
       resetForm();
       loadData();
       await showSuccess(editingArea ? t('common.areaUpdated') : t('common.areaCreated'));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Submit error:', error);
-      await showError(error.message || t('common.failedSaveArea'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedSaveArea'));
     }
   };
 
@@ -94,9 +94,9 @@ export default function AreasPage() {
       await pppoeApi.deleteArea(deleteAreaId);
       await showSuccess(t('common.areaDeleted'));
       loadData();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Delete error:', error);
-      await showError(error.message || t('common.failedDeleteArea'));
+      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDeleteArea'));
     } finally {
       setDeleteAreaId(null);
     }
@@ -114,7 +114,7 @@ export default function AreasPage() {
     return matchesSearch;
   });
 
-  const totalUsers = areas.reduce((sum, area) => sum + area.userCount, 0);
+  const totalUsers = areas.reduce((sum, area) => sum + (area.userCount ?? 0), 0);
   const activeAreas = areas.filter((a) => a.isActive).length;
 
   const canView = hasPermission('customers.view');
