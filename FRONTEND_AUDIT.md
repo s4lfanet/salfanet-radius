@@ -1359,6 +1359,25 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 22 — PPPoE Registrations Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/pppoe/registrations/page.tsx` — 7 fetch() calls replaced:
+  - `fetch('/api/admin/registrations?...')` (load) → `apiAdmin(...)`
+  - `fetch('/api/pppoe/areas')` (areas) → `apiAdmin(...)`
+  - `fetch('/api/pppoe/profiles/sync-mikrotik')` (routers) → `apiAdmin(...)`
+  - `fetch('/api/admin/registrations/${id}/approve', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/admin/registrations/${id}/reject', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/admin/registrations/${id}/mark-installed', { method: 'POST' })` → `apiAdmin(...)`
+  - `fetch('/api/admin/registrations/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in pppoe/registrations page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ PPPoE registrations page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
