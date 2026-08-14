@@ -7,7 +7,7 @@ import {
   Users, Trash2, Download, Search, RefreshCcw, Plus, Shield, FileText,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
-import { pppoeApi } from '@/lib/api';
+import { pppoeApi, apiAdmin } from '@/lib/api';
 
 interface StoppedUser {
   id: string;
@@ -42,8 +42,8 @@ export default function StoppedSubscriptionsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await pppoeApi.listUsers({ status: 'stop' });
-      setUsers((data.users as any) || []);
+      const data = await apiAdmin<{ users: StoppedUser[] }>(`/api/pppoe/users?status=stop`);
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Load data error:', error);
     } finally {

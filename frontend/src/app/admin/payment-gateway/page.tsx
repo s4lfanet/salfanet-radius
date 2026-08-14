@@ -130,7 +130,7 @@ export default function PaymentGatewayPage() {
     }
   };
 
-  const saveGateway = async (provider: string, data: any) => {
+  const saveGateway = async (provider: string, data: Record<string, unknown>) => {
     setSaving(true);
     try {
       await apiAdmin('/api/payment-gateway/config', {

@@ -116,6 +116,27 @@ interface Invoice {
   manualPaymentStatus: string | null;
 }
 
+interface ConnectedDevice {
+  associatedDevice?: string;
+  hostname?: string;
+  macAddress?: string;
+  ipAddress?: string;
+  signalStrength?: string;
+}
+
+interface PaymentGatewayInfo {
+  provider: string;
+  [key: string]: unknown;
+}
+
+interface WlanConfig {
+  index: number;
+  ssid?: string;
+  enabled?: boolean;
+  band?: string;
+  [key: string]: unknown;
+}
+
 export default function CustomerDashboard() {
   const router = useRouter();
   const { addToast } = useToast();
@@ -130,17 +151,17 @@ export default function CustomerDashboard() {
     model?: string;
     status?: string;
     signalStrength?: { rxPower?: string | number };
-    connectedHosts?: unknown[];
-    wlanConfigs?: { index: number; ssid?: string; [k: string]: unknown }[];
+    connectedHosts?: ConnectedDevice[];
+    wlanConfigs?: WlanConfig[];
   } | null>(null);
   const [loadingOnt, setLoadingOnt] = useState(true);
   const [editingWifi, setEditingWifi] = useState<number | null>(null); // WLAN index being edited
   const [wifiForm, setWifiForm] = useState({ ssid: '', password: '' });
   const [updatingWifi, setUpdatingWifi] = useState(false);
   const [companyName, setCompanyName] = useState('SALFANET RADIUS');
-  const [connectedDevices, setConnectedDevices] = useState<any[]>([]);
+  const [connectedDevices, setConnectedDevices] = useState<ConnectedDevice[]>([]);
   const [generatingPayment, setGeneratingPayment] = useState<string | null>(null);
-  const [paymentGateways, setPaymentGateways] = useState<any[]>([]);
+  const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayInfo[]>([]);
   const [manualPayModal, setManualPayModal] = useState<{id: string; invoiceNumber: string; amount: number} | null>(null);
   const [manualForm, setManualForm] = useState({ bankName: '', accountName: '', notes: '', file: null as File | null });
   const [submittingManual, setSubmittingManual] = useState(false);
@@ -571,9 +592,9 @@ export default function CustomerDashboard() {
               {ontDevice.wlanConfigs && ontDevice.wlanConfigs.length > 0 && (
                 <div className="pt-2 border-t border-accent/20 space-y-2">
                   <span className="text-[9px] font-bold text-accent uppercase tracking-wide">{t('customer.wifiSettings')}</span>
-                  {ontDevice.wlanConfigs.map((wlan: any) => {
+                  {ontDevice.wlanConfigs.map((wlan: WlanConfig) => {
                     const isEditing = editingWifi === wlan.index;
-                    const wlanDevices = connectedDevices.filter((d: any) => d.associatedDevice === String(wlan.index));
+                    const wlanDevices = connectedDevices.filter((d: ConnectedDevice) => d.associatedDevice === String(wlan.index));
                     return (
                       <div key={wlan.index} className="rounded-lg border border-accent/20 bg-accent/5 p-2 space-y-1.5">
                         <div className="flex items-center justify-between">
@@ -610,7 +631,7 @@ export default function CustomerDashboard() {
                         {wlanDevices.length > 0 && (
                           <div className="pt-1 border-t border-border/50 space-y-1">
                             <p className="text-[9px] text-muted-foreground">{wlanDevices.length} perangkat terhubung</p>
-                            {wlanDevices.map((device: any, idx: number) => (
+                            {wlanDevices.map((device: ConnectedDevice, idx: number) => (
                               <div key={idx} className="flex items-center gap-2 bg-muted/50 rounded px-2 py-1">
                                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 shrink-0" />
                                 <div className="flex-1 min-w-0">

@@ -7,6 +7,7 @@ import MapPicker from '@/components/MapPicker';
 import { ModalInput, ModalSelect, ModalLabel } from '@/components/cyberpunk';
 import { todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 import { pppoeApi, networkApi, buildUrl } from '@/lib/api';
+import type { PppoeUser } from '@/lib/api';
 
 interface Profile { id: string; name: string; groupName: string; price: number; }
 interface Router { id: string; name: string; nasname: string; ipAddress: string; authMode?: string; }
@@ -70,9 +71,9 @@ export default function NewPppoeUserPage() {
       networkApi.listRouters(),
       pppoeApi.listAreas(),
     ]).then(([profilesData, routersData, areasData]) => {
-      setProfiles((profilesData as any).profiles || []);
-      setRouters((routersData as any).routers || []);
-      setAreas((areasData as any).areas || []);
+      setProfiles(profilesData.profiles || []);
+      setRouters(routersData.routers || []);
+      setAreas(areasData.areas || []);
     }).catch(console.error);
   }, []);
 
@@ -86,7 +87,7 @@ export default function NewPppoeUserPage() {
     const timer = setTimeout(async () => {
       try {
         const data = await pppoeApi.listUsers({ search: formData.idCardNumber });
-        const found = (data.users || []).find((u: any) => u.idCardNumber === formData.idCardNumber);
+        const found = (data.users || []).find((u: PppoeUser) => u.idCardNumber === formData.idCardNumber);
         setFormWarnings(w => ({ ...w, nik: found ? `⚠️ NIK sudah terdaftar: ${found.name}` : '' }));
       } catch { /* ignore */ }
     }, 500);
@@ -102,7 +103,7 @@ export default function NewPppoeUserPage() {
     const timer = setTimeout(async () => {
       try {
         const data = await pppoeApi.listUsers({ search: formData.phone });
-        const found = (data.users || []).find((u: any) => u.phone === formData.phone);
+        const found = (data.users || []).find((u: PppoeUser) => u.phone === formData.phone);
         setFormWarnings(w => ({ ...w, phone: found ? `⚠️ No HP sudah terdaftar: ${found.name}` : '' }));
       } catch { /* ignore */ }
     }, 500);
@@ -539,7 +540,7 @@ export default function NewPppoeUserPage() {
                 </div>
                 <div>
                   <ModalLabel>Tipe Koneksi</ModalLabel>
-                  <ModalSelect value={formData.connectionType} onChange={(e) => { field('connectionType', e.target.value as any); if (e.target.value !== 'PPPOE') setHasPppoeAccount(false); else setHasPppoeAccount(true); }}>
+                  <ModalSelect value={formData.connectionType} onChange={(e) => { field('connectionType', e.target.value as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT'); if (e.target.value !== 'PPPOE') setHasPppoeAccount(false); else setHasPppoeAccount(true); }}>
                     <option value="PPPOE">PPPoE</option>
                     <option value="STATIC_IP">Static IP (ARP)</option>
                     <option value="HOTSPOT">Static IP (Hotspot Binding)</option>

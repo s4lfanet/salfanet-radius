@@ -6,11 +6,100 @@ import Swal from 'sweetalert2';
 
 export type AddNodeType = 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'OLT';
 
+/** Minimal OLT shape for dropdowns/placement in AddNodePanel */
+interface OltOption {
+  id: string;
+  name: string;
+  ipAddress?: string;
+  latitude?: number | string;
+  longitude?: number | string;
+}
+
+/** Minimal cable shape for feeder cable selection */
+interface CableOption {
+  id: string;
+  name: string;
+  tubeCount?: number;
+  coresPerTube?: number;
+  totalCores?: number;
+}
+
+/** Minimal entity shape for dropdowns (ODC, JC, OTB) */
+interface EntityOption {
+  id: string;
+  name: string;
+}
+
+/** Feeder cable row submitted with OTB form */
+interface FeederCableRow {
+  cableId: string;
+  portFrom?: number;
+  portTo?: number;
+}
+
+/** Form data submitted by sub-forms to the main panel */
+interface NodeFormData {
+  name?: string;
+  code?: string;
+  address?: string;
+  oltId?: string;
+  odcId?: string;
+  cableType?: string;
+  type?: string;
+  closureType?: string;
+  fiberCount?: string | number;
+  ponPort?: string;
+  portCount?: string | number;
+  splitterRatio?: string;
+  ipAddress?: string;
+  vendor?: string;
+  model?: string;
+  username?: string;
+  password?: string;
+  latitude: number;
+  longitude: number;
+  feederCables?: FeederCableRow[];
+  [key: string]: unknown;
+}
+
+/** Minimal tube shape for OTBSetupPanel tube display */
+interface TubeOption {
+  id: string;
+  tubeNumber: number;
+  colorCode?: string;
+  cores?: Array<{ id?: string }>;
+}
+
+/** Feeder cable assignment from API (OTB detail) */
+interface FeederAssignment {
+  cableId?: string;
+  cable?: { name?: string; tubes?: TubeOption[]; totalCores?: number };
+  portFrom?: number;
+  portTo?: number;
+}
+
+/** Output segment from API (OTB detail) */
+interface SegmentOption {
+  id?: string;
+  fromPort?: number;
+  toDeviceId?: string;
+  toDevice?: { name?: string };
+}
+
+/** Created node returned from the API after creation */
+interface CreatedNode {
+  id: string;
+  name?: string;
+  code?: string;
+  type?: string;
+  [key: string]: unknown;
+}
+
 interface Props {
   lat: number;
   lng: number;
   onClose: () => void;
-  onCreated: (newEntity: any) => void;
+  onCreated: (newEntity: CreatedNode) => void;
   initialNodeType?: AddNodeType;
   onTypeChange?: (type: AddNodeType | null) => void;
 }
@@ -80,7 +169,7 @@ function NodeTypeIcon({ type, className = 'w-5 h-5' }: { type: AddNodeType; clas
 }
 
 // ─── OTB Form ─────────────────────────────────────────────────────────────────
-function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; lng: number; olts: any[]; cables: any[]; onSubmit: (d: any) => void; loading: boolean }) {
+function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; lng: number; olts: OltOption[]; cables: CableOption[]; onSubmit: (d: NodeFormData) => void; loading: boolean }) {
   const [data, setData] = useState({ name: '', code: '', address: '', oltId: '', cableType: 'SM' });
   const [feederRows, setFeederRows] = useState<Array<{ cableId: string }>>([]);
   const set = (k: string, v: string) => setData(p => ({ ...p, [k]: v }));
@@ -92,10 +181,10 @@ function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; l
 
   // Build port range map: each feeder cable gets a sequential range
   const feederDetails = feederRows.map((row, idx) => {
-    const cable = cables.find((c: any) => c.id === row.cableId);
+    const cable = cables.find((c: CableOption) => c.id === row.cableId);
     const cores = cable?.totalCores ?? 0;
     const prevCores = feederRows.slice(0, idx).reduce((sum, r) => {
-      const c = cables.find((cb: any) => cb.id === r.cableId);
+      const c = cables.find((cb: CableOption) => cb.id === r.cableId);
       return sum + (c?.totalCores ?? 0);
     }, 0);
     return { cable, cores, portFrom: prevCores + 1, portTo: prevCores + cores };
@@ -164,7 +253,7 @@ function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; l
                   <select value={row.cableId} onChange={e => updateFeeder(idx, e.target.value)}
                     className="w-full text-[11px] px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                     <option value="">— Pilih Kabel —</option>
-                    {cables.map((c: any) => (
+                    {cables.map((c: CableOption) => (
                       <option key={c.id} value={c.id} disabled={usedCableIds.has(c.id) && c.id !== row.cableId}>
                         {c.name} ({c.tubeCount}T × {c.coresPerTube}C = {c.totalCores} core)
                       </option>
@@ -207,8 +296,8 @@ function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; l
 // ─── JC Form ──────────────────────────────────────────────────────────────────
 function JCForm({ lat, lng, otbs, cables, odcsList, jcsList, onSubmit, loading }: {
   lat: number; lng: number;
-  otbs: any[]; cables: any[]; odcsList: any[]; jcsList: any[];
-  onSubmit: (d: any) => void; loading: boolean;
+  otbs: EntityOption[]; cables: CableOption[]; odcsList: EntityOption[]; jcsList: EntityOption[];
+  onSubmit: (d: NodeFormData) => void; loading: boolean;
 }) {
   const [data, setData] = useState({ name: '', code: '', type: 'AERIAL', cableType: 'SM', fiberCount: '48', closureType: 'BRANCHING', address: '' });
   const set = (k: string, v: string) => setData(p => ({ ...p, [k]: v }));
@@ -262,7 +351,7 @@ function JCForm({ lat, lng, otbs, cables, odcsList, jcsList, onSubmit, loading }
 }
 
 // ─── ODC Form ─────────────────────────────────────────────────────────────────
-function ODCForm({ lat, lng, olts, onSubmit, loading }: { lat: number; lng: number; olts: any[]; onSubmit: (d: any) => void; loading: boolean }) {
+function ODCForm({ lat, lng, olts, onSubmit, loading }: { lat: number; lng: number; olts: OltOption[]; onSubmit: (d: NodeFormData) => void; loading: boolean }) {
   const [data, setData] = useState({ name: '', oltId: '', ponPort: '1', portCount: '8' });
   const set = (k: string, v: string) => setData(p => ({ ...p, [k]: v }));
   return (
@@ -287,7 +376,7 @@ function ODCForm({ lat, lng, olts, onSubmit, loading }: { lat: number; lng: numb
 }
 
 // ─── ODP Form ─────────────────────────────────────────────────────────────────
-function ODPForm({ lat, lng, olts, odcs, onSubmit, loading }: { lat: number; lng: number; olts: any[]; odcs: any[]; onSubmit: (d: any) => void; loading: boolean }) {
+function ODPForm({ lat, lng, olts, odcs, onSubmit, loading }: { lat: number; lng: number; olts: OltOption[]; odcs: EntityOption[]; onSubmit: (d: NodeFormData) => void; loading: boolean }) {
   const [data, setData] = useState({ name: '', oltId: '', odcId: '', ponPort: '1', portCount: '8', splitterRatio: '1:8' });
   const set = (k: string, v: string) => setData(p => ({ ...p, [k]: v }));
   return (
@@ -359,7 +448,7 @@ function SubmitBtn({ loading, label = 'Tambah Node' }: { loading: boolean; label
 function OLTForm({
   lat, lng, olts, onSubmit, onPlace, loading,
 }: {
-  lat: number; lng: number; olts: any[]; onSubmit: (d: any) => void; onPlace: (olt: any) => void; loading: boolean;
+  lat: number; lng: number; olts: OltOption[]; onSubmit: (d: NodeFormData) => void; onPlace: (olt: OltOption) => void; loading: boolean;
 }) {
   const [mode, setMode] = useState<'place' | 'create'>('place');
   const [search, setSearch] = useState('');
@@ -468,12 +557,12 @@ const getTubeColor = (n: number) => TUBE_COLORS[(n - 1) % TUBE_COLORS.length];
 // ─── OTB Setup Panel (step after OTB creation) ────────────────────────────────
 function OTBSetupPanel({ otbId, jcs, onDone }: {
   otbId: string;
-  jcs: any[];
+  jcs: EntityOption[];
   onDone: () => void;
 }) {
   // feederGroups: array of { cableName, portFrom, portTo, tubes[] }
-  const [feederGroups, setFeederGroups] = useState<Array<{ cableName: string; portFrom: number; portTo: number; tubes: any[] }>>([]);
-  const [existing, setExisting] = useState<any[]>([]);
+  const [feederGroups, setFeederGroups] = useState<Array<{ cableName: string; portFrom: number; portTo: number; tubes: TubeOption[] }>>([]);
+  const [existing, setExisting] = useState<SegmentOption[]>([]);
   const [pendingJC, setPendingJC] = useState<Record<string, string>>({});  // tubeKey → jcId
   const [saving, setSaving] = useState<string | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
@@ -484,11 +573,11 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
       .then(d => {
         setExisting(d.outputSegments ?? []);
 
-        const feeders: any[] = d.feederCableAssignments ?? [];
+        const feeders: FeederAssignment[] = d.feederCableAssignments ?? [];
         if (feeders.length > 0) {
           // Multiple feeder cables — group tubes per cable
-          const groups = feeders.map((f: any) => ({
-            cableName: f.cable?.name ?? f.cableId,
+          const groups = feeders.map((f: FeederAssignment) => ({
+            cableName: f.cable?.name ?? f.cableId ?? '-',
             portFrom: f.portFrom ?? 1,
             portTo: f.portTo ?? 0,
             tubes: f.cable?.tubes ?? [],
@@ -499,7 +588,7 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
           setFeederGroups([{
             cableName: d.incomingCable.name,
             portFrom: 1,
-            portTo: d.incomingCable.totalCores ?? d.incomingCable.tubes?.reduce((s: number, t: any) => s + (t.cores?.length ?? 0), 0) ?? 0,
+            portTo: d.incomingCable.totalCores ?? d.incomingCable.tubes?.reduce((s: number, t: TubeOption) => s + (t.cores?.length ?? 0), 0) ?? 0,
             tubes: d.incomingCable.tubes ?? [],
           }]);
         }
@@ -556,7 +645,7 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
                 <p className="text-[10px] text-green-500 dark:text-green-400">Port {group.portFrom} – {group.portTo} · {group.tubes.length} tabung</p>
               </div>
               <div className="p-2 space-y-1.5">
-                {group.tubes.map((tube: any) => {
+                {group.tubes.map((tube: TubeOption) => {
                   const tubeKey = `${gIdx}-${tube.tubeNumber}`;
                   const alreadySet = isAssigned(tube.id, tube.tubeNumber);
                   const jcName = assignedJCName(tube.tubeNumber);
@@ -621,13 +710,13 @@ function getApiUrl(type: AddNodeType) {
 export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNodeType, onTypeChange }: Props) {
   const [step, setStep] = useState<'type' | 'form' | 'setup'>(initialNodeType ? 'form' : 'type');
   const [selectedType, setSelectedType] = useState<AddNodeType | null>(initialNodeType ?? null);
-  const [createdNode, setCreatedNode] = useState<any | null>(null);
+  const [createdNode, setCreatedNode] = useState<CreatedNode | null>(null);
   const [loading, setLoading] = useState(false);
-  const [olts, setOlts] = useState<any[]>([]);
-  const [odcs, setOdcs] = useState<any[]>([]);
-  const [cables, setCables] = useState<any[]>([]);
-  const [otbs, setOtbs] = useState<any[]>([]);
-  const [jcs, setJcs] = useState<any[]>([]);
+  const [olts, setOlts] = useState<OltOption[]>([]);
+  const [odcs, setOdcs] = useState<EntityOption[]>([]);
+  const [cables, setCables] = useState<CableOption[]>([]);
+  const [otbs, setOtbs] = useState<EntityOption[]>([]);
+  const [jcs, setJcs] = useState<EntityOption[]>([]);
 
   useEffect(() => {
     fetch('/api/network/olts').then(r => r.json()).then(d => setOlts(d.data || [])).catch(() => {});
@@ -637,7 +726,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
     fetch('/api/network/joint-closures').then(r => r.json()).then(d => setJcs(d.data || [])).catch(() => {});
   }, []);
 
-  const handlePlaceOlt = async (olt: any) => {
+  const handlePlaceOlt = async (olt: OltOption) => {
     setLoading(true);
     try {
       const res = await fetch('/api/network/olts', {
@@ -657,7 +746,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
     }
   };
 
-  const handleSubmit = async (formData: any) => {
+  const handleSubmit = async (formData: NodeFormData) => {
     if (!selectedType) return;
     setLoading(true);
     try {
@@ -678,9 +767,9 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
 
       // For OTB: save each feeder cable as an IN segment with port range
       if (selectedType === 'OTB' && Array.isArray(feederCables)) {
-        const validFeeders = feederCables.filter((f: any) => f.cableId);
+        const validFeeders = feederCables.filter((f: FeederCableRow) => f.cableId);
         if (validFeeders.length > 0) {
-          await Promise.allSettled(validFeeders.map((f: any) =>
+          await Promise.allSettled(validFeeders.map((f: FeederCableRow) =>
             fetch(`/api/network/otbs/${node.id}/feeder-cables`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

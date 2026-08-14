@@ -42,6 +42,22 @@ interface ONU {
   customer: { id: string; username: string; name: string; phone: string } | null;
 }
 
+interface OltAlert {
+  id: string;
+  alertType: string;
+  severity: string;
+  message: string;
+  createdAt: string;
+}
+
+interface OltMonitoringLog {
+  id: string;
+  severity: string;
+  logType: string;
+  message: string;
+  createdAt: string;
+}
+
 interface OLTDetail {
   id: string;
   name: string;
@@ -67,9 +83,9 @@ interface OLTDetail {
   username: string | null;
   pollingInterval: number;
   onuStatuses: ONU[];
-  alerts: any[];
-  performanceMetrics: any[];
-  monitoringLogs: any[];
+  alerts: OltAlert[];
+  performanceMetrics: Record<string, unknown>[];
+  monitoringLogs: OltMonitoringLog[];
   routers: { id: string; routerId: string; router: { id: string; name: string; ipAddress: string } }[];
 }
 
@@ -820,9 +836,9 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
         if (isZTE && nextMetadata.tcontProfiles.length > 0) setTcontProfile(nextMetadata.tcontProfiles[0]);
         if (isZTE && nextMetadata.trafficProfiles.length > 0) setTrafficProfile(nextMetadata.trafficProfiles[0]);
       })
-      .catch((error: any) => {
+      .catch((error: unknown) => {
         if (!active) return;
-        setResult({ ok: false, msg: error.message });
+        setResult({ ok: false, msg: error instanceof Error ? error.message : String(error) });
       })
       .finally(() => {
         if (active) setMetadataLoading(false);
@@ -1413,12 +1429,19 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
   );
 }
 
+interface ServicePort {
+  servicePort: string | number;
+  vport: string | number;
+  userVlan: string | number;
+  vlan: string | number;
+}
+
 interface OnuDetailResponse {
   success?: boolean;
   telnet?: {
     interface?: string;
     detail?: { parsed?: Record<string, unknown>; summary?: Record<string, unknown>; raw?: string };
-    config?: { summary?: Record<string, unknown>; raw?: string };
+    config?: { summary?: Record<string, unknown> & { servicePorts?: ServicePort[] }; raw?: string };
     optical?: { raw?: string };
   };
   onu?: {
@@ -1555,7 +1578,7 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
                         </tr>
                       </thead>
                       <tbody>
-                        {configSummary.servicePorts.map((servicePort: any) => (
+                        {configSummary.servicePorts.map((servicePort: ServicePort) => (
                           <tr key={`${servicePort.servicePort}-${servicePort.vport}`} className="bg-gray-50 dark:bg-gray-950">
                             <td className="px-2 py-2 rounded-l border-y border-l border-gray-200 dark:border-gray-800 font-mono">{servicePort.servicePort}</td>
                             <td className="px-2 py-2 border-y border-gray-200 dark:border-gray-800 font-mono">{servicePort.vport}</td>
@@ -1614,7 +1637,7 @@ function ONUAssignModal({ oltId, onu, onClose, onSuccess }: { oltId: string; onu
         setCustomers(json.customers ?? []);
         if (json.currentCustomer?.id) setSelectedCustomerId(json.currentCustomer.id);
       })
-      .catch((e: any) => setError(e.message))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : String(e)))
       .finally(() => setLoading(false));
   }, [oltId, onu.id, query]);
 
@@ -1753,7 +1776,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           username: o.username ?? '',
           password: o.password ?? '',
           pollingInterval: o.pollingInterval,
-          routerIds: (o.routers ?? []).map((r: any) => r.routerId),
+          routerIds: (o.routers ?? []).map((r: { id: string; routerId: string; router: { id: string; name: string; ipAddress: string } }) => r.routerId),
         });
       } else {
         router.push('/admin/olt/monitoring');
@@ -2341,7 +2364,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
               <CardContent className="text-center py-8 text-gray-400">No active alerts</CardContent>
             </Card>
           ) : (
-            olt.alerts.map((alert: any) => (
+            olt.alerts.map((alert: OltAlert) => (
               <Card key={alert.id} className={alert.severity === 'critical' ? 'border-red-300' : ''}>
                 <CardContent className="pt-4 pb-4">
                   <div className="flex items-start gap-3">
@@ -2624,7 +2647,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
           <Card>
             <CardContent className="pt-4">
               <div className="space-y-2">
-                {olt.monitoringLogs.map((log: any) => (
+                {olt.monitoringLogs.map((log: OltMonitoringLog) => (
                   <div key={log.id} className="flex items-start gap-3 py-2 border-b last:border-0">
                     <div className={`text-xs font-mono px-1.5 py-0.5 rounded ${
                       log.severity === 'error' ? 'bg-red-100 text-red-700' :

@@ -57,6 +57,15 @@ interface RoutersListResponse {
   vpnClients: VpnClient[]
 }
 
+interface ScriptConfig {
+  radiusServer: string;
+  connectionType: string;
+  authPort: number | string;
+  acctPort: number | string;
+  coaPort: number | string;
+  radiusSecret: string;
+}
+
 interface RoutersStatusResponse {
   statusMap: Record<string, RouterStatus>
 }
@@ -69,7 +78,7 @@ interface RadiusSetupResponse {
   script: string
   scriptRos6?: string
   scriptRos7?: string
-  config: Record<string, unknown>
+  config: ScriptConfig
 }
 
 export default function RouterPage() {
@@ -109,7 +118,7 @@ export default function RouterPage() {
   const [settingUpRadius, setSettingUpRadius] = useState<string | null>(null)
   const [showScriptModal, setShowScriptModal] = useState(false)
   const [showTutorial, setShowTutorial] = useState(true)
-  const [scriptModalData, setScriptModalData] = useState<{ script: string; scriptRos6?: string; scriptRos7?: string; config: any } | null>(null)
+  const [scriptModalData, setScriptModalData] = useState<{ script: string; scriptRos6?: string; scriptRos7?: string; config: ScriptConfig } | null>(null)
   const [scriptRosTab, setScriptRosTab] = useState<6 | 7>(7)
 
   // Generate random RADIUS secret (16 chars alphanumeric)

@@ -11,6 +11,7 @@ import {
   PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
+import type { TooltipPayloadEntry, TooltipValueType } from 'recharts';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 
@@ -103,19 +104,24 @@ function KpiCard({
 
 // ─── Custom chart tooltip ─────────────────────────────────────────────────────
 
-function CustomTooltip({ active, payload, label, isCurrency }: {
-  active?: boolean; payload?: any[]; label?: string; isCurrency?: boolean;
-}) {
+interface AnalitikTooltipProps {
+  active?: boolean;
+  payload?: ReadonlyArray<TooltipPayloadEntry>;
+  label?: string;
+  isCurrency?: boolean;
+}
+
+function CustomTooltip({ active, payload, label, isCurrency }: AnalitikTooltipProps) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-card border border-border rounded-lg p-3 shadow-lg text-xs">
       <p className="font-semibold text-foreground mb-2">{label}</p>
-      {payload.map((p: any) => (
-        <div key={p.dataKey} className="flex items-center gap-2">
+      {payload.map((p: TooltipPayloadEntry) => (
+        <div key={String(p.dataKey)} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ background: p.color }} />
           <span className="text-muted-foreground">{p.name}:</span>
           <span className="font-medium text-foreground">
-            {isCurrency ? fmtIDRFull(p.value) : p.value?.toLocaleString('id-ID')}
+            {isCurrency ? fmtIDRFull(Number(p.value)) : (typeof p.value === 'number' ? p.value.toLocaleString('id-ID') : String(p.value ?? ''))}
           </span>
         </div>
       ))}
@@ -351,7 +357,7 @@ export default function LaporanAnalitikPage() {
                 <YAxis tick={{ fontSize: 10 }} tickLine={false} domain={[0, 'auto']}
                   tickFormatter={v => `${v}%`} width={40} />
                 <Tooltip
-                  formatter={(v: any) => [`${v ?? 0}%`, 'Churn Rate']}
+                  formatter={(v: TooltipValueType | undefined) => [`${Number(v) ?? 0}%`, 'Churn Rate'] as [React.ReactNode, string | number]}
                   labelFormatter={label => label}
                 />
                 <Line
@@ -405,7 +411,7 @@ export default function LaporanAnalitikPage() {
                         <Cell key={idx} fill={PIE_COLORS[idx % PIE_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(v: any, _n: any, p: any) => [(v ?? 0) + ' pelanggan', p.payload.profile]} />
+                    <Tooltip formatter={(v: TooltipValueType | undefined, _n: string | number | undefined, p: TooltipPayloadEntry) => [`${Number(v) ?? 0} pelanggan`, String(p.payload?.profile ?? '')] as [React.ReactNode, string | number]} />
                   </PieChart>
                 </ResponsiveContainer>
                 <div className="flex-1 space-y-2 min-w-0">

@@ -938,10 +938,10 @@ function AdminLayoutContent({
           onClick={() => setSidebarOpen(false)}
           onTouchStart={(e) => {
             const touch = e.touches[0];
-            (e.currentTarget as any).touchStartX = touch.clientX;
+            (e.currentTarget as unknown as HTMLDivElement & { touchStartX: number }).touchStartX = touch.clientX;
           }}
           onTouchEnd={(e) => {
-            const touchStartX = (e.currentTarget as any).touchStartX;
+            const touchStartX = (e.currentTarget as unknown as HTMLDivElement & { touchStartX: number }).touchStartX;
             const touchEndX = e.changedTouches[0].clientX;
             if (touchStartX - touchEndX > 50) {
               setSidebarOpen(false);

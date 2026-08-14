@@ -417,7 +417,7 @@ export default function LaporanPage() {
 }
 
 // ── Summary Card Component ───────────────────────────────────────────────────
-function SummaryCard({ label, value, icon, color }: { label: string; value: any; icon: React.ReactNode; color: string }) {
+function SummaryCard({ label, value, icon, color }: { label: string; value: React.ReactNode; icon: React.ReactNode; color: string }) {
   const colorMap: Record<string, string> = {
     cyan:   'text-[#00f7ff] border-[#00f7ff]/30 shadow-[0_0_15px_rgba(0,247,255,0.1)]',
     green:  'text-emerald-400 border-emerald-500/30',
