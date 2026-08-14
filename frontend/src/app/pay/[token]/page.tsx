@@ -94,7 +94,7 @@ export default function PaymentPage() {
     if (!invoice) return;
     setProcessing(true);
     try {
-      const body: any = { invoiceId: invoice.id, gateway };
+      const body: { invoiceId: string; gateway: string; paymentMethod?: string } = { invoiceId: invoice.id, gateway };
       if (paymentMethod) body.paymentMethod = paymentMethod;
       const res = await fetch('/api/payment/create', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       const data = await res.json();

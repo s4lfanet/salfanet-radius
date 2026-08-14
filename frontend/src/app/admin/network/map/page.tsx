@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
+import type { Map as LeafletMap } from 'leaflet';
 import { MapPin, Radio, Box, Server, Users, Filter, RefreshCw, Layers, Eye, EyeOff, Edit, Phone, Mail, MapPinned, Wifi, WifiOff, AlertTriangle, CheckCircle, XCircle, Navigation, Crosshair, Map, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import UserDetailModal from '@/components/UserDetailModal';
@@ -150,7 +151,7 @@ export default function NetworkMapPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { addToast } = useToast();
-  const mapRef = useRef<any>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
   const [olts, setOlts] = useState<OLT[]>([]);
   const [odcs, setOdcs] = useState<ODC[]>([]);
   const [odps, setOdps] = useState<ODP[]>([]);
@@ -189,6 +190,7 @@ export default function NetworkMapPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       import('leaflet').then((L) => {
+        // _getIconUrl is an internal Leaflet property not exposed in types
         delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: () => string })._getIconUrl;
         L.Icon.Default.mergeOptions({
           iconRetinaUrl: '/leaflet/marker-icon-2x.png',

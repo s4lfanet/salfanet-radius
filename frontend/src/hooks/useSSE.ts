@@ -50,7 +50,7 @@ export function useSSE<T = any>(
       }
 
       // Handle custom events
-      eventSource.addEventListener('voucher-stats', (event: any) => {
+      eventSource.addEventListener('voucher-stats', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data)
           onMessage('voucher-stats', data)
@@ -59,7 +59,7 @@ export function useSSE<T = any>(
         }
       })
 
-      eventSource.addEventListener('voucher-changed', (event: any) => {
+      eventSource.addEventListener('voucher-changed', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data)
           onMessage('voucher-changed', data)

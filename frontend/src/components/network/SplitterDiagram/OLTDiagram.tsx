@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { DiagramProps, Port, DEFAULT_COLORS, PORT_STATUS_LABELS, FIBER_COLORS } from './types';
+import { DiagramProps, Port, PortStatus, DEFAULT_COLORS, PORT_STATUS_LABELS, FIBER_COLORS } from './types';
 import { useTranslation } from '@/hooks/useTranslation';
 
 /**
@@ -309,7 +309,7 @@ export function OLTDiagram({
                   width={30}
                   height={12}
                   rx="2"
-                  fill={getPortColor({ status: status as any } as Port)}
+                  fill={getPortColor({ status: status as PortStatus } as Port)}
                 />
                 <text x={35} y={0} className="text-xs fill-gray-300">
                   {t(`network.diagram.status.${status.toLowerCase()}`)}

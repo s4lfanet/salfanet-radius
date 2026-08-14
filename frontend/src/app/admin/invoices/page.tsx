@@ -189,6 +189,7 @@ export default function InvoicesPage() {
       const params: Record<string, string> = { status };
       if (invoiceMonth) params.month = invoiceMonth;
       const data = await invoiceApi.list(params);
+      // API Invoice type lacks nested `user` relation; local Invoice includes it
       setInvoices((data.invoices as unknown as Invoice[]) || []);
       setStats(data.stats || stats);
     } catch (error) {
@@ -380,6 +381,7 @@ export default function InvoicesPage() {
         doc.setFontSize(8); doc.text(`Generated: ${data.pdfData.generatedAt}`, 14, 21);
         autoTable(doc, { head: [data.pdfData.headers], body: data.pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
         if (data.pdfData.summary) {
+          // jspdf-autotable adds lastAutoTable to the doc instance at runtime
           const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
           doc.setFontSize(9); doc.setFont('helvetica', 'bold');
           data.pdfData.summary.forEach((s: { label: string; value: string }, i: number) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
@@ -434,6 +436,7 @@ export default function InvoicesPage() {
         styles: { fontSize: 10 }
       });
 
+      // jspdf-autotable adds lastAutoTable to the doc instance at runtime
       const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
       doc.setFontSize(12); doc.setFont('helvetica', 'bold');
       doc.text(`Total: ${inv.amountFormatted}`, 196, finalY, { align: 'right' });

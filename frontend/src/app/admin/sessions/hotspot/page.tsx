@@ -101,9 +101,9 @@ export default function HotspotSessionsPage() {
       if (routerFilter) params.set('routerId', routerFilter);
       if (searchFilter) params.set('search', searchFilter);
 
-      const data = await apiAdmin<{ sessions?: Session[]; stats?: any; pagination?: Pagination }>(`/api/sessions?${params}`);
+      const data = await apiAdmin<{ sessions?: Session[]; stats?: Stats; pagination?: Pagination }>(`/api/sessions?${params}`);
       setSessions(data.sessions || []);
-      setStats(data.stats);
+      setStats(data.stats ?? null);
       if (data.pagination) {
         setPagination(data.pagination);
       }

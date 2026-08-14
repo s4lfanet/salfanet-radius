@@ -254,7 +254,7 @@ export default function SessionsPage() {
         doc.setFontSize(8); doc.text(`Generated: ${data.pdfData.generatedAt}`, 14, 21);
         autoTable(doc, { head: [data.pdfData.headers], body: data.pdfData.rows, startY: 26, styles: { fontSize: 7 }, headStyles: { fillColor: [13, 148, 136] } });
         if (data.pdfData.summary) {
-          const finalY = (doc as any).lastAutoTable.finalY + 8;
+          const finalY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 8;
           doc.setFontSize(9); doc.setFont('helvetica', 'bold');
           data.pdfData.summary.forEach((s, i) => { doc.text(`${s.label}: ${s.value}`, 14, finalY + (i * 5)); });
         }
