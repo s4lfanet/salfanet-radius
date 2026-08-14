@@ -190,4 +190,18 @@ export const pppoeApi = {
   listAreas(): Promise<{ areas: PppoeArea[] } | PppoeArea[]> {
     return apiAdmin('/api/pppoe/areas');
   },
+
+  /** Create or update area (PUT if id present, POST if new) */
+  saveArea(payload: Record<string, any>): Promise<{ area: PppoeArea }> {
+    const method = payload.id ? 'PUT' : 'POST';
+    return apiAdmin('/api/pppoe/areas', {
+      method,
+      body: JSON.stringify(payload),
+    });
+  },
+
+  /** Delete area */
+  deleteArea(id: string): Promise<void> {
+    return apiAdmin(`/api/pppoe/areas?id=${id}`, { method: 'DELETE' });
+  },
 };
