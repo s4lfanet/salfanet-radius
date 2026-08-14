@@ -1378,6 +1378,24 @@ location / { proxy_pass http://127.0.0.1:3000; }           # Pages → frontend
 
 ---
 
+### Phase 2 Batch 23 — GenieACS VP Scripts Page Migration (14 Aug 2026) ✅
+
+**Files migrated:**
+- `frontend/src/app/admin/genieacs/vp-scripts/page.tsx` — 6 fetch() calls replaced:
+  - `fetch('/api/genieacs/virtual-parameters')` (load) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/virtual-parameters', { method: 'POST/PUT' })` (save) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/virtual-parameters/${id}', { method: 'DELETE' })` → `apiAdmin(...)`
+  - `fetch('/api/genieacs/virtual-parameters/${id}', { method: 'PUT' })` (syncOne) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/sync', { method: 'POST' })` (syncAll) → `apiAdmin(...)`
+  - `fetch('/api/genieacs/backup', { method: 'POST' })` (restore) → `apiAdmin(...)`
+  - Zero inline fetch() calls remaining in genieacs/vp-scripts page
+
+**Verification:**
+- Build: ✅ SUCCESS
+- Production test: ✅ GenieACS VP scripts page loads, zero console errors
+
+---
+
 ## 11. Recommended Refactor Plan (Prioritas)
 
 ### Phase 1: Critical Fixes (Independent Frontend)
