@@ -49,6 +49,7 @@ import {
   Gift,
   Zap,
 } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB } from '@/lib/timezone';
@@ -199,7 +200,7 @@ export default function PushNotificationsPage() {
   useEffect(() => {
     loadStats();
     loadHistory();
-    fetch('/api/public/company').then(r => r.json()).then(d => {
+    apiAdmin('/api/public/company').then((d: any) => {
       if (d.success && d.company?.name) setCompanyName(d.company.name);
     }).catch(() => {});
   }, []);
@@ -207,12 +208,11 @@ export default function PushNotificationsPage() {
   const loadStats = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/push/send?action=stats');
-      const data = await res.json();
-      if (data.success) {
-        setStats(data.stats);
+      const data = await apiAdmin('/api/push/send?action=stats');
+      if ((data as any).success) {
+        setStats((data as any).stats);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load stats error:', error);
     } finally {
       setLoading(false);
@@ -222,12 +222,11 @@ export default function PushNotificationsPage() {
   const loadHistory = async () => {
     setHistoryLoading(true);
     try {
-      const res = await fetch('/api/push/send?limit=30');
-      const data = await res.json();
-      if (data.success) {
-        setBroadcasts(data.broadcasts);
+      const data = await apiAdmin('/api/push/send?limit=30');
+      if ((data as any).success) {
+        setBroadcasts((data as any).broadcasts);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Load history error:', error);
     } finally {
       setHistoryLoading(false);
@@ -279,9 +278,8 @@ export default function PushNotificationsPage() {
     try {
       const targetIds = targetType === 'area' && selectedArea ? [selectedArea] : [];
 
-      const res = await fetch('/api/push/send', {
+      const data = await apiAdmin('/api/push/send', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: title.trim(),
           message: message.trim(),
@@ -294,12 +292,10 @@ export default function PushNotificationsPage() {
         }),
       });
 
-      const data = await res.json();
-
-      if (data.success) {
+      if ((data as any).success) {
         showSuccess(
           t('pushNotif.sentSuccess'),
-          t('pushNotif.sentStats').replace('{sent}', data.stats.sent).replace('{failed}', data.stats.failed).replace('{total}', data.stats.total)
+          t('pushNotif.sentStats').replace('{sent}', (data as any).stats.sent).replace('{failed}', (data as any).stats.failed).replace('{total}', (data as any).stats.total)
         );
         setTitle('');
         setMessage('');
@@ -307,10 +303,10 @@ export default function PushNotificationsPage() {
         loadHistory();
         loadStats();
       } else {
-        showError(data.error || t('pushNotif.sendFailed'));
+        showError((data as any).error || t('pushNotif.sendFailed'));
       }
-    } catch (error) {
-      showError(t('pushNotif.sendError'));
+    } catch (error: any) {
+      showError(error.message || t('pushNotif.sendError'));
     } finally {
       setSending(false);
     }
