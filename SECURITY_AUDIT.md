@@ -382,3 +382,97 @@ The centralized client correctly handles FormData:
 8. **Migrate remaining direct fetch** — AdminClientLayout, UserDetailModal, network components
 9. **Authenticated integration tests** — test CRUD with real credentials on VPS
 10. **Tenant isolation tests** — verify with two customer accounts that data doesn't leak
+
+---
+
+## 19. Phase 2 — Comprehensive Security Hardening (2026-08-16)
+
+**Commit:** `23bb7ef5`
+**Files changed:** 19
+**Lines:** +532 / -257
+
+### 19.1 P0/P1 Authorization Fixes
+
+| ID | Endpoint | File | Severity | Root Cause | Fix | Verification |
+|----|----------|------|----------|------------|-----|--------------|
+| SEC-2.01 | `GET/PUT/DELETE /api/admin/users/[id]/permissions` | `admin/users/[id]/permissions/route.ts` | CRITICAL | No authentication at all | Added `requirePermission()` to all 3 methods | ✅ Smoke: 401 |
+| SEC-2.02 | `POST/PUT/DELETE /api/admin/technicians` | `admin/technicians/route.ts` | CRITICAL | No authentication on mutations | Added `requirePermission()` to POST/PUT/DELETE, GET upgraded from session-only | ✅ Smoke: 401 |
+| SEC-2.03 | `POST /api/admin/registrations/[id]/reject` | `admin/registrations/[id]/reject/route.ts` | HIGH | Session-only check | Replaced with `requirePermission('registrations.approve')` | ✅ Build |
+| SEC-2.04 | `POST /api/admin/registrations/[id]/mark-installed` | `admin/registrations/[id]/mark-installed/route.ts` | HIGH | Session-only check | Replaced with `requirePermission('registrations.approve')` | ✅ Build |
+| SEC-2.05 | `POST /api/admin/topup-requests/[id]/reject` | `admin/topup-requests/[id]/reject/route.ts` | HIGH | Session-only check | Replaced with `requirePermission('invoices.approve')` | ✅ Build |
+| SEC-2.06 | `GET/PATCH /api/admin/agent-deposits` | `admin/agent-deposits/route.ts` | HIGH | Session-only check | Replaced with `requirePermission('invoices.approve')` | ✅ Build |
+| SEC-2.07 | `POST /api/admin/evoucher/orders/bulk-delete` | `admin/evoucher/orders/bulk-delete/route.ts` | HIGH | Session-only check | Replaced with `requirePermission('invoices.approve')` | ✅ Build |
+| SEC-2.08 | `POST /api/admin/evoucher/orders/[id]/cancel` | `admin/evoucher/orders/[id]/cancel/route.ts` | MEDIUM | Session-only check | Replaced with `requirePermission('invoices.approve')` | ✅ Build |
+| SEC-2.09 | `POST /api/admin/evoucher/orders/[id]/resend` | `admin/evoucher/orders/[id]/resend/route.ts` | MEDIUM | Session-only check | Replaced with `requirePermission('invoices.approve')` | ✅ Build |
+| SEC-2.10 | `POST /api/admin/users/[id]/renewal` | `admin/users/[id]/renewal/route.ts` | HIGH | Session-only check | Replaced with `requirePermission('customers.edit')` | ✅ Build |
+| SEC-2.11 | `GET /api/agent/deposit/check?orderId=` | `agent/deposit/check/route.ts` | CRITICAL | No authentication — any caller could look up any agent's deposit by orderId | Added `requireAgentAuth()` + ownership verification for orderId-based lookup. Token-based lookup remains a capability URL (32-byte secret). | ✅ Smoke: 401 |
+| SEC-2.12 | `POST /api/agent/record-sales` | `agent/record-sales/route.ts` | CRITICAL | No authentication — cron endpoint exposed publicly | Added `CRON_API_KEY` header verification | ✅ Smoke: 401 |
+
+### 19.2 Mass Assignment Prevention
+
+| ID | Endpoint | File | Severity | Root Cause | Fix | Verification |
+|----|----------|------|----------|------------|-----|--------------|
+| SEC-2.13 | `POST /api/admin/users` | `admin/users/route.ts` | HIGH | `role` accepted from body without validation; could create SUPER_ADMIN | Added role allowlist validation + SUPER_ADMIN escalation check (caller must be SUPER_ADMIN) | ✅ Build |
+| SEC-2.14 | `PUT /api/admin/users/[id]` | `admin/users/[id]/route.ts` | HIGH | `role` accepted from body; could escalate self or demote superadmin | Added role allowlist, SUPER_ADMIN escalation prevention, superadmin deactivation/demotion prevention, replaced `any` with `Prisma.adminUserUpdateInput` | ✅ Build |
+| SEC-2.15 | `admin/technicians` | `admin/technicians/route.ts` | MEDIUM | `where: any` and `updateData: any` | Replaced with `Prisma.technicianWhereInput` and `Prisma.technicianUpdateInput` | ✅ Build |
+
+### 19.3 Billing/Payment Transaction Atomicity
+
+| ID | Handler | File | Severity | Root Cause | Fix | Verification |
+|----|---------|------|----------|------------|-----|--------------|
+| SEC-2.16 | `handleAgentDeposit` | `payment/webhook/route.ts` | HIGH | Deposit status update and agent balance increment were separate operations | Wrapped in `prisma.$transaction()` with `updateMany` idempotency guard (status='PENDING' condition) | ✅ Build |
+| SEC-2.17 | `handleCustomerTopUp` | `payment/webhook/route.ts` | HIGH | Invoice mark-paid and user balance increment were separate operations | Wrapped in `prisma.$transaction()` with `updateMany` idempotency guard | ✅ Build |
+| SEC-2.18 | `handleInvoicePayment` | `payment/webhook/route.ts` | HIGH | Invoice mark-paid, payment record creation, and user status/expiry/profile update were separate operations | All 3 DB operations wrapped in `prisma.$transaction()` with `updateMany` idempotency guard. Notifications and external services remain outside the transaction (best-effort). | ✅ Build |
+| SEC-2.19 | `POST /api/payment/create` | `payment/create/route.ts` | MEDIUM | No duplicate pending payment check — user could create multiple pending payments | Added `webhookLog` check for existing pending payment within last 30 minutes → 409 Conflict | ✅ Build |
+
+### 19.4 FreeRADIUS Multi-NAS Isolation
+
+| ID | Endpoint | File | Severity | Root Cause | Fix | Verification |
+|----|----------|------|----------|------------|-----|--------------|
+| SEC-2.20 | `POST /api/admin/pppoe/sync-all-radius` | `admin/pppoe/sync-all-radius/route.ts` | HIGH | RADIUS entries (radcheck/radusergroup/radreply) created without `nas_identifier`; `deleteMany` not scoped by NAS — risk of cross-NAS collision/leakage | Added `nas_identifier` (router.id) to all create operations; `deleteMany` scoped by `nas_identifier`; replaced session-only auth with `requirePermission('customers.edit')` | ✅ Smoke: 401 |
+
+### 19.5 Cronjob Duplicate Execution Protection
+
+| ID | File | Severity | Root Cause | Fix | Verification |
+|----|------|----------|------------|-----|--------------|
+| SEC-2.21 | `cron-runner.ts` | HIGH | No locking mechanism — long-running jobs could overlap, causing duplicate invoices/notifications/mutations | Added in-memory guard (`Set<string>`) + database-based lock (`cronHistory` 'running' check with 30min stale threshold). Replaced `any` types with proper TypeScript types. | ✅ Build |
+
+### 19.6 GenieACS Reliability
+
+| ID | File | Severity | Root Cause | Fix | Verification |
+|----|------|----------|------------|-----|--------------|
+| SEC-2.22 | `lib/genieacs/api-client.ts` | MEDIUM | No timeout or retry — if GenieACS is unreachable, requests hang indefinitely | Added 30s timeout (`AbortController`), retry with exponential backoff (max 2 retries) for 5xx/429/timeout/network errors | ✅ Build |
+
+### 19.7 Known Limitations (not fixed — require schema/architecture changes)
+
+| ID | Issue | Severity | Why Not Fixed |
+|----|-------|----------|---------------|
+| SEC-2.23 | Technician GenieACS routes allow any authenticated technician to view all devices | MEDIUM | No technician-router assignment model exists in the schema. Requires schema change to add `routerId`/`areaId` to `technician` model. |
+| SEC-2.24 | WhatsApp providers are globally scoped, not tenant-specific | LOW | Single-tenant deployment — not an issue unless multi-tenant is introduced. |
+| SEC-2.25 | No RADIUS sync retry queue/reconciliation cron | LOW | Requires new database table and cron job. Documented for future implementation. |
+| SEC-2.26 | No token revocation for agent JWT | MEDIUM | Requires JWT blocklist table and middleware. Documented in previous audit. |
+
+### 19.8 Verification Results (Phase 2)
+
+| Check | Result |
+|-------|--------|
+| `tsc --noEmit` (backend, changed files) | ✅ 0 new errors |
+| `pnpm build` (backend, local) | ✅ Exit 0 |
+| `pnpm build` (backend, VPS) | ✅ Exit 0 |
+| PM2 services | ✅ All 4 online |
+| Smoke: backend health | ✅ 200 |
+| Smoke: frontend | ✅ 200 |
+| Smoke: nginx proxy | ✅ 200 |
+| Smoke: admin/users/[id]/permissions (no auth) | ✅ 401 (was: no auth) |
+| Smoke: admin/technicians POST (no auth) | ✅ 401 (was: no auth) |
+| Smoke: agent/record-sales POST (no auth) | ✅ 401 (was: no auth) |
+| Smoke: agent/deposit/check orderId (no auth) | ✅ 401 (was: no auth) |
+| Smoke: admin/pppoe/sync-all-radius (no auth) | ✅ 401 (was: session-only) |
+
+### 19.9 Pre-existing TypeScript Errors (not introduced by this audit)
+
+- 118 `session.user` type errors — NextAuth custom fields (`id`, `role`, `username`) not typed in default `Session.user` interface. Pre-existing across ~40 files.
+- 2 `midtrans-client` missing declaration file errors. Pre-existing.
+- 2 BigInt literal errors (ES2020 target required). Pre-existing.
+
+**Total new errors introduced: 0**
