@@ -8,6 +8,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
+import { settlePaymentAttempt } from '@/server/services/payment/payment-attempt.service';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
 
@@ -374,7 +375,7 @@ export async function POST(request: Request) {
     if (orderId.startsWith('EVC-')) {
       // Handle E-Voucher Order
       console.log(`[Webhook] Order type: E-Voucher`);
-      await handleVoucherOrder(orderId, status, gateway, paymentType, paidAt);
+      await handleVoucherOrder(orderId, status, gateway, paymentType, paidAt, amount);
     } else if (orderId.startsWith('TOPUP-')) {
       // Handle Customer Top-Up (Balance)
       console.log(`[Webhook] Order type: Customer Top-Up`);
@@ -397,7 +398,7 @@ export async function POST(request: Request) {
       if (agentDeposit) {
         // Handle Agent Deposit
         console.log(`[Webhook] Order type: Agent Deposit`);
-        await handleAgentDeposit(orderId, status, gateway, transactionId, paidAt);
+        await handleAgentDeposit(orderId, status, gateway, transactionId, paidAt, amount);
       } else {
         // Fallback to invoice payment (for legacy orders without INV- prefix)
         console.log(`[Webhook] Order type: Legacy Invoice (fallback)`);
@@ -463,7 +464,8 @@ async function handleVoucherOrder(
   status: string,
   gateway: string,
   paymentType: string,
-  paidAt: Date | null
+  paidAt: Date | null,
+  webhookAmount?: number
 ) {
   // Extract order number from orderId
   // Format bisa: EVC-20251028-0001 atau EVC-20251028-0001-timestamp
@@ -505,6 +507,14 @@ async function handleVoucherOrder(
   console.log(`✅ Voucher order found: ${order.orderNumber}`);
 
   if (status === 'settlement' || status === 'capture') {
+    // ─── AMOUNT VALIDATION ────────────────────────────────────────────────────
+    if (typeof webhookAmount === 'number' && Number.isFinite(webhookAmount) && webhookAmount !== order.totalAmount) {
+      console.error(
+        `[Voucher Order] AMOUNT_MISMATCH for ${order.orderNumber}: expected ${order.totalAmount}, got ${webhookAmount}`
+      );
+      throw new Error('AMOUNT_MISMATCH');
+    }
+
     // ─── ATOMIC IDEMPOTENCY GUARD ────────────────────────────────────────────
     // Use updateMany with status condition — only one concurrent webhook
     // will get count > 0 and proceed to settlement + voucher generation.
@@ -734,7 +744,8 @@ async function handleAgentDeposit(
   status: string,
   gateway: string,
   transactionId: string,
-  paidAt: Date | null
+  paidAt: Date | null,
+  webhookAmount?: number
 ) {
   console.log(`[Agent Deposit] Processing deposit: ${depositId}, Status: ${status}`);
 
@@ -770,6 +781,14 @@ async function handleAgentDeposit(
   // webhook will get count > 0 and proceed to increment the balance.
   let updatedBalance: number | null = null;
   if (depositStatus === 'PAID') {
+    // ─── AMOUNT VALIDATION ────────────────────────────────────────────────────
+    if (typeof webhookAmount === 'number' && Number.isFinite(webhookAmount) && webhookAmount !== deposit.amount) {
+      console.error(
+        `[Agent Deposit] AMOUNT_MISMATCH for ${depositId}: expected ${deposit.amount}, got ${webhookAmount}`
+      );
+      throw new Error('AMOUNT_MISMATCH');
+    }
+
     const result = await prisma.$transaction(async (tx) => {
       const markPaid = await tx.agentDeposit.updateMany({
         where: { id: deposit.id, status: 'PENDING' },
@@ -988,6 +1007,24 @@ async function handleCustomerTopUp(
   console.log(`[Customer Top-Up] Found invoice: ${invoice.invoiceNumber}, User: ${invoice.user?.username}`);
 
   if (status === 'settlement' || status === 'capture') {
+    // ─── AMOUNT VALIDATION ────────────────────────────────────────────────────
+    if (typeof amount === 'number' && Number.isFinite(amount) && amount !== invoice.amount) {
+      console.error(
+        `[Customer Top-Up] AMOUNT_MISMATCH for ${invoice.invoiceNumber}: expected ${invoice.amount}, got ${amount}`
+      );
+      // Flag mismatch in payment attempt if exists
+      try {
+        const attempt = await prisma.paymentAttempt.findFirst({ where: { orderId } });
+        if (attempt) {
+          await prisma.paymentAttempt.update({
+            where: { id: attempt.id },
+            data: { mismatchFlagged: true, gatewayAmount: amount, status: 'FAILED', errorMessage: `Amount mismatch: expected ${invoice.amount}, got ${amount}` },
+          });
+        }
+      } catch { /* best-effort */ }
+      throw new Error('AMOUNT_MISMATCH');
+    }
+
     // ─── ATOMIC IDEMPOTENCY GUARD + BALANCE INCREMENT ────────────────────────
     // Invoice mark-paid and user balance increment are wrapped in a single
     // transaction so they either both succeed or both roll back.
@@ -1248,7 +1285,39 @@ async function handleInvoicePayment(
       console.error(
         `[Webhook] AMOUNT_MISMATCH for ${invoice.invoiceNumber}: expected ${invoice.amount}, got ${webhookAmount}`
       );
+      // Flag mismatch in payment attempt if exists
+      try {
+        const attempt = await prisma.paymentAttempt.findFirst({ where: { orderId } });
+        if (attempt) {
+          await prisma.paymentAttempt.update({
+            where: { id: attempt.id },
+            data: { mismatchFlagged: true, gatewayAmount: webhookAmount, status: 'FAILED', errorMessage: `Amount mismatch: expected ${invoice.amount}, got ${webhookAmount}` },
+          });
+        }
+      } catch { /* best-effort */ }
       throw new Error('AMOUNT_MISMATCH');
+    }
+
+    // ─── PAYMENT ATTEMPT SETTLEMENT (DB-level idempotency) ────────────────────
+    // settlePaymentAttempt uses updateMany with status condition — only one
+    // concurrent webhook will get settled=true and proceed to business logic.
+    const attemptResult = await settlePaymentAttempt({
+      orderId,
+      gatewayAmount: webhookAmount,
+      transactionId,
+      paidAt: paidAt || undefined,
+    });
+
+    if (!attemptResult.settled) {
+      if (attemptResult.reason === 'amount_mismatch') {
+        throw new Error('AMOUNT_MISMATCH');
+      }
+      if (attemptResult.reason === 'already_paid') {
+        console.log(`[Webhook] ⏭️  Payment attempt for ${orderId} already settled — skipping`);
+        return; // Already processed by concurrent webhook
+      }
+      // If attempt not found, continue with legacy flow (backward compatibility)
+      console.log(`[Webhook] No payment attempt for ${orderId} — using legacy invoice guard`);
     }
 
     // ─── ATOMIC TRANSACTION: invoice mark-paid + payment record + user update ─

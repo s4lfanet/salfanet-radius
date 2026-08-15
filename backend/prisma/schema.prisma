@@ -246,6 +246,7 @@ model invoice {
   manualPayments manualPayment[]
   registration   registrationRequest?
   invoiceAddons  invoiceAddon[]
+  paymentAttempts paymentAttempt[]
 
   @@index([userId], map: "invoices_userId_fkey")
   @@index([status])
@@ -2640,4 +2641,48 @@ model nasreload {
   reloadtime   DateTime @default(now())
 
   @@map("nasreload")
+}
+
+// ─── Payment Attempt (Phase 1 — Payment Integrity) ───────────────────────────
+// Tracks each payment attempt lifecycle with a state machine.
+// Only one ACTIVE attempt (CREATED/PROCESSING/PENDING) per invoice at a time.
+// orderId is globally unique — prevents duplicate gateway orders.
+enum PaymentAttemptStatus {
+  CREATED
+  PROCESSING
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+model paymentAttempt {
+  id              String              @id @default(cuid())
+  invoiceId       String
+  orderId         String              @unique // Gateway order ID — prevents duplicate attempts
+  gateway         String
+  amount          Int // Expected amount (from invoice)
+  gatewayAmount   Int? // Actual amount from gateway webhook
+  status          PaymentAttemptStatus @default(CREATED)
+  paymentToken    String?
+  transactionId   String? // Gateway transaction ID
+  paymentUrl      String?             @db.Text
+  snapToken       String?
+  qrString        String?             @db.Text
+  mismatchFlagged Boolean             @default(false)
+  errorMessage    String?             @db.Text
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  paidAt          DateTime?
+  expiredAt       DateTime?
+
+  invoice         invoice             @relation(fields: [invoiceId], references: [id])
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([gateway])
+  @@index([transactionId])
+  @@index([mismatchFlagged])
+  @@map("payment_attempts")
 }
