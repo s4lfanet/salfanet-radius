@@ -545,13 +545,24 @@ The centralized client correctly handles FormData:
 | Check | Result |
 |-------|--------|
 | `tsc --noEmit` (backend, changed files) | ✅ 0 new errors |
-| `pnpm build` (backend) | ✅ Exit 0 |
+| `pnpm build` (backend, local) | ✅ Exit 0 |
+| `pnpm build` (backend, VPS) | ✅ Exit 0 |
 | Prisma generate | ✅ Success |
-| IDOR tests | ⏳ NOT VERIFIED — requires running backend with test data |
+| DB migration applied (VPS) | ✅ VERIFIED — `radius_sync_queue`, `cron_lock`, `agents.sessionVersion`, `transactions.reference` unique index |
+| PM2 restart | ✅ VERIFIED — all 4 services online |
+| Smoke test: health/frontend/nginx | ✅ VERIFIED — 200/200/200 |
+| Smoke test: admin/users (no auth) | ✅ VERIFIED — 401 |
+| Smoke test: sync-all-radius (no auth) | ✅ VERIFIED — 401 |
+| Smoke test: radius-sync (no auth) | ✅ VERIFIED — 401 |
+| Smoke test: agent/logout (no auth) | ✅ VERIFIED — 401 |
+| Smoke test: customer/dashboard (no auth) | ✅ VERIFIED — 401 |
+| Smoke test: agent/dashboard (no auth) | ✅ VERIFIED — 401 |
+| IDOR tests | ⏳ NOT VERIFIED — requires running test suite with test data |
 | Payment concurrency tests | ⏳ NOT VERIFIED — requires running backend with payment gateway config |
 | Cron lock tests | ⏳ NOT VERIFIED — requires running backend with CRON_SECRET |
 | FreeRADIUS reconciliation | ⏳ NOT VERIFIED — requires FreeRADIUS server + populated DB |
 | Agent JWT revocation | ⏳ NOT VERIFIED — requires running backend with agent accounts |
+| Technician GenieACS scope | ⚠️ NOT IMPLEMENTED — requires schema design decision |
 
 ### 20.9 Database Migration Required
 

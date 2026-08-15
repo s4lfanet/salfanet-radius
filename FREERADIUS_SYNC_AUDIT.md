@@ -2,6 +2,8 @@
 
 **Date:** 2026-08-16
 **Status:** ✅ FIXED (reconciliation + retry queue implemented)
+**Deployed:** 2026-08-15, commit `ebe89923`, VPS `192.168.54.129`
+**DB Migration:** `radius_sync_queue` table created and applied
 
 ---
 
@@ -69,11 +71,15 @@ All sync operations preserve `nas_identifier` (router.id):
 | Check | Status |
 |-------|--------|
 | TypeScript compilation | ✅ 0 errors |
-| Build | ✅ Exit 0 |
+| Build (local) | ✅ Exit 0 |
+| Build (VPS) | ✅ Exit 0 |
+| DB migration applied | ✅ VERIFIED — `radius_sync_queue` table exists on VPS |
+| Admin API endpoint | ✅ VERIFIED — `/api/admin/pppoe/radius-sync` returns 401 without auth (correct) |
 | Retry queue logic | ⏳ NOT VERIFIED — requires FreeRADIUS server |
 | Reconciliation accuracy | ⏳ NOT VERIFIED — requires populated DB |
 | Batch processing | ⏳ NOT VERIFIED — requires large dataset |
 | NAS isolation | ⏳ NOT VERIFIED — requires multi-NAS setup |
+| Cron job registration | ✅ VERIFIED — `radius_sync_retry` job registered in cron runner |
 
 ## Known Limitations
 
