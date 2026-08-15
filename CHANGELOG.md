@@ -6,6 +6,44 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.0.0] — 2026-08-15 — Phase 7: React Query + Performance Optimizations
+
+### React Query Implementation
+- Installed `@tanstack/react-query` v5.101.4
+- Added `QueryProvider` at root layout (`components/providers/QueryProvider.tsx`)
+- Created API hooks: `useApiQuery`, `useApiMutation`, `useAdminQuery`, `useCustomerQuery`, `useAgentQuery` (`lib/api/hooks.ts`)
+- Default: staleTime=30s, gcTime=5min, retry=1, refetchOnWindowFocus=false
+
+### Pages Migrated (15 pages)
+- **Dashboard** (`admin/page.tsx`) — 30s/5min polling via refetchInterval, RADIUS restart mutation
+- **PPPoE users** (`pppoe/users/page.tsx`) — 10s online status polling, optimistic updates, 5min staleTime for reference data
+- **Hotspot voucher** (`hotspot/voucher/page.tsx`) — eliminates 3x duplicate loadVouchers on mount, 30s polling, SSE invalidation
+- **PPPoE sessions** (`sessions/page.tsx`) — 10s polling, disconnect mutation, keepPreviousData for pagination
+- **Hotspot sessions** (`sessions/hotspot/page.tsx`) — 10s polling, sync/disconnect mutations
+- **Network routers** — list query + create/update mutations
+- **Network OLTs** — list query + CRUD mutations + FormData import
+- **Network ODPs** — list query + CRUD mutations
+- **Network trace** — 4 parallel queries via useApiQuery
+- **Network infrastruktur** — 4 table queries with pagination + search
+- **GenieACS presets/provisions/files/config/faults** — 1min staleTime, removed cache:no-store
+- **Invoices** — list query + mark-as-paid/send-reminder/broadcast/generate mutations
+- **Keuangan** — transactions query + categories (5min staleTime) + CRUD mutations
+
+### Performance Optimizations
+- Removed dead code: `lib/utils/export.ts` (unused, had eager jsPDF/exceljs imports)
+- Added `loading="lazy"` to 27 `<img>` tags across 16 files
+- Removed `{ cache: 'no-store' }` from 5 GenieACS pages (RQ handles caching)
+- Net code reduction: -1132 lines (1044 insertions, 2176 deletions)
+
+### Verification
+- `npx tsc --noEmit`: 0 errors
+- `npx next build`: success
+- VPS deploy: all PM2 processes online
+- Smoke test: health, login, 404, auth (401), upload (401) — all pass
+- No business logic, API endpoint, or HTTP method changes
+
+---
+
 ## [4.9.0] — 2026-08-15 — Phase 6D: UI State & Error Handling Audit
 
 ### Error Handling Standardization
