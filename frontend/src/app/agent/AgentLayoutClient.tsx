@@ -143,7 +143,7 @@ function AgentSidebar({
         )}
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1 flex-1 min-h-0 overflow-y-auto">
+        <nav aria-label="Main navigation" className="p-3 space-y-1 flex-1 min-h-0 overflow-y-auto">
           {menuItems.map((item) => (
             <Link
               key={item.href}
@@ -362,7 +362,8 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-card rounded-xl transition"
+                className="p-2.5 hover:bg-card rounded-xl transition"
+                aria-label="Open menu"
               >
                 <Menu className="w-5 h-5 text-foreground" />
               </button>
