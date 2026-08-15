@@ -652,7 +652,7 @@ export default function SendMessagePage() {
                 {broadcastResult && (
                   <div className="p-2.5 bg-primary/10 rounded-lg border border-primary/30">
                     <p className="text-[10px] font-medium text-blue-900 dark:text-blue-100 mb-1.5">{t('whatsapp.broadcastSummary')}:</p>
-                    <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-lg font-bold text-foreground">{broadcastResult.total}</p>
                         <p className="text-[9px] text-muted-foreground">{t('common.total')}</p>

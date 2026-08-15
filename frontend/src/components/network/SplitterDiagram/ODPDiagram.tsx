@@ -407,7 +407,7 @@ export function ODPDiagram({
       {/* Customer Statistics */}
       <div className="mt-4">
         <h4 className="text-sm font-semibold text-gray-900 mb-2">{t('network.odp.customerPortStatus')}</h4>
-        <div className="grid grid-cols-4 gap-2 text-center text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
           {Object.entries(
             customerPorts.reduce((acc, port) => {
               acc[port.status] = (acc[port.status] || 0) + 1;

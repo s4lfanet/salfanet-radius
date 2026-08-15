@@ -340,7 +340,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-xl leading-none">×</button>
         </div>
-        <div className="grid grid-cols-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-slate-200 dark:border-slate-800">
           {TABS.map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
               className={`py-2.5 text-[11px] sm:text-xs font-semibold uppercase tracking-wider transition-colors ${activeTab === t ? 'text-blue-500 border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-950/20' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}>

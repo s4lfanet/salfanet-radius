@@ -384,7 +384,7 @@ export default function IPPoolPage() {
             <ModalDescription>Allocation summary and recent leases</ModalDescription>
           </ModalHeader>
           <ModalBody>
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
               <div className="bg-gray-800/50 rounded p-3">
                 <div className="text-xs text-gray-500">Total</div>
                 <div className="text-xl font-bold text-blue-400">{details.total_ips}</div>

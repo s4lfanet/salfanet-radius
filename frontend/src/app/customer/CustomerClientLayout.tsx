@@ -396,7 +396,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                             <Trash2 className="w-3.5 h-3.5 text-red-400" />
                           </button>
                         )}
-                        <button onClick={() => setBellOpen(false)} className="p-1 hover:bg-primary/10 rounded-lg"><X className="w-3.5 h-3.5 text-primary" /></button>
+                        <button onClick={() => setBellOpen(false)} className="p-2 hover:bg-primary/10 rounded-lg" aria-label="Close notifications"><X className="w-3.5 h-3.5 text-primary" /></button>
                       </div>
                     </div>
                     <div className="max-h-72 overflow-y-auto divide-y divide-border">
@@ -427,6 +427,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDeleteNotification(n.id); }}
                                 className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition-all flex-shrink-0"
+                                aria-label="Delete notification"
                               >
                                 <X className="w-3 h-3 text-red-400" />
                               </button>
@@ -506,7 +507,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                               <Trash2 className="w-3.5 h-3.5 text-red-400" />
                             </button>
                           )}
-                          <button onClick={() => setBellOpen(false)} className="p-1 hover:bg-primary/10 rounded-lg"><X className="w-3.5 h-3.5 text-primary" /></button>
+                          <button onClick={() => setBellOpen(false)} className="p-2 hover:bg-primary/10 rounded-lg" aria-label="Close notifications"><X className="w-3.5 h-3.5 text-primary" /></button>
                         </div>
                       </div>
                       <div className="max-h-60 overflow-y-auto divide-y divide-border">
@@ -537,6 +538,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDeleteNotification(n.id); }}
                                 className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500/20 rounded-lg transition-all flex-shrink-0"
+                                aria-label="Delete notification"
                               >
                                 <X className="w-3 h-3 text-red-400" />
                               </button>

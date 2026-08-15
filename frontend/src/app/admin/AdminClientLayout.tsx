@@ -998,7 +998,8 @@ function AdminLayoutContent({
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 sm:p-1.5 hover:bg-primary/20 rounded-lg sm:rounded-md text-muted-foreground hover:text-primary transition-colors border border-transparent hover:border-primary/30 active:scale-95"
+              className="lg:hidden p-2.5 sm:p-1.5 hover:bg-primary/20 rounded-lg sm:rounded-md text-muted-foreground hover:text-primary transition-colors border border-transparent hover:border-primary/30 active:scale-95"
+              aria-label="Close menu"
             >
               <X className="w-5 h-5 sm:w-4 sm:h-4" />
             </button>
@@ -1110,6 +1111,7 @@ function AdminLayoutContent({
                 <input
                   type="text"
                   placeholder={t('common.search')}
+                  aria-label={t('common.search')}
                   className="w-full pl-10 pr-4 py-2.5 bg-card/50 border-2 border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:bg-card/80 focus:shadow-focus-ring transition-all duration-300"
                 />
                 {/* Bottom focus line */}

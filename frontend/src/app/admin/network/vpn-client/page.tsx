@@ -1087,7 +1087,7 @@ ${vpnCmd}
                         )}
                       </div>
                       {!wgPoolEdit ? (
-                        <div className="grid grid-cols-3 gap-3 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                           <div>
                             <p className="text-muted-foreground mb-0.5">IP Mulai</p>
                             <p className="font-mono text-foreground">{typeof wgServerInfo.poolStart === 'string' ? wgServerInfo.poolStart : `${wgServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.${wgServerInfo.poolStart ?? 2}`}</p>
@@ -1170,7 +1170,7 @@ ${vpnCmd}
                         )}
                       </div>
                       {!l2tpPoolEdit ? (
-                        <div className="grid grid-cols-3 gap-3 text-xs">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                           <div>
                             <p className="text-muted-foreground mb-0.5">IP Mulai</p>
                             <p className="font-mono text-foreground">{typeof l2tpServerInfo.poolStart === 'string' ? l2tpServerInfo.poolStart : `${l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.')}.${l2tpServerInfo.poolStart ?? 10}`}</p>
