@@ -278,11 +278,9 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
 
       if (user.balance < amount) { skipped++; continue; }
 
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
-        data: { balance: { decrement: amount } },
-      });
-
+      // ─── ATOMIC: balance decrement + expiry update + invoice mark-paid ────────
+      // All operations in a single $transaction to ensure balance and ledger
+      // stay consistent. If any step fails, everything rolls back.
       const validityValue = (user.profile as any).validityValue || 1;
       const validityUnit = (user.profile as any).validityUnit || 'MONTHS';
       let validityMs: number;
@@ -296,10 +294,43 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
       const baseDate = user.expiredAt && user.expiredAt > now ? user.expiredAt : now;
       const newExpiredAt = new Date(baseDate.getTime() + validityMs);
 
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
-        data: { expiredAt: newExpiredAt, status: 'active' },
-      });
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Atomic conditional balance decrement — only if balance still sufficient
+          // This prevents double-decrement if cron runs concurrently
+          const balanceResult = await tx.pppoeUser.updateMany({
+            where: { id: user.id, balance: { gte: amount } },
+            data: {
+              balance: { decrement: amount },
+              expiredAt: newExpiredAt,
+              status: 'active',
+            },
+          });
+
+          if (balanceResult.count === 0) {
+            // Balance insufficient or user not found — skip
+            throw new Error('BALANCE_INSUFFICIENT');
+          }
+
+          // Mark unpaid invoices as PAID (atomic conditional update)
+          await tx.invoice.updateMany({
+            where: {
+              userId: user.id,
+              status: { in: ['PENDING', 'OVERDUE'] },
+            },
+            data: {
+              status: 'PAID',
+              paidAt: now,
+            },
+          });
+        });
+      } catch (txError: any) {
+        if (txError?.message === 'BALANCE_INSUFFICIENT') {
+          skipped++;
+          continue;
+        }
+        throw txError;
+      }
 
       // If user was isolated, restore RADIUS + PPP secret so they reconnect normally
       if (user.status === 'isolated') {
