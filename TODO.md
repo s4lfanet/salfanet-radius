@@ -3,6 +3,7 @@
 Daftar pekerjaan yang **belum dikerjakan** setelah Phase 1, Phase 2, dan Phase 3 selesai.
 
 Dokumen ini dibuat pada: 2026-08-14
+Terakhir diperbarui: 2026-08-15 (Phase 3 Security Hardening deployed)
 
 ---
 
@@ -27,6 +28,10 @@ Dokumen ini dibuat pada: 2026-08-14
 | **Phase 5H** | ✅ Selesai | Final validation — TypeScript 0 errors, build OK, deploy OK |
 | **Phase 6A** | ✅ Selesai | Full API Contract & Type-Safety Audit — 1369→950 `any` (31% reduction), 616→318 `(data as any)` casts (48% reduction), 2 new type files, 7 backend issues documented |
 | **Deploy 6A** | ✅ Selesai | VPS `192.168.54.129` — commit `95bfa7e8` deployed, all PM2 online, health OK |
+| **Sec Phase 1** | ✅ Selesai | Backend security hardening — auth, IDOR, billing, RADIUS, cron, GenieACS (commit `23bb7ef5`) |
+| **Sec Phase 2** | ✅ Selesai | Security audit documentation (commit `aa09185e`) |
+| **Sec Phase 3** | ✅ Selesai | FreeRADIUS reconciliation+retry, atomic cron lock, payment idempotency, IDOR tests, agent JWT revocation (commit `1b684fd5` + `ebe89923`) |
+| **Deploy Sec3** | ✅ Selesai | VPS `192.168.54.129` — commit `ebe89923` deployed, DB migration applied, all PM2 online, smoke tests passed |
 
 ---
 
@@ -93,15 +98,17 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 ## Deployment & Production Testing
 
 ### VPS Deployment
-- **Status**: ✅ Selesai (14 Aug 2026)
+- **Status**: ✅ Selesai (15 Aug 2026 — Sec Phase 3)
 - **VPS**: `192.168.54.129`
 - **Domain**: `https://radius.salfa.my.id`
 - **Production dir**: `/var/www/salfanet-radius/`
 - **Git source**: `/root/salfanet-radius/`
 - **Deploy method**: git pull + pnpm install + next build + PM2 restart
-- **Commit deployed**: `95bfa7e8` (Phase 6A)
+- **Commit deployed**: `ebe89923` (Sec Phase 3)
+- **DB migration**: `20260816_add_radius_sync_queue.sql` applied (radius_sync_queue, cron_lock, agents.sessionVersion, transactions.reference unique index)
 - **PM2 processes**: All 4 online (frontend, backend, cron, wa)
-- **Health check**: Backend `{"status":"ok"}`, Frontend 307→200, Nginx 8080 OK
+- **Health check**: Backend 200, Frontend 200, Nginx 8080 200
+- **Security smoke test**: 6 endpoints all return 401 without auth (admin/users, sync-all-radius, radius-sync, agent/logout, customer/dashboard, agent/dashboard)
 - **Nginx**: port 8080, Cloudflare handles 443
 
 ### Production Testing
@@ -120,16 +127,16 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 
 | Commit | Tanggal | Deskripsi |
 |--------|---------|-----------|
+| `ebe89923` | 15 Aug | fix: add missing SQL migration file for radius_sync_queue + cron_lock + agent sessionVersion |
+| `1b684fd5` | 15 Aug | feat: FreeRADIUS reconciliation/retry, atomic cron lock, payment idempotency, IDOR tests, agent JWT revocation |
+| `aa09185e` | 15 Aug | docs: update SECURITY_AUDIT.md with Phase 2 comprehensive security hardening findings |
+| `23bb7ef5` | 15 Aug | fix: comprehensive security hardening — auth, IDOR, billing, RADIUS, cron, GenieACS |
+| `ab3250a7` | 15 Aug | docs: update FRONTEND_REGRESSION_AUDIT.md with Phase 3 fetch migration audit |
 | `95bfa7e8` | 14 Aug | Phase 6A: Full API contract and type-safety audit |
 | `a72fcc30` | 14 Aug | docs: update TODO.md and CHANGELOG.md for Phase 5 completion |
 | `8e39478f` | 14 Aug | feat: Phase 5 frontend audit — API types, utilities, security, server components |
 | `8c8c00f3` | 14 Aug | feat: Phase 3 architecture improvements |
 | `8b743cfb` | 14 Aug | fix: resolve lint errors from API migration |
-| `2ae622f8` | 14 Aug | refactor: migrate Batch 77-111 pages to centralized API client |
-| `6e88dda0` | 14 Aug | refactor: migrate Batch 69-76 pages to centralized API client |
-| `fb4bccf3` | 14 Aug | fix: resolve type errors from API client migration |
-| `2f117d71` | 14 Aug | refactor: migrate Batch 53-60 pages to centralized API client |
-| `42cf6b37` | 14 Aug | refactor: migrate genieacs/presets page to centralized API client |
 
 ---
 
@@ -137,11 +144,24 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 
 | Prioritas | Item | Phase | Status |
 |-----------|------|-------|--------|
+| **High** | Technician GenieACS scope — butuh schema `TechnicianRouter` assignment | Sec Phase 3 | ⚠️ Known Limitation |
+| **Medium** | Customer session migration ke httpOnly cookies | Sec Phase 3 | ⚠️ Documented (not implemented) |
+| **Medium** | Run IDOR + payment concurrency test suites di VPS | Sec Phase 3 | Pending |
 | **Medium** | Sisa 318 `(data as any)` casts di lower-priority pages | Phase 6B | Pending |
 | **Low** | Backend issues (7 items di FRONTEND_API_CONTRACT.md) | Backend | Documented |
 | **Low** | `catch (e: any)` → `catch (e: unknown)` cleanup | Phase 6B | Pending |
+| **Low** | `handleVoucherOrder` upgrade ke `updateMany` idempotency guard | Sec Phase 3 | Pending |
 
 ### Sudah Selesai
+- ✅ VPS Deployment Sec Phase 3 (15 Aug 2026, commit `ebe89923`)
+- ✅ Sec Phase 3 — FreeRADIUS reconciliation + retry queue
+- ✅ Sec Phase 3 — Atomic cron distributed lock
+- ✅ Sec Phase 3 — Payment concurrency/idempotency verification
+- ✅ Sec Phase 3 — Automated IDOR + tenant isolation tests
+- ✅ Sec Phase 3 — Agent JWT revocation (sessionVersion)
+- ✅ Sec Phase 3 — Customer session hardening audit (documented)
+- ✅ Sec Phase 3 — Technician GenieACS scope audit (documented)
+- ✅ Sec Phase 3 — Security documentation synchronization
 - ✅ VPS Deployment (14 Aug 2026, commit `95bfa7e8`)
 - ✅ Phase 6A — Full API Contract & Type-Safety Audit
 - ✅ Phase 6B — Frontend Type-Safety Hardening (14 Aug 2026)

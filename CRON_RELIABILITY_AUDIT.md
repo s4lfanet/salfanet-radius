@@ -2,6 +2,8 @@
 
 **Date:** 2026-08-16
 **Status:** ✅ FIXED (atomic distributed lock implemented)
+**Deployed:** 2026-08-15, commit `ebe89923`, VPS `192.168.54.129`
+**DB Migration:** `cron_lock` table created and applied
 
 ---
 
@@ -92,10 +94,14 @@ If Instance A crashes while holding a lock:
 | Check | Status |
 |-------|--------|
 | TypeScript compilation | ✅ 0 errors |
-| Build | ✅ Exit 0 |
+| Build (local) | ✅ Exit 0 |
+| Build (VPS) | ✅ Exit 0 |
+| DB migration applied | ✅ VERIFIED — `cron_lock` table exists on VPS |
+| PM2 restart | ✅ VERIFIED — all 4 services online |
 | Lock acquisition (atomic) | ⏳ NOT VERIFIED — requires multi-instance test |
 | Stale lock recovery | ⏳ NOT VERIFIED — requires simulated crash |
 | Concurrent cron trigger | ⏳ NOT VERIFIED — requires running backend with CRON_SECRET |
+| Lock table column exists | ✅ VERIFIED — `cron_lock.jobKey` column confirmed in production DB |
 
 ## Known Limitations
 
