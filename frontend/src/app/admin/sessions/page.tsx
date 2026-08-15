@@ -7,6 +7,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr } from '@/lib/timezone';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
 
 interface Session {
   id: string;
@@ -93,17 +94,10 @@ interface DisconnectResponse {
 export default function SessionsPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [allTimeStats, setAllTimeStats] = useState<AllTimeStats | null>(null);
-  const [routers, setRouters] = useState<Router[]>([]);
-  const [loading, setLoading] = useState(true);
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
-  const [disconnecting, setDisconnecting] = useState(false);
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [routerFilter, setRouterFilter] = useState<string>('');
   const [searchFilter, setSearchFilter] = useState<string>('');
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 25, totalPages: 1 });
   const [pageSize, setPageSize] = useState<number>(25);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [showDateRangeModal, setShowDateRangeModal] = useState(false);
@@ -116,6 +110,53 @@ export default function SessionsPage() {
     const ticker = setInterval(() => setNow(nowWIB().getTime()), 1000);
     return () => clearInterval(ticker);
   }, []);
+
+  // Sessions query — 10s polling for live bytes from MikroTik API
+  // Full RADIUS mode dengan pagination
+  const sessionsParams: Record<string, unknown> = {
+    page: currentPage,
+    limit: pageSize,
+    live: 'true', // Live bytes dari MikroTik API
+  };
+  if (typeFilter) sessionsParams.type = typeFilter;
+  if (routerFilter) sessionsParams.routerId = routerFilter;
+  if (searchFilter) sessionsParams.search = searchFilter;
+
+  const { data: sessionsData, isLoading, refetch } = useApiQuery<SessionsResponse>(
+    '/api/sessions',
+    {
+      params: sessionsParams,
+      // Auto-refresh setiap 10 detik — silent refresh to prevent full-page spinner
+      refetchInterval: 10000,
+      placeholderData: 'keepPreviousData',
+      // Refresh immediately when tab becomes visible (browser throttles background timers)
+      queryOptions: { refetchOnWindowFocus: true },
+    },
+  );
+
+  const sessions = sessionsData?.sessions || [];
+  const stats = sessionsData?.stats ?? null;
+  const allTimeStats = sessionsData?.allTimeStats ?? null;
+  const pagination = sessionsData?.pagination ?? { total: 0, page: 1, limit: pageSize, totalPages: 1 };
+
+  // Routers query
+  const { data: routersData } = useApiQuery<RoutersResponse>('/api/network/routers');
+  const routers = routersData?.routers || [];
+
+  // Disconnect mutation — invalidates sessions query after success
+  const disconnectMutation = useApiMutation<DisconnectResponse, { sessionIds: string[] }>(
+    '/api/sessions/disconnect',
+    {
+      method: 'POST',
+      invalidateQueries: [buildQueryKey('/api/sessions', sessionsParams)],
+    },
+  );
+  const disconnecting = disconnectMutation.isPending;
+
+  // Reset to page 1 when filters or page size change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [typeFilter, routerFilter, searchFilter, pageSize]);
 
   const formatDuration = (seconds: number) => {
     if (!seconds || seconds < 0) return '0s';
@@ -133,71 +174,11 @@ export default function SessionsPage() {
     return Math.max(0, Math.floor((now - startMs) / 1000));
   };
 
-  const fetchSessions = async (page: number = 1, silent = false) => {
-    try {
-      // Pastikan page adalah number
-      const pageNum = typeof page === 'number' ? page : 1;
-      if (!silent) setLoading(true);
-      const params = new URLSearchParams();
-      // Full RADIUS mode dengan pagination
-      params.set('page', pageNum.toString());
-      params.set('limit', pageSize.toString());
-      params.set('live', 'true'); // Live bytes dari MikroTik API
-      if (typeFilter) params.set('type', typeFilter);
-      if (routerFilter) params.set('routerId', routerFilter);
-      if (searchFilter) params.set('search', searchFilter);
-
-      const data = await apiAdmin<SessionsResponse>(`/api/sessions?${params}`);
-      setSessions(data.sessions || []);
-      setStats(data.stats);
-      setAllTimeStats(data.allTimeStats);
-      if (data.pagination) {
-        setPagination(data.pagination);
-        setCurrentPage(data.pagination.page);
-      }
-    } catch (error: unknown) {
-      console.error('Failed to fetch sessions:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Format date helper — uses formatWIB for consistent WIB display
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return '-';
     return formatWIB(dateStr, 'dd/MM/yyyy HH:mm');
   };
-
-  const fetchRouters = async () => {
-    try {
-      const data = await apiAdmin<RoutersResponse>('/api/network/routers');
-      setRouters(data.routers || []);
-    } catch (error: unknown) {
-      console.error('Failed to fetch routers:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchRouters();
-  }, []);
-
-  useEffect(() => {
-    fetchSessions(1);
-    // Auto-refresh setiap 10 detik — silent refresh to prevent full-page spinner
-    const interval = setInterval(() => {
-      fetchSessions(currentPage, true);
-    }, 10000);
-    // Refresh immediately when tab becomes visible (browser throttles background timers)
-    const onVisible = () => {
-      if (!document.hidden) fetchSessions(currentPage, true);
-    };
-    document.addEventListener('visibilitychange', onVisible);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVisible);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [typeFilter, routerFilter, searchFilter, pageSize, currentPage]);
 
   // Export functions
   const handleExportExcel = async () => {
@@ -290,24 +271,17 @@ export default function SessionsPage() {
       variant: 'danger',
     })) return;
 
-    setDisconnecting(true);
     try {
-      const data = await apiAdmin<DisconnectResponse>('/api/sessions/disconnect', {
-        method: 'POST',
-        body: JSON.stringify({ sessionIds }),
-      });
+      const data = await disconnectMutation.mutateAsync({ sessionIds });
 
       if (data.success) {
         addToast({ type: 'success', title: t('notifications.success'), description: `${t('sessions.disconnect')}: ${data.summary?.successful ?? 0}` });
         setSelectedSessions(new Set());
-        await fetchSessions();
       } else {
         addToast({ type: 'error', title: t('notifications.error'), description: t('notifications.failed') });
       }
-    } catch (error) {
+    } catch {
       addToast({ type: 'error', title: t('notifications.error'), description: t('notifications.failed') });
-    } finally {
-      setDisconnecting(false);
     }
   };
 
@@ -316,7 +290,7 @@ export default function SessionsPage() {
     handleDisconnect(sessionIds);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -397,7 +371,7 @@ export default function SessionsPage() {
             {t('sessions.history')}
           </button>
           <button
-            onClick={() => fetchSessions(currentPage)}
+            onClick={() => refetch()}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted/50"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -538,7 +512,7 @@ export default function SessionsPage() {
         <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
           {sessions.length === 0 ? (
             <div className="px-3 py-8 text-center text-muted-foreground text-xs">
-              {loading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
+              {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
             </div>
           ) : (
             sessions.map((session) => (
@@ -643,7 +617,7 @@ export default function SessionsPage() {
               {sessions.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground text-xs">
-                    {loading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
+                    {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
                   </td>
                 </tr>
               ) : (
@@ -716,14 +690,14 @@ export default function SessionsPage() {
             </div>
             <div className="flex items-center gap-1">
               <button
-                onClick={() => fetchSessions(1)}
+                onClick={() => setCurrentPage(1)}
                 disabled={pagination.page === 1}
                 className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
               >
                 {t('common.first')}
               </button>
               <button
-                onClick={() => fetchSessions(pagination.page - 1)}
+                onClick={() => setCurrentPage(pagination.page - 1)}
                 disabled={pagination.page === 1}
                 className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
               >
@@ -737,7 +711,7 @@ export default function SessionsPage() {
                 return (
                   <button
                     key={pageNum}
-                    onClick={() => fetchSessions(pageNum)}
+                    onClick={() => setCurrentPage(pageNum)}
                     className={`px-2.5 py-1 text-xs border rounded ${
                       pageNum === pagination.page 
                         ? 'bg-teal-600 text-white border-teal-600' 
@@ -749,14 +723,14 @@ export default function SessionsPage() {
                 );
               })}
               <button
-                onClick={() => fetchSessions(pagination.page + 1)}
+                onClick={() => setCurrentPage(pagination.page + 1)}
                 disabled={pagination.page === pagination.totalPages}
                 className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
               >
                 {t('common.next')}
               </button>
               <button
-                onClick={() => fetchSessions(pagination.totalPages)}
+                onClick={() => setCurrentPage(pagination.totalPages)}
                 disabled={pagination.page === pagination.totalPages}
                 className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
               >

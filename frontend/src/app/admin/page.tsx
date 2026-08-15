@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Users,
   Wifi,
@@ -43,7 +43,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB, getTimezoneInfo, nowWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
 import {
   UserStatusPieChart,
   ChartCard,
@@ -169,6 +169,30 @@ interface RadiusAuthEntry {
   authdate: string;
 }
 
+interface DashboardStatsResponse {
+  success: boolean;
+  stats: DashboardStats;
+  activities: RecentActivity[];
+  systemStatus: { radius: boolean; database: boolean; api: boolean };
+  agentSales: AgentSaleEntry[];
+  agentSalesTotal: { count: number; revenue: number };
+  radiusAuthLog: RadiusAuthEntry[];
+  radiusAuthStats: { acceptToday: number; rejectToday: number };
+  periodLabel?: string;
+}
+
+interface AnalyticsResponse {
+  success: boolean;
+  data: AnalyticsData;
+}
+
+interface ActivityLogResponse {
+  success: boolean;
+  activities: ActivityLogEntry[];
+  total: number;
+  hasMore: boolean;
+}
+
 type IconElement = React.ReactElement<{ className?: string }>;
 
 interface StatCard {
@@ -183,7 +207,6 @@ interface StatCard {
 }
 
 export default function AdminDashboard() {
-  const [mounted, setMounted] = useState(false);
   const tzInfo = getTimezoneInfo();
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -193,99 +216,80 @@ export default function AdminDashboard() {
   function getIndonesianDate(d: Date): string {
     return `${DAY_NAMES_ID[d.getUTCDay()]}, ${d.getUTCDate()} ${MONTH_NAMES_ID_DATE[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
   }
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [activities, setActivities] = useState<RecentActivity[]>([]);
-  const [systemStatus, setSystemStatus] = useState<{ radius: boolean; database: boolean; api: boolean } | null>(null);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-  const [agentSales, setAgentSales] = useState<AgentSaleEntry[]>([]);
-  const [agentSalesTotal, setAgentSalesTotal] = useState({ count: 0, revenue: 0 });
-  const [radiusAuthLog, setRadiusAuthLog] = useState<RadiusAuthEntry[]>([]);
-  const [radiusAuthStats, setRadiusAuthStats] = useState({ acceptToday: 0, rejectToday: 0 });
-  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
-  const [activityModule, setActivityModule] = useState('all');
-  const [activityLoading, setActivityLoading] = useState(false);
-  const [activityTotal, setActivityTotal] = useState(0);
-  const [activityOffset, setActivityOffset] = useState(0);
-  const [activityHasMore, setActivityHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [analyticsLoading, setAnalyticsLoading] = useState(true);
-  const [radiusStatus, setRadiusStatus] = useState<RadiusStatus | null>(null);
-  const [restarting, setRestarting] = useState(false);
   // Month filter for revenue stats
   const [dashboardMonth, setDashboardMonth] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
-  const [periodLabel, setPeriodLabel] = useState<string>('');
+  const [activityModule, setActivityModule] = useState('all');
+  const [activityOffset, setActivityOffset] = useState(0);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
 
-  const loadActivityLog = useCallback(async (module: string, offset: number, append = false) => {
-    setActivityLoading(true);
-    try {
-      const params = new URLSearchParams({ module, limit: '20', offset: String(offset) });
-      const data = await apiAdmin<{ success: boolean; activities: typeof activityLog; total: number; hasMore: boolean }>(`/api/admin/activity-logs?${params}`);
-      if (data.success) {
-        setActivityLog(prev => append ? [...prev, ...data.activities] : data.activities);
-        setActivityTotal(data.total);
-        setActivityHasMore(data.hasMore);
-      }
-    } catch (e) {
-      console.error('Failed to load activity log:', e);
-    } finally {
-      setActivityLoading(false);
-    }
-  }, []);
+  // ─── React Query: Dashboard stats (30s polling) ───────────────────────────
+  const dashboardQuery = useApiQuery<DashboardStatsResponse>('/api/dashboard/stats', {
+    params: { month: dashboardMonth },
+    refetchInterval: 30000,
+    staleTime: 0,
+  });
 
-  const loadDashboardData = useCallback(async (month?: string) => {
-    try {
-      const m = month || dashboardMonth;
-      const data = await apiAdmin<{ success: boolean; stats: typeof stats; activities: typeof activities; systemStatus: typeof systemStatus; agentSales: typeof agentSales; agentSalesTotal: typeof agentSalesTotal; radiusAuthLog: typeof radiusAuthLog; radiusAuthStats: typeof radiusAuthStats; periodLabel?: string }>(`/api/dashboard/stats?month=${m}`);
-      if (data.success) {
-        setStats(data.stats);
-        setActivities(data.activities || []);
-        setSystemStatus(data.systemStatus);
-        setAgentSales(data.agentSales || []);
-        setAgentSalesTotal(data.agentSalesTotal || { count: 0, revenue: 0 });
-        setRadiusAuthLog(data.radiusAuthLog || []);
-        setRadiusAuthStats(data.radiusAuthStats || { acceptToday: 0, rejectToday: 0 });
-        if (data.periodLabel) setPeriodLabel(data.periodLabel);
-      }
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [dashboardMonth]);
+  // ─── React Query: RADIUS status (30s polling) ─────────────────────────────
+  const radiusStatusQuery = useApiQuery<RadiusStatus>('/api/system/radius', {
+    refetchInterval: 30000,
+    staleTime: 0,
+  });
 
-  const loadAnalyticsData = useCallback(async () => {
-    try {
-      setAnalyticsLoading(true);
-      const data = await apiAdmin<{ success: boolean; data: typeof analyticsData }>('/api/dashboard/analytics?type=all');
-      if (data.success) {
-        setAnalyticsData(data.data);
-      }
-    } catch (error) {
-      console.error('Failed to load analytics data:', error);
-    } finally {
-      setAnalyticsLoading(false);
-    }
-  }, []);
+  // ─── React Query: Analytics (5min polling) ────────────────────────────────
+  const analyticsQuery = useApiQuery<AnalyticsResponse>('/api/dashboard/analytics', {
+    params: { type: 'all' },
+    refetchInterval: 300000,
+    staleTime: 0,
+  });
 
-  const loadRadiusStatus = useCallback(async () => {
-    try {
-      const data = await apiAdmin<RadiusStatus>('/api/system/radius');
-      if ((data as { success?: boolean }).success) {
-        setRadiusStatus(data);
-      }
-    } catch (error) {
-      console.error('Failed to load RADIUS status:', error);
-    }
-  }, []);
+  // ─── React Query: Activity log (manual refresh + load more) ───────────────
+  const activityQuery = useApiQuery<ActivityLogResponse>('/api/admin/activity-logs', {
+    params: { module: activityModule, limit: 20, offset: activityOffset },
+    staleTime: 0,
+  });
 
+  // Sync accumulated activity log (reset on offset 0, append on load more)
   useEffect(() => {
-    setMounted(true);
-    loadDashboardData();
-    loadRadiusStatus();
-    loadAnalyticsData();
-    loadActivityLog('all', 0);
+    if (activityQuery.data?.success) {
+      setActivityLog(prev =>
+        activityOffset === 0 ? activityQuery.data.activities : [...prev, ...activityQuery.data.activities],
+      );
+    }
+  }, [activityQuery.data, activityOffset]);
+
+  // ─── React Query: Restart RADIUS mutation ─────────────────────────────────
+  const restartRadiusMutation = useApiMutation<{ success: boolean; error?: string }, { action: string }>(
+    '/api/system/radius',
+    {
+      method: 'POST',
+      invalidateQueries: [
+        buildQueryKey('/api/system/radius'),
+        buildQueryKey('/api/dashboard/stats', { month: dashboardMonth }),
+      ],
+    },
+  );
+
+  // Derive state from queries
+  const stats = dashboardQuery.data?.stats ?? null;
+  const systemStatus = dashboardQuery.data?.systemStatus ?? null;
+  const agentSales = dashboardQuery.data?.agentSales ?? [];
+  const agentSalesTotal = dashboardQuery.data?.agentSalesTotal ?? { count: 0, revenue: 0 };
+  const radiusAuthLog = dashboardQuery.data?.radiusAuthLog ?? [];
+  const radiusAuthStats = dashboardQuery.data?.radiusAuthStats ?? { acceptToday: 0, rejectToday: 0 };
+  const periodLabel = dashboardQuery.data?.periodLabel ?? '';
+  const analyticsData = analyticsQuery.data?.data ?? null;
+  const radiusStatus = radiusStatusQuery.data ?? null;
+  const activityTotal = activityQuery.data?.total ?? 0;
+  const activityHasMore = activityQuery.data?.hasMore ?? false;
+  const loading = dashboardQuery.isPending;
+  const analyticsLoading = analyticsQuery.isFetching;
+  const activityLoading = activityQuery.isFetching;
+  const restarting = restartRadiusMutation.isPending;
+
+  // Clock tick (local, 1s)
+  useEffect(() => {
     const now0 = nowWIB();
     setCurrentTime(formatWIB(now0, 'HH:mm:ss'));
     setCurrentDate(getIndonesianDate(now0));
@@ -296,22 +300,8 @@ export default function AdminDashboard() {
       setCurrentDate(getIndonesianDate(now));
     }, 1000);
 
-    const dataInterval = setInterval(() => {
-      loadDashboardData();
-      loadRadiusStatus();
-    }, 30000);
-
-    const analyticsInterval = setInterval(() => {
-      loadAnalyticsData();
-    }, 300000);
-
-    return () => {
-      clearInterval(timeInterval);
-      clearInterval(dataInterval);
-      clearInterval(analyticsInterval);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadDashboardData, loadRadiusStatus, loadAnalyticsData, loadActivityLog]);
+    return () => clearInterval(timeInterval);
+  }, []);
 
   // Navigate months
   const shiftMonth = (delta: number) => {
@@ -319,8 +309,20 @@ export default function AdminDashboard() {
     const d = new Date(Date.UTC(y, m - 1 + delta, 1));
     const next = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
     setDashboardMonth(next);
-    setLoading(true);
-    loadDashboardData(next);
+  };
+
+  // Refresh activity log (reset to first page)
+  const refreshActivityLog = () => {
+    if (activityOffset === 0) {
+      activityQuery.refetch();
+    } else {
+      setActivityOffset(0);
+    }
+  };
+
+  // Load more activities
+  const loadMoreActivities = () => {
+    setActivityOffset(activityOffset + 20);
   };
 
   const handleRestartRadius = async () => {
@@ -332,24 +334,16 @@ export default function AdminDashboard() {
       variant: 'danger',
     })) return;
 
-    setRestarting(true);
     try {
-      const data = await apiAdmin<{ success: boolean; error?: string }>('/api/system/radius', {
-        method: 'POST',
-        body: JSON.stringify({ action: 'restart' }),
-      });
+      const data = await restartRadiusMutation.mutateAsync({ action: 'restart' });
 
       if (data.success) {
         addToast({ type: 'success', title: t('notifications.success'), description: t('notifications.radiusRestarted') });
-        loadRadiusStatus();
-        loadDashboardData();
       } else {
         addToast({ type: 'error', title: t('notifications.error'), description: data.error || t('errors.restartFailed') });
       }
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('notifications.error'), description: (error instanceof Error ? error.message : String(error)) || t('errors.restartFailed') });
-    } finally {
-      setRestarting(false);
     }
   };
 
@@ -504,7 +498,7 @@ export default function AdminDashboard() {
               </button>
             </div>
             <button
-              onClick={() => { loadDashboardData(); loadAnalyticsData(); }}
+              onClick={() => { dashboardQuery.refetch(); analyticsQuery.refetch(); }}
               disabled={loading || analyticsLoading}
               className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm font-medium bg-[#00f7ff]/10 border-2 border-[#00f7ff]/30 text-[#00f7ff] rounded-lg hover:bg-[#00f7ff]/20 disabled:opacity-50 transition-all shadow-[0_0_15px_rgba(0,247,255,0.2)]"
             >
@@ -662,7 +656,6 @@ export default function AdminDashboard() {
                       onClick={() => {
                         setActivityModule(tab.key);
                         setActivityOffset(0);
-                        loadActivityLog(tab.key, 0);
                       }}
                       className={`px-1.5 py-0.5 text-[9px] font-medium rounded transition-all border ${
                         activityModule === tab.key
@@ -675,7 +668,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
                 <button
-                  onClick={() => { setActivityOffset(0); loadActivityLog(activityModule, 0); }}
+                  onClick={() => refreshActivityLog()}
                   disabled={activityLoading}
                   className="p-1 text-muted-foreground hover:text-[#00f7ff] bg-white/5 border border-white/10 rounded transition-all"
                 >
@@ -728,11 +721,7 @@ export default function AdminDashboard() {
             {activityHasMore && (
               <div className="p-2 border-t border-white/5 text-center">
                 <button
-                  onClick={() => {
-                    const next = activityOffset + 20;
-                    setActivityOffset(next);
-                    loadActivityLog(activityModule, next, true);
-                  }}
+                  onClick={() => loadMoreActivities()}
                   disabled={activityLoading}
                   className="flex items-center gap-1 mx-auto px-2.5 py-1 text-[10px] font-medium bg-[#00f7ff]/10 border border-[#00f7ff]/30 text-[#00f7ff] rounded-lg hover:bg-[#00f7ff]/20 disabled:opacity-50 transition-all"
                 >

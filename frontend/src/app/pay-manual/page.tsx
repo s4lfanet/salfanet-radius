@@ -444,6 +444,7 @@ function PayManualPageContent() {
                         src={imagePreview}
                         alt="Preview"
                         className="max-w-full h-auto rounded-lg border"
+                        loading="lazy"
                       />
                       <Button
                         type="button"

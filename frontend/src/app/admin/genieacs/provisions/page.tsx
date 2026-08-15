@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Loader2, Plus, Trash2, Save, RefreshCw, Download, Upload } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
 
 interface Provision {
@@ -16,30 +17,18 @@ log("Hello from " + declare("DeviceID.SerialNumber", {value: 1}).value[0]);
 `;
 
 export default function GenieACSProvisionsPage() {
-  const [items, setItems] = useState<Provision[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Provision | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const json = await apiAdmin<{ success: boolean; data?: Provision[]; error?: string }>('/api/genieacs/provisions', { cache: 'no-store' });
-      if (!json.success) throw new Error(json.error || 'Failed to load');
-      setItems(json.data || []);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<{ success: boolean; data?: Provision[]; error?: string }>('/api/genieacs/provisions', { staleTime: 60000 });
+  const items: Provision[] = queryData?.data || [];
 
-  useEffect(() => { load(); }, [load]);
+  const invalidateProvisions = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/provisions') });
 
   function flash(msg: string) {
     setSuccessMsg(msg);
@@ -66,7 +55,7 @@ export default function GenieACSProvisionsPage() {
       if (!json.success) throw new Error(json.error || 'Restore gagal');
       const r = json.results?.provisions;
       flash(`Restore selesai: ${r?.ok ?? 0} provision dipulihkan${r?.errors?.length ? `, ${r.errors.length} error` : ''}`);
-      await load();
+      invalidateProvisions();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -94,7 +83,7 @@ export default function GenieACSProvisionsPage() {
       });
       if (!json.success) throw new Error(json.error || 'Save failed');
       setEditing(null);
-      await load();
+      invalidateProvisions();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -109,7 +98,7 @@ export default function GenieACSProvisionsPage() {
         method: 'DELETE',
       });
       if (!json.success) throw new Error(json.error || 'Delete failed');
-      await load();
+      invalidateProvisions();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -126,7 +115,7 @@ export default function GenieACSProvisionsPage() {
           <p className="text-sm text-slate-500">Skrip provisioning yang dipanggil oleh preset · {items.length} script</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={load} disabled={loading}
+          <button onClick={() => refetch()} disabled={loading}
             className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>

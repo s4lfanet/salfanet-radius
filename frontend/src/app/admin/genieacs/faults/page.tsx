@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Loader2, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
 
 interface Fault {
@@ -27,31 +28,17 @@ interface FaultDeleteResponse {
 }
 
 export default function GenieACSFaultsPage() {
-  const [items, setItems] = useState<Fault[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState('');
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const url = filter
-        ? `/api/genieacs/faults?device=${encodeURIComponent(filter)}`
-        : '/api/genieacs/faults';
-      const json = await apiAdmin<FaultsListResponse>(url, { cache: 'no-store' });
-      if (!json.success) throw new Error(json.error || 'Failed to load');
-      setItems(json.data || []);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<FaultsListResponse>(
+    '/api/genieacs/faults',
+    { params: filter ? { device: filter } : undefined, staleTime: 60000 },
+  );
+  const items: Fault[] = queryData?.data || [];
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const invalidateFaults = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/faults') });
 
   const remove = async (id: string) => {
     if (!(await showConfirm(`Delete fault "${id}"?`))) return;
@@ -61,7 +48,7 @@ export default function GenieACSFaultsPage() {
         body: JSON.stringify({ id }),
       });
       if (!json.success) throw new Error(json.error || 'Delete failed');
-      await load();
+      invalidateFaults();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -84,7 +71,7 @@ export default function GenieACSFaultsPage() {
             className="px-3 py-2 text-sm border rounded-md"
           />
           <button
-            onClick={load}
+            onClick={() => refetch()}
             className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             <RefreshCw className="w-4 h-4" /> Refresh

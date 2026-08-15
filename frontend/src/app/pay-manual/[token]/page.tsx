@@ -387,6 +387,7 @@ export default function PayManualPage({ params }: { params: Promise<{ token: str
                       src={proofImageUrl}
                       alt="Bukti Transfer"
                       className="w-full h-auto max-h-64 object-contain bg-gray-100 dark:bg-gray-800"
+                      loading="lazy"
                     />
                     <button
                       type="button"

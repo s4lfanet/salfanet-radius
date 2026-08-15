@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Loader2, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
 
 interface FileItem {
@@ -27,8 +28,6 @@ const fileTypes = [
 ];
 
 export default function GenieACSFilesPage() {
-  const [items, setItems] = useState<FileItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState('');
@@ -37,24 +36,12 @@ export default function GenieACSFilesPage() {
   const [productClass, setProductClass] = useState('');
   const [version, setVersion] = useState('');
   const [uploading, setUploading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const json = await apiAdmin<{ success: boolean; data?: FileItem[]; error?: string }>('/api/genieacs/files', { cache: 'no-store' });
-      if (!json.success) throw new Error(json.error || 'Failed to load');
-      setItems(json.data || []);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<{ success: boolean; data?: FileItem[]; error?: string }>('/api/genieacs/files', { staleTime: 60000 });
+  const items: FileItem[] = queryData?.data || [];
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const invalidateFiles = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/files') });
 
   const upload = async () => {
     if (!file || !fileName) {
@@ -79,7 +66,7 @@ export default function GenieACSFilesPage() {
       setOui('');
       setProductClass('');
       setVersion('');
-      await load();
+      invalidateFiles();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -95,7 +82,7 @@ export default function GenieACSFilesPage() {
         body: JSON.stringify({ fileName: name }),
       });
       if (!json.success) throw new Error(json.error || 'Delete failed');
-      await load();
+      invalidateFiles();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -109,7 +96,7 @@ export default function GenieACSFilesPage() {
           <p className="text-sm text-slate-500">Firmware / Vendor Config / Web Content</p>
         </div>
         <button
-          onClick={load}
+          onClick={() => refetch()}
           className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800"
         >
           <RefreshCw className="w-4 h-4" /> Refresh

@@ -17,7 +17,8 @@ import { renderVoucherTemplate, getPrintableHtml } from '@/lib/utils/templateRen
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from '@/hooks/useTranslation'
 import { useSSE } from '@/hooks/useSSE'
-import { apiAdmin, networkApi, buildUrl } from '@/lib/api'
+import { apiAdmin, buildUrl } from '@/lib/api'
+import { useApiQuery, useQueryClient } from '@/lib/api/hooks'
 
 interface Voucher {
   id: string; code: string; password: string | null; batchCode: string | null;
@@ -63,12 +64,7 @@ interface VoucherEditResponse { updated: number }
 
 export default function HotspotVoucherPage() {
   const { t } = useTranslation()
-  const [loading, setLoading] = useState(true)
-  const [vouchers, setVouchers] = useState<Voucher[]>([])
-  const [profiles, setProfiles] = useState<Profile[]>([])
-  const [routers, setRouters] = useState<RouterItem[]>([])
-  const [agents, setAgents] = useState<Agent[]>([])
-  const [batches, setBatches] = useState<string[]>([])
+  const queryClient = useQueryClient()
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [genOverlay, setGenOverlay] = useState<{
@@ -79,7 +75,6 @@ export default function HotspotVoucherPage() {
   const [deleteBatchCode, setDeleteBatchCode] = useState<string | null>(null)
   const [selectedVouchers, setSelectedVouchers] = useState<string[]>([])
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false)
-  const [templates, setTemplates] = useState<any[]>([])
   const [selectedTemplate, setSelectedTemplate] = useState<string>('')
   const [deletingVouchers, setDeletingVouchers] = useState(false)
   const [isWhatsAppDialogOpen, setIsWhatsAppDialogOpen] = useState(false)
@@ -103,16 +98,73 @@ export default function HotspotVoucherPage() {
   const [importResult, setImportResult] = useState<{ success?: boolean; imported?: number; failed?: number; errors?: string[]; batchCode?: string; message?: string } | null>(null)
   const [formData, setFormData] = useState({ quantity: "", profileId: "", routerId: "", agentId: "", codeLength: "6", prefix: "", voucherType: "same", codeType: "alpha-upper", lockMac: false })
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [totalVouchers, setTotalVouchers] = useState(0)
   const [pageSize, setPageSize] = useState(100)
   const [stats, setStats] = useState({ total: 0, waiting: 0, active: 0, expired: 0, totalValue: 0 })
   const [isSSEConnected, setIsSSEConnected] = useState(false)
-  const [companyName, setCompanyName] = useState('ISP')
   const [deleteOverlay, setDeleteOverlay] = useState<{
     open: boolean; phase: '' | 'deleting' | 'done' | 'error';
     count: number; label: string; errorMsg: string;
   }>({ open: false, phase: '', count: 0, label: '', errorMsg: '' })
+
+  // ─── React Query: Voucher list (filters + pagination + 30s polling) ──────────
+  const voucherParams: Record<string, unknown> = {
+    profileId: filterProfile && filterProfile !== 'all' ? filterProfile : undefined,
+    batchCode: filterBatch && filterBatch !== 'all' ? filterBatch : undefined,
+    status: filterStatus && filterStatus !== 'all' ? filterStatus : undefined,
+    routerId: filterRouter && filterRouter !== 'all' ? filterRouter : undefined,
+    agentId: filterAgent && filterAgent !== 'all' ? filterAgent : undefined,
+    page: currentPage,
+    limit: pageSize,
+  }
+  const { data: voucherData, isLoading: loading, error: voucherError } = useApiQuery<VoucherListResponse>(
+    '/api/hotspot/voucher',
+    { params: voucherParams, refetchInterval: 30000, placeholderData: 'keepPreviousData' }
+  )
+  const vouchers = voucherData?.vouchers || []
+  const batches = voucherData?.batches || []
+  const totalPages = voucherData?.totalPages || 1
+  const totalVouchers = voucherData?.total || 0
+
+  // ─── React Query: Profiles (rarely change — 5min stale) ──────────────────────
+  const { data: profilesData } = useApiQuery<ProfilesResponse>('/api/hotspot/profiles', { staleTime: 5 * 60 * 1000 })
+  const profiles = profilesData?.profiles || []
+
+  // ─── React Query: Routers (rarely change — 5min stale) ───────────────────────
+  const { data: routersData } = useApiQuery<{ routers: RouterItem[] }>('/api/network/routers', { staleTime: 5 * 60 * 1000 })
+  const routers = routersData?.routers || []
+
+  // ─── React Query: Agents (rarely change — 5min stale) ────────────────────────
+  const { data: agentsData } = useApiQuery<AgentsResponse>('/api/hotspot/agents', { staleTime: 5 * 60 * 1000 })
+  const agents = agentsData?.agents || []
+
+  // ─── React Query: Voucher templates (rarely change — 5min stale) ─────────────
+  const { data: templatesData } = useApiQuery<VoucherTemplate[]>('/api/voucher-templates', { staleTime: 5 * 60 * 1000 })
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const templates: any[] = (templatesData || []).filter((t: any) => t.isActive)
+
+  // ─── React Query: Company info (rarely change — 30min stale) ─────────────────
+  const { data: companyData } = useApiQuery<{ success: boolean; company?: { name: string } }>('/api/public/company', { staleTime: 30 * 60 * 1000 })
+  const companyName = companyData?.company?.name || 'ISP'
+
+  // Sync stats from voucher query data (also updated by SSE)
+  useEffect(() => {
+    if (voucherData?.stats) {
+      setStats(voucherData.stats)
+    }
+  }, [voucherData])
+
+  // Set default template when templates load
+  useEffect(() => {
+    if (templatesData) {
+      const def = templatesData.find((t: VoucherTemplate) => t.isDefault)
+      if (def) setSelectedTemplate(def.id)
+    }
+  }, [templatesData])
+
+  // Log query errors (preserving previous console.error behavior)
+  useEffect(() => {
+    if (voucherError) console.error(voucherError)
+  }, [voucherError])
   
   // SSE Handler for real-time updates
   const handleSSEMessage = useCallback((event: string, data: {
@@ -132,10 +184,9 @@ export default function HotspotVoucherPage() {
       }
     } else if (event === 'voucher-changed') {
       console.log('[SSE] Voucher list changed, refreshing...')
-      loadVouchers()
+      queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] })
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [queryClient])
 
   // Setup SSE connection
   useSSE('/api/sse/voucher-updates', handleSSEMessage, {
@@ -189,46 +240,8 @@ export default function HotspotVoucherPage() {
     }
   }
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadProfiles(); loadRouters(); loadAgents(); loadVouchers(); loadTemplates();
-    apiAdmin<{ success: boolean; company?: { name: string } }>('/api/public/company').then((d) => { if (d.success && d.company?.name) setCompanyName(d.company.name); }).catch(() => {});
-  }, [])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setCurrentPage(1); loadVouchers(); }, [filterProfile, filterBatch, filterStatus, filterRouter, filterAgent])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadVouchers(); }, [currentPage, pageSize])
-  
-  // Auto-refresh voucher list every 30 seconds to sync with cron updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadVouchers()
-    }, 30000) // 30 seconds
-    return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterProfile, filterBatch, filterStatus, filterRouter, filterAgent, currentPage, pageSize])
-
-  const loadProfiles = async () => { try { const data = await apiAdmin<ProfilesResponse>('/api/hotspot/profiles'); setProfiles(data.profiles || []); } catch (e) { console.error(e); } }
-  const loadRouters = async () => { try { const data = await networkApi.listRouters(); setRouters(data.routers || []); } catch (e) { console.error(e); } }
-  const loadAgents = async () => { try { const data = await apiAdmin<AgentsResponse>('/api/hotspot/agents'); setAgents(data.agents || []); } catch (e) { console.error(e); } }
-  const loadTemplates = async () => { try { const data = await apiAdmin<VoucherTemplate[]>('/api/voucher-templates'); setTemplates(data.filter((t: VoucherTemplate) => t.isActive)); const def = data.find((t: VoucherTemplate) => t.isDefault); if (def) setSelectedTemplate(def.id); } catch (e) { console.error(e); } }
-  const loadVouchers = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (filterProfile && filterProfile !== 'all') params.append('profileId', filterProfile);
-      if (filterBatch && filterBatch !== 'all') params.append('batchCode', filterBatch);
-      if (filterStatus && filterStatus !== 'all') params.append('status', filterStatus);
-      if (filterRouter && filterRouter !== 'all') params.append('routerId', filterRouter);
-      if (filterAgent && filterAgent !== 'all') params.append('agentId', filterAgent);
-      params.append('page', currentPage.toString());
-      params.append('limit', pageSize.toString());
-      const data = await apiAdmin<VoucherListResponse>(`/api/hotspot/voucher?${params}`);
-      setVouchers(data.vouchers || []);
-      setBatches(data.batches || []);
-      setTotalPages(data.totalPages || 1);
-      setTotalVouchers(data.total || 0);
-      setStats(data.stats || { total: 0, waiting: 0, active: 0, expired: 0, totalValue: 0 });
-    } catch (e) { console.error(e); } finally { setLoading(false); }
-  }
+  // Reset to page 1 when filters change (React Query auto-refetches on param change)
+  useEffect(() => { setCurrentPage(1); }, [filterProfile, filterBatch, filterStatus, filterRouter, filterAgent])
 
   const CHUNK_SIZE = 2000;
   const handleGenerate = async (e: React.FormEvent) => {
@@ -267,12 +280,12 @@ export default function HotspotVoucherPage() {
 
       setGenOverlay(prev => ({ ...prev, phase: 'done', count: totalGenerated, batchCode: lastBatchCode }));
       setFormData({ quantity: "", profileId: "", routerId: "", agentId: "", codeLength: "6", prefix: "", voucherType: "same", codeType: "alpha-upper", lockMac: false });
-      loadVouchers();
+      queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] });
       setTimeout(() => setGenOverlay({ open: false, current: 0, total: 0, phase: '', batchCode: '', count: 0, errorMsg: '' }), 3500);
     } catch (err: unknown) {
       console.error(err);
       setGenOverlay(prev => ({ ...prev, phase: 'error', errorMsg: (err instanceof Error ? err.message : String(err)) || t('common.failed') }));
-      if (totalGenerated > 0) loadVouchers();
+      if (totalGenerated > 0) queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] });
     } finally {
       setGenerating(false);
     }
@@ -285,7 +298,7 @@ export default function HotspotVoucherPage() {
     try {
       const data = await apiAdmin<VoucherDeleteResponse>(`/api/hotspot/voucher?batchCode=${deleteBatchCode}`, { method: 'DELETE' });
       setDeleteOverlay({ open: true, phase: 'done', count: data.count, label, errorMsg: '' });
-      loadVouchers();
+      queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] });
       setTimeout(() => setDeleteOverlay({ open: false, phase: '', count: 0, label: '', errorMsg: '' }), 2500);
     } catch (e: unknown) { console.error(e); setDeleteOverlay({ open: true, phase: 'error', count: 0, label, errorMsg: (e instanceof Error ? e.message : String(e)) || t('common.failed') }); } finally { setDeleteBatchCode(null); }
   }
@@ -295,7 +308,7 @@ export default function HotspotVoucherPage() {
     if (!confirmed) return;
     try {
       await apiAdmin(`/api/hotspot/voucher/${voucherId}`, { method: 'DELETE' });
-      await showSuccess(t('common.deleted')); loadVouchers();
+      await showSuccess(t('common.deleted')); queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] });
     } catch (e: unknown) { console.error(e); await showError((e instanceof Error ? e.message : String(e)) || t('common.failed')); }
   }
 
@@ -310,7 +323,7 @@ export default function HotspotVoucherPage() {
       const data = await apiAdmin<VoucherDeleteMultipleResponse>('/api/hotspot/voucher/delete-multiple', { method: 'POST', body: JSON.stringify({ voucherIds: selectedVouchers }) });
       setDeleteOverlay({ open: true, phase: 'done', count: data.deleted, label: '', errorMsg: '' });
       setSelectedVouchers([]);
-      loadVouchers();
+      queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] });
       setTimeout(() => setDeleteOverlay({ open: false, phase: '', count: 0, label: '', errorMsg: '' }), 2500);
     } catch (e: unknown) {
       setDeleteOverlay({ open: true, phase: 'error', count: 0, label, errorMsg: (e instanceof Error ? e.message : String(e)) || t('common.failed') });
@@ -470,7 +483,7 @@ export default function HotspotVoucherPage() {
     try {
       const fd = new FormData(); fd.append('file', importFile); fd.append('profileId', importProfileId); if (importBatchCode) fd.append('batchCode', importBatchCode);
       const data = await apiAdmin<VoucherImportResponse>('/api/hotspot/voucher/bulk', { method: 'POST', body: fd });
-      setImportResult(data.results); loadVouchers(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportProfileId(''); setImportBatchCode(''); setImportResult(null); }, 3000);
+      setImportResult(data.results); queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] }); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportProfileId(''); setImportBatchCode(''); setImportResult(null); }, 3000);
     } catch (e: unknown) { console.error(e); await showError((e instanceof Error ? e.message : String(e)) || t('common.failed')); } finally { setImporting(false); }
   }
 
@@ -515,7 +528,7 @@ export default function HotspotVoucherPage() {
       await showSuccess(`${data.updated} voucher berhasil diperbarui`)
       setIsEditDialogOpen(false)
       setSelectedVouchers([])
-      loadVouchers()
+      queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] })
     } catch (e: unknown) {
       console.error(e)
       await showError((e instanceof Error ? e.message : String(e)) || t('common.failed'))
@@ -916,7 +929,7 @@ export default function HotspotVoucherPage() {
               </>
             )}
             {filterBatch && filterBatch !== 'all' && <button onClick={handlePrintBatch} className="px-2 py-1 text-[10px] bg-muted-foreground text-background rounded flex items-center gap-0.5"><Printer className="h-2.5 w-2.5" />Batch</button>}
-            {stats.expired > 0 && <button onClick={async () => { const c = await showConfirm(`${t('common.delete')} ${t('hotspot.expired')}?`); if (!c) return; setDeleteOverlay({ open: true, phase: 'deleting', count: stats.expired, label: `${stats.expired} voucher expired`, errorMsg: '' }); try { const data = await apiAdmin<VoucherDeleteResponse>('/api/hotspot/voucher/delete-expired', { method: 'POST' }); setDeleteOverlay({ open: true, phase: 'done', count: data.count, label: '', errorMsg: '' }); loadVouchers(); setTimeout(() => setDeleteOverlay({ open: false, phase: '', count: 0, label: '', errorMsg: '' }), 2500); } catch (e: unknown) { setDeleteOverlay({ open: true, phase: 'error', count: 0, label: '', errorMsg: (e instanceof Error ? e.message : String(e)) || t('common.failed') }); } }} className="px-2 py-1 text-[10px] bg-destructive text-destructive-foreground rounded flex items-center gap-0.5"><Trash2 className="h-2.5 w-2.5" />{t('hotspot.expired')} ({stats.expired})</button>}
+            {stats.expired > 0 && <button onClick={async () => { const c = await showConfirm(`${t('common.delete')} ${t('hotspot.expired')}?`); if (!c) return; setDeleteOverlay({ open: true, phase: 'deleting', count: stats.expired, label: `${stats.expired} voucher expired`, errorMsg: '' }); try { const data = await apiAdmin<VoucherDeleteResponse>('/api/hotspot/voucher/delete-expired', { method: 'POST' }); setDeleteOverlay({ open: true, phase: 'done', count: data.count, label: '', errorMsg: '' }); queryClient.invalidateQueries({ queryKey: ['/api/hotspot/voucher'] }); setTimeout(() => setDeleteOverlay({ open: false, phase: '', count: 0, label: '', errorMsg: '' }), 2500); } catch (e: unknown) { setDeleteOverlay({ open: true, phase: 'error', count: 0, label: '', errorMsg: (e instanceof Error ? e.message : String(e)) || t('common.failed') }); } }} className="px-2 py-1 text-[10px] bg-destructive text-destructive-foreground rounded flex items-center gap-0.5"><Trash2 className="h-2.5 w-2.5" />{t('hotspot.expired')} ({stats.expired})</button>}
             {filterBatch && filterBatch !== 'all' && <button onClick={() => setDeleteBatchCode(filterBatch)} className="px-2 py-1 text-[10px] bg-destructive text-destructive-foreground rounded flex items-center gap-0.5"><Trash2 className="h-2.5 w-2.5" />{t('common.delete')} Batch</button>}
           </div>
         </div>

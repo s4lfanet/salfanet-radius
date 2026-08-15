@@ -295,6 +295,7 @@ export default function TopUpRequestsPage() {
               src={selectedImage}
               alt={t('topup.paymentProof')}
               className="max-w-full max-h-[90vh] object-contain"
+              loading="lazy"
             />
           </div>
         </div>

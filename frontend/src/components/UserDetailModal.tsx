@@ -798,7 +798,7 @@ export default function UserDetailModal({
                     {formData.installationPhotos.map((photo, index) => (
                       <div key={index} className="relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-16 object-cover rounded border border-border dark:border-[#00f7ff]/20" />
+                        <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-16 object-cover rounded border border-border dark:border-[#00f7ff]/20" loading="lazy" />
                         <button type="button" onClick={() => setFormData(prev => ({ ...prev, installationPhotos: prev.installationPhotos.filter((_, i) => i !== index) }))} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] hover:bg-red-600">×</button>
                       </div>
                     ))}
@@ -1021,6 +1021,7 @@ export default function UserDetailModal({
                       alt="Foto KTP"
                       className="w-full max-h-64 object-contain rounded-lg border border-border dark:border-[#bc13fe]/30 bg-black/5 dark:bg-black/30"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      loading="lazy"
                     />
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-lg">
                       <div className="flex items-center gap-1.5 text-white text-xs bg-black/60 px-3 py-1.5 rounded-full">
@@ -1061,6 +1062,7 @@ export default function UserDetailModal({
                           alt={`Instalasi ${index + 1}`}
                           className="w-full aspect-[4/3] object-cover rounded-lg border border-border dark:border-[#00f7ff]/20"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          loading="lazy"
                         />
                         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-lg">
                           <div className="flex items-center gap-1.5 text-white text-xs bg-black/60 px-3 py-1.5 rounded-full">
@@ -1099,6 +1101,7 @@ export default function UserDetailModal({
                 alt="Preview"
                 className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                 onClick={(e) => e.stopPropagation()}
+                loading="lazy"
               />
               <button
                 type="button"

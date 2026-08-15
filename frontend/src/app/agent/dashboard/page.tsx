@@ -998,7 +998,7 @@ export default function AgentDashboardPage() {
                               />
                               {method.iconUrl && (
                                 // eslint-disable-next-line @next/next/no-img-element
-                                <img src={method.iconUrl} alt={method.name} className="w-8 h-8 object-contain rounded" />
+                                <img src={method.iconUrl} alt={method.name} className="w-8 h-8 object-contain rounded" loading="lazy" />
                               )}
                               <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-slate-900 dark:text-white truncate">{method.name}</p>
@@ -1082,7 +1082,7 @@ export default function AgentDashboardPage() {
                     {proofPreviewUrl && (
                       <div className="mt-2 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={proofPreviewUrl} alt="Bukti transfer" className="w-full max-h-48 object-contain bg-slate-100 dark:bg-black/20" />
+                        <img src={proofPreviewUrl} alt="Bukti transfer" className="w-full max-h-48 object-contain bg-slate-100 dark:bg-black/20" loading="lazy" />
                       </div>
                     )}
                   </div>

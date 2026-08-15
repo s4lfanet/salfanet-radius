@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, MapPin, ExternalLink, Trash2 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showError, showConfirm } from '@/lib/sweetalert';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -85,33 +86,26 @@ function CoordCell({ lat, lng }: { lat: number; lng: number }) {
 
 function OTBTable({ search }: { search: string }) {
   const { t } = useTranslation();
-  const [items, setItems] = useState<OTB[]>([]);
-  const [total, setTotal] = useState(0);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const d = await apiAdmin<{ otbs?: OTB[]; pagination?: { total?: number } }>(`/api/network/otbs?page=${page}&limit=20&search=${encodeURIComponent(search)}`);
-      setItems(d.otbs || []);
-      setTotal(d.pagination?.total || 0);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search]);
+  const otbsQuery = useApiQuery<{ otbs?: OTB[]; pagination?: { total?: number } }>('/api/network/otbs', {
+    params: { page, limit: 20, search },
+    placeholderData: 'keepPreviousData',
+  });
+  const items = otbsQuery.data?.otbs || [];
+  const total = otbsQuery.data?.pagination?.total || 0;
+  const loading = otbsQuery.isLoading;
 
   useEffect(() => { setPage(1); }, [search]);
-  useEffect(() => { load(); }, [load]);
 
   const handleDelete = async (r: OTB) => {
     if (!(await showConfirm(t('infrastruktur.deleteConfirmOTB', { name: r.name })))) return;
     setDeletingId(r.id);
     try {
       await apiAdmin(`/api/network/otbs/${r.id}`, { method: 'DELETE' });
-      setItems(prev => prev.filter(i => i.id !== r.id));
-      setTotal(prev => prev - 1);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/otbs') });
     } catch (e: unknown) {
       showError(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {
@@ -163,31 +157,22 @@ function OTBTable({ search }: { search: string }) {
 
 function JCTable({ search }: { search: string }) {
   const { t } = useTranslation();
-  const [items, setItems] = useState<JC[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const d = await apiAdmin<{ data?: JC[]; count?: number }>(`/api/network/joint-closures?search=${encodeURIComponent(search)}`);
-      setItems(d.data || []);
-      setTotal(d.count || 0);
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
-
-  useEffect(() => { load(); }, [load]);
+  const jcsQuery = useApiQuery<{ data?: JC[]; count?: number }>('/api/network/joint-closures', {
+    params: { search },
+  });
+  const items = jcsQuery.data?.data || [];
+  const total = jcsQuery.data?.count || 0;
+  const loading = jcsQuery.isLoading;
 
   const handleDelete = async (r: JC) => {
     if (!(await showConfirm(t('infrastruktur.deleteConfirmJC', { name: r.name })))) return;
     setDeletingId(r.id);
     try {
       await apiAdmin(`/api/network/joint-closures/${r.id}`, { method: 'DELETE' });
-      setItems(prev => prev.filter(i => i.id !== r.id));
-      setTotal(prev => prev - 1);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/joint-closures') });
     } catch (e: unknown) {
       showError(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {
@@ -231,35 +216,23 @@ function JCTable({ search }: { search: string }) {
 
 function ODCTable({ search }: { search: string }) {
   const { t } = useTranslation();
-  const [items, setItems] = useState<ODC[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const d = await apiAdmin<{ odcs?: ODC[] }>('/api/network/odcs');
-      const all: ODC[] = d.odcs || [];
-      const filtered = search
-        ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
-        : all;
-      setItems(filtered);
-      setTotal(filtered.length);
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
-
-  useEffect(() => { load(); }, [load]);
+  const odcsQuery = useApiQuery<{ odcs?: ODC[] }>('/api/network/odcs');
+  const all: ODC[] = odcsQuery.data?.odcs || [];
+  const items = search
+    ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
+    : all;
+  const total = items.length;
+  const loading = odcsQuery.isLoading;
 
   const handleDelete = async (r: ODC) => {
     if (!(await showConfirm(t('infrastruktur.deleteConfirmODC', { name: r.name })))) return;
     setDeletingId(r.id);
     try {
       await apiAdmin(`/api/network/odcs/${r.id}`, { method: 'DELETE' });
-      setItems(prev => prev.filter(i => i.id !== r.id));
-      setTotal(prev => prev - 1);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/odcs') });
     } catch (e: unknown) {
       showError(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {
@@ -305,35 +278,25 @@ function ODCTable({ search }: { search: string }) {
 
 function ODPTable({ search }: { search: string }) {
   const { t } = useTranslation();
-  const [items, setItems] = useState<ODP[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const d = await apiAdmin<{ odps?: ODP[]; data?: ODP[] }>('/api/network/odps?limit=500');
-      const all: ODP[] = d.odps || d.data || [];
-      const filtered = search
-        ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
-        : all;
-      setItems(filtered);
-      setTotal(filtered.length);
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
-
-  useEffect(() => { load(); }, [load]);
+  const odpsQuery = useApiQuery<{ odps?: ODP[]; data?: ODP[] }>('/api/network/odps', {
+    params: { limit: 500 },
+  });
+  const all: ODP[] = odpsQuery.data?.odps || odpsQuery.data?.data || [];
+  const items = search
+    ? all.filter(o => o.name.toLowerCase().includes(search.toLowerCase()))
+    : all;
+  const total = items.length;
+  const loading = odpsQuery.isLoading;
 
   const handleDelete = async (r: ODP) => {
     if (!(await showConfirm(t('infrastruktur.deleteConfirmODP', { name: r.name })))) return;
     setDeletingId(r.id);
     try {
       await apiAdmin(`/api/network/odps/${r.id}`, { method: 'DELETE' });
-      setItems(prev => prev.filter(i => i.id !== r.id));
-      setTotal(prev => prev - 1);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/odps') });
     } catch (e: unknown) {
       showError(t('infrastruktur.deleteFailed', { error: (e instanceof Error ? e.message : String(e)) || 'Failed' }));
     } finally {

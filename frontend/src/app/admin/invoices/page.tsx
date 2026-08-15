@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { showSuccess, showError, showConfirm, showToast } from '@/lib/sweetalert';
@@ -25,7 +25,8 @@ import {
 import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, ChevronLeft, ChevronRight, PlusSquare, Users, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { invoiceApi, pppoeApi, apiAdmin, buildUrl } from '@/lib/api';
-import type { InvoiceListResponse, InvoiceDeleteResponse, InvoiceGenerateResponse, InvoiceSendReminderResponse, InvoicePdfResponse } from '@/types/api';
+import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import type { InvoiceListResponse, InvoiceResponse, InvoiceDeleteResponse, InvoiceGenerateResponse, InvoiceSendReminderResponse, InvoicePdfResponse } from '@/types/api';
 
 interface Invoice {
   id: string;
@@ -124,36 +125,22 @@ interface PdfExportResponse {
 
 export default function InvoicesPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [stats, setStats] = useState<Stats>({
-    total: 0,
-    unpaid: 0,
-    paid: 0,
-    pending: 0,
-    overdue: 0,
-    totalUnpaidAmount: 0,
-    totalPaidAmount: 0,
-  });
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('unpaid');
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [processing, setProcessing] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [sendingWA, setSendingWA] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [printDialogInvoice, setPrintDialogInvoice] = useState<Invoice | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
-  const [broadcasting, setBroadcasting] = useState(false);
   const [exportDateFrom, setExportDateFrom] = useState('');
   const [exportDateTo, setExportDateTo] = useState('');
   const [invoiceMonth, setInvoiceMonth] = useState<string>(''); // '' = all-time, 'YYYY-MM' = filtered
 
   // Generate Invoice dialog
   const [showGenerateDialog, setShowGenerateDialog] = useState(false);
-  const [generating, setGenerating] = useState(false);
   const [genMonth, setGenMonth] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
   const [genScope, setGenScope] = useState<'all' | 'single'>('all');
   const [genUserId, setGenUserId] = useState('');
@@ -163,6 +150,43 @@ export default function InvoicesPage() {
   const [genSkipExisting, setGenSkipExisting] = useState(true);
   const [genSendWa, setGenSendWa] = useState(false);
   const [genResult, setGenResult] = useState<InvoiceGenerateResponse | null>(null);
+
+  // ─── React Query: Invoice list (auto-refetches on tab/month change) ──────────
+  const invoiceStatus = activeTab === 'unpaid' ? 'PENDING' : activeTab === 'paid' ? 'PAID' : 'all';
+  const invoicesQueryKey = buildQueryKey('/api/invoices', { status: invoiceStatus, month: invoiceMonth });
+  const { data: invoicesData, isLoading: loading } = useApiQuery<InvoiceListResponse>('/api/invoices', {
+    params: { status: invoiceStatus, month: invoiceMonth },
+    placeholderData: 'keepPreviousData',
+  });
+  // API Invoice type lacks nested `user` relation; local Invoice includes it
+  const invoices = (invoicesData?.invoices as unknown as Invoice[]) || [];
+  const stats = invoicesData?.stats || {
+    total: 0,
+    unpaid: 0,
+    paid: 0,
+    pending: 0,
+    overdue: 0,
+    totalUnpaidAmount: 0,
+    totalPaidAmount: 0,
+  };
+
+  // ─── React Query: Mutations ──────────────────────────────────────────────────
+  const markAsPaidMutation = useApiMutation<InvoiceResponse>('/api/invoices', {
+    method: 'PUT',
+    invalidateQueries: [invoicesQueryKey],
+  });
+  const sendReminderMutation = useApiMutation<InvoiceSendReminderResponse & { error?: string }, { invoiceId: string }>('/api/invoices/send-reminder', {
+    method: 'POST',
+  });
+  const broadcastMutation = useApiMutation<BroadcastResponse, { invoiceIds: string[] }>('/api/whatsapp/broadcast-invoice', {
+    method: 'POST',
+  });
+  const generateMutation = useApiMutation<InvoiceGenerateResponse & { error?: string }>('/api/invoices/generate', {
+    method: 'POST',
+    invalidateQueries: [invoicesQueryKey],
+  });
+
+  const isSendingWA = (invoiceId: string) => sendReminderMutation.isPending && sendReminderMutation.variables?.invoiceId === invoiceId;
 
   const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const getMonthLabel = (ym: string) => {
@@ -175,28 +199,6 @@ export default function InvoicesPage() {
     const [y, m] = base.split('-').map(Number);
     const d = new Date(Date.UTC(y, m - 1 + delta, 1));
     setInvoiceMonth(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`);
-  };
-
-  useEffect(() => {
-    loadInvoices();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, invoiceMonth]);
-
-  const loadInvoices = async () => {
-    try {
-      setLoading(true);
-      const status = activeTab === 'unpaid' ? 'PENDING' : activeTab === 'paid' ? 'PAID' : 'all';
-      const params: Record<string, string> = { status };
-      if (invoiceMonth) params.month = invoiceMonth;
-      const data = await invoiceApi.list(params);
-      // API Invoice type lacks nested `user` relation; local Invoice includes it
-      setInvoices((data.invoices as unknown as Invoice[]) || []);
-      setStats(data.stats || stats);
-    } catch (error) {
-      console.error('Load invoices error:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const getFilteredInvoices = () => {
@@ -219,16 +221,12 @@ export default function InvoicesPage() {
     e.preventDefault();
     if (!selectedInvoice) return;
 
-    setProcessing(true);
     try {
-      await invoiceApi.update({ id: selectedInvoice.id, status: 'PAID' });
+      await markAsPaidMutation.mutateAsync({ id: selectedInvoice.id, status: 'PAID' });
       setIsPaymentDialogOpen(false);
-      loadInvoices();
       showToast(t('invoices.markedAsPaid'), 'success');
     } catch (error: unknown) {
       await showError(error instanceof Error ? error.message : t('invoices.failedToMarkPaid'));
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -260,9 +258,8 @@ export default function InvoicesPage() {
     const confirmed = await showConfirm(t('invoices.sendReminderTo', { name: invoice.customerName || invoice.customerUsername || '' }), t('invoices.sendWhatsApp'));
     if (!confirmed) return;
 
-    setSendingWA(invoice.id);
     try {
-      const data = await invoiceApi.sendReminder({ invoiceId: invoice.id });
+      const data = await sendReminderMutation.mutateAsync({ invoiceId: invoice.id });
       if (data.success) {
         await showSuccess(t('invoices.whatsappReminderSent'));
       } else {
@@ -270,8 +267,6 @@ export default function InvoicesPage() {
       }
     } catch (error: unknown) {
       await showError(error instanceof Error ? error.message : t('invoices.failedToSendWhatsApp'));
-    } finally {
-      setSendingWA(null);
     }
   };
 
@@ -306,12 +301,8 @@ export default function InvoicesPage() {
     );
     if (!confirmed) return;
 
-    setBroadcasting(true);
     try {
-      const data = await apiAdmin<BroadcastResponse>('/api/whatsapp/broadcast-invoice', {
-        method: 'POST',
-        body: JSON.stringify({ invoiceIds: Array.from(selectedInvoices) }),
-      });
+      const data = await broadcastMutation.mutateAsync({ invoiceIds: Array.from(selectedInvoices) });
 
       if (data.success) {
         await showSuccess(`Broadcast ${t('common.success').toLowerCase()}!\n✅ ${t('whatsapp.sent')}: ${data.successCount}\n❌ ${t('whatsapp.failed')}: ${data.failCount}`);
@@ -322,8 +313,6 @@ export default function InvoicesPage() {
     } catch (error: unknown) {
       console.error('Broadcast error:', error);
       await showError(error instanceof Error ? error.message : t('common.failedSendBroadcast'));
-    } finally {
-      setBroadcasting(false);
     }
   };
 
@@ -338,7 +327,7 @@ export default function InvoicesPage() {
     try {
       const data = await invoiceApi.delete(invoice.id);
       if (data.success) {
-        loadInvoices();
+        queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
         showToast(t('invoices.invoiceDeleted'), 'success');
       } else {
         await showError(data.error || t('common.failedDelete'));
@@ -538,7 +527,7 @@ export default function InvoicesPage() {
       <div class="content">
       <div class="header">
         <div class="brand-wrap">
-          ${inv.company.logo ? `<div class="logo-box"><img src="${inv.company.logo}" style="max-height:58px;max-width:58px;width:auto;object-fit:contain" alt="Logo"></div>` : ''}
+          ${inv.company.logo ? `<div class="logo-box"><img src="${inv.company.logo}" style="max-height:58px;max-width:58px;width:auto;object-fit:contain" alt="Logo" loading="lazy"></div>` : ''}
           <div>
             <div class="company-name">${inv.company.name}</div>
             <div class="company-sub">
@@ -677,7 +666,7 @@ export default function InvoicesPage() {
         .btn-close { flex: 1; padding: 10px; background: #6b7280; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
       </style></head><body>
       <div class="receipt">
-      ${inv.company.logo ? `<img class="logo" src="${inv.company.logo}" alt="Logo">` : ''}
+      ${inv.company.logo ? `<img class="logo" src="${inv.company.logo}" alt="Logo" loading="lazy">` : ''}
       <div class="center bold big">${inv.company.name}</div>
       ${inv.company.address ? `<div class="center sm">${inv.company.address}</div>` : ''}
       ${inv.company.phone ? `<div class="center sm">Telp: ${inv.company.phone}</div>` : ''}
@@ -748,10 +737,9 @@ export default function InvoicesPage() {
 
   const handleGenerate = async () => {
     if (genScope === 'single' && !genUserId) { await showError('Pilih pelanggan terlebih dahulu'); return; }
-    setGenerating(true);
     setGenResult(null);
     try {
-      const data = await invoiceApi.generate({
+      const data = await generateMutation.mutateAsync({
         targetMonth: genMonth,
         scope: genScope,
         userId: genScope === 'single' ? genUserId : undefined,
@@ -760,12 +748,10 @@ export default function InvoicesPage() {
       });
       if (data.success) {
         setGenResult(data);
-        loadInvoices();
       } else {
         await showError(data.error || 'Gagal generate tagihan');
       }
     } catch { await showError('Gagal generate tagihan'); }
-    finally { setGenerating(false); }
   };
 
   const formatCurrency = (amount: number) => {
@@ -834,10 +820,10 @@ export default function InvoicesPage() {
             {selectedInvoices.size > 0 && (
               <button
                 onClick={handleBroadcastInvoices}
-                disabled={broadcasting}
+                disabled={broadcastMutation.isPending}
                 className="inline-flex items-center px-2 py-1.5 text-xs bg-accent text-accent-foreground rounded hover:bg-accent/90 disabled:opacity-50"
               >
-                {broadcasting ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <MessageCircle className="h-3 w-3 mr-1" />}
+                {broadcastMutation.isPending ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <MessageCircle className="h-3 w-3 mr-1" />}
                 {t('invoices.broadcast')} ({selectedInvoices.size})
               </button>
             )}
@@ -1048,8 +1034,8 @@ export default function InvoicesPage() {
                             <Eye className="h-3 w-3 text-muted-foreground" />
                           </button>
                           {(invoice.status === 'PENDING' || invoice.status === 'OVERDUE') && invoice.customerPhone && (
-                            <button onClick={() => handleSendWhatsApp(invoice)} disabled={sendingWA === invoice.id} className="p-1 hover:bg-muted rounded" title="WhatsApp">
-                              {sendingWA === invoice.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3 text-muted-foreground" />}
+                            <button onClick={() => handleSendWhatsApp(invoice)} disabled={isSendingWA(invoice.id)} className="p-1 hover:bg-muted rounded" title="WhatsApp">
+                              {isSendingWA(invoice.id) ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3 text-muted-foreground" />}
                             </button>
                           )}
                           {(invoice.status === 'PENDING' || invoice.status === 'OVERDUE') && (
@@ -1141,8 +1127,8 @@ export default function InvoicesPage() {
                       <Eye className="h-3.5 w-3.5 text-muted-foreground" />
                     </button>
                     {(invoice.status === 'PENDING' || invoice.status === 'OVERDUE') && invoice.customerPhone && (
-                      <button onClick={() => handleSendWhatsApp(invoice)} disabled={sendingWA === invoice.id} className="p-1.5 hover:bg-muted rounded" title="WhatsApp">
-                        {sendingWA === invoice.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />}
+                      <button onClick={() => handleSendWhatsApp(invoice)} disabled={isSendingWA(invoice.id)} className="p-1.5 hover:bg-muted rounded" title="WhatsApp">
+                        {isSendingWA(invoice.id) ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5 text-muted-foreground" />}
                       </button>
                     )}
                     {(invoice.status === 'PENDING' || invoice.status === 'OVERDUE') && (
@@ -1332,11 +1318,11 @@ export default function InvoicesPage() {
                 </div>
 
                 <div className="flex gap-2 pt-1">
-                  <Button type="button" variant="outline" onClick={() => setIsPaymentDialogOpen(false)} disabled={processing} size="sm" className="flex-1 h-9 text-xs">
+                  <Button type="button" variant="outline" onClick={() => setIsPaymentDialogOpen(false)} disabled={markAsPaidMutation.isPending} size="sm" className="flex-1 h-9 text-xs">
                     {t('common.cancel')}
                   </Button>
-                  <Button type="submit" disabled={processing} size="sm" className="flex-1 h-9 text-xs bg-success hover:bg-success/90 text-white">
-                    {processing ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />}
+                  <Button type="submit" disabled={markAsPaidMutation.isPending} size="sm" className="flex-1 h-9 text-xs bg-success hover:bg-success/90 text-white">
+                    {markAsPaidMutation.isPending ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />}
                     {t('common.confirm')}
                   </Button>
                 </div>
@@ -1506,7 +1492,7 @@ export default function InvoicesPage() {
                   )}
 
                   <div className="flex gap-2 pt-1">
-                    <Button type="button" variant="outline" size="sm" className="flex-1 h-9 text-xs" onClick={() => setShowGenerateDialog(false)} disabled={generating}>
+                    <Button type="button" variant="outline" size="sm" className="flex-1 h-9 text-xs" onClick={() => setShowGenerateDialog(false)} disabled={generateMutation.isPending}>
                       Batal
                     </Button>
                     <Button
@@ -1514,9 +1500,9 @@ export default function InvoicesPage() {
                       size="sm"
                       className="flex-1 h-9 text-xs bg-blue-600 hover:bg-blue-700 text-white"
                       onClick={handleGenerate}
-                      disabled={generating || (genScope === 'single' && !genUserId)}
+                      disabled={generateMutation.isPending || (genScope === 'single' && !genUserId)}
                     >
-                      {generating ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generating...</> : <><PlusSquare className="h-3.5 w-3.5 mr-1.5" />Generate Tagihan</>}
+                      {generateMutation.isPending ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Generating...</> : <><PlusSquare className="h-3.5 w-3.5 mr-1.5" />Generate Tagihan</>}
                     </Button>
                   </div>
                 </div>

@@ -1,11 +1,11 @@
 ﻿'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Power, RefreshCw, WifiOff, Search, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB } from '@/lib/timezone';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
 
 interface Session {
   id: string;
@@ -58,9 +58,6 @@ interface Router {
 export default function HotspotSessionsPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [routers, setRouters] = useState<Router[]>([]);
   const [now, setNow] = useState(() => nowWIB().getTime());
 
   // 1-second ticker for live duration
@@ -68,51 +65,77 @@ export default function HotspotSessionsPage() {
     const ticker = setInterval(() => setNow(nowWIB().getTime()), 1000);
     return () => clearInterval(ticker);
   }, []);
-  const [loading, setLoading] = useState(true);
+
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
-  const [disconnecting, setDisconnecting] = useState(false);
   const [routerFilter, setRouterFilter] = useState<string>('');
   const [searchFilter, setSearchFilter] = useState<string>('');
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 25, totalPages: 1 });
   const [pageSize, setPageSize] = useState<number>(25);
-  const [syncing, setSyncing] = useState(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Sessions query — 10s polling for live bytes from MikroTik API
+  const sessionsParams: Record<string, unknown> = {
+    page: currentPage,
+    limit: pageSize,
+    type: 'hotspot', // Force Hotspot only
+    live: 'true', // Merge live bytes from MikroTik API
+  };
+  if (routerFilter) sessionsParams.routerId = routerFilter;
+  if (searchFilter) sessionsParams.search = searchFilter;
+
+  const { data: sessionsData, isLoading } = useApiQuery<{
+    sessions?: Session[];
+    stats?: Stats;
+    pagination?: Pagination;
+  }>('/api/sessions', {
+    params: sessionsParams,
+    // 10 detik — live bytes dari MikroTik API
+    refetchInterval: 10000,
+    placeholderData: 'keepPreviousData',
+    queryOptions: { refetchOnWindowFocus: true },
+  });
+
+  const sessions = sessionsData?.sessions || [];
+  const stats = sessionsData?.stats ?? null;
+  const pagination = sessionsData?.pagination ?? { total: 0, page: 1, limit: pageSize, totalPages: 1 };
+
+  // Routers query
+  const { data: routersData } = useApiQuery<{ routers?: Router[] }>('/api/network/routers');
+  const routers = routersData?.routers || [];
+
+  // Sync mutation — invalidates sessions query after success
+  const syncMutation = useApiMutation<unknown, undefined>(
+    '/api/sessions/sync?type=hotspot',
+    {
+      method: 'POST',
+      invalidateQueries: [buildQueryKey('/api/sessions', sessionsParams)],
+    },
+  );
+  const syncing = syncMutation.isPending;
+
+  // Disconnect mutation — invalidates sessions query after success
+  const disconnectMutation = useApiMutation<{ success: boolean; disconnected?: number; error?: string }, { sessionIds: string[] }>(
+    '/api/sessions/disconnect',
+    {
+      method: 'POST',
+      invalidateQueries: [buildQueryKey('/api/sessions', sessionsParams)],
+    },
+  );
+  const disconnecting = disconnectMutation.isPending;
+
+  // Reset to page 1 when filters or page size change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [routerFilter, searchFilter, pageSize]);
 
   const handleSync = async () => {
-    setSyncing(true);
     try {
-      await apiAdmin('/api/sessions/sync?type=hotspot', { method: 'POST' });
-      await fetchSessions(1);
+      await syncMutation.mutateAsync(undefined);
+      setCurrentPage(1);
       addToast({ type: 'success', title: t('common.success'), description: t('sessions.syncComplete') });
     } catch {
       addToast({ type: 'error', title: t('common.error'), description: t('sessions.syncFailed') });
-    } finally {
-      setSyncing(false);
     }
   };
-
-  const fetchSessions = useCallback(async (page: number = 1) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      params.set('page', page.toString());
-      params.set('limit', pageSize.toString());
-      params.set('type', 'hotspot'); // Force Hotspot only
-      params.set('live', 'true'); // Merge live bytes from MikroTik API
-      if (routerFilter) params.set('routerId', routerFilter);
-      if (searchFilter) params.set('search', searchFilter);
-
-      const data = await apiAdmin<{ sessions?: Session[]; stats?: Stats; pagination?: Pagination }>(`/api/sessions?${params}`);
-      setSessions(data.sessions || []);
-      setStats(data.stats ?? null);
-      if (data.pagination) {
-        setPagination(data.pagination);
-      }
-    } catch (error) {
-      console.error('Failed to fetch sessions:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [pageSize, routerFilter, searchFilter]);
 
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return '-';
@@ -139,27 +162,6 @@ export default function HotspotSessionsPage() {
     if (!expiresAtStr) return 0;
     return Math.max(0, Math.floor((new Date(expiresAtStr).getTime() - now) / 1000));
   };
-
-  const fetchRouters = async () => {
-    try {
-      const data = await apiAdmin<{ routers?: Router[] }>('/api/network/routers');
-      setRouters(data.routers || []);
-    } catch (error) {
-      console.error('Failed to fetch routers:', error);
-    }
-  };
-
-  useEffect(() => {
-    fetchRouters();
-  }, []);
-
-  useEffect(() => {
-    fetchSessions(1);
-    const interval = setInterval(() => {
-      fetchSessions(pagination.page);
-    }, 10000); // 10 detik — live bytes dari MikroTik API
-    return () => clearInterval(interval);
-  }, [fetchSessions, pagination.page]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -190,23 +192,16 @@ export default function HotspotSessionsPage() {
       variant: 'danger',
     })) return;
 
-    setDisconnecting(true);
     try {
-      const data = await apiAdmin<{ success: boolean; disconnected?: number; error?: string }>('/api/sessions/disconnect', {
-        method: 'POST',
-        body: JSON.stringify({ sessionIds })
-      });
+      const data = await disconnectMutation.mutateAsync({ sessionIds });
       if (data.success) {
         addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', String(data.disconnected ?? 0)) });
         setSelectedSessions(new Set());
-        fetchSessions(pagination.page);
       } else {
         addToast({ type: 'error', title: t('common.error'), description: data.error || t('sessions.failedDisconnect') });
       }
     } catch {
       addToast({ type: 'error', title: t('common.error'), description: t('sessions.failedDisconnectSession') });
-    } finally {
-      setDisconnecting(false);
     }
   };
 
@@ -317,7 +312,7 @@ export default function HotspotSessionsPage() {
           <div className="block md:hidden divide-y divide-border">
             {sessions.length === 0 ? (
               <div className="px-3 py-8 text-center text-muted-foreground text-xs">
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('sessions.noData')}
+                {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('sessions.noData')}
               </div>
             ) : (
               sessions.map((session) => (
@@ -421,7 +416,7 @@ export default function HotspotSessionsPage() {
                 {sessions.length === 0 ? (
                   <tr>
                     <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground text-xs">
-                      {loading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
+                      {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
                     </td>
                   </tr>
                 ) : (
@@ -489,14 +484,14 @@ export default function HotspotSessionsPage() {
               </div>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => fetchSessions(1)}
+                  onClick={() => setCurrentPage(1)}
                   disabled={pagination.page === 1}
                   className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
                 >
                   {t('common.first')}
                 </button>
                 <button
-                  onClick={() => fetchSessions(pagination.page - 1)}
+                  onClick={() => setCurrentPage(pagination.page - 1)}
                   disabled={pagination.page === 1}
                   className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
                 >
@@ -509,7 +504,7 @@ export default function HotspotSessionsPage() {
                   return (
                     <button
                       key={pageNum}
-                      onClick={() => fetchSessions(pageNum)}
+                      onClick={() => setCurrentPage(pageNum)}
                       className={`px-2.5 py-1 text-xs border rounded ${pageNum === pagination.page
                           ? 'bg-teal-600 text-white border-teal-600'
                           : 'hover:bg-muted'
@@ -520,14 +515,14 @@ export default function HotspotSessionsPage() {
                   );
                 })}
                 <button
-                  onClick={() => fetchSessions(pagination.page + 1)}
+                  onClick={() => setCurrentPage(pagination.page + 1)}
                   disabled={pagination.page === pagination.totalPages}
                   className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
                 >
                   {t('common.next')}
                 </button>
                 <button
-                  onClick={() => fetchSessions(pagination.totalPages)}
+                  onClick={() => setCurrentPage(pagination.totalPages)}
                   disabled={pagination.page === pagination.totalPages}
                   className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
                 >

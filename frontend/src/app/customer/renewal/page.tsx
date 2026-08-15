@@ -589,7 +589,7 @@ export default function RenewalPage() {
               {proofPreviewUrl ? (
                 <div className="relative">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={proofPreviewUrl} alt="Proof" className="w-full max-h-48 object-contain rounded-lg border border-purple-500/30" />
+                  <img src={proofPreviewUrl} alt="Proof" className="w-full max-h-48 object-contain rounded-lg border border-purple-500/30" loading="lazy" />
                   <button onClick={() => { setProofFile(null); if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl); setProofPreviewUrl(null); }}
                     className="absolute top-2 right-2 p-1 bg-red-500/80 rounded-full hover:bg-red-500">
                     <X className="w-3 h-3 text-white" />
