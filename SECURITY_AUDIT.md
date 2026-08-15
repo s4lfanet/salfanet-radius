@@ -476,3 +476,89 @@ The centralized client correctly handles FormData:
 - 2 BigInt literal errors (ES2020 target required). Pre-existing.
 
 **Total new errors introduced: 0**
+
+---
+
+## 20. Phase 3 — FreeRADIUS Reconciliation, Cron Lock, Payment Concurrency, IDOR Tests, Agent JWT Revocation (2026-08-16)
+
+**Commit:** (pending)
+**Files changed:** 15+
+**Lines:** +800 / -200
+
+### 20.1 FreeRADIUS Reconciliation + Retry Queue
+
+| ID | Component | File | Severity | Fix | Status |
+|----|-----------|------|----------|-----|--------|
+| SEC-3.01 | RADIUS Sync Retry Queue | `server/services/radius/radius-sync-queue.service.ts` | HIGH | New service: enqueue failed syncs, exponential backoff (1m→5m→15m→30m→1h), max 5 retries, DEAD state after max | ✅ FIXED |
+| SEC-3.02 | RADIUS Reconciliation | `server/services/radius/radius-reconciliation.service.ts` | HIGH | New service: compares SalfaNet DB vs FreeRADIUS DB, reports missing/stale/mismatch (password/profile/IP) | ✅ FIXED |
+| SEC-3.03 | Sync All RADIUS | `admin/pppoe/sync-all-radius/route.ts` | MEDIUM | Refactored to batch processing (50 users/batch), failed syncs enqueued for retry | ✅ FIXED |
+| SEC-3.04 | Admin Sync Status API | `admin/pppoe/radius-sync/route.ts` | MEDIUM | New endpoint: GET failed syncs + reconciliation report, POST manual retry | ✅ FIXED |
+| SEC-3.05 | Cron Retry Job | `cron/route.ts` + `cron-runner.ts` + `cron/jobs.ts` | MEDIUM | New `radius_sync_retry` cron job (every 5 min) processes due retries | ✅ FIXED |
+
+### 20.2 Atomic Cron Distributed Lock
+
+| ID | Component | File | Severity | Fix | Status |
+|----|-----------|------|----------|-----|--------|
+| SEC-3.06 | Cron Lock Service | `server/services/cron-lock.service.ts` | HIGH | New MySQL-based distributed lock: atomic INSERT (PK constraint), owner token, TTL (30min), stale lock recovery | ✅ FIXED |
+| SEC-3.07 | Cron Runner Lock | `cron-runner.ts` | HIGH | Replaced `findFirst` + in-memory Set with atomic `acquireCronLock`/`releaseCronLock` | ✅ FIXED |
+| SEC-3.08 | Cron API Route Lock | `api/cron/route.ts` | HIGH | Added atomic lock acquisition + release in finally block; 409 if lock held | ✅ FIXED |
+
+### 20.3 Payment Concurrency & Idempotency
+
+| ID | Component | File | Severity | Fix | Status |
+|----|-----------|------|----------|-----|--------|
+| SEC-3.09 | Financial Transaction Idempotency | `payment/webhook/route.ts` | MEDIUM | Replaced `findFirst` + `INSERT` with `INSERT IGNORE` (MySQL) for race-safe financial entry creation | ✅ FIXED |
+| SEC-3.10 | Transaction Reference Index | `prisma/schema.prisma` | MEDIUM | Added unique index on `transactions.reference` for database-level idempotency | ✅ FIXED |
+| SEC-3.11 | Payment Concurrency Tests | `tests/payment-concurrency.test.ts` | MEDIUM | New test suite: duplicate webhook, concurrent webhook, invalid signature, cron lock | ✅ FIXED |
+
+**Note:** The core payment transaction handlers (`handleAgentDeposit`, `handleCustomerTopUp`, `handleInvoicePayment`) already use `prisma.$transaction()` with `updateMany` idempotency guards from Phase 2. No changes needed — verified correct.
+
+### 20.4 Automated IDOR + Tenant Isolation Tests
+
+| ID | Component | File | Severity | Fix | Status |
+|----|-----------|------|----------|-----|--------|
+| SEC-3.12 | IDOR Test Suite | `tests/idor-tenant-isolation.test.ts` | HIGH | New test suite: 19 admin endpoints (401 without auth), customer endpoints, agent endpoints, parameter tampering, invalid tokens, cross-role access, privilege escalation | ✅ FIXED |
+
+### 20.5 Agent JWT Revocation
+
+| ID | Component | File | Severity | Fix | Status |
+|----|-----------|------|----------|-----|--------|
+| SEC-3.13 | Agent JWT sessionVersion | `server/auth/agent-jwt.ts` | HIGH | Added `sessionVersion` to JWT payload; `verifyAgentToken` checks DB sessionVersion; `revokeAgentSession()` increments version | ✅ FIXED |
+| SEC-3.14 | Agent Login | `agent/login/route.ts` | MEDIUM | Updated to include `sessionVersion` in token | ✅ FIXED |
+| SEC-3.15 | Agent Logout | `agent/logout/route.ts` | HIGH | New endpoint: revokes session by incrementing sessionVersion | ✅ FIXED |
+| SEC-3.16 | Agent Schema | `prisma/schema.prisma` | MEDIUM | Added `sessionVersion` column to `agent` model | ✅ FIXED |
+
+### 20.6 Customer Session Hardening
+
+| ID | Component | File | Severity | Status |
+|----|-----------|------|----------|--------|
+| SEC-3.17 | Customer Session Audit | `docs/CUSTOMER_SESSION_HARDENING.md` | MEDIUM | ⚠️ KNOWN LIMITATION — documented migration plan, not implemented (requires architecture change) |
+
+### 20.7 Technician GenieACS Scope
+
+| ID | Component | File | Severity | Status |
+|----|-----------|------|----------|--------|
+| SEC-3.18 | Technician GenieACS Scope | `api/technician/genieacs/*` | MEDIUM | ⚠️ NOT IMPLEMENTED — requires data model decision (no technician-router assignment in schema) |
+
+### 20.8 Verification Results (Phase 3)
+
+| Check | Result |
+|-------|--------|
+| `tsc --noEmit` (backend, changed files) | ✅ 0 new errors |
+| `pnpm build` (backend) | ✅ Exit 0 |
+| Prisma generate | ✅ Success |
+| IDOR tests | ⏳ NOT VERIFIED — requires running backend with test data |
+| Payment concurrency tests | ⏳ NOT VERIFIED — requires running backend with payment gateway config |
+| Cron lock tests | ⏳ NOT VERIFIED — requires running backend with CRON_SECRET |
+| FreeRADIUS reconciliation | ⏳ NOT VERIFIED — requires FreeRADIUS server + populated DB |
+| Agent JWT revocation | ⏳ NOT VERIFIED — requires running backend with agent accounts |
+
+### 20.9 Database Migration Required
+
+The following migration must be applied to the VPS database:
+- File: `prisma/migrations/20260816_add_radius_sync_queue.sql`
+- Creates: `radius_sync_queue` table, `cron_lock` table
+- Alters: `agents` table (adds `sessionVersion` column)
+- Creates: unique index on `transactions.reference`
+
+**Apply with:** `mysql -u root -p salfanet_radius < prisma/migrations/20260816_add_radius_sync_queue.sql`

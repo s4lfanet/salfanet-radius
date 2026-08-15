@@ -65,6 +65,7 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'auto_stop',             name: 'Auto Stop',              description: 'Stop user isolated >30 hari', defaultSchedule: '0 5 * * *' },
   { type: 'suspend_check',         name: 'Suspend Check',          description: 'Cek user yang perlu disuspend', defaultSchedule: '0 * * * *' },
   { type: 'cron_history_cleanup',  name: 'History Cleanup',        description: 'Hapus cron history >30 hari', defaultSchedule: '0 4 * * *' },
+  { type: 'radius_sync_retry',     name: 'RADIUS Sync Retry',      description: 'Retry failed FreeRADIUS syncs', defaultSchedule: '*/5 * * * *' },
 ]
 
 // ─── Schedule config ────────────────────────────────────────────────────────
@@ -108,13 +109,13 @@ async function triggerJobViaAPI(jobType: string): Promise<{ success?: boolean; e
   }
 }
 
-// ─── Job runner with history logging + duplicate execution protection ────────
+// ─── Job runner with atomic distributed lock + history logging ──────────────
 
 // In-memory guard: prevents overlapping runs within the same process
 const runningJobs = new Set<string>()
 
-// Stale lock threshold: if a 'running' record is older than this, treat it as stale
-const STALE_LOCK_MS = 30 * 60 * 1000 // 30 minutes
+// Lock TTL — stale locks are reclaimable after this duration
+const LOCK_TTL_MS = 30 * 60 * 1000 // 30 minutes
 
 async function runJob(jobType: string) {
   const { enabled } = await getEffectiveSchedule(jobType)
@@ -123,31 +124,27 @@ async function runJob(jobType: string) {
     return
   }
 
-  // ─── In-memory guard ──────────────────────────────────────────────────────
+  // ─── In-memory guard (fast path — prevents overlap within same process) ───
   if (runningJobs.has(jobType)) {
     console.log(`[${new Date().toISOString()}] [CRON] ${jobType} — skipped (already running in-process)`)
     return
   }
 
-  // ─── Database-based lock ──────────────────────────────────────────────────
-  // Check for a 'running' cronHistory record that isn't stale.
-  // This protects against duplicate execution across multiple processes/hosts.
+  // ─── Atomic database lock (distributed — prevents overlap across instances) ──
+  // Uses MySQL primary key constraint for atomic acquisition.
+  // Stale locks (expired TTL) are automatically reclaimed.
+  let ownerToken: string | null = null
   try {
-    const staleThreshold = new Date(Date.now() - STALE_LOCK_MS)
-    const existingRun = await prisma.cronHistory.findFirst({
-      where: {
-        jobType,
-        status: 'running',
-        startedAt: { gte: staleThreshold },
-      },
-      orderBy: { startedAt: 'desc' },
-    })
-    if (existingRun) {
-      console.log(`[${new Date().toISOString()}] [CRON] ${jobType} — skipped (already running since ${existingRun.startedAt.toISOString()})`)
+    // Import the lock service dynamically (cron-runner is standalone)
+    const { acquireCronLock, releaseCronLock } = await import('./src/server/services/cron-lock.service')
+    ownerToken = await acquireCronLock(jobType, LOCK_TTL_MS)
+    if (!ownerToken) {
+      console.log(`[${new Date().toISOString()}] [CRON] ${jobType} — skipped (lock held by another instance)`)
       return
     }
-  } catch {
-    // Table might not exist — fall back to in-memory guard only
+  } catch (err) {
+    // Lock table might not exist yet — fall back to in-memory guard only
+    console.warn(`[${new Date().toISOString()}] [CRON] ${jobType} — lock service unavailable, using in-memory guard only:`, err instanceof Error ? err.message : err)
   }
 
   runningJobs.add(jobType)
@@ -196,6 +193,15 @@ async function runJob(jobType: string) {
     console.error(`[${completedAt.toISOString()}] [CRON] ${jobType} — error:`, error instanceof Error ? error.message : error)
   } finally {
     runningJobs.delete(jobType)
+    // Release the distributed lock (only if we acquired it)
+    if (ownerToken) {
+      try {
+        const { releaseCronLock } = await import('./src/server/services/cron-lock.service')
+        await releaseCronLock(jobType, ownerToken)
+      } catch {
+        // Non-fatal — lock will expire via TTL
+      }
+    }
   }
 }
 

@@ -24,6 +24,14 @@ export async function POST(request: NextRequest) {
     // Find agent by phone
     const agent = await prisma.agent.findUnique({
       where: { phone },
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        email: true,
+        isActive: true,
+        sessionVersion: true,
+      },
     });
 
     if (!agent) {
@@ -46,8 +54,8 @@ export async function POST(request: NextRequest) {
       data: { lastLogin: new Date() },
     });
 
-    // Issue JWT token for the agent session
-    const token = await signAgentToken(agent.id, agent.phone);
+    // Issue JWT token for the agent session (includes sessionVersion for revocation)
+    const token = await signAgentToken(agent.id, agent.phone, agent.sessionVersion);
 
     return NextResponse.json({
       success: true,

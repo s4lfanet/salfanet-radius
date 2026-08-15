@@ -583,26 +583,15 @@ async function handleVoucherOrder(
         });
 
         if (hotspotCategory) {
-          // Check if transaction already exists
-          const existingTransaction = await prisma.transaction.findFirst({
-            where: { reference: order.orderNumber },
-          });
-
-          if (!existingTransaction) {
-            await prisma.transaction.create({
-              data: {
-                id: nanoid(),
-                categoryId: hotspotCategory.id,
-                type: 'INCOME',
-                amount: order.totalAmount,
-                description: `Voucher ${order.profile.name} (${order.quantity}x) - ${order.customerName}`,
-                date: paidAt || new Date(),
-                reference: order.orderNumber,
-                notes: `Auto-synced from voucher order payment`,
-              },
-            });
-            console.log(`✅ Transaction synced to Keuangan: ${order.orderNumber}`);
-          }
+          // Use INSERT IGNORE for race-safe idempotency (MySQL)
+          await prisma.$executeRaw`
+            INSERT IGNORE INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
+            VALUES (${nanoid()}, ${hotspotCategory.id}, 'INCOME', ${order.totalAmount},
+                    ${`Voucher ${order.profile.name} (${order.quantity}x) - ${order.customerName}`}, NOW(),
+                    ${order.orderNumber},
+                    ${`Auto-synced from voucher order payment`}, NOW(), NOW())
+          `;
+          console.log(`✅ Transaction synced to Keuangan: ${order.orderNumber}`);
         }
       } catch (keuanganError) {
         console.error('Keuangan sync error:', keuanganError);
@@ -1067,20 +1056,15 @@ async function handleCustomerTopUp(
         });
 
         if (category) {
-          const existingTransaction = await prisma.transaction.findFirst({
-            where: { reference: `TOPUP-${invoice.invoiceNumber}` },
-          });
-
-          if (!existingTransaction) {
-            await prisma.$executeRaw`
-              INSERT INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
-              VALUES (${nanoid()}, ${category.id}, 'INCOME', ${topupAmount}, 
-                      ${`Top-Up Saldo - ${invoice.user.name}`}, NOW(), 
-                      ${`TOPUP-${invoice.invoiceNumber}`}, 
-                      ${`Payment via ${gateway}`}, NOW(), NOW())
-            `;
-            console.log(`[Customer Top-Up] ✅ Transaction synced to Keuangan`);
-          }
+          // Use INSERT IGNORE for race-safe idempotency (MySQL)
+          await prisma.$executeRaw`
+            INSERT IGNORE INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
+            VALUES (${nanoid()}, ${category.id}, 'INCOME', ${topupAmount}, 
+                    ${`Top-Up Saldo - ${invoice.user.name}`}, NOW(), 
+                    ${`TOPUP-${invoice.invoiceNumber}`}, 
+                    ${`Payment via ${gateway}`}, NOW(), NOW())
+          `;
+          console.log(`[Customer Top-Up] ✅ Transaction synced to Keuangan`);
         }
       } catch (keuanganError) {
         console.error('[Customer Top-Up] Keuangan sync error:', keuanganError);
@@ -1424,27 +1408,20 @@ async function handleInvoicePayment(
 
       if (pppoeCategory) {
         const user = invoice.user;
-        // Check if transaction already exists
-        const existingTransaction = await prisma.transaction.findFirst({
-          where: { reference: `INV-${invoice.invoiceNumber}` },
-        });
+        const customerName = invoice.customerName || user?.name || 'Unknown';
+        const profileName = user?.profile?.name || 'Unknown';
+        const reference = `INV-${invoice.invoiceNumber}`;
 
-        if (!existingTransaction) {
-          const customerName = invoice.customerName || user?.name || 'Unknown';
-          const profileName = user?.profile?.name || 'Unknown';
-
-          // Use raw SQL with NOW() to avoid timezone conversion
-          await prisma.$executeRaw`
-              INSERT INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
-              VALUES (${nanoid()}, ${pppoeCategory.id}, 'INCOME', ${invoice.amount}, 
-                      ${`Pembayaran ${profileName} - ${customerName}`}, NOW(), 
-                      ${`INV-${invoice.invoiceNumber}`}, 
-                      ${`Payment via ${gateway} (${paymentType})`}, NOW(), NOW())
-            `;
-          console.log(`✅ Transaction synced to Keuangan: ${invoice.invoiceNumber} (Rp ${invoice.amount})`);
-        } else {
-          console.log(`⏭️  Transaction already exists for: ${invoice.invoiceNumber}`);
-        }
+        // Use INSERT IGNORE for race-safe idempotency (MySQL)
+        // If a concurrent webhook already inserted this reference, this is a no-op.
+        await prisma.$executeRaw`
+            INSERT IGNORE INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
+            VALUES (${nanoid()}, ${pppoeCategory.id}, 'INCOME', ${invoice.amount}, 
+                    ${`Pembayaran ${profileName} - ${customerName}`}, NOW(), 
+                    ${reference}, 
+                    ${`Payment via ${gateway} (${paymentType})`}, NOW(), NOW())
+          `;
+        console.log(`✅ Transaction synced to Keuangan: ${invoice.invoiceNumber} (Rp ${invoice.amount})`);
       }
     } catch (keuanganError) {
       console.error('Keuangan sync error:', keuanganError);

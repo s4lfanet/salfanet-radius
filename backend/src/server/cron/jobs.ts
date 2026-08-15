@@ -33,6 +33,7 @@ export const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'pppoe_session_sync',    name: 'PPPoE Session Sync',     description: 'Sync sesi PPPoE dari MikroTik ke radacct',   defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
   { type: 'suspend_check',         name: 'Suspend Check',          description: 'Cek user yang perlu disuspend',              defaultSchedule: '0 * * * *',   defaultScheduleLabel: 'Every hour' },
   { type: 'cron_history_cleanup',  name: 'History Cleanup',        description: 'Hapus cron history >30 hari',                defaultSchedule: '0 4 * * *',   defaultScheduleLabel: 'Daily at 4 AM' },
+  { type: 'radius_sync_retry',     name: 'RADIUS Sync Retry',      description: 'Retry failed FreeRADIUS syncs (exponential backoff)', defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
 ];
 
 export const CRON_JOB_MAP = new Map(CRON_JOB_DEFS.map(j => [j.type, j]));

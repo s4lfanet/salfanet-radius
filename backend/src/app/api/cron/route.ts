@@ -5,6 +5,7 @@ import { unauthorized } from '@/lib/api-response'
 import { prisma } from '@/server/db/client'
 import { nowWIB } from '@/lib/timezone'
 import { CRON_JOB_MAP } from '@/server/cron/jobs'
+import { acquireCronLock, releaseCronLock } from '@/server/services/cron-lock.service'
 import { runAutoIsolir, runAutoStop } from '@/server/cron/auto-isolir'
 import {
   runInvoiceGenerate,
@@ -60,6 +61,17 @@ export async function POST(request: NextRequest) {
     const def = CRON_JOB_MAP.get(jobType)
     if (!def) {
       return NextResponse.json({ success: false, error: `Unknown job type: ${jobType}` }, { status: 400 })
+    }
+
+    // ─── Atomic distributed lock ─────────────────────────────────────────────
+    // Prevents duplicate concurrent execution across multiple instances.
+    // Lock is released in the finally block below.
+    const ownerToken = await acquireCronLock(jobType)
+    if (!ownerToken) {
+      return NextResponse.json(
+        { success: false, error: `Job ${jobType} is already running (lock held)` },
+        { status: 409 }
+      )
     }
 
     // Create history record
@@ -124,6 +136,9 @@ export async function POST(request: NextRequest) {
         case 'pppoe_session_sync':
           result = await runPppoeSessionSync()
           break
+        case 'radius_sync_retry':
+          result = await runRadiusSyncRetry()
+          break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }
       }
@@ -154,6 +169,9 @@ export async function POST(request: NextRequest) {
         },
       })
       throw jobError
+    } finally {
+      // Always release the lock — even on error
+      await releaseCronLock(jobType, ownerToken).catch(() => {})
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
@@ -196,4 +214,9 @@ async function runFreeradiusHealth() {
   } catch (e: any) {
     return { healthy: false, error: e?.message }
   }
+}
+
+async function runRadiusSyncRetry() {
+  const { processRetryQueue } = await import('@/server/services/radius/radius-sync-queue.service')
+  return await processRetryQueue(50)
 }
