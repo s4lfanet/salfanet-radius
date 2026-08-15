@@ -89,12 +89,19 @@ export function getCurrentTimezone(): string {
 }
 
 /**
- * Get timezone offset in milliseconds from the configured timezone offset string
+ * Get timezone offset in milliseconds from the configured timezone.
+ * Uses Intl.DateTimeFormat (DST-aware) instead of hardcoded values.
+ * Falls back to extracting offset from the system's own timezone if
+ * the company timezone cannot be resolved.
  */
 export function getTimezoneOffsetMs(): number {
   const offsetStr = getTimezoneOffset(currentTimezone);
   const match = offsetStr.match(/^([+-])(\d{2}):(\d{2})$/);
-  if (!match) return 7 * 60 * 60 * 1000; // Default WIB +7
+  if (!match) {
+    // Fallback: use the system's actual UTC offset (not hardcoded +7)
+    const systemOffset = -new Date().getTimezoneOffset() * 60 * 1000;
+    return systemOffset;
+  }
   const sign = match[1] === '+' ? 1 : -1;
   const hours = parseInt(match[2]);
   const minutes = parseInt(match[3]);
@@ -145,23 +152,24 @@ export function toWIB(date: Date | string | null | undefined): Date | null {
 }
 
 /**
- * Convert a local WIB date to WIB-as-UTC format for Prisma/MySQL storage.
- * Since Prisma stores the Date's UTC value to MySQL DATETIME,
- * and MySQL expects WIB values, we need the Date's UTC = WIB.
- * 
- * @param wib - Date in local timezone (from user input, new Date() etc.)
- * @returns Date where UTC values represent WIB time (for Prisma storage)
+ * Convert a local company-timezone date to company-TZ-as-UTC format for
+ * Prisma/MySQL storage.
+ *
+ * IMPORTANT: This function uses the company timezone offset (from
+ * getTimezoneOffsetMs), NOT the server's local timezone. This ensures
+ * correct behavior even when the browser/server TZ differs from company TZ.
+ *
+ * @param local - Date in local timezone (from user input, new Date() etc.)
+ * @returns Date where UTC values represent company timezone time (for Prisma storage)
  */
-export function toUTC(wib: Date | string): Date {
-  if (typeof wib === 'string') {
-    return parseDateAsWIB(wib);
+export function toUTC(local: Date | string): Date {
+  if (typeof local === 'string') {
+    return parseDateAsWIB(local);
   }
-  // For Date objects: shift from real UTC to WIB-as-UTC
-  // Local time on TZ=Jakarta IS WIB, extract local components as UTC
-  return new Date(Date.UTC(
-    wib.getFullYear(), wib.getMonth(), wib.getDate(),
-    wib.getHours(), wib.getMinutes(), wib.getSeconds(), wib.getMilliseconds()
-  ));
+  // company_time = real_UTC + company_offset
+  // output = new Date(input.getTime() + company_offset)
+  const offsetMs = getTimezoneOffsetMs();
+  return new Date(local.getTime() + offsetMs);
 }
 
 /**
@@ -396,32 +404,58 @@ function getTimezoneAbbreviation(tz: string): string {
 }
 
 /**
- * Get timezone UTC offset
+ * Get timezone UTC offset — uses Intl.DateTimeFormat for DST-aware,
+ * universally correct offset calculation.
+ *
+ * This replaces the old hardcoded offsetMap which:
+ *   1. Only supported a fixed list of timezones
+ *   2. Did not handle DST (Daylight Saving Time)
+ *   3. Fell back to +07:00 for any unknown timezone (WRONG)
+ *
+ * Now supports ANY valid IANA timezone (e.g., 'America/New_York',
+ * 'Europe/London', 'Asia/Makassar') with automatic DST adjustment.
+ *
+ * @param tz - IANA timezone identifier (e.g., 'Asia/Jakarta')
+ * @returns Offset string like '+07:00', '-05:00', '+00:00'
  */
 function getTimezoneOffset(tz: string): string {
   // UTC and GMT have zero offset
   if (tz === 'UTC' || tz === 'GMT' || tz === 'Etc/UTC' || tz === 'Etc/GMT') {
     return '+00:00';
   }
-  const offsetMap: Record<string, string> = {
-    'Asia/Jakarta': '+07:00',
-    'Asia/Makassar': '+08:00',
-    'Asia/Jayapura': '+09:00',
-    'Asia/Singapore': '+08:00',
-    'Asia/Kuala_Lumpur': '+08:00',
-    'Asia/Bangkok': '+07:00',
-    'Asia/Manila': '+08:00',
-    'Asia/Ho_Chi_Minh': '+07:00',
-    'Asia/Dubai': '+04:00',
-    'Asia/Riyadh': '+03:00',
-    'Asia/Tokyo': '+09:00',
-    'Asia/Seoul': '+09:00',
-    'Asia/Hong_Kong': '+08:00',
-    'Australia/Sydney': '+11:00',
-    'Australia/Melbourne': '+11:00',
-    'Pacific/Auckland': '+13:00',
-  };
-  return offsetMap[tz] || '+07:00';
+
+  try {
+    // Use Intl.DateTimeFormat to get the actual offset for this timezone
+    // at the current moment (DST-aware).
+    // formatToParts with timeZoneName: 'longOffset' returns e.g. "GMT+07:00"
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      timeZoneName: 'longOffset',
+    });
+    const parts = dtf.formatToParts(new Date());
+    const offsetPart = parts.find((p) => p.type === 'timeZoneName');
+
+    if (offsetPart) {
+      // offsetPart.value is like "GMT+07:00", "GMT-05:00", or "GMT" (UTC)
+      const val = offsetPart.value;
+      if (val === 'GMT' || val === 'UTC') return '+00:00';
+
+      // Parse "GMT+07:00" → "+07:00"
+      const match = val.match(/GMT([+-])(\d{1,2}):?(\d{2})?/);
+      if (match) {
+        const sign = match[1];
+        const hours = match[2].padStart(2, '0');
+        const minutes = match[3] || '00';
+        return `${sign}${hours}:${minutes}`;
+      }
+    }
+  } catch {
+    // Invalid timezone — fall through to default
+  }
+
+  // Last resort fallback — WIB +07:00 (should rarely happen)
+  console.warn(`[timezone] Could not determine offset for "${tz}", defaulting to +07:00`);
+  return '+07:00';
 }
 
 /**
