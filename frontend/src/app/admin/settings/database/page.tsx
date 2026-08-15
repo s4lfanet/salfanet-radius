@@ -21,6 +21,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface BackupHistory {
   id: string;
@@ -47,7 +48,10 @@ interface DatabaseHealth {
 export default function DatabaseSettingsPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const canView = hasPermission('settings.view');
+  const { data: historyData, isLoading: loading } = useApiQuery<{ success: boolean; history: BackupHistory[] }>('/api/backup/history', { staleTime: 30000, enabled: canView });
+  const { data: healthData } = useApiQuery<{ success: boolean; health: DatabaseHealth }>('/api/backup/health', { staleTime: 30000, enabled: canView });
   const [backing, setBacking] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [backupHistory, setBackupHistory] = useState<BackupHistory[]>([]);
@@ -57,32 +61,20 @@ export default function DatabaseSettingsPage() {
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
-    if (hasPermission('settings.view')) {
-      loadData();
+    if (historyData?.success) {
+      setBackupHistory(historyData.history);
     }
-  }, [hasPermission]);
+  }, [historyData]);
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      // Load backup history
-      const historyData = await apiAdmin<{ success: boolean; history: BackupHistory[] }>('/api/backup/history');
-      if (historyData.success) {
-        setBackupHistory(historyData.history);
-      }
-
-      // Load DB health
-      const healthData = await apiAdmin<{ success: boolean; health: DatabaseHealth }>('/api/backup/health');
-      if (healthData.success) {
-        setDbHealth(healthData.health);
-      }
-
-
-    } catch (error: unknown) {
-      console.error('Load data error:', error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (healthData?.success) {
+      setDbHealth(healthData.health);
     }
+  }, [healthData]);
+
+  const loadData = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/backup/history') });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/backup/health') });
   };
 
   const handleBackupNow = async () => {
@@ -225,7 +217,6 @@ export default function DatabaseSettingsPage() {
   };
 
   // Permission check
-  const canView = hasPermission('settings.view');
   const canEdit = hasPermission('settings.edit');
 
   if (!permLoading && !canView) {

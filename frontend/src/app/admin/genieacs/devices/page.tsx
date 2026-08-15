@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Server, RefreshCw, Wifi, WifiOff, Search, Loader2, Power, Trash2, Eye, Settings2, CheckCircle, XCircle, RotateCcw, X, Globe, Network, Activity, Smartphone, Monitor, Radio, Edit, Save, Lock, Signal, Thermometer, Info, Shield, List, Copy, ChevronDown, ChevronRight, Zap, Code2, Square, CheckSquare } from 'lucide-react';
@@ -20,6 +20,7 @@ import {
 } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface GenieACSDevice {
   _id: string;
@@ -153,11 +154,15 @@ interface GenieACSWifiSaveResponse {
 export default function GenieACSDevicesPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [devices, setDevices] = useState<GenieACSDevice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: devicesData, isLoading: devicesLoading, refetch: refetchDevices } = useApiQuery<GenieACSDevicesResponse>('/api/settings/genieacs/devices', { staleTime: 60000 });
+  const { data: settingsData, isLoading: settingsLoading, refetch: refetchSettings } = useApiQuery<GenieACSSettingsResponse>('/api/settings/genieacs', { staleTime: 60000 });
+  const devices: GenieACSDevice[] = devicesData?.devices || [];
+  const isConfigured = !!settingsData?.settings?.host;
+  const loading = devicesLoading || settingsLoading;
+  const invalidateDevices = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/genieacs/devices') });
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
-  const [isConfigured, setIsConfigured] = useState(false);
 
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -212,29 +217,9 @@ export default function GenieACSDevicesPage() {
   }>({ connectionPath: '', connectionType: 'PPPoE', name: '', username: '', password: '', enable: true, natEnabled: true, currentIP: '', vlanId: '', vlanPriority: '0', serviceList: 'INTERNET', wanDeviceIndex: 1, wanConnectionDeviceIndex: 1 });
   const [savingWan, setSavingWan] = useState(false);
 
-  const fetchDevices = useCallback(async () => {
-    try {
-      const [devicesData, settingsData] = await Promise.all([
-        apiAdmin<GenieACSDevicesResponse>('/api/settings/genieacs/devices'),
-        apiAdmin<GenieACSSettingsResponse>('/api/settings/genieacs')
-      ]);
-
-      setIsConfigured(!!settingsData?.settings?.host);
-      setDevices(devicesData.devices || []);
-    } catch (error: unknown) {
-      console.error('Error fetching devices:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchDevices();
-  }, [fetchDevices]);
-
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchDevices();
+    await Promise.all([refetchDevices(), refetchSettings()]);
     setRefreshing(false);
   };
 
@@ -288,7 +273,7 @@ export default function GenieACSDevicesPage() {
     })) return;
     try {
       await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' });
-      setDevices(devices.filter(d => d._id !== deviceId));
+      invalidateDevices();
       addToast({ type: 'success', title: t('common.success'), description: t('genieacs.deviceDeleted'), duration: 2000 });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.failedDeleteDevice');

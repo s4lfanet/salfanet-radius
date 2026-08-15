@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,6 +18,7 @@ import {
 } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface User {
   id: string;
@@ -52,11 +53,8 @@ export default function ManagementPage() {
   const { addToast, confirm } = useToast();
   const { data: session } = useSession();
   const { hasPermission } = usePermissions();
+  const queryClient = useQueryClient();
   const currentUserIsSuperAdmin = session?.user?.role === 'SUPER_ADMIN';
-  const [users, setUsers] = useState<User[]>([]);
-  const [permissions, setPermissions] = useState<Permission[]>([]);
-  const [roleTemplates, setRoleTemplates] = useState<Record<string, string[]>>({});
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
@@ -68,48 +66,29 @@ export default function ManagementPage() {
     permissions: [] as string[],
   });
 
-  useEffect(() => {
-    fetchUsers();
-    fetchPermissions();
-    fetchRoleTemplates();
-  }, []);
+  // ─── React Query: Users list ─────────────────────────────────────────────────
+  const { data: usersData, isLoading: loading } = useApiQuery<{ users: User[] } | User[]>('/api/admin/users', { staleTime: 30000 });
+  const users: User[] = Array.isArray(usersData) ? usersData : (usersData?.users || []);
 
-  const fetchUsers = async () => {
-    try {
-      const data = await apiAdmin<{ users: User[] } | User[]>('/api/admin/users');
-      setUsers(Array.isArray(data) ? data : (data.users || []));
-    } catch (e: unknown) {
-      console.error('Failed to fetch users:', e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
+  // ─── React Query: Permissions (rarely change — 5min stale) ──────────────────
+  const { data: permissionsData } = useApiQuery<{ success: boolean; permissions: Record<string, Permission[]> } | Permission[]>('/api/permissions', { staleTime: 5 * 60 * 1000 });
+  // API returns grouped object: { category1: [...], category2: [...] }
+  // Convert to flat array for state
+  const permissions: Permission[] = (() => {
+    if (!permissionsData) return [];
+    if (!Array.isArray(permissionsData) && permissionsData.success && permissionsData.permissions) {
+      return Object.values(permissionsData.permissions).flat() as Permission[];
     }
-  };
+    if (Array.isArray(permissionsData)) return permissionsData;
+    return [];
+  })();
 
-  const fetchPermissions = async () => {
-    try {
-      const data = await apiAdmin<{ success: boolean; permissions: Record<string, Permission[]> } | Permission[]>('/api/permissions');
-      // API returns grouped object: { category1: [...], category2: [...] }
-      // Convert to flat array for state
-      if (!Array.isArray(data) && data.success && data.permissions) {
-        const flatPermissions = Object.values(data.permissions).flat();
-        setPermissions(flatPermissions as Permission[]);
-      } else if (Array.isArray(data)) {
-        setPermissions(data);
-      }
-    } catch (e: unknown) {
-      console.error('Failed to fetch permissions:', e instanceof Error ? e.message : String(e));
-    }
-  };
+  // ─── React Query: Role templates (rarely change — 5min stale) ───────────────
+  const { data: templatesData } = useApiQuery<{ success: boolean; templates: Record<string, string[]> }>('/api/permissions/role-templates', { staleTime: 5 * 60 * 1000 });
+  const roleTemplates: Record<string, string[]> = (templatesData?.success && templatesData.templates) ? templatesData.templates : {};
 
-  const fetchRoleTemplates = async () => {
-    try {
-      const data = await apiAdmin<{ success: boolean; templates: Record<string, string[]> }>('/api/permissions/role-templates');
-      if (data.success && data.templates) {
-        setRoleTemplates(data.templates);
-      }
-    } catch (e: unknown) {
-      console.error('Failed to fetch role templates:', e instanceof Error ? e.message : String(e));
-    }
+  const invalidateUsers = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/users') });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -134,7 +113,7 @@ export default function ManagementPage() {
       addToast({ type: 'success', title: t('common.success'), description: editingUser ? t('management.userUpdated') : t('management.userCreated'), duration: 2000 });
       setShowModal(false);
       resetForm();
-      fetchUsers();
+      invalidateUsers();
     } catch (e: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: (e instanceof Error ? e.message : String(e)) || t('management.failedSaveUser') });
     }
@@ -186,7 +165,7 @@ export default function ManagementPage() {
         });
 
         addToast({ type: 'success', title: t('common.success'), description: t('management.userDeleted'), duration: 2000 });
-        fetchUsers();
+        invalidateUsers();
       } catch (e: unknown) {
         addToast({ type: 'error', title: t('common.error'), description: (e instanceof Error ? e.message : String(e)) || t('management.failedSaveUser') });
         addToast({ type: 'error', title: t('common.error'), description: t('management.failedSaveUser') });

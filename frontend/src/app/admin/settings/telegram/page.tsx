@@ -11,6 +11,7 @@ import { showSuccess, showError } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface TelegramSettings {
   enabled: boolean;
@@ -46,7 +47,8 @@ interface TelegramTestBackupResponse {
 export default function TelegramSettingsPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: telegramData, isLoading: loading } = useApiQuery<TelegramSettingsResponse>('/api/telegram/settings', { staleTime: 300000, enabled: hasPermission('settings.view') });
   const [testing, setTesting] = useState(false);
   const [testingBackup, setTestingBackup] = useState(false);
 
@@ -62,24 +64,10 @@ export default function TelegramSettingsPage() {
   });
 
   useEffect(() => {
-    if (hasPermission('settings.view')) {
-      loadSettings();
+    if (telegramData && !telegramData.error) {
+      setTelegramSettings(telegramData);
     }
-  }, [hasPermission]);
-
-  const loadSettings = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<TelegramSettingsResponse>('/api/telegram/settings');
-      if (data && !data.error) {
-        setTelegramSettings(data);
-      }
-    } catch (error: unknown) {
-      console.error('Load telegram settings error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [telegramData]);
 
   const handleSaveTelegramSettings = async () => {
     try {
@@ -96,7 +84,7 @@ export default function TelegramSettingsPage() {
         });
 
         await showSuccess(t('settings.telegramTestSuccess'));
-        loadSettings();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/telegram/settings') });
       } else {
         await showError(data.error || t('common.saveFailed'));
       }

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 import { Globe, Copy, CheckCircle, AlertCircle, Info, Wifi, Shield } from 'lucide-react';
 
 interface CompanySettings {
@@ -86,35 +86,28 @@ const PORTALS = [
 
 export default function SubdomainSettingsPage() {
   const { addToast } = useToast();
+  const { data: companyData, isLoading: loading } = useApiQuery<{ data?: { baseUrl?: string }; baseUrl?: string }>('/api/settings/company', { staleTime: 300000 });
   const [settings, setSettings] = useState<CompanySettings>({ baseUrl: '' });
-  const [loading, setLoading] = useState(true);
   const [domain, setDomain] = useState('example.com');
 
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await apiAdmin<{ data?: { baseUrl?: string }; baseUrl?: string }>('/api/settings/company');
-        const url = data?.data?.baseUrl || data?.baseUrl || '';
-        setSettings({ baseUrl: url });
-        if (url) {
-          try {
-            const host = new URL(url).hostname;
-            // Strip any existing subdomain prefix to get base domain
-            const parts = host.split('.');
-            if (parts.length >= 2) {
-              setDomain(parts.slice(-2).join('.'));
-            } else {
-              setDomain(host);
-            }
-          } catch (e: unknown) { /* keep default domain on parse error */ console.warn('Failed to parse URL, keeping default domain:', e); }
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+    if (companyData) {
+      const url = companyData?.data?.baseUrl || companyData?.baseUrl || '';
+      setSettings({ baseUrl: url });
+      if (url) {
+        try {
+          const host = new URL(url).hostname;
+          // Strip any existing subdomain prefix to get base domain
+          const parts = host.split('.');
+          if (parts.length >= 2) {
+            setDomain(parts.slice(-2).join('.'));
+          } else {
+            setDomain(host);
+          }
+        } catch (e: unknown) { /* keep default domain on parse error */ console.warn('Failed to parse URL, keeping default domain:', e); }
       }
-    })();
-  }, []);
+    }
+  }, [companyData]);
 
   const vpsIp = (() => {
     if (!settings.baseUrl) return 'YOUR_VPS_IP';

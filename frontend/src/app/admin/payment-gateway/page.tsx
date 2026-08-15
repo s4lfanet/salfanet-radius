@@ -9,6 +9,7 @@ import {
   Copy, Check, List, RefreshCw, Search, ChevronLeft, ChevronRight, X
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface PaymentGateway {
   id: string;
@@ -46,18 +47,14 @@ interface WebhookLog {
 
 export default function PaymentGatewayPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [configs, setConfigs] = useState<PaymentGateway[]>([]);
   const [showSecrets, setShowSecrets] = useState<Record<string, boolean>>({});
   const [copied, setCopied] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('logs');
   
   // Webhook logs state
-  const [webhookLogs, setWebhookLogs] = useState<WebhookLog[]>([]);
-  const [logsLoading, setLogsLoading] = useState(false);
   const [logsPage, setLogsPage] = useState(1);
-  const [logsTotalPages, setLogsTotalPages] = useState(1);
   const [logsFilter, setLogsFilter] = useState({ gateway: '', orderId: '', success: '' });
   const [selectedLog, setSelectedLog] = useState<WebhookLog | null>(null);
 
@@ -66,69 +63,70 @@ export default function PaymentGatewayPage() {
   const [duitkuForm, setDuitkuForm] = useState({ merchantCode: '', apiKey: '', environment: 'sandbox', isActive: false });
   const [tripayForm, setTripayForm] = useState({ merchantCode: '', apiKey: '', privateKey: '', environment: 'sandbox', isActive: false });
 
+  // ─── React Query: Payment gateway configs ────────────────────────────────────
+  const { data: configsData, isLoading: loading } = useApiQuery<PaymentGateway[]>('/api/payment-gateway/config', { staleTime: 30000 });
+  const configs = configsData ?? [];
+
+  // Sync form state from query data
   useEffect(() => {
-    fetchConfigs();
-    fetchWebhookLogs();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
-  useEffect(() => {
-    fetchWebhookLogs();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [logsPage, logsFilter]);
-
-  const fetchConfigs = async () => {
-    try {
-      const data = await apiAdmin<PaymentGateway[]>('/api/payment-gateway/config');
-      setConfigs(data);
-      
-      const midtrans = data.find((c: PaymentGateway) => c.provider === 'midtrans');
-      if (midtrans) {
-        setMidtransForm({
-          clientKey: midtrans.midtransClientKey || '',
-          serverKey: midtrans.midtransServerKey || '',
-          environment: midtrans.midtransEnvironment || 'sandbox',
-          isActive: midtrans.isActive
-        });
-      }
-
-      const xendit = data.find((c: PaymentGateway) => c.provider === 'xendit');
-      if (xendit) {
-        setXenditForm({
-          apiKey: xendit.xenditApiKey || '',
-          webhookToken: xendit.xenditWebhookToken || '',
-          environment: xendit.xenditEnvironment || 'sandbox',
-          isActive: xendit.isActive
-        });
-      }
-
-      const duitku = data.find((c: PaymentGateway) => c.provider === 'duitku');
-      if (duitku) {
-        setDuitkuForm({
-          merchantCode: duitku.duitkuMerchantCode || '',
-          apiKey: duitku.duitkuApiKey || '',
-          environment: duitku.duitkuEnvironment || 'sandbox',
-          isActive: duitku.isActive
-        });
-      }
-
-      const tripay = data.find((c: PaymentGateway) => c.provider === 'tripay');
-      if (tripay) {
-        setTripayForm({
-          merchantCode: tripay.tripayMerchantCode || '',
-          apiKey: tripay.tripayApiKey || '',
-          privateKey: tripay.tripayPrivateKey || '',
-          environment: tripay.tripayEnvironment || 'sandbox',
-          isActive: tripay.isActive
-        });
-      }
-    } catch (error) {
-      console.error('Fetch configs error:', error);
-      await showError(t('paymentGateway.failedToLoad'));
-    } finally {
-      setLoading(false);
+    if (!configsData) return;
+    const midtrans = configsData.find((c) => c.provider === 'midtrans');
+    if (midtrans) {
+      setMidtransForm({
+        clientKey: midtrans.midtransClientKey || '',
+        serverKey: midtrans.midtransServerKey || '',
+        environment: midtrans.midtransEnvironment || 'sandbox',
+        isActive: midtrans.isActive
+      });
     }
+
+    const xendit = configsData.find((c) => c.provider === 'xendit');
+    if (xendit) {
+      setXenditForm({
+        apiKey: xendit.xenditApiKey || '',
+        webhookToken: xendit.xenditWebhookToken || '',
+        environment: xendit.xenditEnvironment || 'sandbox',
+        isActive: xendit.isActive
+      });
+    }
+
+    const duitku = configsData.find((c) => c.provider === 'duitku');
+    if (duitku) {
+      setDuitkuForm({
+        merchantCode: duitku.duitkuMerchantCode || '',
+        apiKey: duitku.duitkuApiKey || '',
+        environment: duitku.duitkuEnvironment || 'sandbox',
+        isActive: duitku.isActive
+      });
+    }
+
+    const tripay = configsData.find((c) => c.provider === 'tripay');
+    if (tripay) {
+      setTripayForm({
+        merchantCode: tripay.tripayMerchantCode || '',
+        apiKey: tripay.tripayApiKey || '',
+        privateKey: tripay.tripayPrivateKey || '',
+        environment: tripay.tripayEnvironment || 'sandbox',
+        isActive: tripay.isActive
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configsData]);
+
+  // ─── React Query: Webhook logs (page + filter) ───────────────────────────────
+  const logsParams: Record<string, unknown> = {
+    page: logsPage,
+    limit: 20,
+    gateway: logsFilter.gateway || undefined,
+    orderId: logsFilter.orderId || undefined,
+    success: logsFilter.success || undefined,
   };
+  const { data: logsData, isLoading: logsLoading, refetch: refetchLogs } = useApiQuery<{ logs: WebhookLog[]; pagination: { totalPages: number } }>(
+    '/api/payment-gateway/webhook-logs',
+    { params: logsParams, staleTime: 30000 }
+  );
+  const webhookLogs = logsData?.logs ?? [];
+  const logsTotalPages = logsData?.pagination.totalPages ?? 1;
 
   const saveGateway = async (provider: string, data: Record<string, unknown>) => {
     setSaving(true);
@@ -139,7 +137,7 @@ export default function PaymentGatewayPage() {
       });
 
       await showSuccess(`${provider.charAt(0).toUpperCase() + provider.slice(1)} ${t('paymentGateway.configSaved')}`);
-      fetchConfigs();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/payment-gateway/config') });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('paymentGateway.failedToSave'));
     } finally {
@@ -161,25 +159,6 @@ export default function PaymentGatewayPage() {
     }
   };
   
-  const fetchWebhookLogs = async () => {
-    setLogsLoading(true);
-    try {
-      const params = new URLSearchParams({ page: logsPage.toString(), limit: '20' });
-      if (logsFilter.gateway) params.append('gateway', logsFilter.gateway);
-      if (logsFilter.orderId) params.append('orderId', logsFilter.orderId);
-      if (logsFilter.success) params.append('success', logsFilter.success);
-      
-      const data = await apiAdmin<{ logs: WebhookLog[]; pagination: { totalPages: number } }>(`/api/payment-gateway/webhook-logs?${params}`);
-      
-      setWebhookLogs(data.logs);
-      setLogsTotalPages(data.pagination.totalPages);
-    } catch (error) {
-      console.error('Failed to fetch webhook logs:', error);
-    } finally {
-      setLogsLoading(false);
-    }
-  };
-
   const formatAmount = (amount: number | null) => {
     if (!amount) return '-';
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
@@ -301,7 +280,7 @@ export default function PaymentGatewayPage() {
                   <option value="false">{t('common.failed')}</option>
                 </select>
                 <button
-                  onClick={() => fetchWebhookLogs()}
+                  onClick={() => refetchLogs()}
                   disabled={logsLoading}
                   className="flex items-center gap-1 px-2 py-1 text-xs text-primary border border-primary rounded hover:bg-primary/10"
                 >

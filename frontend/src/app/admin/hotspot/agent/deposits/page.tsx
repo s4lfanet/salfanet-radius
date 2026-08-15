@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { showConfirm, showError, showSuccess } from '@/lib/sweetalert';
 import { RefreshCw } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface AgentDepositItem {
   id: string;
@@ -41,34 +42,19 @@ interface AgentDepositActionResponse {
 }
 
 export default function AgentDepositsPage() {
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [filter, setFilter] = useState<DepositFilter>('ALL');
-  const [deposits, setDeposits] = useState<AgentDepositItem[]>([]);
 
-  const loadDeposits = async (status: DepositFilter = filter) => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<AgentDepositsListResponse>(`/api/admin/agent-deposits?status=${status}`);
-      if (!data.success) {
-        throw new Error(data.error || 'Gagal memuat data deposit agent');
-      }
-      setDeposits(data.deposits || []);
-    } catch (error: unknown) {
-      await showError((error instanceof Error ? error.message : String(error)) || 'Gagal memuat data deposit agent');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDeposits('ALL');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // ─── React Query: Deposits list (auto-refetches on filter change) ────────────
+  const depositsQueryKey = buildQueryKey('/api/admin/agent-deposits', { status: filter });
+  const { data: depositsData, isLoading: loading, refetch: refetchDeposits } = useApiQuery<AgentDepositsListResponse>('/api/admin/agent-deposits', {
+    params: { status: filter },
+  });
+  const deposits = depositsData?.deposits || [];
 
   const handleFilter = (nextFilter: DepositFilter) => {
     setFilter(nextFilter);
-    loadDeposits(nextFilter);
   };
 
   const handleAction = async (deposit: AgentDepositItem, action: 'approve' | 'reject') => {
@@ -90,7 +76,7 @@ export default function AgentDepositsPage() {
       }
 
       await showSuccess(action === 'approve' ? 'Deposit berhasil disetujui' : 'Deposit berhasil ditolak');
-      await loadDeposits(filter);
+      queryClient.invalidateQueries({ queryKey: depositsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || `Gagal ${textAction} deposit`);
     } finally {
@@ -132,7 +118,7 @@ export default function AgentDepositsPage() {
         ))}
 
         <button
-          onClick={() => loadDeposits(filter)}
+          onClick={() => refetchDeposits()}
           className="ml-auto px-3 py-2 rounded-lg border border-border hover:bg-muted transition"
           title="Segarkan"
         >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   SimpleModal,
   ModalHeader,
@@ -49,8 +50,12 @@ const STATUS_OPTIONS = ['active', 'inactive', 'maintenance', 'damaged'];
 
 export default function FiberJointClosuresPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [jointClosures, setJointClosures] = useState<JointClosure[]>([]);
+  const queryClient = useQueryClient();
+  const jointClosuresQuery = useApiQuery<{ data?: JointClosure[] }>('/api/network/joint-closures', {
+    staleTime: 30000,
+  });
+  const jointClosures = jointClosuresQuery.data?.data || [];
+  const loading = jointClosuresQuery.isLoading;
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -75,27 +80,6 @@ export default function FiberJointClosuresPage() {
     totalSpliceCapacity: '96',
     followRoad: true,
   });
-
-  useEffect(() => {
-    loadJointClosures();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadJointClosures = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filterType) params.append('type', filterType);
-      if (filterStatus) params.append('status', filterStatus);
-      if (searchTerm) params.append('search', searchTerm);
-      const data = await apiAdmin<{ data?: JointClosure[] }>(`/api/network/joint-closures?${params}`);
-      setJointClosures(data.data || []);
-    } catch {
-      showError(t('common.loadError') || 'Failed to load Joint Closures');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -171,7 +155,7 @@ export default function FiberJointClosuresPage() {
       );
       setIsDialogOpen(false);
       resetForm();
-      loadJointClosures();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/joint-closures') });
     } catch (error: unknown) {
       showError((error as Error).message || 'Failed to save Joint Closure');
     }
@@ -186,7 +170,7 @@ export default function FiberJointClosuresPage() {
     try {
       await apiAdmin(`/api/network/joint-closures/${jc.id}`, { method: 'DELETE' });
       showSuccess('Deleted successfully');
-      loadJointClosures();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/joint-closures') });
     } catch (error: unknown) {
       showError((error as Error).message || 'Failed to delete');
     }
@@ -271,7 +255,7 @@ export default function FiberJointClosuresPage() {
           ))}
         </select>
         <button
-          onClick={loadJointClosures}
+          onClick={() => jointClosuresQuery.refetch()}
           className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
         >
           <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />

@@ -1,10 +1,11 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm, showWarning } from '@/lib/sweetalert';
 import { Plus, Edit2, Trash2, Check, X } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   SimpleModal,
   ModalHeader,
@@ -29,10 +30,19 @@ interface Category {
   };
 }
 
+// Default categories used when API returns no data or errors
+const defaultCategories: Category[] = TICKET_CATEGORIES.map(cat => ({
+  id: cat.id,
+  name: cat.name,
+  description: cat.description,
+  color: cat.color,
+  isActive: true,
+  _count: { tickets: 0 }
+}));
+
 export default function TicketCategoriesPage() {
   const { t } = useTranslation();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({
@@ -41,6 +51,18 @@ export default function TicketCategoriesPage() {
     color: '#3B82F6',
     isActive: true,
   });
+
+  const categoriesQueryKey = buildQueryKey('/api/tickets/categories');
+
+  // ─── React Query: Ticket categories ───────────────────────────────────────────
+  const { data: categoriesData, isLoading: loading, error: categoriesError } = useApiQuery<Category[]>('/api/tickets/categories', {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // If no data from DB or error, use default categories
+  const categories = (!categoriesData || categoriesData.length === 0 || categoriesError)
+    ? defaultCategories
+    : categoriesData;
 
   // Calculate real stats from categories state
   const calculateStats = () => {
@@ -66,45 +88,6 @@ export default function TicketCategoriesPage() {
   };
 
   const stats = calculateStats();
-
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      const data = await apiAdmin<Category[]>('/api/tickets/categories');
-      // If no data from DB, use default categories
-      if (!data || data.length === 0) {
-        const defaultCategories = TICKET_CATEGORIES.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          description: cat.description,
-          color: cat.color,
-          isActive: true,
-          _count: { tickets: 0 }
-        }));
-        setCategories(defaultCategories);
-      } else {
-        setCategories(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch categories:', error);
-      // On error, show default categories
-      const defaultCategories = TICKET_CATEGORIES.map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        description: cat.description,
-        color: cat.color,
-        isActive: true,
-        _count: { tickets: 0 }
-      }));
-      setCategories(defaultCategories);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenModal = (category?: Category) => {
     if (category) {
@@ -147,7 +130,7 @@ export default function TicketCategoriesPage() {
         body: JSON.stringify(body),
       });
 
-      fetchCategories();
+      queryClient.invalidateQueries({ queryKey: categoriesQueryKey });
       handleCloseModal();
       await showSuccess(editingCategory ? t('ticket.categoryUpdated') : t('ticket.categoryCreated'));
     } catch (error: unknown) {
@@ -170,7 +153,7 @@ export default function TicketCategoriesPage() {
         method: 'DELETE',
       });
 
-      fetchCategories();
+      queryClient.invalidateQueries({ queryKey: categoriesQueryKey });
       await showSuccess(t('ticket.categoryDeleted') || 'Category deleted');
     } catch (error: unknown) {
       console.error('Failed to delete category:', error);

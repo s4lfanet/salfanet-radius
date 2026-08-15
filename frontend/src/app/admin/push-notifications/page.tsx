@@ -50,6 +50,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { format } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB } from '@/lib/timezone';
@@ -201,12 +202,9 @@ const TEMPLATE_CONTENT: Record<string, { title: string; body: string }> = {
 export default function PushNotificationsPage() {
   const { data: session } = useSession();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [broadcasts, setBroadcasts] = useState<Broadcast[]>([]);
-  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [historyLoading, setHistoryLoading] = useState(false);
   const [companyName, setCompanyName] = useState('ISP');
 
   // Form state
@@ -218,40 +216,30 @@ export default function PushNotificationsPage() {
   const [message, setMessage] = useState('');
   const [extraLink, setExtraLink] = useState('');
 
+  // ─── React Query: Push stats ─────────────────────────────────────────────────
+  const { data: statsData, isLoading: loading } = useApiQuery<PushStatsResponse>(
+    '/api/push/send',
+    { params: { action: 'stats' }, staleTime: 30000 }
+  );
+  const stats = statsData?.stats || null;
+
+  // ─── React Query: Push history ───────────────────────────────────────────────
+  const { data: historyData, isLoading: historyLoading, refetch: refetchHistory } = useApiQuery<PushHistoryResponse>(
+    '/api/push/send',
+    { params: { limit: 30 }, staleTime: 30000 }
+  );
+  const broadcasts = historyData?.broadcasts || [];
+
+  // ─── React Query: Company name (public endpoint) ─────────────────────────────
+  const { data: companyData } = useApiQuery<CompanyResponse>('/api/public/company', { staleTime: 300000 });
   useEffect(() => {
-    loadStats();
-    loadHistory();
-    apiAdmin<CompanyResponse>('/api/public/company').then((d) => {
-      if (d.success && d.company?.name) setCompanyName(d.company.name);
-    }).catch(() => {});
-  }, []);
-
-  const loadStats = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<PushStatsResponse>('/api/push/send?action=stats');
-      if (data.success) {
-        setStats(data.stats);
-      }
-    } catch (error: unknown) {
-      console.error('Load stats error:', error);
-    } finally {
-      setLoading(false);
+    if (companyData?.success && companyData.company?.name) {
+      setCompanyName(companyData.company.name);
     }
-  };
+  }, [companyData]);
 
-  const loadHistory = async () => {
-    setHistoryLoading(true);
-    try {
-      const data = await apiAdmin<PushHistoryResponse>('/api/push/send?limit=30');
-      if (data.success) {
-        setBroadcasts(data.broadcasts);
-      }
-    } catch (error: unknown) {
-      console.error('Load history error:', error);
-    } finally {
-      setHistoryLoading(false);
-    }
+  const invalidatePushQueries = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/push/send') });
   };
 
   const applyTemplate = (key: string) => {
@@ -321,8 +309,7 @@ export default function PushNotificationsPage() {
         setTitle('');
         setMessage('');
         setExtraLink('');
-        loadHistory();
-        loadStats();
+        invalidatePushQueries();
       } else {
         showError(data.error || t('pushNotif.sendFailed'));
       }
@@ -382,7 +369,7 @@ export default function PushNotificationsPage() {
             </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { loadStats(); loadHistory(); }} className="gap-2">
+        <Button variant="outline" size="sm" onClick={() => invalidatePushQueries()} className="gap-2">
           <RefreshCw className="w-4 h-4" />
           {t('pushNotif.refresh')}
         </Button>
@@ -833,7 +820,7 @@ export default function PushNotificationsPage() {
                   </CardTitle>
                   <CardDescription className="text-xs mt-1">{t('pushNotif.allBroadcastsSent')}</CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={loadHistory} disabled={historyLoading} className="gap-2">
+                <Button variant="outline" size="sm" onClick={() => refetchHistory()} disabled={historyLoading} className="gap-2">
                   <RefreshCw className={`w-4 h-4 ${historyLoading ? 'animate-spin' : ''}`} />
                   {t('pushNotif.refresh')}
                 </Button>

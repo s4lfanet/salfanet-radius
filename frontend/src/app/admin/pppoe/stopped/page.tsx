@@ -2,12 +2,13 @@
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Users, Trash2, Download, Search, RefreshCcw, Plus, Shield, FileText,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
-import { pppoeApi, apiAdmin } from '@/lib/api';
+import { pppoeApi } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface StoppedUser {
   id: string;
@@ -30,26 +31,16 @@ interface StoppedUser {
 export default function StoppedSubscriptionsPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<StoppedUser[]>([]);
+  const queryClient = useQueryClient();
+  const usersQueryKey = buildQueryKey('/api/pppoe/users', { status: 'stop' });
+  const { data: usersData, isLoading: loading, refetch } = useApiQuery<{ users: StoppedUser[] }>('/api/pppoe/users', {
+    params: { status: 'stop' },
+  });
+  const users = usersData?.users || [];
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
-
-  useEffect(() => { loadData(); }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const data = await apiAdmin<{ users: StoppedUser[] }>(`/api/pppoe/users?status=stop`);
-      setUsers(data.users || []);
-    } catch (error) {
-      console.error('Load data error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleExport = async () => {
     try {
@@ -78,15 +69,20 @@ export default function StoppedSubscriptionsPage() {
     // TRUE optimistic update: remove from list BEFORE API call
     const deletedIds = new Set(Array.from(selectedUsers));
     const usersToRestore = users.filter(u => deletedIds.has(u.id));
-    setUsers(prev => prev.filter(u => !deletedIds.has(u.id)));
+    queryClient.setQueryData<{ users: StoppedUser[] }>(usersQueryKey, (old) => ({
+      users: (old?.users || []).filter(u => !deletedIds.has(u.id)),
+    }));
     setSelectedUsers(new Set());
 
     try {
       const result = await pppoeApi.bulkDelete(Array.from(deletedIds));
       await showSuccess(`${result.deleted || deletedIds.size} ${t('pppoe.customer')} ${t('common.delete').toLowerCase()}`);
+      queryClient.invalidateQueries({ queryKey: usersQueryKey });
     } catch (error: unknown) {
       // Rollback if API failed
-      setUsers(prev => [...prev, ...usersToRestore]);
+      queryClient.setQueryData<{ users: StoppedUser[] }>(usersQueryKey, (old) => ({
+        users: [...(old?.users || []), ...usersToRestore],
+      }));
       console.error('Bulk delete error:', error);
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDelete'));
     }
@@ -99,16 +95,21 @@ export default function StoppedSubscriptionsPage() {
     // TRUE optimistic update: remove from list BEFORE API call
     // Save reference for rollback if API fails
     const userToRestore = users.find(u => u.id === userId);
-    setUsers(prev => prev.filter(u => u.id !== userId));
+    queryClient.setQueryData<{ users: StoppedUser[] }>(usersQueryKey, (old) => ({
+      users: (old?.users || []).filter(u => u.id !== userId),
+    }));
     setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
 
     try {
       await pppoeApi.updateStatus(userId, 'active');
       await showSuccess(t('common.customerReactivated'));
+      queryClient.invalidateQueries({ queryKey: usersQueryKey });
     } catch (error: unknown) {
       // Rollback: add user back to list if API failed
       if (userToRestore) {
-        setUsers(prev => [...prev, userToRestore]);
+        queryClient.setQueryData<{ users: StoppedUser[] }>(usersQueryKey, (old) => ({
+          users: [...(old?.users || []), userToRestore],
+        }));
       }
       console.error('Reactivate error:', error);
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedActivate'));
@@ -121,16 +122,21 @@ export default function StoppedSubscriptionsPage() {
 
     // TRUE optimistic update: remove from list BEFORE API call
     const userToRestore = users.find(u => u.id === userId);
-    setUsers(prev => prev.filter(u => u.id !== userId));
+    queryClient.setQueryData<{ users: StoppedUser[] }>(usersQueryKey, (old) => ({
+      users: (old?.users || []).filter(u => u.id !== userId),
+    }));
     setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
 
     try {
       await pppoeApi.deleteUser(userId);
       await showSuccess(t('common.customerDeleted'));
+      queryClient.invalidateQueries({ queryKey: usersQueryKey });
     } catch (error: unknown) {
       // Rollback if API failed
       if (userToRestore) {
-        setUsers(prev => [...prev, userToRestore]);
+        queryClient.setQueryData<{ users: StoppedUser[] }>(usersQueryKey, (old) => ({
+          users: [...(old?.users || []), userToRestore],
+        }));
       }
       console.error('Delete error:', error);
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDelete'));
@@ -191,7 +197,7 @@ export default function StoppedSubscriptionsPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={loadData} disabled={loading} className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 rounded flex items-center gap-1.5">
+          <button onClick={() => refetch()} disabled={loading} className="px-3 py-1.5 text-xs bg-muted hover:bg-muted/80 rounded flex items-center gap-1.5">
             <RefreshCcw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             {t('common.refresh')}
           </button>

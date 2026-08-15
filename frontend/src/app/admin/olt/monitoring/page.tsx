@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Server, RefreshCw, AlertCircle, Activity, WifiOff, Wifi,
@@ -8,6 +8,7 @@ import {
   ArrowUpDown, Zap,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface OLT {
   id: string;
@@ -57,9 +58,7 @@ function uptimeStr(seconds: bigint | number | null): string {
 }
 
 export default function OLTMonitoringPage() {
-  const [olts, setOlts] = useState<OLT[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   const [polling, setPolling] = useState<Set<string>>(new Set());
   const [pollingAll, setPollingAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,36 +67,28 @@ export default function OLTMonitoringPage() {
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL);
   const countdownRef = useRef(REFRESH_INTERVAL);
 
-  const fetchOLTs = useCallback(async (silent = false) => {
-    if (!silent) setRefreshing(true);
-    try {
-      const params = new URLSearchParams();
-      if (searchTerm) params.set('search', searchTerm);
-      if (statusFilter !== 'all') params.set('status', statusFilter);
-      const data = await apiAdmin<{ olts?: OLT[] }>(`/api/olt/monitoring?${params}`);
-      setOlts(data.olts ?? []);
-    } catch (e) {
-      console.error('Failed to fetch OLTs', e);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-      countdownRef.current = REFRESH_INTERVAL;
-      setCountdown(REFRESH_INTERVAL);
-    }
-  }, [searchTerm, statusFilter]);
+  // ─── React Query: OLT list (search + status filter, 30s auto-refresh) ────────
+  const oltParams: Record<string, unknown> = {
+    search: searchTerm || undefined,
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+  };
+  const { data: oltData, isLoading: loading, isFetching: refreshing, refetch: refetchOLTs } = useApiQuery<{ olts?: OLT[] }>(
+    '/api/olt/monitoring',
+    { params: oltParams, refetchInterval: REFRESH_INTERVAL * 1000, staleTime: 30000 }
+  );
+  const olts = oltData?.olts ?? [];
 
-  // Auto-refresh with countdown
+  // Countdown timer for auto-refresh display
   useEffect(() => {
-    fetchOLTs(true);
     const tick = setInterval(() => {
       countdownRef.current -= 1;
       setCountdown(countdownRef.current);
       if (countdownRef.current <= 0) {
-        fetchOLTs(true);
+        countdownRef.current = REFRESH_INTERVAL;
       }
     }, 1000);
     return () => clearInterval(tick);
-  }, [fetchOLTs]);
+  }, []);
 
   const handleManualPoll = async (oltId: string) => {
     setPolling((prev) => new Set(prev).add(oltId));
@@ -106,7 +97,7 @@ export default function OLTMonitoringPage() {
         method: 'POST',
         body: JSON.stringify({ oltId }),
       });
-      await fetchOLTs(true);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/olt/monitoring') });
     } catch (e) {
       console.error('Poll failed', e);
     } finally {
@@ -125,7 +116,7 @@ export default function OLTMonitoringPage() {
         })
       )
     );
-    await fetchOLTs(true);
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/olt/monitoring') });
     setPollingAll(false);
   };
 
@@ -169,8 +160,8 @@ export default function OLTMonitoringPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => fetchOLTs(false)}
-            disabled={refreshing}
+            onClick={() => { countdownRef.current = REFRESH_INTERVAL; setCountdown(REFRESH_INTERVAL); refetchOLTs(); }}
+            disabled={refreshing && !loading}
             className="inline-flex items-center px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300 disabled:opacity-60"
           >
             <RefreshCw className={`h-3 w-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} />

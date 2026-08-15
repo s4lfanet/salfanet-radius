@@ -1,10 +1,11 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Plus, Pencil, Trash2, Tag, RefreshCcw } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   SimpleModal,
   ModalHeader,
@@ -28,8 +29,7 @@ interface Category {
 
 export default function CategoriesPage() {
   const { t } = useTranslation();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
 
@@ -38,22 +38,13 @@ export default function CategoriesPage() {
     description: '',
   });
 
-  useEffect(() => {
-    loadCategories();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const categoriesQueryKey = buildQueryKey('/api/inventory/categories');
 
-  const loadCategories = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<Category[]>('/api/inventory/categories');
-      setCategories(data || []);
-    } catch (error) {
-      await showError(t('common.error'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── React Query: Categories ──────────────────────────────────────────────────
+  const { data: categoriesData, isLoading: loading } = useApiQuery<Category[]>('/api/inventory/categories', {
+    staleTime: 5 * 60 * 1000, // rarely changes
+  });
+  const categories = categoriesData || [];
 
   const resetForm = () => {
     setFormData({ name: '', description: '' });
@@ -95,7 +86,7 @@ export default function CategoriesPage() {
       setIsDialogOpen(false);
       setEditingCategory(null);
       resetForm();
-      loadCategories();
+      queryClient.invalidateQueries({ queryKey: categoriesQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -115,7 +106,7 @@ export default function CategoriesPage() {
       });
 
       await showSuccess(t('inventory.categoryDeleted'));
-      loadCategories();
+      queryClient.invalidateQueries({ queryKey: categoriesQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -161,7 +152,7 @@ export default function CategoriesPage() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={loadCategories}
+                  onClick={() => queryClient.invalidateQueries({ queryKey: categoriesQueryKey })}
                   className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
                 >
                   <RefreshCcw className="h-4 w-4" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 
 function renderWithLinks(text: string) {
@@ -22,6 +22,7 @@ import { showSuccess, showError } from '@/lib/sweetalert';
 import { ArrowLeft, Send, User, Clock, Lock, MessageCircle, Edit2, Save } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -61,10 +62,8 @@ export default function AdminTicketDetailPage() {
   const params = useParams();
   const router = useRouter();
   const ticketId = params.id as string;
+  const queryClient = useQueryClient();
 
-  const [ticket, setTicket] = useState<TicketDetail | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState('');
   const [isInternal, setIsInternal] = useState(false);
   const [sending, setSending] = useState(false);
@@ -75,37 +74,30 @@ export default function AdminTicketDetailPage() {
   const [selectedStatus, setSelectedStatus] = useState<TicketStatus>('OPEN');
   const [selectedPriority, setSelectedPriority] = useState<TicketPriority>('MEDIUM');
 
+  const ticketQueryKey = buildQueryKey('/api/tickets', { id: ticketId });
+  const messagesQueryKey = buildQueryKey('/api/tickets/messages', { ticketId, includeInternal: true });
+
+  // ─── React Query: Ticket detail ───────────────────────────────────────────────
+  const { data: ticketData, isLoading: loading } = useApiQuery<TicketDetail[]>('/api/tickets', {
+    params: { id: ticketId },
+    enabled: !!ticketId,
+  });
+  const ticket = (Array.isArray(ticketData) && ticketData.length > 0) ? ticketData[0] : null;
+
+  // ─── React Query: Messages ────────────────────────────────────────────────────
+  const { data: messagesData } = useApiQuery<Message[]>('/api/tickets/messages', {
+    params: { ticketId, includeInternal: true },
+    enabled: !!ticketId,
+  });
+  const messages = messagesData || [];
+
+  // Sync selected status/priority when ticket loads
   useEffect(() => {
-    if (ticketId) {
-      fetchTicket();
-      fetchMessages();
+    if (ticket) {
+      setSelectedStatus(ticket.status);
+      setSelectedPriority(ticket.priority);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ticketId]);
-
-  const fetchTicket = async () => {
-    try {
-      const data = await apiAdmin<TicketDetail[]>(`/api/tickets?id=${ticketId}`);
-      if (Array.isArray(data) && data.length > 0) {
-        setTicket(data[0]);
-        setSelectedStatus(data[0].status);
-        setSelectedPriority(data[0].priority);
-      }
-    } catch (error: unknown) {
-      console.error('Failed to fetch ticket:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMessages = async () => {
-    try {
-      const data = await apiAdmin<Message[]>(`/api/tickets/messages?ticketId=${ticketId}&includeInternal=true`);
-      setMessages(data);
-    } catch (error: unknown) {
-      console.error('Failed to fetch messages:', error);
-    }
-  };
+  }, [ticket]);
 
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,8 +119,8 @@ export default function AdminTicketDetailPage() {
 
       setReplyText('');
       setIsInternal(false);
-      fetchMessages();
-      fetchTicket(); // Update lastResponseAt
+      queryClient.invalidateQueries({ queryKey: messagesQueryKey });
+      queryClient.invalidateQueries({ queryKey: ticketQueryKey }); // Update lastResponseAt
       await showSuccess(t('ticket.replySent') || 'Reply sent successfully');
     } catch (error: unknown) {
       console.error('Failed to send reply:', error);
@@ -148,7 +140,7 @@ export default function AdminTicketDetailPage() {
         }),
       });
 
-      fetchTicket();
+      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
       setEditingStatus(false);
       await showSuccess(t('ticket.statusUpdated') || 'Status updated successfully');
     } catch (error: unknown) {
@@ -167,7 +159,7 @@ export default function AdminTicketDetailPage() {
         }),
       });
 
-      fetchTicket();
+      queryClient.invalidateQueries({ queryKey: ticketQueryKey });
       setEditingPriority(false);
       await showSuccess(t('ticket.priorityUpdated') || 'Priority updated successfully');
     } catch (error: unknown) {

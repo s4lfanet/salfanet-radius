@@ -1,11 +1,12 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { Plus, Edit2, Trash2, Eye, X, RefreshCw, FileCode } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { renderVoucherTemplate } from '@/lib/utils/templateRenderer';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   SimpleModal,
   ModalHeader,
@@ -96,8 +97,7 @@ interface VoucherTemplate {
 
 export default function VoucherTemplatesPage() {
   const { t } = useTranslation();
-  const [templates, setTemplates] = useState<VoucherTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showDialog, setShowDialog] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<VoucherTemplate | null>(null);
@@ -108,20 +108,9 @@ export default function VoucherTemplatesPage() {
     isActive: true
   });
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
-
-  const fetchTemplates = async () => {
-    try {
-      const data = await apiAdmin<VoucherTemplate[]>('/api/voucher-templates');
-      setTemplates(data || []);
-    } catch (error) {
-      console.error('Failed to fetch templates:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── React Query: Templates list ─────────────────────────────────────────────
+  const { data: templatesData, isLoading: loading } = useApiQuery<VoucherTemplate[]>('/api/voucher-templates', { staleTime: 30000 })
+  const templates = templatesData || []
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,7 +122,7 @@ export default function VoucherTemplatesPage() {
         body: JSON.stringify(formData)
       });
       await showSuccess(editingTemplate ? t('common.updated') : t('common.created'));
-      await fetchTemplates();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/voucher-templates') });
       handleCloseDialog();
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('hotspot.failedSaveTemplate'));
@@ -146,7 +135,7 @@ export default function VoucherTemplatesPage() {
     try {
       await apiAdmin(`/api/voucher-templates/${id}`, { method: 'DELETE' });
       await showSuccess(t('hotspot.templateDeleted'));
-      await fetchTemplates();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/voucher-templates') });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('hotspot.failedDeleteTemplate'));
     }
@@ -229,7 +218,7 @@ export default function VoucherTemplatesPage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={fetchTemplates}
+              onClick={() => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/voucher-templates') })}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted"
               title="Perbarui Data"
             >

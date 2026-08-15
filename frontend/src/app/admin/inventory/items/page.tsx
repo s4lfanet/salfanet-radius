@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -30,6 +30,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Category {
   id: string;
@@ -63,10 +64,7 @@ interface Item {
 
 export default function InventoryItemsPage() {
   const { t } = useTranslation();
-  const [items, setItems] = useState<Item[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -90,29 +88,17 @@ export default function InventoryItemsPage() {
     isActive: true,
   });
 
-  useEffect(() => {
-    loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const itemsQueryKey = buildQueryKey('/api/inventory/items');
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [itemsData, categoriesData, suppliersData] = await Promise.all([
-        apiAdmin<Item[]>('/api/inventory/items'),
-        apiAdmin<Category[]>('/api/inventory/categories'),
-        apiAdmin<Supplier[]>('/api/inventory/suppliers'),
-      ]);
+  // ─── React Query: Items ───────────────────────────────────────────────────────
+  const { data: itemsData, isLoading: loading } = useApiQuery<Item[]>('/api/inventory/items');
+  const items = itemsData || [];
 
-      setItems(itemsData);
-      setCategories(categoriesData);
-      setSuppliers(suppliersData);
-    } catch (error: unknown) {
-      await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── React Query: Categories & Suppliers (reference data — 5min stale) ────────
+  const { data: categoriesData } = useApiQuery<Category[]>('/api/inventory/categories', { staleTime: 5 * 60 * 1000 });
+  const { data: suppliersData } = useApiQuery<Supplier[]>('/api/inventory/suppliers', { staleTime: 5 * 60 * 1000 });
+  const categories = categoriesData || [];
+  const suppliers = suppliersData || [];
 
   const resetForm = () => {
     setFormData({
@@ -177,7 +163,7 @@ export default function InventoryItemsPage() {
       setIsDialogOpen(false);
       setEditingItem(null);
       resetForm();
-      loadData();
+      queryClient.invalidateQueries({ queryKey: itemsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -197,7 +183,7 @@ export default function InventoryItemsPage() {
       });
 
       await showSuccess(t('inventory.itemDeleted'));
-      loadData();
+      queryClient.invalidateQueries({ queryKey: itemsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -356,7 +342,7 @@ export default function InventoryItemsPage() {
                 </button>
 
                 <button
-                  onClick={loadData}
+                  onClick={() => queryClient.invalidateQueries({ queryKey: itemsQueryKey })}
                   className="px-2.5 py-1.5 bg-muted text-muted-foreground rounded-lg hover:bg-muted transition-colors text-xs font-medium"
                 >
                   <RefreshCcw className="h-3.5 w-3.5" />
