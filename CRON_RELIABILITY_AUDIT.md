@@ -1,9 +1,10 @@
 # Cron Reliability Audit
 
 **Date:** 2026-08-16
-**Status:** ✅ FIXED (atomic distributed lock implemented)
+**Status:** ✅ FIXED (atomic distributed lock + heartbeat renewal)
 **Deployed:** 2026-08-15, commit `ebe89923`, VPS `192.168.54.129`
 **DB Migration:** `cron_lock` table created and applied
+**Phase 4 Update:** 2026-08-16 — heartbeat/renewal function added, monitoring integrated
 
 ---
 
@@ -98,10 +99,15 @@ If Instance A crashes while holding a lock:
 | Build (VPS) | ✅ Exit 0 |
 | DB migration applied | ✅ VERIFIED — `cron_lock` table exists on VPS |
 | PM2 restart | ✅ VERIFIED — all 4 services online |
-| Lock acquisition (atomic) | ⏳ NOT VERIFIED — requires multi-instance test |
-| Stale lock recovery | ⏳ NOT VERIFIED — requires simulated crash |
-| Concurrent cron trigger | ⏳ NOT VERIFIED — requires running backend with CRON_SECRET |
+| Lock acquisition (atomic) | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (multi-instance test) |
+| Stale lock recovery | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (simulated crash) |
+| Concurrent cron trigger | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (running backend with CRON_SECRET) |
 | Lock table column exists | ✅ VERIFIED — `cron_lock.jobKey` column confirmed in production DB |
+| Heartbeat/renewal function | ✅ VERIFIED (code inspection — Phase 4) |
+| Heartbeat owner-protected | ✅ VERIFIED (code inspection — Phase 4) |
+| Heartbeat expired-lock check | ✅ VERIFIED (code inspection — Phase 4) |
+| Monitoring integration | ✅ VERIFIED (code inspection — Phase 4) |
+| Cron lock DB test | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (MySQL test database) |
 
 ## Known Limitations
 

@@ -564,6 +564,41 @@ The centralized client correctly handles FormData:
 | Agent JWT revocation | ⏳ NOT VERIFIED — requires running backend with agent accounts |
 | Technician GenieACS scope | ⚠️ NOT IMPLEMENTED — requires schema design decision |
 
+### 20.9 Phase 4 Hardening (2026-08-16)
+
+| ID | Title | Files | Severity | Status |
+|----|-------|------|----------|--------|
+| SEC-4.01 | Voucher payment atomicity | `api/payment/webhook/route.ts` | HIGH | ✅ FIXED — `updateMany` with status condition + secondary dedup |
+| SEC-4.02 | Payment unique constraint | `prisma/schema.prisma`, `migrations/20260816_add_payment_idempotency_constraints.sql` | HIGH | ✅ FIXED — `payments.invoiceId` unique index |
+| SEC-4.03 | Payment concurrency test | `tests/payment-concurrency-db.test.ts` | MEDIUM | ✅ CREATED — DB-level concurrency test (8 test cases) |
+| SEC-4.04 | Cron lock heartbeat | `services/cron-lock.service.ts` | MEDIUM | ✅ FIXED — `renewCronLock` + `startHeartbeat` functions |
+| SEC-4.05 | FreeRADIUS delete sync | `services/radius/radius-sync-queue.service.ts`, `services/pppoe.service.ts` | HIGH | ✅ FIXED — `syncSingleUserDeleteToRadius` + retry queue integration |
+| SEC-4.06 | RADIUS stale user protection | `services/radius/radius-reconciliation.service.ts` | MEDIUM | ✅ FIXED — categorized as known_stale/unknown/delete_queued |
+| SEC-4.07 | Automatic reconciliation cron | `cron/jobs.ts`, `cron-runner.ts`, `api/cron/route.ts` | MEDIUM | ✅ FIXED — `radius_reconciliation` job, daily at 6 AM |
+| SEC-4.08 | RADIUS circuit breaker | `services/radius/radius-sync-queue.service.ts` | MEDIUM | ✅ FIXED — 5 consecutive failures → pause + defer |
+| SEC-4.09 | Expanded IDOR tests | `tests/idor-expanded.test.ts` | MEDIUM | ✅ CREATED — 11 resource types, action endpoints, cross-role |
+| SEC-4.10 | Technician GenieACS scope | `TECHNICIAN_GENIEACS_SCOPE_AUDIT.md` | MEDIUM | ⚠️ NOT IMPLEMENTED — requires data model decision |
+| SEC-4.11 | Operational monitoring | `services/monitoring.service.ts` | LOW | ✅ FIXED — structured logging for RADIUS/cron/payment |
+| SEC-4.12 | Database index audit | `prisma/schema.prisma`, `migrations/` | LOW | ✅ VERIFIED — `prisma validate` passes, no duplicate indexes |
+
+### 20.10 Phase 4 Verification Results
+
+| Check | Result |
+|-------|--------|
+| `tsc --noEmit` (backend) | ✅ 0 errors |
+| `prisma validate` | ✅ Schema valid |
+| Voucher order atomicity | ✅ VERIFIED (code inspection) |
+| Payment unique constraint | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (VPS migration) |
+| Payment concurrency DB test | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (MySQL test database) |
+| Cron lock heartbeat | ✅ VERIFIED (code inspection) |
+| FreeRADIUS delete sync | ✅ VERIFIED (code inspection) |
+| Stale user protection | ✅ VERIFIED (code inspection) |
+| Automatic reconciliation cron | ✅ VERIFIED (code inspection) |
+| Circuit breaker/backpressure | ✅ VERIFIED (code inspection) |
+| Expanded IDOR tests | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (running backend) |
+| Technician GenieACS scope | ⚠️ NOT IMPLEMENTED — requires schema design decision |
+| Monitoring integration | ✅ VERIFIED (code inspection) |
+
 ### 20.9 Database Migration Required
 
 The following migration must be applied to the VPS database:

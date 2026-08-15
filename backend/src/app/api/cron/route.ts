@@ -139,6 +139,9 @@ export async function POST(request: NextRequest) {
         case 'radius_sync_retry':
           result = await runRadiusSyncRetry()
           break
+        case 'radius_reconciliation':
+          result = await runRadiusReconciliation()
+          break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }
       }
@@ -219,4 +222,44 @@ async function runFreeradiusHealth() {
 async function runRadiusSyncRetry() {
   const { processRetryQueue } = await import('@/server/services/radius/radius-sync-queue.service')
   return await processRetryQueue(50)
+}
+
+/**
+ * Daily RADIUS reconciliation — detects drift between SalfaNet DB and FreeRADIUS.
+ * Does NOT auto-delete stale users. Only reports mismatches for admin review.
+ * Stale users with existing delete queue entries are tracked but not re-queued.
+ */
+async function runRadiusReconciliation() {
+  const { runReconciliation } = await import('@/server/services/radius/radius-reconciliation.service')
+  const report = await runReconciliation()
+
+  console.log('[CRON] RADIUS Reconciliation:', {
+    totalSalfaNetUsers: report.totalSalfaNetUsers,
+    totalRadiusUsers: report.totalRadiusUsers,
+    missingInRadius: report.missingInRadius.length,
+    staleInRadius: report.staleInRadius.length,
+    mismatchPassword: report.mismatchPassword.length,
+    mismatchProfile: report.mismatchProfile.length,
+    mismatchIp: report.mismatchIp.length,
+    knownStale: report.summary.knownStaleCount,
+    unknownStale: report.summary.unknownStaleCount,
+    deleteQueued: report.summary.deleteQueuedCount,
+  })
+
+  return {
+    success: true,
+    totalSalfaNetUsers: report.totalSalfaNetUsers,
+    totalRadiusUsers: report.totalRadiusUsers,
+    issues: report.summary.totalIssues,
+    critical: report.summary.criticalCount,
+    warnings: report.summary.warningCount,
+    missingInRadius: report.missingInRadius.length,
+    staleInRadius: report.staleInRadius.length,
+    mismatchPassword: report.mismatchPassword.length,
+    mismatchProfile: report.mismatchProfile.length,
+    mismatchIp: report.mismatchIp.length,
+    knownStale: report.summary.knownStaleCount,
+    unknownStale: report.summary.unknownStaleCount,
+    deleteQueued: report.summary.deleteQueuedCount,
+  }
 }

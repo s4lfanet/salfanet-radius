@@ -1,9 +1,10 @@
 # FreeRADIUS Sync Audit
 
 **Date:** 2026-08-16
-**Status:** ✅ FIXED (reconciliation + retry queue implemented)
+**Status:** ✅ FIXED (reconciliation + retry queue + delete sync + backpressure + automatic reconciliation)
 **Deployed:** 2026-08-15, commit `ebe89923`, VPS `192.168.54.129`
 **DB Migration:** `radius_sync_queue` table created and applied
+**Phase 4 Update:** 2026-08-16 — delete sync, stale user protection, automatic reconciliation cron, circuit breaker/backpressure
 
 ---
 
@@ -75,11 +76,16 @@ All sync operations preserve `nas_identifier` (router.id):
 | Build (VPS) | ✅ Exit 0 |
 | DB migration applied | ✅ VERIFIED — `radius_sync_queue` table exists on VPS |
 | Admin API endpoint | ✅ VERIFIED — `/api/admin/pppoe/radius-sync` returns 401 without auth (correct) |
-| Retry queue logic | ⏳ NOT VERIFIED — requires FreeRADIUS server |
-| Reconciliation accuracy | ⏳ NOT VERIFIED — requires populated DB |
-| Batch processing | ⏳ NOT VERIFIED — requires large dataset |
-| NAS isolation | ⏳ NOT VERIFIED — requires multi-NAS setup |
-| Cron job registration | ✅ VERIFIED — `radius_sync_retry` job registered in cron runner |
+| Retry queue logic | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (FreeRADIUS server) |
+| Reconciliation accuracy | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (populated DB) |
+| Batch processing | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (large dataset) |
+| NAS isolation | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (multi-NAS setup) |
+| Cron job registration | ✅ VERIFIED — `radius_sync_retry` + `radius_reconciliation` jobs registered |
+| Delete sync (Phase 4) | ✅ VERIFIED (code inspection) — `syncSingleUserDeleteToRadius` + retry queue integration |
+| Stale user protection (Phase 4) | ✅ VERIFIED (code inspection) — categorized as known_stale/unknown/delete_queued |
+| Automatic reconciliation cron (Phase 4) | ✅ VERIFIED (code inspection) — `radius_reconciliation` job, daily at 6 AM |
+| Circuit breaker/backpressure (Phase 4) | ✅ VERIFIED (code inspection) — 5 consecutive failures → pause + defer |
+| Monitoring integration (Phase 4) | ✅ VERIFIED (code inspection) — sync success/failure/retry/dead/backpressure logged |
 
 ## Known Limitations
 
