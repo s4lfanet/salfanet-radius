@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
       newExpiredDate.setDate(newExpiredDate.getDate() + 30);
     }
 
-    // Create invoice for renewal
-    const baseAmount = targetProfile.price;
+    // Create invoice for renewal (apply user discount to base price)
+    const baseAmount = Math.max(0, targetProfile.price - (user.discount || 0));
     
     // Calculate PPN if enabled on profile
     let amount = baseAmount;
