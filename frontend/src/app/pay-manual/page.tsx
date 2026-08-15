@@ -74,8 +74,9 @@ function PayManualPageContent() {
       const response = await fetch(`/api/pay/manual?token=${token}`);
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to fetch payment info');
+        let errMsg = `Failed to fetch payment info (${response.status})`;
+        try { const error = await response.json(); errMsg = error.error || errMsg; } catch { /* not JSON */ }
+        throw new Error(errMsg);
       }
 
       const data = await response.json();

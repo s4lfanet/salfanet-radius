@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { showConfirm } from '@/lib/sweetalert';
@@ -112,7 +112,7 @@ export default function CustomerSuspendPage() {
   };
 
   // Min date = today (WIB)
-  const todayStr = formatInTimeZone(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd');
+  const todayStr = formatInTimeZone(new Date(), getCurrentTimezone(), 'yyyy-MM-dd');
 
   if (loading) {
     return (

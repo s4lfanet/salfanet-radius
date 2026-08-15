@@ -8,8 +8,6 @@ export async function GET(
   try {
     const { token: rawToken } = await context.params;
     const token = decodeURIComponent(rawToken).trim();
-    
-    console.log('[DEBUG] /api/pay/[token] - Received token:', token);
 
     // Try by payment token first
     let invoice = await prisma.invoice.findFirst({
@@ -20,12 +18,9 @@ export async function GET(
         },
       },
     });
-    
-    console.log('[DEBUG] Invoice by paymentToken:', invoice ? 'FOUND' : 'NOT FOUND');
 
     // Fallback: try by invoiceNumber (in case link shared with invoice number)
     if (!invoice) {
-      console.log('[DEBUG] Trying fallback search by invoiceNumber:', token);
       invoice = await prisma.invoice.findFirst({
         where: { invoiceNumber: token },
         include: {
@@ -34,11 +29,9 @@ export async function GET(
           },
         },
       });
-      console.log('[DEBUG] Invoice by invoiceNumber:', invoice ? 'FOUND' : 'NOT FOUND');
     }
 
     if (!invoice) {
-      console.log('[DEBUG] No invoice found for token:', token);
       return NextResponse.json(
         { success: false, error: 'Invoice tidak ditemukan atau token tidak valid' },
         { status: 404 }

@@ -7,6 +7,8 @@
  *   - cron-runner.ts      (standalone cron runner script)
  */
 import { prisma } from '@/server/db/client';
+import { CronExpressionParser } from 'cron-parser';
+import { nowWIB } from '@/lib/timezone';
 
 export interface CronJobDef {
   type: string;
@@ -105,23 +107,22 @@ export async function getAllCronStatuses() {
   const schedules = await getAllScheduleConfigs();
   const scheduleMap = new Map(schedules.map(s => [s.jobType, s]));
 
-  const now = Date.now();
+  const now = nowWIB();
   return CRON_JOB_DEFS.map(def => {
     const lastRun = lastRunMap.get(def.type);
     const sched = scheduleMap.get(def.type);
     const enabled = sched?.enabled ?? true;
     const schedule = sched?.schedule || def.defaultSchedule;
 
-    // Calculate next run (simplified — just add interval based on schedule)
-    let nextRun = new Date(now + 3600000); // default: 1 hour from now
-    if (lastRun?.completedAt) {
-      // Estimate next run from schedule pattern
-      if (schedule === '* * * * *') nextRun = new Date(now + 60000);
-      else if (schedule.startsWith('*/5')) nextRun = new Date(now + 300000);
-      else if (schedule.startsWith('*/15')) nextRun = new Date(now + 900000);
-      else if (schedule.startsWith('0 *')) nextRun = new Date(now + 3600000);
-      else if (schedule.startsWith('0 */6')) nextRun = new Date(now + 6 * 3600000);
-      else nextRun = new Date(now + 86400000); // daily
+    // Calculate next run using cron-parser (accurate, not heuristic).
+    // Uses WIB-as-UTC time (consistent with database storage).
+    let nextRunISO: string | null = null;
+    try {
+      const interval = CronExpressionParser.parse(schedule, { tz: 'UTC', currentDate: now });
+      const next = interval.next().toDate();
+      nextRunISO = next.toISOString();
+    } catch {
+      // Invalid schedule — leave nextRun as null
     }
 
     // Health: healthy if last run was success, error if failed, degraded if never ran
@@ -144,7 +145,7 @@ export async function getAllCronStatuses() {
         result: lastRun.result,
         error: lastRun.error,
       } : undefined,
-      nextRun: nextRun.toISOString(),
+      nextRun: nextRunISO,
       recentHistory: recentHistoryMap.get(def.type) || [],
     };
   });
