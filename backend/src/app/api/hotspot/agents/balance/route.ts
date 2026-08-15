@@ -44,36 +44,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate new balance
+    // ─── ATOMIC: balance adjustment + deposit record in $transaction ──────────
+    // Use atomic increment/decrement instead of read-modify-write to prevent
+    // lost update race condition under concurrent adjustments.
     const adjustAmount = type === 'add' ? amount : -amount;
-    const newBalance = agent.balance + adjustAmount;
 
-    if (newBalance < 0) {
+    const result = await prisma.$transaction(async (tx) => {
+      // Atomic conditional update — only decrements if balance stays >= 0
+      let updatedAgent;
+      if (type === 'subtract') {
+        // For subtract: use updateMany with balance condition to prevent negative
+        const claimResult = await tx.agent.updateMany({
+          where: { id: agentId, balance: { gte: amount } },
+          data: { balance: { decrement: amount } },
+        });
+
+        if (claimResult.count === 0) {
+          return { insufficientBalance: true as const };
+        }
+
+        updatedAgent = await tx.agent.findUnique({ where: { id: agentId } });
+      } else {
+        // For add: simple increment
+        updatedAgent = await tx.agent.update({
+          where: { id: agentId },
+          data: { balance: { increment: amount } },
+        });
+      }
+
+      // Create manual deposit record for tracking
+      await tx.agentDeposit.create({
+        data: {
+          id: crypto.randomUUID(),
+          agentId: agentId,
+          amount: adjustAmount,
+          status: 'PAID',
+          paymentGateway: 'manual',
+          paymentToken: `MANUAL-${Date.now()}`,
+          transactionId: `MANUAL-${type.toUpperCase()}-${Date.now()}`,
+          paidAt: new Date(),
+        },
+      });
+
+      return { insufficientBalance: false as const, updatedAgent: updatedAgent! };
+    });
+
+    if (result.insufficientBalance) {
       return NextResponse.json(
         { error: 'Insufficient balance. Cannot subtract more than current balance.' },
         { status: 400 }
       );
     }
 
-    // Update agent balance
-    const updatedAgent = await prisma.agent.update({
-      where: { id: agentId },
-      data: { balance: newBalance },
-    });
-
-    // Create manual deposit record for tracking (using agentDeposit table)
-    await prisma.agentDeposit.create({
-      data: {
-        id: crypto.randomUUID(),
-        agentId: agentId,
-        amount: adjustAmount,
-        status: 'PAID',
-        paymentGateway: 'manual',
-        paymentToken: `MANUAL-${Date.now()}`,
-        transactionId: `MANUAL-${type.toUpperCase()}-${Date.now()}`,
-        paidAt: new Date(),
-      },
-    });
+    const updatedAgent = result.updatedAgent!;
+    const newBalance = updatedAgent.balance;
 
     // Create notification for agent
     const notificationMessage = type === 'add' 
