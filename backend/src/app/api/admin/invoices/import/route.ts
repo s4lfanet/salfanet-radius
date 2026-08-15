@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/server/db/client';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
+import { nowWIB } from '@/lib/timezone';
 
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
           continue;
         }
       } else {
-        dueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        dueDate = new Date(nowWIB().getTime() + 7 * 24 * 60 * 60 * 1000);
       }
 
       // Look up user

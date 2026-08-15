@@ -162,9 +162,9 @@ export async function POST(request: NextRequest) {
     if (!user) return notFound('User');
 
     // Generate invoice number: INV-YYYYMM-0001
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const now = nowWIB();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
     const count = await prisma.invoice.count({
       where: {
         invoiceNumber: {

@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import { formatCurrencyExport, formatDateExport } from "@/lib/utils/export";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/server/auth/config";
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from "@/lib/timezone";
 import { prisma } from '@/server/db/client';
@@ -279,7 +279,7 @@ function exportToPDF(transactions: any[], stats: any) {
       headers,
       rows,
       summary,
-      generatedAt: formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm')
+      generatedAt: formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMM yyyy HH:mm')
     }
   });
 }

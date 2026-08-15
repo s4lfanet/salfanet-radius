@@ -3,7 +3,7 @@ import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
 import { sendPaymentSuccess, sendVoucherPurchaseSuccess } from '@/server/services/notifications/whatsapp-templates.service';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
-import { formatWIB, toUTC, nowWIB } from '@/lib/timezone';
+import { formatWIB, toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
@@ -666,7 +666,7 @@ async function handleVoucherOrder(
                 quantity: order.quantity.toString(),
                 totalAmount: `Rp ${order.totalAmount.toLocaleString('id-ID')}`,
                 voucherCodes: vouchers.map(v => v.code).join(', '),
-                purchaseDate: formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMMM yyyy'),
+                purchaseDate: formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMMM yyyy'),
                 expiryDate: '-',
                 companyName: company?.name || 'ISP',
                 companyPhone: company?.phone || '-',

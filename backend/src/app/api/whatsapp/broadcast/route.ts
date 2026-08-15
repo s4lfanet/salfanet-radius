@@ -5,6 +5,7 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { getCurrentTimezone } from '@/lib/timezone';
 
 function formatBankAccountsForWA(bankAccounts: any): string {
   if (!bankAccounts) return '';
@@ -105,11 +106,11 @@ export async function POST(request: NextRequest) {
       const daysRemaining = dueDate && diffTime > 0 ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : 0;
       const daysOverdue = dueDate && diffTime < 0 ? Math.abs(Math.ceil(diffTime / (1000 * 60 * 60 * 24))) : 0;
       const dueDateStr = dueDate
-        ? dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })
+        ? dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() })
         : '-';
       const amountStr = latestInvoice ? `Rp ${latestInvoice.amount.toLocaleString('id-ID')}` : '-';
       const expiredDateStr = user.expiredAt
-        ? new Date(user.expiredAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })
+        ? new Date(user.expiredAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() })
         : '-';
       const bankAccountsText = formatBankAccountsForWA(company?.bankAccounts);
 

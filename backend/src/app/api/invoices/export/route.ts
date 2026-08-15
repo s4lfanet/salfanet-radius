@@ -2,7 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { generateExcelBuffer, formatCurrencyExport, formatDateExport, generatePDFBuffer, generateInvoicePDF } from '@/lib/utils/export';
 import { checkAuth } from '@/server/middleware/api-auth';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, formatWIB } from '@/lib/timezone';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, formatWIB, getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 
 export async function GET(req: NextRequest) {
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
           headers,
           rows,
           summary,
-          generatedAt: formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm')
+          generatedAt: formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMM yyyy HH:mm')
         }
       });
     }

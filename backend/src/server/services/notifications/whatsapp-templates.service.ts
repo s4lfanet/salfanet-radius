@@ -1,6 +1,7 @@
 import 'server-only'
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { prisma } from '@/server/db/client';
+import { getCurrentTimezone } from '@/lib/timezone';
 
 /**
  * Render template with variables
@@ -169,7 +170,7 @@ export async function sendRegistrationApproval(data: {
     }
 
     const dueDateStr = data.dueDate
-      ? data.dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })
+      ? data.dueDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() })
       : '-';
 
     // Prepare variables
@@ -228,7 +229,7 @@ export async function sendInstallationInvoice(data: {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-      timeZone: 'Asia/Jakarta',
+      timeZone: getCurrentTimezone(),
     });
 
     // Get template from database
@@ -294,7 +295,7 @@ export async function sendAdminCreateUser(data: {
     }
 
     const expiredDateStr = data.expiredAt
-      ? data.expiredAt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' })
+      ? data.expiredAt.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() })
       : '-';
 
     // Prepare variables
@@ -353,7 +354,7 @@ export async function sendInvoiceReminder(data: {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-      timeZone: 'Asia/Jakarta',
+      timeZone: getCurrentTimezone(),
     });
 
     // Calculate days remaining or overdue
@@ -570,7 +571,7 @@ export async function sendAutoRenewalSuccess(data: {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-      timeZone: 'Asia/Jakarta',
+      timeZone: getCurrentTimezone(),
     });
 
     // Get template from database

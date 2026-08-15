@@ -5,6 +5,7 @@ import { createReadStream, createWriteStream } from 'fs';
 import { createGzip } from 'zlib';
 import { pipeline } from 'stream/promises';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getCurrentTimezone } from '@/lib/timezone';
 
 interface TelegramSendOptions {
   botToken: string;
@@ -133,7 +134,7 @@ export async function sendTelegramFile(
 export async function testTelegramConnection(
   options: TelegramSendOptions
 ): Promise<{ success: boolean; error?: string }> {
-  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
+  const now = formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMM yyyy HH:mm');
   const testMessage = `🤖 <b>SALFANET RADIUS - Test Connection</b>\n\n✅ Bot connection successful!\n\n📅 ${now} WIB`;
   
   return await sendTelegramMessage(options, testMessage);
@@ -157,7 +158,7 @@ export async function sendHealthReport(
     issues?: string;
   }
 ): Promise<{ success: boolean; error?: string }> {
-  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
+  const now = formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMM yyyy HH:mm');
   
   const statusEmoji = health.status === 'healthy' ? '🟢' : health.status === 'warning' ? '🟡' : '🔴';
   
@@ -198,7 +199,7 @@ export async function sendBackupToTelegram(
 ): Promise<{ success: boolean; error?: string }> {
   const fileSizeNum = Number(filesize);
   const originalSizeMB = (fileSizeNum / 1024 / 1024).toFixed(2);
-  const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
+  const now = formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMM yyyy HH:mm');
   const originalFilename = path.basename(filepath) || 'backup.sql';
   
   const MAX_TELEGRAM_FILE_SIZE = 50 * 1024 * 1024; // 50MB Telegram Bot API limit

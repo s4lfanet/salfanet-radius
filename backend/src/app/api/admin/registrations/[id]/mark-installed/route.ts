@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { sendInstallationInvoice } from '@/server/services/notifications/whatsapp-templates.service';
 import crypto from 'crypto';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { nowWIB } from '@/lib/timezone';
 
 export async function POST(
   request: NextRequest,
@@ -82,7 +83,7 @@ export async function POST(
         userId: registration.pppoeUserId,
         amount: Math.round(Number(registration.installationFee)),
         status: 'PENDING',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        dueDate: new Date(nowWIB().getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days
         customerName: registration.name,
         customerPhone: registration.phone,
         customerUsername: registration.pppoeUser.username,
