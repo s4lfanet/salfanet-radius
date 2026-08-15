@@ -270,7 +270,7 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
     try {
       if (!user.profile) { skipped++; continue; }
 
-      const baseAmount = user.profile.price;
+      const baseAmount = Math.max(0, user.profile.price - (user.discount || 0));
       let amount = baseAmount;
       if (user.profile.ppnActive && user.profile.ppnRate > 0) {
         amount = Math.round(baseAmount + (baseAmount * Number(user.profile.ppnRate) / 100));

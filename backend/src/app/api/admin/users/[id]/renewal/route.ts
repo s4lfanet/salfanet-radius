@@ -41,7 +41,7 @@ export async function POST(
       );
     }
 
-    const basePrice = user.profile.price;
+    const basePrice = Math.max(0, user.profile.price - (user.discount || 0));
 
     // Calculate PPN if enabled on profile
     let amount = basePrice;
