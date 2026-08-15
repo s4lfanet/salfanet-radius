@@ -532,7 +532,80 @@ The following pages use `apiAdmin()` (centralized client) but manage state manua
 
 ---
 
-## 23. Medium Issues (P2)
+## 23. Direct Fetch Migration Audit (Phase 3)
+
+> Tanggal: 16 Agustus 2026
+> Commit: `f04dad78`
+> Mencakup: Migrasi semua direct fetch() ke centralized API client
+
+### 🔧 FIXED — Comprehensive Direct Fetch Migration
+
+Migrated ~100+ direct `fetch()` calls across 40 files to `apiAdmin`/`apiCustomer`/`apiAgent`:
+
+**Layouts (3 files):**
+- `TechnicianPortalLayout.tsx` — session, logout, ticket polling → `apiAdmin`
+- `CustomerClientLayout.tsx` — notifications, logout → `apiCustomer`
+- `AgentLayoutClient.tsx` — dashboard balance → `apiAgent`
+
+**Customer pages (13 files):**
+- profile, invoices, tickets (list/create/detail), topup-direct, topup-request,
+  suspend, wifi, referral, upgrade, dashboard, history → `apiCustomer`
+
+**Agent pages (6 files):**
+- dashboard, tickets, sessions, vouchers, login, NotificationDropdown → `apiAgent`
+
+**Technician pages (4 files):**
+- login, dashboard, customers, offline → `apiAdmin`
+
+**Admin pages (6 files):**
+- AdminClientLayout system info, NotificationDropdown, GenieACS settings/devices/parameters,
+  OLT detail (16 fetch calls) → `apiAdmin`
+
+**Network components (8 files):**
+- AddNodePanel, NetworkNodePanel, UnifiedNetworkMap, AssignCustomerDialog,
+  EditAssignmentDialog, SplitterSection, SplicePointsSection, FreeRadiusStatusCard → `apiAdmin`
+
+**Infrastructure:**
+- `ApiError` class enhanced with optional `body` property for error response data access
+
+### ✅ PASS — Legitimate Fetch Exceptions (Not Migrated)
+
+The following `fetch()` calls were intentionally kept as raw `fetch()`:
+
+| Category | Reason | Examples |
+|----------|--------|----------|
+| Public endpoints | No auth needed | `/api/public/*`, `/api/company/info` |
+| Binary downloads/exports | Need raw fetch for blob handling | Excel/CSV/PDF exports |
+| Push notification subscriptions | Browser-native API integration | `/api/push/*` |
+| Streaming responses | Need `response.body.getReader()` | VPN server setup |
+| Token-based payment endpoints | Use URL token param, not session auth | `/api/pay/[token]`, `/api/payment/*` |
+| Public FormData uploads | No auth needed | `/api/upload/payment-proof` (public) |
+
+### ✅ PASS — Backend Typecheck Fixes
+- Fixed `rateLimit` boolean leak: 5 routes returned `true` instead of `NextResponse` when rate-limited
+  - `customer/topup-request`, `customer/upgrade-package`, `genieacs/files` (2x), `genieacs/provisions`, `genieacs/devices/[deviceId]/factory-reset`
+- Fixed `topup-requests/[id]/reject` params signature to `Promise<{ id: string }>` for Next.js 15
+- Backend build: ✅ PASS (exit 0)
+- Backend `tsc --noEmit`: 5 target errors fixed (133 pre-existing errors remain — session.user typing + BigInt target, not caused by changes)
+
+### ✅ PASS — Verification
+- Frontend `tsc --noEmit`: **0 errors**
+- Frontend build (local + VPS): **exit 0**
+- Backend build (VPS): **exit 0**
+- PM2: all 4 services **online**
+- Smoke tests:
+  - Frontend: **200**
+  - Backend health: **200**
+  - Customer login: **200**
+  - Agent login: **200**
+  - Technician login: **200**
+  - PPPoE no auth: **401**
+  - Registration DELETE no auth: **401**
+  - Nginx proxy: **200**
+
+---
+
+## 24. Medium Issues (P2)
 
 | # | Issue | File | Status |
 |---|-------|------|--------|
