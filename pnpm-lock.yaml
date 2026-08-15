@@ -236,9 +236,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.101.4
         version: 5.101.4(react@19.2.8)
-      '@types/leaflet':
-        specifier: ^1.9.21
-        version: 1.9.22
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -296,9 +293,6 @@ importers:
       server-only:
         specifier: ^0.0.1
         version: 0.0.1
-      sweetalert2:
-        specifier: ^11.26.3
-        version: 11.26.25
       tailwind-merge:
         specifier: ^3.3.1
         version: 3.6.0
@@ -318,6 +312,9 @@ importers:
         specifier: ^5.0.8
         version: 5.0.14(@types/react@19.2.18)(immer@11.1.16)(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
     devDependencies:
+      '@types/leaflet':
+        specifier: ^1.9.21
+        version: 1.9.22
       '@types/node':
         specifier: ^20.19.33
         version: 20.19.43
@@ -5529,9 +5526,6 @@ packages:
   svg-pathdata@6.0.3:
     resolution: {integrity: sha512-qsjeeq5YjBZ5eMdFuUa4ZosMLxgr5RZ+F+Y1OrDhuOCEInRMA3x74XdBtggJcj9kOeInz0WE+LgCPDkZFlBYJw==}
     engines: {node: '>=12.0.0'}
-
-  sweetalert2@11.26.25:
-    resolution: {integrity: sha512-+hunCOJdJ6FLj04T9YSLvvZXRjsvIkTeTKP2e4VF8CaBias961BTnWiSFAy7F/CM5eq3QK2Rraoc5Gzftslvkg==}
 
   tailwind-merge@3.6.0:
     resolution: {integrity: sha512-uxL7qAVQriqRQPAyK3pj66VqskWqoZ37PW94jwOTwNfq/z9oyu1V+eqrZqtR2+fCiXdYOZe/Modt8GtvqNzu+w==}
@@ -11533,8 +11527,6 @@ snapshots:
 
   svg-pathdata@6.0.3:
     optional: true
-
-  sweetalert2@11.26.25: {}
 
   tailwind-merge@3.6.0: {}
 
