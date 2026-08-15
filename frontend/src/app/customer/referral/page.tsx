@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,18 +69,14 @@ export default function CustomerReferralPage() {
       const token = getToken();
       if (!token) { router.push('/customer/login'); return; }
 
-      const res = await fetch('/api/customer/referral', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCustomer<{ success: boolean; referral: ReferralData; config: ReferralConfig }>('/api/customer/referral');
 
-      if (res.status === 401) { router.push('/customer/login'); return; }
-
-      const data = await res.json();
       if (data.success) {
         setReferral(data.referral);
         setConfig(data.config);
       }
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) { router.push('/customer/login'); return; }
       console.error('Load referral error:', error);
     } finally {
       setLoading(false);
@@ -91,11 +88,8 @@ export default function CustomerReferralPage() {
       const token = getToken();
       if (!token) return;
 
-      const res = await fetch('/api/customer/referral/rewards', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const data = await apiCustomer<{ success: boolean; rewards: RewardItem[] }>('/api/customer/referral/rewards');
 
-      const data = await res.json();
       if (data.success) {
         setRewards(data.rewards);
       }
@@ -115,20 +109,19 @@ export default function CustomerReferralPage() {
       const token = getToken();
       if (!token) return;
 
-      const res = await fetch('/api/customer/referral', {
+      const data = await apiCustomer<{ success: boolean; error?: string }>('/api/customer/referral', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await res.json();
       if (data.success) {
         addToast({ type: 'success', title: 'Berhasil!', description: 'Kode referral berhasil dibuat' });
         loadReferralData();
       } else {
         addToast({ type: 'error', title: 'Error', description: data.error || 'Gagal membuat kode referral' });
       }
-    } catch {
-      addToast({ type: 'error', title: 'Error', description: 'Gagal membuat kode referral' });
+    } catch (error) {
+      if (error instanceof ApiError) addToast({ type: 'error', title: 'Error', description: error.message || 'Gagal membuat kode referral' });
+      else addToast({ type: 'error', title: 'Error', description: 'Gagal membuat kode referral' });
     } finally {
       setGenerating(false);
     }

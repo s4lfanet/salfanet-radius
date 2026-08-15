@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { LogIn, Phone, Loader2, Shield, Ticket, MessageCircle } from 'lucide-react';
 import { showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAgent, ApiError } from '@/lib/api';
 
 export default function AgentLoginPage() {
   const router = useRouter();
@@ -47,24 +48,25 @@ export default function AgentLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/agent/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
-      });
+      const data = await apiAgent<{ agent: { id: string; name: string; phone: string }; token: string; error?: string }>(
+        '/api/agent/login',
+        {
+          method: 'POST',
+          body: JSON.stringify({ phone }),
+        },
+      );
 
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem('agentData', JSON.stringify(data.agent));
-        localStorage.setItem('agentToken', data.token);
-        router.push('/agent/dashboard');
-      } else {
-        setError(data.error || t('agent.portal.errors.loginFailed'));
-        await showError(data.error || t('agent.portal.errors.loginFailed'));
-      }
+      localStorage.setItem('agentData', JSON.stringify(data.agent));
+      localStorage.setItem('agentToken', data.token);
+      router.push('/agent/dashboard');
     } catch (error) {
-      setError(t('agent.portal.errors.tryAgain'));
-      await showError(t('agent.portal.errors.tryAgain'));
+      if (error instanceof ApiError) {
+        setError(error.message || t('agent.portal.errors.loginFailed'));
+        await showError(error.message || t('agent.portal.errors.loginFailed'));
+      } else {
+        setError(t('agent.portal.errors.tryAgain'));
+        await showError(t('agent.portal.errors.tryAgain'));
+      }
     } finally {
       setLoading(false);
     }

@@ -18,7 +18,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { onUnauthorized } from '@/lib/api/client';
+import { onUnauthorized, apiAgent } from '@/lib/api/client';
 import AgentNotificationDropdown from '@/components/agent/NotificationDropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
@@ -253,10 +253,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
         setAgent(localAgent);
         // Fetch fresh balance from API
         if (token) {
-          fetch('/api/agent/dashboard?limit=1', {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-            .then(res => res.ok ? res.json() : null)
+          apiAgent<{ agent?: { balance: number } }>('/api/agent/dashboard?limit=1')
             .then(data => {
               if (data?.agent) {
                 const updated = { ...localAgent, balance: data.agent.balance };

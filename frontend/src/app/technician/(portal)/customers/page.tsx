@@ -22,6 +22,7 @@ import {
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 interface Customer {
   id: string;
@@ -116,9 +117,7 @@ export default function TechnicianCustomersPage() {
       const p = new URLSearchParams({ page: String(page), limit: String(LIMIT) });
       if (search) p.set('search', search);
       if (filterStatus) p.set('status', filterStatus);
-      const res = await fetch(`/api/technician/customers?${p}`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
+      const data = await apiAdmin<{ users: Customer[]; total: number; pages: number }>(`/api/technician/customers?${p}`);
       setCustomers(data.users ?? []);
       setTotal(data.total ?? 0);
       setPages(data.pages ?? 1);

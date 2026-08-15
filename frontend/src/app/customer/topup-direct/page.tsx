@@ -6,6 +6,7 @@ import { ArrowLeft, Wallet, Loader2, CreditCard, CheckCircle, AlertCircle, Uploa
 import { showSuccess, showError, showWarning } from '@/lib/sweetalert';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 interface PaymentGateway {
   id: string;
@@ -63,10 +64,7 @@ export default function TopUpDirectPage() {
       console.log('[Top-Up Direct] Loading data...');
 
       // Load user info
-      const userRes = await fetch('/api/customer/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const userData = await userRes.json();
+      const userData = await apiCustomer<{ success: boolean; user: User }>('/api/customer/me');
       console.log('[Top-Up Direct] User data:', userData);
 
       if (userData.success && userData.user) {
@@ -110,8 +108,7 @@ export default function TopUpDirectPage() {
     setPaymentChannels([]);
     setSelectedChannel('');
     try {
-      const res = await fetch(`/api/customer/payment-methods?gateway=${gateway}&amount=${amt}`);
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; methods: PaymentChannel[] }>(`/api/customer/payment-methods?gateway=${gateway}&amount=${amt}`);
       if (data.success && Array.isArray(data.methods) && data.methods.length > 0) {
         setPaymentChannels(data.methods);
         // Auto-select first channel
@@ -155,15 +152,10 @@ export default function TopUpDirectPage() {
 
     setProcessing(true);
     setError('');
-    const token = localStorage.getItem('customer_token');
 
     try {
-      const res = await fetch('/api/customer/topup-direct', {
+      const data = await apiCustomer<{ success: boolean; error?: string; details?: string; message?: string; gateway?: string; paymentUrl?: string; invoiceNumber?: string; amount?: number }>('/api/customer/topup-direct', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           amount: topupAmount,
           gateway: selectedGateway,
@@ -171,12 +163,9 @@ export default function TopUpDirectPage() {
         })
       });
 
-      const data = await res.json();
-
-      console.log('[Top-Up Direct Frontend] Response status:', res.status);
       console.log('[Top-Up Direct Frontend] Response data:', data);
 
-      if (!res.ok || data.error || !data.success) {
+      if (data.error || !data.success) {
         // Show error with details
         const errorMsg = data.error || data.details || data.message || t('customer.invoiceCreationError');
         console.error('[Top-Up Direct Frontend] Error:', errorMsg);
@@ -194,13 +183,13 @@ export default function TopUpDirectPage() {
         console.log('[Top-Up Direct Frontend] Redirecting to:', data.paymentUrl);
 
         showSuccess(
-          `${t('customer.invoiceNo')}: ${data.invoiceNumber} — ${t('customer.total')}: ${formatCurrency(data.amount)}. ${t('customer.redirectingToPayment')}`,
+          `${t('customer.invoiceNo')}: ${data.invoiceNumber} — ${t('customer.total')}: ${formatCurrency(data.amount || 0)}. ${t('customer.redirectingToPayment')}`,
           t('common.success')
         );
 
         // Redirect to payment gateway
         setTimeout(() => {
-          window.location.href = data.paymentUrl;
+          window.location.href = data.paymentUrl!;
         }, 1500);
       } else {
         // Success but no payment URL
@@ -216,9 +205,13 @@ export default function TopUpDirectPage() {
     } catch (error: unknown) {
       console.error('[Top-Up Direct Frontend] Fetch error:', error);
 
-      showError(t('customer.failedContactServer'), t('customer.connectionError'));
-
-      setError(t('customer.serverConnectionFailed'));
+      if (error instanceof ApiError) {
+        showError(error.message, t('customer.paymentCreationFailed'));
+        setError(error.message);
+      } else {
+        showError(t('customer.failedContactServer'), t('customer.connectionError'));
+        setError(t('customer.serverConnectionFailed'));
+      }
     } finally {
       setProcessing(false);
     }

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin, ApiError } from '@/lib/api';
 import { User, Lock, Loader2, Wrench } from 'lucide-react';
 
 export default function TechnicianLoginPage() {
@@ -44,21 +45,18 @@ export default function TechnicianLoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/technician/auth/login', {
+      await apiAdmin('/api/technician/auth/login', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        router.push('/technician/dashboard');
+      router.push('/technician/dashboard');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setError(error.message || 'Login gagal');
       } else {
-        setError(data.error || 'Login gagal');
+        setError('Terjadi kesalahan. Silakan coba lagi.');
       }
-    } catch {
-      setError('Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }

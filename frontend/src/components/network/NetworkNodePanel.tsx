@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Edit2, Trash2, Save, XCircle, Loader2, MapPin, Server, Box, GitBranch, ChevronRight, ExternalLink } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 export interface MapEntity {
   id: string;
@@ -312,8 +313,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
       ? `${base}/${entity.id}`
       : `${base}/${entity.id}`;
 
-    fetch(url)
-      .then(r => r.json())
+    apiAdmin<Record<string, unknown>>(url)
       .then(data => {
         const d = (data.otb || data.odc || data.odp || data.jc || data.olt || data) as EntityFormData;
         setDetail(d);
@@ -328,10 +328,10 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
   useEffect(() => {
     if (!entity || entity.type === 'CUSTOMER') return;
     if (entity.type === 'ODC' || entity.type === 'ODP') {
-      fetch('/api/network/olts').then(r => r.json()).then(d => setOlts(d.data || [])).catch(() => {});
+      apiAdmin<{ data?: DropdownEntity[] }>('/api/network/olts').then(d => setOlts(d.data || [])).catch(() => {});
     }
     if (entity.type === 'ODP') {
-      fetch('/api/network/odcs').then(r => r.json()).then(d => setOdcs(d.odcs || [])).catch(() => {});
+      apiAdmin<{ odcs?: DropdownEntity[] }>('/api/network/odcs').then(d => setOdcs(d.odcs || [])).catch(() => {});
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entity?.type]);
@@ -357,14 +357,10 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
         method = 'PUT';
       }
 
-      const res = await fetch(url, {
+      const data = await apiAdmin<Record<string, unknown>>(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
-      const data = await res.json();
-
-      if (!res.ok || data.error) throw new Error(data.error || 'Failed to save');
 
       const updated = (data.otb || data.odc || data.odp || data.olt || data) as EntityFormData;
       setDetail(updated);
@@ -403,9 +399,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
         url = `${base}/${entity.id}`;
       }
 
-      const res = await fetch(url, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok && data.error) throw new Error(data.error);
+      await apiAdmin(url, { method: 'DELETE' });
 
       showSuccess('Node deleted successfully');
       onDeleted(entity.id);

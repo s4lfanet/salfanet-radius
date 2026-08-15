@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Home, MessageSquare, User, Receipt, Shield, Menu, X, Package, Clock, LogOut, Bell, CheckCircle2, XCircle, RefreshCw, Trash2, Wifi, FileText, PauseCircle, Gift, Sun, Moon, RefreshCcw, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-import { onUnauthorized } from '@/lib/api/client';
+import { onUnauthorized, apiCustomer } from '@/lib/api/client';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
@@ -123,12 +123,9 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     const token = typeof window !== 'undefined' ? localStorage.getItem('customer_token') : null;
     if (!token) return;
     try {
-      const res = await fetch(
-        `/api/customer/notifications?since=${encodeURIComponent(lastCheckedRef.current)}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+      const data = await apiCustomer<{ success?: boolean; events?: NotifEvent[] }>(
+        `/api/customer/notifications?since=${encodeURIComponent(lastCheckedRef.current)}`
       );
-      if (!res.ok) return;
-      const data = await res.json();
       if (!data.success || !Array.isArray(data.events) || data.events.length === 0) return;
 
       lastCheckedRef.current = new Date().toISOString();
@@ -224,10 +221,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     try {
       const token = localStorage.getItem('customer_token');
       if (token) {
-        await fetch('/api/customer/auth/logout', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        await apiCustomer('/api/customer/auth/logout', { method: 'POST' });
       }
     } catch { /* non-fatal — proceed with client-side cleanup */ }
     localStorage.removeItem('customer_token');

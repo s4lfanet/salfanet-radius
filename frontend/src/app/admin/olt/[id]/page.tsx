@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showError, showSuccess, showInfo, showWarning, showConfirm } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 interface ONU {
   id: string;
@@ -152,9 +153,8 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
   const fetchTab = useCallback(async (tab: string) => {
     setLoading(true); setError(null); setTabData(null);
     try {
-      const res = await fetch(`/api/olt/${oltId}/uplink?port=${encodeURIComponent(port)}&tab=${tab}`);
-      const json = await res.json();
-      if (json.success) setTabData(json.data);
+      const json = await apiAdmin<{ success?: boolean; data?: { raw: string; parsed: Record<string, string> }; error?: string }>(`/api/olt/${oltId}/uplink?port=${encodeURIComponent(port)}&tab=${tab}`);
+      if (json.success) setTabData(json.data ?? null);
       else setError(json.error ?? 'Failed to load');
     } catch (e: unknown) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setLoading(false); }
@@ -165,12 +165,10 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
   const doAction = async (action: string, extra: Record<string, unknown> = {}) => {
     setActionLoading(true); setActionMsg(null);
     try {
-      const res = await fetch(`/api/olt/${oltId}/uplink`, {
+      const json = await apiAdmin<{ success?: boolean; error?: string }>(`/api/olt/${oltId}/uplink`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ port, action, ...extra }),
       });
-      const json = await res.json();
       setActionMsg(json.success ? '✓ Success' : `Error: ${json.error}`);
       if (json.success) fetchTab(activeTab);
     } catch (e: unknown) { setActionMsg(`Error: ${e instanceof Error ? e.message : String(e)}`); }
@@ -380,8 +378,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
 
   const fetchChassis = useCallback(() => {
     setLoadingChassis(true);
-    fetch(`/api/olt/${olt.id}/chassis`)
-      .then(r => r.json())
+    apiAdmin<{ success?: boolean; chassis?: ApiChassisSlot[] }>(`/api/olt/${olt.id}/chassis`)
       .then(j => { if (j.success && j.chassis) setChassisSlots(j.chassis); })
       .catch(() => {})
       .finally(() => setLoadingChassis(false));
@@ -817,10 +814,9 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
     let active = true;
     setMetadataLoading(true);
 
-    fetch(`/api/olt/${oltId}/onus/register?frame=${onu.frame}&slot=${onu.slot}&port=${onu.port}&onuId=${onu.onuId}&serialNumber=${encodeURIComponent(onu.serialNumber ?? '')}`)
-      .then(async res => {
-        const json = await res.json();
-        if (!res.ok || !json.success) throw new Error(json.error ?? 'Failed to load register metadata');
+    apiAdmin<{ success?: boolean; error?: string; metadata?: { onuTypes?: string[]; tcontProfiles?: string[]; trafficProfiles?: string[]; suggestedOnuId?: number | null; detectedOnuType?: string | null } }>(`/api/olt/${oltId}/onus/register?frame=${onu.frame}&slot=${onu.slot}&port=${onu.port}&onuId=${onu.onuId}&serialNumber=${encodeURIComponent(onu.serialNumber ?? '')}`)
+      .then(async json => {
+        if (!json.success) throw new Error(json.error ?? 'Failed to load register metadata');
         if (!active) return;
 
         const nextMetadata: RegisterMetadata = {
@@ -854,9 +850,8 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
     setLoading(true);
     setResult(null);
     try {
-      const res = await fetch(`/api/olt/${oltId}/onus/register`, {
+      const data = await apiAdmin<{ success?: boolean; message?: string; error?: string }>(`/api/olt/${oltId}/onus/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           frame: onu.frame,
           slot:  onu.slot,
@@ -900,9 +895,8 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           profileName,
         }),
       });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setResult({ ok: true, msg: data.message });
+      if (data.success) {
+        setResult({ ok: true, msg: data.message ?? 'Registration successful' });
         setTimeout(() => { onSuccess(); onClose(); }, 1500);
       } else {
         setResult({ ok: false, msg: data.error ?? 'Registration failed' });
@@ -1895,9 +1889,8 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
 
     setDeletingOnu(onu.id);
     try {
-      const res = await fetch(`/api/olt/${id}/onus/${onu.id}/delete`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) {
+      const data = await apiAdmin<{ error?: string; sync?: { success?: boolean }; message?: string }>(`/api/olt/${id}/onus/${onu.id}/delete`, { method: 'DELETE' });
+      if (data.error) {
         showError(data.error ?? 'Delete ONU failed');
       } else {
         await fetchOLT();
@@ -1922,9 +1915,8 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       const onuId = ids[i];
       const onu = olt?.onuStatuses.find((o) => o.id === onuId);
       try {
-        const res = await fetch(`/api/olt/${id}/onus/${onuId}/reboot`, { method: 'POST' });
-        const data = await res.json();
-        results.push({ serialNumber: onu?.serialNumber ?? onuId, success: res.ok, error: !res.ok ? data.error : undefined });
+        const data = await apiAdmin<{ error?: string }>(`/api/olt/${id}/onus/${onuId}/reboot`, { method: 'POST' });
+        results.push({ serialNumber: onu?.serialNumber ?? onuId, success: true, error: data.error });
       } catch (e: unknown) {
         results.push({ serialNumber: onu?.serialNumber ?? onuId, success: false, error: e instanceof Error ? e.message : String(e) });
       }
