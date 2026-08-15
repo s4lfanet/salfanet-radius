@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, TrendingUp, Wallet, Calendar, DollarSign, CheckCircle2, XCircle, Loader2, AlertCircle, Download } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { apiAdmin } from '@/lib/api';
 import {
   SimpleModal,
   ModalHeader,
@@ -50,10 +52,8 @@ export default function BalanceManagementPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const userId = params.id as string;
+  const queryClient = useQueryClient();
 
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<PppoeUser | null>(null);
-  const [transactions, setTransactions] = useState<BalanceTransaction[]>([]);
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -62,6 +62,14 @@ export default function BalanceManagementPage() {
     paymentMethod: 'CASH' as 'CASH' | 'TRANSFER' | 'EWALLET',
     note: '',
   });
+
+  // React Query: load balance data
+  const { data: balanceData, isLoading: loading } = useApiQuery<{ user: PppoeUser; transactions: BalanceTransaction[] }>(
+    `/api/admin/pppoe/users/${userId}/deposit`,
+    { staleTime: 30000 },
+  );
+  const user = balanceData?.user || null;
+  const transactions = balanceData?.transactions || [];
 
   const paymentMethodLabel = (method: string) => {
     if (method === 'CASH') return t('pppoe.cash');
@@ -104,27 +112,6 @@ export default function BalanceManagementPage() {
     showSuccess(t('common.csvDownloaded'));
   };
 
-  useEffect(() => {
-    loadBalanceData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
-
-  const loadBalanceData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/admin/pppoe/users/${userId}/deposit`);
-      if (!response.ok) throw new Error('Failed to load balance data');
-
-      const data = await response.json();
-      setUser(data.user);
-      setTransactions(data.transactions || []);
-    } catch (error: unknown) {
-      showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedLoadBalance'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleTopUp = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -145,7 +132,7 @@ export default function BalanceManagementPage() {
 
     try {
       setSubmitting(true);
-      const response = await fetch(`/api/admin/pppoe/users/${userId}/deposit`, {
+      const result = await apiAdmin<{ data: { newBalance: number } }>(`/api/admin/pppoe/users/${userId}/deposit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -155,21 +142,16 @@ export default function BalanceManagementPage() {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || t('pppoe.failedTopUp'));
-      }
-
-      const result = await response.json();
       showSuccess(
         t('pppoe.topUpSuccess'),
         t('pppoe.topUpSuccessMsg').replace('{amount}', amount.toLocaleString('id-ID')).replace('{newBalance}', result.data.newBalance.toLocaleString('id-ID'))
       );
 
-      // Reset form and reload data
+      // Reset form and invalidate queries
       setTopUpData({ amount: '', paymentMethod: 'CASH', note: '' });
       setIsTopUpModalOpen(false);
-      loadBalanceData();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey(`/api/admin/pppoe/users/${userId}/deposit`) });
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users') });
     } catch (error: unknown) {
       showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedTopUp'));
     } finally {
@@ -191,7 +173,7 @@ export default function BalanceManagementPage() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`/api/pppoe/users/${userId}`, {
+      await apiAdmin(`/api/pppoe/users/${userId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -199,10 +181,9 @@ export default function BalanceManagementPage() {
         }),
       });
 
-      if (!response.ok) throw new Error(t('pppoe.failedChangeAutoRenewal'));
-
       showSuccess(user.autoRenewal ? t('pppoe.autoRenewalDisabled') : t('pppoe.autoRenewalEnabled'));
-      loadBalanceData();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey(`/api/admin/pppoe/users/${userId}/deposit`) });
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users') });
     } catch (error: unknown) {
       showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedChangeAutoRenewal'));
     }
