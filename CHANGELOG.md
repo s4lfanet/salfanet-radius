@@ -6,6 +6,33 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.6.0] — 2026-08-15 — Frontend Performance Optimization + Auto-Changelog Fix
+
+### Summary
+Frontend performance optimization pass: remove dead dependency, code-split heavy chart library, fix broken auto-changelog script path.
+
+### Performance Optimizations
+- **[REMOVED]** `sweetalert2` dari `dependencies` — dead dependency, sudah diganti CyberToast bridge (`@/lib/sweetalert`). Reduce install size ~150KB.
+- **[MOVED]** `@types/leaflet` dari `dependencies` ke `devDependencies` — type-only package, tidak perlu di production deps.
+- **[CODE-SPLIT]** `recharts` (~400KB) sebelumnya static import di `components/charts/index.tsx` → sekarang dynamic import via `next/dynamic` dengan `ssr: false`. recharts hanya loaded saat chart components dibutuhkan (dashboard/analitik pages), tidak di initial bundle untuk non-chart pages.
+  - Split: `charts/RechartsComponents.tsx` (internal, recharts imports) + `charts/index.tsx` (public API, dynamic load)
+  - Non-recharts components (`ChartCard`, `TopRevenueSources`) tetap static export
+
+### Auto-Changelog Fix
+- **[FIXED]** `sync-readme-changelog.mjs` dipindah dari `backend/scripts/` ke root `scripts/` — GitHub Action (`sync-readme-changelog.yml`) memanggil `node scripts/sync-readme-changelog.mjs` dari repo root, tapi file ada di `backend/scripts/` setelah monorepo restructure. Auto-sync README changelog sekarang berfungsi lagi.
+- **[VERIFIED]** Script berjalan sukses dari root: `node scripts/sync-readme-changelog.mjs` → "README.md updated from CHANGELOG.md"
+
+### Build Performance
+- Compile: 11.2s (Turbopack, sebelumnya 13.0s) — 14% faster
+- TypeScript: 6.2s
+- Total: ~18s
+- Bundle: 8,863 KB (257 files) — recharts sekarang di separate chunk (443 KB), hanya loaded on-demand
+
+### Commits
+- `9464c61d` — perf: remove dead sweetalert2 dep, move @types/leaflet to devDeps, dynamic import recharts, fix auto-changelog script path
+
+---
+
 ## [5.5.0] — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
 
 ### Summary
