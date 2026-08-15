@@ -806,11 +806,8 @@ export async function updatePppoeUser(
       console.error('RADIUS re-sync error:', syncError);
     }
   }
-  }
 
   // CoA disconnect is now enqueued as external task in the transaction above
-
-  // Activity log
 
   // Activity log
   try {

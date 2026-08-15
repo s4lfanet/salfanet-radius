@@ -198,7 +198,7 @@ async function executeSendWhatsApp(payload: any): Promise<string> {
     }
   }
 
-  const { sendAdminCreateUser } = await import('./notifications/whatsapp.service');
+  const { sendAdminCreateUser } = await import('./notifications/whatsapp-templates.service');
   // Route to the correct template function
   switch (payload.template) {
     case 'admin_create_user':
