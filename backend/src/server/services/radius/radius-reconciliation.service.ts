@@ -59,9 +59,10 @@ export interface ReconciliationReport {
 /**
  * Run a full reconciliation between SalfaNet DB and FreeRADIUS DB.
  * Reads in batches to avoid memory issues with large datasets.
+ * Uses cursor pagination to avoid loading entire RADIUS tables into memory.
  */
 export async function runReconciliation(batchSize = 500): Promise<ReconciliationReport> {
-  // Get all active PPPoE users (not deleted)
+  // Get all active PPPoE users (not deleted) — select only needed fields
   const salfaNetUsers = await prisma.pppoeUser.findMany({
     select: {
       id: true,
@@ -75,42 +76,77 @@ export async function runReconciliation(batchSize = 500): Promise<Reconciliation
     },
   });
 
-  // Get all RADIUS usernames (unique)
-  const radcheckUsers = await prisma.radcheck.findMany({
-    select: { username: true, value: true, attribute: true, nas_identifier: true },
-  });
-  const radusergroupEntries = await prisma.radusergroup.findMany({
-    select: { username: true, groupname: true, nas_identifier: true },
-  });
-  const radreplyEntries = await prisma.radreply.findMany({
-    select: { username: true, value: true, attribute: true, nas_identifier: true },
-  });
+  // Build lookup maps for SalfaNet users
+  const salfaNetUsernames = new Set(salfaNetUsers.map(u => u.username));
+  const salfaNetUserMap = new Map(salfaNetUsers.map(u => [u.username, u]));
 
-  // Build lookup maps
+  // Build lookup maps for RADIUS — read in batches using cursor pagination
   const radiusUsernames = new Set<string>();
   const radiusPasswords = new Map<string, string>(); // username → password
   const radiusGroups = new Map<string, string>(); // username → groupname
   const radiusIps = new Map<string, string>(); // username → IP
+  const radiusTablePresence = new Map<string, Set<string>>(); // username → Set of tables
 
-  for (const rc of radcheckUsers) {
-    radiusUsernames.add(rc.username);
-    if (rc.attribute === 'Cleartext-Password') {
-      radiusPasswords.set(rc.username, rc.value);
+  // Read radcheck in batches
+  let radcheckCursor: number | undefined;
+  do {
+    const batch = await prisma.radcheck.findMany({
+        take: batchSize,
+        ...(radcheckCursor ? { skip: 1, cursor: { id: radcheckCursor } } : {}),
+        orderBy: { id: 'asc' },
+        select: { id: true, username: true, value: true, attribute: true, nas_identifier: true },
+      });
+    for (const rc of batch) {
+      radiusUsernames.add(rc.username);
+      if (rc.attribute === 'Cleartext-Password') {
+        radiusPasswords.set(rc.username, rc.value);
+      }
+      const tables = radiusTablePresence.get(rc.username) || new Set();
+      tables.add('radcheck');
+      radiusTablePresence.set(rc.username, tables);
     }
-  }
-  for (const rug of radusergroupEntries) {
-    radiusUsernames.add(rug.username);
-    radiusGroups.set(rug.username, rug.groupname);
-  }
-  for (const rr of radreplyEntries) {
-    radiusUsernames.add(rr.username);
-    if (rr.attribute === 'Framed-IP-Address') {
-      radiusIps.set(rr.username, rr.value);
-    }
-  }
+    radcheckCursor = batch.length > 0 ? batch[batch.length - 1].id : undefined;
+  } while (radcheckCursor);
 
-  // SalfaNet usernames set
-  const salfaNetUsernames = new Set(salfaNetUsers.map(u => u.username));
+  // Read radusergroup in batches
+  let radusergroupCursor: number | undefined;
+  do {
+    const batch = await prisma.radusergroup.findMany({
+        take: batchSize,
+        ...(radusergroupCursor ? { skip: 1, cursor: { id: radusergroupCursor } } : {}),
+        orderBy: { id: 'asc' },
+        select: { id: true, username: true, groupname: true, nas_identifier: true },
+      });
+    for (const rug of batch) {
+      radiusUsernames.add(rug.username);
+      radiusGroups.set(rug.username, rug.groupname);
+      const tables = radiusTablePresence.get(rug.username) || new Set();
+      tables.add('radusergroup');
+      radiusTablePresence.set(rug.username, tables);
+    }
+    radusergroupCursor = batch.length > 0 ? batch[batch.length - 1].id : undefined;
+  } while (radusergroupCursor);
+
+  // Read radreply in batches
+  let radreplyCursor: number | undefined;
+  do {
+    const batch = await prisma.radreply.findMany({
+        take: batchSize,
+        ...(radreplyCursor ? { skip: 1, cursor: { id: radreplyCursor } } : {}),
+        orderBy: { id: 'asc' },
+        select: { id: true, username: true, value: true, attribute: true, nas_identifier: true },
+      });
+    for (const rr of batch) {
+      radiusUsernames.add(rr.username);
+      if (rr.attribute === 'Framed-IP-Address') {
+        radiusIps.set(rr.username, rr.value);
+      }
+      const tables = radiusTablePresence.get(rr.username) || new Set();
+      tables.add('radreply');
+      radiusTablePresence.set(rr.username, tables);
+    }
+    radreplyCursor = batch.length > 0 ? batch[batch.length - 1].id : undefined;
+  } while (radreplyCursor);
 
   // Find missing in RADIUS (user exists in SalfaNet but not in RADIUS)
   const missingInRadius: ReconciliationReport['missingInRadius'] = [];
@@ -181,10 +217,13 @@ export async function runReconciliation(batchSize = 500): Promise<Reconciliation
   const deleteQueuedUsernames = new Set(deleteQueueEntries.map(e => e.username));
 
   for (const username of staleUsernames) {
-    const tables: string[] = [];
-    if (radcheckUsers.some(rc => rc.username === username)) tables.push('radcheck');
-    if (radusergroupEntries.some(rug => rug.username === username)) tables.push('radusergroup');
-    if (radreplyEntries.some(rr => rr.username === username)) tables.push('radreply');
+    const tablesSet = radiusTablePresence.get(username);
+    const tables: string[] = tablesSet ? Array.from(tablesSet) : [];
+    // Also check if the username appears in radiusUsernames but has no table entry
+    // (shouldn't happen, but safety)
+    if (tables.length === 0 && radiusUsernames.has(username)) {
+      tables.push('unknown');
+    }
 
     let category: 'known_stale' | 'unknown' | 'delete_queued';
     if (deleteQueuedUsernames.has(username)) {

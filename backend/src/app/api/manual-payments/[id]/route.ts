@@ -51,6 +51,7 @@ export async function GET(
           include: {
             profile: true,
             area: true,
+            router: { select: { id: true } },
           },
         },
       },
@@ -120,6 +121,7 @@ export async function PATCH(
           include: {
             profile: true,
             area: true,
+            router: { select: { id: true } },
           },
         },
       },
@@ -294,26 +296,27 @@ export async function PATCH(
       try {
         const activeProfile = newProfileData;
         if (activeProfile && 'groupName' in activeProfile) {
-          // Update password in radcheck
+          const nasIdentifier = manualPayment.user.routerId || null;
+          // Update password in radcheck — scoped by nas_identifier
           await prisma.$executeRaw`
-            INSERT INTO radcheck (username, attribute, op, value)
-            VALUES (${manualPayment.user.username}, 'Cleartext-Password', ':=', ${manualPayment.user.password})
+            INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+            VALUES (${manualPayment.user.username}, 'Cleartext-Password', ':=', ${manualPayment.user.password}, ${nasIdentifier})
             ON DUPLICATE KEY UPDATE value = ${manualPayment.user.password}
           `;
-          // Update radusergroup to new profile
+          // Update radusergroup to new profile — scoped by nas_identifier
           await prisma.$executeRaw`
-            DELETE FROM radusergroup WHERE username = ${manualPayment.user.username}
+            DELETE FROM radusergroup WHERE username = ${manualPayment.user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
           `;
           await prisma.$executeRaw`
-            INSERT INTO radusergroup (username, groupname, priority)
-            VALUES (${manualPayment.user.username}, ${(activeProfile as any).groupName}, 1)
+            INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+            VALUES (${manualPayment.user.username}, ${(activeProfile as any).groupName}, 1, ${nasIdentifier})
           `;
-          // Remove isolation entries
+          // Remove isolation entries — scoped by nas_identifier
           await prisma.radcheck.deleteMany({
-            where: { username: manualPayment.user.username, attribute: 'Auth-Type' }
+            where: { username: manualPayment.user.username, attribute: 'Auth-Type', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) }
           });
           await prisma.radreply.deleteMany({
-            where: { username: manualPayment.user.username, attribute: 'Reply-Message' }
+            where: { username: manualPayment.user.username, attribute: 'Reply-Message', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) }
           });
           // CoA disconnect to force re-auth
           const coaResult = await disconnectPPPoEUser(manualPayment.user.username);

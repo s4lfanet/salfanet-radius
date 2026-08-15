@@ -1697,19 +1697,21 @@ async function handleInvoicePayment(
 
           const nasIdentifier = user.routerId || null;
           try {
-            // Remove forced reject (if any) from previous SUSPENDED state
+            // Remove forced reject (if any) from previous SUSPENDED state — scoped by nas_identifier
             await prisma.radcheck.deleteMany({
               where: {
                 username: user.username,
                 attribute: 'Auth-Type',
+                ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
               },
             });
 
-            // Remove NAS-IP-Address restriction (can prevent login if NAS-IP differs)
+            // Remove NAS-IP-Address restriction (can prevent login if NAS-IP differs) — scoped by nas_identifier
             await prisma.radcheck.deleteMany({
               where: {
                 username: user.username,
                 attribute: 'NAS-IP-Address',
+                ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
               },
             });
 
@@ -1720,9 +1722,9 @@ async function handleInvoicePayment(
                 ON DUPLICATE KEY UPDATE value = ${user.password}
               `;
 
-            // 2. Restore radusergroup — DELETE first to remove 'isolir' row, then insert real group
+            // 2. Restore radusergroup — DELETE first to remove 'isolir' row, then insert real group — scoped by nas_identifier
             await prisma.$executeRaw`
-                DELETE FROM radusergroup WHERE username = ${user.username}
+                DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
               `;
             await prisma.$executeRaw`
                 INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
@@ -1730,18 +1732,19 @@ async function handleInvoicePayment(
                 ON DUPLICATE KEY UPDATE groupname = ${profile.groupName}
               `;
 
-            // 3. Remove isolated message from radreply
+            // 3. Remove isolated message from radreply — scoped by nas_identifier
             await prisma.radreply.deleteMany({
               where: {
                 username: user.username,
-                attribute: 'Reply-Message'
+                attribute: 'Reply-Message',
+                ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
               }
             });
             console.log(`✅ Removed isolated message from radreply for ${user.username}`);
 
-            // 4. Restore radreply (if static IP) — with nas_identifier
+            // 4. Restore radreply (if static IP) — with nas_identifier — scoped by nas_identifier
             await prisma.$executeRaw`
-                DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address'
+                DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
               `;
             if (user.ipAddress) {
               await prisma.$executeRaw`
