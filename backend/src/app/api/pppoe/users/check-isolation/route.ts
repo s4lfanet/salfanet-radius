@@ -127,6 +127,7 @@ export async function GET(request: NextRequest) {
         amount: true,
         dueDate: true,
         paymentLink: true,
+        paymentToken: true,
       },
       orderBy: {
         dueDate: 'asc'

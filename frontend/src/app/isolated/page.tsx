@@ -51,6 +51,7 @@ interface UserInfo {
     amount: number;
     dueDate: string;
     paymentLink: string | null;
+    paymentToken: string | null;
   }>;
 }
 
@@ -150,14 +151,14 @@ function IsolatedContent() {
   }, [username, ip, alreadyActive]);
 
   // ── pay handler ─────────────────────────────────────────────────────────────
-  const handlePay = async (invoice: { id: string; invoiceNumber: string }, provider: string) => {
+  const handlePay = async (invoice: { id: string; invoiceNumber: string; paymentToken?: string | null }, provider: string) => {
     const key = `${invoice.id}:${provider}`;
     setPayingState(prev => ({ ...prev, [key]: true }));
     try {
       const res  = await fetch('/api/payment/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ invoiceId: invoice.id, gateway: provider }),
+        body: JSON.stringify({ invoiceId: invoice.id, gateway: provider, paymentToken: invoice.paymentToken || undefined }),
       });
       const data = await res.json();
       if (!res.ok || !data.paymentUrl) {
