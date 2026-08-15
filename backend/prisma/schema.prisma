@@ -652,7 +652,7 @@ model radcheck {
   value          String  @db.VarChar(253)
   nas_identifier String? @db.VarChar(128) // Multi-NAS isolation: router.id (diadopsi dari home.pmynet.id-main)
 
-  @@unique([username, attribute])
+  @@unique([username, attribute, nas_identifier])
   @@index([username])
   @@index([nas_identifier])
 }
@@ -698,6 +698,7 @@ model radreply {
   value          String  @db.VarChar(253)
   nas_identifier String? @db.VarChar(128) // Multi-NAS isolation: router.id
 
+  @@unique([username, attribute, nas_identifier])
   @@index([username])
   @@index([nas_identifier])
 }
@@ -709,7 +710,7 @@ model radusergroup {
   priority       Int     @default(1)
   nas_identifier String? @db.VarChar(128) // Multi-NAS isolation: router.id
 
-  @@unique([username, groupname])
+  @@unique([username, groupname, nas_identifier])
   @@index([groupname])
   @@index([username])
   @@index([nas_identifier])
