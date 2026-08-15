@@ -402,6 +402,7 @@ export default function PppoeUsersPage() {
   const [mapPickerLat, setMapPickerLat] = useState('');
   const [mapPickerLon, setMapPickerLon] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterProfile, setFilterProfile] = useState('');
   const [filterRouter, setFilterRouter] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -409,6 +410,8 @@ export default function PppoeUsersPage() {
   const [filterPaymentStatus, setFilterPaymentStatus] = useState('');
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
@@ -447,12 +450,39 @@ export default function PppoeUsersPage() {
   // ─── React Query data fetching ──────────────────────────────────────
   const queryClient = useQueryClient();
 
-  // Users list — fetched once, stale for 30s
+  // Debounce search input (300ms) to avoid request on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset to first page on new search
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
+
+  // Reset to first page when filters change
+  useEffect(() => { setCurrentPage(1); }, [filterProfile, filterRouter, filterStatus]);
+
+  // Users list — server-side pagination, search, filter, sort
+  const serverParams: Record<string, string> = {
+    page: String(currentPage),
+    limit: String(pageSize),
+    sortBy,
+    sortOrder,
+  };
+  if (debouncedSearch) serverParams.search = debouncedSearch;
+  if (filterProfile) serverParams.profileId = filterProfile;
+  if (filterRouter && filterRouter !== 'global') serverParams.routerId = filterRouter;
+  if (filterStatus) serverParams.status = filterStatus;
+
   const usersQuery = useApiQuery<PppoeUserListResponse>('/api/pppoe/users', {
+    params: serverParams,
     staleTime: 30000,
+    placeholderData: 'keepPreviousData',
   });
   // API PppoeUser uses pppoe_profiles/nas/pppoe_areas; local PppoeUser uses profile/router/area
   const users = (usersQuery.data?.users as unknown as PppoeUser[]) || [];
+  const totalCount = usersQuery.data?.total || 0;
+  const totalPages = usersQuery.data?.totalPages || 1;
 
   // Realtime online/offline status polling — refresh every 10 seconds
   // without reloading the entire page. Only fetches the online username set.
@@ -1172,70 +1202,20 @@ export default function PppoeUsersPage() {
       setSortBy(column);
       setSortOrder('asc');
     }
+    setCurrentPage(1); // Reset to first page on sort change
   };
 
+  // Server-side filtering handles: search, profile, router, status, sort
+  // Client-side filtering handles: session (online/offline), paymentStatus (needs invoice data)
+  // Also handle 'global' router filter (users with no routerId) client-side
   const filteredUsers = usersWithOnline.filter((user) => {
-    const matchesSearch = searchQuery === '' || user.username.toLowerCase().includes(searchQuery.toLowerCase()) || user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.phone.includes(searchQuery);
-    const matchesProfile = filterProfile === '' || user.profile.id === filterProfile;
-    const matchesRouter = filterRouter === '' || (filterRouter === 'global' ? !user.routerId : user.routerId === filterRouter);
-    const matchesStatus = filterStatus === '' || user.status === filterStatus;
+    const matchesRouterGlobal = filterRouter !== 'global' || !user.routerId;
     const matchesSession = filterSession === '' || (filterSession === 'online' ? user.isOnline === true : user.isOnline !== true);
     const matchesPaymentStatus = filterPaymentStatus === '' ||
       (filterPaymentStatus === 'unpaid' && (invoiceCounts[user.id] || 0) > 0) ||
       (filterPaymentStatus === 'paid' && !(invoiceCounts[user.id] > 0)) ||
       (filterPaymentStatus === 'isolated' && user.status === 'isolated');
-    return matchesSearch && matchesProfile && matchesRouter && matchesStatus && matchesSession && matchesPaymentStatus;
-  }).sort((a, b) => {
-    let aVal: string | number, bVal: string | number;
-
-    switch (sortBy) {
-      case 'username':
-        aVal = a.username.toLowerCase();
-        bVal = b.username.toLowerCase();
-        break;
-      case 'name':
-        aVal = a.name.toLowerCase();
-        bVal = b.name.toLowerCase();
-        break;
-      case 'customerId':
-        aVal = a.customerId || '';
-        bVal = b.customerId || '';
-        break;
-      case 'phone':
-        aVal = a.phone;
-        bVal = b.phone;
-        break;
-      case 'profile':
-        aVal = a.profile.name.toLowerCase();
-        bVal = b.profile.name.toLowerCase();
-        break;
-      case 'balance':
-        aVal = a.balance || 0;
-        bVal = b.balance || 0;
-        break;
-      case 'createdAt':
-        aVal = new Date(a.createdAt).getTime();
-        bVal = new Date(b.createdAt).getTime();
-        break;
-      case 'updatedAt':
-        aVal = new Date(a.updatedAt).getTime();
-        bVal = new Date(b.updatedAt).getTime();
-        break;
-      case 'expiredAt':
-        aVal = a.expiredAt ? new Date(a.expiredAt).getTime() : 0;
-        bVal = b.expiredAt ? new Date(b.expiredAt).getTime() : 0;
-        break;
-      case 'status':
-        aVal = a.status;
-        bVal = b.status;
-        break;
-      default:
-        return 0;
-    }
-
-    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
+    return matchesRouterGlobal && matchesSession && matchesPaymentStatus;
   });
 
   // Calculate stats
@@ -1401,7 +1381,7 @@ export default function PppoeUsersPage() {
             ))}
           </div>
           {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus) && <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); setFilterPaymentStatus(''); }} className="ml-auto text-[10px] text-primary hover:text-teal-700 mt-1.5 block">{t('common.reset')}</button>}
-          <div className="mt-2 text-[10px] text-muted-foreground">{t('table.showing')} {filteredUsers.length} {t('table.of')} {users.length}</div>
+          <div className="mt-2 text-[10px] text-muted-foreground">{t('table.showing')} {filteredUsers.length} {t('table.of')} {totalCount}</div>
         </div>
 
         {/* Users Table */}
@@ -1675,6 +1655,55 @@ export default function PppoeUsersPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Server-side Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-3 py-2 border-t border-border text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Page {currentPage} of {totalPages} ({totalCount} total)</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                  className="bg-card border border-border rounded px-1 py-0.5 text-[10px]"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1 || usersQuery.isFetching}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1 || usersQuery.isFetching}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages || usersQuery.isFetching}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages || usersQuery.isFetching}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Dropdown Menu — di luar tabel, fixed positioning agar tidak terpotong */}

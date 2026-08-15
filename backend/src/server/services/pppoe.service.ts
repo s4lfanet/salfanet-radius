@@ -89,7 +89,19 @@ export interface UpdatePppoeUserInput {
 
 // ─── List ─────────────────────────────────────────────────────────────────────
 
-export async function listPppoeUsers(params: { status?: string | null }) {
+export interface ListPppoeUsersParams {
+  status?: string | null;
+  search?: string | null;
+  profileId?: string | null;
+  routerId?: string | null;
+  areaId?: string | null;
+  page?: number | null;
+  limit?: number | null;
+  sortBy?: string | null;
+  sortOrder?: 'asc' | 'desc' | null;
+}
+
+export async function listPppoeUsers(params: ListPppoeUsersParams) {
   const whereClause: Record<string, unknown> = {};
   if (params.status) {
     whereClause.status = params.status;
@@ -97,18 +109,66 @@ export async function listPppoeUsers(params: { status?: string | null }) {
     whereClause.status = { not: 'stop' };
   }
 
-  const users = await prisma.pppoeUser.findMany({
-    where: whereClause,
-    include: {
-      profile: true,
-      router: true,
-      area: true,
-      odpAssignment: { include: { odp: true } },
-      pppoeCustomer: { select: { id: true, customerId: true, name: true, phone: true, email: true } },
-      registeredByTechnician: { select: { id: true, name: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
+  // Server-side search: username, name, phone, customerId
+  if (params.search) {
+    const q = params.search.trim();
+    if (q) {
+      whereClause.OR = [
+        { username: { contains: q } },
+        { name: { contains: q } },
+        { phone: { contains: q } },
+        { customerId: { contains: q } },
+      ];
+    }
+  }
+
+  // Server-side filters
+  if (params.profileId) {
+    whereClause.profileId = params.profileId;
+  }
+  if (params.routerId) {
+    whereClause.routerId = params.routerId;
+  }
+  if (params.areaId) {
+    whereClause.areaId = params.areaId;
+  }
+
+  // Pagination
+  const page = Math.max(1, params.page || 1);
+  const limit = Math.min(500, Math.max(1, params.limit || 100));
+  const skip = (page - 1) * limit;
+
+  // Sorting
+  const sortMap: Record<string, string> = {
+    username: 'username',
+    name: 'name',
+    phone: 'phone',
+    customerId: 'customerId',
+    status: 'status',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    expiredAt: 'expiredAt',
+  };
+  const sortField = sortMap[params.sortBy || ''] || 'createdAt';
+  const sortDir = params.sortOrder === 'asc' ? 'asc' : 'desc';
+
+  const [users, total] = await Promise.all([
+    prisma.pppoeUser.findMany({
+      where: whereClause,
+      include: {
+        profile: true,
+        router: true,
+        area: true,
+        odpAssignment: { include: { odp: true } },
+        pppoeCustomer: { select: { id: true, customerId: true, name: true, phone: true, email: true } },
+        registeredByTechnician: { select: { id: true, name: true } },
+      },
+      orderBy: { [sortField]: sortDir },
+      skip,
+      take: limit,
+    }),
+    prisma.pppoeUser.count({ where: whereClause }),
+  ]);
 
   // Batch fetch all active sessions in ONE query instead of N queries (N+1 fix)
   const usernames = users.map(u => u.username);
@@ -142,7 +202,16 @@ export async function listPppoeUsers(params: { status?: string | null }) {
     }
   }
 
-  return users.map(user => ({ ...user, isOnline: onlineSet.has(user.username) }));
+  const mappedUsers = users.map(user => ({ ...user, isOnline: onlineSet.has(user.username) }));
+
+  return {
+    users: mappedUsers,
+    count: mappedUsers.length,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 }
 
 // ─── Get one ──────────────────────────────────────────────────────────────────

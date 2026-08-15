@@ -65,6 +65,10 @@ export interface PppoeUser {
 export interface PppoeUserListResponse {
   users: PppoeUser[];
   count: number;
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // GET /api/pppoe/users/[id] returns raw user object (no wrapper)
