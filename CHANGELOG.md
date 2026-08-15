@@ -6,6 +6,61 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.4.0] — 2026-08-15 — Final Production Completion (Security + safeCompare + JWT + CoA)
+
+### Summary
+Final production completion pass: safeCompare fail-closed hardening, JWT_SECRET separation, CoA/disconnect auth fixes, payment gateway credential logging fix, email timezone fix, and full 112/112 E2E test verification on VPS.
+
+### Security Fixes
+- **[CRITICAL]** `/api/radius/coa` POST + GET: Added `checkAuth()` — was completely unauthenticated (anyone could disconnect users)
+- **[CRITICAL]** `/api/sessions/disconnect` POST: Added `checkAuth()` — was completely unauthenticated (anyone could disconnect sessions)
+- **[CRITICAL]** `/api/payment-gateway/config` POST: Added `getServerSession` check — was unauthenticated (anyone could write payment gateway credentials)
+- **[CRITICAL]** `/api/payment-gateway/config` POST: Removed `console.log` that logged full payment gateway credentials (midtransServerKey, xenditApiKey, tripayPrivateKey, etc.)
+
+### safeCompare Defensive Hardening
+- **[FIXED]** `safeCompare()` now fail-closed on empty strings: `safeCompare('', '') === false`
+- **[FIXED]** `safeCompare('', 'abc') === false` and `safeCompare('abc', '') === false`
+- Production routes already guarded via truthiness checks, but helper is now independently fail-closed
+- Test assertions updated: 17/17 PASS (was 14/14)
+
+### JWT Secret Separation
+- **[CONFIGURED]** VPS now has dedicated `JWT_SECRET` (64 chars, distinct from `NEXTAUTH_SECRET`)
+- **[VERIFIED]** `JWT_SECRET !== NEXTAUTH_SECRET` on VPS
+- **[VERIFIED]** `AGENT_JWT_SECRET` is also distinct from both
+- Fallback to `NEXTAUTH_SECRET` remains as safety net, but production now uses dedicated secrets
+
+### Timezone Fix
+- **[FIXED]** `email.service.ts`: 2 hardcoded `'Asia/Jakarta'` in date formatting replaced with `getCurrentTimezone()`
+
+### GenieACS
+- **[STATUS]** GenieACS is NOT INSTALLED on VPS (service inactive, binaries not found, ports not listening)
+- **[STATUS]** GenieACS integration code is ready (DB-based credential loading, encrypted passwords, env fallback)
+- **[STATUS]** GENIEACS PRODUCTION = NOT VERIFIED (cannot test without GenieACS server)
+
+### RADIUS CoA
+- **[STATUS]** CoA uses per-router secrets from DB (`nas.secret`) as primary source
+- **[STATUS]** `RADIUS_COA_SECRET` env var is optional global fallback (NOT SET on VPS)
+- **[STATUS]** 1 router with secret in DB — CoA will use DB secret
+- **[STATUS]** CoA auth now requires admin session (401 without auth — verified)
+- **[STATUS]** CoA functional test = NOT VERIFIED (requires active MikroTik session to test disconnect)
+
+### Test Results (VPS — 2026-08-15)
+- Timezone: 27/27 PASS
+- Cron Schedule: 40/40 PASS
+- Cron Lock: 16/16 PASS
+- FreeRADIUS Concurrency: 12/12 PASS
+- CRON_SECRET: 17/17 PASS
+- **Total: 112/112 PASS**
+
+### Commits
+- `389a540f` — safeCompare fail-closed on empty strings
+- `ab18d892` — Fix malformed header test (HTTP layer rejection)
+- `4cc0895e` — Sync test safeCompare with production
+- `ce0c4cfc` — Add auth checks to CoA and session disconnect routes
+- `27bf2bda` — Fix payment gateway config auth + credential logging + email timezone
+
+---
+
 ## [5.3.0] — 2026-08-15 — Final Production Hardening + E2E Verification
 
 ### Summary
