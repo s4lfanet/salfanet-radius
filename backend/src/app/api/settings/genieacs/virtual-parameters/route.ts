@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
 
 export async function GET() {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const parameters = await prisma.genieacsVirtualParameter.findMany({
       orderBy: { createdAt: 'desc' },
     });
@@ -22,11 +19,9 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const body = await request.json();
     const { 
       name, parameter, expression, description, isActive = true,

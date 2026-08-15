@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
 
@@ -108,10 +107,8 @@ async function cleanupStaleSessions(): Promise<number> {
 // ─── GET handler: list active sessions from RADIUS (radacct) ────────────────
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('sessions.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const searchParams = request.nextUrl.searchParams;

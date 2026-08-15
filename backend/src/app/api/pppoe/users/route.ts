@@ -1,6 +1,7 @@
 ﻿import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, created, badRequest, unauthorized, notFound, conflict, serverError } from '@/lib/api-response';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/server/db/client';
@@ -14,8 +15,8 @@ import {
 
 // GET - List PPPoE users (server-side pagination, search, filter)
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -39,8 +40,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new PPPoE user
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('customers.create');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const body = await request.json();

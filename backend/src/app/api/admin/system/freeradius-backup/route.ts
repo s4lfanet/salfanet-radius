@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { spawn, ChildProcess } from 'child_process';
 import { openSync, closeSync, existsSync, readFileSync, readdirSync, statSync, mkdirSync } from 'fs';
 import path from 'path';
@@ -53,11 +52,8 @@ function listBackups(appDir: string): BackupFile[] {
 
 /** POST — trigger local backup script */
 export async function POST() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (session.user.role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   const appDir = getAppDir();
   const scriptPath = path.join(appDir, 'scripts/backup-freeradius-local.sh');
@@ -91,11 +87,8 @@ export async function POST() {
 
 /** GET — return log output + backup file list */
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (session.user.role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   const appDir = getAppDir();
   const log = existsSync(LOG_FILE) ? readFileSync(LOG_FILE, 'utf-8') : '';

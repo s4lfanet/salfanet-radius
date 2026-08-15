@@ -1,8 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import crypto from 'crypto';
 import os from 'os';
 const RouterOSAPI = require('node-routeros').RouterOSAPI;
@@ -28,10 +27,8 @@ const getRadiusServerIp = () => process.env.RADIUS_SERVER_IP || process.env.VPS_
 
 // GET - Load all routers
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('routers.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const radiusServerIp = getRadiusServerIp();
 
@@ -110,6 +107,9 @@ export async function GET() {
 
 // POST - Add new router
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('routers.manage');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
   try {
     const body = await request.json();
     const { name, ipAddress, nasIpAddress, username, password, port, secret, latitude, longitude, vpnClientId, type, authMode } = body;
@@ -218,9 +218,8 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     try {
-      const session = await getServerSession(authOptions);
       await logActivity({
-        userId: (session?.user as any)?.id,
+        userId: authCheck.userId,
         username: (session?.user as any)?.username || 'Admin',
         userRole: (session?.user as any)?.role,
         action: 'ADD_ROUTER',
@@ -254,6 +253,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update router
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('routers.manage');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
   try {
     const body = await request.json();
     const { id, name, type, authMode, ipAddress, nasIpAddress, nasname: nasnameFromBody, username, password, port, secret, isActive, latitude, longitude, vpnClientId } = body;
@@ -328,9 +330,8 @@ export async function PUT(request: NextRequest) {
 
     // Log activity
     try {
-      const session = await getServerSession(authOptions);
       await logActivity({
-        userId: (session?.user as any)?.id,
+        userId: authCheck.userId,
         username: (session?.user as any)?.username || 'Admin',
         userRole: (session?.user as any)?.role,
         action: 'UPDATE_ROUTER',
@@ -368,6 +369,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Remove router
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('routers.manage');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -395,9 +399,8 @@ export async function DELETE(request: NextRequest) {
 
     // Log activity
     try {
-      const session = await getServerSession(authOptions);
       await logActivity({
-        userId: (session?.user as any)?.id,
+        userId: authCheck.userId,
         username: (session?.user as any)?.username || 'Admin',
         userRole: (session?.user as any)?.role,
         action: 'DELETE_ROUTER',

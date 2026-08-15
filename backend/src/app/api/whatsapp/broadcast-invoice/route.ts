@@ -1,8 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { formatWIB } from '@/lib/timezone';
 import { randomBytes } from 'crypto';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
@@ -36,6 +35,10 @@ function formatBankAccountsForWA(bankAccounts: any): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('whatsapp.broadcast');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
+
     const body: BroadcastInvoiceRequest = await request.json();
     const { invoiceIds, channel = 'both' } = body;
 
@@ -285,7 +288,6 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     try {
-      const session = await getServerSession(authOptions);
       const totalSent = results.whatsapp.sent + results.email.sent;
       const totalFailed = results.whatsapp.failed + results.email.failed;
 

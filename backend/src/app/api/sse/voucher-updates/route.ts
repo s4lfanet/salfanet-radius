@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { sseManager } from '@/server/services/sse-manager.service'
 
 export const dynamic = 'force-dynamic'
@@ -11,10 +10,8 @@ export const runtime = 'nodejs'
  * Streams real-time voucher status changes, stats updates, etc.
  */
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+  const authCheck = await requirePermission('vouchers.view')
+  if (!authCheck.authorized) return authCheck.response
   const encoder = new TextEncoder()
 
   const stream = new ReadableStream({

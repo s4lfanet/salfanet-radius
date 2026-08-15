@@ -1,17 +1,13 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { nanoid } from 'nanoid';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 
 // GET - List categories
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // INCOME, EXPENSE, or all
 
@@ -52,6 +48,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create category
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.create');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { name, type, description } = body;
@@ -100,6 +98,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update category
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { id, name, type, description, isActive } = body;
@@ -137,6 +137,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete category
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.delete');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

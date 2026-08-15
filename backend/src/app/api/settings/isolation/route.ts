@@ -2,8 +2,7 @@
 import { exec } from 'child_process';
 import * as fs from 'fs/promises';
 import { promisify } from 'util';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { clearIsolationSettingsCache } from '@/server/services/isolation.service';
 
@@ -63,11 +62,9 @@ async function syncIsolationRouteOnVps(oldPool: string | null, newPool: string):
 
 // GET - Get isolation settings
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     console.log('[Isolation API] GET request received');
     
     const company = await prisma.company.findFirst({
@@ -111,11 +108,9 @@ export async function GET(request: NextRequest) {
 
 // PUT - Update isolation settings
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const body = await request.json();
     
     const {

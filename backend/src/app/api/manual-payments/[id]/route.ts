@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { authOptions } from '@/server/auth/config';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { EmailService } from '@/server/services/notifications/email.service';
 import { addMonths } from 'date-fns';
@@ -41,6 +40,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('invoices.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id } = await params;
     const manualPayment = await prisma.manualPayment.findUnique({
@@ -82,22 +83,16 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('invoices.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id } = await params;
     const body = await request.json();
     const { action: rawAction, rejectionReason } = body;
     const action = typeof rawAction === 'string' ? rawAction.toUpperCase() : rawAction;
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-    const role = (session.user as any)?.role;
-    const allowedRoles = ['SUPER_ADMIN', 'FINANCE', 'CUSTOMER_SERVICE'];
-    if (!role || !allowedRoles.includes(role)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
-    const approvedBy = (session.user as any)?.name || session.user.email || 'Admin';
+    const session = authCheck.session;
+    const approvedBy = (session.user as any)?.name || session.user?.email || 'Admin';
 
     if (!action || (action !== 'APPROVE' && action !== 'REJECT')) {
       return NextResponse.json(
@@ -578,16 +573,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('invoices.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id } = await params;
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-    const deleteRole = (session.user as any)?.role;
-    if (!deleteRole || !['SUPER_ADMIN', 'FINANCE'].includes(deleteRole)) {
-      return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
-    }
 
     await prisma.manualPayment.delete({
       where: { id },

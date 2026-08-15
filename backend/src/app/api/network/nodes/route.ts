@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET /api/network/nodes - Fetch all network nodes with filtering
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const searchParams = request.nextUrl.searchParams;
     const type = searchParams.get('type'); // OLT, ODC, ODP, JOINT_CLOSURE
@@ -75,11 +72,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/network/nodes - Create new network node
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const {
@@ -150,8 +146,8 @@ export async function POST(request: NextRequest) {
     await prisma.activityLog.create({
       data: {
         id: `log_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-        userId: session.user.id,
-        username: session.user.name || session.user.username,
+        userId: authCheck.userId,
+        username: (session.user as any)?.name || (session.user as any)?.username,
         action: 'CREATE_NETWORK_NODE',
         description: `Created network node: ${code} (${name})`,
         module: 'NETWORK',

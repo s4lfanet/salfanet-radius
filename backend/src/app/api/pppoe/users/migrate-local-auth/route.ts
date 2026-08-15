@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { managePppSecret, getMikrotikProfileName, shouldCreatePppSecret } from '@/server/services/mikrotik/ppp-secret.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * POST /api/pppoe/users/migrate-local-auth
@@ -11,8 +10,8 @@ import { authOptions } from '@/server/auth/config';
  * Body (optional): { routerId?: string } — limit to one router
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await requirePermission('customers.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const body = await request.json().catch(() => ({}));

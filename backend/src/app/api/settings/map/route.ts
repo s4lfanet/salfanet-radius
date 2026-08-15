@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 const SINGLETON_ID = 'map-settings-singleton';
 
 // GET /api/settings/map
 export async function GET() {
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     let settings = await prisma.mapSettings.findFirst();
 
@@ -33,11 +34,9 @@ export async function GET() {
 
 // PUT /api/settings/map
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const { defaultLat, defaultLon, defaultZoom, mapTheme, osrmApiUrl, followRoad } = body;

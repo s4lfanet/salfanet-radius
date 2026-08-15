@@ -4,8 +4,6 @@ import { ok, fail } from '@/lib/genieacs/helpers';
 import { factoryResetDevice } from '@/lib/genieacs/api-client';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 
 /**
  * POST /api/genieacs/devices/[deviceId]/factory-reset
@@ -23,7 +21,7 @@ export async function POST(
   try {
     const { deviceId } = await params;
     const task = await factoryResetDevice(deviceId);
-    const session = await getServerSession(authOptions);
+    const session = auth.session;
     await logActivity({
       username: session?.user?.name ?? 'unknown',
       userId: session?.user?.id,

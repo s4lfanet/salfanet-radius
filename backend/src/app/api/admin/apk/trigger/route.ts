@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import {
   mkdirSync, writeFileSync, existsSync, chmodSync,
@@ -671,10 +670,8 @@ async function detectJavaHome(): Promise<string> {
 // ─── GET: check environment ───────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   let java = false;
   let javaVersion = '';
@@ -711,10 +708,8 @@ export async function GET(req: NextRequest) {
 // ─── POST: start build ────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   const role = req.nextUrl.searchParams.get('role') as RoleKey;
   if (!role || !ROLES[role]) {

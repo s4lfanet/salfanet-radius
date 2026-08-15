@@ -1,15 +1,12 @@
 ﻿import { NextResponse } from 'next/server'
 import { prisma } from '@/server/db/client'
 import { syncProfileToRadius } from '@/server/services/radius/hotspot-sync.service'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('hotspot.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const profiles = await prisma.hotspotProfile.findMany({
       orderBy: {
@@ -32,6 +29,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const authCheck = await requirePermission('hotspot.manage');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json()
     const {
       name,
@@ -106,6 +106,9 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
+    const authCheck = await requirePermission('hotspot.manage');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json()
     const {
       id,
@@ -181,6 +184,9 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const authCheck = await requirePermission('hotspot.manage');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 

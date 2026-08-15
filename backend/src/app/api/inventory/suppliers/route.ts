@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET - Get all suppliers
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const suppliers = await prisma.inventorySupplier.findMany({
       include: {
@@ -33,10 +30,8 @@ export async function GET() {
 // POST - Create supplier
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const body = await request.json();
     const { name, contactName, phone, email, address, notes, isActive } = body;
@@ -79,10 +74,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update supplier
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const body = await request.json();
     const { id, name, contactName, phone, email, address, notes, isActive } = body;
@@ -132,10 +125,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete supplier
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import axios from 'axios';
 import { nanoid } from 'nanoid';
 import { formatWIB } from '@/lib/timezone';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -11,6 +12,9 @@ interface RouteParams {
 // POST - Test provider
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const authCheck = await requirePermission('whatsapp.providers');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await params;
     const { phone } = await request.json();
 

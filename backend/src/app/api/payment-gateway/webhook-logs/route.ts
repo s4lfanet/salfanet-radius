@@ -1,7 +1,6 @@
 ﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,12 +9,9 @@ export const dynamic = 'force-dynamic';
  * Fetch webhook logs with pagination and filters
  */
 export async function GET(request: Request) {
+  const authCheck = await requirePermission('settings.payment');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');

@@ -1,6 +1,5 @@
 ﻿import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -19,11 +18,9 @@ const ALLOWED_DIRS = [
 ];
 
 export async function POST(req: Request) {
+    const authCheck = await requirePermission('settings.view');
+    if (!authCheck.authorized) return authCheck.response;
     try {
-        const session = await getServerSession(authOptions);
-        if (!session) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
         const { filename } = await req.json();
 
         if (!filename) {

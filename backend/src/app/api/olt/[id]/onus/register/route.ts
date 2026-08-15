@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { unauthorized } from '@/lib/api-response';
 import { executeCommand, executeMultipleCommands, TelnetResult } from '@/lib/olt/telnet';
 
 function parseZteOnuTypes(output: string): string[] {
@@ -327,8 +325,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { id } = await params;
@@ -438,8 +436,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { id } = await params;

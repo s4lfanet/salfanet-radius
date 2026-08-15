@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { unauthorized } from '@/lib/api-response';
 import { testSNMP } from '@/lib/olt/snmp';
 import { testSSH } from '@/lib/olt/ssh';
 import { testTelnet } from '@/lib/olt/telnet';
@@ -12,8 +10,8 @@ import { testTelnet } from '@/lib/olt/telnet';
 //   { oltId, protocol } — look up OLT from DB
 //   { ipAddress, username, password, snmpCommunity, sshEnabled, telnetEnabled, sshPort, telnetPort, snmpPort } — direct params (for new OLT before save)
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const body = await request.json();

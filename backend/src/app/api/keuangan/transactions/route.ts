@@ -2,18 +2,14 @@
 import { nanoid } from "nanoid";
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from "@/lib/timezone";
 import { logActivity } from "@/server/services/activity-log.service";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/server/auth/config";
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 
 // GET - List transactions with filters & stats
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type"); // INCOME, EXPENSE, or all
     const categoryId = searchParams.get("categoryId");
@@ -221,6 +217,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new transaction
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.create');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { categoryId, type, amount, description, date, reference, notes } =
@@ -264,7 +262,7 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     try {
-      const session = await getServerSession(authOptions);
+      const session = authCheck.session;
       await logActivity({
         userId: (session?.user as any)?.id,
         username: (session?.user as any)?.username || 'Admin',
@@ -302,6 +300,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update transaction
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const {
@@ -358,12 +358,9 @@ export async function PUT(request: NextRequest) {
 //   ?ids=x,y,z         — bulk delete by IDs
 //   ?filterDelete=true — delete all matching current filter (?type=&categoryId=&startDate=&endDate=)
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('keuangan.delete');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const idsParam = searchParams.get("ids");
@@ -434,6 +431,7 @@ export async function DELETE(request: NextRequest) {
 
     // Log activity
     try {
+      const session = authCheck.session;
       await logActivity({
         userId: (session?.user as any)?.id,
         username: (session?.user as any)?.username || 'Admin',

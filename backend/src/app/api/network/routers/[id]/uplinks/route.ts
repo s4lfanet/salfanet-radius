@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/server/middleware/api-auth';
 import crypto from 'crypto';
 import { prisma } from '@/server/db/client';
 
@@ -7,6 +8,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('routers.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id: routerId } = await params;
 
@@ -47,6 +50,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('routers.manage');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id: routerId } = await params;
     const body = await request.json();
@@ -122,6 +127,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('routers.manage');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id: routerId } = await params;
     const body = await request.json();
@@ -168,6 +175,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('routers.manage');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
     const connectionId = searchParams.get('connectionId');

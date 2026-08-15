@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET - Get movements for an item or all movements
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { searchParams } = new URL(request.url);
     const itemId = searchParams.get('itemId');
@@ -55,10 +52,9 @@ export async function GET(request: NextRequest) {
 // POST - Create movement (stock in/out/adjustment)
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const body = await request.json();
     const { itemId, movementType, quantity, referenceNo, notes } = body;
@@ -116,7 +112,7 @@ export async function POST(request: NextRequest) {
           newStock,
           referenceNo,
           notes,
-          userId: session.user.id,
+          userId: authCheck.userId,
           userName: session.user.name || session.user.username,
         },
         include: {
@@ -149,10 +145,8 @@ export async function POST(request: NextRequest) {
 // DELETE - Delete movement (admin only, careful!)
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

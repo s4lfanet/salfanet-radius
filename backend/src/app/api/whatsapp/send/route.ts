@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { rateLimit } from '@/server/middleware/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('whatsapp.send');
+    if (!authCheck.authorized) return authCheck.response;
     // Rate limit: 20 per minute per IP — prevent WA API abuse
     const limited = await rateLimit(request, { max: 20, windowMs: 60 * 1000 });
     if (limited) {

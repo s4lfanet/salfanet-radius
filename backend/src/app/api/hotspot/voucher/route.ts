@@ -2,8 +2,7 @@
 
 // Allow up to 5 minutes for large batch voucher generation (25k vouchers)
 export const maxDuration = 300;
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, created, badRequest, unauthorized, notFound, serverError } from '@/lib/api-response';
 import {
   listVouchers,
@@ -14,8 +13,8 @@ import {
 
 // GET - List vouchers with filters and pagination
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('vouchers.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -37,8 +36,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Generate vouchers in batch
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('vouchers.generate');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const body = await request.json();
@@ -66,8 +66,8 @@ export async function POST(request: Request) {
 
 // DELETE - Delete voucher or batch
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('vouchers.delete');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -88,8 +88,9 @@ export async function DELETE(request: Request) {
 
 // PATCH - Update agent, router, or profile for multiple vouchers
 export async function PATCH(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('hotspot.manage');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const body = await request.json();

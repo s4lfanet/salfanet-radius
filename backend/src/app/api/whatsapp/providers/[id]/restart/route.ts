@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import axios from 'axios';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -9,6 +10,9 @@ interface RouteParams {
 // POST - Restart WAHA session
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const authCheck = await requirePermission('whatsapp.providers');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await params;
 
     const provider = await prisma.whatsapp_providers.findUnique({

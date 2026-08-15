@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { Client as SSHClient } from 'ssh2';
 import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
@@ -38,10 +37,8 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; onuId: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { id: oltId, onuId } = await params;

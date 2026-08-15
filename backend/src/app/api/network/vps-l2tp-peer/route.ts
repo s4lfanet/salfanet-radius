@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { exec as execCb } from 'child_process'
 import { promisify } from 'util'
 import { readFile, writeFile } from 'fs/promises'
@@ -65,8 +64,8 @@ async function getNextAvailableIp(subnet: string, poolStart: number | string = 1
 
 // ─── GET /api/network/vps-l2tp-peer ────────────────────────────────────────
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('vpn.view')
+  if (!authCheck.authorized) return authCheck.response
 
   const info = await readL2tpInfo()
   if (!info) {
@@ -96,8 +95,8 @@ export async function GET() {
 // ─── POST /api/network/vps-l2tp-peer ───────────────────────────────────────
 // Body: { action: "add"|"remove", label?, username? (for remove) }
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   const info = await readL2tpInfo()
   if (!info) {
@@ -255,8 +254,8 @@ export async function POST(req: NextRequest) {
 // ─── PATCH /api/network/vps-l2tp-peer ─────────────────────────────
 // Update pool config (poolStart, poolEnd, gateway) in l2tp-server-info.json
 export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   const info = await readL2tpInfo()
   if (!info) return NextResponse.json({ error: 'L2TP server belum di-install di VPS ini' }, { status: 400 })

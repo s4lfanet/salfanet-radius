@@ -1,16 +1,13 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET - Fetch all ODPs
 export async function GET() {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const odps = await prisma.networkODP.findMany({
       include: {
@@ -56,6 +53,8 @@ export async function GET() {
 
 // POST - Create new ODP
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { name, latitude, longitude, odcId, parentOdpId, ponPort, oltId, portCount, followRoad } = body;
@@ -109,6 +108,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update ODP
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { id, name, latitude, longitude, odcId, parentOdpId, ponPort, oltId, portCount, followRoad, status } = body;
@@ -166,6 +167,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Delete ODP
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
     let id = searchParams.get('id');

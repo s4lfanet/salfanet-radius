@@ -1,16 +1,13 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prepareJCMetadata } from '@/lib/network-sync-helpers';
 
 // GET /api/network/joint-closures - List all Joint Closures
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // CORE, DISTRIBUTION, FEEDER
@@ -57,11 +54,9 @@ export async function GET(request: NextRequest) {
 
 // POST /api/network/joint-closures - Create new Joint Closure
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const body = await request.json();
     const {

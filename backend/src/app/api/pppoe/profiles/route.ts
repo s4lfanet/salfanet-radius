@@ -1,17 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { changePPPoERateLimit } from '@/server/services/mikrotik/rate-limit';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { cacheAside, invalidateKey, CACHE_KEYS, CACHE_TTL } from '@/server/cache/redis';
 
 // GET - List all PPPoE profiles with user count
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const profilesWithCount = await cacheAside(
       CACHE_KEYS.profiles,
@@ -47,6 +44,8 @@ export async function GET() {
 // POST - Create new PPPoE profile
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
     const body = await request.json();
     const {
       name,

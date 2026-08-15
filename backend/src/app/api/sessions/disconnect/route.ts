@@ -3,9 +3,7 @@ import { prisma } from '@/server/db/client';
 import { RouterOSAPI } from 'node-routeros';
 import { sendDisconnectRequest, isRadclientAvailable } from '@/server/services/radius/coa.service';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
-import { checkAuth } from '@/server/middleware/api-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // Check if CoA is available (radclient installed)
 let coaAvailable: boolean | null = null;
@@ -206,8 +204,8 @@ async function disconnectPPPoEUser(router: any, username: string): Promise<{ suc
 
 export async function POST(request: NextRequest) {
   try {
-    // Auth check: session disconnect requires admin authentication
-    const authCheck = await checkAuth();
+    // Auth check: session disconnect requires sessions.view permission
+    const authCheck = await requirePermission('sessions.view');
     if (!authCheck.authorized) return authCheck.response;
 
     const body = await request.json();
@@ -449,10 +447,10 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     try {
-      const session = await getServerSession(authOptions);
+      const session = authCheck.session;
       const usernamesStr = Array.isArray(usernames) ? usernames.join(', ') : String(usernames || '');
       await logActivity({
-        userId: (session?.user as any)?.id,
+        userId: authCheck.userId,
         username: (session?.user as any)?.username || 'Admin',
         userRole: (session?.user as any)?.role,
         action: 'DISCONNECT_SESSION',

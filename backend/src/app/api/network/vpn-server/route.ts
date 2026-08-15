@@ -1,6 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import crypto from 'crypto'
 
@@ -20,14 +19,8 @@ function encryptPassword(text: string): string {
 
 // GET - List all VPN servers
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.view')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     // Exclude VPS built-in servers (WireGuard & L2TP) — mereka dikelola via halaman VPN Client,
@@ -72,14 +65,8 @@ export async function GET() {
 
 // POST - Create new VPN server
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const data = await request.json()
@@ -117,14 +104,8 @@ export async function POST(request: Request) {
 
 // PUT - Update VPN server
 export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const data = await request.json()
@@ -169,14 +150,8 @@ export async function PUT(request: Request) {
 
 // DELETE - Delete VPN server
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const { searchParams } = new URL(request.url)

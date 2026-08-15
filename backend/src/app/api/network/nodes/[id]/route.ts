@@ -1,18 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET /api/network/nodes/:id - Get single node with details
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { id } = await params;
     const node = await prisma.network_nodes.findUnique({
@@ -56,11 +53,10 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { id } = await params;
     const body = await request.json();
@@ -109,8 +105,8 @@ export async function PUT(
     await prisma.activityLog.create({
       data: {
         id: `log_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-        userId: session.user.id,
-        username: session.user.name || session.user.username,
+        userId: authCheck.userId,
+        username: (session.user as any)?.name || (session.user as any)?.username,
         action: 'UPDATE_NETWORK_NODE',
         description: `Updated network node: ${updated.code}`,
         module: 'NETWORK',
@@ -138,11 +134,10 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const { id } = await params;
     // Check if node exists
@@ -177,8 +172,8 @@ export async function DELETE(
     await prisma.activityLog.create({
       data: {
         id: `log_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-        userId: session.user.id,
-        username: session.user.name || session.user.username,
+        userId: authCheck.userId,
+        username: (session.user as any)?.name || (session.user as any)?.username,
         action: 'DELETE_NETWORK_NODE',
         description: `Deleted network node: ${existing.code}`,
         module: 'NETWORK',

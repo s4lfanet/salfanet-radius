@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { nowWIB } from '@/lib/timezone';
 import { prisma } from '@/server/db/client';
 
@@ -10,10 +9,9 @@ import { prisma } from '@/server/db/client';
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('hotspot.manage');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json();
     const { agentId, amount, type, note } = body;
 

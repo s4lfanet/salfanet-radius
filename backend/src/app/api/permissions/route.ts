@@ -1,17 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getAllPermissionsGrouped } from '@/server/auth/permissions';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * GET /api/permissions - Get all permissions grouped by category
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('users.permissions');
+    if (!authCheck.authorized) return authCheck.response;
 
     const grouped = await getAllPermissionsGrouped();
 

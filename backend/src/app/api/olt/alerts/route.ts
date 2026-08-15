@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { unauthorized } from '@/lib/api-response';
 
 // GET - List alerts
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { searchParams } = new URL(request.url);
