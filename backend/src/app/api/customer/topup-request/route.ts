@@ -7,7 +7,7 @@ import { getUploadDir } from '@/lib/upload-dir';
 
 export async function POST(request: NextRequest) {
   const rateLimitResult = await rateLimit(request, { max: 5, windowMs: 60 * 1000 });
-  if (rateLimitResult) return rateLimitResult;
+  if (rateLimitResult) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
 
   try {
     // Authenticate via customer Bearer token

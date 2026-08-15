@@ -18,7 +18,7 @@ export async function POST(
   const auth = await requirePermission('settings.genieacs');
   if (!auth.authorized) return auth.response;
   const limited = await rateLimit(req, RateLimitPresets.strict);
-  if (limited) return limited;
+  if (limited) return fail('Too many requests', 429);
 
   try {
     const { deviceId } = await params;
