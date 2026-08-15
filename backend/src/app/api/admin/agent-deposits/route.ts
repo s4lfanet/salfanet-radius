@@ -85,15 +85,23 @@ export async function PATCH(request: NextRequest) {
     const targetBankLabel = deposit.targetBankName || 'manual';
 
     if (action === 'approve') {
+      // ─── ATOMIC: updateMany with status condition + balance increment ─────────
+      // Prevents double-approval under concurrent requests.
       const result = await prisma.$transaction(async (tx) => {
-        const updatedDeposit = await tx.agentDeposit.update({
-          where: { id: depositId },
+        // Atomic conditional update — only succeeds if status is still PENDING
+        const claimResult = await tx.agentDeposit.updateMany({
+          where: { id: depositId, status: 'PENDING' },
           data: {
             status: 'PAID',
             paidAt: nowWIB(),
           },
         });
 
+        if (claimResult.count === 0) {
+          return { alreadyProcessed: true as const };
+        }
+
+        // Increment agent balance — only if we claimed the deposit
         const updatedAgent = await tx.agent.update({
           where: { id: deposit.agentId },
           data: {
@@ -125,23 +133,35 @@ export async function PATCH(request: NextRequest) {
           },
         });
 
-        return { updatedDeposit, updatedAgent };
+        return { alreadyProcessed: false as const, updatedAgent };
       });
+
+      if (result.alreadyProcessed) {
+        return NextResponse.json(
+          { error: 'Permintaan ini sudah diproses' },
+          { status: 409 }
+        );
+      }
 
       return NextResponse.json({
         success: true,
         message: 'Deposit berhasil disetujui',
-        deposit: result.updatedDeposit,
-        agent: { id: result.updatedAgent.id, balance: result.updatedAgent.balance },
+        agent: { id: result.updatedAgent!.id, balance: result.updatedAgent!.balance },
       });
     }
 
-    const updatedDeposit = await prisma.agentDeposit.update({
-      where: { id: depositId },
-      data: {
-        status: 'CANCELLED',
-      },
+    // ─── REJECT: atomic conditional update ─────────────────────────────────────
+    const claimResult = await prisma.agentDeposit.updateMany({
+      where: { id: depositId, status: 'PENDING' },
+      data: { status: 'CANCELLED' },
     });
+
+    if (claimResult.count === 0) {
+      return NextResponse.json(
+        { error: 'Permintaan ini sudah diproses' },
+        { status: 409 }
+      );
+    }
 
     await prisma.agentNotification.create({
       data: {
@@ -168,7 +188,7 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Deposit ditolak',
-      deposit: updatedDeposit,
+      deposit: { id: depositId, status: 'CANCELLED' },
     });
   } catch (error) {
     console.error('Update admin agent deposit status error:', error);

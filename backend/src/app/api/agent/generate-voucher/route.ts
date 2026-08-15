@@ -103,38 +103,66 @@ export async function POST(request: NextRequest) {
     // Generate batch code: AGENTNAME-TIMESTAMP
     const batchCode = `${agent.name.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${Date.now()}`;
     
-    // Generate vouchers
-    const vouchers = [];
+    // ─── ATOMIC: balance check + voucher creation + balance decrement ──────────
+    // All in a single $transaction to prevent:
+    //   1. Double voucher generation under concurrent requests
+    //   2. Voucher creation without balance decrement (if crash between)
+    //   3. Balance going below minBalance under concurrent requests
+    const vouchers: any[] = [];
 
-    for (let i = 0; i < quantity; i++) {
-      // Generate unique code
-      const code = generateVoucherCode(codeLength, prefix, codeType);
-
-      // Create voucher with batch code, agentId, and routerId
-      const voucher = await prisma.hotspotVoucher.create({
+    const result = await prisma.$transaction(async (tx) => {
+      // Atomic conditional balance check + decrement in one operation
+      // Only decrements if balance >= totalCost AND balance - totalCost >= minBalance
+      const balanceResult = await tx.agent.updateMany({
+        where: {
+          id: agentId,
+          balance: { gte: totalCost + (agent.minBalance || 0) },
+        },
         data: {
-          id: crypto.randomUUID(),
-          code,
-          profileId: profile.id,
-          routerId: agent.routerId, // Link voucher to agent's router
-          agentId: agentId, // Link voucher to agent
-          batchCode: batchCode,
-          status: 'WAITING',
+          balance: { decrement: totalCost },
         },
       });
 
-      vouchers.push(voucher);
-    }
+      if (balanceResult.count === 0) {
+        // Balance insufficient or would go below minBalance
+        throw new Error('BALANCE_INSUFFICIENT');
+      }
 
-    // Deduct balance from agent
-    await prisma.agent.update({
-      where: { id: agentId },
-      data: {
-        balance: {
-          decrement: totalCost,
-        },
-      },
+      // Generate vouchers — only if balance was successfully decremented
+      for (let i = 0; i < quantity; i++) {
+        const code = generateVoucherCode(codeLength, prefix, codeType);
+        const voucher = await tx.hotspotVoucher.create({
+          data: {
+            id: crypto.randomUUID(),
+            code,
+            profileId: profile.id,
+            routerId: agent.routerId,
+            agentId: agentId,
+            batchCode: batchCode,
+            status: 'WAITING',
+          },
+        });
+        vouchers.push(voucher);
+      }
+
+      return { vouchers };
+    }).catch((err: any) => {
+      if (err?.message === 'BALANCE_INSUFFICIENT') {
+        return { insufficientBalance: true as const };
+      }
+      throw err;
     });
+
+    if ('insufficientBalance' in result) {
+      return NextResponse.json(
+        {
+          error: 'Insufficient balance or balance would go below minimum',
+          required: totalCost + (agent.minBalance || 0),
+          current: agent.balance,
+        },
+        { status: 400 }
+      );
+    }
 
     // Record agent sales immediately (agent has paid costPrice)
     // resellerFee is agent's profit margin (sellingPrice - costPrice)
