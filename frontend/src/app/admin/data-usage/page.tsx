@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { formatWIB } from '@/lib/timezone';
 
 interface UsageRecord {
   username: string;
@@ -325,8 +326,8 @@ export default function DataUsagePage() {
                   {userUsage.map((r, i) => (
                     <tr key={i} className="hover:bg-gray-800/30">
                       <td className="px-4 py-3 font-mono text-cyan-400">{r.username}</td>
-                      <td className="px-4 py-3 text-gray-400">{new Date(r.period_start).toLocaleString()}</td>
-                      <td className="px-4 py-3 text-gray-400">{r.period_end ? new Date(r.period_end).toLocaleString() : '-'}</td>
+                      <td className="px-4 py-3 text-gray-400">{formatWIB(r.period_start, 'dd MMM HH:mm')}</td>
+                      <td className="px-4 py-3 text-gray-400">{r.period_end ? formatWIB(r.period_end, 'dd MMM HH:mm') : '-'}</td>
                       <td className="px-4 py-3 text-right text-blue-400">{r.upload_gb}</td>
                       <td className="px-4 py-3 text-right text-green-400">{r.download_gb}</td>
                       <td className="px-4 py-3 text-right font-bold text-yellow-400">{r.total_gb}</td>

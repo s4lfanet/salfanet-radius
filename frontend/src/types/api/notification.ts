@@ -51,10 +51,8 @@ export interface Ticket {
   lastResponseAt: ISODateString | null;
 }
 
-export interface TicketListResponse {
-  tickets: Ticket[];
-  total?: number;
-}
+// GET /api/tickets returns a raw array (not wrapped)
+export type TicketListResponse = Ticket[];
 
 export interface TicketResponse {
   success?: boolean;

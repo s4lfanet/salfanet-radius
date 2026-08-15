@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { AlertCircle, CheckCircle, RefreshCw, Wifi, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { formatWIB } from '@/lib/timezone';
+import { showError } from '@/lib/sweetalert';
 
 interface Alert {
   id: string;
@@ -40,7 +42,7 @@ function relativeTime(dateStr: string): string {
   if (diff < 60) return `${diff}d lalu`;
   if (diff < 3600) return `${Math.floor(diff / 60)}m lalu`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}j lalu`;
-  return new Date(dateStr).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  return formatWIB(dateStr, 'dd MMM HH:mm');
 }
 
 export default function OLTAlertsPage() {
@@ -75,6 +77,7 @@ export default function OLTAlertsPage() {
       invalidateAlerts();
     } catch (e) {
       console.error('Failed to resolve alert', e);
+      showError(e instanceof Error ? e.message : 'Gagal resolve alert');
     } finally {
       setResolving(null);
     }

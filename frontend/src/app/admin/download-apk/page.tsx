@@ -10,6 +10,7 @@ import {
 import { apiAdmin } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
 import { useApiQuery } from '@/lib/api/hooks';
+import { formatWIB } from '@/lib/timezone';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ function formatBytes(bytes: number) {
 
 function formatTime(iso?: string) {
   if (!iso) return '-';
-  return new Date(iso).toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
+  return formatWIB(iso, 'dd MMM yyyy HH:mm');
 }
 
 // ─── CopyButton ───────────────────────────────────────────────────────────────

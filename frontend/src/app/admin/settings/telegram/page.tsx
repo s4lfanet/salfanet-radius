@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/lib/permissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -149,7 +150,7 @@ export default function TelegramSettingsPage() {
   };
 
   const canView = hasPermission('settings.view');
-  const canEdit = hasPermission('settings.edit');
+  const canEdit = hasPermission(PERMISSIONS.SETTINGS_EDIT);
 
   if (!permLoading && !canView) {
     return (
