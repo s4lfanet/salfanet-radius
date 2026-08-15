@@ -6,6 +6,35 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.1.0] — 2026-08-15 — Phase 8: Complete React Query Migration
+
+### Summary
+Completed React Query migration for all remaining admin pages. 80 files changed, net reduction of 875 lines of code. All admin pages now use `useApiQuery`/`useQueryClient` instead of manual `useEffect + apiAdmin + load()` patterns.
+
+### Pages Migrated (65+ pages across 8 batches)
+- **Settings** (15 files): company, cloudflare-tunnel, cron, database, email, footer, genieacs, isolation (+ mikrotik + templates), referral, security, subdomain, telegram
+- **GenieACS** (6 files): auto-provision, devices, parameter-config, tasks, virtual-parameters, vp-scripts
+- **Network** (11 files): customers, diagrams, fiber-cables, fiber-cores, fiber-joint-closures, map, odcs, splice-points, unified-map, vpn-client, vpn-server
+- **PPPoE + Hotspot** (10 files): addons, profiles, registrations, stopped, agent (+ deposits), evoucher, profile, rekap-voucher, template
+- **FreeRADIUS** (6 files): backup, config, logs, radcheck, radtest, status
+- **Other admin** (23 files): data-usage, download-apk, ippool, isolated-users, laporan/analitik, logs/activity, management, manual-payments, notifications, olt/alerts, olt/monitoring, payment/bank-accounts, payment-gateway, push-notifications, referrals, sessions/pppoe, suspend-requests, system, technicians, topup-requests, tickets (+ [id] + categories), whatsapp (5 files), inventory (4 files)
+
+### Key Changes
+- Mutations now use `queryClient.invalidateQueries()` instead of manual `load()` reloads
+- Filter/pagination params included in query keys for automatic refetch tracking
+- Reference data (routers, company, templates) cached with `staleTime: 300000` (5 min)
+- Polling uses `refetchInterval` instead of `setInterval`
+- Form/edit state synced from query data via `useMemo` + `useEffect`
+- Auth pages (login, 2FA) intentionally NOT migrated
+
+### Verification
+- `npx tsc --noEmit`: 0 errors
+- `npx next build`: success (local + VPS)
+- PM2: all 4 processes online
+- Smoke tests: health 200, login 200, 404, protected 401, upload 401
+
+---
+
 ## [5.0.0] — 2026-08-15 — Phase 7: React Query + Performance Optimizations
 
 ### React Query Implementation
