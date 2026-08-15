@@ -1,11 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // PUT - Update email template
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id } = await params;
     const body = await request.json();
@@ -40,6 +43,8 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id } = await params;
 

@@ -1,13 +1,11 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { logActivity } from '@/server/services/activity-log.service';
 import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requirePermission('invoices.approve');
+    const auth = await requirePermission('invoices.delete');
     if (!auth.authorized) return auth.response;
 
     const { orderIds } = await req.json();
@@ -38,8 +36,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Log activity
-    const session = await getServerSession(authOptions);
-    const sessionUser = session?.user as { id?: string; username?: string; role?: string } | undefined;
+    const sessionUser = auth.session?.user as { id?: string; username?: string; role?: string } | undefined;
     await logActivity({
       userId: auth.userId,
       username: sessionUser?.username || 'admin',

@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { execFile } from 'child_process';
@@ -80,10 +79,8 @@ export async function POST(req: NextRequest) {
     const isInternalCall = req.headers.get('x-internal-call') === 'true';
     
     if (!isInternalCall) {
-      const session = await getServerSession(authOptions);
-      if (!session || session.user.role !== 'SUPER_ADMIN') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
+      const authCheck = await requirePermission('settings.edit');
+      if (!authCheck.authorized) return authCheck.response;
     }
 
     const { timezone } = await req.json();

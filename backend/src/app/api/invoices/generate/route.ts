@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
-import { badRequest, unauthorized } from '@/lib/api-response';
+import { badRequest } from '@/lib/api-response';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 
 /**
@@ -24,8 +23,8 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
  * Returns { generated, skipped, errors[] }
  */
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('invoices.create');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const body = await request.json();

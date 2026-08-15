@@ -1,18 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/server/db/client'
 import { nanoid } from 'nanoid'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 
 /**
  * GET /api/whatsapp/reminder-settings - Get current reminder settings
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('whatsapp.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     // Get the first (and only) settings record
     let settings = await prisma.whatsapp_reminder_settings.findFirst()
@@ -59,6 +56,9 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('whatsapp.templates');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json()
     const { enabled, reminderDays, reminderTime, otpEnabled, otpExpiry, batchSize, batchDelay, randomize } = body
     

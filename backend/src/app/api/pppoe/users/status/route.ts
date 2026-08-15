@@ -2,18 +2,16 @@
 import { prisma } from '@/server/db/client';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 // sendIsolationNotification moved to NestJS backend — customer notifications handled by backend cron
 
 export async function PUT(request: Request) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const { userId, status } = await request.json();
 

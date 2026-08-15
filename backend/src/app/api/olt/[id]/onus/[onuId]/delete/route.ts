@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { unauthorized } from '@/lib/api-response';
 import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 
 function normalizeTelnetOutput(output: string): string {
@@ -85,8 +83,9 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string; onuId: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const { id: oltId, onuId } = await params;

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { createBackup } from '@/server/services/backup.service';
 import { sendBackupToTelegram } from '@/server/services/notifications/telegram.service';
 import { formatInTimeZone } from 'date-fns-tz';
@@ -14,14 +13,8 @@ export const maxDuration = 300;
 // POST - Test auto backup by creating a real backup and sending it to Telegram
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    if (session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const authCheck = await requirePermission('settings.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     // Load Telegram settings from database
     const settings = await prisma.telegramBackupSettings.findFirst({

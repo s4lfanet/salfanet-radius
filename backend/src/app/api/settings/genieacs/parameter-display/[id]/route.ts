@@ -1,11 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET - Fetch single configuration by ID
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const params = await context.params;
     const id = parseInt(params.id);
@@ -39,6 +42,8 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const params = await context.params;
     const id = parseInt(params.id);
@@ -101,6 +106,8 @@ export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const params = await context.params;
     const id = parseInt(params.id);

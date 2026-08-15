@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { sendInvoiceReminder } from '@/server/services/notifications/whatsapp-templates.service';
 
@@ -14,10 +13,8 @@ import { sendInvoiceReminder } from '@/server/services/notifications/whatsapp-te
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('invoices.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const body = await request.json().catch(() => ({}));
     const daysBefore = body.daysBefore ?? 7;

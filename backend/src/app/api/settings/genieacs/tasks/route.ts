@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { getGenieACSCredentials } from '../route';
 
 // Helper: fetch with AbortController timeout
@@ -16,11 +15,9 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 150
 
 // POST - Queue task to GenieACS for a device
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const credentials = await getGenieACSCredentials();
 
     if (!credentials) {

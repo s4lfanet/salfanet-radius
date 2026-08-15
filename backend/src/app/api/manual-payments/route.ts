@@ -1,18 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, nowWIB } from '@/lib/timezone';
 import { notifyAdminsViaWhatsApp } from '@/server/services/notifications/whatsapp-templates.service';
 
 // GET - Get all manual payment submissions
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('invoices.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const status = searchParams.get('status');
@@ -79,6 +75,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Submit new manual payment
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('invoices.create');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const {

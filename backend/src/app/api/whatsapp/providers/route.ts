@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET - List all providers
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('whatsapp.providers');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const providers = await prisma.whatsapp_providers.findMany({
       orderBy: { priority: 'asc' },
@@ -28,6 +25,9 @@ export async function GET() {
 // POST - Create new provider
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('whatsapp.providers');
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json();
     const { name, type, apiKey, apiUrl, senderNumber, description, isActive, priority } = body;
 

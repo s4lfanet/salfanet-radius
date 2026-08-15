@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 
 // GET - Fetch parameter display configurations
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const { searchParams } = new URL(request.url);
     const configType = searchParams.get('configType'); // DEVICE_LIST or DEVICE_DETAIL
     const section = searchParams.get('section');
@@ -41,6 +38,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new parameter display configuration
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const {
@@ -103,6 +102,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Bulk update configurations (reorder, enable/disable)
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { configs } = body; // Array of {id, enabled?, displayOrder?}
@@ -143,6 +144,8 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Reset to defaults
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('settings.genieacs');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
     const configType = searchParams.get('configType');

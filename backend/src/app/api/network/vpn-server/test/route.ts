@@ -1,18 +1,11 @@
 ﻿import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { MikroTikConnection } from '@/server/services/mikrotik/client'
 
 // POST - Test MikroTik connection
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const { host, username, password, apiPort } = await request.json()

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { exec as execCb } from 'child_process'
 import { promisify } from 'util'
 import { readFile, writeFile } from 'fs/promises'
@@ -276,8 +275,8 @@ async function syncPeersToDB(
 // ─── GET /api/network/vps-wg-peer ────────────────────────────────────────
 // Returns WG server info + list of active peers from `wg show`
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('vpn.view')
+  if (!authCheck.authorized) return authCheck.response
 
   const info = await readWgInfo()
   if (!info) {
@@ -321,8 +320,8 @@ export async function GET() {
 // On "add": generates keypair, assigns vpnIp, appends to wg.conf
 // On "remove": removes peer by publicKey from wg.conf
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   const body = await req.json()
   const { action, nasName, publicKey: suppliedPubKey, localNetworks } = body
@@ -468,8 +467,8 @@ export async function POST(req: NextRequest) {
 // ─── PATCH /api/network/vps-wg-peer ─────────────────────────────────────
 // Update pool config (poolStart, poolEnd, gatewayIp) in wg-server-info.json
 export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   const info = await readWgInfo()
   if (!info) return NextResponse.json({ error: 'WireGuard belum di-install di VPS ini' }, { status: 400 })

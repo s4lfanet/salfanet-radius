@@ -1,20 +1,16 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { formatCurrencyExport, formatDateExport } from "@/lib/utils/export";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/server/auth/config";
+import { requirePermission } from '@/server/middleware/api-auth';
 import { formatWIB, getCurrentTimezone } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from "@/lib/timezone";
 import { prisma } from '@/server/db/client';
 
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('reports.export');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const format = searchParams.get("format") || "excel"; // excel or pdf
     const startDate = searchParams.get("startDate");

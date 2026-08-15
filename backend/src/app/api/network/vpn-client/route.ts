@@ -1,6 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { MikroTikConnection } from '@/server/services/mikrotik/client'
 import { generateKeyPairSync, randomUUID } from 'crypto'
@@ -110,14 +109,8 @@ async function getNextWinboxPort(vpnServerId: string): Promise<number> {
 
 // GET - Load all VPN clients
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.view')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const clients = await prisma.vpnClient.findMany({
@@ -183,14 +176,8 @@ export async function GET() {
 
 // POST - Create new VPN client
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const { name, description, vpnServerId, vpnType: rawVpnType, customVpnIp } = await request.json()
@@ -523,8 +510,8 @@ ${radiusSection}
 
 // PATCH - Update VPN client IP address
 export async function PATCH(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const { id, vpnIp } = await request.json()
@@ -585,14 +572,8 @@ export async function PATCH(request: Request) {
 
 // PUT - Update VPN client (toggle RADIUS server)
 export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const { id, isRadiusServer } = await request.json()
@@ -627,14 +608,8 @@ export async function PUT(request: Request) {
 
 // DELETE - Remove VPN client
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions)
-  
-  if (!session) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    )
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const { searchParams } = new URL(request.url)

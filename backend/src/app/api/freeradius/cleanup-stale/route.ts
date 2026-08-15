@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * POST /api/freeradius/cleanup-stale
@@ -10,8 +9,8 @@ import { authOptions } from '@/server/auth/config';
  * (e.g. duplicate packet caused auth but session never established, or NAS rebooted).
  */
 export async function POST() {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authCheck = await requirePermission('settings.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     try {
         // Close stale sessions

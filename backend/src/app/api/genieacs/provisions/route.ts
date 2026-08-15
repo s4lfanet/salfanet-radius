@@ -4,8 +4,6 @@ import { ok, fail } from '@/lib/genieacs/helpers';
 import { createOrUpdateProvision } from '@/lib/genieacs/api-client';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 
 export async function GET() {
@@ -48,7 +46,7 @@ export async function POST(req: NextRequest) {
       await prisma.genieacsProvision.update({ where: { name: _id }, data: { syncError } });
     }
 
-    const session = await getServerSession(authOptions);
+    const session = auth.session;
     await logActivity({
       username: session?.user?.name ?? 'unknown',
       userId: session?.user?.id,
