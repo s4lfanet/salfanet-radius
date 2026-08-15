@@ -1,7 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, RateLimitPresets.relaxed);
+  if (limited) {
+    return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+  }
   try {
     const company = await prisma.company.findFirst({
       select: {

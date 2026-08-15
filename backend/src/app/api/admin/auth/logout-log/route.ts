@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logActivity } from '@/server/services/activity-log.service';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 /**
  * Log logout activity from frontend.
@@ -12,6 +13,10 @@ import { logActivity } from '@/server/services/activity-log.service';
  *   400 { error: 'Username required' }
  */
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, RateLimitPresets.moderate);
+  if (limited) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
   try {
     const body = await req.json();
     const { userId, username, userRole } = body;

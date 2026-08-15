@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { checkAuth } from '@/server/middleware/api-auth';
 import { TOTP, Secret } from 'otpauth';
 import QRCode from 'qrcode';
 import { prisma } from '@/server/db/client';
@@ -8,8 +7,9 @@ import bcrypt from 'bcryptjs';
 
 // GET - Get 2FA status + generate setup QR (if not enabled)
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await checkAuth();
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   const userId = (session.user as any).id;
   const user = await prisma.adminUser.findUnique({ where: { id: userId } });
@@ -43,8 +43,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Enable 2FA (verify code against the provided secret, then save)
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await checkAuth();
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   const userId = (session.user as any).id;
   const { secret, code } = await request.json();
@@ -72,8 +73,9 @@ export async function POST(request: NextRequest) {
 
 // DELETE - Disable 2FA (requires current password + TOTP code)
 export async function DELETE(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await checkAuth();
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   const userId = (session.user as any).id;
   const { password, code } = await request.json();

@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 /**
  * Bypass login endpoint
@@ -8,6 +9,10 @@ import { nanoid } from 'nanoid';
  * Only works if OTP is disabled in settings
  */
 export async function POST(request: NextRequest) {
+  const limited = await rateLimit(request, RateLimitPresets.auth);
+  if (limited) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
   try {
     const { phone } = await request.json();
 
