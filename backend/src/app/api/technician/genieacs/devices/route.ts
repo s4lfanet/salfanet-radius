@@ -16,13 +16,13 @@ async function verifyTechnician(req: NextRequest) {
         select: { id: true, isActive: true, role: true },
       });
       if (!adminUser?.isActive || adminUser.role !== 'TECHNICIAN') return null;
-      return { id: adminUser.id };
+      return { id: adminUser.id, isAdminUser: true as const };
     }
     const tech = await prisma.technician.findUnique({
       where: { id: payload.id as string },
       select: { id: true, isActive: true },
     });
-    return tech?.isActive ? tech : null;
+    return tech?.isActive ? { ...tech, isAdminUser: false as const } : null;
   } catch {
     return null;
   }
@@ -250,6 +250,19 @@ export async function GET(req: NextRequest) {
   const tech = await verifyTechnician(req);
   if (!tech) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const routerId = searchParams.get('routerId') || undefined;
+  const areaId = searchParams.get('areaId') || undefined;
+
+  // Field technicians must scope their query to a router or area
+  // (same security pattern as the customers route)
+  if (!tech.isAdminUser && !routerId && !areaId) {
+    return NextResponse.json(
+      { error: 'routerId or areaId parameter is required' },
+      { status: 400 },
+    );
+  }
+
   const credentials = await getGenieACSCredentials();
   if (!credentials) {
     return NextResponse.json({
@@ -265,6 +278,24 @@ export async function GET(req: NextRequest) {
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
+    // If field technician with router/area scope, get the list of
+    // customer usernames/IPs that belong to that scope for filtering.
+    let allowedUsernames: Set<string> | null = null;
+    if (!tech.isAdminUser && (routerId || areaId)) {
+      const users = await prisma.pppoeUser.findMany({
+        where: {
+          ...(routerId ? { routerId } : {}),
+          ...(areaId ? { areaId } : {}),
+        },
+        select: { username: true, ipAddress: true },
+      });
+      allowedUsernames = new Set(users.map(u => u.username));
+      // Also include IP addresses for matching against GenieACS device IPs
+      for (const u of users) {
+        if (u.ipAddress) allowedUsernames.add(u.ipAddress);
+      }
+    }
+
     const response = await fetch(`${host}/devices`, {
       method: 'GET',
       headers: {
@@ -290,7 +321,21 @@ export async function GET(req: NextRequest) {
     }
 
     const devicesRaw = await response.json();
-    const devices = devicesRaw.map(processDevice);
+    let devices = devicesRaw.map(processDevice);
+
+    // Filter devices for field technicians — only show devices that
+    // match a customer in their assigned router/area
+    if (allowedUsernames) {
+      devices = devices.filter((d: any) => {
+        // Match by username (DeviceID or _tags) or IP address
+        const deviceId = String(d.id || '');
+        const tags = Array.isArray(d.tags) ? d.tags : [];
+        const ip = String(d.ipAddress || d.ip || '');
+        return allowedUsernames.has(deviceId) ||
+               tags.some((t: string) => allowedUsernames.has(t)) ||
+               (ip !== '-' && allowedUsernames.has(ip));
+      });
+    }
 
     return NextResponse.json({
       success: true,

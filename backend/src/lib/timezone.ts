@@ -399,6 +399,10 @@ function getTimezoneAbbreviation(tz: string): string {
  * Get timezone UTC offset
  */
 function getTimezoneOffset(tz: string): string {
+  // UTC and GMT have zero offset
+  if (tz === 'UTC' || tz === 'GMT' || tz === 'Etc/UTC' || tz === 'Etc/GMT') {
+    return '+00:00';
+  }
   const offsetMap: Record<string, string> = {
     'Asia/Jakarta': '+07:00',
     'Asia/Makassar': '+08:00',

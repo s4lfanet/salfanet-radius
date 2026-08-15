@@ -1,4 +1,3 @@
-import 'server-only';
 import { prisma } from '@/server/db/client';
 import { randomUUID } from 'crypto';
 import { logCronLockAcquired, logCronLockDenied, logCronLockExpired, logCronHeartbeatFailure } from '@/server/services/monitoring.service';

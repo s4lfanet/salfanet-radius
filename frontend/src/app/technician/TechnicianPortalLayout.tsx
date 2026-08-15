@@ -33,6 +33,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getCurrentTimezone } from '@/lib/timezone';
 import { id as localeId } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -663,7 +664,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card/50 border border-border text-muted-foreground">
                   <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                   <span className="text-xs tabular-nums">
-                    {formatInTimeZone(now, 'Asia/Jakarta', 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })}
+                    {formatInTimeZone(now, getCurrentTimezone(), 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })}
                   </span>
                 </div>
               )}

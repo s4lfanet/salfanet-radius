@@ -3,7 +3,47 @@
 Daftar pekerjaan yang **belum dikerjakan** setelah Phase 1, Phase 2, dan Phase 3 selesai.
 
 Dokumen ini dibuat pada: 2026-08-14
-Terakhir diperbarui: 2026-08-15 (Phase 3 Security Hardening deployed)
+Terakhir diperbarukan: 2026-08-15 (Production Hardening Audit)
+
+---
+
+## Production Hardening Audit (2026-08-15) — Status
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Database ↔ Prisma @map consistency | ✅ [VERIFIED] | 0 mismatches |
+| Cron heartbeat integration | ✅ [FIXED] | Heartbeat active in runJob() |
+| Remove in-memory fallback (production) | ✅ [FIXED] | Fail-closed in production |
+| CRON_SECRET hardening | ✅ [FIXED] | Fail-fast + timingSafeEqual |
+| Cron HTTP timeout | ✅ [FIXED] | Per-job timeout config |
+| Timezone +7h elimination | ✅ [FIXED] | Removed from cron-runner, UTC fix in timezone.ts |
+| Cron schedule timezone | ✅ [FIXED] | Company timezone from DB |
+| nextRun calculation | ✅ [FIXED] | cron-parser library |
+| FreeRADIUS queue concurrency | ✅ [FIXED] | Atomic claim in processRetryQueue() |
+| Payment idempotency | ✅ [VERIFIED] | No changes needed |
+| GenieACS technician auth | ✅ [FIXED] | routerId/areaId scope required |
+| IDOR audit | ✅ [VERIFIED] | Customer/agent/technician secure |
+| Frontend API regression | ✅ [FIXED] | res.ok checks added |
+| Transaction audit | ⚠️ [DOCUMENTED] | Pre-existing gaps noted |
+| Secret leak audit | ✅ [FIXED] | Webhook + pay token logging fixed |
+| Tests — timezone | ✅ [TESTED] | 27/27 passed |
+| Tests — cron lock | ⚠️ [CREATED] | Must run on VPS |
+| Documentation | ✅ [DONE] | CHANGELOG + audit report |
+| VPS deployment | ❌ [PENDING] | Not yet deployed |
+
+### Deployment Checklist
+- [ ] Git push to master
+- [ ] Git pull on VPS (/root/salfanet-radius)
+- [ ] Git pull in deployment (/var/www/salfanet-radius)
+- [ ] pnpm install (backend — for cron-parser dependency)
+- [ ] prisma generate
+- [ ] Backend build
+- [ ] Frontend build
+- [ ] Restart PM2 processes (salfanet-backend, salfanet-cron)
+- [ ] Run cron lock tests on VPS
+- [ ] Verify CRON_SECRET fail-fast
+- [ ] Verify heartbeat in PM2 logs
+- [ ] Verify GenieACS technician device filtering
 
 ---
 

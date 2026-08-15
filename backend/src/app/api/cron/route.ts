@@ -21,6 +21,20 @@ import {
   runSessionMonitor,
   runPppoeSessionSync,
 } from '@/server/cron/additional-jobs'
+import { timingSafeEqual } from 'crypto'
+
+/**
+ * Timing-safe string comparison to prevent timing attacks on CRON_SECRET.
+ * Returns true if both strings are equal (same length + same bytes).
+ */
+function safeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  try {
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b))
+  } catch {
+    return false
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -41,10 +55,21 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Allow cron secret bypass or SUPERADMIN
-    const cronSecret = process.env.CRON_SECRET
-    const headerSecret = request.headers.get('x-cron-secret')
-    const hasCronSecret = cronSecret && headerSecret === cronSecret
+    // ─── Authentication: CRON_SECRET or SUPERADMIN session ──────────────────
+    const cronSecret = process.env.CRON_SECRET || ''
+    const headerSecret = request.headers.get('x-cron-secret') || ''
+
+    // In production: CRON_SECRET must be set.
+    if (process.env.NODE_ENV === 'production' && !cronSecret) {
+      console.error('[CRON API] FATAL: CRON_SECRET is not set in production.')
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error' },
+        { status: 500 }
+      )
+    }
+
+    // Timing-safe comparison to prevent timing attacks.
+    const hasCronSecret = cronSecret && headerSecret && safeCompare(headerSecret, cronSecret)
 
     let user = 'system'
     if (!hasCronSecret) {

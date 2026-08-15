@@ -321,11 +321,19 @@ export async function processRetryQueue(batchSize = 50): Promise<{
       break;
     }
 
-    // Mark as SYNCING
-    await prisma.radiusSyncQueue.update({
-      where: { id: entry.id },
+    // Atomic claim: only transition PENDING/FAILED → SYNCING if we win the race.
+    // This prevents two workers from processing the same item simultaneously.
+    const claimResult = await prisma.radiusSyncQueue.updateMany({
+      where: {
+        id: entry.id,
+        status: { in: ['PENDING', 'FAILED'] },
+      },
       data: { status: 'SYNCING', lastAttemptAt: new Date() },
     });
+    if (claimResult.count === 0) {
+      // Another worker already claimed this item — skip
+      continue;
+    }
 
     try {
       if (entry.syncType === 'delete') {

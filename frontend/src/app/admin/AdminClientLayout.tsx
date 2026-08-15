@@ -57,6 +57,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getCurrentTimezone } from '@/lib/timezone';
 import { id as localeId } from 'date-fns/locale';
 
 interface MenuItem {
@@ -1125,7 +1126,7 @@ function AdminLayoutContent({
                 <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card/50 border border-primary/20 text-muted-foreground">
                   <Clock className="w-3.5 h-3.5 text-accent/70 flex-shrink-0" />
                   <span className="text-xs tabular-nums">
-                    {formatInTimeZone(now, 'Asia/Jakarta', 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })}
+                    {formatInTimeZone(now, getCurrentTimezone(), 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })}
                   </span>
                 </div>
               )}
