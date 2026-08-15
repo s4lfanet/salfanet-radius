@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../../route';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export interface FlatParameter {
   path: string;
@@ -73,6 +74,8 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ deviceId: string }> }
 ) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
 

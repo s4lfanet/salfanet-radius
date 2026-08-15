@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../route';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // DELETE - Delete a specific device from GenieACS
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ deviceId: string }> }
 ) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
     

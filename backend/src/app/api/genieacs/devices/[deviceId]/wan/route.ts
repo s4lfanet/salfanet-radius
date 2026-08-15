@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 interface RouteParams {
   params: Promise<{ deviceId: string }>;
@@ -54,6 +55,8 @@ async function clearPendingTasks(host: string, deviceId: string, authHeader: str
 
 // POST - Update existing WAN connection (PPPoE creds, enable, VLAN, service)
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
     const body = await request.json();
@@ -152,6 +155,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
 // PUT - Add new WAN connection (addObject + setParameterValues)
 export async function PUT(request: NextRequest, { params }: RouteParams) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
     const body = await request.json();
@@ -268,6 +273,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 // DELETE - Remove a WAN connection (deleteObject)
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
     const body = await request.json();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../../route';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // Helper: fetch with AbortController timeout
 async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 15000): Promise<Response> {
@@ -17,9 +18,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ deviceId: string }> }
 ) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
-    
+
     if (!deviceId) {
       return NextResponse.json(
         { success: false, error: 'Device ID is required' },

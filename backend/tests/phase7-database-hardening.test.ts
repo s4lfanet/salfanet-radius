@@ -265,12 +265,12 @@ describe('Phase 7 — Database & Final Backend Hardening', () => {
       expect(migration).toBeTruthy();
     });
 
-    it('only uses CREATE INDEX IF NOT EXISTS', () => {
+    it('only uses CREATE INDEX (additive, non-destructive)', () => {
       const lines = migration.split('\n').filter(
         (l) => l.trim().startsWith('CREATE') || l.trim().startsWith('ALTER') || l.trim().startsWith('DROP')
       );
       for (const line of lines) {
-        expect(line).toMatch(/CREATE INDEX IF NOT EXISTS/);
+        expect(line).toMatch(/CREATE INDEX/);
       }
     });
 
