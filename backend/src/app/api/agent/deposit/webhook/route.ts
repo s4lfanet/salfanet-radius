@@ -218,39 +218,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Only process if current status is PENDING
-    if (deposit.status !== 'PENDING') {
-      await prisma.webhookLog.update({ where: { id: wLog.id }, data: { success: true } });
-      return NextResponse.json({
-        success: true,
-        message: 'Deposit already processed',
-      });
-    }
-
-    // Update deposit status
-    await prisma.agentDeposit.update({
-      where: { id: deposit.id },
-      data: {
-        status,
-        transactionId: transactionId || deposit.transactionId,
-        paidAt: status === 'PAID' ? new Date() : null,
-      },
-    });
-
-    // If payment successful, add balance to agent
+    // ─── ATOMIC CONDITIONAL UPDATE + BALANCE INCREMENT ──────────────────────
+    // Use updateMany with status condition to atomically claim this webhook.
+    // Only one concurrent webhook will get count > 0 and proceed to balance increment.
+    // This replaces the unsafe findFirst-then-update pattern.
     if (status === 'PAID') {
-      const updatedAgent = await prisma.agent.update({
-        where: { id: deposit.agentId },
-        data: {
-          balance: {
-            increment: deposit.amount,
+      // Settlement path: atomically transition PENDING → PAID, then increment balance
+      const result = await prisma.$transaction(async (tx) => {
+        // Atomic conditional update — only succeeds if status is still PENDING
+        const claimResult = await tx.agentDeposit.updateMany({
+          where: { id: deposit.id, status: 'PENDING' },
+          data: {
+            status: 'PAID',
+            transactionId: transactionId || deposit.transactionId,
+            paidAt: new Date(),
           },
-        },
+        });
+
+        if (claimResult.count === 0) {
+          return { alreadyProcessed: true as const };
+        }
+
+        // Increment agent balance — only runs if we claimed the deposit
+        const updatedAgent = await tx.agent.update({
+          where: { id: deposit.agentId },
+          data: {
+            balance: {
+              increment: deposit.amount,
+            },
+          },
+        });
+
+        return { alreadyProcessed: false as const, updatedAgent };
       });
 
+      if (result.alreadyProcessed) {
+        await prisma.webhookLog.update({ where: { id: wLog.id }, data: { success: true } });
+        return NextResponse.json({
+          success: true,
+          message: 'Deposit already processed',
+        });
+      }
+
+      const updatedAgent = result.updatedAgent!;
       console.log(`Agent ${deposit.agent.name} balance increased by ${deposit.amount}`);
 
-      // Create notification for agent
+      // Create notification for agent (best-effort, outside transaction)
       await prisma.agentNotification.create({
         data: {
           id: Math.random().toString(36).substring(2, 15),
@@ -260,9 +273,9 @@ export async function POST(request: NextRequest) {
           message: `Deposit sebesar Rp ${deposit.amount.toLocaleString('id-ID')} berhasil. Saldo baru: Rp ${updatedAgent.balance.toLocaleString('id-ID')}`,
           link: null,
         },
-      });
+      }).catch(e => console.error('Agent notification error:', e));
 
-      // Create notification for admin
+      // Create notification for admin (best-effort)
       await prisma.notification.create({
         data: {
           id: Math.random().toString(36).substring(2, 15),
@@ -272,9 +285,9 @@ export async function POST(request: NextRequest) {
           link: '/admin/hotspot/agent',
           createdAt: nowWIB(),
         },
-      });
+      }).catch(e => console.error('Admin notification error:', e));
 
-      // Log activity
+      // Log activity (best-effort)
       try {
         await logActivity({
           username: deposit.agent.name,
@@ -293,6 +306,23 @@ export async function POST(request: NextRequest) {
         });
       } catch (logError) {
         console.error('Activity log error:', logError);
+      }
+    } else {
+      // Non-settlement path (FAILED/EXPIRED): atomically transition PENDING → FAILED
+      const claimResult = await prisma.agentDeposit.updateMany({
+        where: { id: deposit.id, status: 'PENDING' },
+        data: {
+          status,
+          transactionId: transactionId || deposit.transactionId,
+        },
+      });
+
+      if (claimResult.count === 0) {
+        await prisma.webhookLog.update({ where: { id: wLog.id }, data: { success: true } });
+        return NextResponse.json({
+          success: true,
+          message: 'Deposit already processed',
+        });
       }
     }
 

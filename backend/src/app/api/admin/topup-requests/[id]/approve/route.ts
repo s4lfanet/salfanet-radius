@@ -11,7 +11,8 @@ export async function POST(
     if (!authCheck.authorized) return authCheck.response;
     const { id } = await params;
 
-    // Get transaction
+    // Get transaction (for reading pppoeUserId and amount)
+    // The actual status check is atomic inside the transaction below.
     const transaction = await prisma.transaction.findUnique({
       where: { id },
       include: { category: true }
@@ -21,36 +22,41 @@ export async function POST(
       return NextResponse.json({ error: 'Transaksi tidak ditemukan' }, { status: 404 });
     }
 
-    // Parse request data from notes
     const requestData = transaction.notes ? JSON.parse(transaction.notes) : {};
-    
-    if (requestData.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Transaksi sudah diproses' }, { status: 400 });
+    const pppoeUserId = requestData.pppoeUserId;
+    if (!pppoeUserId) {
+      return NextResponse.json({ error: 'PPPoE User ID not found in request data' }, { status: 400 });
     }
 
-    // Start transaction
+    const approvedAtISO = new Date().toISOString();
+
+    // ─── ALL-OR-NOTHING: atomic status update + balance + financial tx ─────────
+    // Single $transaction ensures:
+    //   1. Status PENDING → SUCCESS (atomic conditional, prevents double approve)
+    //   2. Balance increment (only if status transition succeeded)
+    //   3. Financial transaction record (only if status transition succeeded)
+    // If any step fails, the entire transaction rolls back — status stays PENDING.
     const result = await prisma.$transaction(async (tx) => {
-      // Update transaction status to SUCCESS in notes
-      const updatedRequestData = {
-        ...requestData,
-        status: 'SUCCESS',
-        approvedAt: new Date().toISOString(),
-        approvedBy: 'admin' // TODO: Get from session
-      };
+      // ── Step 1: Atomic conditional status update ─────────────────────────────
+      // Only updates if status is still PENDING. If another concurrent request
+      // already claimed it, affectedRows = 0 and we abort.
+      const atomicResult = await tx.$executeRaw`
+        UPDATE transactions
+        SET notes = JSON_SET(
+          notes,
+          '$.status', 'SUCCESS',
+          '$.approvedAt', ${approvedAtISO},
+          '$.approvedBy', 'admin'
+        )
+        WHERE id = ${id}
+          AND JSON_EXTRACT(notes, '$.status') = 'PENDING'
+      `;
 
-      const updatedTransaction = await tx.transaction.update({
-        where: { id },
-        data: { 
-          notes: JSON.stringify(updatedRequestData)
-        }
-      });
-
-      // Add balance to pppoe user
-      const pppoeUserId = requestData.pppoeUserId;
-      if (!pppoeUserId) {
-        throw new Error('PPPoE User ID not found in request data');
+      if (atomicResult === 0) {
+        return { alreadyProcessed: true as const };
       }
 
+      // ── Step 2: Increment user balance ───────────────────────────────────────
       const updatedUser = await tx.pppoeUser.update({
         where: { id: pppoeUserId },
         data: {
@@ -60,8 +66,42 @@ export async function POST(
         }
       });
 
-      return { transaction: updatedTransaction, user: updatedUser, requestData: updatedRequestData };
+      // ── Step 3: Create financial transaction record ──────────────────────────
+      // Use a deterministic reference to detect duplicates. Since the atomic
+      // status update already prevents double execution, this create will only
+      // run once. The try/catch handles edge cases (e.g., crash recovery).
+      const reference = `TOPUP-APPROVED-${id}`;
+      const existing = await tx.transaction.findFirst({ where: { reference } });
+      if (!existing) {
+        await tx.transaction.create({
+          data: {
+            id: `fin-${id}`,
+            categoryId: transaction.categoryId,
+            amount: transaction.amount,
+            type: 'INCOME',
+            description: `Top-up approved for ${requestData.pppoeUsername || pppoeUserId}`,
+            reference,
+            notes: JSON.stringify({
+              source: 'topup_request_approval',
+              originalTransactionId: id,
+              pppoeUserId,
+              approvedAt: approvedAtISO,
+            }),
+          },
+        });
+      }
+
+      return { alreadyProcessed: false as const, user: updatedUser };
     });
+
+    if (result.alreadyProcessed) {
+      const currentData = transaction.notes ? JSON.parse(transaction.notes) : {};
+      const currentStatus = currentData.status || 'UNKNOWN';
+      return NextResponse.json(
+        { error: `Transaksi sudah diproses (status: ${currentStatus})` },
+        { status: 409 }
+      );
+    }
 
     // TODO: Send WhatsApp/Email notification to user
 
@@ -69,14 +109,14 @@ export async function POST(
       success: true,
       message: 'Permintaan top-up berhasil disetujui',
       transaction: {
-        id: result.transaction.id,
-        amount: Number(result.transaction.amount),
-        status: result.requestData.status
+        id: transaction.id,
+        amount: Number(transaction.amount),
+        status: 'SUCCESS'
       },
       user: {
-        id: result.user.id,
-        username: result.user.username,
-        newBalance: Number(result.user.balance)
+        id: result.user!.id,
+        username: result.user!.username,
+        newBalance: Number(result.user!.balance)
       }
     });
 

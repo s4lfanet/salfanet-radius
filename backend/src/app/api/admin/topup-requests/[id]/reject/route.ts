@@ -11,7 +11,7 @@ export async function POST(
     if (!auth.authorized) return auth.response;
     const { id } = await params;
 
-    // Get transaction
+    // Get transaction (for display purposes — the actual status check is atomic below)
     const transaction = await prisma.transaction.findUnique({
       where: { id },
       include: { category: true }
@@ -21,37 +21,43 @@ export async function POST(
       return NextResponse.json({ error: 'Transaksi tidak ditemukan' }, { status: 404 });
     }
 
-    // Parse request data from notes
-    const requestData = transaction.notes ? JSON.parse(transaction.notes) : {};
+    // ─── ATOMIC CONDITIONAL UPDATE ─────────────────────────────────────────────
+    // Atomically check status = PENDING and update to FAILED in a single SQL statement.
+    // This prevents the TOCTOU race condition where two concurrent requests (e.g.,
+    // approve + reject, or two rejects) both see PENDING and both proceed.
+    const rejectedAtISO = new Date().toISOString();
 
-    if (requestData.status !== 'PENDING') {
-      return NextResponse.json({ error: 'Transaksi sudah diproses' }, { status: 400 });
+    const atomicResult = await prisma.$executeRaw`
+      UPDATE transactions
+      SET notes = JSON_SET(
+        notes,
+        '$.status', 'FAILED',
+        '$.rejectedAt', ${rejectedAtISO},
+        '$.rejectedBy', 'admin'
+      )
+      WHERE id = ${id}
+        AND JSON_EXTRACT(notes, '$.status') = 'PENDING'
+    `;
+
+    if (atomicResult === 0) {
+      const currentData = transaction.notes ? JSON.parse(transaction.notes) : {};
+      const currentStatus = currentData.status || 'UNKNOWN';
+      return NextResponse.json(
+        { error: `Transaksi sudah diproses (status: ${currentStatus})` },
+        { status: 409 }
+      );
     }
 
-    // Update transaction status to FAILED in notes
-    const updatedRequestData = {
-      ...requestData,
-      status: 'FAILED',
-      rejectedAt: new Date().toISOString(),
-      rejectedBy: 'admin' // TODO: Get from session
-    };
-
-    const updatedTransaction = await prisma.transaction.update({
-      where: { id },
-      data: { 
-        notes: JSON.stringify(updatedRequestData)
-      }
-    });
-
-    // TODO: Send WhatsApp/Email notification to user
+    // No balance increment on reject — just status change (already done above)
+    // No financial transaction record needed for rejected requests
 
     return NextResponse.json({
       success: true,
       message: 'Permintaan top-up ditolak',
       transaction: {
-        id: updatedTransaction.id,
-        amount: Number(updatedTransaction.amount),
-        status: updatedRequestData.status
+        id: transaction.id,
+        amount: Number(transaction.amount),
+        status: 'FAILED'
       }
     });
 

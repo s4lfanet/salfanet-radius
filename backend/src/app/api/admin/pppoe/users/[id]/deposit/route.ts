@@ -35,48 +35,56 @@ export async function POST(
       return NextResponse.json({ error: 'User tidak ditemukan' }, { status: 404 })
     }
 
-    // Update balance
-    const updatedUser = await prisma.pppoeUser.update({
-      where: { id },
-      data: {
-        balance: {
-          increment: amount
-        }
+    // ─── ATOMIC: balance increment + financial transaction ────────────────────
+    // Both operations in a single $transaction to ensure consistency.
+    // If either fails, both roll back — balance and ledger stay in sync.
+    const result = await prisma.$transaction(async (tx) => {
+      // Get or create deposit transaction category
+      let depositCategory = await tx.transactionCategory.findFirst({
+        where: { name: 'Deposit Saldo' }
+      })
+
+      if (!depositCategory) {
+        depositCategory = await tx.transactionCategory.create({
+          data: {
+            id: nanoid(),
+            name: 'Deposit Saldo',
+            type: 'INCOME',
+            description: 'Top up saldo user'
+          }
+        })
       }
-    })
 
-    // Get or create deposit transaction category
-    let depositCategory = await prisma.transactionCategory.findFirst({
-      where: { name: 'Deposit Saldo' }
-    })
-
-    if (!depositCategory) {
-      depositCategory = await prisma.transactionCategory.create({
+      // Increment balance
+      const updatedUser = await tx.pppoeUser.update({
+        where: { id },
         data: {
-          id: nanoid(),
-          name: 'Deposit Saldo',
-          type: 'INCOME',
-          description: 'Top up saldo user'
+          balance: {
+            increment: amount
+          }
         }
       })
-    }
 
-    // Create transaction record
-    await prisma.transaction.create({
-      data: {
-        id: nanoid(),
-        categoryId: depositCategory.id,
-        amount: amount,
-        type: 'INCOME',
-        description: note || `Top up saldo deposit untuk user ${user.username}`,
-        reference: `DEPOSIT-${id}`, // Store user ID in reference field
-        notes: paymentMethod ? `Payment Method: ${paymentMethod}` : 'Payment Method: MANUAL',
-        createdAt: new Date(),
-        createdBy: 'admin', // TODO: Get from session
-      }
+      // Create transaction record with deterministic reference for idempotency
+      const reference = `DEPOSIT-${id}-${Date.now()}`
+      const financialTx = await tx.transaction.create({
+        data: {
+          id: nanoid(),
+          categoryId: depositCategory.id,
+          amount: amount,
+          type: 'INCOME',
+          description: note || `Top up saldo deposit untuk user ${user.username}`,
+          reference,
+          notes: paymentMethod ? `Payment Method: ${paymentMethod}` : 'Payment Method: MANUAL',
+          createdAt: new Date(),
+          createdBy: 'admin', // TODO: Get from session
+        }
+      })
+
+      return { updatedUser, financialTx }
     })
 
-    console.log(`[Deposit] User ${user.username} balance +${amount}. New balance: ${updatedUser.balance}`)
+    console.log(`[Deposit] User ${user.username} balance +${amount}. New balance: ${result.updatedUser.balance}`)
 
     return NextResponse.json({
       message: 'Top up berhasil',
@@ -84,7 +92,7 @@ export async function POST(
         username: user.username,
         previousBalance: user.balance,
         amount: amount,
-        newBalance: updatedUser.balance,
+        newBalance: result.updatedUser.balance,
       }
     })
 

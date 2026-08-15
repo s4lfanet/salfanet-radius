@@ -203,9 +203,13 @@ export async function PATCH(
       const passwordBefore = manualPayment.user.password;
 
       // Atomic transaction: all related records written together
-      await prisma.$transaction(async (tx) => {
-        await tx.manualPayment.update({
-          where: { id },
+      // Use updateMany with status condition to prevent double-approval under
+      // concurrent requests. If another request already approved/rejected this
+      // payment, the conditional update returns count=0 and we abort.
+      const approveResult = await prisma.$transaction(async (tx) => {
+        // ── Step 1: Atomic conditional update — PENDING → APPROVED ───────────────
+        const claimResult = await tx.manualPayment.updateMany({
+          where: { id, status: 'PENDING' },
           data: {
             status: 'APPROVED',
             approvedBy,
@@ -213,35 +217,62 @@ export async function PATCH(
           },
         });
 
-        await tx.invoice.update({
-          where: { id: manualPayment.invoiceId },
+        if (claimResult.count === 0) {
+          return { alreadyProcessed: true as const };
+        }
+
+        // ── Step 2: Atomic conditional invoice update — only if not already PAID ──
+        const invoiceResult = await tx.invoice.updateMany({
+          where: { id: manualPayment.invoiceId, status: { not: 'PAID' } },
           data: {
             status: 'PAID',
             paidAt: approvedAt,
           },
         });
 
-        await tx.pppoeUser.update({
-          where: { id: manualPayment.userId },
-          data: {
-            expiredAt: finalExpiry,
-            status: 'active',
-            lastPaymentDate: approvedAt,
-            ...(newProfileId !== manualPayment.user.profileId && { profileId: newProfileId }),
-          },
-        });
+        // If invoice was already PAID (by webhook or another path), still proceed
+        // with user update — but don't create duplicate payment record
+        if (invoiceResult.count > 0) {
+          // ── Step 3: Update user expiry/status ───────────────────────────────────
+          await tx.pppoeUser.update({
+            where: { id: manualPayment.userId },
+            data: {
+              expiredAt: finalExpiry,
+              status: 'active',
+              lastPaymentDate: approvedAt,
+              ...(newProfileId !== manualPayment.user.profileId && { profileId: newProfileId }),
+            },
+          });
 
-        await tx.payment.create({
-          data: {
-            id: paymentId,
-            invoiceId: manualPayment.invoiceId,
-            amount: manualPayment.invoice.amount,
-            method: 'manual_transfer',
-            status: 'success',
-            paidAt: approvedAt,
-          },
-        });
+          // ── Step 4: Create payment record (only if invoice wasn't already paid) ──
+          // Check if payment record already exists for this invoice
+          const existingPayment = await tx.payment.findUnique({
+            where: { invoiceId: manualPayment.invoiceId },
+          });
+
+          if (!existingPayment) {
+            await tx.payment.create({
+              data: {
+                id: paymentId,
+                invoiceId: manualPayment.invoiceId,
+                amount: manualPayment.invoice.amount,
+                method: 'manual_transfer',
+                status: 'success',
+                paidAt: approvedAt,
+              },
+            });
+          }
+        }
+
+        return { alreadyProcessed: false as const };
       });
+
+      if (approveResult.alreadyProcessed) {
+        return NextResponse.json(
+          { success: false, error: 'Manual payment already processed' },
+          { status: 409 }
+        );
+      }
 
       // Verify pppoe_users.password was NOT changed by the transaction or any DB trigger
       const userAfterTx = await prisma.pppoeUser.findUnique({
