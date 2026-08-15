@@ -67,6 +67,7 @@ model agent {
   routerId          String? // Router/NAS yang ditangani agent ini
   router            router?                 @relation(fields: [routerId], references: [id], onDelete: SetNull)
   lastLogin         DateTime? // Waktu login terakhir agent
+  sessionVersion    Int                     @default(0) // JWT revocation: increment to invalidate all existing tokens
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
   sales             agentSale[]
@@ -952,6 +953,7 @@ model transaction {
   @@index([categoryId])
   @@index([type])
   @@index([date])
+  @@index([reference])
   @@map("transactions")
 }
 
@@ -979,6 +981,43 @@ model cronScheduleConfig {
   updatedBy String?
 
   @@map("cron_schedule_config")
+}
+
+// ─── FreeRADIUS Sync Retry Queue ────────────────────────────────────────────
+// Tracks failed RADIUS syncs for retry with exponential backoff.
+// Reconciliation detects drift between SalfaNet DB and FreeRADIUS DB.
+model radiusSyncQueue {
+  id             String   @id
+  pppoeUserId    String   @map("pppoe_user_id")
+  username       String   @db.VarChar(64)
+  syncType       String   @db.VarChar(32) // full, password, profile, ip, status, delete
+  status         String   @default("PENDING") @db.VarChar(16) // PENDING, SYNCING, SYNCED, FAILED, DEAD
+  retryCount     Int      @default(0)
+  maxRetries     Int      @default(5)
+  lastError      String?  @db.Text
+  lastAttemptAt  DateTime?
+  nextRetryAt    DateTime?
+  completedAt    DateTime?
+  failedAt       DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@index([nextRetryAt])
+  @@index([pppoeUserId])
+  @@map("radius_sync_queue")
+}
+
+// ─── Atomic Cron Lock (MySQL-based distributed lock) ────────────────────────
+// Replaces in-memory Set + findFirst race condition.
+// Uses INSERT ... ON DUPLICATE KEY UPDATE for atomic acquisition.
+model cronLock {
+  jobKey      String   @id @db.VarChar(64) // unique per job type, e.g. "invoice_generate"
+  ownerToken  String   @db.VarChar(64) // random token to identify lock owner
+  acquiredAt  DateTime @default(now())
+  expiresAt   DateTime // TTL — stale locks are reclaimable
+
+  @@map("cron_lock")
 }
 
 enum hotspot_vouchers_status {
