@@ -433,6 +433,7 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center gap-1.5 px-2 py-1 group"
+        aria-expanded={isOpen}
       >
         <span className="text-[9px] text-gray-500 tracking-[0.25em] uppercase font-bold group-hover:text-gray-600 dark:text-gray-400 dark:group-hover:text-gray-300 transition-colors flex-shrink-0">
           {t(titleKey)}
@@ -477,6 +478,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
       <div>
         <button
           onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
           className={cn(
             'w-full flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all duration-200 group',
             isActive
@@ -500,7 +502,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
         {!collapsed && (
           <div className={cn(
             'overflow-hidden transition-all duration-300 ease-in-out',
-            isOpen ? 'max-h-96 opacity-100 mt-0.5' : 'max-h-0 opacity-0'
+            isOpen ? 'max-h-[500px] opacity-100 mt-0.5' : 'max-h-0 opacity-0'
           )}>
             <div className="ml-3.5 pl-2 border-l-2 border-gray-200 dark:border-primary/20 space-y-0.5">
               {item.children.map((child) => (
@@ -1006,7 +1008,7 @@ function AdminLayoutContent({
           </div>
 
           {/* Navigation - optimized scrolling for mobile */}
-          <nav className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-1.5 custom-scrollbar touch-pan-y">
+          <nav aria-label="Main navigation" className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-2 py-1.5 custom-scrollbar touch-pan-y">
             <div className="mb-1">
               <NavItem
                 item={dashboardMenuItem}

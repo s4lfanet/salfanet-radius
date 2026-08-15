@@ -301,7 +301,8 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1.5 hover:bg-sidebar-accent rounded-lg lg:hidden"
+              className="p-2.5 hover:bg-sidebar-accent rounded-lg lg:hidden"
+              aria-label="Close menu"
             >
               <X className="w-4 h-4 text-sidebar-foreground" />
             </button>
@@ -309,7 +310,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="p-3 space-y-1 flex-1 min-h-0 overflow-y-auto">
+        <nav aria-label="Main navigation" className="p-3 space-y-1 flex-1 min-h-0 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -461,7 +462,8 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               {/* Menu button (left side) */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="p-2 flex items-center justify-center hover:bg-primary/10 rounded-xl transition-all border border-border"
+                className="p-2.5 flex items-center justify-center hover:bg-primary/10 rounded-xl transition-all border border-border"
+                aria-label="Open menu"
               >
                 <Menu className="w-5 h-5 text-primary" />
               </button>
@@ -572,7 +574,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         </main>
 
         {/* ── MOBILE BOTTOM NAV ─────────────────────────────────── */}
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-xl border-t border-border shadow-sm">
+        <nav aria-label="Quick navigation" className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-xl border-t border-border shadow-sm">
           <div className="flex items-center justify-around px-1 py-1.5 safe-area-pb">
             {[
               { href: '/customer',          icon: Home,        label: 'Beranda' },
