@@ -5,6 +5,8 @@ import { createXenditInvoice } from '@/server/services/payment/xendit.service';
 import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
+import { createPaymentAttempt } from '@/server/services/payment/payment-attempt.service';
+import nodeCrypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,11 +47,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { invoiceId, orderNumber, amount, gateway, type, paymentMethod } = body;
+    const { invoiceId, orderNumber, amount, gateway, type, paymentMethod, paymentToken } = body;
 
-    console.log('[Payment Create] Request:', { invoiceId, orderNumber, amount, gateway, type, paymentMethod });
-
-    // For voucher orders
+    // For voucher orders (no payment token needed — uses order's paymentToken)
     if (type === 'voucher') {
       if (!orderNumber || !amount || !gateway) {
         return NextResponse.json(
@@ -73,6 +73,12 @@ export async function POST(request: NextRequest) {
 
       return await createVoucherPayment(order, gateway);
     }
+
+    // ─── AUTHENTICATION: Validate payment token ownership ─────────────────────
+    // For invoice payments, the requester must provide the invoice's paymentToken
+    // to prove they are authorized to pay this invoice.
+    // This prevents IDOR — paying someone else's invoice or creating fraudulent
+    // payment links.
 
     // For invoices (PPPoE)
     if (!invoiceId || !gateway) {
@@ -114,6 +120,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate payment token — requester must know the invoice's payment token
+    if (!paymentToken || paymentToken !== invoice.paymentToken) {
+      return NextResponse.json(
+        { error: 'Invalid payment token — not authorized to pay this invoice' },
+        { status: 403 }
+      );
+    }
+
     // Check if payment gateway is active
     const gatewayConfig = await prisma.paymentGateway.findUnique({
       where: { provider: gateway }
@@ -126,32 +140,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for existing pending payment for this invoice
-    // Prevent duplicate pending payments that could lead to double-payment confusion
-    const existingPending = await prisma.webhookLog.findFirst({
-      where: {
-        orderId: { startsWith: `${invoice.invoiceNumber}-` },
-        status: 'pending',
-        success: true,
-        createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) }, // Last 30 minutes
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (existingPending) {
-      return NextResponse.json(
-        { error: 'You already have a pending payment for this invoice. Please complete or wait for it to expire before creating a new one.' },
-        { status: 409 }
-      );
-    }
+    // ─── PAYMENT ATTEMPT: DB-level idempotency ────────────────────────────────
+    // Create a PaymentAttempt record with a unique orderId.
+    // This atomically cancels any existing active attempts for this invoice
+    // and prevents duplicate payment attempts under concurrent requests.
+    const orderId = `${invoice.invoiceNumber}-${Date.now()}-${nodeCrypto.randomBytes(4).toString('hex')}`;
 
     // Get customer info (use snapshot if user deleted)
     const customerName = invoice.user?.name || invoice.customerName || 'Customer';
     const customerPhone = invoice.user?.phone || invoice.customerPhone || '08123456789';
     const customerEmail = invoice.user?.email || `invoice-${invoice.invoiceNumber}@example.com`;
-
-    // Generate unique order ID (invoiceNumber already contains INV- prefix)
-    const orderId = `${invoice.invoiceNumber}-${Date.now()}`;
 
     // Compute base URL for callbacks/return URLs
     // Priority: company.baseUrl → request Host header → env → localhost
@@ -317,22 +315,50 @@ export async function POST(request: NextRequest) {
     }
 
     // ============================================
-    // SAVE PAYMENT TO DATABASE
+    // SAVE PAYMENT ATTEMPT TO DATABASE (atomic idempotency)
     // ============================================
 
-    const payment = await prisma.payment.create({
-      data: {
-        id: crypto.randomUUID(),
-        invoiceId: invoice.id,
-        amount: invoice.amount,
-        method: `${gateway}_${gateway === 'midtrans' ? 'snap' : 'invoice'}`,
-        gatewayId: gatewayConfig.id,
-        status: 'pending'
-      }
+    const attemptResult = await createPaymentAttempt({
+      invoiceId: invoice.id,
+      orderId,
+      gateway,
+      amount: invoice.amount,
+      paymentToken: invoice.paymentToken,
+      paymentUrl,
+      snapToken: snapToken || undefined,
+      qrString: qrString || undefined,
     });
 
-    console.log(`✅ Payment created: ${orderId} via ${gateway.toUpperCase()}`);
-    
+    if (!attemptResult.success) {
+      console.error('[Payment Create] Failed to create payment attempt:', attemptResult.error);
+      return NextResponse.json(
+        { error: 'A payment attempt already exists for this invoice. Please complete or wait for it to expire.' },
+        { status: 409 }
+      );
+    }
+
+    // Also create legacy payment record for backward compatibility
+    try {
+      await prisma.payment.create({
+        data: {
+          id: crypto.randomUUID(),
+          invoiceId: invoice.id,
+          amount: invoice.amount,
+          method: `${gateway}_${gateway === 'midtrans' ? 'snap' : 'invoice'}`,
+          gatewayId: gatewayConfig.id,
+          status: 'pending'
+        }
+      });
+    } catch (paymentError: any) {
+      // P2002 = unique constraint on invoiceId — payment record already exists
+      // This is OK, the PaymentAttempt is the real idempotency guard
+      if (paymentError?.code !== 'P2002') {
+        console.error('[Payment Create] Failed to create payment record:', paymentError);
+      }
+    }
+
+    console.log(`✅ Payment attempt created: ${orderId} via ${gateway.toUpperCase()}`);
+
     // Create webhook log for pending payment
     try {
       await prisma.webhookLog.create({
@@ -348,14 +374,13 @@ export async function POST(request: NextRequest) {
           success: true
         }
       });
-      console.log(`✅ Webhook log created for ${orderId}`);
     } catch (logError) {
       console.error('Failed to create webhook log:', logError);
     }
 
     return NextResponse.json({
       success: true,
-      payment,
+      paymentId: attemptResult.attempt.id,
       orderId,
       paymentUrl,
       snapToken,
