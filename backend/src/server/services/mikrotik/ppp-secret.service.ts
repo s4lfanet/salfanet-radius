@@ -253,7 +253,7 @@ export async function listPppSecrets(routerId: string): Promise<Array<{ name: st
  */
 export async function listPppActive(routerId: string): Promise<Set<string>> {
   const router = await getRouterConfig(routerId)
-  if (!router) return new Set()
+  if (!router) throw new Error(`Router ${routerId} not found`)
 
   const host = router.ipAddress || router.nasname
   const apiPort = router.port || 8728
@@ -276,7 +276,10 @@ export async function listPppActive(routerId: string): Promise<Set<string>> {
     return usernames
   } catch (e: any) {
     console.error(`[PPP_ACTIVE] listPppActive for router ${router.name}:`, e?.message || e)
-    return new Set()
+    // CRITICAL: Re-throw so callers know the API failed.
+    // Returning an empty Set would make the cron job think the router
+    // has no active sessions and incorrectly close them as stale.
+    throw e
   } finally {
     try { if (api) await api.close() } catch { /* ignore */ }
   }
