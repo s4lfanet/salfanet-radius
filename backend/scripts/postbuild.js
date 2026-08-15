@@ -35,14 +35,32 @@ if (fs.existsSync('node_modules/.prisma') && fs.existsSync(`${standaloneDir}/nod
 // 3. Copy iconv-lite to standalone node_modules
 // node-routeros depends on iconv-lite, but Next.js standalone build
 // doesn't properly link iconv-lite's internal ../encodings requires.
-// Copying the full package ensures module resolution works.
-const iconvSrc = 'node_modules/iconv-lite';
-const iconvDst = `${standaloneDir}/node_modules/iconv-lite`;
-if (fs.existsSync(iconvSrc) && !fs.existsSync(iconvDst)) {
-  copyDir(iconvSrc, iconvDst);
-  console.log('[postbuild] iconv-lite copied to standalone/backend/node_modules/');
-} else if (fs.existsSync(iconvSrc) && fs.existsSync(iconvDst)) {
-  // Re-copy to ensure encodings directory is present
-  copyDir(iconvSrc, iconvDst);
-  console.log('[postbuild] iconv-lite updated in standalone/backend/node_modules/');
+// iconv-lite is a transitive dep (via node-routeros), so it's only in
+// the pnpm store, not in backend/node_modules/ directly.
+// We copy it to standalone/backend/node_modules/ so Node.js can resolve it.
+const iconvDirs = [
+  'node_modules/iconv-lite',
+  'node_modules/.pnpm/iconv-lite@0.7.3/node_modules/iconv-lite',
+];
+const standaloneNodeModules = `${standaloneDir}/node_modules`;
+let iconvCopied = false;
+for (const src of iconvDirs) {
+  if (fs.existsSync(src)) {
+    copyDir(src, `${standaloneNodeModules}/iconv-lite`);
+    console.log(`[postbuild] iconv-lite copied from ${src} to standalone/`);
+    iconvCopied = true;
+    break;
+  }
+}
+if (!iconvCopied) {
+  // Try pnpm store in standalone build
+  const pnpmIconv = '.next/standalone/node_modules/.pnpm/iconv-lite@0.7.3/node_modules/iconv-lite';
+  if (fs.existsSync(pnpmIconv)) {
+    copyDir(pnpmIconv, `${standaloneNodeModules}/iconv-lite`);
+    console.log('[postbuild] iconv-lite copied from standalone pnpm store');
+    iconvCopied = true;
+  }
+}
+if (!iconvCopied) {
+  console.warn('[postbuild] WARNING: iconv-lite not found — node-routeros may fail');
 }
