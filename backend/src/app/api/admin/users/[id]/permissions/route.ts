@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getUserPermissions, setUserPermissions, resetUserPermissionsToRole } from '@/server/auth/permissions';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * GET /api/admin/users/[id]/permissions - Get user's permissions
@@ -9,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission('users.view');
+    if (!auth.authorized) return auth.response;
+
     const { id } = await params;
     
     // Validate ID
@@ -45,6 +49,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission('users.edit');
+    if (!auth.authorized) return auth.response;
+
     const { id } = await params;
     const body = await request.json();
     const { permissions } = body;
@@ -79,6 +86,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requirePermission('users.edit');
+    if (!auth.authorized) return auth.response;
+
     const { id } = await params;
     await resetUserPermissionsToRole(id);
 

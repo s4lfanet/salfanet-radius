@@ -91,7 +91,7 @@ const CRON_SECRET = process.env.CRON_SECRET || ''
  * The API route handles all business logic (can import from src/server/*).
  * Returns the job result from the API.
  */
-async function triggerJobViaAPI(jobType: string): Promise<any> {
+async function triggerJobViaAPI(jobType: string): Promise<{ success?: boolean; error?: string; [key: string]: unknown }> {
   const url = `${API_URL}/api/cron`
   const body = JSON.stringify({ type: jobType })
 
@@ -108,7 +108,13 @@ async function triggerJobViaAPI(jobType: string): Promise<any> {
   }
 }
 
-// ─── Job runner with history logging ────────────────────────────────────────
+// ─── Job runner with history logging + duplicate execution protection ────────
+
+// In-memory guard: prevents overlapping runs within the same process
+const runningJobs = new Set<string>()
+
+// Stale lock threshold: if a 'running' record is older than this, treat it as stale
+const STALE_LOCK_MS = 30 * 60 * 1000 // 30 minutes
 
 async function runJob(jobType: string) {
   const { enabled } = await getEffectiveSchedule(jobType)
@@ -117,6 +123,34 @@ async function runJob(jobType: string) {
     return
   }
 
+  // ─── In-memory guard ──────────────────────────────────────────────────────
+  if (runningJobs.has(jobType)) {
+    console.log(`[${new Date().toISOString()}] [CRON] ${jobType} — skipped (already running in-process)`)
+    return
+  }
+
+  // ─── Database-based lock ──────────────────────────────────────────────────
+  // Check for a 'running' cronHistory record that isn't stale.
+  // This protects against duplicate execution across multiple processes/hosts.
+  try {
+    const staleThreshold = new Date(Date.now() - STALE_LOCK_MS)
+    const existingRun = await prisma.cronHistory.findFirst({
+      where: {
+        jobType,
+        status: 'running',
+        startedAt: { gte: staleThreshold },
+      },
+      orderBy: { startedAt: 'desc' },
+    })
+    if (existingRun) {
+      console.log(`[${new Date().toISOString()}] [CRON] ${jobType} — skipped (already running since ${existingRun.startedAt.toISOString()})`)
+      return
+    }
+  } catch {
+    // Table might not exist — fall back to in-memory guard only
+  }
+
+  runningJobs.add(jobType)
   const startedAt = nowWIB()
   const jobId = `cron_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
   console.log(`[${startedAt.toISOString()}] [CRON] ${jobType} — starting`)
@@ -150,16 +184,18 @@ async function runJob(jobType: string) {
     } catch { /* non-fatal */ }
 
     console.log(`[${completedAt.toISOString()}] [CRON] ${jobType} — ${success ? 'success' : 'error'} (${duration}ms)`, result)
-  } catch (error: any) {
+  } catch (error) {
     const completedAt = nowWIB()
     const duration = completedAt.getTime() - startedAt.getTime()
     try {
       await prisma.cronHistory.update({
         where: { id: jobId },
-        data: { status: 'error', completedAt, duration, error: error?.message || 'Job failed' },
+        data: { status: 'error', completedAt, duration, error: error instanceof Error ? error.message : 'Job failed' },
       })
     } catch { /* non-fatal */ }
-    console.error(`[${completedAt.toISOString()}] [CRON] ${jobType} — error:`, error?.message || error)
+    console.error(`[${completedAt.toISOString()}] [CRON] ${jobType} — error:`, error instanceof Error ? error.message : error)
+  } finally {
+    runningJobs.delete(jobType)
   }
 }
 
@@ -189,7 +225,7 @@ async function main() {
   }
 
   // Schedule all jobs
-  const tasks: any[] = []
+  const tasks: ReturnType<typeof cron.schedule>[] = []
   for (const def of CRON_JOB_DEFS) {
     const { schedule, enabled } = await getEffectiveSchedule(def.type)
     if (!enabled) {

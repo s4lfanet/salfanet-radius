@@ -2,6 +2,7 @@
 import { prisma } from '@/server/db/client';
 import bcrypt from 'bcryptjs';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { isSuperAdmin } from '@/server/auth/permissions';
 
 /**
  * GET /api/admin/users - Get all admin users
@@ -88,6 +89,27 @@ export async function POST(request: NextRequest) {
         : '62' + normalized;
     }
 
+    // Validate role against allowlist
+    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN'];
+    const finalRole = role || 'OPERATOR';
+    if (!allowedRoles.includes(finalRole)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid role' },
+        { status: 400 }
+      );
+    }
+
+    // Prevent SUPER_ADMIN escalation unless caller is SUPER_ADMIN
+    if (finalRole === 'SUPER_ADMIN') {
+      const callerIsSuper = await isSuperAdmin(authCheck.userId);
+      if (!callerIsSuper) {
+        return NextResponse.json(
+          { success: false, error: 'Cannot grant SUPER_ADMIN role' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Check if username already exists
     const existing = await prisma.adminUser.findUnique({
       where: { username },
@@ -110,7 +132,7 @@ export async function POST(request: NextRequest) {
         email: email || null,
         password: hashedPassword,
         name: name || username,
-        role: role || 'OPERATOR',
+        role: finalRole,
         phone: formattedPhone || null,
         isActive: isActive !== undefined ? isActive : true,
       },

@@ -64,11 +64,19 @@ interface NbiOptions {
   headers?: Record<string, string>;
   /** Return raw Response (for binary/text routes). */
   raw?: boolean;
+  /** Override default timeout (ms). */
+  timeoutMs?: number;
 }
+
+// ─── Retry / timeout configuration ──────────────────────────────────────────
+const DEFAULT_TIMEOUT_MS = 30_000; // 30 seconds
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 1_000; // 1s initial, exponential backoff
 
 /**
  * Low-level wrapper around `fetch` against the configured NBI base URL.
  * Resolves to parsed JSON unless `raw` is true.
+ * Includes timeout (30s default) and retry (max 2 attempts) for transient failures.
  */
 export async function nbiRequest<T = unknown>(path: string, opts: NbiOptions = {}): Promise<T> {
   const auth = await resolveAuth();
@@ -80,7 +88,7 @@ export async function nbiRequest<T = unknown>(path: string, opts: NbiOptions = {
         .join('&')
     : '';
   const url = `${auth.baseUrl}${path}${qs}`;
-  const headers: Record<string, string> = {
+  const baseHeaders: Record<string, string> = {
     Accept: 'application/json',
     ...basicAuthHeader(auth.username, auth.password),
     ...(opts.headers ?? {}),
@@ -91,24 +99,69 @@ export async function nbiRequest<T = unknown>(path: string, opts: NbiOptions = {
       body = opts.body as BodyInit;
     } else {
       body = JSON.stringify(opts.body);
-      headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+      baseHeaders['Content-Type'] = baseHeaders['Content-Type'] || 'application/json';
     }
   }
-  const res = await fetch(url, {
-    method: opts.method ?? 'GET',
-    headers,
-    body,
-    cache: 'no-store',
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`NBI ${opts.method ?? 'GET'} ${path} -> ${res.status} ${text.slice(0, 200)}`);
+
+  const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    // AbortController for per-attempt timeout
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        method: opts.method ?? 'GET',
+        headers: baseHeaders,
+        body,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        // Retry on 5xx (server errors) and 429 (rate limit), but not on 4xx client errors
+        if ((res.status >= 500 || res.status === 429) && attempt < MAX_RETRIES) {
+          const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+          console.warn(`[GenieACS] NBI ${opts.method ?? 'GET'} ${path} -> ${res.status}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw new Error(`NBI ${opts.method ?? 'GET'} ${path} -> ${res.status} ${text.slice(0, 200)}`);
+      }
+      if (opts.raw) return res as unknown as T;
+      if (res.status === 204) return undefined as T;
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) return (await res.json()) as T;
+      return (await res.text()) as unknown as T;
+    } catch (err) {
+      clearTimeout(timer);
+      lastError = err instanceof Error ? err : new Error(String(err));
+
+      // Retry on abort (timeout) and network errors
+      const isAbort = lastError.name === 'AbortError';
+      const isNetworkError = lastError.message.includes('fetch failed') || lastError.message.includes('ECONNREFUSED') || lastError.message.includes('ETIMEDOUT') || lastError.message.includes('ENOTFOUND');
+
+      if ((isAbort || isNetworkError) && attempt < MAX_RETRIES) {
+        const delay = RETRY_DELAY_MS * Math.pow(2, attempt);
+        console.warn(`[GenieACS] NBI ${opts.method ?? 'GET'} ${path} -> ${isAbort ? 'timeout' : 'network error'}, retrying in ${delay}ms (attempt ${attempt + 1}/${MAX_RETRIES})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+
+      // No more retries — rethrow with context
+      if (isAbort) {
+        throw new Error(`NBI ${opts.method ?? 'GET'} ${path} -> timeout after ${timeoutMs}ms`);
+      }
+      throw lastError;
+    }
   }
-  if (opts.raw) return res as unknown as T;
-  if (res.status === 204) return undefined as T;
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('application/json')) return (await res.json()) as T;
-  return (await res.text()) as unknown as T;
+
+  // Should not reach here, but just in case
+  throw lastError ?? new Error(`NBI ${opts.method ?? 'GET'} ${path} -> exhausted retries`);
 }
 
 /* ---------- Devices ---------- */

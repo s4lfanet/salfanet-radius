@@ -2,6 +2,8 @@
 import { prisma } from '@/server/db/client';
 import bcrypt from 'bcryptjs';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { isSuperAdmin } from '@/server/auth/permissions';
+import type { Prisma } from '@prisma/client';
 
 /**
  * PUT /api/admin/users/[id] - Update admin user
@@ -31,6 +33,42 @@ export async function PUT(
       );
     }
 
+    // Validate role against allowlist if provided
+    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN'];
+    if (role !== undefined && !allowedRoles.includes(role)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid role' },
+        { status: 400 }
+      );
+    }
+
+    // Prevent SUPER_ADMIN escalation unless caller is SUPER_ADMIN
+    if (role === 'SUPER_ADMIN' && existing.role !== 'SUPER_ADMIN') {
+      const callerIsSuper = await isSuperAdmin(authCheck.userId);
+      if (!callerIsSuper) {
+        return NextResponse.json(
+          { success: false, error: 'Cannot grant SUPER_ADMIN role' },
+          { status: 403 }
+        );
+      }
+    }
+
+    // Prevent deactivating or demoting the superadmin account
+    if (existing.username === 'superadmin') {
+      if (role !== undefined && role !== 'SUPER_ADMIN') {
+        return NextResponse.json(
+          { success: false, error: 'Cannot demote superadmin' },
+          { status: 403 }
+        );
+      }
+      if (isActive === false) {
+        return NextResponse.json(
+          { success: false, error: 'Cannot deactivate superadmin' },
+          { status: 403 }
+        );
+      }
+    }
+
     // Format phone number to ensure it starts with 62
     let formattedPhone = phone;
     if (phone) {
@@ -42,14 +80,14 @@ export async function PUT(
         : '62' + normalized;
     }
 
-    // Prepare update data
-    const updateData: any = {
+    // Prepare update data with explicit typing
+    const updateData: Prisma.adminUserUpdateInput = {
       email: email || null,
       name,
-      role,
       phone: formattedPhone || null,
-      isActive,
     };
+    if (role !== undefined) updateData.role = role;
+    if (isActive !== undefined) updateData.isActive = isActive;
 
     // Only update password if provided
     if (password && password.trim() !== '') {

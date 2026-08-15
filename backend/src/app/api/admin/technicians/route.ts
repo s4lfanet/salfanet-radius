@@ -1,21 +1,19 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
+import type { Prisma } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requirePermission('users.view');
+    if (!auth.authorized) return auth.response;
 
     const searchParams = req.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
     const isActive = searchParams.get('isActive');
 
     // Build where clause
-    const where: any = {};
+    const where: Prisma.technicianWhereInput = {};
 
     if (search) {
       where.OR = [
@@ -56,6 +54,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await requirePermission('users.create');
+    if (!auth.authorized) return auth.response;
+
     const { name, phoneNumber, email, isActive, requireOtp } = await req.json();
 
     if (!name || !phoneNumber) {
@@ -108,6 +109,9 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    const auth = await requirePermission('users.edit');
+    if (!auth.authorized) return auth.response;
+
     const { id, name, phoneNumber, email, isActive, requireOtp } = await req.json();
 
     if (!id) {
@@ -130,7 +134,7 @@ export async function PUT(req: NextRequest) {
     }
 
     // Build update data
-    const updateData: any = {};
+    const updateData: Prisma.technicianUpdateInput = {};
 
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email || null;
@@ -179,6 +183,9 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
+    const auth = await requirePermission('users.delete');
+    if (!auth.authorized) return auth.response;
+
     const searchParams = req.nextUrl.searchParams;
     const id = searchParams.get('id');
 
