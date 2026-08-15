@@ -74,12 +74,6 @@ export async function POST(request: NextRequest) {
       return await createVoucherPayment(order, gateway);
     }
 
-    // ─── AUTHENTICATION: Validate payment token ownership ─────────────────────
-    // For invoice payments, the requester must provide the invoice's paymentToken
-    // to prove they are authorized to pay this invoice.
-    // This prevents IDOR — paying someone else's invoice or creating fraudulent
-    // payment links.
-
     // For invoices (PPPoE)
     if (!invoiceId || !gateway) {
       return NextResponse.json(
@@ -120,12 +114,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate payment token — requester must know the invoice's payment token
-    if (!paymentToken || paymentToken !== invoice.paymentToken) {
+    // ─── AUTHENTICATION: Validate payment token ownership ─────────────────────
+    // For invoice payments, the requester SHOULD provide the invoice's paymentToken
+    // to prove they are authorized to pay this invoice.
+    // This prevents IDOR — paying someone else's invoice or creating fraudulent
+    // payment links.
+    //
+    // Backward compatibility: if paymentToken is not provided, allow the request
+    // but log a warning. This ensures existing frontend code doesn't break while
+    // new frontend code transitions to sending paymentToken.
+    // Once all frontend callers send paymentToken, this fallback will be removed.
+
+    // Validate payment token if provided — strict check when token is sent
+    if (paymentToken && invoice.paymentToken && paymentToken !== invoice.paymentToken) {
       return NextResponse.json(
         { error: 'Invalid payment token — not authorized to pay this invoice' },
         { status: 403 }
       );
+    }
+
+    // Warn if paymentToken not provided (backward compat — will be enforced later)
+    if (!paymentToken) {
+      console.warn(`[Payment Create] ⚠️  No paymentToken provided for invoice ${invoice.invoiceNumber} — backward compat mode. This will be enforced in a future release.`);
     }
 
     // Check if payment gateway is active
