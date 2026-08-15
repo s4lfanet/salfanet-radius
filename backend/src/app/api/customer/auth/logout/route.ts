@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 /**
  * POST /api/customer/auth/logout
@@ -7,6 +8,10 @@ import { prisma } from '@/server/db/client';
  * Body: none — token is read from Authorization header.
  */
 export async function POST(request: NextRequest) {
+  const limited = await rateLimit(request, RateLimitPresets.moderate);
+  if (limited) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
   try {
     const authHeader = request.headers.get('authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;

@@ -1,13 +1,12 @@
 ﻿import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
-import { unauthorized } from '@/lib/api-response';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { getAllCronStatuses } from '@/server/cron/jobs';
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return unauthorized();
+    const authCheck = await requirePermission('settings.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const jobs = await getAllCronStatuses();
     return NextResponse.json({ success: true, jobs });

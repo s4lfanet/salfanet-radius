@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -52,10 +51,9 @@ function monthLabel(ym: string): string {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('reports.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const { searchParams } = new URL(request.url);
     const periodParam = searchParams.get('period') || '12'; // months

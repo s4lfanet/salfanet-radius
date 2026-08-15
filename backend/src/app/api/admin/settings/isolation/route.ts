@@ -1,17 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { clearIsolationSettingsCache, getCidrRange } from '@/server/services/isolation.service';
 
 // GET - Get current isolation settings
 export async function GET(request: NextRequest) {
   try {
     // Verify admin authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     // Get isolation settings
     const company = await prisma.company.findFirst({
@@ -69,10 +67,9 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Verify admin authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const body = await request.json();
     const {

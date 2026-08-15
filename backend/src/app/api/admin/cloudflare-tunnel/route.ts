@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -16,10 +15,9 @@ const execAsync = promisify(exec);
  */
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const company = await prisma.company.findFirst();
 
@@ -128,10 +126,9 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const body = await req.json();
     const { action } = body;

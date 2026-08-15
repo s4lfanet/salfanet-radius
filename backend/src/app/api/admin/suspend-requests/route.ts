@@ -1,17 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * GET /api/admin/suspend-requests
  * List all suspend requests (filter by status)
  */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   const { searchParams } = new URL(request.url);
   const status = searchParams.get('status') || 'PENDING';

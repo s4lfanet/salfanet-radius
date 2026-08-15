@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import Papa from 'papaparse';
 import { randomBytes } from 'crypto';
 import { prisma } from '@/server/db/client';
@@ -13,6 +12,9 @@ function generatePaymentToken(): string {
 
 // Download CSV template
 export async function GET() {
+  const authCheck = await requirePermission('invoices.view');
+  if (!authCheck.authorized) return authCheck.response;
+
   const csvTemplate =
     'username,amount,dueDate,notes\n' +
     'pppoe_user01,100000,2025-08-30,Tagihan Agustus\n' +
@@ -28,10 +30,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   // Auth check
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('invoices.edit');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const formData = await request.formData();

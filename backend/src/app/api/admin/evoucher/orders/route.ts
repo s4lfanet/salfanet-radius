@@ -1,14 +1,12 @@
 ﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('invoices.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const orders = await prisma.voucherOrder.findMany({
       include: {

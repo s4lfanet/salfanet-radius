@@ -7,6 +7,21 @@ import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { createPaymentAttempt } from '@/server/services/payment/payment-attempt.service';
 import nodeCrypto from 'crypto';
+import { z } from '@/lib/parse-body';
+
+// Zod schema for payment creation — validates and prevents mass assignment
+const paymentCreateSchema = z.object({
+  invoiceId: z.string().uuid().optional(),
+  orderNumber: z.string().max(64).optional(),
+  amount: z.number().int().positive().optional(),
+  gateway: z.enum(['midtrans', 'xendit', 'duitku', 'tripay', 'manual', 'cash', 'transfer']),
+  type: z.enum(['invoice', 'voucher']).optional(),
+  paymentMethod: z.string().max(64).optional(),
+  paymentToken: z.string().max(128).optional(),
+}).refine(
+  (data) => data.invoiceId || (data.orderNumber && data.amount),
+  { message: 'Either invoiceId or (orderNumber + amount) is required' }
+);
 
 export const dynamic = 'force-dynamic';
 
@@ -35,10 +50,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse body with error handling
+    // Parse and validate body with Zod
     let body;
     try {
-      body = await request.json();
+      const raw = await request.json();
+      const result = paymentCreateSchema.safeParse(raw);
+      if (!result.success) {
+        const errors = result.error.flatten().fieldErrors as Record<string, string[]>;
+        return NextResponse.json(
+          { error: 'Validation failed', details: errors },
+          { status: 400 }
+        );
+      }
+      body = result.data;
     } catch (parseError) {
       console.error('[Payment Create] Failed to parse request body:', parseError);
       return NextResponse.json(

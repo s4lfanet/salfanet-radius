@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/server/db/client';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 /**
  * Pre-login check: validates credentials and checks if 2FA is required.
@@ -9,6 +10,10 @@ import { prisma } from '@/server/db/client';
  * sanitized to "CredentialsSignin" on the client.
  */
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, RateLimitPresets.auth);
+  if (limited) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
   try {
     const { username, password } = await req.json();
 

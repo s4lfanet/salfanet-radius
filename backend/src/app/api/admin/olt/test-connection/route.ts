@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
-import { unauthorized } from '@/lib/api-response';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { Client as SSHClient } from 'ssh2';
 import * as net from 'net';
 
@@ -9,8 +7,9 @@ type TestResult = { method: string; success: boolean; message: string; time: num
 
 // POST - Test OLT connection with raw credentials (before saving)
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const { ipAddress, vendor, username, password, sshEnabled, telnetEnabled } = await request.json();
