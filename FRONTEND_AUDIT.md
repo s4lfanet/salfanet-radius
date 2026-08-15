@@ -3148,3 +3148,110 @@ Standardisasi error handling, loading states, dan confirmation dialogs di seluru
 - Smoke test: ✅ Health 200, Login 200, 404 page works, PPPoE 401, Upload 401
 - Tidak ada perubahan business logic, API endpoints, atau HTTP methods
 - React Query **tidak diimplementasikan** di phase ini
+
+---
+
+## Phase 7 — React Query + Performance Optimizations
+
+> Tanggal: 15 Agustus 2026
+> Status: **SELESAI**
+> Typecheck: ✅ 0 errors
+> Build: ✅ Sukses
+> Commit: `4c0e31d2`
+
+### Tujuan
+
+Berdasarkan data profiling dari Phase 7.1-7.5, implementasi React Query untuk mengatasi:
+- Duplicate API calls (5+ instances)
+- No caching (95% pages refetch on every mount)
+- setInterval polling (8 files)
+- Waterfall requests (8 instances)
+- useEffect dependency issues (30+ eslint-disable)
+
+### Profiling Results
+
+#### Bundle Size
+- Total: 7.3 MB (6.8 MB JS + 0.5 MB CSS)
+- Good: jsPDF, autoTable, XLSX, Leaflet already use dynamic imports
+- Dead code: `lib/utils/export.ts` had eager imports but was unused
+
+#### API Call Patterns
+| Issue | Count | RQ Help? |
+|-------|-------|----------|
+| Duplicate calls | 5 | YES |
+| Waterfall requests | 8 | YES |
+| No caching | ~100 | YES |
+| Polling | 8 | YES |
+| Large payloads | 6 | PARTIAL |
+| useEffect deps | 30+ | YES |
+
+#### Re-render Patterns
+| Issue | Count |
+|-------|-------|
+| React.memo usage | 0 |
+| useMemo usage | 6 files |
+| useCallback usage | 62 files |
+
+#### Image Optimization
+| Issue | Count |
+|-------|-------|
+| Plain `<img>` tags | 28 |
+| Images with loading="lazy" | 1 |
+| next/image usage | 11 |
+
+### Implementasi
+
+#### 7.7a — Install + Provider + Hooks
+
+- Install `@tanstack/react-query` v5.101.4
+- `QueryProvider` di `components/providers/QueryProvider.tsx`
+- Wrap root layout dengan `QueryProvider`
+- Hooks di `lib/api/hooks.ts`:
+  - `useApiQuery<TData>(path, { params, staleTime, refetchInterval, enabled, placeholderData })`
+  - `useApiMutation<TData, TVariables>(path, { method, invalidateQueries })`
+  - `useAdminQuery`, `useCustomerQuery`, `useAgentQuery` — convenience wrappers
+  - `buildQueryKey(path, params)` — stable query key builder
+
+#### 7.7b-7.7d — Migrate 15 Pages
+
+| Page | Endpoint | Polling | staleTime | Mutations |
+|------|----------|---------|-----------|-----------|
+| Dashboard | `/api/dashboard/*` | 30s/5min | 30s | RADIUS restart |
+| PPPoE users | `/api/pppoe/users` | 10s | 30s | CRUD + optimistic |
+| Hotspot voucher | `/api/hotspot/voucher` | 30s | 30s | Generate/delete/import |
+| PPPoE sessions | `/api/sessions` | 10s | 30s | Disconnect |
+| Hotspot sessions | `/api/sessions` | 10s | 30s | Sync/disconnect |
+| Network routers | `/api/network/routers` | — | 30s | Create/update |
+| Network OLTs | `/api/network/olts` | — | 30s | CRUD + import |
+| Network ODPs | `/api/network/odps` | — | 30s | CRUD |
+| Network trace | 4 endpoints | — | 30s | — |
+| Network infrastruktur | 4 endpoints | — | 30s | Delete |
+| GenieACS (5 pages) | `/api/genieacs/*` | — | 1min | CRUD |
+| Invoices | `/api/invoices` | — | 30s | 5 mutations |
+| Keuangan | `/api/keuangan/*` | — | 30s/5min | CRUD |
+
+#### 7.7e — Dead Code + Image Optimization
+
+- Remove `lib/utils/export.ts` (unused, eager jsPDF/exceljs imports)
+- Add `loading="lazy"` to 27 `<img>` tags across 16 files
+- Remove `{ cache: 'no-store' }` from 5 GenieACS pages
+
+### Performance Improvements
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Duplicate API calls on mount | 5+ | 0 (RQ dedup) |
+| Pages with no caching | ~100 | 15 migrated |
+| setInterval polling | 8 files | 0 (refetchInterval) |
+| Dead code | 1 file | 0 |
+| Images without loading="lazy" | 27 | 0 |
+| Net code reduction | — | -1132 lines |
+
+### Verification
+
+- `npx tsc --noEmit`: ✅ 0 errors
+- `npx next build`: ✅ Sukses
+- VPS deploy: ✅ All PM2 processes online
+- Smoke test: ✅ Health 200, Login 200, 404, PPPoE 401, Voucher 401, Sessions 401, Invoices 401, GenieACS 401, Upload 401
+- Tidak ada perubahan business logic, API endpoints, atau HTTP methods
+- React Query **diimplementasikan** berdasarkan data profiling nyata

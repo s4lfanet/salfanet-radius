@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.9.0 — Phase 6D complete (UI State & Error Handling Audit) + Phase 6C (API Client Correctness & Type-Safety Hardening) + Phase 6B (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.0.0 — Phase 7 complete (React Query + Performance Optimizations) + Phase 6D (UI State & Error Handling Audit) + Phase 6C (API Client Correctness & Type-Safety Hardening) + Phase 6B (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -243,7 +243,50 @@ Setiap batch diverifikasi dengan:
 
 ---
 
-## 🔒 Phase 6D — UI State & Error Handling Audit (v4.9.0)
+## � Phase 7 — React Query + Performance Optimizations (v5.0.0)
+
+Implementasi @tanstack/react-query v5 untuk caching, deduplication, dan background refetching.
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+
+### Yang Dikerjakan
+
+1. **Install @tanstack/react-query v5** + `QueryProvider` di root layout
+2. **Create hooks** — `useApiQuery`, `useApiMutation`, `useAdminQuery`, `useCustomerQuery`, `useAgentQuery`
+3. **Migrate 15 pages** to React Query:
+   - Dashboard — 30s/5min polling via `refetchInterval`
+   - PPPoE users — 10s online status polling, optimistic updates
+   - Hotspot voucher — eliminates 3x duplicate `loadVouchers()` on mount
+   - PPPoE sessions — 10s polling, disconnect mutation
+   - Hotspot sessions — 10s polling, sync/disconnect mutations
+   - Network: routers, OLTs, ODPs, trace, infrastruktur
+   - GenieACS: presets, provisions, files, config, faults
+   - Invoices — mark-as-paid, send-reminder, broadcast, generate mutations
+   - Keuangan — transactions, categories with 5min staleTime
+4. **Remove dead code** — `lib/utils/export.ts` (unused, had eager jsPDF/exceljs imports)
+5. **Add `loading="lazy"`** to 27 `<img>` tags across 16 files
+6. **Remove `{ cache: 'no-store' }`** from GenieACS pages (RQ handles caching)
+
+### Performance Improvements
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Duplicate API calls on mount | 5+ instances | 0 (RQ dedup) |
+| Pages with no caching | ~100 | 15 migrated (RQ caching) |
+| setInterval polling | 8 files | 0 (refetchInterval) |
+| Dead code (eager imports) | 1 file | 0 (removed) |
+| Images without loading="lazy" | 27 | 0 |
+| Net code reduction | — | -1132 lines |
+
+### Verification
+- TypeScript: 0 errors
+- Build: success
+- No business logic, API endpoint, or HTTP method changes
+- React Query implemented as planned based on profiling data
+
+---
+
+## �🔒 Phase 6D — UI State & Error Handling Audit (v4.9.0)
 
 Standardisasi error handling, loading states, dan confirmation dialogs di seluruh frontend.
 
