@@ -306,6 +306,7 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
             {tasks.length === 0 ? (
               <p className="px-4 py-3 text-sm text-gray-500">No tasks pending.</p>
             ) : (
+              <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
                 <thead className="bg-gray-50 dark:bg-gray-800">
                   <tr>
@@ -330,6 +331,7 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         )}

@@ -152,7 +152,7 @@ export default function TopUpRequestPage() {
               <label className="block text-sm font-bold text-[#00f7ff] mb-3 uppercase tracking-wider">
                 {t('customer.paymentMethod')} <span className="text-red-400">*</span>
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'TRANSFER' }))}

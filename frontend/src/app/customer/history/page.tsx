@@ -806,7 +806,7 @@ export default function PaymentHistoryPage() {
                       <h3 className="text-sm font-bold text-foreground">Pilih Metode Pembayaran</h3>
                       <p className="text-[10px] text-muted-foreground">Invoice: {selectedPaymentInvoice.invoiceNumber}</p>
                     </div>
-                    <button onClick={() => setPaymentChoiceVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50"><X className="w-4 h-4 text-muted-foreground" /></button>
+                    <button onClick={() => setPaymentChoiceVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50" aria-label="Close"><X className="w-4 h-4 text-muted-foreground" /></button>
                   </div>
                   <p className="text-base font-bold text-cyan-400 mb-4">{formatCurrency(selectedPaymentInvoice.amount)}</p>
                   <div className="space-y-3">
@@ -852,7 +852,7 @@ export default function PaymentHistoryPage() {
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-bold text-foreground">Pilih Payment Gateway</h3>
-                    <button onClick={() => setGatewayDialogVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50"><X className="w-4 h-4 text-muted-foreground" /></button>
+                    <button onClick={() => setGatewayDialogVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50" aria-label="Close"><X className="w-4 h-4 text-muted-foreground" /></button>
                   </div>
                   <div className="space-y-2 mb-4">
                     {paymentGateways.map(gw => (
@@ -902,7 +902,7 @@ export default function PaymentHistoryPage() {
                     <h3 className="text-sm font-bold text-white">Pembayaran Offline</h3>
                     <p className="text-[10px] text-muted-foreground">{selectedPaymentInvoice.invoiceNumber} ? {formatCurrency(selectedPaymentInvoice.amount)}</p>
                   </div>
-                  {!submittingOffline && <button onClick={() => setOfflineDialogVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50"><X className="w-4 h-4 text-muted-foreground" /></button>}
+                  {!submittingOffline && <button onClick={() => setOfflineDialogVisible(false)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50" aria-label="Close"><X className="w-4 h-4 text-muted-foreground" /></button>}
                 </div>
 
                 <div className="overflow-y-auto flex-1 p-5 space-y-4">
@@ -1057,7 +1057,7 @@ export default function PaymentHistoryPage() {
                         }`}>{getStatusConfig(selectedDetail.status).text}</span>
                       </div>
                     </div>
-                    <button onClick={() => setSelectedDetail(null)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50"><X className="w-4 h-4 text-muted-foreground" /></button>
+                    <button onClick={() => setSelectedDetail(null)} className="p-1.5 rounded-lg bg-muted/20 hover:bg-muted/40 border border-border/50" aria-label="Close"><X className="w-4 h-4 text-muted-foreground" /></button>
                   </div>
 
                   <div className="space-y-2.5">

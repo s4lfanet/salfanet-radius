@@ -485,7 +485,7 @@ export default function FiberCablesPage() {
               {/* Cable Preset */}
               <div className="space-y-3">
                 <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('fiberCable.presets')}</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {CABLE_PRESETS.map(preset => {
                     const isActive = parseInt(formData.tubeCount) === preset.tubeCount && 
                                      parseInt(formData.coresPerTube) === preset.coresPerTube;
@@ -514,7 +514,7 @@ export default function FiberCablesPage() {
                   {t('fiberCable.manualConfig')}
                 </h3>
                 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-[10px] font-medium mb-1">{t('fiberCable.tubeCount')}</label>
                     <input

@@ -716,7 +716,7 @@ export default function GenieACSDevicesPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <div className="bg-card rounded-lg border border-border p-2">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-primary/20 dark:bg-blue-900/30 flex items-center justify-center">

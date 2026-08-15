@@ -618,7 +618,7 @@ export default function CustomerDashboard() {
                               <button onClick={handleUpdateWifi} disabled={updatingWifi} className="flex-1 px-2 py-1 bg-teal-600 text-white text-[10px] rounded disabled:opacity-50 flex items-center justify-center gap-1">
                                 {updatingWifi ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}{t('common.save')}
                               </button>
-                              <button onClick={() => { setEditingWifi(null); setWifiForm({ ssid: '', password: '' }); }} className="px-2 py-1 border text-[10px] rounded"><X className="w-3 h-3" /></button>
+                              <button onClick={() => { setEditingWifi(null); setWifiForm({ ssid: '', password: '' }); }} className="px-2 py-1 border text-[10px] rounded" aria-label="Cancel"><X className="w-3 h-3" /></button>
                             </div>
                           </div>
                         )}

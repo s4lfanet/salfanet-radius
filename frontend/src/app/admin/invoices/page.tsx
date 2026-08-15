@@ -1357,7 +1357,7 @@ export default function InvoicesPage() {
                 <div className="space-y-3">
                   <div className={`rounded-xl border p-3 ${genResult.errors.length === 0 ? 'border-success/30 bg-success/10' : 'border-warning/30 bg-warning/10'}`}>
                     <p className="text-xs font-semibold mb-2">{genResult.message}</p>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <div className="text-center">
                         <p className="text-lg font-bold text-success">{genResult.generated}</p>
                         <p className="text-[10px] text-muted-foreground">Dibuat</p>

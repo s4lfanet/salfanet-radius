@@ -358,6 +358,7 @@ function NotificationBell() {
       <button
         onClick={handleOpen}
         className="relative p-2 rounded-xl bg-slate-100 dark:bg-brand-500/10 hover:bg-slate-200 dark:hover:bg-brand-500/20 border border-slate-200 dark:border-brand-500/30 transition-all"
+        aria-label="Notifications"
       >
         <Bell className="w-4 h-4 text-slate-600 dark:text-slate-200" />
         {count > 0 && (

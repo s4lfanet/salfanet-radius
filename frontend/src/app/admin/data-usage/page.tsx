@@ -240,7 +240,7 @@ export default function DataUsagePage() {
       {/* Monthly Summary Tab */}
       {tab === 'monthly' && monthly && (
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4">
               <div className="text-xs text-gray-500 uppercase">Period</div>
               <div className="text-2xl font-bold text-cyan-400">{monthly.period}</div>

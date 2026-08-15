@@ -307,7 +307,7 @@ export function SplitterDiagram({
       )}
 
       {/* Port Statistics */}
-      <div className="mt-4 grid grid-cols-4 gap-2 text-center text-xs">
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
         {Object.entries(
           node.ports.reduce((acc, port) => {
             acc[port.status] = (acc[port.status] || 0) + 1;
