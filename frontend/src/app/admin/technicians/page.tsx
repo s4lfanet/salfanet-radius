@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -28,6 +28,7 @@ import {
 } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Technician {
   id: string;
@@ -45,8 +46,7 @@ interface Technician {
 
 export default function TechniciansManagementPage() {
   const { t } = useTranslation();
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTechnician, setEditingTechnician] = useState<Technician | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -60,25 +60,19 @@ export default function TechniciansManagementPage() {
     requireOtp: true,
   });
 
-  useEffect(() => {
-    loadTechnicians();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filterActive]);
+  // ─── React Query: Technicians (search + active filter) ───────────────────────
+  const techParams: Record<string, unknown> = {
+    search: searchTerm || undefined,
+    isActive: filterActive || undefined,
+  };
+  const { data: techniciansData, isLoading: loading, refetch: refetchTechs } = useApiQuery<Technician[]>(
+    '/api/admin/technicians',
+    { params: techParams, staleTime: 30000 }
+  );
+  const technicians = techniciansData ?? [];
 
-  const loadTechnicians = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (searchTerm) params.append('search', searchTerm);
-      if (filterActive) params.append('isActive', filterActive);
-
-      const data = await apiAdmin<Technician[]>(`/api/admin/technicians?${params}`);
-      setTechnicians(data);
-    } catch (error) {
-      await showError(t('common.error'));
-    } finally {
-      setLoading(false);
-    }
+  const invalidateTechs = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/technicians') });
   };
 
   const resetForm = () => {
@@ -130,7 +124,7 @@ export default function TechniciansManagementPage() {
       setIsDialogOpen(false);
       setEditingTechnician(null);
       resetForm();
-      loadTechnicians();
+      invalidateTechs();
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -150,7 +144,7 @@ export default function TechniciansManagementPage() {
       });
 
       await showSuccess(t('technician.technicianDeleted'));
-      loadTechnicians();
+      invalidateTechs();
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -262,7 +256,7 @@ export default function TechniciansManagementPage() {
               </select>
 
               <button
-                onClick={loadTechnicians}
+                onClick={() => refetchTechs()}
                 className="px-3 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
               >
                 <RefreshCcw className="h-4 w-4" />

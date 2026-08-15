@@ -1,11 +1,12 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BarChart3, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
+import { useApiQuery } from '@/lib/api/hooks';
 
 interface RekapVoucher {
   batchCode: string;
@@ -54,12 +55,8 @@ interface VoucherItem {
 
 export default function RekapVoucherPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [rekap, setRekap] = useState<RekapVoucher[]>([]);
   const [filterAgent, setFilterAgent] = useState('');
   const [filterProfile, setFilterProfile] = useState('');
-  const [agents, setAgents] = useState<{ id: string; name: string }[]>([]);
-  const [profiles, setProfiles] = useState<{ id: string; name: string }[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [periodMode, setPeriodMode] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('monthly');
   const [periodValue, setPeriodValue] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
@@ -127,41 +124,33 @@ export default function RekapVoucherPage() {
     }
     return '';
   };
-  const buildPeriodParams = (params: URLSearchParams) => {
-    if (periodMode === 'monthly' && periodValue) params.set('month', periodValue);
-    else if (periodMode === 'daily' && periodValue) params.set('date', periodValue);
-    else if (periodMode === 'weekly' && periodValue) params.set('week', periodValue);
+  const buildPeriodQueryParams = (): Record<string, string> => {
+    if (periodMode === 'monthly' && periodValue) return { month: periodValue };
+    if (periodMode === 'daily' && periodValue) return { date: periodValue };
+    if (periodMode === 'weekly' && periodValue) return { week: periodValue };
+    return {};
   };
 
-  useEffect(() => {
-    fetchData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterAgent, filterProfile, periodMode, periodValue]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (filterAgent && filterAgent !== 'all') params.set('agentId', filterAgent);
-      if (filterProfile && filterProfile !== 'all') params.set('profileId', filterProfile);
-      buildPeriodParams(params);
-
-      const data = await apiAdmin<{ rekap?: RekapVoucher[]; agents?: { id: string; name: string }[]; profiles?: { id: string; name: string }[] }>(`/api/hotspot/rekap-voucher?${params}`);
-      setRekap(data.rekap || []);
-      setAgents(data.agents || []);
-      setProfiles(data.profiles || []);
-    } catch (error) {
-      console.error('Failed to fetch rekap:', error);
-    }
-    setLoading(false);
+  // ─── React Query: Rekap data (filters + period) ──────────────────────────────
+  const rekapParams: Record<string, unknown> = {
+    agentId: filterAgent && filterAgent !== 'all' ? filterAgent : undefined,
+    profileId: filterProfile && filterProfile !== 'all' ? filterProfile : undefined,
+    ...buildPeriodQueryParams(),
   };
+  const { data: rekapData, isLoading: loading, refetch: refetchRekap } = useApiQuery<{ rekap?: RekapVoucher[]; agents?: { id: string; name: string }[]; profiles?: { id: string; name: string }[] }>(
+    '/api/hotspot/rekap-voucher',
+    { params: rekapParams, staleTime: 30000 }
+  );
+  const rekap = rekapData?.rekap || [];
+  const agents = rekapData?.agents || [];
+  const profiles = rekapData?.profiles || [];
 
   const handleExport = async () => {
     try {
       const params = new URLSearchParams();
       if (filterAgent && filterAgent !== 'all') params.set('agentId', filterAgent);
       if (filterProfile && filterProfile !== 'all') params.set('profileId', filterProfile);
-      buildPeriodParams(params);
+      Object.entries(buildPeriodQueryParams()).forEach(([k, v]) => params.set(k, v));
 
       const res = await fetch(buildUrl(`/api/hotspot/rekap-voucher/export?${params}`), { credentials: 'include' });
       const blob = await res.blob();
@@ -257,7 +246,7 @@ export default function RekapVoucherPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={fetchData}
+            onClick={() => refetchRekap()}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border-2 border-primary/30 rounded-lg hover:bg-primary/10 hover:border-primary/50 transition-all"
             title="Perbarui Data"
           >

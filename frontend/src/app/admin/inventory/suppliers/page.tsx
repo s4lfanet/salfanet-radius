@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   Plus,
   Pencil,
@@ -43,8 +44,7 @@ interface Supplier {
 
 export default function SuppliersPage() {
   const { t } = useTranslation();
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
@@ -58,22 +58,13 @@ export default function SuppliersPage() {
     isActive: true,
   });
 
-  useEffect(() => {
-    loadSuppliers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const suppliersQueryKey = buildQueryKey('/api/inventory/suppliers');
 
-  const loadSuppliers = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<Supplier[]>('/api/inventory/suppliers');
-      setSuppliers(data || []);
-    } catch (error) {
-      await showError(t('common.error'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── React Query: Suppliers ───────────────────────────────────────────────────
+  const { data: suppliersData, isLoading: loading } = useApiQuery<Supplier[]>('/api/inventory/suppliers', {
+    staleTime: 5 * 60 * 1000, // rarely changes
+  });
+  const suppliers = suppliersData || [];
 
   const resetForm = () => {
     setFormData({
@@ -128,7 +119,7 @@ export default function SuppliersPage() {
       setIsDialogOpen(false);
       setEditingSupplier(null);
       resetForm();
-      loadSuppliers();
+      queryClient.invalidateQueries({ queryKey: suppliersQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -148,7 +139,7 @@ export default function SuppliersPage() {
       });
 
       await showSuccess(t('inventory.supplierDeleted'));
-      loadSuppliers();
+      queryClient.invalidateQueries({ queryKey: suppliersQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.error'));
     }
@@ -194,7 +185,7 @@ export default function SuppliersPage() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={loadSuppliers}
+                  onClick={() => queryClient.invalidateQueries({ queryKey: suppliersQueryKey })}
                   className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted transition-colors text-sm font-medium"
                 >
                   <RefreshCcw className="h-4 w-4" />

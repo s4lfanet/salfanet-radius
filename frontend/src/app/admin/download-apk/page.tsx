@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
+import { useApiQuery } from '@/lib/api/hooks';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -274,29 +275,23 @@ function RoleCard({
 // ─── page ─────────────────────────────────────────────────────────────────────
 
 export default function DownloadApkPage() {
-  const [env, setEnv]           = useState<EnvStatus | null>(null);
   const [statuses, setStatuses] = useState<Partial<Record<RoleKey, BuildStatus>>>({});
   const [building, setBuilding] = useState<Set<RoleKey>>(new Set());
   const [customUrl, setCustomUrl] = useState('');
-  const [currentLogo, setCurrentLogo] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoError, setLogoError] = useState('');
 
-  const fetchEnv = useCallback(() => {
-    apiAdmin<EnvStatus & { defaultUrl?: string }>('/api/admin/apk/trigger')
-      .then((data) => {
-        setEnv(data);
-        if (data.defaultUrl && !customUrl) setCustomUrl(data.defaultUrl);
-      })
-      .catch(() => setEnv({ ready: false, java: false, androidSdk: false }));
+  // ─── React Query: Env status + default URL ──────────────────────────────────
+  const envQuery = useApiQuery<EnvStatus & { defaultUrl?: string }>('/api/admin/apk/trigger');
+  const env = envQuery.data ?? (envQuery.error ? { ready: false, java: false, androidSdk: false } as EnvStatus : null);
+  useEffect(() => {
+    if (envQuery.data?.defaultUrl && !customUrl) setCustomUrl(envQuery.data.defaultUrl);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [envQuery.data]);
 
-  const fetchCompanyLogo = useCallback(() => {
-    apiAdmin<{ logo?: string | null }>('/api/company')
-      .then((data) => { if (data.logo) setCurrentLogo(data.logo); })
-      .catch(() => {});
-  }, []);
+  // ─── React Query: Company logo ──────────────────────────────────────────────
+  const companyQuery = useApiQuery<{ logo?: string | null }>('/api/company');
+  const currentLogo = companyQuery.data?.logo ?? null;
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -314,7 +309,7 @@ export default function DownloadApkPage() {
           method: 'POST',
           body: JSON.stringify({ ...company, logo: data.url }),
         });
-        setCurrentLogo(data.url);
+        companyQuery.refetch();
       } else {
         setLogoError(data.error || 'Upload gagal');
       }
@@ -335,10 +330,8 @@ export default function DownloadApkPage() {
   }, []);
 
   useEffect(() => {
-    fetchEnv();
-    fetchCompanyLogo();
     ROLES.forEach(r => fetchStatus(r.key));
-  }, [fetchEnv, fetchStatus, fetchCompanyLogo]);
+  }, [fetchStatus]);
 
   // Poll roles that are building
   useEffect(() => {
@@ -453,7 +446,7 @@ export default function DownloadApkPage() {
       </div>
 
       {/* Env Banner */}
-      {env && <EnvBanner env={env} onRecheck={fetchEnv} />}
+      {env && <EnvBanner env={env} onRecheck={() => envQuery.refetch()} />}
       {!env && (
         <div className="flex items-center gap-2 text-slate-400 text-sm">
           <RefreshCw className="w-4 h-4 animate-spin" /> Memeriksa environment…

@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   ShoppingCart,
   Search,
@@ -38,9 +39,13 @@ interface Order {
 
 export default function EVoucherManagementPage() {
   const { t } = useTranslation();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const queryClient = useQueryClient();
+  const ordersQueryKey = buildQueryKey('/api/admin/evoucher/orders');
+
+  // ─── React Query: Orders list ────────────────────────────────────────────────
+  const { data: ordersData, isLoading: loading, refetch: refetchOrders } = useApiQuery<{ success: boolean; orders?: Order[] }>('/api/admin/evoucher/orders');
+  const orders = ordersData?.orders || [];
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
@@ -54,29 +59,16 @@ export default function EVoucherManagementPage() {
   });
 
   useEffect(() => {
-    loadOrders();
+    if (ordersData?.success) {
+      calculateStats(ordersData.orders || []);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [ordersData]);
 
   useEffect(() => {
     filterOrders();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders, statusFilter, searchQuery]);
-
-  const loadOrders = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<{ success: boolean; orders?: Order[] }>('/api/admin/evoucher/orders');
-      if (data.success) {
-        setOrders(data.orders || []);
-        calculateStats(data.orders || []);
-      }
-    } catch (error) {
-      showError(t('evoucher.failedLoadOrders'));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const calculateStats = (orderList: Order[]) => {
     setStats({
@@ -113,7 +105,7 @@ export default function EVoucherManagementPage() {
       const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/admin/evoucher/orders/${orderId}/cancel`, { method: 'POST' });
       if (data.success) {
         showSuccess(t('evoucher.orderCancelled'));
-        loadOrders();
+        queryClient.invalidateQueries({ queryKey: ordersQueryKey });
       } else {
         showError(data.error || t('common.failed'));
       }
@@ -172,7 +164,7 @@ export default function EVoucherManagementPage() {
       if (data.success) {
         await showSuccess(t('evoucher.ordersDeleted').replace('{count}', String(data.deleted)));
         setSelectedOrders([]);
-        loadOrders();
+        queryClient.invalidateQueries({ queryKey: ordersQueryKey });
       } else {
         await showError(data.error || t('evoucher.failedDeleteOrders'));
       }
@@ -230,7 +222,7 @@ export default function EVoucherManagementPage() {
             </button>
           )}
           <button
-            onClick={loadOrders}
+            onClick={() => refetchOrders()}
             disabled={loading}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted disabled:opacity-50"
           >

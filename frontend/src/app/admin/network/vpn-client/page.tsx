@@ -5,6 +5,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Shield, Plus, Trash2, Eye, Loader2, Users, Server, Copy, CheckCircle, XCircle, Wifi, Radio, Terminal, ChevronDown, ChevronUp, Route, Zap, Info, Key, Settings } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface VpnClient {
   id: string
@@ -171,9 +172,6 @@ function RedundancyInfoPanel(_props: Record<string, unknown>) {
 
 export default function VpnClientPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [clients, setClients] = useState<VpnClient[]>([]);
-  const [vpnServers, setVpnServers] = useState<VpnServer[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [showCredentials, setShowCredentials] = useState(false);
   const [credentials, setCredentials] = useState<Credentials | null>(null);
@@ -204,12 +202,6 @@ export default function VpnClientPage() {
   const [wgNewPeerName, setWgNewPeerName] = useState('');
   const [wgGeneratedScript, setWgGeneratedScript] = useState<string | null>(null);
   const [showWgSection, setShowWgSection] = useState(false);
-  // VPS WireGuard server info (fetched from vps-wg-peer GET)
-  const [wgServerInfo, setWgServerInfo] = useState<{ installed: boolean; publicIp?: string; publicKey?: string; listenPort?: number; subnet?: string; poolStart?: number | string; poolEnd?: number | string; gatewayIp?: string } | null>(null);
-  const [wgServerInfoLoading, setWgServerInfoLoading] = useState(false);
-  // VPS L2TP/IPsec server info
-  const [l2tpServerInfo, setL2tpServerInfo] = useState<{ installed: boolean; publicIp?: string; ipsecPsk?: string; subnet?: string; localIp?: string; poolStart?: number | string; poolEnd?: number | string; gateway?: string } | null>(null);
-  const [l2tpServerInfoLoading, setL2tpServerInfoLoading] = useState(false);
   // VPS Pool Config edit states
   const [wgPoolEdit, setWgPoolEdit] = useState(false);
   const [wgPoolForm, setWgPoolForm] = useState({ poolStart: '', poolEnd: '', gatewayIp: '' });
@@ -222,11 +214,60 @@ export default function VpnClientPage() {
   // Tutorial toggle
   const [showTutorial, setShowTutorial] = useState(true);
 
+  // ── React Query data loading ──────────────────────────────────────────────
+  const queryClient = useQueryClient();
+  const clientsQuery = useApiQuery<VpnClientListResponse>('/api/network/vpn-client', { staleTime: 30000 });
+  const wgQuery = useApiQuery<VpsWgServerInfoResponse>('/api/network/vps-wg-peer', { staleTime: 30000 });
+  const l2tpQuery = useApiQuery<VpsL2tpInfoResponse>('/api/network/vps-l2tp-info', { staleTime: 30000 });
+
+  const clients = clientsQuery.data?.clients || [];
+  const vpnServers = clientsQuery.data?.vpnServers || [];
+  const loading = clientsQuery.isLoading;
+  // VPS WireGuard server info (fetched from vps-wg-peer GET)
+  const wgServerInfo = wgQuery.error
+    ? { installed: false }
+    : wgQuery.data
+      ? (wgQuery.data.installed
+        ? {
+            installed: true,
+            publicIp: wgQuery.data.publicIp,
+            publicKey: wgQuery.data.publicKey,
+            listenPort: wgQuery.data.listenPort,
+            subnet: wgQuery.data.subnet,
+            poolStart: wgQuery.data.poolStart,
+            poolEnd: wgQuery.data.poolEnd,
+            gatewayIp: wgQuery.data.gatewayIp,
+          }
+        : { installed: false })
+      : null;
+  const wgServerInfoLoading = wgQuery.isLoading;
+  // VPS L2TP/IPsec server info
+  const l2tpServerInfo = l2tpQuery.error
+    ? { installed: false }
+    : l2tpQuery.data
+      ? (l2tpQuery.data.installed
+        ? {
+            installed: true,
+            publicIp: l2tpQuery.data.publicIp,
+            ipsecPsk: l2tpQuery.data.ipsecPsk,
+            subnet: l2tpQuery.data.subnet,
+            localIp: l2tpQuery.data.localIp,
+            poolStart: l2tpQuery.data.poolStart,
+            poolEnd: l2tpQuery.data.poolEnd,
+            gateway: l2tpQuery.data.gateway,
+          }
+        : { installed: false })
+      : null;
+  const l2tpServerInfoLoading = l2tpQuery.isLoading;
+
+  // Sync WG peers from query data
   useEffect(() => {
-    loadClients();
-    // Pre-load VPS info for redundancy panel
-    loadWgServerInfo();
-    loadL2tpServerInfo();
+    if (wgQuery.data?.installed) {
+      setWgPeers(wgQuery.data.peers || []);
+    }
+  }, [wgQuery.data]);
+
+  useEffect(() => {
     // Restore saved routing SSH credentials from localStorage
     try {
       const saved = localStorage.getItem('routing_ssh_credentials');
@@ -285,23 +326,6 @@ export default function VpnClientPage() {
   };
 
   // ── WireGuard NAS Peer handlers (VPS as WG server) ─────────────────────
-  const loadWgPeers = async () => {
-    setWgLoading(true);
-    try {
-      const data = await apiAdmin<VpsWgServerInfoResponse>('/api/network/vps-wg-peer');
-      if (data.installed) {
-        setWgPeers(data.peers || []);
-      } else {
-        setWgPeers([]);
-        showError('WireGuard server belum terinstall. Install dulu melalui menu VPN Server → WireGuard.');
-      }
-    } catch (e: unknown) {
-      showError('Gagal muat peers WireGuard: ' + errMsg(e));
-    } finally {
-      setWgLoading(false);
-    }
-  };
-
   const handleWgAddPeer = async () => {
     if (!wgNewPeerName.trim()) { showError('Nama NAS wajib diisi'); return; }
     setWgAddingPeer(true);
@@ -354,7 +378,7 @@ export default function VpnClientPage() {
       setWgGeneratedScript(script);
       setWgNewPeerName('');
       showSuccess(`Peer "${wgNewPeerName}" berhasil ditambahkan! VPN IP: ${data.vpnIp}`);
-      loadWgPeers();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') });
     } catch (e: unknown) {
       showError('Gagal tambah peer WireGuard: ' + errMsg(e));
     } finally {
@@ -373,6 +397,7 @@ export default function VpnClientPage() {
       if (!data.success) throw new Error(data.error || 'Gagal hapus peer');
       showSuccess('Peer WireGuard dihapus');
       setWgPeers(prev => prev.filter(p => p.publicKey !== pubKey));
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') });
     } catch (e: unknown) {
       showError('Gagal hapus peer: ' + errMsg(e));
     }
@@ -463,66 +488,6 @@ export default function VpnClientPage() {
     ].join('\n');
   };
 
-  const loadClients = async () => {
-    try {
-      const data = await apiAdmin<VpnClientListResponse>('/api/network/vpn-client')
-      setClients(data.clients || [])
-      setVpnServers(data.vpnServers || [])
-    } catch (error: unknown) {
-      console.error('Load error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const loadWgServerInfo = async () => {
-    if (wgServerInfo !== null) return // already loaded
-    setWgServerInfoLoading(true)
-    try {
-      const data = await apiAdmin<VpsWgServerInfoResponse>('/api/network/vps-wg-peer')
-      if (data.installed) {
-        setWgServerInfo({
-          installed: true,
-          publicIp: data.publicIp,
-          publicKey: data.publicKey,
-          listenPort: data.listenPort,
-          subnet: data.subnet,
-          poolStart: data.poolStart,
-          poolEnd: data.poolEnd,
-          gatewayIp: data.gatewayIp,
-        })
-      } else {
-        setWgServerInfo({ installed: false })
-      }
-    } catch {
-      setWgServerInfo({ installed: false })
-    } finally {
-      setWgServerInfoLoading(false)
-    }
-  }
-
-  const loadL2tpServerInfo = async () => {
-    if (l2tpServerInfo !== null) return // already loaded
-    setL2tpServerInfoLoading(true)
-    try {
-      const data = await apiAdmin<VpsL2tpInfoResponse>('/api/network/vps-l2tp-info')
-      setL2tpServerInfo(data.installed ? {
-        installed: true,
-        publicIp: data.publicIp,
-        ipsecPsk: data.ipsecPsk,
-        subnet: data.subnet,
-        localIp: data.localIp,
-        poolStart: data.poolStart,
-        poolEnd: data.poolEnd,
-        gateway: data.gateway,
-      } : { installed: false })
-    } catch {
-      setL2tpServerInfo({ installed: false })
-    } finally {
-      setL2tpServerInfoLoading(false)
-    }
-  }
-
   const handleWgSavePoolConfig = async () => {
     setWgPoolSaving(true);
     try {
@@ -535,7 +500,7 @@ export default function VpnClientPage() {
         }),
       });
       if (!data.success) throw new Error(data.error || 'Gagal simpan');
-      setWgServerInfo(prev => prev ? { ...prev, poolStart: data.poolStart, poolEnd: data.poolEnd, gatewayIp: data.gatewayIp, subnet: data.subnet ?? prev.subnet } : prev);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') });
       setWgPoolEdit(false);
       showSuccess('Konfigurasi pool WireGuard disimpan');
     } catch (e: unknown) {
@@ -557,7 +522,7 @@ export default function VpnClientPage() {
         }),
       });
       if (!data.success) throw new Error(data.error || 'Gagal simpan');
-      setL2tpServerInfo(prev => prev ? { ...prev, poolStart: data.poolStart, poolEnd: data.poolEnd, gateway: data.gateway } : prev);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-l2tp-info') });
       setL2tpPoolEdit(false);
       showSuccess('Konfigurasi pool L2TP disimpan');
     } catch (e: unknown) {
@@ -588,7 +553,7 @@ export default function VpnClientPage() {
         })
         if (data.success) {
           setWgGeneratedScript(data.routerosScript || null)
-          await loadWgPeers()
+          queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') });
           showSuccess('WireGuard peer berhasil ditambahkan ke VPS', 'Peer Ditambahkan')
 
           // Auto-show credentials with generated script so user can copy it immediately
@@ -614,7 +579,7 @@ export default function VpnClientPage() {
           })
           setSelectedVpnType('wireguard')
           setShowCredentials(true)
-          loadClients()
+          queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') });
         } else {
           showError(data.error || 'Gagal menambahkan WireGuard peer ke VPS')
         }
@@ -661,7 +626,7 @@ export default function VpnClientPage() {
           setShowWgSection(true)
           showSuccess('L2TP user berhasil ditambahkan ke VPS', 'Berhasil')
           setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
-          loadClients()
+          queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') });
         } else {
           showError(data.error || 'Gagal menambahkan L2TP user ke VPS')
         }
@@ -688,7 +653,7 @@ export default function VpnClientPage() {
         setShowCredentials(true);
         setShowModal(false);
         setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' });
-        loadClients();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') });
         showSuccess(t('network.clientCredentialsDisplayed'), t('network.vpnClientCreated'));
       } else {
         showError(result.error || t('network.failedCreateClient'));
@@ -711,7 +676,7 @@ export default function VpnClientPage() {
     try {
       await apiAdmin(`/api/network/vpn-client?id=${id}`, { method: 'DELETE' })
       showSuccess(t('network.deleted'));
-      loadClients();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') });
     } catch (error: unknown) {
       showError(errMsg(error) || t('network.failedDeleteClient'));
     }
@@ -724,7 +689,7 @@ export default function VpnClientPage() {
         body: JSON.stringify({ id: clientId, isRadiusServer }),
       })
       showSuccess(isRadiusServer ? t('network.setAsRadiusServerSuccess') : t('network.unsetRadiusServerSuccess'));
-      loadClients();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') });
     } catch (error: unknown) {
       showError(errMsg(error) || t('network.failedUpdateClient'));
     }
@@ -741,7 +706,7 @@ export default function VpnClientPage() {
       if (data.success) {
         showSuccess(`IP berhasil diubah ke ${data.newIp}`);
         setEditingIpClientId(null);
-        loadClients();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') });
       } else {
         showError(data.error || 'Gagal mengubah IP');
       }
@@ -1064,8 +1029,8 @@ ${vpnCmd}
                 onClick={() => {
                   setShowVpsSettings(!showVpsSettings);
                   if (!showVpsSettings) {
-                    loadWgServerInfo();
-                    loadL2tpServerInfo();
+                    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') });
+                    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-l2tp-info') });
                   }
                 }}
                 className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[#00f7ff]/5 transition-colors"
@@ -1555,7 +1520,7 @@ ${vpnCmd}
                       <button
                         key={type}
                         type="button"
-                        onClick={() => { setFormData({ ...formData, vpnType: type, vpnServerId: '' }); if (type === 'wireguard') loadWgServerInfo(); if (type === 'l2tp') loadL2tpServerInfo(); }}
+                        onClick={() => { setFormData({ ...formData, vpnType: type, vpnServerId: '' }); if (type === 'wireguard') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') }); if (type === 'l2tp') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-l2tp-info') }); }}
                         className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${formData.vpnType === type
                           ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black shadow-[0_0_15px_rgba(0,247,255,0.4)]'
                           : 'bg-muted/60 dark:bg-slate-800/60 border border-[#bc13fe]/30 text-foreground hover:bg-[#bc13fe]/20'
@@ -1822,7 +1787,7 @@ ${vpnCmd}
               </div>
 
               <button
-                onClick={() => { setShowCredentials(false); loadClients(); }}
+                onClick={() => { setShowCredentials(false); queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') }); }}
                 className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-[#bc13fe] to-[#ff44cc] hover:from-[#bc13fe]/90 hover:to-[#ff44cc]/90 rounded-xl transition-all font-bold text-white shadow-[0_0_20px_rgba(188,19,254,0.4)]"
               >
                 {t('common.close')}

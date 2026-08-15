@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
 import { 
@@ -21,6 +21,7 @@ import {
 import { formatWIB } from '@/lib/timezone';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -96,9 +97,7 @@ interface DispatchResponse {
 export default function AdminTicketsPage() {
   const { t } = useTranslation();
   const router = useRouter();
-  const [tickets, setTickets] = useState<TicketItem[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filters, setFilters] = useState({ status: '', priority: '', search: '' });
 
   // Dispatch modal state
@@ -114,6 +113,20 @@ export default function AdminTicketsPage() {
     customerId: null, customerName: '', customerPhone: '', customerAddress: '',
     subject: '', description: '', categoryId: '', priority: 'MEDIUM',
     routerId: '', oltId: '', odcId: '', odpId: '',
+  });
+
+  const ticketsQueryKey = buildQueryKey('/api/tickets', { status: filters.status, priority: filters.priority, search: filters.search });
+  const statsQueryKey = buildQueryKey('/api/tickets/stats');
+
+  // ─── React Query: Tickets list (auto-refetches on filter change) ──────────────
+  const { data: ticketsData, isLoading: loading } = useApiQuery<TicketItem[]>('/api/tickets', {
+    params: { status: filters.status, priority: filters.priority, search: filters.search },
+  });
+  const tickets = ticketsData || [];
+
+  // ─── React Query: Ticket stats ────────────────────────────────────────────────
+  const { data: stats } = useApiQuery<Stats>('/api/tickets/stats', {
+    staleTime: 30000,
   });
 
   const loadDispatchData = useCallback(async (search = '') => {
@@ -183,44 +196,12 @@ export default function AdminTicketsPage() {
       setCustomerSearch('');
       setCustomerLockedIn(false);
       setCustomerSearchLoading(false);
-      fetchTickets();
-      fetchStats();
+      queryClient.invalidateQueries({ queryKey: ticketsQueryKey });
+      queryClient.invalidateQueries({ queryKey: statsQueryKey });
     } catch (e: unknown) {
       showError('Gagal kirim tiket', e instanceof Error ? e.message : String(e));
     } finally {
       setDispatchLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-    fetchTickets();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters]);
-
-  const fetchStats = async () => {
-    try {
-      const data = await apiAdmin<Stats>('/api/tickets/stats');
-      setStats(data);
-    } catch (error: unknown) {
-      console.error('Failed to fetch stats:', error);
-    }
-  };
-
-  const fetchTickets = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.priority) params.append('priority', filters.priority);
-      if (filters.search) params.append('search', filters.search);
-
-      const data = await apiAdmin<TicketItem[]>(`/api/tickets?${params.toString()}`);
-      setTickets(data);
-    } catch (error: unknown) {
-      console.error('Failed to fetch tickets:', error);
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface IsolationTemplate {
   id: string;
@@ -55,8 +56,11 @@ interface TemplatesListResponse {
 export default function TemplatesPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: templatesData, isLoading: loading } = useApiQuery<TemplatesListResponse>('/api/settings/isolation/templates', { staleTime: 300000 });
+  const { data: isolationData } = useApiQuery<IsolationSettingsResponse>('/api/settings/isolation', { staleTime: 300000 });
+  const { data: companyData } = useApiQuery<CompanyInfoResponse>('/api/public/company', { staleTime: 300000 });
   const [templates, setTemplates] = useState<IsolationTemplate[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingTemplate, setEditingTemplate] = useState<IsolationTemplate | null>(null);
   const [showEditor, setShowEditor] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -66,36 +70,29 @@ export default function TemplatesPage() {
   const [companyName, setCompanyName] = useState('ISP Billing');
 
   useEffect(() => {
-    fetchTemplates();
-    apiAdmin<IsolationSettingsResponse>('/api/settings/isolation')
-      .then((d) => { if (d.success && d.data?.baseUrl) setCompanyBaseUrl(d.data.baseUrl.replace(/\/$/, '')); })
-      .catch(() => {});
-    apiAdmin<CompanyInfoResponse>('/api/public/company')
-      .then((d) => { if (d.success && d.company?.name) setCompanyName(d.company.name); })
-      .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchTemplates = async () => {
-    try {
-      const data = await apiAdmin<TemplatesListResponse>('/api/settings/isolation/templates');
-
-      console.log('Templates API response:', data);
-
-      if (data.success) {
-        console.log('Templates data:', data.data);
-        setTemplates(data.data);
+    if (templatesData) {
+      console.log('Templates API response:', templatesData);
+      if (templatesData.success) {
+        console.log('Templates data:', templatesData.data);
+        setTemplates(templatesData.data);
       } else {
-        console.error('API returned error:', data.message);
-        addToast({ type: 'error', title: t('common.failed'), description: data.message || t('isolation.failedLoadTemplates') });
+        console.error('API returned error:', templatesData.message);
+        addToast({ type: 'error', title: t('common.failed'), description: templatesData.message || t('isolation.failedLoadTemplates') });
       }
-    } catch (error: unknown) {
-      console.error('Failed to fetch templates:', error);
-      addToast({ type: 'error', title: t('common.failed'), description: (error instanceof Error ? error.message : String(error)) || t('isolation.failedLoadTemplates') });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [templatesData, addToast, t]);
+
+  useEffect(() => {
+    if (isolationData?.success && isolationData.data?.baseUrl) {
+      setCompanyBaseUrl(isolationData.data.baseUrl.replace(/\/$/, ''));
+    }
+  }, [isolationData]);
+
+  useEffect(() => {
+    if (companyData?.success && companyData.company?.name) {
+      setCompanyName(companyData.company.name);
+    }
+  }, [companyData]);
 
   const handleEdit = (template: IsolationTemplate) => {
     setEditingTemplate({ ...template });
@@ -121,7 +118,7 @@ export default function TemplatesPage() {
       if (data.success) {
         addToast({ type: 'success', title: t('common.success'), description: t('isolation.templateUpdated'), duration: 2000 });
         
-        fetchTemplates();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/isolation/templates') });
         setShowEditor(false);
         setEditingTemplate(null);
       } else {

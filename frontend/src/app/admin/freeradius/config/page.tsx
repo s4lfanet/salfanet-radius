@@ -10,6 +10,7 @@ import {
 import { showConfirm } from '@/lib/sweetalert';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface FileItem {
     name: string;
@@ -26,42 +27,33 @@ interface ConfigGroup {
 export default function RadiusConfigPage() {
     const { t } = useTranslation();
     const { addToast, confirm } = useToast();
-    const [groups, setGroups] = useState<ConfigGroup[]>([]);
+    const queryClient = useQueryClient();
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [content, setContent] = useState('');
     const [originalContent, setOriginalContent] = useState('');
-    const [loadingFile, setLoadingFile] = useState(false);
-    const [loadingList, setLoadingList] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [loadingFile, setLoadingFile] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
         'main': true,
         'sites-enabled': true
     });
 
-    // Fetch directory listing
-    const fetchConfigList = async () => {
-        try {
-            const data = await apiAdmin<{ success: boolean; groups: ConfigGroup[] }>('/api/freeradius/config/list');
-            if (data.success) {
-                setGroups(data.groups);
-                // Select first file by default if none selected
-                if (!selectedFile && data.groups.length > 0 && data.groups[0].files.length > 0) {
-                    setSelectedFile(data.groups[0].files[0].path);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to load config list:', error);
-        } finally {
-            setLoadingList(false);
-        }
-    };
+    // ─── React Query: Config directory listing ──────────────────────────────────
+    const { data: configListData, isLoading: loadingList } = useApiQuery<{ success: boolean; groups: ConfigGroup[] }>('/api/freeradius/config/list', {
+        staleTime: 5 * 60 * 1000, // rarely changes
+    });
 
+    const groups = configListData?.groups || [];
+
+    // Select first file by default if none selected
     useEffect(() => {
-        fetchConfigList();
+        if (!selectedFile && groups.length > 0 && groups[0].files.length > 0) {
+            setSelectedFile(groups[0].files[0].path);
+        }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [groups]);
 
-    // Fetch file content
+    // Fetch file content via POST (useApiQuery is GET-only, so we keep the manual fetch)
     const fetchFileContent = async (filename: string) => {
         setLoadingFile(true);
         try {

@@ -1,12 +1,13 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Bell, Check, CheckCheck, Trash2, Loader2, Filter, AlertCircle, UserPlus, DollarSign, Clock, AlertTriangle, Users, Briefcase, Wallet, Wrench, Receipt, CreditCard } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/use-toast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Notification {
   id: string;
@@ -40,46 +41,27 @@ const NOTIFICATION_CATEGORIES = [
 export default function NotificationsPage() {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [unreadCount, setUnreadCount] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    loadNotifications();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, categoryFilter]);
+  // ─── React Query: Notifications (filter + category) ──────────────────────────
+  const notifParams: Record<string, unknown> = {
+    limit: 100,
+    unreadOnly: filter === 'unread' ? 'true' : undefined,
+    type: categoryFilter !== 'all' && categoryFilter !== 'unread' ? categoryFilter : undefined,
+  };
+  const { data: notifData, isLoading: loading } = useApiQuery<{ success: boolean; notifications: Notification[]; unreadCount: number; categoryCounts?: Record<string, number> }>(
+    '/api/notifications',
+    { params: notifParams, staleTime: 30000 }
+  );
+  const notifications = notifData?.notifications || [];
+  const unreadCount = notifData?.unreadCount || 0;
+  const categoryCounts = notifData?.categoryCounts || {};
 
-  const loadNotifications = async () => {
-    setLoading(true);
-    try {
-      let url = '/api/notifications?limit=100';
-      
-      if (filter === 'unread') {
-        url += '&unreadOnly=true';
-      }
-      
-      if (categoryFilter !== 'all' && categoryFilter !== 'unread') {
-        url += `&type=${categoryFilter}`;
-      }
-      
-      const data = await apiAdmin<{ success: boolean; notifications: Notification[]; unreadCount: number; categoryCounts?: Record<string, number> }>(url);
-
-      if (data.success) {
-        setNotifications(data.notifications);
-        setUnreadCount(data.unreadCount);
-        if (data.categoryCounts) {
-          setCategoryCounts(data.categoryCounts);
-        }
-      }
-    } catch (error: unknown) {
-      console.error('Load notifications error:', error);
-    } finally {
-      setLoading(false);
-    }
+  const invalidateNotifications = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/notifications') });
   };
 
   const markAsRead = async (notificationIds: string[]) => {
@@ -94,7 +76,7 @@ export default function NotificationsPage() {
         description: `${notificationIds.length} ${t('notifications.notificationMarked')}`,
       });
 
-      loadNotifications();
+      invalidateNotifications();
     } catch (error: unknown) {
       console.error('Mark as read error:', error);
       toast({
@@ -117,7 +99,7 @@ export default function NotificationsPage() {
         description: t('notifications.allNotificationsMarked'),
       });
 
-      loadNotifications();
+      invalidateNotifications();
     } catch (error: unknown) {
       console.error('Mark all as read error:', error);
       toast({
@@ -139,7 +121,7 @@ export default function NotificationsPage() {
         description: t('notifications.notificationDeleted'),
       });
 
-      loadNotifications();
+      invalidateNotifications();
     } catch (error: unknown) {
       console.error('Delete notification error:', error);
       toast({
@@ -164,7 +146,7 @@ export default function NotificationsPage() {
       });
 
       setSelectedIds([]);
-      loadNotifications();
+      invalidateNotifications();
     } catch (error: unknown) {
       console.error('Delete selected error:', error);
       toast({
@@ -190,7 +172,7 @@ export default function NotificationsPage() {
       });
       
       setSelectedIds([]);
-      loadNotifications();
+      invalidateNotifications();
     } catch (error) {
       console.error('Mark selected as read error:', error);
       toast({

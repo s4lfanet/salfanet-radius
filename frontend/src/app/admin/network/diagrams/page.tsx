@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import Link from 'next/link';
 import { apiAdmin } from '@/lib/api';
 import { showError, showConfirm } from '@/lib/sweetalert';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 // ─── Network diagram entity types ────────────────────────────────────────────
 interface OtbListItem { id: string; name: string; code: string; }
@@ -84,9 +85,24 @@ export default function NetworkDiagramsPage() {
   const [selectedTab, setSelectedTab] = React.useState<'otb' | 'jc' | 'odc' | 'odp'>('otb');
   const [selectedPort, setSelectedPort] = React.useState<Port | null>(null);
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
+  // React Query: list loads (OTBs, JCs, ODCs, ODPs)
+  const otbsQuery = useApiQuery<{ otbs?: OtbListItem[] }>('/api/network/otbs', {
+    params: { limit: 100 },
+    staleTime: 30000,
+  });
+  const jcsQuery = useApiQuery<{ success?: boolean; data?: JcListItem[] }>('/api/network/joint-closures', {
+    staleTime: 30000,
+  });
+  const odcsQuery = useApiQuery<{ odcs?: OdcListItem[] }>('/api/network/odcs', {
+    staleTime: 30000,
+  });
+  const odpsQuery = useApiQuery<{ odps?: OdpListItem[] }>('/api/network/odps', {
+    staleTime: 30000,
+  });
 
   // State for real data
-  const [loading, setLoading] = useState(true);
   const [otbList, setOtbList] = useState<OtbListItem[]>([]);
   const [jcList, setJcList] = useState<JcListItem[]>([]);
   const [odcList, setOdcList] = useState<OdcListItem[]>([]);
@@ -96,9 +112,49 @@ export default function NetworkDiagramsPage() {
   const [selectedODC, setSelectedODC] = useState<string>('');
   const [selectedODP, setSelectedODP] = useState<string>('');
 
+  // Sync list data from queries and auto-select first item
+  useEffect(() => {
+    const otbs = otbsQuery.data?.otbs;
+    if (otbs) {
+      setOtbList(otbs);
+      if (otbs.length > 0 && !selectedOTB) setSelectedOTB(otbs[0].id);
+    }
+  }, [otbsQuery.data, selectedOTB]);
+
+  useEffect(() => {
+    const jcsData = jcsQuery.data;
+    if (jcsData?.success && jcsData.data) {
+      setJcList(jcsData.data);
+      setJcListAll(jcsData.data);
+      if (jcsData.data.length > 0 && !selectedJC) setSelectedJC(jcsData.data[0].id);
+    }
+  }, [jcsQuery.data, selectedJC]);
+
+  useEffect(() => {
+    const odcs = odcsQuery.data?.odcs;
+    if (odcs) {
+      setOdcList(odcs);
+      if (odcs.length > 0 && !selectedODC) setSelectedODC(odcs[0].id);
+    }
+  }, [odcsQuery.data, selectedODC]);
+
+  useEffect(() => {
+    const odps = odpsQuery.data?.odps;
+    if (odps) {
+      setOdpList(odps);
+      if (odps.length > 0 && !selectedODP) setSelectedODP(odps[0].id);
+    }
+  }, [odpsQuery.data, selectedODP]);
+
+  const loading = otbsQuery.isLoading || jcsQuery.isLoading || odcsQuery.isLoading || odpsQuery.isLoading;
+
   // OTB enriched detail (with incomingCable + outputSegments)
-  const [otbDetail, setOtbDetail] = useState<OtbDetail | null>(null);
-  const [otbDetailLoading, setOtbDetailLoading] = useState(false);
+  const otbDetailQuery = useApiQuery<OtbDetail>(`/api/network/otbs/${selectedOTB}`, {
+    enabled: !!selectedOTB,
+    staleTime: 30000,
+  });
+  const otbDetail = otbDetailQuery.data ?? null;
+  const otbDetailLoading = otbDetailQuery.isLoading;
 
   // OTB tube→JC assignment form state
   const [jcListAll, setJcListAll] = useState<JcListItem[]>([]);
@@ -108,71 +164,14 @@ export default function NetworkDiagramsPage() {
   const [assignSaving, setAssignSaving] = useState(false);
 
   // JC enriched detail (with inputSegments + outputSegments + splicePoints)
-  const [jcDetail, setJcDetail] = useState<JcDetail | null>(null);
-  const [jcDetailLoading, setJcDetailLoading] = useState(false);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [otbData, jcData, odcData, odpData] = await Promise.all([
-        apiAdmin<{ otbs?: OtbListItem[] }>('/api/network/otbs?limit=100'),
-        apiAdmin<{ success?: boolean; data?: JcListItem[] }>('/api/network/joint-closures'),
-        apiAdmin<{ odcs?: OdcListItem[] }>('/api/network/odcs'),
-        apiAdmin<{ odps?: OdpListItem[] }>('/api/network/odps'),
-      ]);
-
-      if (otbData.otbs) {
-        setOtbList(otbData.otbs);
-        if (otbData.otbs.length > 0) setSelectedOTB(otbData.otbs[0].id);
-      }
-
-      if (jcData.success && jcData.data) {
-        setJcList(jcData.data);
-        setJcListAll(jcData.data);
-        if (jcData.data.length > 0) setSelectedJC(jcData.data[0].id);
-      }
-
-      if (odcData.odcs) {
-        setOdcList(odcData.odcs);
-        if (odcData.odcs.length > 0) setSelectedODC(odcData.odcs[0].id);
-      }
-
-      if (odpData.odps) {
-        setOdpList(odpData.odps);
-        if (odpData.odps.length > 0) setSelectedODP(odpData.odps[0].id);
-      }
-    } catch (error: unknown) {
-      console.error('Failed to load network data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Fetch enriched OTB detail whenever selectedOTB changes
-  useEffect(() => {
-    if (!selectedOTB) return;
-    setOtbDetail(null);
-    setOtbDetailLoading(true);
-    apiAdmin<OtbDetail>(`/api/network/otbs/${selectedOTB}`)
-      .then((d) => setOtbDetail(d))
-      .catch(console.error)
-      .finally(() => setOtbDetailLoading(false));
-  }, [selectedOTB]);
-
-  // Fetch enriched JC detail whenever selectedJC changes
-  useEffect(() => {
-    if (!selectedJC) return;
-    setJcDetail(null);
-    setJcDetailLoading(true);
-    apiAdmin<{ data?: JcDetail } | JcDetail>(`/api/network/joint-closures/${selectedJC}`)
-      .then((d) => setJcDetail((d as { data?: JcDetail }).data ?? (d as JcDetail)))
-      .catch(console.error)
-      .finally(() => setJcDetailLoading(false));
-  }, [selectedJC]);
+  const jcDetailQuery = useApiQuery<{ data?: JcDetail } | JcDetail>(`/api/network/joint-closures/${selectedJC}`, {
+    enabled: !!selectedJC,
+    staleTime: 30000,
+  });
+  const jcDetail = jcDetailQuery.data
+    ? ((jcDetailQuery.data as { data?: JcDetail }).data ?? (jcDetailQuery.data as JcDetail))
+    : null;
+  const jcDetailLoading = jcDetailQuery.isLoading;
 
   // Save a tube→JC assignment
   const handleAssignTube = async () => {
@@ -183,9 +182,8 @@ export default function NetworkDiagramsPage() {
         method: 'POST',
         body: JSON.stringify({ tubeNumber: parseInt(assignTube), jcId: assignJc, lengthMeters: assignLength || undefined }),
       });
-      // Re-fetch enriched OTB
-      const refreshed = await apiAdmin<OtbDetail>(`/api/network/otbs/${selectedOTB}`);
-      setOtbDetail(refreshed);
+      // Invalidate enriched OTB detail to refetch
+      queryClient.invalidateQueries({ queryKey: buildQueryKey(`/api/network/otbs/${selectedOTB}`) });
       setAssignTube('');
       setAssignJc('');
       setAssignLength('');
@@ -201,8 +199,7 @@ export default function NetworkDiagramsPage() {
     if (!(await showConfirm('Hapus penugasan tabung ini?'))) return;
     try {
       await apiAdmin(`/api/network/otbs/${selectedOTB}/segments?segmentId=${segmentId}`, { method: 'DELETE' });
-      const refreshed = await apiAdmin<OtbDetail>(`/api/network/otbs/${selectedOTB}`);
-      setOtbDetail(refreshed);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey(`/api/network/otbs/${selectedOTB}`) });
     } catch (err: unknown) { showError(err instanceof Error ? err.message : String(err)); }
   };
 

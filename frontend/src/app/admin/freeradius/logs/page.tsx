@@ -6,39 +6,27 @@ import {
     Terminal, Pause, Play, Download, Trash2,
     Search, Filter, Activity
 } from 'lucide-react';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 export default function RadiusLogsPage() {
     const { t } = useTranslation();
     const [logs, setLogs] = useState<string[]>([]);
     const [isPlaying, setIsPlaying] = useState(true);
     const [search, setSearch] = useState('');
-    const [loading, setLoading] = useState(true);
     const logEndRef = useRef<HTMLDivElement>(null);
 
-    const fetchLogs = async () => {
-        try {
-            const data = await apiAdmin<{ success: boolean; logs: string }>('/api/freeradius/logs?lines=100');
+    // ─── React Query: Logs (poll every 3s when playing) ─────────────────────────
+    const { data: logsData, isLoading: loading } = useApiQuery<{ success: boolean; logs: string }>('/api/freeradius/logs', {
+        params: { lines: 100 },
+        refetchInterval: isPlaying ? 3000 : false,
+    });
 
-            if (data.success) {
-                setLogs(data.logs.split('\n').filter(Boolean));
-                setLoading(false);
-            }
-        } catch (error) {
-            console.error('Error fetching logs:', error);
-        }
-    };
-
+    // Sync query data to local state (allows "clear view" to work)
     useEffect(() => {
-        fetchLogs(); // Initial fetch
-
-        let interval: NodeJS.Timeout;
-        if (isPlaying) {
-            interval = setInterval(fetchLogs, 3000); // Poll every 3 seconds
+        if (logsData?.success) {
+            setLogs(logsData.logs.split('\n').filter(Boolean));
         }
-
-        return () => clearInterval(interval);
-    }, [isPlaying]);
+    }, [logsData]);
 
     // Auto-scroll to bottom
     useEffect(() => {

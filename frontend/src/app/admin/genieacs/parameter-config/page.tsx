@@ -6,6 +6,7 @@ import { SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, Moda
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm, showWarning } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface ParameterConfig {
   id: number;
@@ -36,59 +37,30 @@ interface ConfigMutationResponse { success: boolean; error?: string }
 
 export default function ParameterConfigPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'DEVICE_LIST' | 'DEVICE_DETAIL'>('DEVICE_LIST');
   const [configs, setConfigs] = useState<ParameterConfig[]>([]);
-  const [virtualParameters, setVirtualParameters] = useState<VirtualParameter[]>([]);
-  const [loading, setLoading] = useState(true);
   const [editingConfig, setEditingConfig] = useState<ParameterConfig | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [draggedItem, setDraggedItem] = useState<ParameterConfig | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Component mounted
-  useEffect(() => {
-    console.log('ParameterConfigPage mounted');
-    fetchVirtualParameters();
-  }, []);
-
   // Fetch Virtual Parameters
-  const fetchVirtualParameters = async () => {
-    try {
-      const data = await apiAdmin<VirtualParametersResponse>('/api/settings/genieacs/virtual-parameters');
-      if (data.success) {
-        setVirtualParameters(data.data.filter((vp: VirtualParameter) => vp.isActive));
-      }
-    } catch (error: unknown) {
-      console.error('Error fetching virtual parameters:', error);
-    }
-  };
+  const { data: vpData } = useApiQuery<VirtualParametersResponse>('/api/settings/genieacs/virtual-parameters', { staleTime: 60000 });
+  const virtualParameters: VirtualParameter[] = (vpData?.data || []).filter((vp: VirtualParameter) => vp.isActive);
 
   // Fetch configurations
-  const fetchConfigs = async () => {
-    setLoading(true);
-    try {
-      console.log('Fetching configs for tab:', activeTab);
-      const data = await apiAdmin<ConfigsResponse>(`/api/settings/genieacs/parameter-display?configType=${activeTab}`);
-      console.log('Fetched configs:', data);
-      if (data.success) {
-        setConfigs(data.configs);
-      } else {
-        console.error('Failed to fetch configs:', data.error);
-        await showError(t('genieacs.failedLoadConfig') + ': ' + (data.error || 'Unknown error'));
-      }
-    } catch (error: unknown) {
-      console.error('Error fetching configs:', error);
-      await showError(t('genieacs.failedLoadConfig') + ': ' + (error instanceof Error ? error.message : String(error)));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: queryData, isLoading: loading } = useApiQuery<ConfigsResponse>(
+    '/api/settings/genieacs/parameter-display',
+    { params: { configType: activeTab }, staleTime: 60000 },
+  );
 
+  // Sync configs from query data (local state needed for drag-and-drop)
   useEffect(() => {
-    console.log('Tab changed to:', activeTab);
-    fetchConfigs();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+    if (queryData?.success) setConfigs(queryData.configs);
+  }, [queryData]);
+
+  const invalidateConfigs = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/genieacs/parameter-display', { configType: activeTab }) });
 
   // Toggle enabled/disabled
   const toggleEnabled = async (config: ParameterConfig) => {
@@ -104,6 +76,7 @@ export default function ParameterConfigPage() {
         setConfigs(configs.map(c =>
           c.id === config.id ? { ...c, enabled: !c.enabled } : c
         ));
+        invalidateConfigs();
       } else {
         await showError(t('genieacs.failedToggle') + ': ' + (data.error || 'Unknown error'));
       }
@@ -130,7 +103,7 @@ export default function ParameterConfigPage() {
 
       if (data.success) {
         await showSuccess(t('genieacs.orderSaved'));
-        fetchConfigs(); // Refresh to get updated data
+        invalidateConfigs(); // Refresh to get updated data
       } else {
         await showError(t('genieacs.failedSaveOrder') + ': ' + (data.error || 'Unknown error'));
       }
@@ -154,6 +127,7 @@ export default function ParameterConfigPage() {
 
       if (data.success) {
         setConfigs(configs.filter(c => c.id !== id));
+        invalidateConfigs();
         await showSuccess(t('genieacs.configDeleted'));
       } else {
         await showError(t('genieacs.failedDeleteConfig') + ': ' + (data.error || 'Unknown error'));
@@ -238,7 +212,7 @@ export default function ParameterConfigPage() {
         setEditingConfig(null);
 
         // Refresh data from server to get latest state
-        await fetchConfigs();
+        invalidateConfigs();
 
         await showSuccess(isNewConfig ? t('genieacs.paramCreated') : t('genieacs.configSaved'));
       } else {
@@ -266,7 +240,7 @@ export default function ParameterConfigPage() {
 
       if (data.success) {
         await showSuccess(t('genieacs.resetSuccess'));
-        fetchConfigs();
+        invalidateConfigs();
       } else {
         await showError(t('genieacs.failedReset') + ': ' + (data.error || 'Unknown error'));
       }

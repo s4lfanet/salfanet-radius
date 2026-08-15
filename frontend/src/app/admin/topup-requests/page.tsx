@@ -1,12 +1,13 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Check, X, Eye, Download, Loader2, AlertCircle, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface TopUpRequest {
   id: string;
@@ -26,27 +27,17 @@ interface TopUpRequest {
 
 export default function TopUpRequestsPage() {
   const { t } = useTranslation();
-  const [requests, setRequests] = useState<TopUpRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [processing, setProcessing] = useState<string | null>(null);
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'SUCCESS' | 'FAILED'>('PENDING');
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadRequests();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // ─── React Query: Top-up requests ────────────────────────────────────────────
+  const { data: topupData, isLoading: loading } = useApiQuery<{ requests?: TopUpRequest[] }>('/api/admin/topup-requests', { staleTime: 30000 });
+  const requests = topupData?.requests || [];
 
-  const loadRequests = async () => {
-    try {
-      setLoading(true);
-      const data = await apiAdmin<{ requests?: TopUpRequest[] }>('/api/admin/topup-requests');
-      setRequests(data.requests || []);
-    } catch (error: unknown) {
-      showError((error instanceof Error ? error.message : String(error)) || t('topup.failedLoadRequests'));
-    } finally {
-      setLoading(false);
-    }
+  const invalidateRequests = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/topup-requests') });
   };
 
   const handleApprove = async (requestId: string) => {
@@ -65,7 +56,7 @@ export default function TopUpRequestsPage() {
       });
 
       showSuccess(t('topup.approveSuccess'));
-      loadRequests();
+      invalidateRequests();
     } catch (error: unknown) {
       showError((error instanceof Error ? error.message : String(error)) || t('topup.failedProcess'));
     } finally {
@@ -90,7 +81,7 @@ export default function TopUpRequestsPage() {
       });
 
       showSuccess(t('topup.rejectSuccess'));
-      loadRequests();
+      invalidateRequests();
     } catch (error: unknown) {
       showError((error instanceof Error ? error.message : String(error)) || t('topup.failedProcess'));
     } finally {

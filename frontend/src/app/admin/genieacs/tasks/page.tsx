@@ -1,11 +1,12 @@
 ﻿'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ListTodo, RefreshCw, Loader2, Trash2, CheckCircle, XCircle, Clock, Search, AlertCircle, X, Activity } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface GenieACSTask {
   _id: string;
@@ -23,46 +24,32 @@ interface GenieACSTask {
 export default function GenieACSTasksPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [tasks, setTasks] = useState<GenieACSTask[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<{ tasks?: GenieACSTask[] }>('/api/genieacs/tasks', { staleTime: 60000 });
+  const tasks: GenieACSTask[] = queryData?.tasks || [];
+  const invalidateTasks = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/tasks') });
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
 
-  const fetchTasks = useCallback(async () => {
-    try {
-      const data = await apiAdmin<{ tasks?: GenieACSTask[] }>('/api/genieacs/tasks');
-      setTasks(data.tasks || []);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Initial fetch
-  useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
-
   // Auto-refresh every 10 seconds if there are pending tasks
   useEffect(() => {
     if (!autoRefresh) return;
-    
+
     const hasPending = tasks.some(t => !t.fault && t.status !== 'done');
     if (!hasPending) return;
 
     const interval = setInterval(() => {
-      fetchTasks();
+      refetch();
     }, 10000); // Refresh every 10 seconds
 
     return () => clearInterval(interval);
-  }, [tasks, autoRefresh, fetchTasks]);
+  }, [tasks, autoRefresh, refetch]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await fetchTasks();
+    await refetch();
     setRefreshing(false);
   };
 
@@ -75,10 +62,10 @@ export default function GenieACSTasksPage() {
       variant: 'danger',
     })) {
       try {
-        await apiAdmin(`/api/genieacs/tasks/${encodeURIComponent(taskId)}`, { 
-          method: 'DELETE' 
+        await apiAdmin(`/api/genieacs/tasks/${encodeURIComponent(taskId)}`, {
+          method: 'DELETE'
         });
-        setTasks(tasks.filter(t => t._id !== taskId));
+        invalidateTasks();
         addToast({ type: 'success', title: t('common.success'), description: t('common.taskDeleted'), duration: 2000 });
       } catch (error) {
         addToast({ type: 'error', title: t('common.error'), description: t('genieacs.failedDeleteTask') });
@@ -88,11 +75,11 @@ export default function GenieACSTasksPage() {
 
   const handleRetryTask = async (taskId: string) => {
     try {
-      await apiAdmin(`/api/genieacs/tasks/${encodeURIComponent(taskId)}/retry`, { 
-        method: 'POST' 
+      await apiAdmin(`/api/genieacs/tasks/${encodeURIComponent(taskId)}/retry`, {
+        method: 'POST'
       });
       addToast({ type: 'success', title: t('common.success'), description: t('genieacs.taskWillBeRetried'), duration: 2000 });
-      handleRefresh();
+      invalidateTasks();
     } catch (error) {
       addToast({ type: 'error', title: t('common.error'), description: t('genieacs.failedRetryTask') });
     }

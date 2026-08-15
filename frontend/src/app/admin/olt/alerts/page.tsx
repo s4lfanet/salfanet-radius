@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { AlertCircle, CheckCircle, RefreshCw, Wifi, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Alert {
   id: string;
@@ -43,46 +44,35 @@ function relativeTime(dateStr: string): string {
 }
 
 export default function OLTAlertsPage() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [severityFilter, setSeverityFilter] = useState('all');
   const [resolvedFilter, setResolvedFilter] = useState('false');
   const [typeFilter, setTypeFilter] = useState('all');
   const [resolving, setResolving] = useState<string | null>(null);
   const [resolvingAll, setResolvingAll] = useState(false);
 
-  const fetchAlerts = useCallback(async () => {
-    try {
-      const params = new URLSearchParams();
-      if (resolvedFilter !== 'all') params.set('resolved', resolvedFilter);
-      if (severityFilter !== 'all') params.set('severity', severityFilter);
-      if (typeFilter !== 'all') params.set('type', typeFilter);
-      params.set('limit', '100');
+  // ─── React Query: Alerts (filters) ───────────────────────────────────────────
+  const alertParams: Record<string, unknown> = {
+    resolved: resolvedFilter !== 'all' ? resolvedFilter : undefined,
+    severity: severityFilter !== 'all' ? severityFilter : undefined,
+    type: typeFilter !== 'all' ? typeFilter : undefined,
+    limit: 100,
+  };
+  const { data: alertsData, isLoading: loading, refetch: refetchAlerts } = useApiQuery<{ alerts?: Alert[] }>(
+    '/api/olt/alerts',
+    { params: alertParams, staleTime: 30000 }
+  );
+  const alerts = alertsData?.alerts ?? [];
 
-      const data = await apiAdmin<{ alerts?: Alert[] }>(`/api/olt/alerts?${params}`);
-      setAlerts(data.alerts ?? []);
-    } catch (e) {
-      console.error('Failed to fetch alerts', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [resolvedFilter, severityFilter, typeFilter]);
-
-  useEffect(() => {
-    fetchAlerts();
-  }, [fetchAlerts]);
+  const invalidateAlerts = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/olt/alerts') });
+  };
 
   const handleResolve = async (alertId: string) => {
     setResolving(alertId);
     try {
       await apiAdmin(`/api/olt/alerts/${alertId}`, { method: 'PUT' });
-      setAlerts((prev) =>
-        prev.map((a) =>
-          a.id === alertId
-            ? { ...a, isResolved: true, resolvedAt: new Date().toISOString() }
-            : a
-        )
-      );
+      invalidateAlerts();
     } catch (e) {
       console.error('Failed to resolve alert', e);
     } finally {
@@ -97,9 +87,7 @@ export default function OLTAlertsPage() {
     await Promise.allSettled(
       unresolved.map((a) => apiAdmin(`/api/olt/alerts/${a.id}`, { method: 'PUT' }))
     );
-    setAlerts((prev) =>
-      prev.map((a) => ({ ...a, isResolved: true, resolvedAt: new Date().toISOString() }))
-    );
+    invalidateAlerts();
     setResolvingAll(false);
   };
 
@@ -152,7 +140,7 @@ export default function OLTAlertsPage() {
             </button>
           )}
           <button
-            onClick={fetchAlerts}
+            onClick={() => refetchAlerts()}
             className="inline-flex items-center px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300"
           >
             <RefreshCw className="h-3 w-3 mr-1" />

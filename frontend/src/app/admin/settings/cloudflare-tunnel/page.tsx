@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Cloud,
   CheckCircle2,
@@ -26,6 +26,7 @@ import {
   WifiOff,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface TunnelStatus {
   baseUrl: string;
@@ -72,8 +73,13 @@ function CodeBlock({ code }: { code: string }) {
 }
 
 export default function CloudflareTunnelPage() {
-  const [status, setStatus] = useState<TunnelStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: status, isLoading: loading, refetch } = useApiQuery<TunnelStatus>('/api/admin/cloudflare-tunnel', {
+    staleTime: 30000,
+    queryOptions: {
+      refetchInterval: (query) => query.state.data?.cloudflared?.serviceStatus === 'active' ? 10000 : false,
+    },
+  });
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [tunnelDomain, setTunnelDomain] = useState('');
   const [tunnelToken, setTunnelToken] = useState('');
@@ -85,33 +91,20 @@ export default function CloudflareTunnelPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const loadStatus = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await apiAdmin<TunnelStatus>('/api/admin/cloudflare-tunnel');
-      setStatus(data);
-      if (data.baseUrl) {
-        setTunnelDomain(data.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''));
-      }
-      if (data.nginx?.port) {
-        setLocalPort(String(data.nginx.port));
-      }
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const loadStatus = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/cloudflare-tunnel') });
+  };
 
-  useEffect(() => { loadStatus(); }, [loadStatus]);
-
-  // Auto-refresh status every 10s when service is active
   useEffect(() => {
-    if (status?.cloudflared?.serviceStatus === 'active') {
-      const interval = setInterval(loadStatus, 10000);
-      return () => clearInterval(interval);
+    if (status) {
+      if (status.baseUrl) {
+        setTunnelDomain(status.baseUrl.replace(/^https?:\/\//, '').replace(/\/$/, ''));
+      }
+      if (status.nginx?.port) {
+        setLocalPort(String(status.nginx.port));
+      }
     }
-  }, [status?.cloudflared?.serviceStatus, loadStatus]);
+  }, [status]);
 
   const doAction = async (action: string, extra?: Record<string, unknown>) => {
     setActionLoading(action);
@@ -122,7 +115,7 @@ export default function CloudflareTunnelPage() {
       });
       if (data.success !== false) {
         showToast('success', data.message || 'Berhasil');
-        await loadStatus();
+        loadStatus();
       } else {
         showToast('error', data.error || 'Gagal');
       }
@@ -196,7 +189,7 @@ export default function CloudflareTunnelPage() {
           <div className="flex items-center gap-2">
             <Server className="w-4 h-4 text-brand-500" />
             <span className="font-semibold text-sm text-foreground">Status Cloudflare Tunnel</span>
-            <button onClick={loadStatus} className="ml-auto p-1 rounded hover:bg-muted transition-colors" title="Refresh">
+            <button onClick={() => refetch()} className="ml-auto p-1 rounded hover:bg-muted transition-colors" title="Refresh">
               <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           </div>

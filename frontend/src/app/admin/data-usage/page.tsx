@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { RefreshCw, BarChart3, TrendingUp, Download, Upload, Users, Calendar, Zap } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface UsageRecord {
   username: string;
@@ -63,66 +64,48 @@ const API_BASE = '/api/admin/data-usage';
 
 export default function DataUsagePage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<'top' | 'monthly' | 'user'>('top');
-  const [topConsumers, setTopConsumers] = useState<TopConsumers | null>(null);
-  const [monthly, setMonthly] = useState<MonthlySummary | null>(null);
-  const [userUsage, setUserUsage] = useState<UsageRecord[]>([]);
   const [topDays, setTopDays] = useState(30);
   const [topLimit, setTopLimit] = useState(20);
   const [searchUser, setSearchUser] = useState('');
+  const [searchUserQuery, setSearchUserQuery] = useState('');
   const [now] = useState(new Date());
 
-  useEffect(() => {
-    loadTop();
-  }, []);
+  // ─── React Query: Top consumers ─────────────────────────────────────────────
+  const topQuery = useApiQuery<TopConsumersResponse>(
+    `${API_BASE}/top`,
+    { params: { days: topDays, limit: topLimit }, enabled: tab === 'top', staleTime: 30000 }
+  );
+  const topConsumers = topQuery.data?.data || null;
+  const loadingTop = topQuery.isLoading && tab === 'top';
 
-  const loadTop = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<TopConsumersResponse>(`${API_BASE}/top?days=${topDays}&limit=${topLimit}`);
-      setTopConsumers(data.data || null);
-    } catch (err: unknown) {
-      console.error('Failed to load top consumers', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── React Query: Monthly summary ───────────────────────────────────────────
+  const monthlyQuery = useApiQuery<MonthlySummaryResponse>(
+    `${API_BASE}/monthly`,
+    { enabled: tab === 'monthly', staleTime: 30000 }
+  );
+  const monthly = monthlyQuery.data?.data || null;
+  const loadingMonthly = monthlyQuery.isLoading && tab === 'monthly';
 
-  const loadMonthly = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<MonthlySummaryResponse>(`${API_BASE}/monthly`);
-      setMonthly(data.data || null);
-    } catch (err: unknown) {
-      console.error('Failed to load monthly summary', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── React Query: Per-user usage ────────────────────────────────────────────
+  const userUsageQuery = useApiQuery<UserUsageResponse>(
+    API_BASE,
+    { params: searchUserQuery ? { username: searchUserQuery } : undefined, enabled: tab === 'user' && !!searchUserQuery, staleTime: 30000 }
+  );
+  const userUsage = userUsageQuery.data?.data || [];
+  const loadingUser = userUsageQuery.isLoading && tab === 'user';
 
-  const loadUserUsage = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (searchUser) params.set('username', searchUser);
-      const data = await apiAdmin<UserUsageResponse>(`${API_BASE}?${params.toString()}`);
-      setUserUsage(data.data || []);
-    } catch (err: unknown) {
-      console.error('Failed to load user usage', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = loadingTop || loadingMonthly || loadingUser;
 
   const triggerAggregate = async () => {
     try {
       const data = await apiAdmin<AggregateResponse>(`${API_BASE}/aggregate`, { method: 'POST' });
       if (data.success) {
         showSuccess(`Aggregation complete: ${data.data.processed} users processed`);
-        if (tab === 'top') loadTop();
-        else if (tab === 'monthly') loadMonthly();
-        else loadUserUsage();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey(`${API_BASE}/top`) });
+        queryClient.invalidateQueries({ queryKey: buildQueryKey(`${API_BASE}/monthly`) });
+        queryClient.invalidateQueries({ queryKey: buildQueryKey(API_BASE) });
       }
     } catch (err: unknown) {
       showError('Failed to trigger aggregation');
@@ -131,9 +114,12 @@ export default function DataUsagePage() {
 
   const switchTab = (newTab: 'top' | 'monthly' | 'user') => {
     setTab(newTab);
-    if (newTab === 'top') loadTop();
-    else if (newTab === 'monthly') loadMonthly();
-    else loadUserUsage();
+  };
+
+  const refreshCurrent = () => {
+    if (tab === 'top') topQuery.refetch();
+    else if (tab === 'monthly') monthlyQuery.refetch();
+    else userUsageQuery.refetch();
   };
 
   if (loading) {
@@ -159,7 +145,7 @@ export default function DataUsagePage() {
           <button onClick={triggerAggregate} className="px-3 py-2 bg-yellow-600/20 text-yellow-400 rounded-lg hover:bg-yellow-600/30 flex items-center gap-2 text-sm" title="Manual aggregate">
             <Zap className="w-4 h-4" /> Aggregate
           </button>
-          <button onClick={() => switchTab(tab)} className="p-2 text-gray-400 hover:text-cyan-400 transition-colors" title="Refresh">
+          <button onClick={refreshCurrent} className="p-2 text-gray-400 hover:text-cyan-400 transition-colors" title="Refresh">
             <RefreshCw className="w-5 h-5" />
           </button>
         </div>
@@ -201,7 +187,7 @@ export default function DataUsagePage() {
               <option value={20}>Top 20</option>
               <option value={50}>Top 50</option>
             </select>
-            <button onClick={loadTop} className="px-3 py-1.5 bg-cyan-600/20 text-cyan-400 rounded text-sm hover:bg-cyan-600/30">Apply</button>
+            <button onClick={() => topQuery.refetch()} className="px-3 py-1.5 bg-cyan-600/20 text-cyan-400 rounded text-sm hover:bg-cyan-600/30">Apply</button>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -310,11 +296,11 @@ export default function DataUsagePage() {
               type="text"
               value={searchUser}
               onChange={(e) => setSearchUser(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && loadUserUsage()}
+              onKeyDown={(e) => { if (e.key === 'Enter') { setSearchUserQuery(searchUser); } }}
               placeholder="Enter username..."
               className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-1.5 text-sm text-gray-200"
             />
-            <button onClick={loadUserUsage} className="px-4 py-1.5 bg-cyan-600/20 text-cyan-400 rounded text-sm hover:bg-cyan-600/30">Search</button>
+            <button onClick={() => setSearchUserQuery(searchUser)} className="px-4 py-1.5 bg-cyan-600/20 text-cyan-400 rounded text-sm hover:bg-cyan-600/30">Search</button>
           </div>
 
           {userUsage.length === 0 ? (

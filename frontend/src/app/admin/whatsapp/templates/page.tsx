@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { Loader2 } from 'lucide-react';
 
 interface Template {
@@ -182,34 +183,27 @@ const templateTypes = Object.keys(templateConfig) as (keyof typeof templateConfi
 
 export default function WhatsAppTemplatesPage() {
   const { t } = useTranslation();
-  const [templates, setTemplates] = useState<Record<string, Template>>({});
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<keyof typeof templateConfig>('registration-approval');
 
+  // ─── React Query: WhatsApp templates ─────────────────────────────────────────
+  const { data: templatesData, isLoading: loading } = useApiQuery<TemplatesResponse>('/api/whatsapp/templates', { staleTime: 30000 });
+  const [templates, setTemplates] = useState<Record<string, Template>>({});
+
+  // Build templates map from query data
   useEffect(() => {
-    fetchTemplates();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchTemplates = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<TemplatesResponse>('/api/whatsapp/templates');
-
-      if (data.success) {
-        const templatesMap: Record<string, Template> = {};
-        data.data.forEach((t: Template) => {
-          templatesMap[t.type] = t;
-        });
-        setTemplates(templatesMap);
-      }
-    } catch (error: unknown) {
-      console.error('Fetch templates error:', error);
-      showError((error instanceof Error ? error.message : String(error)) || t('whatsapp.failedLoadTemplate'));
-    } finally {
-      setLoading(false);
+    if (templatesData?.success) {
+      const templatesMap: Record<string, Template> = {};
+      templatesData.data.forEach((tpl: Template) => {
+        templatesMap[tpl.type] = tpl;
+      });
+      setTemplates(templatesMap);
     }
+  }, [templatesData]);
+
+  const invalidateTemplates = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/whatsapp/templates') });
   };
 
   const handleUpdate = async (type: string, message: string) => {
@@ -225,7 +219,7 @@ export default function WhatsAppTemplatesPage() {
 
       if (data.success) {
         showSuccess(t('whatsapp.templateUpdated'));
-        fetchTemplates();
+        invalidateTemplates();
       } else {
         showError(data.error || t('whatsapp.failedUpdateTemplate'));
       }

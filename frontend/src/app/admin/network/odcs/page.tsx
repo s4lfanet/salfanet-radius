@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   Plus, Pencil, Trash2, Server, MapPin, Map, X, RefreshCcw,
   Activity, Box, HardDrive,
@@ -51,9 +52,16 @@ interface OLT {
 
 export default function ODCsPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [odcs, setOdcs] = useState<ODC[]>([]);
-  const [olts, setOlts] = useState<OLT[]>([]);
+  const queryClient = useQueryClient();
+  const odcsQuery = useApiQuery<{ odcs?: ODC[] }>('/api/network/odcs', {
+    staleTime: 30000,
+  });
+  const oltsQuery = useApiQuery<{ olts?: OLT[] }>('/api/network/olts', {
+    staleTime: 30000,
+  });
+  const odcs = odcsQuery.data?.odcs || [];
+  const olts = oltsQuery.data?.olts || [];
+  const loading = odcsQuery.isLoading || oltsQuery.isLoading;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOdc, setEditingOdc] = useState<ODC | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -69,25 +77,6 @@ export default function ODCsPage() {
     status: 'active',
     followRoad: false,
   });
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [odcsData, oltsData] = await Promise.all([
-        apiAdmin<{ odcs?: ODC[] }>('/api/network/odcs'),
-        apiAdmin<{ olts?: OLT[] }>('/api/network/olts'),
-      ]);
-      setOdcs(odcsData.odcs || []);
-      setOlts(oltsData.olts || []);
-    } catch (error) {
-      console.error('Load error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -136,7 +125,7 @@ export default function ODCsPage() {
         setIsDialogOpen(false);
         setEditingOdc(null);
         resetForm();
-        loadData();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/odcs') });
       } else {
         await showError(result.error || t('common.failedSaveOdc'));
       }
@@ -161,7 +150,7 @@ export default function ODCsPage() {
 
       if (result.success) {
         await showSuccess(t('common.odcDeleted'));
-        loadData();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/odcs') });
       } else {
         await showError(result.error || t('common.failedDeleteOdc'));
       }

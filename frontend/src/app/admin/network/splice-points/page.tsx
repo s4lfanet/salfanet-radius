@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 // Fiber color coding (TIA-598-D standard)
 const FIBER_COLORS: Record<string, string> = {
@@ -95,13 +96,24 @@ const SPLICE_TYPES = [
 
 export default function SplicePointsPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [splicePoints, setSplicePoints] = useState<SplicePoint[]>([]);
-  const [cables, setCables] = useState<FiberCable[]>([]);
+  const queryClient = useQueryClient();
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
+
+  // React Query: splices (with filterType param), cables
+  const splicesQuery = useApiQuery<SplicesResponse>('/api/network/splices', {
+    params: filterType ? { spliceType: filterType } : undefined,
+    staleTime: 30000,
+  });
+  const cablesQuery = useApiQuery<CablesResponse>('/api/network/cables', {
+    staleTime: 30000,
+  });
+
+  const splicePoints = splicesQuery.data?.splices || [];
+  const cables = cablesQuery.data?.cables || [];
+  const loading = splicesQuery.isLoading;
 
   // Dialogs
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -126,33 +138,6 @@ export default function SplicePointsPage() {
   const [coresForCableA, setCoresForCableA] = useState<FiberCore[]>([]);
   const [coresForCableB, setCoresForCableB] = useState<FiberCore[]>([]);
 
-  const loadSplicePoints = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (filterType) params.append('spliceType', filterType);
-
-      const data = await apiAdmin<SplicesResponse>(`/api/network/splices?${params}`);
-
-      setSplicePoints(data.splices || []);
-    } catch (error: unknown) {
-      const err = error as Error;
-      showError(err.message || t('splicePoint.loadFailed'));
-    } finally {
-      setLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterType]);
-
-  const loadCables = useCallback(async () => {
-    try {
-      const data = await apiAdmin<CablesResponse>('/api/network/cables');
-      setCables(data.cables || []);
-    } catch (error: unknown) {
-      console.error('Failed to load cables:', error);
-    }
-  }, []);
-
   const loadCoresForCable = async (cableId: string, target: 'A' | 'B') => {
     try {
       const data = await apiAdmin<CoresResponse>(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
@@ -166,11 +151,6 @@ export default function SplicePointsPage() {
       console.error('Failed to load cores:', error);
     }
   };
-
-  useEffect(() => {
-    loadCables();
-    loadSplicePoints();
-  }, [loadCables, loadSplicePoints]);
 
   useEffect(() => {
     if (selectedCableA) loadCoresForCable(selectedCableA, 'A');
@@ -231,7 +211,7 @@ export default function SplicePointsPage() {
       showSuccess(t('splicePoint.createdSuccess'));
       setIsCreateDialogOpen(false);
       resetForm();
-      loadSplicePoints();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/splices') });
     } catch (error: unknown) {
       const err = error as Error;
       showError(err.message || t('splicePoint.createFailed'));
@@ -250,7 +230,7 @@ export default function SplicePointsPage() {
     try {
       await apiAdmin(`/api/network/splices/${splice.id}`, { method: 'DELETE' });
       showSuccess(t('splicePoint.deletedSuccess'));
-      loadSplicePoints();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/splices') });
     } catch (error: unknown) {
       const err = error as Error;
       showError(err.message || t('splicePoint.deleteFailed'));
@@ -328,7 +308,7 @@ export default function SplicePointsPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => loadSplicePoints()}
+            onClick={() => splicesQuery.refetch()}
             disabled={loading}
             className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1 disabled:opacity-50"
           >

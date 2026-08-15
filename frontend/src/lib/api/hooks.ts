@@ -64,8 +64,8 @@ interface UseApiQueryOptions<TData, TError = Error> {
   mode?: AuthMode;
   /** Stale time in ms (default: 30s from QueryClient) */
   staleTime?: number;
-  /** Refetch interval in ms (for polling) */
-  refetchInterval?: number;
+  /** Refetch interval in ms (for polling), or false to disable */
+  refetchInterval?: number | false;
   /** Enable/disable the query */
   enabled?: boolean;
   /** Keep previous data while fetching new data (for pagination) */

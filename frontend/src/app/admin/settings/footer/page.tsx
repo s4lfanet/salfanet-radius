@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FileText, Save, Loader2, Info } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface FooterSettings {
   footerAdmin: string;
@@ -49,30 +50,26 @@ const PORTALS = [
 
 export default function FooterSettingsPage() {
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
+  const { data, isLoading: loading } = useApiQuery<Record<string, unknown>>('/api/company', { staleTime: 300000 });
   const [settings, setSettings] = useState<FooterSettings>({
     footerAdmin: '',
     footerCustomer: '',
     footerTechnician: '',
     footerAgent: '',
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    apiAdmin<Record<string, unknown>>('/api/company')
-      .then(data => {
-        if (data) {
-          setSettings({
-            footerAdmin: String(data.footerAdmin ?? ''),
-            footerCustomer: String(data.footerCustomer ?? ''),
-            footerTechnician: String(data.footerTechnician ?? ''),
-            footerAgent: String(data.footerAgent ?? ''),
-          });
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    if (data) {
+      setSettings({
+        footerAdmin: String(data.footerAdmin ?? ''),
+        footerCustomer: String(data.footerCustomer ?? ''),
+        footerTechnician: String(data.footerTechnician ?? ''),
+        footerAgent: String(data.footerAgent ?? ''),
+      });
+    }
+  }, [data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +90,7 @@ export default function FooterSettingsPage() {
       });
 
       addToast({ type: 'success', title: 'Tersimpan', description: 'Pengaturan footer berhasil disimpan.', duration: 2000 });
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/company') });
     } catch {
       addToast({ type: 'error', title: 'Gagal', description: 'Terjadi kesalahan saat menyimpan.', duration: 4000 });
     } finally {

@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { CyberCard, CyberButton, CyberBadge } from '@/components/cyberpunk';
 import {
   Gift, Users, Wallet, Clock, CheckCircle, XCircle, Search,
@@ -59,37 +60,30 @@ interface ReferralActionResponse {
 export default function AdminReferralsPage() {
   const { addToast } = useToast();
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [processing, setProcessing] = useState<string | null>(null);
-  const [rewards, setRewards] = useState<ReferralReward[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  const loadData = useCallback(async () => {
-    try {
-      const params = new URLSearchParams({ page: page.toString(), limit: '20' });
-      if (search) params.set('search', search);
-      if (statusFilter) params.set('status', statusFilter);
+  // ─── React Query: Referrals list (page + search + status filter) ─────────────
+  const referralParams: Record<string, unknown> = {
+    page,
+    limit: 20,
+    search: search || undefined,
+    status: statusFilter || undefined,
+  };
+  const { data: referralData, isLoading: loading } = useApiQuery<ReferralsListResponse>(
+    '/api/admin/referrals',
+    { params: referralParams, staleTime: 30000 }
+  );
+  const rewards = referralData?.rewards || [];
+  const stats = referralData?.stats || null;
+  const totalPages = referralData?.pagination.totalPages ?? 1;
 
-      const data = await apiAdmin<ReferralsListResponse>(`/api/admin/referrals?${params}`);
-      if (data.success) {
-        setRewards(data.rewards);
-        setStats(data.stats);
-        setTotalPages(data.pagination.totalPages);
-      }
-    } catch (error: unknown) {
-      console.error('Load referrals error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, statusFilter]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const invalidateReferrals = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/referrals') });
+  };
 
   const processReward = async (rewardId: string, action: 'credit' | 'expire') => {
     setProcessing(rewardId);
@@ -101,7 +95,7 @@ export default function AdminReferralsPage() {
 
       if (data.success) {
         addToast({ type: 'success', title: 'Berhasil!', description: data.message });
-        loadData();
+        invalidateReferrals();
       } else {
         addToast({ type: 'error', title: 'Error', description: data.error });
       }

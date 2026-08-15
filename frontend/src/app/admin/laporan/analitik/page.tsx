@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   TrendingUp, TrendingDown, Users, DollarSign, UserX, RefreshCw,
@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 import type { TooltipPayloadEntry, TooltipValueType } from 'recharts';
 import { useTranslation } from '@/hooks/useTranslation';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -158,28 +158,14 @@ export default function LaporanAnalitikPage() {
     { label: t('laporanAnalitik.months24'), value: '24' },
   ];
 
-  const [data, setData] = useState<AnalyticsData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('12');
-  const [refreshing, setRefreshing] = useState(false);
 
-  const loadAnalytics = useCallback(async (p: string, silent = false) => {
-    if (!silent) setLoading(true);
-    else setRefreshing(true);
-    try {
-      const json = await apiAdmin<{ success: boolean } & AnalyticsData>(`/api/admin/analytics?period=${p}`);
-      if (json.success) setData(json);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadAnalytics(period);
-  }, [period, loadAnalytics]);
+  // ─── React Query: Analytics data (period-based) ──────────────────────────────
+  const { data: rawData, isLoading: loading, isFetching: refreshing, refetch } = useApiQuery<{ success: boolean } & AnalyticsData>(
+    '/api/admin/analytics',
+    { params: { period }, staleTime: 30000 }
+  );
+  const data = rawData ?? null;
 
   // ── Loading state ────────────────────────────────────────────────────────
   if (loading) {
@@ -234,8 +220,8 @@ export default function LaporanAnalitikPage() {
             ))}
           </div>
           <button
-            onClick={() => loadAnalytics(period, true)}
-            disabled={refreshing}
+            onClick={() => refetch()}
+            disabled={refreshing && !loading}
             className="p-2 rounded-lg border border-border hover:bg-accent transition-colors disabled:opacity-50"
             title="Perbarui Data"
           >

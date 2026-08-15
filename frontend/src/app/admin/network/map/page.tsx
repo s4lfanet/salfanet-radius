@@ -10,6 +10,7 @@ import UserDetailModal from '@/components/UserDetailModal';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin, networkApi, pppoeApi } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 // Dynamic import Leaflet components
 const MapContainer = dynamic(
@@ -151,17 +152,73 @@ export default function NetworkMapPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
   const mapRef = useRef<LeafletMap | null>(null);
-  const [olts, setOlts] = useState<OLT[]>([]);
-  const [odcs, setOdcs] = useState<ODC[]>([]);
-  const [odps, setOdps] = useState<ODP[]>([]);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [routerList, setRouterList] = useState<Router[]>([]);
+  const [mapReady, setMapReady] = useState(false);
+
+  // React Query: 6 parallel data loads (enabled when map is ready)
+  const oltsQuery = useApiQuery<{ olts?: OLT[] } | OLT[]>('/api/network/olts', {
+    enabled: mapReady,
+    staleTime: 30000,
+  });
+  const odcsQuery = useApiQuery<{ odcs?: ODC[] } | ODC[]>('/api/network/odcs', {
+    enabled: mapReady,
+    staleTime: 30000,
+  });
+  const odpsQuery = useApiQuery<{ odps?: ODP[] } | ODP[]>('/api/network/odps', {
+    enabled: mapReady,
+    staleTime: 30000,
+  });
+  const customersQuery = useApiQuery<{ users?: Customer[] } | Customer[]>('/api/pppoe/users', {
+    params: { limit: 5000 },
+    enabled: mapReady,
+    staleTime: 30000,
+  });
+  const profilesQuery = useApiQuery<{ profiles?: Profile[] } | Profile[]>('/api/pppoe/profiles', {
+    enabled: mapReady,
+    staleTime: 30000,
+  });
+  const routersQuery = useApiQuery<{ routers?: Router[] } | Router[]>('/api/network/routers', {
+    enabled: mapReady,
+    staleTime: 30000,
+  });
+
+  // Derived data from queries (same type coercion as original)
+  const olts = (oltsQuery.data as { olts?: OLT[] } | undefined)?.olts || (oltsQuery.data as OLT[] | undefined) || [];
+  const odcs = (odcsQuery.data as { odcs?: ODC[] } | undefined)?.odcs || (odcsQuery.data as ODC[] | undefined) || [];
+  const odps = (odpsQuery.data as { odps?: ODP[] } | undefined)?.odps || (odpsQuery.data as ODP[] | undefined) || [];
+  const customers = (((customersQuery.data as { users?: Customer[] } | undefined)?.users || (customersQuery.data as Customer[] | undefined)) || []).filter((c) => c.latitude && c.longitude);
+  const profiles = (profilesQuery.data as { profiles?: Profile[] } | undefined)?.profiles || (profilesQuery.data as Profile[] | undefined) || [];
+  const routerList = (routersQuery.data as { routers?: Router[] } | undefined)?.routers || (routersQuery.data as Router[] | undefined) || [];
+
+  const loading = oltsQuery.isLoading || odcsQuery.isLoading || odpsQuery.isLoading || customersQuery.isLoading || profilesQuery.isLoading || routersQuery.isLoading;
+
+  // Router-OLT connections (fetched per-router after routers list loads)
   const [routerOltConnections, setRouterOltConnections] = useState<Record<string, RouterOltConnection[]>>({});
   const [routerPingStatus, setRouterPingStatus] = useState<Record<string, PingResult[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [mapReady, setMapReady] = useState(false);
+
+  // Fetch uplink connections for routers with GPS when routers data changes
+  useEffect(() => {
+    if (!mapReady || routerList.length === 0) return;
+    const routersWithGps = routerList.filter((r) => r.latitude && r.longitude);
+    const connectionPromises = routersWithGps.map(async (r) => {
+      try {
+        const connData = await apiAdmin<{ connections?: RouterOltConnection[] }>(`/api/network/routers/${r.id}/uplinks`);
+        return { routerId: r.id, connections: connData.connections || [] };
+      } catch (e) {
+        console.error(`Failed to fetch uplinks for router ${r.id}:`, e);
+      }
+      return { routerId: r.id, connections: [] as RouterOltConnection[] };
+    });
+
+    Promise.all(connectionPromises).then((connectionResults) => {
+      const connMap: Record<string, RouterOltConnection[]> = {};
+      connectionResults.forEach(({ routerId, connections }) => {
+        connMap[routerId] = connections;
+      });
+      setRouterOltConnections(connMap);
+    });
+  }, [mapReady, routerList]);
 
   // Edit Modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -348,54 +405,15 @@ export default function NetworkMapPage() {
   };
 
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [oltsData, odcsData, odpsData, customersData, profilesData, routersData] = await Promise.all([
-        apiAdmin<{ olts?: OLT[] } | OLT[]>('/api/network/olts'),
-        apiAdmin<{ odcs?: ODC[] } | ODC[]>('/api/network/odcs'),
-        apiAdmin<{ odps?: ODP[] } | ODP[]>('/api/network/odps'),
-        apiAdmin<{ users?: Customer[] } | Customer[]>('/api/pppoe/users?limit=5000'),
-        apiAdmin<{ profiles?: Profile[] } | Profile[]>('/api/pppoe/profiles'),
-        apiAdmin<{ routers?: Router[] } | Router[]>('/api/network/routers'),
-      ]);
-
-      const oltsArr = (oltsData as { olts?: OLT[] }).olts || (oltsData as OLT[]);
-      setOlts(oltsArr);
-      const odcsArr = (odcsData as { odcs?: ODC[] }).odcs || (odcsData as ODC[]);
-      setOdcs(odcsArr);
-      const odpsArr = (odpsData as { odps?: ODP[] }).odps || (odpsData as ODP[]);
-      setOdps(odpsArr);
-      const customersWithGps = ((customersData as { users?: Customer[] }).users || (customersData as Customer[])).filter((c) => c.latitude && c.longitude);
-      setCustomers(customersWithGps);
-      setProfiles((profilesData as { profiles?: Profile[] }).profiles || (profilesData as Profile[]));
-
-      const routersList = (routersData as { routers?: Router[] }).routers || (routersData as Router[]);
-      setRouterList(routersList);
-
-      // Fetch uplink connections for routers with GPS
-      const routersWithGps = routersList.filter((r) => r.latitude && r.longitude);
-      const connectionPromises = routersWithGps.map(async (r) => {
-        try {
-          const connData = await apiAdmin<{ connections?: RouterOltConnection[] }>(`/api/network/routers/${r.id}/uplinks`);
-          return { routerId: r.id, connections: connData.connections || [] };
-        } catch (e) {
-          console.error(`Failed to fetch uplinks for router ${r.id}:`, e);
-        }
-        return { routerId: r.id, connections: [] as RouterOltConnection[] };
-      });
-
-      const connectionResults = await Promise.all(connectionPromises);
-      const connMap: Record<string, RouterOltConnection[]> = {};
-      connectionResults.forEach(({ routerId, connections }) => {
-        connMap[routerId] = connections;
-      });
-      setRouterOltConnections(connMap);
-    } catch (error: unknown) {
-      console.error('Error fetching data:', error);
-      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('network.map.failedLoadNetwork') });
-    } finally {
-      setLoading(false);
-    }
+    // Refetch all queries
+    await Promise.all([
+      oltsQuery.refetch(),
+      odcsQuery.refetch(),
+      odpsQuery.refetch(),
+      customersQuery.refetch(),
+      profilesQuery.refetch(),
+      routersQuery.refetch(),
+    ]);
   };
 
   // Ping OLT from router
@@ -441,7 +459,7 @@ export default function NetworkMapPage() {
 
       setEditModalOpen(false);
       setEditingCustomer(null);
-      fetchData(); // Refresh data
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users') }); // Refresh data
     } catch (error) {
       console.error('Error saving customer:', error);
       addToast({ type: 'error', title: t('common.error'), description: error instanceof Error ? error.message : t('common.failedToSave') });
@@ -539,13 +557,7 @@ export default function NetworkMapPage() {
     }
   };
 
-  // Fetch data when map is ready
-  useEffect(() => {
-    if (mapReady) {
-      fetchData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady]);
+  // Data is fetched automatically by React Query when mapReady becomes true (enabled flag)
 
   // Calculate map center
   const mapCenter = useMemo(() => {

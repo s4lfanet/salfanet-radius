@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import {
   Loader2, Plus, Trash2, RefreshCw, Save, X, Zap,
@@ -8,6 +8,7 @@ import {
   Download, Upload,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
 
 interface VpScript {
@@ -77,8 +78,10 @@ function SyncBadge({ syncedAt, syncError }: { syncedAt?: string | null; syncErro
 }
 
 export default function VpScriptsPage() {
-  const [items, setItems] = useState<VpScript[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<VpListResponse>('/api/genieacs/virtual-parameters', { staleTime: 60000 });
+  const items: VpScript[] = queryData?.data || [];
+  const invalidateVpScripts = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/virtual-parameters') });
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState<string | null>(null);
   const [syncingAll, setSyncingAll] = useState(false);
@@ -87,22 +90,6 @@ export default function VpScriptsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const json = await apiAdmin<VpListResponse>('/api/genieacs/virtual-parameters');
-      if (!json.success) throw new Error(json.error || 'Failed to load');
-      setItems(json.data || []);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   function flash(msg: string) {
     setSuccessMsg(msg);
@@ -133,7 +120,7 @@ export default function VpScriptsPage() {
         flash(`VP "${name}" berhasil disimpan dan disinkronkan ke GenieACS`);
       }
       setEditing(null);
-      await load();
+      invalidateVpScripts();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -150,7 +137,7 @@ export default function VpScriptsPage() {
       });
       if (!json.success) throw new Error(json.error || 'Gagal menghapus');
       flash(`VP "${id}" berhasil dihapus`);
-      await load();
+      invalidateVpScripts();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     }
@@ -172,7 +159,7 @@ export default function VpScriptsPage() {
       } else {
         flash(`VP "${id}" berhasil disinkronkan`);
       }
-      await load();
+      invalidateVpScripts();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -191,7 +178,7 @@ export default function VpScriptsPage() {
       if (!json.success) throw new Error(json.error || 'Sync gagal');
       const r = json.data?.virtualParameters;
       flash(`Sync selesai: ${r?.success ?? 0} berhasil, ${r?.failed ?? 0} gagal`);
-      await load();
+      invalidateVpScripts();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -221,7 +208,7 @@ export default function VpScriptsPage() {
       if (!json.success) throw new Error(json.error || 'Restore gagal');
       const r = json.results?.vpScripts;
       flash(`Restore selesai: ${r?.ok ?? 0} VP berhasil dipulihkan${r?.errors?.length ? `, ${r.errors.length} error` : ''}`);
-      await load();
+      invalidateVpScripts();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -246,7 +233,7 @@ export default function VpScriptsPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={load}
+            onClick={() => refetch()}
             disabled={loading}
             className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 dark:border-slate-700"
           >

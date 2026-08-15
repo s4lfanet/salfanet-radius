@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface ReminderSettings {
   id: string;
@@ -20,9 +21,8 @@ interface ReminderSettings {
 
 export default function NotificationSettingsPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<ReminderSettings | null>(null);
   const [enabled, setEnabled] = useState(true);
   const [reminderDays, setReminderDays] = useState<number[]>([-7, -5, -3, 0]);
   const [reminderTime, setReminderTime] = useState('09:00');
@@ -33,31 +33,22 @@ export default function NotificationSettingsPage() {
   const [randomize, setRandomize] = useState(true);
   const [newDay, setNewDay] = useState('');
 
+  // ─── React Query: Reminder settings ──────────────────────────────────────────
+  const { data: settingsData, isLoading: loading } = useApiQuery<{ success?: boolean; settings?: ReminderSettings }>('/api/whatsapp/reminder-settings', { staleTime: 30000 });
+
+  // Sync form state from query data
   useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      const data = await apiAdmin<{ success?: boolean; settings?: ReminderSettings }>('/api/whatsapp/reminder-settings');
-
-      if (data.success && data.settings) {
-        setSettings(data.settings);
-        setEnabled(data.settings.enabled);
-        setReminderDays(data.settings.reminderDays);
-        setReminderTime(data.settings.reminderTime);
-        setOtpEnabled(data.settings.otpEnabled ?? true);
-        setOtpExpiry(data.settings.otpExpiry ?? 5);
-        setBatchSize(data.settings.batchSize ?? 10);
-        setBatchDelay(data.settings.batchDelay ?? 60);
-        setRandomize(data.settings.randomize ?? true);
-      }
-    } catch (error) {
-      console.error('Load settings error:', error);
-    } finally {
-      setLoading(false);
+    if (settingsData?.success && settingsData.settings) {
+      setEnabled(settingsData.settings.enabled);
+      setReminderDays(settingsData.settings.reminderDays);
+      setReminderTime(settingsData.settings.reminderTime);
+      setOtpEnabled(settingsData.settings.otpEnabled ?? true);
+      setOtpExpiry(settingsData.settings.otpExpiry ?? 5);
+      setBatchSize(settingsData.settings.batchSize ?? 10);
+      setBatchDelay(settingsData.settings.batchDelay ?? 60);
+      setRandomize(settingsData.settings.randomize ?? true);
     }
-  };
+  }, [settingsData]);
 
   const addReminderDay = () => {
     const day = parseInt(newDay);
@@ -112,7 +103,7 @@ export default function NotificationSettingsPage() {
 
       if (data.success) {
         await showSuccess(t('whatsapp.settingsSavedSuccess'));
-        loadSettings();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/whatsapp/reminder-settings') });
       } else {
         await showError(t('whatsapp.failedSaveSettings') + ': ' + data.error);
       }

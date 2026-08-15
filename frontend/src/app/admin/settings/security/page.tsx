@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, Smartphone, QrCode, KeyRound, AlertTriangle, CheckCircle, Loader2, Eye, EyeOff, X } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 type Phase = 'status' | 'setup-qr' | 'setup-verify' | 'disable-confirm';
 
@@ -22,9 +23,10 @@ interface TwoFactorActionResponse {
 }
 
 export default function SecuritySettingsPage() {
+  const queryClient = useQueryClient();
+  const { data: statusData, isLoading: loading } = useApiQuery<TwoFactorStatusResponse>('/api/admin/profile/2fa', { staleTime: 300000 });
   const [phase, setPhase] = useState<Phase>('status');
   const [enabled, setEnabled] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -41,10 +43,10 @@ export default function SecuritySettingsPage() {
   const [showDisablePassword, setShowDisablePassword] = useState(false);
 
   useEffect(() => {
-    apiAdmin<TwoFactorStatusResponse>('/api/admin/profile/2fa')
-      .then((d) => { setEnabled(d.enabled); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
+    if (statusData) {
+      setEnabled(statusData.enabled);
+    }
+  }, [statusData]);
 
   const startSetup = async () => {
     setSubmitting(true);
@@ -79,6 +81,7 @@ export default function SecuritySettingsPage() {
         setSuccess(data.message || '');
         setSetupCode('');
         setTimeout(() => setSuccess(''), 5000);
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/profile/2fa') });
       } else {
         setError(data.error || 'Verification failed');
       }
@@ -108,6 +111,7 @@ export default function SecuritySettingsPage() {
         setDisablePassword('');
         setDisableCode('');
         setTimeout(() => setSuccess(''), 5000);
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/profile/2fa') });
       } else {
         setError(data.error || 'Failed to disable 2FA');
       }

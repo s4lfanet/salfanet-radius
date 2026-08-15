@@ -1,10 +1,11 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { Plus, Pencil, Trash2, RefreshCw, Package, ToggleLeft, ToggleRight, X } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface AddonType {
   id: string;
@@ -20,23 +21,14 @@ interface AddonType {
 export default function AddonTypesPage() {
   const { hasPermission, loading: permLoading } = usePermissions();
   const { t } = useTranslation();
-  const [addons, setAddons] = useState<AddonType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const addonsQueryKey = buildQueryKey('/api/addon-types');
+  const { data: addonsData, isLoading: loading, refetch } = useApiQuery<{ addons: AddonType[] }>('/api/addon-types');
+  const addons = addonsData?.addons || [];
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<AddonType | null>(null);
   const [form, setForm] = useState({ name: '', description: '', price: '', isRecurring: true });
   const [saving, setSaving] = useState(false);
-
-  const fetchAddons = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<{ addons: AddonType[] }>('/api/addon-types');
-      setAddons(data.addons || []);
-    } catch (e: unknown) { console.error('Fetch addons error:', e); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { fetchAddons(); }, [fetchAddons]);
 
   const openCreate = () => {
     setEditing(null);
@@ -68,7 +60,7 @@ export default function AddonTypesPage() {
       });
       await showSuccess(editing ? 'Addon diperbarui' : 'Addon berhasil dibuat');
       setShowModal(false);
-      fetchAddons();
+      queryClient.invalidateQueries({ queryKey: addonsQueryKey });
     } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
     finally { setSaving(false); }
   };
@@ -79,7 +71,7 @@ export default function AddonTypesPage() {
         method: 'PUT',
         body: JSON.stringify({ isActive: !addon.isActive }),
       });
-      fetchAddons();
+      queryClient.invalidateQueries({ queryKey: addonsQueryKey });
     } catch (e: unknown) { await showError((e instanceof Error ? e.message : String(e)) || 'Gagal mengubah status'); }
   };
 
@@ -89,7 +81,7 @@ export default function AddonTypesPage() {
     try {
       const data = await apiAdmin<{ message: string }>(`/api/addon-types/${addon.id}`, { method: 'DELETE' });
       await showSuccess(data.message);
-      fetchAddons();
+      queryClient.invalidateQueries({ queryKey: addonsQueryKey });
     } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
   };
 
@@ -107,7 +99,7 @@ export default function AddonTypesPage() {
           <p className="text-sm text-muted-foreground mt-1">Kelola jenis layanan add-on (STB, IPTV, dll.) untuk pelanggan</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={fetchAddons} className="p-2 border border-border rounded hover:bg-muted transition" title="Refresh">
+          <button onClick={() => refetch()} className="p-2 border border-border rounded hover:bg-muted transition" title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </button>
           <button onClick={openCreate} className="inline-flex items-center px-3 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition">

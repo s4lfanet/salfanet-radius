@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   Plus, Pencil, Trash2, Cable, Eye, RefreshCcw, X,
   ChevronDown, ChevronRight, Activity, Layers, Circle,
@@ -69,8 +70,12 @@ const CABLE_TYPES = ['GPON', 'ADSS', 'OPGW', 'Figure_8', 'Aerial', 'Underground'
 
 export default function FiberCablesPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [cables, setCables] = useState<FiberCable[]>([]);
+  const queryClient = useQueryClient();
+  const cablesQuery = useApiQuery<{ cables?: FiberCable[] }>('/api/network/cables', {
+    staleTime: 30000,
+  });
+  const cables = cablesQuery.data?.cables || [];
+  const loading = cablesQuery.isLoading;
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -87,22 +92,6 @@ export default function FiberCablesPage() {
     coresPerTube: '12',
     outerDiameter: '',
   });
-
-  useEffect(() => {
-    loadCables();
-  }, []);
-
-  const loadCables = async () => {
-    try {
-      setLoading(true);
-      const data = await apiAdmin<{ cables?: FiberCable[] }>('/api/network/cables');
-      setCables(data.cables || []);
-    } catch (error) {
-      console.error('Load error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -149,7 +138,7 @@ export default function FiberCablesPage() {
       await showSuccess(editingCable ? t('fiberCable.updatedSuccess') : t('fiberCable.createdSuccess'));
       setIsDialogOpen(false);
       resetForm();
-      loadCables();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/cables') });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('fiberCable.saveFailed'));
     }
@@ -178,7 +167,7 @@ export default function FiberCablesPage() {
     try {
       await apiAdmin(`/api/network/cables/${cable.id}`, { method: 'DELETE' });
       await showSuccess(t('fiberCable.deletedSuccess'));
-      loadCables();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/cables') });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('fiberCable.deleteFailed'));
     }
@@ -249,7 +238,7 @@ export default function FiberCablesPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={loadCables}
+            onClick={() => cablesQuery.refetch()}
             className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1"
           >
             <RefreshCcw className="h-3 w-3" />

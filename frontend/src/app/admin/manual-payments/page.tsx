@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
@@ -38,6 +38,7 @@ import { format } from 'date-fns';
 import { apiAdmin } from '@/lib/api';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB, nowWIB } from '@/lib/timezone';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface ManualPayment {
   id: string;
@@ -74,9 +75,7 @@ interface ManualPayment {
 export default function ManualPaymentsPage() {
   const { data: session } = useSession();
   const { t } = useTranslation();
-  const [payments, setPayments] = useState<ManualPayment[]>([]);
-  const [filteredPayments, setFilteredPayments] = useState<ManualPayment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPayment, setSelectedPayment] = useState<ManualPayment | null>(null);
@@ -100,32 +99,16 @@ export default function ManualPaymentsPage() {
     setPaymentMonth(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`);
   };
 
-  useEffect(() => {
-    fetchPayments();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentMonth]);
+  // ─── React Query: Manual payments (month filter) ─────────────────────────────
+  const { data: paymentsData, isLoading: paymentsLoading, refetch: refetchPayments } = useApiQuery<{ data: ManualPayment[] }>(
+    '/api/manual-payments',
+    { params: paymentMonth ? { month: paymentMonth } : undefined, staleTime: 30000 }
+  );
+  const payments = paymentsData?.data || [];
+  const loading = paymentsLoading;
 
-  useEffect(() => {
-    filterPayments();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payments, statusFilter, searchQuery]);
-
-  const fetchPayments = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (paymentMonth) params.set('month', paymentMonth);
-      const data = await apiAdmin<{ data: ManualPayment[] }>(`/api/manual-payments?${params}`);
-      setPayments(data.data || []);
-    } catch (error: unknown) {
-      console.error('Error fetching payments:', error);
-      showError((error instanceof Error ? error.message : String(error)) || t('common.failedLoadPayments'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterPayments = () => {
+  // ─── Client-side filtering (status + search) ─────────────────────────────────
+  const filteredPayments = useMemo(() => {
     let filtered = [...payments];
 
     // Filter by status
@@ -146,8 +129,8 @@ export default function ManualPaymentsPage() {
       );
     }
 
-    setFilteredPayments(filtered);
-  };
+    return filtered;
+  }, [payments, statusFilter, searchQuery]);
 
   const handleApprove = async () => {
     if (!selectedPayment) return;
@@ -165,7 +148,7 @@ export default function ManualPaymentsPage() {
       showSuccess(t('manualPayment.approveSuccess'));
       setShowApproveDialog(false);
       setSelectedPayment(null);
-      fetchPayments();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/manual-payments') });
     } catch (error: unknown) {
       console.error('Error approving payment:', error);
       showError((error instanceof Error ? error.message : String(error)) || t('manualPayment.failedApprove'));
@@ -195,7 +178,7 @@ export default function ManualPaymentsPage() {
       setShowRejectDialog(false);
       setSelectedPayment(null);
       setRejectionReason('');
-      fetchPayments();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/manual-payments') });
     } catch (error: unknown) {
       console.error('Error rejecting payment:', error);
       showError((error instanceof Error ? error.message : String(error)) || t('manualPayment.failedReject'));
@@ -214,7 +197,7 @@ export default function ManualPaymentsPage() {
       });
 
       showSuccess(t('manualPayment.deleteSuccess'));
-      fetchPayments();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/manual-payments') });
     } catch (error: unknown) {
       console.error('Error deleting payment:', error);
       showError(t('manualPayment.failedDelete'));
@@ -341,7 +324,7 @@ export default function ManualPaymentsPage() {
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
-            <Button onClick={fetchPayments} variant="outline" size="icon">
+            <Button onClick={() => refetchPayments()} variant="outline" size="icon">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>

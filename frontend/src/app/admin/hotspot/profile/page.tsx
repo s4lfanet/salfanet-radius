@@ -1,10 +1,11 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight } from "lucide-react"
 import { useTranslation } from '@/hooks/useTranslation'
 import { showSuccess, showError } from '@/lib/sweetalert'
 import { apiAdmin } from '@/lib/api'
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks'
 import {
   SimpleModal,
   ModalHeader,
@@ -39,13 +40,16 @@ interface HotspotProfile {
 
 export default function HotspotProfilePage() {
   const { t } = useTranslation()
-  const [loading, setLoading] = useState(true)
-  const [profiles, setProfiles] = useState<HotspotProfile[]>([])
+  const queryClient = useQueryClient()
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingProfile, setEditingProfile] = useState<HotspotProfile | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleteProfileId, setDeleteProfileId] = useState<string | null>(null)
   const [showBurst, setShowBurst] = useState(false)
+
+  // ─── React Query: Profiles list ──────────────────────────────────────────────
+  const { data: profilesData, isLoading: loading } = useApiQuery<{ profiles?: HotspotProfile[] }>('/api/hotspot/profiles', { staleTime: 30000 })
+  const profiles = profilesData?.profiles || []
 
   const [formData, setFormData] = useState({
     name: "",
@@ -73,21 +77,6 @@ export default function HotspotProfilePage() {
     agentAccess: true,
     eVoucherAccess: true,
   })
-
-  useEffect(() => {
-    loadProfiles()
-  }, [])
-
-  const loadProfiles = async () => {
-    try {
-      const data = await apiAdmin<{ profiles?: HotspotProfile[] }>('/api/hotspot/profiles')
-      setProfiles(data.profiles || [])
-    } catch (error) {
-      console.error('Load profiles error:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const buildHotspotSpeed = () => {
     const dl = formData.speedDownload || '0';
@@ -263,7 +252,7 @@ export default function HotspotProfilePage() {
       })
       setIsDialogOpen(false)
       resetForm()
-      loadProfiles()
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/hotspot/profiles') })
       await showSuccess(t('hotspot.profileSavedSuccess'))
     } catch (error: unknown) {
       await showError(t('hotspot.failedPrefix', { error: error instanceof Error ? error.message : String(error) }))
@@ -276,7 +265,7 @@ export default function HotspotProfilePage() {
     if (!deleteProfileId) return
     try {
       await apiAdmin(`/api/hotspot/profiles?id=${deleteProfileId}`, { method: 'DELETE' })
-      loadProfiles()
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/hotspot/profiles') })
       await showSuccess(t('hotspot.profileDeletedSuccess'))
     } catch (error: unknown) {
       await showError(t('hotspot.failedPrefix', { error: error instanceof Error ? error.message : String(error) }))
@@ -353,7 +342,7 @@ export default function HotspotProfilePage() {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={loadProfiles}
+              onClick={() => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/hotspot/profiles') })}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted"
               title="Perbarui Data"
             >

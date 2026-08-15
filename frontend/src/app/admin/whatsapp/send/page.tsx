@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 interface User {
   id: string;
@@ -64,68 +65,33 @@ export default function SendMessagePage() {
   const [result, setResult] = useState<{ success: boolean; provider?: string; error?: string } | null>(null);
 
   // Broadcast states
-  const [users, setUsers] = useState<User[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [broadcastMessage, setBroadcastMessage] = useState('');
   const [broadcasting, setBroadcasting] = useState(false);
   const [broadcastResult, setBroadcastResult] = useState<{ total: number; successCount: number; failCount: number } | null>(null);
 
   // Filter states
-  const [filters, setFilters] = useState<{
-    profiles: { id: string; name: string }[];
-    routers: { id: string; name: string }[];
-    statuses: string[];
-    odps: { id: string; name: string }[];
-  }>({ profiles: [], routers: [], statuses: [], odps: [] });
   const [statusFilter, setStatusFilter] = useState('');
   const [profileFilter, setProfileFilter] = useState('');
   const [routerFilter, setRouterFilter] = useState('');
   const [addressFilter, setAddressFilter] = useState('');
   const [odpFilters, setOdpFilters] = useState<string[]>([]);
-  const [loadingUsers, setLoadingUsers] = useState(false);
 
-  // Template states
-  const [templates, setTemplates] = useState<{ id: string; name: string; message: string }[]>([]);
-
-  useEffect(() => {
-    loadUsers();
-    loadTemplates();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, profileFilter, routerFilter, addressFilter, odpFilters]);
-
-  const loadUsers = async () => {
-    setLoadingUsers(true);
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter) params.append('status', statusFilter);
-      if (profileFilter) params.append('profileId', profileFilter);
-      if (routerFilter) params.append('routerId', routerFilter);
-      if (addressFilter) params.append('address', addressFilter);
-      if (odpFilters.length > 0) params.append('odpIds', odpFilters.join(','));
-
-      const data = await apiAdmin<UsersListResponse>(`/api/users/list?${params}`);
-
-      if (data.success) {
-        setUsers(data.users);
-        setFilters(data.filters);
-      }
-    } catch (error: unknown) {
-      console.error('Load users error:', error);
-    } finally {
-      setLoadingUsers(false);
-    }
+  // ─── React Query: Users list (filters) ───────────────────────────────────────
+  const usersParams: Record<string, unknown> = {
+    status: statusFilter || undefined,
+    profileId: profileFilter || undefined,
+    routerId: routerFilter || undefined,
+    address: addressFilter || undefined,
+    odpIds: odpFilters.length > 0 ? odpFilters.join(',') : undefined,
   };
+  const { data: usersData, isLoading: loadingUsers } = useApiQuery<UsersListResponse>('/api/users/list', { params: usersParams, staleTime: 30000 });
+  const users = usersData?.users || [];
+  const filters = usersData?.filters || { profiles: [], routers: [], statuses: [], odps: [] };
 
-  const loadTemplates = async () => {
-    try {
-      const data = await apiAdmin<TemplatesListResponse>('/api/whatsapp/templates');
-      if (data.success) {
-        setTemplates(data.data);
-      }
-    } catch (error: unknown) {
-      console.error('Load templates error:', error);
-    }
-  };
+  // ─── React Query: Templates (reference data) ─────────────────────────────────
+  const { data: templatesData } = useApiQuery<TemplatesListResponse>('/api/whatsapp/templates', { staleTime: 300000 });
+  const templates = templatesData?.data || [];
 
   const loadTemplate = (templateId: string) => {
     const template = templates.find((t) => t.id === templateId);

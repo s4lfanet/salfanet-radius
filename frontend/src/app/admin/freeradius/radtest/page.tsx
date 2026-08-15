@@ -7,7 +7,7 @@ import {
     Shield, RefreshCw, Terminal, Copy, Clock
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { apiAdmin } from '@/lib/api';
+import { useApiMutation } from '@/lib/api/hooks';
 
 interface RadTestResult {
     success: boolean;
@@ -26,9 +26,14 @@ export default function RadTestPage() {
     const [nasIP, setNasIP] = useState('127.0.0.1');
     const [nasPort, setNasPort] = useState('1812');
     const [secret, setSecret] = useState('testing123');
-    const [testing, setTesting] = useState(false);
     const [result, setResult] = useState<RadTestResult | null>(null);
     const [showRaw, setShowRaw] = useState(false);
+
+    // ─── React Query: RadTest mutation ──────────────────────────────────────────
+    const radtestMutation = useApiMutation<{ result: RadTestResult; error?: string }, { username: string; password: string; nasIP: string; nasPort: number; secret: string }>('/api/freeradius/radtest', {
+        method: 'POST',
+    });
+    const testing = radtestMutation.isPending;
 
     const handleTest = async () => {
         if (!username || !password) {
@@ -36,26 +41,20 @@ export default function RadTestPage() {
             return;
         }
 
-        setTesting(true);
         setResult(null);
 
         try {
-            const data = await apiAdmin<{ result: RadTestResult; error?: string }>('/api/freeradius/radtest', {
-                method: 'POST',
-                body: JSON.stringify({
-                    username,
-                    password,
-                    nasIP,
-                    nasPort: parseInt(nasPort, 10),
-                    secret
-                })
+            const data = await radtestMutation.mutateAsync({
+                username,
+                password,
+                nasIP,
+                nasPort: parseInt(nasPort, 10),
+                secret
             });
 
             setResult(data.result);
         } catch (error: unknown) {
             addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to run radtest' });
-        } finally {
-            setTesting(false);
         }
     };
 

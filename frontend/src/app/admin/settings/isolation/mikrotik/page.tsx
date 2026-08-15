@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 interface IsolationSettings {
   isolationIpPool: string;
@@ -29,7 +29,7 @@ interface IsolationSettings {
 export default function MikroTikSetupPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const { data: queryData, isLoading: loading } = useApiQuery<{ success: boolean; data: IsolationSettings }>('/api/settings/isolation', { staleTime: 300000 });
   const [settings, setSettings] = useState<IsolationSettings>({
     isolationIpPool: '192.168.200.0/24',
     isolationServerIp: '',
@@ -39,27 +39,15 @@ export default function MikroTikSetupPage() {
   const [copied, setCopied] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const data = await apiAdmin<{ success: boolean; data: IsolationSettings }>('/api/settings/isolation');
-
-      if (data.success) {
-        setSettings({
-          isolationIpPool: data.data.isolationIpPool || '192.168.200.0/24',
-          isolationServerIp: data.data.isolationServerIp || '',
-          isolationRateLimit: data.data.isolationRateLimit || '64k/64k',
-          baseUrl: data.data.baseUrl || '',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
-    } finally {
-      setLoading(false);
+    if (queryData?.success) {
+      setSettings({
+        isolationIpPool: queryData.data.isolationIpPool || '192.168.200.0/24',
+        isolationServerIp: queryData.data.isolationServerIp || '',
+        isolationRateLimit: queryData.data.isolationRateLimit || '64k/64k',
+        baseUrl: queryData.data.baseUrl || '',
+      });
     }
-  };
+  }, [queryData]);
 
   const copyToClipboard = async (text: string, label: string) => {
     const fallbackCopy = (str: string): boolean => {

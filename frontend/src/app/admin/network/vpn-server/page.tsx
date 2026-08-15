@@ -7,6 +7,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Shield, Server, Plus, Pencil, Trash2, Zap, Activity, CheckCircle, XCircle, Settings, Terminal, RefreshCw, FileText, X, Wifi, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface VpnServer {
   id: string
@@ -130,9 +131,6 @@ export default function VpnServerPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
 
-  const [servers, setServers] = useState<VpnServer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [vpnClients, setVpnClients] = useState<VpnClientData[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingServer, setEditingServer] = useState<VpnServer | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
@@ -217,6 +215,24 @@ export default function VpnServerPage() {
   });
   const [showTutorial, setShowTutorial] = useState(true);
 
+  // ── React Query data loading ──────────────────────────────────────────────
+  const queryClient = useQueryClient();
+  const serversQuery = useApiQuery<VpnServerListResponse>('/api/network/vpn-server', { staleTime: 30000 });
+  const vpnClientsQuery = useApiQuery<VpnClientListForServerResponse>('/api/network/vpn-client', { staleTime: 30000 });
+
+  const servers = serversQuery.data?.servers || [];
+  const loading = serversQuery.isLoading;
+  const vpnClients: VpnClientData[] = (vpnClientsQuery.data?.clients || []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    username: c.username,
+    password: c.password,
+    vpnType: (c.vpnType || 'l2tp').toLowerCase(),
+    vpnServerId: c.vpnServerId,
+    vpnServerHost: (vpnClientsQuery.data?.vpnServers || []).find((s) => s.id === c.vpnServerId)?.host || '',
+    isRadiusServer: c.isRadiusServer ?? false,
+  }));
+
   useEffect(() => {
     // Restore saved SSH + L2TP credentials from localStorage
     // Note: password is NOT stored in localStorage for security (C8 fix),
@@ -235,29 +251,8 @@ export default function VpnServerPage() {
       }
       if (savedConf) setL2tpConfig(JSON.parse(savedConf));
     } catch {}
-    loadServers();
-    loadVpnClients();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const loadVpnClients = async () => {
-    try {
-      const data = await apiAdmin<VpnClientListForServerResponse>('/api/network/vpn-client');
-      const clients = (data.clients || []).map((c) => ({
-        id: c.id,
-        name: c.name,
-        username: c.username,
-        password: c.password,
-        vpnType: (c.vpnType || 'l2tp').toLowerCase(),
-        vpnServerId: c.vpnServerId,
-        vpnServerHost: (data.vpnServers || []).find((s) => s.id === c.vpnServerId)?.host || '',
-        isRadiusServer: c.isRadiusServer ?? false,
-      }));
-      setVpnClients(clients);
-    } catch {
-      // non-critical — ignore
-    }
-  };
 
   const handleL2tpAction = async (action: string, server: VpnServer) => {
     if (!savedSshCredentials) {
@@ -328,18 +323,6 @@ export default function VpnServerPage() {
   };
 
   // handleL2tpSshSubmit removed — form is now inline in the L2TP Control modal via handleConnectL2tp
-
-  const loadServers = async () => {
-    try {
-      const data = await apiAdmin<VpnServerListResponse>('/api/network/vpn-server');
-      setServers(data.servers || []);
-    } catch (error: unknown) {
-      console.error('Load servers error:', error);
-      showError(errMsg(error) || t('error.loadFailed') || 'Failed to load VPN servers');
-    } finally {
-      setLoading(false);
-    }
-  };
 
 
   // --- PPTP Control Handler ----------------------------------------------------
@@ -493,7 +476,7 @@ export default function VpnServerPage() {
             method: 'PUT',
             body: JSON.stringify({ id: server.id, name: server.name, host: server.host, username: server.username, apiPort: server.apiPort, subnet: server.subnet, l2tpEnabled: server.l2tpEnabled, sstpEnabled: server.sstpEnabled, pptpEnabled: server.pptpEnabled, wgEnabled: true, wgPublicKey: data.publicKey, wgPort: data.listenPort }),
           });
-          loadServers();
+          queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-server') });
         }
       } else {
         setWgServerInfo({ installed: false, message: data.message });
@@ -619,7 +602,7 @@ export default function VpnServerPage() {
         })
         showSuccess(t('network.vpnServerUpdated') || 'VPN Server berhasil disimpan');
         setShowModal(false)
-        loadServers()
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-server') });
       } else {
         await apiAdmin('/api/network/vpn-server', {
           method: 'PUT',
@@ -627,7 +610,7 @@ export default function VpnServerPage() {
         })
         showSuccess(t('network.vpnServerUpdated'));
         setShowModal(false)
-        loadServers()
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-server') });
       }
     } catch (error: unknown) {
       showError(errMsg(error) || t('common.error'));
@@ -641,7 +624,7 @@ export default function VpnServerPage() {
       try {
         await apiAdmin(`/api/network/vpn-server?id=${id}`, { method: 'DELETE' })
         showSuccess(t('network.vpnServerDeleted'), t('common.deleted'));
-        loadServers();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-server') });
       } catch (error: unknown) {
         showError(errMsg(error) || t('network.failedDeleteVpnServer'));
       }
@@ -751,7 +734,7 @@ export default function VpnServerPage() {
                 const successMsg = (t('network.protocolsEnabled') || 'Protokol aktif: {protocols}').replace('{protocols}', protocols.join(', ')) + (data.rosVersion ? ` | RouterOS: ${data.rosVersion}` : '');
                 setSetupResultModal({ success: true, title: t('network.setupComplete') || 'Setup Selesai', message: successMsg, stepsHtml });
                 addToast({ type: 'success', title: t('network.setupComplete') || 'Setup VPN Berhasil', description: `Protokol aktif: ${protocols.join(', ') || '-'}` });
-                loadServers();
+                queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-server') });
               } else {
                 const errMsg = data.message || 'Setup gagal — periksa koneksi ke CHR';
                 setSetupResultModal({ success: false, title: t('network.connectionFailed') || 'Setup Gagal', message: errMsg, stepsHtml });

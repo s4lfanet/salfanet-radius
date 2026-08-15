@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -20,6 +20,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Customer {
   id: string;
@@ -73,8 +74,12 @@ type NearestOdpsResponse = ODP[] | { error: string };
 
 export default function CustomerAssignmentPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const queryClient = useQueryClient();
+  const assignmentsQuery = useApiQuery<Assignment[]>('/api/network/customers/assign', {
+    staleTime: 30000,
+  });
+  const assignments = Array.isArray(assignmentsQuery.data) ? assignmentsQuery.data : [];
+  const loading = assignmentsQuery.isLoading;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Assignment | null>(null);
 
@@ -96,21 +101,6 @@ export default function CustomerAssignmentPage() {
 
   // Filter
   const [filterSearch, setFilterSearch] = useState('');
-
-  useEffect(() => {
-    loadAssignments();
-  }, []);
-
-  const loadAssignments = async () => {
-    try {
-      const data = await apiAdmin('/api/network/customers/assign');
-      setAssignments(Array.isArray(data) ? data : []);
-    } catch (error: unknown) {
-      console.error('Load error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const searchCustomers = async (query: string) => {
     if (!query || query.length < 2) {
@@ -222,7 +212,7 @@ export default function CustomerAssignmentPage() {
       setIsDialogOpen(false);
       setEditingAssignment(null);
       resetForm();
-      loadAssignments();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/customers/assign') });
     } catch (error: unknown) {
       console.error('Submit error:', error);
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedSaveAssignment'));
@@ -242,7 +232,7 @@ export default function CustomerAssignmentPage() {
       });
 
       await showSuccess(t('common.assignmentRemoved'));
-      loadAssignments();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/customers/assign') });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedRemoveAssignment'));
       await showError(t('common.failedRemoveAssignment'));

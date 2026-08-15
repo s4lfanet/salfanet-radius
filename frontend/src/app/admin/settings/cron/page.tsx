@@ -1,11 +1,12 @@
 ﻿'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Clock, Play, RefreshCw, CheckCircle, XCircle, Loader2, Activity, Settings2, RotateCcw, Pencil, X } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface CronJob {
   type: string;
@@ -204,48 +205,34 @@ function ScheduleEditor({ config, onSave, onClose }: {
 export default function CronSettingsPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: statusData, isLoading: loading, refetch } = useApiQuery<CronStatusResponse>('/api/cron/status', { staleTime: 30000, refetchInterval: 10000 });
+  const { data: schedulesData } = useApiQuery<CronSchedulesResponse>('/api/cron/schedules', { staleTime: 30000, refetchInterval: 10000 });
   const [triggering, setTriggering] = useState<string | null>(null);
-  const [jobs, setJobs] = useState<CronJob[]>([]);
-  const [schedules, setSchedules] = useState<ScheduleConfig[]>([]);
-  const [history, setHistory] = useState<CronHistory[]>([]);
   const [selectedType, setSelectedType] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'jobs' | 'schedules' | 'history'>('jobs');
   const [editingSchedule, setEditingSchedule] = useState<ScheduleConfig | null>(null);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [statusData, schedulesData] = await Promise.all([
-        apiAdmin<CronStatusResponse>('/api/cron/status'),
-        apiAdmin<CronSchedulesResponse>('/api/cron/schedules'),
-      ]);
+  const jobs = useMemo(() => statusData?.jobs || [], [statusData]);
+  const schedules = useMemo(() => schedulesData?.schedules || [], [schedulesData]);
+  const history = useMemo(() => {
+    if (!statusData?.jobs) return [];
+    const allHistory = statusData.jobs.flatMap((job) =>
+      (job.recentHistory || []).map((h) => ({
+        id: h.id, type: job.type,
+        startedAt: h.startedAt, completedAt: h.completedAt,
+        status: h.status, result: h.result, error: h.error,
+      }))
+    );
+    return allHistory.sort((a: CronHistory, b: CronHistory) =>
+      new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+    ).slice(0, 50);
+  }, [statusData]);
 
-      if (statusData.success) {
-        setJobs(statusData.jobs || []);
-        const allHistory = statusData.jobs.flatMap((job) =>
-          (job.recentHistory || []).map((h) => ({
-            id: h.id, type: job.type,
-            startedAt: h.startedAt, completedAt: h.completedAt,
-            status: h.status, result: h.result, error: h.error,
-          }))
-        );
-        setHistory(allHistory.sort((a: CronHistory, b: CronHistory) =>
-          new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
-        ).slice(0, 50));
-      }
-      if (schedulesData.success) setSchedules(schedulesData.schedules || []);
-    } catch (error: unknown) {
-      console.error('Load cron data error:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-    const interval = setInterval(loadData, 10000);
-    return () => clearInterval(interval);
-  }, [loadData]);
+  const loadData = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/cron/status') });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/cron/schedules') });
+  };
 
   const triggerManual = async (jobType: string) => {
     setTriggering(jobType);
@@ -275,7 +262,7 @@ export default function CronSettingsPage() {
       });
       if (data.success) {
         addToast({ type: 'success', title: 'Schedule updated', description: `${jobType} schedule saved. Restart cron runner to apply.`, duration: 4000 });
-        await loadData();
+        loadData();
       } else {
         addToast({ type: 'error', title: t('common.error'), description: data.error });
       }
@@ -288,7 +275,7 @@ export default function CronSettingsPage() {
     try {
       await apiAdmin(`/api/cron/schedules?jobType=${encodeURIComponent(jobType)}`, { method: 'DELETE' });
       addToast({ type: 'success', title: 'Reset to default', description: `${jobType} reverted to default schedule.`, duration: 3000 });
-      await loadData();
+      loadData();
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to reset schedule' });
     }
@@ -359,7 +346,7 @@ export default function CronSettingsPage() {
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('settings.cronSubtitle')}</p>
           </div>
-          <button onClick={loadData} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-lg hover:bg-muted transition-colors">
+          <button onClick={() => refetch()} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-card border border-border rounded-lg hover:bg-muted transition-colors">
             <RefreshCw className="w-4 h-4" />
             {t('common.refresh')}
           </button>

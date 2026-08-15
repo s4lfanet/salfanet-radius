@@ -11,6 +11,7 @@ import NetworkNodePanel, { type MapEntity } from '@/components/network/NetworkNo
 import type { ConnectionLine } from '@/components/network/UnifiedNetworkMap';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 // Dynamic imports (client-side only) — prevents Lucide icon hydration mismatch
 const UnifiedNetworkMap = dynamic(

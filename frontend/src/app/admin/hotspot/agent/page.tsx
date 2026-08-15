@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { Plus, Pencil, Trash2, Users, TrendingUp, Calendar, Eye, X, Wallet, DollarSign, RefreshCw } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -18,6 +18,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { formatWIB } from '@/lib/timezone';
 
 interface Router {
@@ -72,9 +73,17 @@ interface MonthDetail {
 
 export default function AgentPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [agents, setAgents] = useState<Agent[]>([]);
-  const [routers, setRouters] = useState<Router[]>([]);
+  const queryClient = useQueryClient();
+  const agentsQueryKey = buildQueryKey('/api/hotspot/agents');
+
+  // ─── React Query: Agents list ────────────────────────────────────────────────
+  const { data: agentsData, isLoading: loading, refetch: refetchAgents } = useApiQuery<{ agents: Agent[] }>('/api/hotspot/agents');
+  const agents = agentsData?.agents || [];
+
+  // ─── React Query: Routers (reference data — 5min stale) ─────────────────────
+  const { data: routersData } = useApiQuery<{ routers: Router[] }>('/api/network/routers', { staleTime: 5 * 60 * 1000 });
+  const routers = routersData?.routers || [];
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
   const [deleteAgentId, setDeleteAgentId] = useState<string | null>(null);
@@ -103,25 +112,6 @@ export default function AgentPage() {
     isActive: true,
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [agentsData, routersData] = await Promise.all([
-        apiAdmin<{ agents: Agent[] }>('/api/hotspot/agents'),
-        apiAdmin<{ routers: Router[] }>('/api/network/routers'),
-      ]);
-      setAgents(agentsData.agents || []);
-      setRouters(routersData.routers || []);
-    } catch (error: unknown) {
-      console.error('Load data error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -135,7 +125,7 @@ export default function AgentPage() {
       setIsDialogOpen(false);
       setEditingAgent(null);
       resetForm();
-      loadData();
+      queryClient.invalidateQueries({ queryKey: agentsQueryKey });
       await showSuccess(editingAgent ? t('common.updated') : t('common.created'));
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('agent.failedSaveAgent'));
@@ -162,7 +152,7 @@ export default function AgentPage() {
     try {
       await apiAdmin(`/api/hotspot/agents?id=${deleteAgentId}`, { method: 'DELETE' });
       await showSuccess(t('agent.agentDeleted'));
-      loadData();
+      queryClient.invalidateQueries({ queryKey: agentsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('agent.failedDeleteAgent'));
     } finally {
@@ -203,7 +193,7 @@ export default function AgentPage() {
       await showSuccess(t('agent.agentsDeleted'));
       setSelectedAgents([]);
       setBulkDeleteOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: agentsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('agent.someDeletionsFailed'));
     }
@@ -227,7 +217,7 @@ export default function AgentPage() {
       await showSuccess(t('agent.statusUpdated'));
       setSelectedAgents([]);
       setBulkStatusOpen(false);
-      loadData();
+      queryClient.invalidateQueries({ queryKey: agentsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('agent.someUpdatesFailed'));
     }
@@ -260,7 +250,7 @@ export default function AgentPage() {
       setSelectedAgentForBalance(null);
       setBalanceAmount('');
       setBalanceNote('');
-      loadData();
+      queryClient.invalidateQueries({ queryKey: agentsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failed'));
     }
@@ -356,7 +346,7 @@ export default function AgentPage() {
               </>
             )}
             <button
-              onClick={loadData}
+              onClick={() => refetchAgents()}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted"
               title="Perbarui Data"
             >

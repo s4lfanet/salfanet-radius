@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
     Server, RefreshCw, Play, Square, RotateCcw, Activity,
@@ -10,6 +10,7 @@ import {
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface RadiusStatus {
     running: boolean;
@@ -30,31 +31,23 @@ interface RadiusStatus {
 export default function FreeRADIUSStatusPage() {
     const { t } = useTranslation();
     const { addToast, confirm } = useToast();
-    const [status, setStatus] = useState<RadiusStatus | null>(null);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [refreshing, setRefreshing] = useState(false);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [showDebugInfo, setShowDebugInfo] = useState(false);
 
-    const fetchStatus = useCallback(async () => {
-        try {
-            const data = await apiAdmin<{ success: boolean; status: RadiusStatus }>(`/api/freeradius/status`);
-            if (data.success) {
-                setStatus(data.status);
-            }
-        } catch (error) {
-            console.error('Error fetching RADIUS status:', error);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, []);
+    const statusQueryKey = buildQueryKey('/api/freeradius/status');
 
-    useEffect(() => {
-        fetchStatus();
-        const interval = setInterval(fetchStatus, 10000); // Auto-refresh every 10 seconds
-        return () => clearInterval(interval);
-    }, [fetchStatus]);
+    // ─── React Query: Status (auto-refresh every 10 seconds) ─────────────────────
+    const { data: statusData, isLoading: loading, refetch } = useApiQuery<{ success: boolean; status: RadiusStatus }>('/api/freeradius/status', {
+        refetchInterval: 10000,
+    });
+    const status = statusData?.status ?? null;
+
+    const fetchStatus = useCallback(async () => {
+        await refetch();
+        setRefreshing(false);
+    }, [refetch]);
 
     const handleRefresh = () => {
         setRefreshing(true);
@@ -83,7 +76,7 @@ export default function FreeRADIUSStatusPage() {
 
                 if (data.success) {
                     addToast({ type: 'success', title: t('common.success'), description: msg.successText || data.message, duration: 2000 });
-                    setTimeout(fetchStatus, 2000);
+                    setTimeout(() => queryClient.invalidateQueries({ queryKey: statusQueryKey }), 2000);
                 } else {
                     throw new Error(data.error || 'Action failed');
                 }
@@ -100,7 +93,7 @@ export default function FreeRADIUSStatusPage() {
             const data = await apiAdmin<{ success: boolean; message?: string; error?: string }>('/api/freeradius/cleanup-stale', { method: 'POST' });
             if (data.success) {
                 addToast({ type: 'success', title: t('common.success'), description: data.message, duration: 3000 });
-                setTimeout(fetchStatus, 1000);
+                setTimeout(() => queryClient.invalidateQueries({ queryKey: statusQueryKey }), 1000);
             } else {
                 throw new Error(data.error || 'Cleanup failed');
             }

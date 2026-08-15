@@ -1,13 +1,13 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatDistanceToNow } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB } from '@/lib/timezone';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 interface HistoryItem {
   id: string;
@@ -39,51 +39,28 @@ const getProviderColor = (type?: string) => {
 
 export default function WhatsAppHistoryPage() {
   const { t } = useTranslation();
-  const { addToast } = useToast();
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [stats, setStats] = useState<Stats>({ total: 0, sent: 0, failed: 0, last24Hours: 0 });
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewingItem, setViewingItem] = useState<HistoryItem | null>(null);
 
-  useEffect(() => {
-    fetchHistory();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, statusFilter]);
-
-  const fetchHistory = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-        status: statusFilter,
-        search: searchQuery,
-      });
-
-      const data = await apiAdmin<{ success: boolean; data: HistoryItem[]; stats: Stats; pagination: { totalPages: number } }>(`/api/whatsapp/history?${params}`);
-
-      if (data.success) {
-        setHistory(data.data);
-        setStats(data.stats);
-        setTotalPages(data.pagination.totalPages);
-      } else {
-        addToast({ type: 'error', title: t('common.error'), description: t('whatsapp.failedLoadHistory') });
-      }
-    } catch (error) {
-      console.error('Fetch history error:', error);
-      addToast({ type: 'error', title: t('common.error'), description: t('whatsapp.failedLoadHistory') });
-    } finally {
-      setLoading(false);
-    }
+  // ─── React Query: WhatsApp history (page + status filter + search) ───────────
+  const historyParams: Record<string, unknown> = {
+    page,
+    limit: 20,
+    status: statusFilter,
+    search: searchQuery || undefined,
   };
+  const { data: historyData, isLoading: loading } = useApiQuery<{ success: boolean; data: HistoryItem[]; stats: Stats; pagination: { totalPages: number } }>(
+    '/api/whatsapp/history',
+    { params: historyParams, staleTime: 30000 }
+  );
+  const history = historyData?.data || [];
+  const stats = historyData?.stats || { total: 0, sent: 0, failed: 0, last24Hours: 0 };
+  const totalPages = historyData?.pagination.totalPages ?? 1;
 
   const handleSearch = () => {
     setPage(1);
-    fetchHistory();
   };
 
   const showDetail = (item: HistoryItem) => {

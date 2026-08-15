@@ -1,11 +1,12 @@
 ﻿'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Power, RefreshCw, Wifi, Search, Download, Trash2, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Session {
   id: string;
@@ -57,18 +58,14 @@ interface Router {
 export default function PPPoESessionsPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [sessions, setSessions] = useState<Session[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [routers, setRouters] = useState<Router[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
   const [disconnecting, setDisconnecting] = useState(false);
   const [routerFilter, setRouterFilter] = useState<string>('');
   const [searchFilter, setSearchFilter] = useState<string>('');
-  const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 10, totalPages: 1 });
   const [pageSize, setPageSize] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [now, setNow] = useState(() => Date.now());
-  const [fetchedAt, setFetchedAt] = useState(() => Date.now());
   const [syncing, setSyncing] = useState(false);
 
   // 1-second ticker for live uptime counter
@@ -77,37 +74,33 @@ export default function PPPoESessionsPage() {
     return () => clearInterval(ticker);
   }, []);
 
+  // ─── React Query: PPPoE sessions (page + filters, 10s auto-refresh) ──────────
+  const sessionParams: Record<string, unknown> = {
+    page: currentPage,
+    limit: pageSize,
+    type: 'pppoe', // Force PPPoE only
+    live: 'true', // Merge live bytes dari MikroTik API
+    routerId: routerFilter || undefined,
+    search: searchFilter || undefined,
+  };
+  const { data: sessionsData, isLoading: loading, dataUpdatedAt: fetchedAt, refetch: refetchSessions } = useApiQuery<{ sessions: Session[]; stats: Stats; pagination: Pagination }>(
+    '/api/sessions',
+    { params: sessionParams, refetchInterval: 10000, staleTime: 30000 }
+  );
+  const sessions = sessionsData?.sessions || [];
+  const stats = sessionsData?.stats || null;
+  const pagination = sessionsData?.pagination || { total: 0, page: 1, limit: pageSize, totalPages: 1 };
+
+  // ─── React Query: Routers (reference data) ───────────────────────────────────
+  const { data: routersData } = useApiQuery<{ routers: Router[] }>('/api/network/routers', { staleTime: 300000 });
+  const routers = routersData?.routers || [];
+
   // Use server-computed duration (clock-independent) + elapsed seconds since last fetch.
   // This avoids the clock-skew problem where NAS timestamps are ahead of VPS clock.
   const liveDuration = (serverDuration: number) => {
     const elapsed = Math.floor((now - fetchedAt) / 1000);
     return serverDuration + elapsed;
   };
-
-  const fetchSessions = useCallback(async (page: number = 1) => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      params.set('page', page.toString());
-      params.set('limit', pageSize.toString());
-      params.set('type', 'pppoe'); // Force PPPoE only
-      params.set('live', 'true'); // Merge live bytes dari MikroTik API
-      if (routerFilter) params.set('routerId', routerFilter);
-      if (searchFilter) params.set('search', searchFilter);
-
-      const data = await apiAdmin<{ sessions: Session[]; stats: Stats; pagination: Pagination }>(`/api/sessions?${params}`);
-      setSessions(data.sessions || []);
-      setFetchedAt(Date.now());
-      setStats(data.stats);
-      if (data.pagination) {
-        setPagination(data.pagination);
-      }
-    } catch (error: unknown) {
-      console.error('Failed to fetch sessions:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [pageSize, routerFilter, searchFilter]);
 
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return '-';
@@ -122,26 +115,9 @@ export default function PPPoESessionsPage() {
     return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   };
 
-  const fetchRouters = async () => {
-    try {
-      const data = await apiAdmin<{ routers: Router[] }>('/api/network/routers');
-      setRouters(data.routers || []);
-    } catch (error: unknown) {
-      console.error('Failed to fetch routers:', error);
-    }
+  const invalidateSessions = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/sessions') });
   };
-
-  useEffect(() => {
-    fetchRouters();
-  }, []);
-
-  useEffect(() => {
-    fetchSessions(1);
-    const interval = setInterval(() => {
-      fetchSessions(pagination.page);
-    }, 10000); // 10 detik — live bytes dari MikroTik API
-    return () => clearInterval(interval);
-  }, [fetchSessions, pagination.page]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -181,7 +157,7 @@ export default function PPPoESessionsPage() {
       if (data.success) {
         addToast({ type: 'success', title: t('common.success'), description: t('sessions.sessionsDisconnected').replace('{count}', String(data.disconnected)) });
         setSelectedSessions(new Set());
-        fetchSessions(pagination.page);
+        invalidateSessions();
       } else {
         addToast({ type: 'error', title: t('common.error'), description: data.error || t('sessions.failedDisconnect') });
       }
@@ -196,7 +172,8 @@ export default function PPPoESessionsPage() {
     setSyncing(true);
     try {
       await apiAdmin('/api/sessions/sync?type=pppoe', { method: 'POST' });
-      await fetchSessions(1);
+      setCurrentPage(1);
+      invalidateSessions();
       addToast({ type: 'success', title: t('common.success'), description: t('sessions.syncComplete') });
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('sessions.syncFailed') });
@@ -296,7 +273,7 @@ export default function PPPoESessionsPage() {
             <span>{t('sessions.show')}</span>
             <select 
               value={pageSize} 
-              onChange={(e) => setPageSize(Number(e.target.value))}
+              onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
               className="px-2 py-1 border border-border rounded text-xs bg-card"
             >
               <option value={10}>10</option>
@@ -312,7 +289,7 @@ export default function PPPoESessionsPage() {
               type="text"
               placeholder={t('sessions.searchPlaceholder')}
               value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
+              onChange={(e) => { setSearchFilter(e.target.value); setCurrentPage(1); }}
               className="px-2 py-1 text-xs border border-border rounded bg-card w-full sm:w-40"
             />
           </div>
@@ -469,7 +446,7 @@ export default function PPPoESessionsPage() {
           </div>
           <div className="flex items-center gap-1 flex-wrap justify-center">
             <button
-              onClick={() => fetchSessions(pagination.page - 1)}
+              onClick={() => setCurrentPage(pagination.page - 1)}
               disabled={pagination.page === 1}
               className="px-3 py-1 text-xs border border-border rounded disabled:opacity-50 hover:bg-muted/80 text-muted-foreground"
             >
@@ -482,7 +459,7 @@ export default function PPPoESessionsPage() {
               return (
                 <button
                   key={pageNum}
-                  onClick={() => fetchSessions(pageNum)}
+                  onClick={() => setCurrentPage(pageNum)}
                   className={`px-3 py-1 text-xs border rounded ${
                     pageNum === pagination.page 
                       ? 'bg-primary text-primary-foreground border-primary' 
@@ -494,7 +471,7 @@ export default function PPPoESessionsPage() {
               );
             })}
             <button
-              onClick={() => fetchSessions(pagination.page + 1)}
+              onClick={() => setCurrentPage(pagination.page + 1)}
               disabled={pagination.page === pagination.totalPages}
               className="px-3 py-1 text-xs border border-border rounded disabled:opacity-50 hover:bg-muted/80 text-muted-foreground"
             >

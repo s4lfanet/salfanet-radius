@@ -6,6 +6,7 @@ import { Server, Loader2, Zap, Save, CheckCircle, Info, ExternalLink } from 'luc
 import Link from 'next/link';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface GenieACSSettings {
   id?: string;
@@ -33,46 +34,35 @@ interface GenieACSTestResponse {
 export default function GenieACSSettingsPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: settingsData, isLoading: loading } = useApiQuery<GenieACSSettingsResponse>('/api/settings/genieacs', { staleTime: 300000 });
+  const { data: devicesData } = useApiQuery<GenieACSDevicesResponse>('/api/settings/genieacs/devices', { staleTime: 300000 });
   const [settings, setSettings] = useState<GenieACSSettings>({
     host: '',
     username: '',
     password: '',
     isActive: false
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [deviceCount, setDeviceCount] = useState(0);
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      const [settingsData, devicesData] = await Promise.all([
-        apiAdmin<GenieACSSettingsResponse>('/api/settings/genieacs'),
-        apiAdmin<GenieACSDevicesResponse>('/api/settings/genieacs/devices')
-      ]);
-
-      if (settingsData?.settings) {
-        setSettings({
-          id: settingsData.settings.id ?? '',
-          host: settingsData.settings.host ?? '',
-          username: settingsData.settings.username ?? '',
-          password: '',
-          isActive: settingsData.settings.isActive ?? false,
-          hasPassword: settingsData.settings.hasPassword ?? false
-        });
-      }
-
-      setDeviceCount(devicesData.devices?.length || 0);
-    } catch (error: unknown) {
-      console.error('Error:', error);
-    } finally {
-      setLoading(false);
+    if (settingsData?.settings) {
+      setSettings({
+        id: settingsData.settings.id ?? '',
+        host: settingsData.settings.host ?? '',
+        username: settingsData.settings.username ?? '',
+        password: '',
+        isActive: settingsData.settings.isActive ?? false,
+        hasPassword: settingsData.settings.hasPassword ?? false
+      });
     }
-  };
+  }, [settingsData]);
+
+  useEffect(() => {
+    setDeviceCount(devicesData?.devices?.length || 0);
+  }, [devicesData]);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +83,8 @@ export default function GenieACSSettingsPage() {
       });
       setSettings(prev => ({ ...prev, hasPassword: true, password: '', isActive: true }));
       addToast({ type: 'success', title: t('common.success'), description: t('genieacs.settingsSaved'), duration: 2000 });
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/genieacs') });
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/genieacs/devices') });
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : t('genieacs.saveFailed');
       addToast({ type: 'error', title: t('common.error'), description: msg });

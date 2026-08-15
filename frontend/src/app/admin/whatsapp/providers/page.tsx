@@ -17,6 +17,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Provider {
   id: string;
@@ -40,8 +41,7 @@ interface ProviderStatus {
 export default function WhatsAppProvidersPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [providers, setProviders] = useState<Provider[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [editingProvider, setEditingProvider] = useState<Provider | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -54,6 +54,14 @@ export default function WhatsAppProvidersPage() {
   const [providerStatuses, setProviderStatuses] = useState<Record<string, ProviderStatus>>({});
   const [restartingProvider, setRestartingProvider] = useState<string | null>(null);
   const [copiedWebhook, setCopiedWebhook] = useState(false);
+
+  // ─── React Query: Providers list ─────────────────────────────────────────────
+  const { data: providersData, isLoading: loading } = useApiQuery<Provider[]>('/api/whatsapp/providers', { staleTime: 30000 });
+  const providers = (providersData ?? []).sort((a, b) => a.priority - b.priority);
+
+  const invalidateProviders = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/whatsapp/providers') });
+  };
 
   const copyWebhookUrl = async () => {
     const webhookUrl = `${window.location.origin}/api/whatsapp/webhook`;
@@ -105,7 +113,6 @@ export default function WhatsAppProvidersPage() {
   };
 
   useEffect(() => {
-    fetchProviders();
     const interval = setInterval(() => {
       fetchAllStatuses();
     }, 30000);
@@ -119,18 +126,6 @@ export default function WhatsAppProvidersPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [providers]);
-
-  const fetchProviders = async () => {
-    try {
-      const data = await apiAdmin<Provider[]>('/api/whatsapp/providers');
-      setProviders(data.sort((a: Provider, b: Provider) => a.priority - b.priority));
-    } catch (error: unknown) {
-      console.error('Error fetching providers:', error);
-      addToast({ type: 'error', title: 'Error!', description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedFetchProviders') });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const fetchAllStatuses = async () => {
     if (providers.length === 0) return;
@@ -192,7 +187,7 @@ export default function WhatsAppProvidersPage() {
       });
 
       addToast({ type: 'success', title: t('common.success'), description: t('whatsapp.providerSaved') });
-      fetchProviders();
+      invalidateProviders();
       resetForm();
     } catch (error: unknown) {
       console.error('Error saving provider:', error);
@@ -208,7 +203,7 @@ export default function WhatsAppProvidersPage() {
       });
 
       addToast({ type: 'success', title: t('common.success'), description: !currentStatus ? t('whatsapp.providerActivated') : t('whatsapp.providerDeactivated') });
-      fetchProviders();
+      invalidateProviders();
     } catch (error: unknown) {
       console.error('Error toggling provider:', error);
       addToast({ type: 'error', title: 'Error!', description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedToggleProvider') });
@@ -230,7 +225,7 @@ export default function WhatsAppProvidersPage() {
       });
 
       addToast({ type: 'success', title: t('common.deleted'), description: t('whatsapp.providerDeleted') });
-      fetchProviders();
+      invalidateProviders();
     } catch (error: unknown) {
       console.error('Error deleting provider:', error);
       addToast({ type: 'error', title: 'Error!', description: (error instanceof Error ? error.message : String(error)) || t('whatsapp.failedDeleteProvider') });
