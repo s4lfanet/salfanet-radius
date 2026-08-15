@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.0.0 — Phase 7 complete (React Query + Performance Optimizations) + Phase 6D (UI State & Error Handling Audit) + Phase 6C (API Client Correctness & Type-Safety Hardening) + Phase 6B (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.5.0 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav) + Phase 7 (React Query + Performance) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -990,6 +990,125 @@ Saat pelanggan isolir dilunaskan (manual atau auto-renewal), sistem otomatis:
 Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di GitHub.
 
 <!-- AUTO-CHANGELOG:START -->
+
+### v5.5.0 — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
+
+#### Active Session Sync (CRITICAL)
+- `listPppActive()` sebelumnya menelan error MikroTik API → cron false-close semua session. Fix: throw on error.
+- `iconv-lite` tidak tersedia di standalone deployment → semua MikroTik API calls gagal. Fix: serverExternalPackages + postbuild copy.
+
+#### Frontend Audit
+- Responsive: ~20+ pages fixed (`grid-cols-N` → `grid-cols-1/2 sm:grid-cols-N`), table `overflow-x-auto` wrappers.
+- Loading/error: Added `loading.tsx` + `error.tsx` untuk `/app/agent/`.
+- Accessibility: `aria-label` on icon-only buttons, `aria-expanded` on submenu toggles, nav landmarks labeled, touch targets ≥44px.
+- Navigation: Verified single source of truth untuk menu di semua 4 layout (no desktop/mobile duplication). Admin submenu max-height fix.
+
+#### Performance Audit
+- Build: 13s (Turbopack). Bundle: 8.8 MB (257 files). Heavy deps code-split (jspdf, xlsx, leaflet).
+- `sweetalert2` dead dependency (diganti CyberToast). `recharts` static import (low priority optimization).
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v5.4.0 — 2026-08-15 — Final Production Completion (Security + safeCompare + JWT + CoA)
+
+#### Security Fixes
+- **[CRITICAL]** `/api/radius/coa` dan `/api/sessions/disconnect`: Added auth checks (sebelumnya unauthenticated).
+- **[CRITICAL]** `/api/payment-gateway/config`: Added auth + removed credential logging.
+- `safeCompare()` now fail-closed on empty strings.
+- JWT_SECRET separation (dedicated, distinct from NEXTAUTH_SECRET).
+- Email timezone: hardcoded `Asia/Jakarta` → `getCurrentTimezone()`.
+- **Test: 112/112 PASS** (timezone, cron schedule, cron lock, FreeRADIUS concurrency, CRON_SECRET).
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v5.3.0 — 2026-08-15 — Final Production Hardening + E2E Verification
+
+#### Timezone Hardening
+- Invoice due date: `nowWIB()` instead of `new Date()` / `Date.now()`.
+- 11 backend files: hardcoded `Asia/Jakarta` → `getCurrentTimezone()` (21 replacements).
+- New E2E test suite: cron schedule (40), FreeRADIUS concurrency (12), CRON_SECRET (17).
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v5.2.0 — 2026-08-15 — Production Hardening Audit (Cron + Security + Timezone)
+
+#### Cron Reliability
+- Cron heartbeat, fail-closed distributed lock, CRON_SECRET validation.
+- Double-lock prevention saat cron-runner memanggil cron API route.
+
+#### Security
+- GenieACS auth, secret leak fixes, queue concurrency control.
+- `@map` annotations untuk `cronLock` dan `radiusSyncQueue` (snake_case MySQL columns).
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v5.1.0 — 2026-08-15 — Phase 8: Complete React Query Migration
+
+#### React Query Migration
+- Migrasi semua remaining admin pages ke React Query.
+- Query invalidation untuk deposit/invoice mutations.
+- Global 401 handler, evoucher invalidation.
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v5.0.0 — 2026-08-15 — Phase 7: React Query + Performance Optimizations
+
+#### React Query + Performance
+- React Query implementation untuk data fetching, caching, dan optimistic updates.
+- Performance optimizations untuk VPS 2GB (standalone output, build limit 1536MB).
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v4.9.0 — 2026-08-15 — Phase 6D: UI State & Error Handling Audit
+
+#### UI State & Error Handling
+- Standardized error handling across pages.
+- Loading state improvements.
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v4.8.0 — 2026-08-14 — Phase 6C: API Client Correctness & Type-Safety Hardening
+
+#### API Client Hardening
+- Critical fix untuk API client correctness.
+- Type-safety improvements.
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v4.7.0 — 2026-08-14 — Phase 6B: Frontend Type-Safety Hardening
+
+#### Type-Safety
+- Frontend type-safety hardening across components.
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
+
+### v4.6.0 — 2026-08-14 — Frontend Audit Phase 5 (API Types, Utilities, Security)
+
+#### Frontend Audit Phase 5
+- API types, utilities, security audit.
+- Server components audit.
+
+Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+
+---
 
 ### v4.5.0 — 2026-08-14 — Phase 2 Complete + Phase 3 Architecture Improvements
 
