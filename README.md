@@ -993,388 +993,276 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 ### v5.5.0 — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
 
-#### Active Session Sync (CRITICAL)
-- `listPppActive()` sebelumnya menelan error MikroTik API → cron false-close semua session. Fix: throw on error.
-- `iconv-lite` tidak tersedia di standalone deployment → semua MikroTik API calls gagal. Fix: serverExternalPackages + postbuild copy.
+### Summary
+Dua kategori perbaikan: (1) Critical fix untuk sync active session MikroTik → web (mismatch status aktif), dan (2) Frontend audit menyeluruh untuk responsive, accessibility, loading/error state, dan menu navigation consistency across all 4 role layouts.
 
-#### Frontend Audit
-- Responsive: ~20+ pages fixed (`grid-cols-N` → `grid-cols-1/2 sm:grid-cols-N`), table `overflow-x-auto` wrappers.
-- Loading/error: Added `loading.tsx` + `error.tsx` untuk `/app/agent/`.
-- Accessibility: `aria-label` on icon-only buttons, `aria-expanded` on submenu toggles, nav landmarks labeled, touch targets ≥44px.
-- Navigation: Verified single source of truth untuk menu di semua 4 layout (no desktop/mobile duplication). Admin submenu max-height fix.
+### Active Session Sync Fix (CRITICAL)
+- **[CRITICAL]** `listPppActive()` sebelumnya menelan error MikroTik API dan return empty Set → cron menganggap semua session stale dan menutupnya. Fix: sekarang throw error pada failure, sehingga cron skip cycle instead of false-closing sessions.
+- **[CRITICAL]** `iconv-lite` tidak tersedia di Next.js standalone deployment → semua MikroTik API calls gagal. Fix: tambah `iconv-lite` ke `serverExternalPackages`, copy ke standalone `node_modules` di postbuild.
 
-#### Performance Audit
-- Build: 13s (Turbopack). Bundle: 8.8 MB (257 files). Heavy deps code-split (jspdf, xlsx, leaflet).
-- `sweetalert2` dead dependency (diganti CyberToast). `recharts` static import (low priority optimization).
+### Frontend Audit — Responsive Fixes
+- Fixed `grid-cols-N` tanpa mobile prefixes → `grid-cols-1/2 sm:grid-cols-N` di ~20+ pages:
+  - Referral stats, agent/technician login cards, technician isolated stats
+  - Splitter loss metrics dan ports, port selection dialogs
+  - User installation-photo grids, OLT tabs, GenieACS stats
+  - Hotspot agent/voucher report stats, IP pool, data usage cards
+  - PPPoE installation photos, SMTP settings, WhatsApp summaries
+  - Customer top-up payment methods, VPN status summaries
+  - Invoice generation results, Splitter/ODP/ODC diagrams
+  - Fiber cable presets, VPN client pool summaries
+- Added `overflow-x-auto` wrappers untuk tables yang bisa overflow di small screens:
+  - `admin/genieacs/files/page.tsx`
+  - `admin/genieacs/devices/[deviceId]/page.tsx`
 
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+### Frontend Audit — Loading/Error State
+- Created route-level `loading.tsx` dan `error.tsx` untuk `/app/agent/` (sebelumnya missing)
+- Loading: centered `Loader2` spinner + "Memuat..."
+- Error: client component, logs error, generic Indonesian message, "Coba Lagi" + link ke `/agent`, shows error digest
+
+### Frontend Audit — Accessibility & Navigation
+- Added `aria-label` ke icon-only close buttons di semua 4 layout (Admin, Agent, Customer, Technician)
+- Added `aria-label` ke mobile menu/hamburger buttons where missing
+- Added `aria-expanded` ke Admin category dan submenu toggle buttons
+- Added `aria-label="X navigation"` ke semua nav landmarks
+- Increased close-button padding dari `p-1.5` → `p-2.5` untuk touch targets ≥44px
+- Fixed Admin submenu `max-h-96` → `max-h-[500px]` untuk accommodate GenieACS group (11 children)
+- Verified route-change sidebar closing behavior di semua layout
+- Verified semua 4 layout menggunakan single source of truth untuk menu (no desktop/mobile duplication)
+
+### Performance Audit Findings
+- Build: 13s compile + 5.6s TypeScript = ~20s total (Next.js 16 Turbopack)
+- Bundle: 8.8 MB total static (257 files), largest JS chunk 409 KB, largest CSS 539 KB (Tailwind v4)
+- Heavy deps properly code-split: `jspdf`, `xlsx`, `leaflet` menggunakan dynamic `await import()`
+- `sweetalert2` di `package.json` tapi TIDAK di-import (sudah diganti CyberToast) — dead dependency
+- `recharts` statically imported di `components/charts/index.tsx` — bisa di-optimize dengan dynamic import tapi low priority
+
+### Commits
+- `076501c0` — fix(critical): listPppActive must throw on error, not return empty Set
+- `54b45403` — fix: add iconv-lite to serverExternalPackages for standalone build
+- `432e3593` — fix: copy iconv-lite to standalone node_modules in postbuild
+- `fa9ddd1f` — fix: copy iconv-lite from pnpm store to standalone node_modules
+- `0b330fe1` — fix(frontend): responsive, accessibility, and loading/error state improvements
+- `a13c609a` — fix(nav): menu navigation desktop/mobile audit - accessibility and UI fixes
 
 ---
 
 ### v5.4.0 — 2026-08-15 — Final Production Completion (Security + safeCompare + JWT + CoA)
 
-#### Security Fixes
-- **[CRITICAL]** `/api/radius/coa` dan `/api/sessions/disconnect`: Added auth checks (sebelumnya unauthenticated).
-- **[CRITICAL]** `/api/payment-gateway/config`: Added auth + removed credential logging.
-- `safeCompare()` now fail-closed on empty strings.
-- JWT_SECRET separation (dedicated, distinct from NEXTAUTH_SECRET).
-- Email timezone: hardcoded `Asia/Jakarta` → `getCurrentTimezone()`.
-- **Test: 112/112 PASS** (timezone, cron schedule, cron lock, FreeRADIUS concurrency, CRON_SECRET).
+### Summary
+Final production completion pass: safeCompare fail-closed hardening, JWT_SECRET separation, CoA/disconnect auth fixes, payment gateway credential logging fix, email timezone fix, and full 112/112 E2E test verification on VPS.
 
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+### Security Fixes
+- **[CRITICAL]** `/api/radius/coa` POST + GET: Added `checkAuth()` — was completely unauthenticated (anyone could disconnect users)
+- **[CRITICAL]** `/api/sessions/disconnect` POST: Added `checkAuth()` — was completely unauthenticated (anyone could disconnect sessions)
+- **[CRITICAL]** `/api/payment-gateway/config` POST: Added `getServerSession` check — was unauthenticated (anyone could write payment gateway credentials)
+- **[CRITICAL]** `/api/payment-gateway/config` POST: Removed `console.log` that logged full payment gateway credentials (midtransServerKey, xenditApiKey, tripayPrivateKey, etc.)
+
+### safeCompare Defensive Hardening
+- **[FIXED]** `safeCompare()` now fail-closed on empty strings: `safeCompare('', '') === false`
+- **[FIXED]** `safeCompare('', 'abc') === false` and `safeCompare('abc', '') === false`
+- Production routes already guarded via truthiness checks, but helper is now independently fail-closed
+- Test assertions updated: 17/17 PASS (was 14/14)
+
+### JWT Secret Separation
+- **[CONFIGURED]** VPS now has dedicated `JWT_SECRET` (64 chars, distinct from `NEXTAUTH_SECRET`)
+- **[VERIFIED]** `JWT_SECRET !== NEXTAUTH_SECRET` on VPS
+- **[VERIFIED]** `AGENT_JWT_SECRET` is also distinct from both
+- Fallback to `NEXTAUTH_SECRET` remains as safety net, but production now uses dedicated secrets
+
+### Timezone Fix
+- **[FIXED]** `email.service.ts`: 2 hardcoded `'Asia/Jakarta'` in date formatting replaced with `getCurrentTimezone()`
+
+### GenieACS
+- **[STATUS]** GenieACS is NOT INSTALLED on VPS (service inactive, binaries not found, ports not listening)
+- **[STATUS]** GenieACS integration code is ready (DB-based credential loading, encrypted passwords, env fallback)
+- **[STATUS]** GENIEACS PRODUCTION = NOT VERIFIED (cannot test without GenieACS server)
+
+### RADIUS CoA
+- **[STATUS]** CoA uses per-router secrets from DB (`nas.secret`) as primary source
+- **[STATUS]** `RADIUS_COA_SECRET` env var is optional global fallback (NOT SET on VPS)
+- **[STATUS]** 1 router with secret in DB — CoA will use DB secret
+- **[STATUS]** CoA auth now requires admin session (401 without auth — verified)
+- **[STATUS]** CoA functional test = NOT VERIFIED (requires active MikroTik session to test disconnect)
+
+### Test Results (VPS — 2026-08-15)
+- Timezone: 27/27 PASS
+- Cron Schedule: 40/40 PASS
+- Cron Lock: 16/16 PASS
+- FreeRADIUS Concurrency: 12/12 PASS
+- CRON_SECRET: 17/17 PASS
+- **Total: 112/112 PASS**
+
+### Commits
+- `389a540f` — safeCompare fail-closed on empty strings
+- `ab18d892` — Fix malformed header test (HTTP layer rejection)
+- `4cc0895e` — Sync test safeCompare with production
+- `ce0c4cfc` — Add auth checks to CoA and session disconnect routes
+- `27bf2bda` — Fix payment gateway config auth + credential logging + email timezone
 
 ---
 
 ### v5.3.0 — 2026-08-15 — Final Production Hardening + E2E Verification
 
-#### Timezone Hardening
-- Invoice due date: `nowWIB()` instead of `new Date()` / `Date.now()`.
-- 11 backend files: hardcoded `Asia/Jakarta` → `getCurrentTimezone()` (21 replacements).
-- New E2E test suite: cron schedule (40), FreeRADIUS concurrency (12), CRON_SECRET (17).
+### Summary
+Final production hardening pass: timezone bug fixes (invoice due dates, hardcoded Asia/Jakarta in 11 backend files), new E2E test suite (cron schedule, FreeRADIUS concurrency, CRON_SECRET), and full VPS production verification.
 
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+### Timezone Hardening
+- **[FIXED]** Invoice due date calculation: `invoices/route.ts` now uses `nowWIB()` instead of `new Date()` for invoice number generation
+- **[FIXED]** Registration approve route: due date now uses `nowWIB()` instead of `Date.now()`
+- **[FIXED]** Registration mark-installed route: due date now uses `nowWIB()` instead of `Date.now()`
+- **[FIXED]** Invoice import route: default due date now uses `nowWIB()` instead of `Date.now()`
+- **[FIXED]** 11 backend files: replaced hardcoded `'Asia/Jakarta'` with `getCurrentTimezone()` (21 replacements total):
+  - `payment/webhook/route.ts` (1)
+  - `manual-payments/[id]/route.ts` (1)
+  - `notifications/whatsapp-templates.service.ts` (5)
+  - `notifications/telegram.service.ts` (3)
+  - `lib/utils/export.ts` (4)
+  - `whatsapp/broadcast/route.ts` (2)
+  - `telegram/test/route.ts` (1)
+  - `telegram/test-backup/route.ts` (1)
+  - `keuangan/export/route.ts` (1)
+  - `invoices/export/route.ts` (1)
+  - `evoucher/purchase/route.ts` (1)
+
+### New E2E Tests
+- **[TESTED]** `cron-schedule.test.ts`: 40/40 passed on VPS — tests all 19 production cron schedules with cron-parser, timezone difference (Jakarta vs UTC), month boundary, edge cases (06:59, 07:00, 07:01, 23:00, 00:00)
+- **[TESTED]** `freeradius-concurrency.test.ts`: 12/12 passed on VPS — tests atomic claim with 2 workers, status transitions (PENDING/FAILED/SYNCING/COMPLETED/DEAD), 10-item batch with no overlap
+- **[TESTED]** `cron-secret.test.ts`: 14/14 passed on VPS — tests timing-safe comparison, secret not in logs, API with correct/wrong/empty/no/malformed secret
+
+### Production Verification (VPS 192.168.54.129)
+- **[PRODUCTION VERIFIED]** All PM2 processes online (backend, cron, frontend, wa)
+- **[PRODUCTION VERIFIED]** Backend health: OK (port 3001)
+- **[PRODUCTION VERIFIED]** Frontend health: 200 OK (port 3000)
+- **[PRODUCTION VERIFIED]** Nginx: active, config test OK (port 8080)
+- **[PRODUCTION VERIFIED]** MySQL: active, timezone +07:00
+- **[PRODUCTION VERIFIED]** FreeRADIUS: active (v3.0.26)
+- **[PRODUCTION VERIFIED]** OS timezone: Asia/Jakarta
+- **[PRODUCTION VERIFIED]** CRON_SECRET: SET (length: 64)
+- **[PRODUCTION VERIFIED]** DATABASE_URL: SET
+- **[PRODUCTION VERIFIED]** NEXTAUTH_SECRET: SET
+- **[PRODUCTION VERIFIED]** No pending migrations
+- **[PRODUCTION VERIFIED]** payments.invoiceId unique index: EXISTS (non_unique=0)
+- **[PRODUCTION VERIFIED]** webhook_logs table: EXISTS
+- **[PRODUCTION VERIFIED]** All recent cron jobs: SUCCESS (hotspot_sync, freeradius_health, pppoe_session_sync, disconnect_sessions, pppoe_auto_isolir, radius_sync_retry)
+- **[PRODUCTION VERIFIED]** Automated cron (CRON_SECRET): 200 OK (no 409 double-lock)
+- **[PRODUCTION VERIFIED]** Manual trigger without auth: 401 Unauthorized
+- **[PRODUCTION VERIFIED]** GenieACS technician routes: routerId/areaId requirement present in code
+- **[PRODUCTION VERIFIED]** Backend build: SUCCESS
+- **[PRODUCTION VERIFIED]** Frontend build: SUCCESS
+
+### Not Set (Configuration Issues, Not Code Issues)
+- RADIUS_COA_SECRET: NOT SET (needed for CoA/Disconnect packets)
+- GENIEACS_HOST/USER/PASS: NOT SET (GenieACS integration not configured)
+- JWT_SECRET: NOT SET (falls back to NEXTAUTH_SECRET)
+
+### Test Summary
+| Test Suite | Tests | Passed | Failed | Environment |
+|------------|-------|--------|--------|-------------|
+| Timezone | 27 | 27 | 0 | VPS |
+| Cron Schedule | 40 | 40 | 0 | VPS |
+| Cron Lock | 16 | 16 | 0 | VPS |
+| FreeRADIUS Concurrency | 12 | 12 | 0 | VPS |
+| CRON_SECRET | 14 | 14 | 0 | VPS |
+| **Total** | **109** | **109** | **0** | |
 
 ---
 
 ### v5.2.0 — 2026-08-15 — Production Hardening Audit (Cron + Security + Timezone)
 
-#### Cron Reliability
-- Cron heartbeat, fail-closed distributed lock, CRON_SECRET validation.
-- Double-lock prevention saat cron-runner memanggil cron API route.
+### Summary
+Comprehensive production hardening pass covering cron reliability, distributed locking, CRON_SECRET security, timezone handling, FreeRADIUS queue concurrency, GenieACS technician authorization, secret leak prevention, and frontend API error handling.
 
-#### Security
-- GenieACS auth, secret leak fixes, queue concurrency control.
-- `@map` annotations untuk `cronLock` dan `radiusSyncQueue` (snake_case MySQL columns).
+### Cron System Hardening
+- **[FIXED]** Heartbeat integration: `cron-runner.ts` now starts a heartbeat timer that renews the DB lock periodically while a job is running. If renewal fails (LOCK_LOST), the job result is recorded as error to prevent duplicate processing.
+- **[FIXED]** Production fail-closed: In production (`NODE_ENV=production`), if the DB lock service fails, the job is NOT run. The in-memory `runningJobs` Set is now an optimization only, never the reliability mechanism. Development mode retains the in-memory fallback for convenience.
+- **[FIXED]** `CRON_SECRET` hardening: Both `cron-runner.ts` and `/api/cron` route now fail-fast in production if `CRON_SECRET` is not set. Secret comparison uses `timingSafeEqual` to prevent timing attacks. Secret length is logged, never the value.
+- **[FIXED]** Per-job HTTP timeout: Jobs now have configurable timeouts (120s default, 300s for heavy jobs like invoice_generate and radius_reconciliation).
+- **[FIXED]** `server-only` import removed from `cron-lock.service.ts`, `monitoring.service.ts`, and `db/client.ts` — this was the root cause of the original in-memory fallback issue (standalone cron-runner could not import server-only modules).
+- **[FIXED]** Cron schedule timezone: `cron-runner.ts` now loads company timezone from DB and passes it to `node-cron` via `{ timezone: companyTimezone }` option, ensuring jobs run at correct local time regardless of VPS system timezone.
+- **[FIXED]** `nextRun` calculation: Replaced heuristic interval estimation with `cron-parser` library for accurate next-run calculation in `/api/cron/status`.
 
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+### Timezone Fixes
+- **[FIXED]** `cron-runner.ts`: Removed manual `+7h` manipulation (`new Date(now.getTime() + 7 * 60 * 60 * 1000)`). Now uses `new Date()` which respects the system timezone (`TZ=Asia/Jakarta` in production).
+- **[FIXED]** `getTimezoneOffset()` in both backend and frontend `timezone.ts`: Added explicit handling for UTC/GMT timezone (previously fell back to `+07:00` for UTC, causing incorrect offset calculations).
+- **[FIXED]** Frontend: Replaced hardcoded `'Asia/Jakarta'` in `formatInTimeZone()` calls with dynamic `getCurrentTimezone()` in 5 layout files (TechnicianPortalLayout, CustomerClientLayout, AgentLayoutClient, AdminClientLayout, customer/suspend page).
+
+### FreeRADIUS Queue Concurrency
+- **[FIXED]** Atomic claim in `processRetryQueue()`: Replaced unconditional `prisma.radiusSyncQueue.update()` with conditional `updateMany({ where: { id, status: { in: ['PENDING', 'FAILED'] } } })`. This prevents two workers from processing the same queue item simultaneously. If `count === 0`, the item was already claimed by another worker and is skipped.
+
+### GenieACS Technician Authorization
+- **[FIXED]** Technician device list route (`/api/technician/genieacs/devices`): Field technicians (non-admin) must now provide `routerId` or `areaId` query parameter. Devices are filtered to only show those matching customers in the assigned scope. This matches the security pattern already used in the technician customers route.
+- **[FIXED]** Technician single device route (`/api/technician/genieacs/devices/[deviceId]`): Field technicians must provide `routerId`/`areaId` and the device must match a customer in their assigned scope. Returns 403 if the device is not in their area.
+- **[FIXED]** `verifyTechnician()` in both GenieACS routes now returns `isAdminUser` flag for consistent authorization logic.
+
+### Secret Leak Prevention
+- **[FIXED]** Payment webhook (`/api/payment/webhook`): Removed raw body logging and form data logging. Signature headers are now truncated to first 16 characters instead of logged in full. Tripay signature validation log now truncates both received and expected signatures.
+- **[FIXED]** Payment token route (`/api/pay/[token]`): Removed debug `console.log` statements that logged the full payment token, invoice search results, and fallback search details.
+
+### Frontend API Error Handling
+- **[FIXED]** GenieACS files upload page: Added `res.ok` check before `res.json()` to prevent JSON parse errors on non-JSON error responses (e.g., 405 Method Not Allowed with HTML body).
+- **[FIXED]** Pay-manual page: Wrapped error response `response.json()` in try/catch to handle non-JSON error bodies gracefully.
+
+### Database Schema
+- **[VERIFIED]** All Prisma `@map()` and `@@map()` annotations are correct and match the production database. Every snake_case database column has an explicit field mapping. No mismatches found.
+
+### Tests
+- **[TESTED]** Timezone utility tests: 27/27 passed locally (`npx tsx tests/timezone.test.ts`). Covers `nowWIB()`, `parseDateAsWIB()`, `formatWIB()`, `isExpiredWIB()`, `daysUntilExpiry()`, `startOfDayWIBtoUTC`/`endOfDayWIBtoUTC`, and timezone switching (Asia/Jakarta ↔ UTC).
+- **[CREATED]** Cron lock service tests (`tests/cron-lock.test.ts`): Tests acquire/release, concurrent acquisition, release by non-owner, heartbeat renewal, heartbeat failure after release, and stale lock recovery. Must be run on the VPS where the database is accessible.
+
+### Files Changed
+- `backend/cron-runner.ts` — Complete rewrite with heartbeat, fail-closed, timezone, per-job timeout
+- `backend/src/app/api/cron/route.ts` — CRON_SECRET fail-fast + timingSafeEqual
+- `backend/src/server/cron/jobs.ts` — cron-parser for nextRun calculation
+- `backend/src/server/services/cron-lock.service.ts` — Removed `server-only` import
+- `backend/src/server/services/monitoring.service.ts` — Removed `server-only` import
+- `backend/src/server/db/client.ts` — Removed `server-only` import
+- `backend/src/server/services/radius/radius-sync-queue.service.ts` — Atomic claim
+- `backend/src/app/api/technician/genieacs/devices/route.ts` — routerId/areaId scope
+- `backend/src/app/api/technician/genieacs/devices/[deviceId]/route.ts` — Authorization check
+- `backend/src/app/api/payment/webhook/route.ts` — Secret leak fixes
+- `backend/src/app/api/pay/[token]/route.ts` — Removed debug logging
+- `backend/src/lib/timezone.ts` — UTC offset fix
+- `frontend/src/lib/timezone.ts` — UTC offset fix
+- `frontend/src/app/technician/TechnicianPortalLayout.tsx` — Dynamic timezone
+- `frontend/src/app/customer/CustomerClientLayout.tsx` — Dynamic timezone
+- `frontend/src/app/agent/AgentLayoutClient.tsx` — Dynamic timezone
+- `frontend/src/app/admin/AdminClientLayout.tsx` — Dynamic timezone
+- `frontend/src/app/customer/suspend/page.tsx` — Dynamic timezone
+- `frontend/src/app/admin/genieacs/files/page.tsx` — res.ok check
+- `frontend/src/app/pay-manual/page.tsx` — Error handling fix
+- `backend/tests/cron-lock.test.ts` — New test file
+- `backend/tests/timezone.test.ts` — New test file
 
 ---
 
 ### v5.1.0 — 2026-08-15 — Phase 8: Complete React Query Migration
 
-#### React Query Migration
-- Migrasi semua remaining admin pages ke React Query.
-- Query invalidation untuk deposit/invoice mutations.
-- Global 401 handler, evoucher invalidation.
+### Summary
+Completed React Query migration for all remaining admin pages. 80 files changed, net reduction of 875 lines of code. All admin pages now use `useApiQuery`/`useQueryClient` instead of manual `useEffect + apiAdmin + load()` patterns.
 
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+### Pages Migrated (65+ pages across 8 batches)
+- **Settings** (15 files): company, cloudflare-tunnel, cron, database, email, footer, genieacs, isolation (+ mikrotik + templates), referral, security, subdomain, telegram
+- **GenieACS** (6 files): auto-provision, devices, parameter-config, tasks, virtual-parameters, vp-scripts
+- **Network** (11 files): customers, diagrams, fiber-cables, fiber-cores, fiber-joint-closures, map, odcs, splice-points, unified-map, vpn-client, vpn-server
+- **PPPoE + Hotspot** (10 files): addons, profiles, registrations, stopped, agent (+ deposits), evoucher, profile, rekap-voucher, template
+- **FreeRADIUS** (6 files): backup, config, logs, radcheck, radtest, status
+- **Other admin** (23 files): data-usage, download-apk, ippool, isolated-users, laporan/analitik, logs/activity, management, manual-payments, notifications, olt/alerts, olt/monitoring, payment/bank-accounts, payment-gateway, push-notifications, referrals, sessions/pppoe, suspend-requests, system, technicians, topup-requests, tickets (+ [id] + categories), whatsapp (5 files), inventory (4 files)
 
----
+### Key Changes
+- Mutations now use `queryClient.invalidateQueries()` instead of manual `load()` reloads
+- Filter/pagination params included in query keys for automatic refetch tracking
+- Reference data (routers, company, templates) cached with `staleTime: 300000` (5 min)
+- Polling uses `refetchInterval` instead of `setInterval`
+- Form/edit state synced from query data via `useMemo` + `useEffect`
+- Auth pages (login, 2FA) intentionally NOT migrated
 
-### v5.0.0 — 2026-08-15 — Phase 7: React Query + Performance Optimizations
-
-#### React Query + Performance
-- React Query implementation untuk data fetching, caching, dan optimistic updates.
-- Performance optimizations untuk VPS 2GB (standalone output, build limit 1536MB).
-
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
-
----
-
-### v4.9.0 — 2026-08-15 — Phase 6D: UI State & Error Handling Audit
-
-#### UI State & Error Handling
-- Standardized error handling across pages.
-- Loading state improvements.
-
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
+### Verification
+- `npx tsc --noEmit`: 0 errors
+- `npx next build`: success (local + VPS)
+- PM2: all 4 processes online
+- Smoke tests: health 200, login 200, 404, protected 401, upload 401
 
 ---
-
-### v4.8.0 — 2026-08-14 — Phase 6C: API Client Correctness & Type-Safety Hardening
-
-#### API Client Hardening
-- Critical fix untuk API client correctness.
-- Type-safety improvements.
-
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
-
----
-
-### v4.7.0 — 2026-08-14 — Phase 6B: Frontend Type-Safety Hardening
-
-#### Type-Safety
-- Frontend type-safety hardening across components.
-
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
-
----
-
-### v4.6.0 — 2026-08-14 — Frontend Audit Phase 5 (API Types, Utilities, Security)
-
-#### Frontend Audit Phase 5
-- API types, utilities, security audit.
-- Server components audit.
-
-Dokumentasi lengkap: [`CHANGELOG.md`](CHANGELOG.md)
-
----
-
-### v4.5.0 — 2026-08-14 — Phase 2 Complete + Phase 3 Architecture Improvements
-
-#### Overview — Phase 2 Completion & Phase 3 Architecture
-Melanjutkan migrasi API client dari Batch 53 sampai Batch 111 (selesai), dilanjutkan dengan Phase 3 architecture improvements (middleware, error boundaries, permission constants, security fix).
-
-**Total Phase 2: 111 batch, ~510 fetch calls di-migrasi, 55 fetch calls tersisa (semua legitimate blob/FormData/streaming downloads).**
-
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
-
-#### Phase 2 — Batch 53–111 (Remaining Pages Migration)
-| Batch | Halaman | Calls | Commit |
-|-------|---------|-------|--------|
-| 53–60 | genieacs/presets, network/fiber-cables, genieacs/provisions, hotspot/evoucher, genieacs/virtual-parameters, network/odcs, sessions/hotspot, freeradius/config | ~24 | `2f117d71` |
-| 61–68 | inventory/movements, inventory/suppliers, payment/bank-accounts, hotspot/template, inventory/categories, tickets/categories, settings/footer, network/fiber-joint-closures | ~24 | — |
-| 69–76 | network/fiber-cores, technicians, olt/monitoring, olt/alerts, genieacs/auto-provision, freeradius/status, freeradius/radcheck, topup-requests | ~24 | `6e88dda0` |
-| 77–84 | genieacs/files, genieacs/config, pppoe/users, payment-gateway, technicians, genieacs/auto-provision, freeradius/radcheck, freeradius/status | 24 | `2ae622f8` |
-| 85–90 | settings/isolation, settings/cloudflare-tunnel, admin/login, pppoe/users/new, sessions, suspend-requests | 12 | `2ae622f8` |
-| 91–93 | whatsapp/notifications, hotspot/agent/deposits, genieacs/faults | 6 | `2ae622f8` |
-| 94–111 | 18 pages with 1 fetch call each (11 JSON → apiAdmin, 7 blob/FormData → buildUrl) | 18 | `2ae622f8` |
-
-#### Phase 2 Final Status: ✅ COMPLETE
-- **Total batches**: 111
-- **Total fetch calls migrated**: ~510
-- **Remaining fetch() calls**: 55 (all legitimate blob/FormData/streaming downloads using `buildUrl()`)
-
-#### Phase 3 — Architecture Improvements
-- **middleware.ts** — Protect `/admin/*` routes with NextAuth JWT check
-- **error.tsx** — Route-level error boundary for `/admin/*` with retry & home buttons
-- **loading.tsx** — Route-level loading UI with spinner
-- **permissions.ts** — Centralized permission/role constants + helper functions
-- **usePermissions.ts** — Migrated to `apiAdmin()`
-- **C8 Fix** — SSH password removed from `localStorage` in `vpn-server/page.tsx`
-
-#### Phase 3 Status: ✅ COMPLETE
-
----
-
-### v4.4.0 — 2026-08-14 — Frontend Centralized API Migration (Phase 2 Batch 1–52)
-
-#### Overview — Frontend Audit & Centralized API Client Migration
-Migrasi massif frontend dari inline `fetch()` ke **centralized API client** (`@/lib/api`) untuk semua halaman admin. Frontend sekarang **UI-only** — tidak ada direct Prisma/DB/MikroTik/SSH/FreeRADIUS access.
-
-**Total: 52 batch, 361 inline `fetch()` calls di-migrasi.**
-
-Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md) · [`CHANGELOG.md`](CHANGELOG.md)
-
-#### Phase 1 — Architectural Cleanup (Prasyarat)
-- **1A** — Dead code removal (import tidak terpakai, komponen yatim)
-- **1B** — NextAuth refactor & Prisma removal dari frontend
-- **1C** — Uploads serving dipindahkan ke Nginx (`/uploads/`)
-
-#### Phase 2 — Centralized API Client Migration (Batch 1–52)
-| Batch | Halaman | Calls | Tanggal |
-|-------|---------|-------|---------|
-| 1–8b | API client + pppoe/profiles, areas, users, invoices, dashboard, keuangan, ippool | 80 | 13 Aug |
-| 9 | hotspot/voucher | 15 | 13 Aug |
-| 10–11 | vpn-server + vpn-client | 31 | 13 Aug |
-| 12–24 | genieacs, network, whatsapp, download-apk, pppoe, management | 88 | 13 Aug |
-| 25–40 | network/trace, settings, sessions, notifications, tickets, inventory, cron, freeradius | 78 | 13 Aug |
-| 41–52 | network/odps, pppoe/users/[id], manual-payments, settings/security, isolation, genieacs, addons, data-usage, whatsapp/send, push-notifications, referrals, templates | 49 | 14 Aug |
-
-#### Centralized API Client (`@/lib/api`)
-- `apiAdmin()` — auth-aware, auto JSON parsing, auto `Content-Type` header
-- Throw `ApiError` untuk non-2xx responses
-- Multipart & blob download support
-
-#### Phase 2 Status
-- **Migrated**: 52 batch, 361 fetch calls
-- **Remaining**: ~176 fetch calls di halaman admin lainnya
-- **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
-
----
-
-### v4.3.0 — 2026-08-14 — Add-ons System + Janji Bayar + GPS Maps + Diskon + Teknisi Tracking
-
-#### Added — Layanan Add-ons (Add-on Services)
-- **Prisma models**: `addonType`, `customerAddon`, `invoiceAddon` — mendukung recurring (bulanan) & one-time (sekali bayar)
-- **API endpoints**: `GET/POST /api/addon-types`, `PUT/DELETE /api/addon-types/[id]`, `GET/POST /api/pppoe/users/[id]/addons`, `DELETE /api/customer-addons/[id]`
-- **Invoice integration**: addon recurring otomatis ditambahkan ke invoice bulanan saat cron generate
-- **Frontend admin page**: `/admin/pppoe/addons` — kelola jenis layanan tambahan (CRUD + toggle active)
-- **UserDetailModal**: tab "📦 Add-ons" — lihat addon aktif & riwayat, tambah/hentikan addon dengan price override
-
-#### Added — Janji Bayar (Promise to Pay)
-- **Prisma model**: `paymentPromise` — status `active`/`fulfilled`/`broken`
-- **API endpoints**: `GET/POST/DELETE /api/pppoe/users/[id]/promise`
-- **Behavior**: membuat janji bayar akan membuka isolir pelanggan hingga tanggal janji; membatalkan akan mengisolir kembali
-- **UserDetailModal**: tab "🤝 Janji Bayar" — buat janji bayar dengan tanggal & catatan, lihat riwayat
-
-#### Added — GPS Maps di Customer Detail
-- **Embedded OpenStreetMap iframe** di tab Info Pengguna — menampilkan lokasi GPS pelanggan
-- **Google Maps link** — tombol "Google Maps ↗" untuk buka koordinat di Google Maps
-
-#### Added — Diskon Tagihan di Customer Detail
-- **Field diskon** (`discount` & `discountNote`) sekarang bisa di-edit dari UserDetailModal tab Info
-- **Invoice generation fix**: cron `invoice-jobs.ts` sekarang mengurangi `discount` dari `baseAmount` saat generate invoice bulanan
-
-#### Added — Teknisi Pemasang Tracking
-- **Field baru**: `registeredByTechnicianId` di `pppoeUser` model (nullable, relation ke `technician`)
-- **Display**: UserDetailModal tab Info menampilkan nama teknisi yang mendaftarkan pelanggan + tanggal registrasi
-- Legacy customers tanpa teknisi menampilkan "System / Admin"
-
-#### Fixed — Invoice Generation
-- **Bug**: field `discount` di `pppoeUser` tidak digunakan saat generate invoice bulanan
-- **Fix**: `baseAmount = Math.max(0, user.profile.price - (user.discount || 0))` + tambah recurring addons
-- **Invoice addon records**: `invoiceAddon` records dibuat untuk setiap recurring addon aktif
-
----
-
-### v4.2.0 — 2026-08-13 — Redis Cache + Realtime UI Fixes + RADIUS Script IP Fix + Auth Mode Cleanup
-
-#### Added — Redis Cache untuk Data Non-Realtime
-- **Cache endpoint**: `GET /api/pppoe/profiles`, `GET /api/pppoe/areas`, `GET /api/network/routers` — TTL 5 menit
-- **Graceful degradation**: jika Redis unavailable, fallback ke database langsung
-- File: `backend/src/server/cache/redis.ts`
-
-#### Fixed — Realtime UI Fixes
-- **Online/offline status**: polling 10 detik, hanya trigger re-render jika ada perubahan status
-- **Badge "Live"** dengan indikator pulse di filter Sesi
-
-#### Fixed — RADIUS Script IP Fix
-- **Auto-generated RouterOS script** pakai **IP asli VPS** (bukan domain/Cloudflare proxy)
-- VPN-specific address selection
-
-#### Fixed — Auth Mode Cleanup
-- **`hybrid` mode obsolete** — hanya `local` (MikroTik primary) dan `radius` (FreeRADIUS primary)
-- PPP secret backup disabled saat `auth_mode='radius'`
-
----
-
-### v4.1.0 — 2026-08-13
-
-### Added — PSB Wizard 3-Step untuk Tambah Pelanggan
-- **Wizard 3-step** mengadopsi flow `home.pmynet.id` untuk tambah pelanggan baru
-- **Step 1 — Data Pelanggan**: nama, phone, NIK (16 digit), email, alamat, foto KTP (capture dari kamera HP via `capture="environment"`), GPS koordinat, MapPicker, foto instalasi, duplicate NIK & phone check
-- **Step 2 — Data Pembayaran**: paket/profile, subscription type (POSTPAID/PREPAID), billing day, discount amount + note, preview harga setelah discount, first invoice option (none/prorate/full), estimasi prorate
-- **Step 3 — Data Secret / Connection**: connection type (PPPoE/Static IP/Hotspot), PPPoE username+password, static IP, router/NAS, area, ODP, MAC address, auto-isolation, install date, comment, conditional "Buat PPP Secret di MikroTik" checkbox (muncul hanya untuk PPPoE + router `auth_mode='radius'`)
-- **Per-step validation** sebelum bisa lanjut ke step berikutnya
-- File: `frontend/src/app/admin/pppoe/users/new/page.tsx`
-
-### Added — Backend Support untuk PSB Wizard
-- `backend/src/features/pppoe/schemas.ts`: Extended `createPppoeUserSchema` dengan `odp`, `discount`, `discountNote`, `installDate`, `connectionType`
-- `backend/src/server/services/pppoe.service.ts`: Persist field baru ke database + NIK/phone duplicate check
-- `backend/src/app/api/pppoe/users/route.ts`: Validasi field baru
-
-### Added — Prisma Schema untuk PSB Wizard
-- `pppoeUser` model: tambah `odp` (varchar 100), `discount` (int default 0), `discountNote` (varchar 255), `installDate` (datetime)
-- Update: `backend/prisma/schema.prisma` + `frontend/prisma/schema.prisma`
-
-### Added — Implementasi 4 Cron Jobs yang Sebelumnya Placeholder
-Sebelumnya 4 cron jobs hanya return "not yet implemented". Sekarang sudah diimplementasi penuh:
-
-- **`hotspot_sync`** (setiap menit): Expire voucher hotspot dengan status `WAITING`/`ACTIVE` yang sudah lewat `expiresAt` → update ke `EXPIRED`
-- **`agent_sales`** (setiap 5 menit): Catat penjualan voucher agent ke `agent_sales` table dengan amount dari `hotspotProfile.sellingPrice`, skip duplicate
-- **`session_monitor`** (setiap 15 menit): Monitor sesi suspicious/stale/orphaned di `radacct`, **auto-close** orphaned (username tidak terdaftar) + stale (>30 hari)
-- **`pppoe_session_sync`** (setiap 5 menit): Sync PPP active dari MikroTik via RouterOS API, **auto-close** stale sessions (tidak di MikroTik) + orphaned sessions (username tidak di `pppoe_users`/`hotspot_vouchers`)
-- File: `backend/src/server/cron/additional-jobs.ts` (baru)
-- File: `backend/src/app/api/cron/route.ts` — switch case untuk 4 jobs baru
-
-### Fixed — Cron Jobs `{"error":"Unauthorized"}`
-- **Root cause**: `CRON_SECRET` hanya ada di PM2 env cron-runner, tidak di `backend/.env`. Backend tidak bisa verify `x-cron-secret` header → fallback session auth → Unauthorized
-- **Fix**:
-  - Tambah `CRON_SECRET` ke `backend/.env` + `backend/.next/standalone/backend/.env` di VPS
-  - `deploy/ecosystem.config.js` + `frontend/production/ecosystem.config.js`: Tambah `CRON_SECRET` ke env backend + cron
-  - `frontend/vps-install/install-app.sh`: Auto-generate `CRON_SECRET` via `openssl rand -hex 32` saat install
-
-### Fixed — Inkonsistensi Data PPPoE (Status Online vs Active Sessions)
-- **Root cause**: `radacct` punya open sessions dari sistem lama (home.pmynet.id) yang username-nya tidak terdaftar di `pppoe_users`. Halaman sessions menampilkan semua radacct open sessions → muncul 3 active padahal hanya 1 user terdaftar
-- **Fix**:
-  - Cleanup 2 orphaned sessions langsung di VPS (`sucidwilestari@sukajadi`, `oomabdulrohman@sukajadi`)
-  - `pppoe_session_sync` cron: auto-close orphaned + stale sessions setiap 5 menit
-  - `session_monitor` cron: auto-close orphaned + stale (>30 hari) sessions setiap 15 menit
-- **Verifikasi**: `radacct_open = 1`, `pppoe_active = 1`, `orphaned_open = 0` ✅
-
-### Fixed — Static Assets 404 Setelah Build
-- **Root cause**: `npx next build` standalone tidak otomatis copy `.next/static/` ke standalone directory → CSS/JS chunks 404 + MIME type error
-- **Fix**: Manual `cp -r .next/static .next/standalone/frontend/.next/static/` (updater.sh sudah handle ini, masalah hanya saat build manual)
-
-### v4.0.0 — 2026-08-13
-
-### Architecture — Two Independent Next.js Apps
-- **Migrated from NestJS backend back to Next.js** — both frontend and backend are now Next.js 16 standalone apps
-- `frontend/` (port 3000): UI pages, components, NextAuth authentication routes
-- `backend/` (port 3001): API routes, Prisma, MikroTik services, RADIUS services, cron business logic
-- `packages/shared-types/`: Shared TypeScript types between apps
-- Frontend communicates with backend over HTTP via `lib/api-client.ts`
-- Nginx routes: `/api/auth/*` → frontend (3000), `/api/*` → backend (3001), `/` → frontend (3000)
-- PM2 processes: `salfanet-frontend`, `salfanet-backend`, `salfanet-cron`, `salfanet-wa`
-- Cron runner: standalone tsx process that calls backend APIs on schedule
-- Monorepo standalone build: `scripts/postbuild.js` copies static assets to nested standalone dirs
-
-### Fixed — PPPoE Tidak Reconnect Setelah Payment dari Isolir
-- **Root cause 1**: Isolir flow mengubah MikroTik PPP secret profile ke `isolir`, tapi payment restoration hanya update RADIUS tables tanpa restore PPP secret
-- **Root cause 2**: FreeRADIUS `rest` module `connect_uri` masih ke port 3000 (frontend) — seharusnya port 3001 (backend). Setelah split, route `/api/radius/authorize` ada di backend
-- **Root cause 3**: `sqlippool` di FreeRADIUS post-auth bersifat fatal — jika gagal allocate IP, Access-Accept berubah menjadi Access-Reject
-- **Root cause 4**: Auto-renewal cron hanya update `status: 'active'` tanpa restore RADIUS/PPP secret untuk user yang sebelumnya isolated
-
-#### Fixes Applied
-- `backend/src/app/api/invoices/route.ts` (PUT): Tambah `managePppSecret` + `kickPppoeSession` + `nas_identifier` di RADIUS queries
-- `backend/src/server/cron/invoice-jobs.ts`: Auto-renewal sekarang restore RADIUS + PPP secret untuk user isolated
-- `backend/freeradius-config/mods-enabled/rest`: `connect_uri` → `http://localhost:3001` (backend)
-- `backend/freeradius-config/sites-enabled/default`: `sqlippool`, `sql`, `cuisql` di post-auth → non-fatal (`-` prefix)
-- Clear stale `radippool` entries yang expired
-
-#### Verification
-- User `muhammadluthfi@rw02`: Access-Accept dengan `Mikrotik-Group=PAKET 100MBPS`
-- IP `192.168.14.2` dari `100mbps-pool` (bukan `pool-isolir`)
-- MikroTik: ACTIVE, session tersimpan di `radacct` dengan `acctstoptime=NULL`
-
-### Added — Realtime Online/Offline Status
-- **New API endpoint**: `GET /api/pppoe/users/online-status` — lightweight endpoint yang hanya return set username online
-  - Cek `radacct` (RADIUS auth users) + `batchListPppActive` (MikroTik local auth users)
-  - Support filter `?usernames=` untuk restrict ke user yang ditampilkan saja
-- **Frontend polling**: Setiap 10 detik, update `isOnline` field tanpa reload full data
-  - Hanya trigger re-render jika ada perubahan status (cegah unnecessary renders)
-  - Badge **"Live"** dengan indikator pulse di filter Sesi
-- File: `backend/src/app/api/pppoe/users/online-status/route.ts`
-- File: `frontend/src/app/admin/pppoe/users/page.tsx` — polling effect
-
-### Updated — FreeRADIUS Configuration
-- `rest` module: `connect_uri` diupdate dari `localhost:3000` → `localhost:3001` (backend API)
-- `sites-enabled/default` post-auth: semua modules (`sql`, `sqlippool`, `cuisql`, `rest`) sekarang non-fatal
-- Comment diupdate untuk reflect 2-app architecture
-
-### Updated — Deployment Configuration
-- `deploy/ecosystem.config.js`: 4 PM2 processes (frontend, backend, cron, wa)
-- `deploy/nginx-salfanet.conf`: 2-app routing (`/api/auth/*` → 3000, `/api/*` → 3001, `/` → 3000)
-- `frontend/production/ecosystem.config.js`: Updated untuk 2-app architecture
-- `frontend/production/nginx-salfanet-radius.conf`: Updated untuk 2-app routing
-
-### Updated — Installer/Updater/Uninstaller
-- `frontend/vps-install/install-pm2.sh`: Build dan setup 2 Next.js apps terpisah
-- `frontend/vps-install/updater.sh`: Build dan restart 2 apps + cron
-- `frontend/vps-install/vps-uninstaller.sh`: Hapus 4 PM2 processes (frontend, backend, cron, wa)
-- `frontend/vps-install/install-app.sh`: Install dependencies untuk frontend + backend
-- `frontend/vps-install/install-nginx.sh`: 2-app routing + nested static paths
-- `frontend/vps-install/vps-installer.sh`: Path `frontend/vps-install/`, 4 PM2 status
-
-### v3.2.0 — 2026-08-12
-
-### FreeRADIUS Server Configuration (Stage 1 — Verified on VPS)
-- Enabled `sqlippool` module (SQL-backed IP pool, not file-based `rlm_ippool`)
-- Enabled `cui` module with MySQL backend (`cuisql`)
-- Imported stored procedure `fr_allocate_previous_or_new_framedipaddress`
-- Configured `queries.conf` to use stored procedure for atomic IP allocation
-- Added `sqlippool` + `cuisql` to `sites-enabled/default` post-auth section
-- Added `sqlippool` to accounting section for lease release on STOP/ON/OFF
-- Fixed `Pool-Name` attribute: moved from `radgroupreply` to `radgroupcheck`
-- Verified with `radtest`: Access-Accept + `Framed-IP-Address` from pool
-- Verified CUI table populated on auth
-- FreeRADIUS config validation: `freeradius -XC` exit 0
-
-### Admin UI (Stage 2)
-- New page: `/admin/ippool` — IP Pool Management
-- New page: `/admin/data-usage` — Data Usage Reports
-- Added sidebar menu entries under FreeRADIUS group: IP Pool, Data Usage
-
-### v2.34.9 — 2026-08-11
-
-### Fixed
-- **Admin sidebar "Log Aktivitas" menu returned 404** — Created `src/app/admin/logs/activity/page.tsx` and fixed `.gitignore` overly-broad `logs/` rule.
-
-### v2.34.5 — 2026-08-11
-
-### Removed
-- **Go backend cleanup — full revert to pure Next.js** — Menghapus seluruh sisa eksperimen migrasi backend ke Go.
 
 <!-- AUTO-CHANGELOG:END -->
 
