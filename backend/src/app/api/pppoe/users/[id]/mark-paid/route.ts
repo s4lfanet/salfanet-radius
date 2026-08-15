@@ -148,15 +148,15 @@ export async function POST(
     if (userRecord.profile) {
       const nasIdentifier = userRecord.router?.id || null;
       try {
-        // Remove any old rejection/suspension markers
+        // Remove any old rejection/suspension markers — scoped by nas_identifier
         await prisma.radcheck.deleteMany({
-          where: { username: userRecord.username, attribute: 'Auth-Type' },
+          where: { username: userRecord.username, attribute: 'Auth-Type', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
         });
         await prisma.radcheck.deleteMany({
-          where: { username: userRecord.username, attribute: 'NAS-IP-Address' },
+          where: { username: userRecord.username, attribute: 'NAS-IP-Address', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
         });
         await prisma.radreply.deleteMany({
-          where: { username: userRecord.username, attribute: 'Reply-Message' },
+          where: { username: userRecord.username, attribute: 'Reply-Message', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
         });
 
         // Ensure password exists in radcheck — with nas_identifier
@@ -166,18 +166,18 @@ export async function POST(
           ON DUPLICATE KEY UPDATE value = ${userRecord.password}
         `;
 
-        // Restore original subscription group — delete by username, insert with nas_identifier
+        // Restore original subscription group — scoped by nas_identifier
         await prisma.$executeRaw`
-          DELETE FROM radusergroup WHERE username = ${userRecord.username}
+          DELETE FROM radusergroup WHERE username = ${userRecord.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         await prisma.$executeRaw`
           INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
           VALUES (${userRecord.username}, ${userRecord.profile.groupName}, 1, ${nasIdentifier})
         `;
 
-        // Restore static IP — delete by username+attribute, insert with nas_identifier
+        // Restore static IP — scoped by nas_identifier
         await prisma.$executeRaw`
-          DELETE FROM radreply WHERE username = ${userRecord.username} AND attribute = 'Framed-IP-Address'
+          DELETE FROM radreply WHERE username = ${userRecord.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
         if (userRecord.ipAddress) {
           await prisma.$executeRaw`
