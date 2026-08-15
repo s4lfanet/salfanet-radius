@@ -7,6 +7,7 @@ import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 interface InternetPackage {
   id: string;
@@ -69,10 +70,7 @@ export default function UpgradePackagePage() {
 
     try {
       // Load current user info
-      const userRes = await fetch('/api/customer/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const userData = await userRes.json();
+      const userData = await apiCustomer<{ success: boolean; user: { expiredAt: string; profile?: { name: string; downloadSpeed: number; uploadSpeed: number; price?: number } } }>('/api/customer/me');
       if (userData.success && userData.user) {
         setCurrentPackage({
           name: userData.user.profile?.name || 'Unknown',
@@ -119,26 +117,20 @@ export default function UpgradePackagePage() {
 
     setUpgrading(true);
     setError('');
-    const token = localStorage.getItem('customer_token');
 
     try {
-      const res = await fetch('/api/customer/upgrade', {
+      const data = await apiCustomer<{ success: boolean; error?: string; invoiceNumber?: string; amount?: number; paymentUrl?: string }>('/api/customer/upgrade', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({
           newProfileId: selectedPackage,
           gateway: selectedGateway
         })
       });
-      const data = await res.json();
 
       if (data.success) {
         // Show success toast and redirect
         showSuccess(
-          `${t('customer.invoiceNo')}: ${data.invoiceNumber} — ${t('customer.total')}: ${formatCurrency(data.amount)}`,
+          `${t('customer.invoiceNo')}: ${data.invoiceNumber} — ${t('customer.total')}: ${formatCurrency(data.amount || 0)}`,
           t('customer.invoiceCreated')
         );
 
@@ -152,7 +144,8 @@ export default function UpgradePackagePage() {
         setError(data.error || 'Gagal membuat invoice upgrade');
       }
     } catch (error) {
-      setError('Gagal menghubungi server');
+      if (error instanceof ApiError) setError(error.message);
+      else setError('Gagal menghubungi server');
     } finally {
       setUpgrading(false);
     }
@@ -167,18 +160,12 @@ export default function UpgradePackagePage() {
 
     setUpgrading(true);
     setError('');
-    const token = localStorage.getItem('customer_token');
 
     try {
-      const res = await fetch('/api/customer/upgrade-package', {
+      const data = await apiCustomer<{ success: boolean; error?: string; invoice?: { invoiceNumber: string; amount: number } }>('/api/customer/upgrade-package', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ packageId: selectedPackage })
       });
-      const data = await res.json();
 
       if (data.success) {
         showSuccess(
@@ -190,7 +177,8 @@ export default function UpgradePackagePage() {
         setError(data.error || 'Gagal membuat invoice');
       }
     } catch (error) {
-      setError('Gagal menghubungi server');
+      if (error instanceof ApiError) setError(error.message);
+      else setError('Gagal menghubungi server');
     } finally {
       setUpgrading(false);
     }

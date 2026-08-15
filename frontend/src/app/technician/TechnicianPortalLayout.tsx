@@ -27,7 +27,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { onUnauthorized } from '@/lib/api/client';
+import { onUnauthorized, apiAdmin } from '@/lib/api/client';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
@@ -275,9 +275,7 @@ function NotificationBell() {
 
   const loadTickets = async () => {
     try {
-      const res = await fetch('/api/technician/tickets?status=OPEN');
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await apiAdmin<{ tickets?: Array<{ id: string; ticketNumber: string; subject: string; customerName: string; description: string; createdAt: string; status: string }> }>('/api/technician/tickets?status=OPEN');
       const items = (data.tickets || []).map((t: { id: string; ticketNumber: string; subject: string; customerName: string; description: string; createdAt: string; status: string }) => ({
         id: t.id,
         title: `#${t.ticketNumber} — ${t.subject}`,
@@ -592,14 +590,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    fetch('/api/technician/auth/session')
-      .then((res) => {
-        if (!res.ok) {
-          router.replace('/technician/login');
-          return null;
-        }
-        return res.json();
-      })
+    apiAdmin<{ technician?: TechnicianData }>('/api/technician/auth/session')
       .then((data) => {
         if (data?.technician) setTech(data.technician);
         setLoading(false);
@@ -611,7 +602,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/technician/auth/logout', { method: 'POST' });
+      await apiAdmin('/api/technician/auth/logout', { method: 'POST' });
     } catch {
       // ignore
     }

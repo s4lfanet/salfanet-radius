@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { showSuccess, showError } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 import {
   GitFork, Save, RefreshCcw, AlertCircle, Check, Cable
 } from 'lucide-react';
@@ -128,20 +129,14 @@ export default function SplitterSection({
         ? `/api/network/odcs/${deviceId}` 
         : `/api/network/odps/${deviceId}`;
 
-      const res = await fetch(endpoint, {
+      await apiAdmin(endpoint, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           splitterConfig: config,
           splitterRatio: config.ratio,
           splitterType: config.splitterType,
         }),
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Gagal menyimpan');
-      }
 
       showSuccess('Konfigurasi splitter berhasil disimpan');
       setIsEditMode(false);

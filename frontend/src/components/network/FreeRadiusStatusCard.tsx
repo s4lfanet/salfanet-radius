@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { RefreshCw, Radio } from 'lucide-react';
+import { apiAdmin } from '@/lib/api';
 
 interface RadiusStatus {
   status: 'running' | 'stopped';
@@ -20,8 +21,7 @@ export default function FreeRadiusStatusCard({ className = '' }: Props) {
   const fetchStatus = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     try {
-      const res = await fetch('/api/system/radius');
-      const json = await res.json();
+      const json = await apiAdmin<RadiusStatus>('/api/system/radius');
       setData(json);
     } catch {
       setData(null);

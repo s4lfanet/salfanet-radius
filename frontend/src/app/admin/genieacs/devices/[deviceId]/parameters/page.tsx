@@ -22,6 +22,7 @@ import {
   EyeOff,
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface FlatParameter {
   path: string;
@@ -114,10 +115,7 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(`/api/genieacs/devices/${encodedId}/all-parameters`, window.location.origin);
-      const res = await fetch(url.toString());
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+      const json = await apiAdmin<{ data?: FlatParameter[]; error?: string }>(`/api/genieacs/devices/${encodedId}/all-parameters`);
       setParameters(Array.isArray(json.data) ? json.data : []);
     } catch (e) {
       setError((e as Error).message);
@@ -217,13 +215,10 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
     try {
       const endpoint = modal.target === 'vp' ? '/api/genieacs/virtual-parameters' : '/api/genieacs/provisions';
       const body = { _id: modal.name.trim(), script: modal.script };
-      const res = await fetch(endpoint, {
+      await apiAdmin(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? 'Save failed');
       addToast({ type: 'success', title: 'Saved', description: `${modal.target === 'vp' ? 'Virtual parameter' : 'Provision'} "${modal.name}" saved`, duration: 3000 });
       setModal((m) => ({ ...m, open: false }));
     } catch (e) {

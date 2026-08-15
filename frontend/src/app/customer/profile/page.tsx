@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 interface CustomerData {
   id: string;
@@ -63,23 +64,12 @@ export default function CustomerProfilePage() {
 
   const fetchCustomerProfile = async (token: string) => {
     try {
-      const response = await fetch('/api/customer/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const data = await apiCustomer<{ success: boolean; user: {
+        id: string; username: string; name: string; email: string | null; phone: string | null;
+        status: string; customerId?: string | null; expiredAt: string | null;
+        profile?: { id: string; name: string; downloadSpeed: string; uploadSpeed: string };
+      } }>('/api/customer/me');
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          localStorage.removeItem('customer_token');
-          localStorage.removeItem('customer_user');
-          router.push('/customer/login');
-          return;
-        }
-        throw new Error('Failed to fetch profile');
-      }
-
-      const data = await response.json();
       if (data.success && data.user) {
         const user = data.user;
         const c = {
@@ -101,6 +91,12 @@ export default function CustomerProfilePage() {
         setEditEmail(user.email || '');
       }
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        localStorage.removeItem('customer_token');
+        localStorage.removeItem('customer_user');
+        router.push('/customer/login');
+        return;
+      }
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
@@ -130,12 +126,10 @@ export default function CustomerProfilePage() {
     }
     setSaving(true);
     try {
-      const res = await fetch('/api/customer/profile', {
+      const data = await apiCustomer<{ success: boolean; message?: string; error?: string; user: { name: string; phone: string | null; email: string | null } }>('/api/customer/profile', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name: editName.trim(), phone: editPhone.trim() || null, email: editEmail.trim() || null }),
       });
-      const data = await res.json();
       if (!data.success) {
         toast('error', 'Gagal menyimpan', data.message || data.error || 'Terjadi kesalahan');
         return;
@@ -144,8 +138,12 @@ export default function CustomerProfilePage() {
       setCustomer(prev => prev ? { ...prev, name: u.name, phone: u.phone, email: u.email } : prev);
       setEditing(false);
       toast('success', 'Profil diperbarui', 'Data berhasil disimpan');
-    } catch {
-      toast('error', 'Error', 'Terjadi kesalahan saat menyimpan');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast('error', 'Gagal menyimpan', error.message);
+      } else {
+        toast('error', 'Error', 'Terjadi kesalahan saat menyimpan');
+      }
     } finally {
       setSaving(false);
     }

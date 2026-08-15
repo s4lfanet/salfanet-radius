@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Loader2, MapPin, ChevronLeft, Server, Search, Box, GitBranch, Database, Wifi, Trash2 } from 'lucide-react';
 import { showSuccess, showError, showInfo } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 
 export type AddNodeType = 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'OLT';
 
@@ -568,12 +569,11 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
   const [loadingDetail, setLoadingDetail] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/network/otbs/${otbId}`)
-      .then(r => r.json())
+    apiAdmin<Record<string, unknown>>(`/api/network/otbs/${otbId}`)
       .then(d => {
-        setExisting(d.outputSegments ?? []);
+        setExisting((d.outputSegments as SegmentOption[]) ?? []);
 
-        const feeders: FeederAssignment[] = d.feederCableAssignments ?? [];
+        const feeders: FeederAssignment[] = (d.feederCableAssignments as FeederAssignment[]) ?? [];
         if (feeders.length > 0) {
           // Multiple feeder cables — group tubes per cable
           const groups = feeders.map((f: FeederAssignment) => ({
@@ -585,11 +585,12 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
           setFeederGroups(groups);
         } else if (d.incomingCable) {
           // Fallback: single incomingCable
+          const ic = d.incomingCable as { name?: string; totalCores?: number; tubes?: TubeOption[] };
           setFeederGroups([{
-            cableName: d.incomingCable.name,
+            cableName: ic.name ?? '-',
             portFrom: 1,
-            portTo: d.incomingCable.totalCores ?? d.incomingCable.tubes?.reduce((s: number, t: TubeOption) => s + (t.cores?.length ?? 0), 0) ?? 0,
-            tubes: d.incomingCable.tubes ?? [],
+            portTo: ic.totalCores ?? ic.tubes?.reduce((s: number, t: TubeOption) => s + (t.cores?.length ?? 0), 0) ?? 0,
+            tubes: ic.tubes ?? [],
           }]);
         }
       })
@@ -609,13 +610,10 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
     if (!jcId) return;
     setSaving(tubeKey);
     try {
-      const res = await fetch(`/api/network/otbs/${otbId}/segments`, {
+      const data = await apiAdmin<Record<string, unknown>>(`/api/network/otbs/${otbId}/segments`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tubeNumber: tubeNum, jcId }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal');
       const jcObj = jcs.find(j => j.id === jcId);
       setExisting(prev => [...prev.filter(s => s.fromPort !== tubeNum), { ...data, fromPort: tubeNum, toDevice: jcObj ?? { name: jcId } }]);
       setPendingJC(prev => { const n = { ...prev }; delete n[tubeKey]; return n; });
@@ -719,23 +717,20 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
   const [jcs, setJcs] = useState<EntityOption[]>([]);
 
   useEffect(() => {
-    fetch('/api/network/olts').then(r => r.json()).then(d => setOlts(d.data || [])).catch(() => {});
-    fetch('/api/network/odcs').then(r => r.json()).then(d => setOdcs(d.odcs || [])).catch(() => {});
-    fetch('/api/network/cables?limit=100').then(r => r.json()).then(d => setCables(d.cables || [])).catch(() => {});
-    fetch('/api/network/otbs?limit=100').then(r => r.json()).then(d => setOtbs(d.otbs || [])).catch(() => {});
-    fetch('/api/network/joint-closures').then(r => r.json()).then(d => setJcs(d.data || [])).catch(() => {});
+    apiAdmin<{ data?: OltOption[] }>('/api/network/olts').then(d => setOlts(d.data || [])).catch(() => {});
+    apiAdmin<{ odcs?: EntityOption[] }>('/api/network/odcs').then(d => setOdcs(d.odcs || [])).catch(() => {});
+    apiAdmin<{ cables?: CableOption[] }>('/api/network/cables?limit=100').then(d => setCables(d.cables || [])).catch(() => {});
+    apiAdmin<{ otbs?: EntityOption[] }>('/api/network/otbs?limit=100').then(d => setOtbs(d.otbs || [])).catch(() => {});
+    apiAdmin<{ data?: EntityOption[] }>('/api/network/joint-closures').then(d => setJcs(d.data || [])).catch(() => {});
   }, []);
 
   const handlePlaceOlt = async (olt: OltOption) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/network/olts', {
+      await apiAdmin('/api/network/olts', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id: olt.id, latitude: lat, longitude: lng }),
       });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Gagal menempatkan OLT');
       showSuccess(`OLT "${olt.name}" ditempatkan`);
       onCreated({ ...olt, latitude: lat, longitude: lng, type: 'OLT' });
       onClose();
@@ -753,16 +748,13 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
       // Strip UI-only fields before sending to API
       const { outputRows, feederCables, ...apiBody } = formData;
 
-      const res = await fetch(getApiUrl(selectedType), {
+      const data = await apiAdmin<Record<string, unknown>>(getApiUrl(selectedType), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(apiBody),
       });
-      const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || 'Gagal membuat node');
 
       // JC returns { success, data: jc }, OTB returns the object directly
-      const node = data.data || data.otb || data.jc || data.odc || data.odp || data.olt || data;
+      const node = (data.data || data.otb || data.jc || data.odc || data.odp || data.olt || data) as CreatedNode;
       onCreated({ ...node, type: selectedType });
 
       // For OTB: save each feeder cable as an IN segment with port range
@@ -770,9 +762,8 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
         const validFeeders = feederCables.filter((f: FeederCableRow) => f.cableId);
         if (validFeeders.length > 0) {
           await Promise.allSettled(validFeeders.map((f: FeederCableRow) =>
-            fetch(`/api/network/otbs/${node.id}/feeder-cables`, {
+            apiAdmin(`/api/network/otbs/${node.id}/feeder-cables`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 cableId: f.cableId,
                 portFrom: f.portFrom,

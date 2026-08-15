@@ -2,6 +2,7 @@
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAgent, ApiError } from '@/lib/api';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -184,33 +185,36 @@ export default function AgentDashboardPage() {
       if (profileId) params.append('profileId', profileId);
       if (search) params.append('search', search);
 
-      const res = await fetch(`/api/agent/dashboard?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const data = await apiAgent<{
+        agent: AgentData;
+        stats: typeof stats;
+        profiles: Profile[];
+        vouchers: Voucher[];
+        deposits: Deposit[];
+        paymentGateways: { provider: string; name: string }[];
+        pagination: typeof pagination;
+      }>(`/api/agent/dashboard?${params.toString()}`);
 
-      if (res.ok) {
-        setAgent(data.agent);
-        setStats(data.stats || {
-          currentMonth: { total: 0, count: 0, income: 0 },
-          allTime: { total: 0, count: 0, income: 0 },
-          today: { total: 0, count: 0, income: 0 },
-          generated: 0,
-          waiting: 0,
-          sold: 0,
-          used: 0,
-        });
-        setProfiles(data.profiles || []);
-        setVouchers(data.vouchers || []);
-        setDeposits(data.deposits || []);
-        setPaymentGateways(data.paymentGateways || []);
-        setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
-        if (data.paymentGateways && data.paymentGateways.length > 0) {
-          setDepositGateway(data.paymentGateways[0].provider);
-        }
-        if (data.profiles && data.profiles.length > 0 && !selectedProfile) {
-          setSelectedProfile(data.profiles[0].id);
-        }
+      setAgent(data.agent);
+      setStats(data.stats || {
+        currentMonth: { total: 0, count: 0, income: 0 },
+        allTime: { total: 0, count: 0, income: 0 },
+        today: { total: 0, count: 0, income: 0 },
+        generated: 0,
+        waiting: 0,
+        sold: 0,
+        used: 0,
+      });
+      setProfiles(data.profiles || []);
+      setVouchers(data.vouchers || []);
+      setDeposits(data.deposits || []);
+      setPaymentGateways(data.paymentGateways || []);
+      setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
+      if (data.paymentGateways && data.paymentGateways.length > 0) {
+        setDepositGateway(data.paymentGateways[0].provider);
+      }
+      if (data.profiles && data.profiles.length > 0 && !selectedProfile) {
+        setSelectedProfile(data.profiles[0].id);
       }
     } catch (error) {
       console.error('Load dashboard error:', error);
@@ -284,16 +288,13 @@ export default function AgentDashboardPage() {
         };
       });
 
-      const res = await fetch('/api/hotspot/voucher/send-whatsapp', {
+      const data = await apiAgent<{ success: boolean; error?: string }>('/api/hotspot/voucher/send-whatsapp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: whatsappPhone,
           vouchers: vouchersData
         })
       });
-
-      const data = await res.json();
 
       if (data.success) {
         await showSuccess(t('agent.portal.whatsappSentSuccess', { phone: whatsappPhone }));
@@ -351,10 +352,11 @@ export default function AgentDashboardPage() {
 
     setGenerating(true);
     try {
-      const token = localStorage.getItem('agentToken');
-      const res = await fetch('/api/agent/generate-voucher', {
+      const data = await apiAgent<{
+        vouchers: Voucher[];
+        newBalance?: number;
+      }>('/api/agent/generate-voucher', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           agentId: agent.id,
           profileId: selectedProfile,
@@ -365,41 +367,38 @@ export default function AgentDashboardPage() {
         }),
       });
 
-      const data = await res.json();
-
-      if (res.ok) {
-        setGeneratedVouchers(data.vouchers);
-        setShowVouchersModal(true);
-        if (data.newBalance !== undefined && agent) {
-          setAgent({ ...agent, balance: data.newBalance });
-        }
-        loadDashboard();
-        await showSuccess(t('agent.portal.vouchersGeneratedSuccess', {
-          count: data.vouchers.length.toString(),
-          balance: formatCurrency(data.newBalance || 0)
-        }));
-      } else {
-        if (data.error === 'Insufficient balance') {
-          const deficit = data.deficit || 0;
-          const result = await showConfirm(
-            t('agent.portal.insufficientBalanceMessage', {
-              current: formatCurrency(data.current || 0),
-              required: formatCurrency(data.required || 0),
-              deficit: formatCurrency(deficit)
-            }),
-            t('agent.portal.insufficientBalanceTitle')
-          );
-          if (result) {
-            setShowDepositModal(true);
-            setDepositAmount(Math.ceil(deficit / 10000) * 10000 + '');
-          }
-        } else {
-          await showError(t('common.error') + ': ' + data.error);
-        }
+      setGeneratedVouchers(data.vouchers);
+      setShowVouchersModal(true);
+      if (data.newBalance !== undefined && agent) {
+        setAgent({ ...agent, balance: data.newBalance });
       }
+      loadDashboard();
+      await showSuccess(t('agent.portal.vouchersGeneratedSuccess', {
+        count: data.vouchers.length.toString(),
+        balance: formatCurrency(data.newBalance || 0)
+      }));
     } catch (error) {
-      console.error('Generate error:', error);
-      await showError(t('agent.portal.voucherGenerateError'));
+      if (error instanceof ApiError && error.message === 'Insufficient balance') {
+        const body = error.body as { deficit?: number; current?: number; required?: number } | undefined;
+        const deficit = body?.deficit || 0;
+        const result = await showConfirm(
+          t('agent.portal.insufficientBalanceMessage', {
+            current: formatCurrency(body?.current || 0),
+            required: formatCurrency(body?.required || 0),
+            deficit: formatCurrency(deficit)
+          }),
+          t('agent.portal.insufficientBalanceTitle')
+        );
+        if (result) {
+          setShowDepositModal(true);
+          setDepositAmount(Math.ceil(deficit / 10000) * 10000 + '');
+        }
+      } else if (error instanceof ApiError) {
+        await showError(t('common.error') + ': ' + error.message);
+      } else {
+        console.error('Generate error:', error);
+        await showError(t('agent.portal.voucherGenerateError'));
+      }
     } finally {
       setGenerating(false);
     }
@@ -413,11 +412,13 @@ export default function AgentDashboardPage() {
     }
     setLoadingMethods(true);
     try {
-      const res = await fetch(`/api/agent/deposit/payment-methods?gateway=${gateway}&amount=${amount}`);
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await apiAgent<{
+        success: boolean;
+        methods?: { code: string; name: string; totalFee?: number; iconUrl?: string }[];
+      }>(`/api/agent/deposit/payment-methods?gateway=${gateway}&amount=${amount}`);
+      if (data.success) {
         setPaymentMethods(data.methods || []);
-        if (data.methods?.length > 0) {
+        if (data.methods && data.methods.length > 0) {
           setDepositPaymentMethod(data.methods[0].code);
         }
       } else {
@@ -451,10 +452,12 @@ export default function AgentDashboardPage() {
 
     setCreatingDeposit(true);
     try {
-      const token = localStorage.getItem('agentToken');
-      const res = await fetch('/api/agent/deposit/create', {
+      const data = await apiAgent<{
+        success: boolean;
+        error?: string;
+        deposit: { paymentUrl?: string };
+      }>('/api/agent/deposit/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           agentId: agent.id,
           amount,
@@ -463,9 +466,7 @@ export default function AgentDashboardPage() {
         }),
       });
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
+      if (data.success) {
         if (data.deposit.paymentUrl) {
           window.open(data.deposit.paymentUrl, '_blank');
           await showSuccess(t('agent.portal.paymentLinkOpened'));
@@ -479,8 +480,12 @@ export default function AgentDashboardPage() {
         await showError(t('common.error') + ': ' + data.error);
       }
     } catch (error) {
-      console.error('Create deposit error:', error);
-      await showError(t('agent.portal.depositCreateError'));
+      if (error instanceof ApiError) {
+        await showError(t('common.error') + ': ' + error.message);
+      } else {
+        console.error('Create deposit error:', error);
+        await showError(t('agent.portal.depositCreateError'));
+      }
     } finally {
       setCreatingDeposit(false);
     }
@@ -517,35 +522,37 @@ export default function AgentDashboardPage() {
       setUploadingProof(true);
       const uploadForm = new FormData();
       uploadForm.append('file', proofFile);
-      const uploadRes = await fetch('/api/upload/payment-proof', {
+      const uploadData = await apiAgent<{
+        success: boolean;
+        url?: string;
+        error?: string;
+      }>('/api/upload/payment-proof', {
         method: 'POST',
         body: uploadForm,
       });
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok || !uploadData.success || !uploadData.url) {
+      if (!uploadData.success || !uploadData.url) {
         throw new Error(uploadData.error || 'Gagal upload bukti transfer');
       }
       setUploadingProof(false);
 
-      const token = localStorage.getItem('agentToken');
-      const res = await fetch('/api/agent/deposit/manual-request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          agentId: agent.id,
-          amount,
-          targetBankName,
-          targetBankAccountNumber,
-          targetBankAccountName,
-          senderAccountName: senderAccountName.trim(),
-          senderAccountNumber: senderAccountNumber.trim() || undefined,
-          receiptImage: uploadData.url,
-          note: manualDepositNote || undefined,
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
+      const data = await apiAgent<{ success: boolean; error?: string }>(
+        '/api/agent/deposit/manual-request',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            agentId: agent.id,
+            amount,
+            targetBankName,
+            targetBankAccountNumber,
+            targetBankAccountName,
+            senderAccountName: senderAccountName.trim(),
+            senderAccountNumber: senderAccountNumber.trim() || undefined,
+            receiptImage: uploadData.url,
+            note: manualDepositNote || undefined,
+          }),
+        },
+      );
+      if (!data.success) {
         throw new Error(data.error || 'Gagal membuat permintaan deposit manual');
       }
 

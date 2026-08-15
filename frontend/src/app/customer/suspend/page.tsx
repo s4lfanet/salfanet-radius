@@ -7,6 +7,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { showConfirm } from '@/lib/sweetalert';
 import { PauseCircle, CheckCircle2, XCircle, Clock, AlertCircle, Loader2, Calendar } from 'lucide-react';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 interface SuspendRequest {
   id: string;
@@ -49,10 +50,7 @@ export default function CustomerSuspendPage() {
   const fetchCurrent = async (tkn: string) => {
     setLoading(true);
     try {
-      const res = await fetch('/api/customer/suspend-request', {
-        headers: { Authorization: `Bearer ${tkn}` },
-      });
-      const data = await res.json();
+      const data = await apiCustomer<{ data?: SuspendRequest | null }>('/api/customer/suspend-request');
       setCurrent(data.data || null);
     } catch { /* ignore */ }
     finally { setLoading(false); }
@@ -81,17 +79,17 @@ export default function CustomerSuspendPage() {
     setSubmitting(true);
     setMsg(null);
     try {
-      const res = await fetch('/api/customer/suspend-request', {
+      const data = await apiCustomer<{ message?: string }>('/api/customer/suspend-request', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (!res.ok) { setMsg({ type: 'error', text: data.message || 'Gagal mengirim permintaan' }); return; }
       setMsg({ type: 'success', text: 'Permintaan suspend berhasil dikirim! Menunggu persetujuan admin.' });
       setForm({ reason: '', startDate: '', endDate: '' });
       await fetchCurrent(token);
-    } catch { setMsg({ type: 'error', text: 'Terjadi kesalahan jaringan' }); }
+    } catch (error) {
+      if (error instanceof ApiError) setMsg({ type: 'error', text: error.message || 'Gagal mengirim permintaan' });
+      else setMsg({ type: 'error', text: 'Terjadi kesalahan jaringan' });
+    }
     finally { setSubmitting(false); }
   };
 
@@ -101,15 +99,15 @@ export default function CustomerSuspendPage() {
     setCancelling(true);
     setMsg(null);
     try {
-      const res = await fetch(`/api/customer/suspend-request?id=${current.id}`, {
+      await apiCustomer(`/api/customer/suspend-request?id=${current.id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      if (!res.ok) { setMsg({ type: 'error', text: data.message || 'Gagal membatalkan' }); return; }
       setMsg({ type: 'success', text: 'Permintaan suspend berhasil dibatalkan.' });
       setCurrent(null);
-    } catch { setMsg({ type: 'error', text: 'Terjadi kesalahan jaringan' }); }
+    } catch (error) {
+      if (error instanceof ApiError) setMsg({ type: 'error', text: error.message || 'Gagal membatalkan' });
+      else setMsg({ type: 'error', text: 'Terjadi kesalahan jaringan' });
+    }
     finally { setCancelling(false); }
   };
 

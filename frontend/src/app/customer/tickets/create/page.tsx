@@ -8,6 +8,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { ArrowLeft, Send, CheckCircle, MapPin, Navigation } from 'lucide-react';
 import { CyberCard } from '@/components/cyberpunk/CyberCard';
 import { CyberButton } from '@/components/cyberpunk/CyberButton';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 interface Category {
   id: string;
@@ -67,14 +68,8 @@ export default function CreateTicketPage() {
 
   const fetchCategories = async () => {
     try {
-      const token = localStorage.getItem('customer_token');
-      const res = await fetch('/api/tickets/categories?isActive=true', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data);
-      }
+      const data = await apiCustomer<Category[]>('/api/tickets/categories?isActive=true');
+      setCategories(data);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     }
@@ -162,9 +157,8 @@ export default function CreateTicketPage() {
         }
       }
 
-      const res = await fetch('/api/tickets', {
+      const data = await apiCustomer<{ id: string; ticketNumber: string; error?: string }>('/api/tickets', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
           description: finalDescription,
@@ -172,20 +166,15 @@ export default function CreateTicketPage() {
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setTicketNumber(data.ticketNumber);
-        setSuccess(true);
-        setTimeout(() => {
-          router.push(`/customer/tickets/${data.id}`);
-        }, 3000);
-      } else {
-        const error = await res.json();
-        toastError(error.error || t('ticket.createFailed'));
-      }
+      setTicketNumber(data.ticketNumber);
+      setSuccess(true);
+      setTimeout(() => {
+        router.push(`/customer/tickets/${data.id}`);
+      }, 3000);
     } catch (error) {
       console.error('Failed to create ticket:', error);
-      toastError(t('ticket.createFailed'));
+      if (error instanceof ApiError) toastError(error.message || t('ticket.createFailed'));
+      else toastError(t('ticket.createFailed'));
     } finally {
       setLoading(false);
     }

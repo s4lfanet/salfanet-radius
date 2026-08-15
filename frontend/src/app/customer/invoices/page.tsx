@@ -11,6 +11,7 @@ import { CyberCard, CyberButton, SimpleModal, ModalHeader, ModalTitle, ModalDesc
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,10 +106,8 @@ export default function CustomerInvoicesPage() {
       const params = new URLSearchParams({ page: String(page), limit: '10' });
       if (filter !== 'all') params.set('status', filter);
 
-      const res = await fetch(`/api/customer/invoices?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; error?: string; data: { invoices: Invoice[]; pagination: Pagination } }>(`/api/customer/invoices?${params}`);
+
       if (!data.success) {
         if (!silent) toast('error', 'Gagal', data.error || 'Gagal memuat tagihan');
         return;
@@ -176,20 +175,18 @@ export default function CustomerInvoicesPage() {
     if (inv.paymentLink && !inv.paymentLink.includes('localhost')) { window.open(inv.paymentLink, '_blank'); return; }
     setPaying(inv.id);
     try {
-      const token = localStorage.getItem('customer_token');
-      const res = await fetch('/api/customer/invoice/regenerate-payment', {
+      const data = await apiCustomer<{ paymentUrl?: string; paymentLink?: string; payment_url?: string; error?: string }>('/api/customer/invoice/regenerate-payment', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ invoiceId: inv.id }),
       });
-      const data = await res.json();
       if (data.paymentUrl || data.paymentLink || data.payment_url) {
         window.open(data.paymentUrl || data.paymentLink || data.payment_url, '_blank');
       } else {
         toast('error', 'Gagal', data.error || 'Gagal membuat link pembayaran');
       }
-    } catch {
-      toast('error', 'Error', 'Terjadi kesalahan');
+    } catch (error) {
+      if (error instanceof ApiError) toast('error', 'Gagal', error.message);
+      else toast('error', 'Error', 'Terjadi kesalahan');
     } finally {
       setPaying(null);
     }
@@ -208,12 +205,10 @@ export default function CustomerInvoicesPage() {
       if (manualForm.notes.trim()) body.append('notes', manualForm.notes.trim());
       if (manualForm.file) body.append('file', manualForm.file);
 
-      const res = await fetch(`/api/customer/invoices/${manualPayModal.id}/manual-payment`, {
+      const data = await apiCustomer<{ success: boolean; error?: string }>(`/api/customer/invoices/${manualPayModal.id}/manual-payment`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body,
       });
-      const data = await res.json();
       if (data.success) {
         toast('success', 'Bukti Transfer Terkirim', 'Admin akan mengkonfirmasi pembayaran Anda dalam 1×24 jam');
         setManualPayModal(null);
@@ -223,8 +218,9 @@ export default function CustomerInvoicesPage() {
       } else {
         toast('error', 'Gagal', data.error || 'Gagal mengirim bukti transfer');
       }
-    } catch {
-      toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
+    } catch (error) {
+      if (error instanceof ApiError) toast('error', 'Gagal', error.message);
+      else toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setSubmittingManual(false);
     }

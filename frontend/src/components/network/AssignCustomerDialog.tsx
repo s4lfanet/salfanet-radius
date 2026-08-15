@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Search, Wifi, MapPin, Users } from 'lucide-react';
+import { apiAdmin, ApiError } from '@/lib/api';
 
 interface Customer {
   id: string;
@@ -70,13 +71,11 @@ export default function AssignCustomerDialog({
     try {
       setLoading(true);
       // Get all customers
-      const customersRes = await fetch('/api/pppoe/users');
-      const customersData = await customersRes.json();
+      const customersData = await apiAdmin<{ users?: Customer[] }>('/api/pppoe/users');
       const allCustomers = customersData.users || [];
 
       // Get all assignments
-      const assignmentsRes = await fetch('/api/network/customers/assign');
-      const assignments = await assignmentsRes.json();
+      const assignments = await apiAdmin<{ customerId: string }[]>('/api/network/customers/assign');
 
       // Filter out assigned customers and those without GPS
       const assignedCustomerIds = assignments.map((a: { customerId: string }) => a.customerId);
@@ -99,13 +98,9 @@ export default function AssignCustomerDialog({
   const fetchNearestODPs = async (customerId: string) => {
     try {
       setLoadingODPs(true);
-      const res = await fetch(
+      const odps = await apiAdmin<ODP[]>(
         `/api/network/customers/assign?customerId=${customerId}`
       );
-      if (!res.ok) {
-        throw new Error('Failed to fetch ODPs');
-      }
-      const odps = await res.json();
       setNearestODPs(odps);
     } catch (err) {
       console.error('Error fetching ODPs:', err);
@@ -131,9 +126,8 @@ export default function AssignCustomerDialog({
 
     try {
       setLoading(true);
-      const res = await fetch('/api/network/customers/assign', {
+      await apiAdmin('/api/network/customers/assign', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerId: selectedCustomer.id,
           odpId: selectedODP.id,
@@ -142,15 +136,11 @@ export default function AssignCustomerDialog({
         }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to assign customer');
-      }
-
       onSuccess();
       handleClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof ApiError ? err.message : err instanceof Error ? err.message : String(err);
+      setError(msg);
     } finally {
       setLoading(false);
     }

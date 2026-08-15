@@ -24,6 +24,7 @@ import { DeviceStatusBadge } from '@/components/genieacs/DeviceStatusBadge';
 import { TaskStatusBadge } from '@/components/genieacs/TaskStatusBadge';
 import { formatWIB } from '@/lib/timezone';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin } from '@/lib/api';
 
 interface GenieDevice {
   _id: string;
@@ -99,19 +100,13 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
     setLoading(true);
     setError(null);
     try {
-      const [devRes, taskRes] = await Promise.all([
-        fetch(`/api/genieacs/devices/${encodedId}`),
-        fetch(`/api/genieacs/devices/${encodedId}/tasks`),
+      const [devJson, taskJson] = await Promise.all([
+        apiAdmin<{ data?: GenieDevice; error?: string }>(`/api/genieacs/devices/${encodedId}`),
+        apiAdmin<{ data?: GenieTask[] }>(`/api/genieacs/devices/${encodedId}/tasks`).catch(() => ({ data: [] as GenieTask[] })),
       ]);
-      if (!devRes.ok) {
-        const j = await devRes.json().catch(() => ({}));
-        throw new Error(j.error ?? `HTTP ${devRes.status}`);
-      }
-      const devJson = await devRes.json();
-      setDevice(devJson.data);
+      setDevice(devJson.data ?? null);
 
-      if (taskRes.ok) {
-        const taskJson = await taskRes.json();
+      if (taskJson.data) {
         setTasks(Array.isArray(taskJson.data) ? taskJson.data : []);
       }
     } catch (e) {
@@ -128,13 +123,10 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
     setError(null);
     setSuccess(null);
     try {
-      const res = await fetch(`/api/genieacs/devices/${encodedId}/${action}`, {
+      await apiAdmin(`/api/genieacs/devices/${encodedId}/${action}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
       });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error ?? `HTTP ${res.status}`);
       setSuccess(`${label} queued successfully.`);
       load();
     } catch (e) {
@@ -154,11 +146,7 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
     })) return;
     setActionLoading('delete');
     try {
-      const res = await fetch(`/api/genieacs/devices/${encodedId}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}));
-        throw new Error(j.error ?? 'Delete failed');
-      }
+      await apiAdmin(`/api/genieacs/devices/${encodedId}`, { method: 'DELETE' });
       addToast({ type: 'success', title: 'Deleted', description: 'Device removed from GenieACS', duration: 3000 });
       router.push('/admin/genieacs/devices');
     } catch (e) {
