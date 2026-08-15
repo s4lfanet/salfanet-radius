@@ -138,7 +138,6 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 | Prioritas | Item | Phase | Status |
 |-----------|------|-------|--------|
 | **Medium** | Sisa 318 `(data as any)` casts di lower-priority pages | Phase 6B | Pending |
-| **Medium** | React Query (performance optimization) | Phase 7 | Pending (butuh profiling data) |
 | **Low** | Backend issues (7 items di FRONTEND_API_CONTRACT.md) | Backend | Documented |
 | **Low** | `catch (e: any)` → `catch (e: unknown)` cleanup | Phase 6B | Pending |
 
@@ -149,6 +148,7 @@ Error berikut sudah ada sebelum migrasi dan belum diperbaiki:
 - ✅ Phase 6C — API Client Correctness & Type-Safety Hardening (14 Aug 2026)
 - ✅ Phase 6D — UI State & Error Handling Audit (15 Aug 2026)
 - ✅ Phase 7 — React Query + Performance Optimizations (15 Aug 2026)
+- ✅ Phase 8 — Complete React Query Migration (15 Aug 2026, commit `9f03f93f`)
 - ✅ Production Testing — smoke test via domain
 - ✅ NextAuth Session Types (Phase 4.1)
 - ✅ Enable TypeScript Build Checks (Phase 4.5)

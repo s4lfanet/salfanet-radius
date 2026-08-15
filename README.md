@@ -243,6 +243,30 @@ Setiap batch diverifikasi dengan:
 
 ---
 
+## Phase 8 — Complete React Query Migration (v5.1.0)
+
+Melanjutkan migrasi React Query dari Phase 7 untuk **semua halaman admin tersisa**. 80 file diubah, net reduction 875 baris kode.
+
+### Yang Dikerjakan
+
+- Migrasi 65+ halaman admin dari `useEffect + apiAdmin + load()` ke `useApiQuery`/`useQueryClient`
+- Settings (15), GenieACS (6), Network (11), PPPoE+Hotspot (10), FreeRADIUS (6), other admin (23)
+- Mutations menggunakan `queryClient.invalidateQueries()` bukan manual reload
+- Filter/pagination params masuk ke query key
+- Reference data: `staleTime: 300000` (5 menit)
+- Polling: `refetchInterval` menggantikan `setInterval`
+- Auth pages (login, 2FA) **tidak dimigrasi** (intentional)
+
+### Verification
+
+- `npx tsc --noEmit`: 0 errors
+- `npx next build`: sukses (local + VPS)
+- PM2: 4 processes online
+- Smoke: health 200, login 200, 404, protected 401, upload 401
+- Commit: `9f03f93f`
+
+---
+
 ## � Phase 7 — React Query + Performance Optimizations (v5.0.0)
 
 Implementasi @tanstack/react-query v5 untuk caching, deduplication, dan background refetching.
