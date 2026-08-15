@@ -5,9 +5,17 @@ import { prisma } from '@/server/db/client';
  * POST /api/agent/record-sales
  * Record agent sales for vouchers that became ACTIVE
  * Should be called by cron job or after voucher activation
+ * Protected by CRON_API_KEY — only callable by internal cron
  */
 export async function POST(request: NextRequest) {
   try {
+    // Verify internal cron API key
+    const cronKey = request.headers.get('x-cron-key');
+    const expectedKey = process.env.CRON_API_KEY;
+    if (!expectedKey || cronKey !== expectedKey) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Get all ACTIVE vouchers that have agent batch codes (contains hyphen pattern)
     const activeVouchers = await prisma.hotspotVoucher.findMany({
       where: {

@@ -1,15 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requirePermission('invoices.approve');
+    if (!auth.authorized) return auth.response;
     const { id } = await params;
 
     // Get transaction

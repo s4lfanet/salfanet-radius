@@ -752,31 +752,59 @@ async function handleAgentDeposit(
     depositStatus = 'FAILED';
   }
 
-  // Update deposit status
-  await prisma.agentDeposit.update({
-    where: { id: deposit.id },
-    data: {
-      status: depositStatus,
-      transactionId: transactionId || deposit.transactionId,
-      paidAt: depositStatus === 'PAID' ? (paidAt || new Date()) : null,
-    },
-  });
-
-  console.log(`[Agent Deposit] Updated deposit status to: ${depositStatus}`);
-
-  // If payment successful, add balance to agent
+  // ─── ATOMIC: deposit status + balance increment in one transaction ─────────
+  // Use updateMany with status condition for idempotency — only one concurrent
+  // webhook will get count > 0 and proceed to increment the balance.
+  let updatedBalance: number | null = null;
   if (depositStatus === 'PAID') {
-    const updatedAgent = await prisma.agent.update({
-      where: { id: deposit.agentId },
-      data: {
-        balance: {
-          increment: deposit.amount,
+    const result = await prisma.$transaction(async (tx) => {
+      const markPaid = await tx.agentDeposit.updateMany({
+        where: { id: deposit.id, status: 'PENDING' },
+        data: {
+          status: 'PAID',
+          transactionId: transactionId || deposit.transactionId,
+          paidAt: paidAt || new Date(),
         },
-      },
+      });
+
+      if (markPaid.count === 0) {
+        console.log(`[Agent Deposit] ⏭️  Deposit ${depositId} already processed — skipping`);
+        return null;
+      }
+
+      const updatedAgent = await tx.agent.update({
+        where: { id: deposit.agentId },
+        data: {
+          balance: {
+            increment: deposit.amount,
+          },
+        },
+      });
+
+      return updatedAgent.balance;
     });
 
+    if (result === null) {
+      return; // Already processed by a concurrent webhook
+    }
+    updatedBalance = result;
     console.log(`[Agent Deposit] ✅ Agent ${deposit.agent.name} balance increased by Rp ${deposit.amount.toLocaleString('id-ID')}`);
-    console.log(`[Agent Deposit] New balance: Rp ${updatedAgent.balance.toLocaleString('id-ID')}`);
+    console.log(`[Agent Deposit] New balance: Rp ${updatedBalance.toLocaleString('id-ID')}`);
+  } else {
+    // Non-PAID status: just update deposit status
+    await prisma.agentDeposit.update({
+      where: { id: deposit.id },
+      data: {
+        status: depositStatus,
+        transactionId: transactionId || deposit.transactionId,
+        paidAt: null,
+      },
+    });
+    console.log(`[Agent Deposit] Updated deposit status to: ${depositStatus}`);
+  }
+
+  // If payment successful, send notifications
+  if (depositStatus === 'PAID' && updatedBalance !== null) {
 
     // Log activity
     try {
@@ -793,7 +821,7 @@ async function handleAgentDeposit(
           amount: deposit.amount,
           paymentGateway: gateway,
           transactionId,
-          newBalance: updatedAgent.balance,
+          newBalance: updatedBalance,
         },
       });
     } catch (logError) {
@@ -806,7 +834,7 @@ async function handleAgentDeposit(
     if (deposit.agent.phone) {
       try {
         const company = await prisma.company.findFirst();
-        const message = `Halo ${deposit.agent.name},\n\nTop-up saldo agent Anda berhasil!\n\nJumlah: Rp ${deposit.amount.toLocaleString('id-ID')}\nSaldo baru: Rp ${updatedAgent.balance.toLocaleString('id-ID')}\nGateway: ${gateway}\n\nTerima kasih!\n${company?.name || 'ISP'}`;
+        const message = `Halo ${deposit.agent.name},\n\nTop-up saldo agent Anda berhasil!\n\nJumlah: Rp ${deposit.amount.toLocaleString('id-ID')}\nSaldo baru: Rp ${updatedBalance.toLocaleString('id-ID')}\nGateway: ${gateway}\n\nTerima kasih!\n${company?.name || 'ISP'}`;
 
         await WhatsAppService.sendMessage({
           phone: deposit.agent.phone,
@@ -847,7 +875,7 @@ async function handleAgentDeposit(
                 </tr>
                 <tr>
                   <td style="padding: 10px; border: 1px solid #ddd;"><strong>Saldo Baru</strong></td>
-                  <td style="padding: 10px; border: 1px solid #ddd;">Rp ${updatedAgent.balance.toLocaleString('id-ID')}</td>
+                  <td style="padding: 10px; border: 1px solid #ddd;">Rp ${updatedBalance.toLocaleString('id-ID')}</td>
                 </tr>
                 <tr>
                   <td style="padding: 10px; border: 1px solid #ddd;"><strong>Metode Pembayaran</strong></td>
@@ -947,35 +975,49 @@ async function handleCustomerTopUp(
   console.log(`[Customer Top-Up] Found invoice: ${invoice.invoiceNumber}, User: ${invoice.user?.username}`);
 
   if (status === 'settlement' || status === 'capture') {
-    // ─── ATOMIC IDEMPOTENCY GUARD ─────────────────────────────────────────────
-    // Only ONE concurrent request will get count > 0; others skip silently.
-    const markPaid = await prisma.invoice.updateMany({
-      where: { id: invoice.id, status: { not: 'PAID' } },
-      data: { status: 'PAID', paidAt: paidAt || new Date() },
-    });
+    // ─── ATOMIC IDEMPOTENCY GUARD + BALANCE INCREMENT ────────────────────────
+    // Invoice mark-paid and user balance increment are wrapped in a single
+    // transaction so they either both succeed or both roll back.
+    let topupAmount = 0;
+    let updatedUserBalance = 0;
 
-    if (markPaid.count === 0) {
-      console.log(`[Customer Top-Up] ⏭️  Invoice ${invoice.invoiceNumber} already PAID — skipping duplicate notification`);
-      return;
-    }
-
-    console.log(`[Customer Top-Up] ✅ Invoice ${invoice.invoiceNumber} marked as PAID`);
-
-    // Add balance to customer
-    if (invoice.user) {
-      const topupAmount = amount || invoice.amount;
-
-      const updatedUser = await prisma.pppoeUser.update({
-        where: { id: invoice.user.id },
-        data: {
-          balance: {
-            increment: topupAmount
-          }
-        }
+    const txResult = await prisma.$transaction(async (tx) => {
+      const markPaid = await tx.invoice.updateMany({
+        where: { id: invoice.id, status: { not: 'PAID' } },
+        data: { status: 'PAID', paidAt: paidAt || new Date() },
       });
 
-      console.log(`[Customer Top-Up] ✅ User ${invoice.user.username} balance increased by Rp ${topupAmount.toLocaleString('id-ID')}`);
-      console.log(`[Customer Top-Up] New balance: Rp ${updatedUser.balance.toLocaleString('id-ID')}`);
+      if (markPaid.count === 0) {
+        console.log(`[Customer Top-Up] ⏭️  Invoice ${invoice.invoiceNumber} already PAID — skipping duplicate notification`);
+        return null;
+      }
+
+      console.log(`[Customer Top-Up] ✅ Invoice ${invoice.invoiceNumber} marked as PAID`);
+
+      if (invoice.user) {
+        topupAmount = amount || invoice.amount;
+        const updatedUser = await tx.pppoeUser.update({
+          where: { id: invoice.user.id },
+          data: {
+            balance: {
+              increment: topupAmount
+            }
+          }
+        });
+        updatedUserBalance = updatedUser.balance;
+        console.log(`[Customer Top-Up] ✅ User ${invoice.user.username} balance increased by Rp ${topupAmount.toLocaleString('id-ID')}`);
+        console.log(`[Customer Top-Up] New balance: Rp ${updatedUserBalance.toLocaleString('id-ID')}`);
+      }
+
+      return { topupAmount, updatedUserBalance };
+    });
+
+    if (txResult === null) {
+      return; // Already processed by a concurrent webhook
+    }
+
+    // Send notifications outside the transaction (best-effort)
+    if (invoice.user) {
 
       // Create notification using NotificationService
       try {
@@ -1006,7 +1048,7 @@ async function handleCustomerTopUp(
             amount: topupAmount,
             paymentGateway: gateway,
             transactionId,
-            newBalance: updatedUser.balance,
+            newBalance: updatedUserBalance,
           },
         });
       } catch (logError) {
@@ -1095,7 +1137,7 @@ async function handleCustomerTopUp(
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Saldo Baru</strong></td>
-                    <td style="padding: 10px; border: 1px solid #ddd;">Rp ${updatedUser.balance.toLocaleString('id-ID')}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">Rp ${updatedUserBalance.toLocaleString('id-ID')}</td>
                   </tr>
                   <tr>
                     <td style="padding: 10px; border: 1px solid #ddd;"><strong>Metode Pembayaran</strong></td>
@@ -1201,29 +1243,32 @@ async function handleInvoicePayment(
       throw new Error('AMOUNT_MISMATCH');
     }
 
-    // ─── ATOMIC IDEMPOTENCY GUARD ────────────────────────────────────────────
-    // Use updateMany with status condition so only ONE concurrent request wins.
-    // If count === 0 the invoice was already PAID by a previous webhook → skip.
-    const markPaid = await prisma.invoice.updateMany({
-      where: { id: invoice.id, status: { not: 'PAID' } },
-      data: { status: 'PAID', paidAt: paidAt || new Date() },
-    });
+    // ─── ATOMIC TRANSACTION: invoice mark-paid + payment record + user update ─
+    // All critical state transitions are wrapped in a single Prisma transaction
+    // so they either all succeed or all roll back. Notifications and external
+    // service calls remain outside the transaction (best-effort).
+    const txResult = await prisma.$transaction(async (tx) => {
+      // Idempotency guard: only one concurrent webhook will get count > 0
+      const markPaid = await tx.invoice.updateMany({
+        where: { id: invoice.id, status: { not: 'PAID' } },
+        data: { status: 'PAID', paidAt: paidAt || new Date() },
+      });
 
-    if (markPaid.count === 0) {
-      console.log(`[Webhook] ⏭️  Invoice ${invoice.invoiceNumber} already PAID — skipping duplicate notification`);
-      return;
-    }
+      if (markPaid.count === 0) {
+        console.log(`[Webhook] ⏭️  Invoice ${invoice.invoiceNumber} already PAID — skipping duplicate notification`);
+        return null;
+      }
 
-    console.log(`✅ Invoice ${invoice.invoiceNumber} marked as PAID`);
+      console.log(`✅ Invoice ${invoice.invoiceNumber} marked as PAID`);
 
       // Check if payment already exists (idempotency)
-      const existingPayment = await prisma.payment.findFirst({
+      const existingPayment = await tx.payment.findFirst({
         where: { invoiceId: invoice.id }
       });
 
       // Create payment record only if not exists
       if (!existingPayment) {
-        await prisma.payment.create({
+        await tx.payment.create({
           data: {
             id: crypto.randomUUID(),
             invoiceId: invoice.id,
@@ -1238,85 +1283,11 @@ async function handleInvoicePayment(
         console.log(`⚠️ Payment already exists for invoice ${invoice.invoiceNumber}, skipping duplicate`);
       }
 
-      console.log(`✅ Invoice ${invoice.invoiceNumber} marked as PAID`);
-
-      // Create notification using NotificationService
-      try {
-        const customerName = invoice.customerName || invoice.user?.name || 'Unknown';
-        const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
-        await NotificationService.notifyPaymentReceived({
-          amount: invoice.amount,
-          invoiceId: invoice.id,
-          customerName: customerName,
-          customerUsername: invoice.user?.username,
-          gateway: gateway
-        });
-      } catch (notifError) {
-        console.error('[Invoice Payment] Notification error:', notifError);
-      }
-
-      // Log activity
-      try {
-        await logActivity({
-          username: invoice.user?.username || invoice.customerUsername || 'Customer',
-          action: 'PAYMENT_RECEIVED',
-          description: `Payment received for invoice ${invoice.invoiceNumber} - Rp ${invoice.amount.toLocaleString('id-ID')}`,
-          module: 'payment',
-          status: 'success',
-          metadata: {
-            invoiceId: invoice.id,
-            invoiceNumber: invoice.invoiceNumber,
-            amount: invoice.amount,
-            paymentGateway: gateway,
-            paymentType,
-            transactionId,
-          },
-        });
-      } catch (logError) {
-        console.error('Activity log error:', logError);
-      }
-
-      // ============================================
-      // AUTO-SYNC TO KEUANGAN TRANSACTIONS
-      // ============================================
-      try {
-        const pppoeCategory = await prisma.transactionCategory.findFirst({
-          where: { name: 'Pembayaran PPPoE', type: 'INCOME' },
-        });
-
-        if (pppoeCategory) {
-          const user = invoice.user;
-          // Check if transaction already exists
-          const existingTransaction = await prisma.transaction.findFirst({
-            where: { reference: `INV-${invoice.invoiceNumber}` },
-          });
-
-          if (!existingTransaction) {
-            const customerName = invoice.customerName || user?.name || 'Unknown';
-            const profileName = user?.profile?.name || 'Unknown';
-
-            // Use raw SQL with NOW() to avoid timezone conversion
-            await prisma.$executeRaw`
-                INSERT INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
-                VALUES (${nanoid()}, ${pppoeCategory.id}, 'INCOME', ${invoice.amount}, 
-                        ${`Pembayaran ${profileName} - ${customerName}`}, NOW(), 
-                        ${`INV-${invoice.invoiceNumber}`}, 
-                        ${`Payment via ${gateway} (${paymentType})`}, NOW(), NOW())
-              `;
-            console.log(`✅ Transaction synced to Keuangan: ${invoice.invoiceNumber} (Rp ${invoice.amount})`);
-          } else {
-            console.log(`⏭️  Transaction already exists for: ${invoice.invoiceNumber}`);
-          }
-        }
-      } catch (keuanganError) {
-        console.error('Keuangan sync error:', keuanganError);
-      }
-
-      // ============================================
-      // ACTIVATE USER & EXTEND EXPIRY
-      // ============================================
-
+      // ─── ACTIVATE USER & EXTEND EXPIRY ──────────────────────────────────────
       const user = invoice.user;
+      let userUpdateData: { expiredAt: Date | null; status: string; profileId: string } | null = null;
+      let isPackageChange = false;
+      let wasDisabled = false;
 
       if (user && user.profile) {
         const profile = user.profile;
@@ -1327,12 +1298,10 @@ async function handleInvoicePayment(
         let newExpiredAt: Date | null = null;
 
         // Both PREPAID and POSTPAID: Extend expiredAt by validity period
-        // Base date: use current expiredAt if still in the future, otherwise use now (payment date)
-        // This ensures user always gets a full validity period after each payment
         {
           let baseDate = user.expiredAt ? new Date(user.expiredAt) : now;
           if (baseDate < now) {
-            baseDate = now; // Expired already → start fresh from payment date
+            baseDate = now;
           }
 
           newExpiredAt = new Date(baseDate);
@@ -1359,17 +1328,18 @@ async function handleInvoicePayment(
 
         // Check if this is a package upgrade invoice
         let newProfileId = user.profileId;
-        let isPackageChange = false;
         if (invoice.additionalFees && typeof invoice.additionalFees === 'object') {
-          const additionalFeesObj = invoice.additionalFees as any;
+          const additionalFeesObj = invoice.additionalFees as Record<string, unknown>;
           if (additionalFeesObj.items && Array.isArray(additionalFeesObj.items)) {
-            const upgradeItem = additionalFeesObj.items.find((item: any) =>
-              (item.metadata?.type === 'package_upgrade' || item.metadata?.type === 'package_change') && item.metadata?.newPackageId
-            );
+            const upgradeItem = (additionalFeesObj.items as Array<Record<string, unknown>>).find((item) => {
+              const metadata = item.metadata as Record<string, unknown> | undefined;
+              return (metadata?.type === 'package_upgrade' || metadata?.type === 'package_change') && metadata?.newPackageId;
+            });
             if (upgradeItem) {
-              newProfileId = upgradeItem.metadata.newPackageId;
+              const metadata = upgradeItem.metadata as Record<string, unknown>;
+              newProfileId = metadata.newPackageId as string;
               isPackageChange = true;
-              console.log(`📦 Package change detected: ${upgradeItem.metadata.oldPackageName} → ${upgradeItem.metadata.newPackageName} (expiry PRESERVED)`);
+              console.log(`📦 Package change detected: ${metadata.oldPackageName} → ${metadata.newPackageName} (expiry PRESERVED)`);
             }
           }
         }
@@ -1377,8 +1347,8 @@ async function handleInvoicePayment(
         // For package change: keep existing expiredAt, do NOT extend
         const finalExpiredAt = isPackageChange ? user.expiredAt : toUTC(newExpiredAt);
 
-        // Update user
-        await prisma.pppoeUser.update({
+        // Update user inside the transaction
+        await tx.pppoeUser.update({
           where: { id: user.id },
           data: {
             expiredAt: finalExpiredAt,
@@ -1387,16 +1357,105 @@ async function handleInvoicePayment(
           }
         });
 
-        console.log(`✅ User ${user.username} updated (${user.subscriptionType}):`)
+        console.log(`✅ User ${user.username} updated:`);
         console.log(`   - Expiry: ${user.expiredAt?.toISOString() || 'null'} → ${finalExpiredAt?.toISOString() || 'null'} ${isPackageChange ? '(package change, preserved)' : ''}`);
         console.log(`   - Status: ${user.status} → ${newStatus}`);
         if (newProfileId !== user.profileId) {
           console.log(`   - Profile: ${user.profileId} → ${newProfileId}`);
         }
 
-        // ============================================
-        // SEND WHATSAPP NOTIFICATION (ALWAYS)
-        // ============================================
+        userUpdateData = { expiredAt: finalExpiredAt, status: newStatus, profileId: newProfileId };
+      }
+
+      return { userUpdateData, isPackageChange, wasDisabled };
+    });
+
+    if (txResult === null) {
+      return; // Already processed by a concurrent webhook
+    }
+
+    const { userUpdateData, isPackageChange: _isPackageChange, wasDisabled } = txResult;
+
+    // ─── NOTIFICATIONS & SIDE EFFECTS (best-effort, outside transaction) ──────
+
+    // Create notification using NotificationService
+    try {
+      const customerName = invoice.customerName || invoice.user?.name || 'Unknown';
+      const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+      await NotificationService.notifyPaymentReceived({
+        amount: invoice.amount,
+        invoiceId: invoice.id,
+        customerName: customerName,
+        customerUsername: invoice.user?.username,
+        gateway: gateway
+      });
+    } catch (notifError) {
+      console.error('[Invoice Payment] Notification error:', notifError);
+    }
+
+    // Log activity
+    try {
+      await logActivity({
+        username: invoice.user?.username || invoice.customerUsername || 'Customer',
+        action: 'PAYMENT_RECEIVED',
+        description: `Payment received for invoice ${invoice.invoiceNumber} - Rp ${invoice.amount.toLocaleString('id-ID')}`,
+        module: 'payment',
+        status: 'success',
+        metadata: {
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: invoice.amount,
+          paymentGateway: gateway,
+          paymentType,
+          transactionId,
+        },
+      });
+    } catch (logError) {
+      console.error('Activity log error:', logError);
+    }
+
+    // ============================================
+    // AUTO-SYNC TO KEUANGAN TRANSACTIONS
+    // ============================================
+    try {
+      const pppoeCategory = await prisma.transactionCategory.findFirst({
+        where: { name: 'Pembayaran PPPoE', type: 'INCOME' },
+      });
+
+      if (pppoeCategory) {
+        const user = invoice.user;
+        // Check if transaction already exists
+        const existingTransaction = await prisma.transaction.findFirst({
+          where: { reference: `INV-${invoice.invoiceNumber}` },
+        });
+
+        if (!existingTransaction) {
+          const customerName = invoice.customerName || user?.name || 'Unknown';
+          const profileName = user?.profile?.name || 'Unknown';
+
+          // Use raw SQL with NOW() to avoid timezone conversion
+          await prisma.$executeRaw`
+              INSERT INTO transactions (id, categoryId, type, amount, description, date, reference, notes, createdAt, updatedAt)
+              VALUES (${nanoid()}, ${pppoeCategory.id}, 'INCOME', ${invoice.amount}, 
+                      ${`Pembayaran ${profileName} - ${customerName}`}, NOW(), 
+                      ${`INV-${invoice.invoiceNumber}`}, 
+                      ${`Payment via ${gateway} (${paymentType})`}, NOW(), NOW())
+            `;
+          console.log(`✅ Transaction synced to Keuangan: ${invoice.invoiceNumber} (Rp ${invoice.amount})`);
+        } else {
+          console.log(`⏭️  Transaction already exists for: ${invoice.invoiceNumber}`);
+        }
+      }
+    } catch (keuanganError) {
+      console.error('Keuangan sync error:', keuanganError);
+    }
+
+    // ─── SEND NOTIFICATIONS TO USER ───────────────────────────────────────────
+    const user = invoice.user;
+
+    if (user && user.profile && userUpdateData) {
+      const profile = user.profile;
+      const finalExpiredAt = userUpdateData.expiredAt;
         try {
           await sendPaymentSuccess({
             customerName: user.name,
@@ -1560,7 +1619,7 @@ async function handleInvoicePayment(
         }
 
         if (wasDisabled) {
-          console.log(`   - Status: ${user.status} → ${newStatus}`);
+          console.log(`   - Status: ${user.status} → ${userUpdateData.status}`);
 
           // ============================================
           // RADIUS SYNC FOR REACTIVATION

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
+import { requirePermission } from '@/server/middleware/api-auth';
+import type { Prisma } from '@prisma/client';
 
 /**
  * GET /api/admin/agent-deposits
@@ -10,15 +10,13 @@ import { nowWIB } from '@/lib/timezone';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requirePermission('invoices.approve');
+    if (!auth.authorized) return auth.response;
 
     const { searchParams } = new URL(request.url);
     const status = (searchParams.get('status') || 'ALL').toUpperCase();
 
-    const where: any = {
+    const where: Prisma.agentDepositWhereInput = {
       paymentGateway: 'manual',
     };
 
@@ -57,10 +55,8 @@ export async function GET(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await requirePermission('invoices.approve');
+    if (!auth.authorized) return auth.response;
 
     const body = await request.json();
     const { depositId, action } = body as { depositId?: string; action?: 'approve' | 'reject' };
@@ -76,7 +72,7 @@ export async function PATCH(request: NextRequest) {
     const deposit = await prisma.agentDeposit.findUnique({
       where: { id: depositId },
       include: { agent: true },
-    }) as any;
+    });
 
     if (!deposit || deposit.paymentGateway !== 'manual') {
       return NextResponse.json({ error: 'Deposit manual tidak ditemukan' }, { status: 404 });

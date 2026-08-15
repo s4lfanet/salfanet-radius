@@ -126,8 +126,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Skip checking for existing pending payment for now
-    // User can create new payment attempt if needed
+    // Check for existing pending payment for this invoice
+    // Prevent duplicate pending payments that could lead to double-payment confusion
+    const existingPending = await prisma.webhookLog.findFirst({
+      where: {
+        orderId: { startsWith: `${invoice.invoiceNumber}-` },
+        status: 'pending',
+        success: true,
+        createdAt: { gte: new Date(Date.now() - 30 * 60 * 1000) }, // Last 30 minutes
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (existingPending) {
+      return NextResponse.json(
+        { error: 'You already have a pending payment for this invoice. Please complete or wait for it to expire before creating a new one.' },
+        { status: 409 }
+      );
+    }
 
     // Get customer info (use snapshot if user deleted)
     const customerName = invoice.user?.name || invoice.customerName || 'Customer';
