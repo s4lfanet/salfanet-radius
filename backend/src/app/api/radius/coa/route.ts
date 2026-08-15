@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { checkAuth } from '@/server/middleware/api-auth';
 import { 
   sendCoARequest, 
   sendDisconnectRequest, 
@@ -63,6 +64,10 @@ async function getRouterSecret(nasIpAddress: string): Promise<string | null> {
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check: CoA operations require admin authentication
+    const authCheck = await checkAuth();
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json();
     const { action, username, attributes, fallbackToDisconnect } = body;
 
@@ -329,6 +334,10 @@ export async function POST(request: NextRequest) {
 // GET - Check CoA status and get info
 export async function GET() {
   try {
+    // Auth check: CoA status requires admin authentication
+    const authCheck = await checkAuth();
+    if (!authCheck.authorized) return authCheck.response;
+
     const coaAvailable = await isRadclientAvailable();
     
     // Get list of NAS/routers for testing
