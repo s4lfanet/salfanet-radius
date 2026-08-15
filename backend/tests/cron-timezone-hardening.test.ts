@@ -360,4 +360,53 @@ describe('Phase 6 — Cron Reliability & Timezone Hardening', () => {
       expect(timezone).toContain('refreshTimezoneFromDB');
     });
   });
+
+  // ─── Non-WIB Timezone Support ─────────────────────────────────────────────
+  describe('Non-WIB timezone support (DST-aware, universal)', () => {
+    const timezone = readFile('lib/timezone.ts');
+
+    it('must NOT use hardcoded offset map', () => {
+      // The old code had a fixed offsetMap that only supported ~15 timezones
+      // and fell back to +07:00 for anything else. This is wrong.
+      expect(timezone).not.toContain("'Asia/Jakarta': '+07:00'");
+      expect(timezone).not.toContain("'Asia/Makassar': '+08:00'");
+    });
+
+    it('must NOT fallback to hardcoded +07:00 for unknown timezones', () => {
+      // The getTimezoneOffsetMs fallback should use system offset, not +7
+      expect(timezone).not.toContain('return 7 * 60 * 60 * 1000');
+    });
+
+    it('must use Intl.DateTimeFormat for DST-aware offset calculation', () => {
+      expect(timezone).toContain('Intl.DateTimeFormat');
+      expect(timezone).toContain('longOffset');
+      expect(timezone).toContain('formatToParts');
+    });
+
+    it('must support any IANA timezone (not just hardcoded list)', () => {
+      // The new implementation should work for any timezone like
+      // America/New_York, Europe/London, etc.
+      expect(timezone).toContain('timeZone: tz');
+    });
+
+    it('toUTC must use company offset (not server local getFullYear)', () => {
+      // The old toUTC used getFullYear() which depends on server TZ.
+      // The new one should use getTimezoneOffsetMs().
+      const toUTCSection = timezone.slice(
+        timezone.indexOf('export function toUTC'),
+        timezone.indexOf('export function formatWIB')
+      );
+      expect(toUTCSection).toContain('getTimezoneOffsetMs');
+      expect(toUTCSection).not.toContain('wib.getFullYear()');
+    });
+
+    it('getTimezoneOffsetMs fallback must use system offset (not hardcoded +7)', () => {
+      const section = timezone.slice(
+        timezone.indexOf('export function getTimezoneOffsetMs'),
+        timezone.indexOf('export function parseDateAsWIB')
+      );
+      expect(section).toContain('getTimezoneOffset');
+      expect(section).not.toContain('7 * 60 * 60 * 1000');
+    });
+  });
 });
