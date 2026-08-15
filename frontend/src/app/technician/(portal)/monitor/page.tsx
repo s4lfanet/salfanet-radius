@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin } from '@/lib/api/client';
 
 interface OnlineSession {
   uniqueId: string;
@@ -68,9 +69,7 @@ export default function TechnicianMonitorPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/technician/monitor');
-      if (!res.ok) throw new Error('Gagal memuat data');
-      const data = await res.json();
+      const data = await apiAdmin<{ stats: Stats; sessions?: OnlineSession[]; isolatedCustomers?: IsolatedCustomer[] }>('/api/technician/monitor');
       setStats(data.stats);
       setSessions(data.sessions ?? []);
       setIsolatedCustomers(data.isolatedCustomers ?? []);

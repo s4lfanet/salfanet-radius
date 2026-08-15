@@ -8,6 +8,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { showConfirm } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api/client';
 
 interface GenieACSDevice {
   _id: string;
@@ -76,17 +77,15 @@ export default function TechnicianGenieACSPage() {
 
   const fetchDevices = useCallback(async () => {
     try {
-      const [devRes, settRes] = await Promise.all([
-        fetch('/api/technician/genieacs/devices'),
-        fetch('/api/technician/genieacs')
+      const [devData, settData] = await Promise.all([
+        apiAdmin<{ devices?: GenieACSDevice[] }>('/api/technician/genieacs/devices').catch(() => null),
+        apiAdmin<{ settings?: { host?: string } }>('/api/technician/genieacs').catch(() => null),
       ]);
-      if (settRes.ok) {
-        const d = await settRes.json();
-        setIsConfigured(!!d?.settings?.host);
+      if (settData) {
+        setIsConfigured(!!settData?.settings?.host);
       }
-      if (devRes.ok) {
-        const d = await devRes.json();
-        setDevices(d.devices || []);
+      if (devData) {
+        setDevices(devData.devices || []);
       }
     } catch {
       addToast({ type: 'error', title: t('techPortal.failedLoadDevices') });
@@ -102,11 +101,8 @@ export default function TechnicianGenieACSPage() {
     setLoadingDetail(true);
     setDetailDevice(null);
     try {
-      const res = await fetch(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`);
-      if (res.ok) {
-        const data = await res.json();
-        setDetailDevice(data.device || data);
-      }
+      const data = await apiAdmin<{ device?: DeviceDetail } & Partial<DeviceDetail>>(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`);
+      setDetailDevice(data.device ?? (data as DeviceDetail));
     } catch {
       addToast({ type: 'error', title: t('techPortal.failedLoadDetail') });
     } finally {
@@ -118,12 +114,10 @@ export default function TechnicianGenieACSPage() {
     if (!(await showConfirm(t('techPortal.rebootConfirm')))) return;
     setRebootingId(deviceId);
     try {
-      const res = await fetch(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`, {
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'reboot' }),
       });
-      const data = await res.json();
       if (data.success) {
         addToast({ type: 'success', title: t('techPortal.rebootSuccess') });
       } else {
@@ -140,9 +134,8 @@ export default function TechnicianGenieACSPage() {
     if (!wifiEdit) return;
     setSavingWifi(true);
     try {
-      const res = await fetch(`/api/technician/genieacs/devices/${encodeURIComponent(wifiEdit.deviceId)}`, {
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/technician/genieacs/devices/${encodeURIComponent(wifiEdit.deviceId)}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'setWifi',
           wifiIndex: wifiEdit.index,
@@ -150,7 +143,6 @@ export default function TechnicianGenieACSPage() {
           wifiPassword: wifiEdit.wifiPassword,
         }),
       });
-      const data = await res.json();
       if (data.success) {
         addToast({ type: 'success', title: t('techPortal.wifiSaved') });
         setWifiEdit(null);
