@@ -1,6 +1,6 @@
 import 'server-only'
 import { prisma } from '@/server/db/client';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, getCurrentTimezone } from '@/lib/timezone';
 const nodemailer = require('nodemailer');
 
 export interface EmailOptions {
@@ -744,7 +744,7 @@ export const EmailService = {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
-        timeZone: 'Asia/Jakarta',
+        timeZone: getCurrentTimezone(),
       });
 
       // Fetch bank accounts for payment email
@@ -1270,7 +1270,7 @@ export async function sendAutoRenewalEmail(data: {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
-      timeZone: 'Asia/Jakarta',
+      timeZone: getCurrentTimezone(),
     });
 
     // Prepare variables
