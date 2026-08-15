@@ -2,6 +2,8 @@
 
 **Date:** 2026-08-16
 **Status:** ✅ VERIFIED (atomic transactions + idempotency guards)
+**Deployed:** 2026-08-15, commit `ebe89923`, VPS `192.168.54.129`
+**DB Migration:** Unique index on `transactions.reference` created and applied
 
 ---
 
@@ -101,13 +103,17 @@ Result: Only Webhook A processes the payment.
 | Check | Status |
 |-------|--------|
 | TypeScript compilation | ✅ 0 errors |
-| Build | ✅ Exit 0 |
+| Build (local) | ✅ Exit 0 |
+| Build (VPS) | ✅ Exit 0 |
+| DB migration applied | ✅ VERIFIED — unique index on `transactions.reference` exists on VPS |
 | Transaction atomicity | ✅ VERIFIED (code inspection) |
 | updateMany idempotency guard | ✅ VERIFIED (code inspection) |
 | INSERT IGNORE for financial sync | ✅ VERIFIED (code inspection) |
+| Webhook endpoint live | ✅ VERIFIED — `/api/payment/webhook` responds on VPS |
 | Duplicate webhook handling | ⏳ NOT VERIFIED — requires running backend with payment gateway |
 | Concurrent webhook handling | ⏳ NOT VERIFIED — requires running backend with payment gateway |
 | Amount mismatch rejection | ⏳ NOT VERIFIED — requires running backend with payment gateway |
+| handleVoucherOrder atomicity | ⚠️ KNOWN LIMITATION — uses findFirst+update (not updateMany) |
 
 ## Known Limitations
 
