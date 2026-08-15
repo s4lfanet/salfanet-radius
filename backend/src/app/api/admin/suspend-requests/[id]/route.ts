@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * PUT /api/admin/suspend-requests/[id]
@@ -12,10 +11,8 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('customers.isolate');
+  if (!authCheck.authorized) return authCheck.response;
 
   const { id } = await params;
   const body = await request.json();
@@ -49,7 +46,7 @@ export async function PUT(
       status: newStatus,
       adminNotes: adminNotes?.trim() || null,
       approvedAt: now,
-      approvedBy: session.user?.name || session.user?.email || 'admin',
+      approvedBy: authCheck.session.user?.name || authCheck.session.user?.email || 'admin',
     },
     include: {
       user: {

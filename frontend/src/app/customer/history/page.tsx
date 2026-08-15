@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatWIB } from '@/lib/timezone';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { apiCustomer } from '@/lib/api';
 import { 
   Receipt, 
   CheckCircle, 
@@ -92,11 +94,19 @@ export default function PaymentHistoryPage() {
     addToast({ type, title, description, duration: type === 'error' ? 8000 : 5000 });
   }, [addToast]);
 
-  // Core data state
-  const [loading, setLoading] = useState(true);
-  const [payments, setPayments] = useState<PaymentHistory[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [paymentGateways, setPaymentGateways] = useState<PaymentGateway[]>([]);
+  // Core data via React Query
+  const queryClient = useQueryClient();
+  const { data: paymentsData, isLoading: loading, refetch } = useApiQuery<{ success: boolean; payments: PaymentHistory[] }>(
+    '/api/customer/payment-history',
+    { mode: 'customer', staleTime: 30000, refetchInterval: 30000, queryOptions: { refetchOnWindowFocus: true } }
+  );
+  const payments = paymentsData?.payments || [];
+
+  const { data: gatewaysData } = useApiQuery<{ success: boolean; gateways: PaymentGateway[] }>(
+    '/api/public/payment-gateways',
+    { staleTime: 300000 }
+  );
+  const paymentGateways = gatewaysData?.gateways || [];
 
   // Detail modal
   const [selectedDetail, setSelectedDetail] = useState<PaymentHistory | null>(null);
@@ -126,59 +136,11 @@ export default function PaymentHistoryPage() {
   useEffect(() => {
     const token = localStorage.getItem('customer_token');
     if (!token) { router.push('/customer/login'); return; }
-    loadPaymentHistory();
-    loadPaymentGateways();
-
-    // Auto-refresh when admin confirms or rejects a payment
-    const handleAdminUpdate = () => loadPaymentHistory();
-    window.addEventListener('customer-data-refresh', handleAdminUpdate);
-
-    // Also refresh on tab focus and every 15s (catches gateway payment callbacks quickly)
-    const handleVisible = () => { if (!document.hidden) loadPaymentHistory(); };
-    document.addEventListener('visibilitychange', handleVisible);
-    const interval = setInterval(loadPaymentHistory, 15_000);
-
-    return () => {
-      window.removeEventListener('customer-data-refresh', handleAdminUpdate);
-      document.removeEventListener('visibilitychange', handleVisible);
-      clearInterval(interval);
-    };
-  }, [router]);
-
-  const loadPaymentHistory = async () => {
-    const token = localStorage.getItem('customer_token');
-    if (!token) return;
-    try {
-      const res = await fetch('/api/customer/payment-history', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) setPayments(data.payments || []);
-    } catch (error) {
-      console.error('Load payment history error:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+    // Set default gateway selection once gateways are loaded
+    if (paymentGateways.length > 0 && !selectedGateway) {
+      setSelectedGateway(paymentGateways[0].provider);
     }
-  };
-
-  const loadPaymentGateways = async () => {
-    try {
-      const res = await fetch('/api/public/payment-gateways');
-      const data = await res.json();
-      if (data.success) {
-        const gateways = data.gateways || [];
-        setPaymentGateways(gateways);
-        if (gateways.length > 0) setSelectedGateway(gateways[0].provider);
-      }
-    } catch { /* ignore */ }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadPaymentHistory();
-    loadPaymentGateways();
-  };
+  }, [router, paymentGateways, selectedGateway]);
 
   const handlePayInvoice = (payment: PaymentHistory) => {
     setSelectedPaymentInvoice(payment);
@@ -210,17 +172,17 @@ export default function PaymentHistoryPage() {
     if (!selectedPaymentInvoice || !selectedGateway) return;
     setProcessingGateway(true);
     setGatewayDialogVisible(false);
-    const token = localStorage.getItem('customer_token');
     try {
-      const res = await fetch('/api/customer/invoice/regenerate-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ invoiceId: selectedPaymentInvoice.id, gateway: selectedGateway })
-      });
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; paymentUrl?: string; error?: string }>(
+        '/api/customer/invoice/regenerate-payment',
+        {
+          method: 'POST',
+          body: JSON.stringify({ invoiceId: selectedPaymentInvoice.id, gateway: selectedGateway }),
+        }
+      );
       if (data.success && data.paymentUrl) {
         window.open(data.paymentUrl, '_blank', 'noopener,noreferrer');
-        setTimeout(() => loadPaymentHistory(), 2000);
+        setTimeout(() => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/customer/payment-history') }), 2000);
       } else {
         toast('error', 'Gagal Membuat Pembayaran', data.error || 'Gagal membuat link pembayaran');
       }
@@ -248,22 +210,22 @@ export default function PaymentHistoryPage() {
     if (!proofFile) { toast('warning', 'Bukti Transfer', 'Upload bukti transfer diperlukan'); return; }
 
     setSubmittingOffline(true);
-    const token = localStorage.getItem('customer_token');
     try {
       // Step 1: Create manual payment record
-      const payRes = await fetch('/api/customer/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({
-          invoiceId: selectedPaymentInvoice.id,
-          amount: selectedPaymentInvoice.amount,
-          method: finalBank,
-          accountNumber: accountNumber.trim() || undefined,
-          accountName: accountName.trim(),
-          notes: paymentNotes.trim() || undefined,
-        })
-      });
-      const payData = await payRes.json();
+      const payData = await apiCustomer<{ success: boolean; data?: { id: string }; message?: string }>(
+        '/api/customer/payments',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            invoiceId: selectedPaymentInvoice.id,
+            amount: selectedPaymentInvoice.amount,
+            method: finalBank,
+            accountNumber: accountNumber.trim() || undefined,
+            accountName: accountName.trim(),
+            notes: paymentNotes.trim() || undefined,
+          }),
+        }
+      );
       if (!payData.success) {
         toast('error', 'Gagal', payData.message || 'Gagal membuat pembayaran');
         return;
@@ -274,10 +236,9 @@ export default function PaymentHistoryPage() {
       if (paymentId && proofFile) {
         const fd = new FormData();
         fd.append('file', proofFile);
-        await fetch(`/api/customer/payments/${paymentId}/proof`, {
+        await apiCustomer(`/api/customer/payments/${paymentId}/proof`, {
           method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` },
-          body: fd
+          body: fd,
         });
       }
 
@@ -286,7 +247,7 @@ export default function PaymentHistoryPage() {
       setProofFile(null);
       if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl);
       setProofPreviewUrl(null);
-      loadPaymentHistory();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/customer/payment-history') });
       toast('success', 'Pembayaran Terkirim', 'Bukti transfer berhasil dikirim. Menunggu konfirmasi dari admin.');
     } catch {
       toast('error', 'Gagal', 'Gagal mengirim pembayaran. Silakan coba lagi.');
@@ -524,11 +485,11 @@ export default function PaymentHistoryPage() {
           <p className="text-xs text-accent mt-1">Lihat status invoice Anda</p>
         </div>
         <button
-          onClick={handleRefresh}
-          disabled={refreshing}
+          onClick={() => refetch()}
+          disabled={loading}
           className="flex items-center gap-2 px-3 py-2.5 bg-primary/20 rounded-xl hover:bg-primary/30 transition-colors disabled:opacity-50 border border-primary/30 text-xs font-bold text-primary"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>

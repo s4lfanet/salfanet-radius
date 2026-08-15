@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
@@ -12,10 +11,8 @@ import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.servic
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.isolate');
+    if (!authCheck.authorized) return authCheck.response;
 
     const body = await request.json();
     const { username, reason } = body;
