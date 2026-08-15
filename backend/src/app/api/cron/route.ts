@@ -90,13 +90,23 @@ export async function POST(request: NextRequest) {
 
     // ─── Atomic distributed lock ─────────────────────────────────────────────
     // Prevents duplicate concurrent execution across multiple instances.
-    // Lock is released in the finally block below.
-    const ownerToken = await acquireCronLock(jobType)
-    if (!ownerToken) {
-      return NextResponse.json(
-        { success: false, error: `Job ${jobType} is already running (lock held)` },
-        { status: 409 }
-      )
+    //
+    // When called from the cron-runner (authenticated via CRON_SECRET), the
+    // runner already holds the distributed lock with heartbeat — so we skip
+    // locking here to avoid a double-lock deadlock. The runner is the
+    // authoritative lock holder.
+    //
+    // For manual admin triggers (no CRON_SECRET), the API route acquires its
+    // own lock to prevent concurrent manual + automated execution.
+    let ownerToken: string | null = null
+    if (!hasCronSecret) {
+      ownerToken = await acquireCronLock(jobType)
+      if (!ownerToken) {
+        return NextResponse.json(
+          { success: false, error: `Job ${jobType} is already running (lock held)` },
+          { status: 409 }
+        )
+      }
     }
 
     // Create history record
@@ -198,8 +208,11 @@ export async function POST(request: NextRequest) {
       })
       throw jobError
     } finally {
-      // Always release the lock — even on error
-      await releaseCronLock(jobType, ownerToken).catch(() => {})
+      // Release the lock only if we acquired it (manual admin trigger).
+      // Cron-runner holds its own lock with heartbeat.
+      if (ownerToken) {
+        await releaseCronLock(jobType, ownerToken).catch(() => {})
+      }
     }
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
