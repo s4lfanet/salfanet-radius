@@ -2,8 +2,11 @@
 import { prisma } from '@/server/db/client';
 import * as XLSX from 'xlsx';
 import { nanoid } from 'nanoid';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
