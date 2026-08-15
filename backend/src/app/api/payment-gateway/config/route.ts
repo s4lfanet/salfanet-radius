@@ -46,11 +46,15 @@ export async function GET() {
 
 // POST - Create or update payment gateway config
 export async function POST(request: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   try {
     const body = await request.json();
     const { provider, ...data } = body;
 
-    console.log('[Payment Gateway Config] Save request:', { provider, data });
+    console.log('[Payment Gateway Config] Save request for provider:', provider);
 
     if (!provider) {
       return NextResponse.json(
