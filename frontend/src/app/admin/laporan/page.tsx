@@ -6,6 +6,7 @@ import { Loader2, Download, FileText, Users, CreditCard, Filter, RefreshCw, File
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, todayWIBStr, firstOfMonthWIBStr } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { showError } from '@/lib/sweetalert';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type ReportType = 'invoice' | 'payment' | 'customer';
@@ -119,7 +120,7 @@ export default function LaporanPage() {
       const filename = `Laporan_${TYPE_LABELS[reportType]}_${dateFrom}_${dateTo}.xlsx`;
       XLSX.writeFile(wb, filename);
     } catch (err: unknown) {
-      alert('Gagal export Excel: ' + (err instanceof Error ? err.message : String(err)));
+      showError('Gagal export Excel: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setExporting(null);
     }
@@ -171,7 +172,7 @@ export default function LaporanPage() {
       const filename = `Laporan_${TYPE_LABELS[reportType]}_${dateFrom}_${dateTo}.pdf`;
       doc.save(filename);
     } catch (err: unknown) {
-      alert('Gagal export PDF: ' + (err instanceof Error ? err.message : String(err)));
+      showError('Gagal export PDF: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
       setExporting(null);
     }

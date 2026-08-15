@@ -18,7 +18,7 @@ function PaymentFailedContent() {
 
   useEffect(() => {
     if (token || orderId) fetchInvoiceInfo(); else setLoading(false);
-    fetch('/api/company/info').then(res => res.json()).then(data => { const c = data.data || data; if (c.phone) { let phone = c.phone.replace(/^0/, '62'); if (!phone.startsWith('62')) phone = '62' + phone; setCompanyPhone(phone); } }).catch(() => { });
+    fetch('/api/company/info').then(res => res.json()).then(data => { const c = data.data || data; if (c.phone) { let phone = c.phone.replace(/^0/, '62'); if (!phone.startsWith('62')) phone = '62' + phone; setCompanyPhone(phone); } }).catch((e: unknown) => { console.warn('Failed to fetch company info:', e); });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, orderId]);
 
@@ -31,7 +31,7 @@ function PaymentFailedContent() {
       const res = await fetch(endpoint);
       const data = await res.json();
       if (res.ok && data.invoice) setInvoiceNumber(data.invoice.invoiceNumber);
-    } catch { } finally { setLoading(false); }
+    } catch (e: unknown) { console.error('Failed to fetch invoice info:', e); } finally { setLoading(false); }
   };
 
   if (loading) return (

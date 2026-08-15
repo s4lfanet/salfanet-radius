@@ -67,7 +67,7 @@ export default function FreeRADIUSBackupPage() {
             requestAnimationFrame(() => {
                 if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
             });
-        } catch { /* ignore */ }
+        } catch (e: unknown) { /* ignore — polling will retry */ console.warn('Failed to fetch backup data:', e); }
     }, []);
 
     const stopPolling = useCallback(() => {

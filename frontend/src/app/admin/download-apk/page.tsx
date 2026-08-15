@@ -8,6 +8,7 @@ import {
   Package, Globe, Upload, ImageIcon,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showError } from '@/lib/sweetalert';
 
 // ─── types ────────────────────────────────────────────────────────────────────
 
@@ -362,7 +363,7 @@ export default function DownloadApkPage() {
     } catch (e: unknown) {
       setStatuses(prev => ({ ...prev, [role]: { status: 'failed', error: (e instanceof Error ? e.message : String(e)) || 'Gagal memulai build' } }));
       setBuilding(prev => { const s = new Set(prev); s.delete(role); return s; });
-      alert((e instanceof Error ? e.message : String(e)) || 'Gagal memulai build');
+      showError((e instanceof Error ? e.message : String(e)) || 'Gagal memulai build');
     }
   }
 

@@ -7,6 +7,7 @@ import { Server, Search, RefreshCw, Loader2, Wifi, WifiOff, Eye, X, Power, Penci
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface GenieACSDevice {
   _id: string;
@@ -114,7 +115,7 @@ export default function TechnicianGenieACSPage() {
   };
 
   const handleReboot = async (deviceId: string) => {
-    if (!confirm(t('techPortal.rebootConfirm'))) return;
+    if (!(await showConfirm(t('techPortal.rebootConfirm')))) return;
     setRebootingId(deviceId);
     try {
       const res = await fetch(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`, {

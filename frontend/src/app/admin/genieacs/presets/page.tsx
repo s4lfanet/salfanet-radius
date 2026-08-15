@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Loader2, Plus, Trash2, Save, RefreshCw, Download, Upload } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface Preset {
   _id: string;
@@ -121,7 +122,7 @@ export default function GenieACSPresetsPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm(`Delete preset "${id}"?`)) return;
+    if (!(await showConfirm(`Delete preset "${id}"?`))) return;
     try {
       const json = await apiAdmin<{ success: boolean; error?: string }>(`/api/genieacs/presets/${encodeURIComponent(id)}`, {
         method: 'DELETE',
