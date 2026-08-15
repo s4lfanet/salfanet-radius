@@ -8,7 +8,7 @@ import { addMonths } from 'date-fns';
 import { generateTransactionId } from '@/server/services/billing/invoice.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
-import { toUTC, nowWIB } from '@/lib/timezone';
+import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 
 function formatBankAccountsWA(bankAccounts: any): string {
   if (!bankAccounts) return '';
@@ -358,7 +358,7 @@ export async function PATCH(
             customerUsername: manualPayment.user.username,
             invoiceNumber,
             amount,
-            expiredDate: newExpiry.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' }),
+            expiredDate: newExpiry.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() }),
             profileName: (manualPayment.user as any)?.profile?.name || '-',
             area: (manualPayment.user as any)?.area?.name || '-',
             companyName: company?.name || '',

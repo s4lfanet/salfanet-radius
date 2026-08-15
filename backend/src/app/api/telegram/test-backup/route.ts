@@ -4,6 +4,7 @@ import { authOptions } from '@/server/auth/config';
 import { createBackup } from '@/server/services/backup.service';
 import { sendBackupToTelegram } from '@/server/services/notifications/telegram.service';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getCurrentTimezone } from '@/lib/timezone';
 import { prisma } from '@/server/db/client';
 import * as fs from 'fs/promises';
 
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { botToken, chatId, backupTopicId } = settings;
-    const now = formatInTimeZone(new Date(), 'Asia/Jakarta', 'dd MMM yyyy HH:mm');
+    const now = formatInTimeZone(new Date(), getCurrentTimezone(), 'dd MMM yyyy HH:mm');
 
     // Step 1: Create actual backup
     const backupResult = await createBackup('manual');

@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { randomBytes } from 'crypto';
+import { getCurrentTimezone } from '@/lib/timezone';
 
 // Generate secure payment token
 function generatePaymentToken(): string {
@@ -29,7 +30,7 @@ async function sendPaymentLinkNotification(order: any, notificationMethod: strin
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: 'Asia/Jakarta'
+      timeZone: getCurrentTimezone()
     });
 
     const variables = {

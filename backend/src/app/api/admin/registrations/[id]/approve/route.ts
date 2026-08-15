@@ -4,7 +4,7 @@ import { genCustomerId } from '@/lib/utils';
 import { sendRegistrationApproval } from '@/server/services/notifications/whatsapp-templates.service';
 import crypto from 'crypto';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
-import { toUTC } from '@/lib/timezone';
+import { toUTC, nowWIB } from '@/lib/timezone';
 import { requirePermission } from '@/server/middleware/api-auth';
 
 // Helper to generate username from name and phone
@@ -296,7 +296,7 @@ export async function POST(
         baseAmount: baseAmount,
         ...(taxRate !== null && { taxRate }),
         status: 'PENDING',
-        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        dueDate: new Date(nowWIB().getTime() + 7 * 24 * 60 * 60 * 1000), // 7 days
         customerName: registration.name,
         customerPhone: registration.phone,
         customerUsername: pppoeUser.username,
