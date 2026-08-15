@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Home, MessageSquare, User, Receipt, Shield, Menu, X, Package, Clock, LogOut, Bell, CheckCircle2, XCircle, RefreshCw, Trash2, Wifi, FileText, PauseCircle, Gift, Sun, Moon, RefreshCcw, MoreHorizontal } from 'lucide-react';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
+import { onUnauthorized } from '@/lib/api/client';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
@@ -62,6 +63,17 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   // Stable ref to addToast — prevents poll() recreation when context re-renders
   const addToastRef = useRef(addToast);
   useEffect(() => { addToastRef.current = addToast; }, [addToast]);
+  // Register global 401 handler — redirect to customer login on any API 401
+  useEffect(() => {
+    onUnauthorized(() => {
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/customer/login')) {
+        localStorage.removeItem('customer_token');
+        localStorage.removeItem('customer_user');
+        queryClient.clear();
+        router.push('/customer/login');
+      }
+    });
+  }, [router, queryClient]);
   // Dedup: track event IDs that already triggered a toast to prevent doubles
   const shownEventIdsRef = useRef<Set<string>>(new Set());
 

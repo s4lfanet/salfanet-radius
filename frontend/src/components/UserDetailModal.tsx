@@ -6,6 +6,7 @@ import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Cam
 import { formatWIB, formatLocalDate, todayWIBStr, nowWIB, isExpiredWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showWarning, showConfirm } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
 import type { PppoeProfile, PppoeArea, Router } from '@/types/api/pppoe';
@@ -192,16 +193,15 @@ export default function UserDetailModal({
     setLoading(true);
     try {
       {
-        const res = await fetch(`/api/pppoe/users/${user.id}/activity?type=${tab === 'sessions' ? 'sessions' : tab === 'auth' ? 'auth' : 'invoices'}`);
-        const data = await res.json();
+        const data = await apiAdmin<{ success: boolean; data: Session[] | AuthLog[] | Invoice[] }>(`/api/pppoe/users/${user.id}/activity?type=${tab === 'sessions' ? 'sessions' : tab === 'auth' ? 'auth' : 'invoices'}`);
 
         if (data.success) {
           if (tab === 'sessions') {
-            setSessions(data.data);
+            setSessions(data.data as Session[]);
           } else if (tab === 'auth') {
-            setAuthLogs(data.data);
+            setAuthLogs(data.data as AuthLog[]);
           } else if (tab === 'invoices') {
-            setInvoices(data.data);
+            setInvoices(data.data as Invoice[]);
           }
         }
       }
@@ -225,9 +225,8 @@ export default function UserDetailModal({
     setUploadingInstallation(true);
     try {
       const fd = new FormData(); fd.append('file', file); fd.append('type', 'installation');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-      const result = await res.json();
-      if (result.success) { setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url] })); }
+      const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+      if (result.success && result.url) { setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url!] })); }
       else { await showError(result.error || 'Upload foto instalasi gagal'); }
     } catch { await showError('Upload foto instalasi gagal'); }
     finally { setUploadingInstallation(false); }
@@ -237,10 +236,9 @@ export default function UserDetailModal({
     setUploadingInstallation(true);
     try {
       const fd = new FormData(); fd.append('file', file); fd.append('type', 'installation');
-      const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-      const result = await res.json();
-      if (result.success) {
-        setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url] }));
+      const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+      if (result.success && result.url) {
+        setFormData(prev => ({ ...prev, installationPhotos: [...prev.installationPhotos, result.url!] }));
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((p) => {
             setFormData(prev => ({ ...prev, latitude: p.coords.latitude.toFixed(6), longitude: p.coords.longitude.toFixed(6) }));
@@ -761,9 +759,8 @@ export default function UserDetailModal({
                         setUploadingIdCard(true);
                         try {
                           const fd = new FormData(); fd.append('file', file); fd.append('type', 'idCard');
-                          const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-                          const result = await res.json();
-                          if (result.success) { setFormData(prev => ({ ...prev, idCardPhoto: result.url })); return result.url; }
+                          const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+                          if (result.success && result.url) { setFormData(prev => ({ ...prev, idCardPhoto: result.url! })); return result.url; }
                           await showError(result.error || 'Upload KTP gagal'); return null;
                         } catch { await showError('Upload KTP gagal'); return null; }
                         finally { setUploadingIdCard(false); }
@@ -1133,16 +1130,16 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
 
   const loadAddons = async () => {
     try {
-      const res = await fetch(`/api/pppoe/users/${userId}/addons`, { cache: 'no-store' });
-      if (res.ok) { const data = await res.json(); setAddons(data.addons || []); }
+      const data = await apiAdmin<{ addons?: any[] }>(`/api/pppoe/users/${userId}/addons`);
+      setAddons(data.addons || []);
     } catch (e) { console.error('Load addons error:', e); }
     finally { setLoading(false); }
   };
 
   const loadAddonTypes = async () => {
     try {
-      const res = await fetch('/api/addon-types', { cache: 'no-store' });
-      if (res.ok) { const data = await res.json(); setAddonTypes(data.addons || []); }
+      const data = await apiAdmin<{ addons?: any[] }>('/api/addon-types');
+      setAddonTypes(data.addons || []);
     } catch (e) { console.error('Load addon types error:', e); }
   };
 
@@ -1152,9 +1149,8 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
     if (!form.addonTypeId) { await showError('Pilih jenis layanan tambahan'); return; }
     setSaving(true);
     try {
-      const res = await fetch(`/api/pppoe/users/${userId}/addons`, {
+      const data = await apiAdmin(`/api/pppoe/users/${userId}/addons`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           addonTypeId: form.addonTypeId,
           priceOverride: form.priceOverride ? parseInt(form.priceOverride) : null,
@@ -1162,8 +1158,6 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
           notes: form.notes || null,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal');
       await showSuccess('Layanan tambahan berhasil ditambahkan');
       setShowModal(false);
       setForm({ addonTypeId: '', priceOverride: '', startDate: todayWIBStr(), notes: '' });
@@ -1176,8 +1170,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
     const confirmed = await showConfirm(`Hentikan layanan "${addonName}"? End date akan diset ke hari ini.`);
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/customer-addons/${addonId}`, { method: 'DELETE' });
-      if (!res.ok) { const data = await res.json(); throw new Error(data.error || 'Gagal'); }
+      await apiAdmin(`/api/customer-addons/${addonId}`, { method: 'DELETE' });
       await showSuccess('Layanan tambahan dihentikan');
       loadAddons();
     } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
@@ -1323,8 +1316,8 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
 
   const loadPromises = async () => {
     try {
-      const res = await fetch(`/api/pppoe/users/${userId}/promise`, { cache: 'no-store' });
-      if (res.ok) { const data = await res.json(); setPromises(data.promises || []); }
+      const data = await apiAdmin<{ promises?: any[] }>(`/api/pppoe/users/${userId}/promise`);
+      setPromises(data.promises || []);
     } catch (e) { console.error('Load promises error:', e); }
     finally { setLoading(false); }
   };
@@ -1336,13 +1329,10 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
     if (new Date(promiseDate) <= new Date()) { await showError('Tanggal janji harus di masa depan'); return; }
     setSaving(true);
     try {
-      const res = await fetch(`/api/pppoe/users/${userId}/promise`, {
+      const data = await apiAdmin<{ message?: string }>(`/api/pppoe/users/${userId}/promise`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ promiseDate, notes: promiseNotes || null }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal');
       await showSuccess(data.message || 'Janji bayar dibuat. Akses internet dibuka hingga tanggal janji.');
       setShowModal(false);
       setPromiseDate('');
@@ -1356,9 +1346,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
     const confirmed = await showConfirm('Batalkan janji bayar? Pelanggan akan diisolir kembali.');
     if (!confirmed) return;
     try {
-      const res = await fetch(`/api/pppoe/users/${userId}/promise`, { method: 'DELETE' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Gagal');
+      const data = await apiAdmin<{ message?: string }>(`/api/pppoe/users/${userId}/promise`, { method: 'DELETE' });
       await showSuccess(data.message || 'Janji bayar dibatalkan. Pelanggan diisolir kembali.');
       loadPromises();
     } catch (err: unknown) { await showError(err instanceof Error ? err.message : String(err)); }
