@@ -48,6 +48,7 @@ import {
   UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { apiAdmin, onUnauthorized } from '@/lib/api';
 import { useAppStore } from '@/lib/store';
 import NotificationDropdown from '@/components/NotificationDropdown';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -697,9 +698,8 @@ function AdminLayoutContent({
     // Log logout activity before signing out
     if (session?.user) {
       try {
-        await fetch('/api/auth/logout-log', {
+        await apiAdmin('/api/auth/logout-log', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId: session.user.id,
             username: session.user.username,
@@ -719,7 +719,13 @@ function AdminLayoutContent({
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Register global 401 handler — redirect to login on any API 401
+    onUnauthorized(() => {
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/admin/login')) {
+        router.push('/admin/login');
+      }
+    });
+  }, [router]);
 
   // Delayed unauthenticated redirect — avoids spurious full-page reload during
   // the brief window after signIn() where the outer SessionProvider hasn't yet
@@ -750,8 +756,7 @@ function AdminLayoutContent({
 
     const userId = session.user.id;
     if (userId) {
-      fetch(`/api/admin/users/${userId}/permissions`)
-        .then((res) => res.json())
+      apiAdmin<{ success: boolean; permissions: string[] }>(`/api/admin/users/${userId}/permissions`)
         .then((data) => {
           if (data.success) {
             setUserPermissions(data.permissions);
@@ -763,8 +768,7 @@ function AdminLayoutContent({
 
   // Load company data (use public endpoint — works before login)
   useEffect(() => {
-    fetch('/api/company/info')
-      .then((res) => res.json())
+    apiAdmin<{ data?: { name?: string; email?: string; phone?: string; address?: string; baseUrl?: string; logo?: string }; name?: string; email?: string; phone?: string; address?: string; baseUrl?: string; logo?: string }>('/api/company/info')
       .then((data) => {
         const c = data.data || data;
         if (c.name) {
@@ -787,8 +791,7 @@ function AdminLayoutContent({
     if (status !== 'authenticated') return;
 
     const loadPending = () => {
-      fetch('/api/admin/registrations?status=PENDING')
-        .then((res) => res.json())
+      apiAdmin<{ stats?: { pending?: number } }>('/api/admin/registrations?status=PENDING')
         .then((data) => {
           if (data.stats) setPendingRegistrations(data.stats.pending || 0);
         })
@@ -805,8 +808,7 @@ function AdminLayoutContent({
     if (status !== 'authenticated') return;
 
     const loadPendingPayments = () => {
-      fetch('/api/manual-payments?status=PENDING')
-        .then((res) => res.json())
+      apiAdmin<{ success: boolean; data?: unknown[] }>('/api/manual-payments?status=PENDING')
         .then((data) => {
           if (data.success) setPendingManualPayments(data.data?.length || 0);
         })
@@ -825,14 +827,12 @@ function AdminLayoutContent({
     const pollNotifications = async () => {
       try {
         // Get unread count (badge)
-        const countRes = await fetch('/api/notifications?limit=1');
-        const countData = await countRes.json();
+        const countData = await apiAdmin<{ success: boolean; unreadCount?: number }>('/api/notifications?limit=1');
         if (countData.success) setUnreadNotifications(countData.unreadCount || 0);
 
         // Get new notifications since last check (for toasts)
         const since = encodeURIComponent(adminNotifLastCheckedRef.current);
-        const newRes = await fetch(`/api/notifications?since=${since}&limit=20`);
-        const newData = await newRes.json();
+        const newData = await apiAdmin<{ success: boolean; notifications?: Array<{ id: string; title: string; message: string; type?: string }> }>(`/api/notifications?since=${since}&limit=20`);
         if (newData.success && Array.isArray(newData.notifications) && newData.notifications.length > 0) {
           adminNotifLastCheckedRef.current = new Date().toISOString();
           sessionStorage.setItem('adminNotifLastChecked', adminNotifLastCheckedRef.current);

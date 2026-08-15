@@ -35,6 +35,31 @@ function buildUrl(path: string): string {
 export type AuthMode = 'admin' | 'customer' | 'agent';
 
 /**
+ * Global 401 handler — registered by layout components to redirect to login
+ * when any API call returns 401 Unauthorized.
+ *
+ * Layouts register their handler:
+ *   onUnauthorized(() => router.push('/admin/login'))
+ *
+ * The handler is debounced so multiple simultaneous 401s only trigger one redirect.
+ */
+let _unauthorizedHandler: (() => void) | null = null;
+let _unauthorizedTimer: ReturnType<typeof setTimeout> | null = null;
+
+export function onUnauthorized(handler: () => void): void {
+  _unauthorizedHandler = handler;
+}
+
+function triggerUnauthorized(): void {
+  if (!_unauthorizedHandler) return;
+  if (_unauthorizedTimer) return; // Already pending — debounce
+  _unauthorizedTimer = setTimeout(() => {
+    _unauthorizedTimer = null;
+    _unauthorizedHandler?.();
+  }, 100);
+}
+
+/**
  * Backend error response shapes (compatible with all known backend error formats).
  * Some routes return `{ error: string }`, others `{ success: false, error: string }`,
  * others `{ message: string }`. This union covers all cases.
@@ -147,6 +172,10 @@ export async function apiCall<T = unknown>(
       } else if (res.status >= 500) {
         message = `Server error (${res.status}) — please try again later`;
       }
+    }
+    // Trigger global 401 handler (debounced redirect to login)
+    if (res.status === 401) {
+      triggerUnauthorized();
     }
     throw new ApiError(res.status, message, path);
   }

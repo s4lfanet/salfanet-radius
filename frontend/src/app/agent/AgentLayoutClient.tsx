@@ -18,6 +18,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { onUnauthorized } from '@/lib/api/client';
 import AgentNotificationDropdown from '@/components/agent/NotificationDropdown';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
@@ -212,6 +213,16 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
     const tick = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(tick);
   }, []);
+
+  // Register global 401 handler — redirect to agent login on any API 401
+  useEffect(() => {
+    onUnauthorized(() => {
+      if (typeof window !== 'undefined' && pathname !== '/agent') {
+        queryClient.clear();
+        router.push('/agent');
+      }
+    });
+  }, [router, pathname, queryClient]);
 
   // Check if on login page
   const isLoginPage = pathname === '/agent';

@@ -236,9 +236,6 @@ importers:
       '@types/leaflet':
         specifier: ^1.9.21
         version: 1.9.22
-      '@types/papaparse':
-        specifier: ^5.5.2
-        version: 5.5.2
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
