@@ -6,6 +6,72 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.3.0] — 2026-08-15 — Final Production Hardening + E2E Verification
+
+### Summary
+Final production hardening pass: timezone bug fixes (invoice due dates, hardcoded Asia/Jakarta in 11 backend files), new E2E test suite (cron schedule, FreeRADIUS concurrency, CRON_SECRET), and full VPS production verification.
+
+### Timezone Hardening
+- **[FIXED]** Invoice due date calculation: `invoices/route.ts` now uses `nowWIB()` instead of `new Date()` for invoice number generation
+- **[FIXED]** Registration approve route: due date now uses `nowWIB()` instead of `Date.now()`
+- **[FIXED]** Registration mark-installed route: due date now uses `nowWIB()` instead of `Date.now()`
+- **[FIXED]** Invoice import route: default due date now uses `nowWIB()` instead of `Date.now()`
+- **[FIXED]** 11 backend files: replaced hardcoded `'Asia/Jakarta'` with `getCurrentTimezone()` (21 replacements total):
+  - `payment/webhook/route.ts` (1)
+  - `manual-payments/[id]/route.ts` (1)
+  - `notifications/whatsapp-templates.service.ts` (5)
+  - `notifications/telegram.service.ts` (3)
+  - `lib/utils/export.ts` (4)
+  - `whatsapp/broadcast/route.ts` (2)
+  - `telegram/test/route.ts` (1)
+  - `telegram/test-backup/route.ts` (1)
+  - `keuangan/export/route.ts` (1)
+  - `invoices/export/route.ts` (1)
+  - `evoucher/purchase/route.ts` (1)
+
+### New E2E Tests
+- **[TESTED]** `cron-schedule.test.ts`: 40/40 passed on VPS — tests all 19 production cron schedules with cron-parser, timezone difference (Jakarta vs UTC), month boundary, edge cases (06:59, 07:00, 07:01, 23:00, 00:00)
+- **[TESTED]** `freeradius-concurrency.test.ts`: 12/12 passed on VPS — tests atomic claim with 2 workers, status transitions (PENDING/FAILED/SYNCING/COMPLETED/DEAD), 10-item batch with no overlap
+- **[TESTED]** `cron-secret.test.ts`: 14/14 passed on VPS — tests timing-safe comparison, secret not in logs, API with correct/wrong/empty/no/malformed secret
+
+### Production Verification (VPS 192.168.54.129)
+- **[PRODUCTION VERIFIED]** All PM2 processes online (backend, cron, frontend, wa)
+- **[PRODUCTION VERIFIED]** Backend health: OK (port 3001)
+- **[PRODUCTION VERIFIED]** Frontend health: 200 OK (port 3000)
+- **[PRODUCTION VERIFIED]** Nginx: active, config test OK (port 8080)
+- **[PRODUCTION VERIFIED]** MySQL: active, timezone +07:00
+- **[PRODUCTION VERIFIED]** FreeRADIUS: active (v3.0.26)
+- **[PRODUCTION VERIFIED]** OS timezone: Asia/Jakarta
+- **[PRODUCTION VERIFIED]** CRON_SECRET: SET (length: 64)
+- **[PRODUCTION VERIFIED]** DATABASE_URL: SET
+- **[PRODUCTION VERIFIED]** NEXTAUTH_SECRET: SET
+- **[PRODUCTION VERIFIED]** No pending migrations
+- **[PRODUCTION VERIFIED]** payments.invoiceId unique index: EXISTS (non_unique=0)
+- **[PRODUCTION VERIFIED]** webhook_logs table: EXISTS
+- **[PRODUCTION VERIFIED]** All recent cron jobs: SUCCESS (hotspot_sync, freeradius_health, pppoe_session_sync, disconnect_sessions, pppoe_auto_isolir, radius_sync_retry)
+- **[PRODUCTION VERIFIED]** Automated cron (CRON_SECRET): 200 OK (no 409 double-lock)
+- **[PRODUCTION VERIFIED]** Manual trigger without auth: 401 Unauthorized
+- **[PRODUCTION VERIFIED]** GenieACS technician routes: routerId/areaId requirement present in code
+- **[PRODUCTION VERIFIED]** Backend build: SUCCESS
+- **[PRODUCTION VERIFIED]** Frontend build: SUCCESS
+
+### Not Set (Configuration Issues, Not Code Issues)
+- RADIUS_COA_SECRET: NOT SET (needed for CoA/Disconnect packets)
+- GENIEACS_HOST/USER/PASS: NOT SET (GenieACS integration not configured)
+- JWT_SECRET: NOT SET (falls back to NEXTAUTH_SECRET)
+
+### Test Summary
+| Test Suite | Tests | Passed | Failed | Environment |
+|------------|-------|--------|--------|-------------|
+| Timezone | 27 | 27 | 0 | VPS |
+| Cron Schedule | 40 | 40 | 0 | VPS |
+| Cron Lock | 16 | 16 | 0 | VPS |
+| FreeRADIUS Concurrency | 12 | 12 | 0 | VPS |
+| CRON_SECRET | 14 | 14 | 0 | VPS |
+| **Total** | **109** | **109** | **0** | |
+
+---
+
 ## [5.2.0] — 2026-08-15 — Production Hardening Audit (Cron + Security + Timezone)
 
 ### Summary
