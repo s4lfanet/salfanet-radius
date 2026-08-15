@@ -2,6 +2,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
 import { requirePermission } from '@/server/middleware/api-auth'
+import { z, parseBody } from '@/lib/parse-body'
+
+const depositSchema = z.object({
+  amount: z.number().int().positive('Amount harus lebih dari 0'),
+  paymentMethod: z.string().max(50).optional(),
+  note: z.string().max(500).optional(),
+})
 
 /**
  * POST /api/admin/pppoe/users/[id]/deposit
@@ -15,15 +22,9 @@ export async function POST(
     const authCheck = await requirePermission('customers.edit')
     if (!authCheck.authorized) return authCheck.response
     const { id } = await params
-    const body = await request.json()
-    const { amount, paymentMethod, note } = body
-
-    if (!amount || amount <= 0) {
-      return NextResponse.json(
-        { error: 'Amount harus lebih dari 0' },
-        { status: 400 }
-      )
-    }
+    const { data, error } = await parseBody(request, depositSchema)
+    if (error) return error
+    const { amount, paymentMethod, note } = data
 
     // Get user
     const user = await prisma.pppoeUser.findUnique({

@@ -107,6 +107,8 @@ export async function GET(request: NextRequest) {
     } else if (type === 'export') {
       // Export all users to CSV
       const paymentStatus = searchParams.get('paymentStatus');
+      // P0 security: passwords excluded by default; require includePassword=true
+      const includePassword = searchParams.get('includePassword') === 'true';
       const exportWhere: any = {};
       if (paymentStatus === 'unpaid') {
         exportWhere.invoices = { some: { status: { in: ['PENDING', 'OVERDUE'] } } };
@@ -117,23 +119,39 @@ export async function GET(request: NextRequest) {
       }
       const users = await prisma.pppoeUser.findMany({
         where: exportWhere,
-        include: {
-          profile: true,
-          router: true,
-          area: true,
+        select: {
+          username: true,
+          password: includePassword,
+          name: true,
+          phone: true,
+          email: true,
+          address: true,
+          ipAddress: true,
+          subscriptionType: true,
+          billingDay: true,
+          status: true,
+          expiredAt: true,
+          latitude: true,
+          longitude: true,
+          autoIsolationEnabled: true,
+          createdAt: true,
+          customerId: true,
+          profile: { select: { name: true } },
+          router: { select: { name: true } },
+          area: { select: { name: true } },
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
 
-      // Build CSV content with password
+      // Build CSV content — password only included when explicitly requested
       let csv = 'username,password,customerId,name,phone,email,address,area,ipAddress,subscriptionType,billingDay,status,profile,router,expiredAt,latitude,longitude,autoIsolationEnabled,createdAt\n';
       
       users.forEach(user => {
         const row = [
           user.username,
-          user.password, // Include plaintext password for backup/recovery
+          includePassword ? (user.password || '') : '',
           (user as any).customerId || '',
           user.name,
           user.phone,

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requirePermission } from '@/server/middleware/api-auth'
 import { getAllScheduleConfigs, CRON_JOB_MAP } from '@/server/cron/jobs'
 import { prisma } from '@/server/db/client'
+import { safeErrorResponse } from '@/lib/api-response'
 
 export async function GET() {
   const authCheck = await requirePermission('settings.cron')
@@ -11,7 +12,7 @@ export async function GET() {
     const schedules = await getAllScheduleConfigs()
     return NextResponse.json({ success: true, schedules })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
+    return safeErrorResponse(error)
   }
 }
 
@@ -58,7 +59,7 @@ export async function PUT(request: Request) {
       message: `Schedule for ${jobType} updated. Restart cron runner to apply.`,
     })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
+    return safeErrorResponse(error)
   }
 }
 
@@ -78,6 +79,6 @@ export async function DELETE(request: Request) {
       message: `${jobType} reverted to default schedule. Restart cron runner to apply.`,
     })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
+    return safeErrorResponse(error)
   }
 }
