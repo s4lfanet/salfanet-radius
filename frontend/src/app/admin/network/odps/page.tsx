@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -20,7 +20,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
 
 interface ODP {
   id: string;
@@ -64,10 +64,13 @@ interface ODC {
 
 export default function ODPsPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [odps, setOdps] = useState<ODP[]>([]);
-  const [olts, setOlts] = useState<OLT[]>([]);
-  const [odcs, setOdcs] = useState<ODC[]>([]);
+  const odpsQuery = useApiQuery<{ odps?: ODP[] }>('/api/network/odps');
+  const oltsQuery = useApiQuery<{ olts?: OLT[] }>('/api/network/olts');
+  const odcsQuery = useApiQuery<{ odcs?: ODC[] }>('/api/network/odcs');
+  const odps = odpsQuery.data?.odps || [];
+  const olts = oltsQuery.data?.olts || [];
+  const odcs = odcsQuery.data?.odcs || [];
+  const loading = odpsQuery.isLoading || oltsQuery.isLoading || odcsQuery.isLoading;
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOdp, setEditingOdp] = useState<ODP | null>(null);
   const [showMapPicker, setShowMapPicker] = useState(false);
@@ -88,26 +91,19 @@ export default function ODPsPage() {
     followRoad: false,
   });
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [odpsData, oltsData, odcsData] = await Promise.all([
-        apiAdmin<{ odps?: ODP[] }>('/api/network/odps'),
-        apiAdmin<{ olts?: OLT[] }>('/api/network/olts'),
-        apiAdmin<{ odcs?: ODC[] }>('/api/network/odcs'),
-      ]);
-      setOdps(odpsData.odps || []);
-      setOlts(oltsData.olts || []);
-      setOdcs(odcsData.odcs || []);
-    } catch (error: unknown) {
-      console.error('Load error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Mutations: create / update / delete
+  const createMutation = useApiMutation<{ success?: boolean; error?: string }>('/api/network/odps', {
+    method: 'POST',
+    invalidateQueries: [buildQueryKey('/api/network/odps')],
+  });
+  const updateMutation = useApiMutation<{ success?: boolean; error?: string }>('/api/network/odps', {
+    method: 'PUT',
+    invalidateQueries: [buildQueryKey('/api/network/odps')],
+  });
+  const deleteMutation = useApiMutation<{ success?: boolean; error?: string }>('/api/network/odps', {
+    method: 'DELETE',
+    invalidateQueries: [buildQueryKey('/api/network/odps')],
+  });
 
   const resetForm = () => {
     setFormData({
@@ -146,7 +142,6 @@ export default function ODPsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const method = editingOdp ? 'PUT' : 'POST';
       const payload = {
         ...formData,
         odcId: connectionType === 'odc' ? formData.odcId : null,
@@ -154,17 +149,14 @@ export default function ODPsPage() {
         ...(editingOdp && { id: editingOdp.id }),
       };
 
-      const result = await apiAdmin<{ success?: boolean; error?: string }>('/api/network/odps', {
-        method,
-        body: JSON.stringify(payload),
-      });
+      const mutation = editingOdp ? updateMutation : createMutation;
+      const result = await mutation.mutateAsync(payload);
 
       if (result.success) {
         await showSuccess(editingOdp ? 'ODP updated!' : 'ODP created!');
         setIsDialogOpen(false);
         setEditingOdp(null);
         resetForm();
-        loadData();
       } else {
         await showError(result.error || t('common.failedSaveOdp'));
       }
@@ -182,14 +174,10 @@ export default function ODPsPage() {
     if (!confirmed) return;
 
     try {
-      const result = await apiAdmin<{ success?: boolean; error?: string }>('/api/network/odps', {
-        method: 'DELETE',
-        body: JSON.stringify({ id: odp.id }),
-      });
+      const result = await deleteMutation.mutateAsync({ id: odp.id });
 
       if (result.success) {
         await showSuccess(t('common.odpDeleted'));
-        loadData();
       } else {
         await showError(result.error || t('common.failedDeleteOdp'));
       }

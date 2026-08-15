@@ -399,7 +399,7 @@ export default function PaymentHistoryPage() {
       <div class="content">
       <div class="header">
         <div class="brand-wrap">
-          ${inv.company.logo ? `<div class="logo-box"><img src="${inv.company.logo}" style="max-height:58px;max-width:58px;width:auto;object-fit:contain" alt="Logo"></div>` : ''}
+          ${inv.company.logo ? `<div class="logo-box"><img src="${inv.company.logo}" style="max-height:58px;max-width:58px;width:auto;object-fit:contain" alt="Logo" loading="lazy"></div>` : ''}
           <div>
             <div class="company-name">${inv.company.name}</div>
             <div class="company-sub">
@@ -991,7 +991,7 @@ export default function PaymentHistoryPage() {
                     {proofPreviewUrl ? (
                       <div className="relative rounded-lg overflow-hidden border border-success/30">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={proofPreviewUrl} alt="Bukti transfer" className="w-full max-h-40 object-contain bg-black" />
+                        <img src={proofPreviewUrl} alt="Bukti transfer" className="w-full max-h-40 object-contain bg-black" loading="lazy" />
                         <button
                           onClick={() => { setProofFile(null); if (proofPreviewUrl) URL.revokeObjectURL(proofPreviewUrl); setProofPreviewUrl(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                           className="absolute top-2 right-2 p-1 bg-red-500/80 rounded-full hover:bg-red-500"

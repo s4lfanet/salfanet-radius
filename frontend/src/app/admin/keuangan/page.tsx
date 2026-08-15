@@ -10,6 +10,7 @@ import { showSuccess, showError, showConfirm } from "@/lib/sweetalert";
 import { formatWIB, nowWIB } from "@/lib/timezone";
 import { useTranslation } from "@/hooks/useTranslation";
 import { apiAdmin, buildUrl } from "@/lib/api";
+import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from "@/lib/api/hooks";
 import {
   Dialog,
   DialogContent,
@@ -107,28 +108,19 @@ interface KeuanganExportResponse {
 
 export default function KeuanganPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [loadingMore, setLoadingMore] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [stats, setStats] = useState<Stats>({
-    totalIncome: 0,
-    totalExpense: 0,
-    balance: 0,
-    incomeCount: 0,
-    expenseCount: 0,
-  });
+  const [extraTransactions, setExtraTransactions] = useState<Transaction[]>([]);
 
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const [total, setTotal] = useState(0);
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
-  
+
   // Default: show all transactions (no date filter)
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
@@ -151,8 +143,49 @@ export default function KeuanganPage() {
     description: "",
   });
 
-  const [processing, setProcessing] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // ─── React Query: Categories (rarely change — 5min stale) ─────────────────────
+  const { data: categoriesData } = useApiQuery<CategoriesListResponse>("/api/keuangan/categories", { staleTime: 5 * 60 * 1000 });
+
+  // ─── React Query: Transactions list (page 1, auto-refetches on filter change) ─
+  const transactionParams: Record<string, unknown> = {
+    page: 1,
+    limit: 50,
+    type: filterType !== "all" ? filterType : undefined,
+    categoryId: filterCategory !== "all" ? filterCategory : undefined,
+    startDate: startDate && endDate ? startDate : undefined,
+    endDate: startDate && endDate ? endDate : undefined,
+    search: debouncedSearch || undefined,
+  };
+  const { data: transactionsData, isLoading: loading, isFetching } = useApiQuery<TransactionsListResponse>("/api/keuangan/transactions", {
+    params: transactionParams,
+    placeholderData: "keepPreviousData",
+  });
+  const transactions = [...(transactionsData?.transactions || []), ...extraTransactions];
+  const categories = categoriesData?.categories || [];
+  const stats = transactionsData?.stats || {
+    totalIncome: 0,
+    totalExpense: 0,
+    balance: 0,
+    incomeCount: 0,
+    expenseCount: 0,
+  };
+  const total = transactionsData?.total || 0;
+
+  // ─── React Query: Mutations ──────────────────────────────────────────────────
+  const createTransactionMutation = useApiMutation<KeuanganActionResponse>("/api/keuangan/transactions", {
+    method: "POST",
+    invalidateQueries: [buildQueryKey("/api/keuangan/transactions")],
+  });
+  const updateTransactionMutation = useApiMutation<KeuanganActionResponse>("/api/keuangan/transactions", {
+    method: "PUT",
+    invalidateQueries: [buildQueryKey("/api/keuangan/transactions")],
+  });
+  const createCategoryMutation = useApiMutation<KeuanganActionResponse>("/api/keuangan/categories", {
+    method: "POST",
+    invalidateQueries: [buildQueryKey("/api/keuangan/transactions"), buildQueryKey("/api/keuangan/categories")],
+  });
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -175,56 +208,55 @@ export default function KeuanganPage() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Reset infinite-scroll state when filters change (React Query auto-refetches page 1)
   useEffect(() => {
     setPage(1);
-    setTransactions([]);
-    setHasMore(true);
-    loadData(1, true);
+    setExtraTransactions([]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterType, filterCategory, startDate, endDate, debouncedSearch]);
+
+  // Sync hasMore from query data (page 1)
+  useEffect(() => {
+    if (transactionsData) {
+      setHasMore(transactionsData.transactions.length === 50);
+    }
+  }, [transactionsData]);
 
   useEffect(() => {
     const handleScroll = () => {
       if (window.innerHeight + document.documentElement.scrollTop >= document.documentElement.offsetHeight - 100) {
-        if (!loading && !loadingMore && hasMore) loadMoreData();
+        if (!isFetching && !loadingMore && hasMore) loadMoreData();
       }
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, loadingMore, hasMore, page]);
+  }, [isFetching, loadingMore, hasMore, page]);
 
-  const loadData = async (pageNum = 1, reset = false) => {
-    try {
-      if (reset) { setLoading(true); } else { setLoadingMore(true); }
-
-      let url = `/api/keuangan/transactions?page=${pageNum}&limit=50`;
-      if (filterType !== "all") url += `&type=${filterType}`;
-      if (filterCategory !== "all") url += `&categoryId=${filterCategory}`;
-      if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
-      if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
-
-      const [transData, catData] = await Promise.all([apiAdmin<TransactionsListResponse>(url), apiAdmin<CategoriesListResponse>("/api/keuangan/categories")]);
-
-      if (transData.success) {
-        if (reset) { setTransactions(transData.transactions); } else { setTransactions((prev) => [...prev, ...transData.transactions]); }
-        setStats(transData.stats);
-        setTotal(transData.total || 0);
-        setHasMore(transData.transactions.length === 50);
-      }
-      if (catData.success) setCategories(catData.categories);
-    } catch (error) {
-      await showError(t('keuangan.failedLoadData'));
-    } finally {
-      setLoading(false);
-      setLoadingMore(false);
-    }
+  const buildTransactionsUrl = (pageNum: number) => {
+    let url = `/api/keuangan/transactions?page=${pageNum}&limit=50`;
+    if (filterType !== "all") url += `&type=${filterType}`;
+    if (filterCategory !== "all") url += `&categoryId=${filterCategory}`;
+    if (startDate && endDate) url += `&startDate=${startDate}&endDate=${endDate}`;
+    if (debouncedSearch) url += `&search=${encodeURIComponent(debouncedSearch)}`;
+    return url;
   };
 
-  const loadMoreData = () => {
+  const loadMoreData = async () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    loadData(nextPage, false);
+    setLoadingMore(true);
+    try {
+      const data = await apiAdmin<TransactionsListResponse>(buildTransactionsUrl(nextPage));
+      if (data.success) {
+        setExtraTransactions((prev) => [...prev, ...data.transactions]);
+        setHasMore(data.transactions.length === 50);
+      }
+    } catch {
+      await showError(t('keuangan.failedLoadData'));
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const handleAddTransaction = () => {
@@ -262,29 +294,21 @@ export default function KeuanganPage() {
       return;
     }
 
-    setProcessing(true);
     try {
-      const method = editingTransaction ? "PUT" : "POST";
       const body = editingTransaction ? { id: editingTransaction.id, ...transactionForm } : transactionForm;
-      const data = await apiAdmin<KeuanganActionResponse>("/api/keuangan/transactions", {
-        method,
-        body: JSON.stringify(body),
-      });
+      const mutation = editingTransaction ? updateTransactionMutation : createTransactionMutation;
+      const data = await mutation.mutateAsync(body);
 
       if (data.success) {
         await showSuccess(data.message || '');
         setIsTransactionDialogOpen(false);
         setPage(1);
-        setTransactions([]);
-        setHasMore(true);
-        loadData(1, true);
+        setExtraTransactions([]);
       } else {
         await showError(data.error || '');
       }
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('keuangan.failedSaveTransaction'));
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -299,9 +323,8 @@ export default function KeuanganPage() {
         await showSuccess(data.message || '');
         clearSelection();
         setPage(1);
-        setTransactions([]);
-        setHasMore(true);
-        loadData(1, true);
+        setExtraTransactions([]);
+        queryClient.invalidateQueries({ queryKey: ["/api/keuangan/transactions"] });
       } else {
         await showError(data.error || '');
       }
@@ -321,9 +344,8 @@ export default function KeuanganPage() {
         await showSuccess(data.message || '');
         clearSelection();
         setPage(1);
-        setTransactions([]);
-        setHasMore(true);
-        loadData(1, true);
+        setExtraTransactions([]);
+        queryClient.invalidateQueries({ queryKey: ["/api/keuangan/transactions"] });
       } else {
         await showError(data.error || '');
       }
@@ -344,9 +366,8 @@ export default function KeuanganPage() {
         await showSuccess(data.message);
         clearSelection();
         setPage(1);
-        setTransactions([]);
-        setHasMore(true);
-        loadData(1, true);
+        setExtraTransactions([]);
+        queryClient.invalidateQueries({ queryKey: ["/api/keuangan/transactions"] });
       } else {
         await showError(data.error);
       }
@@ -367,27 +388,19 @@ export default function KeuanganPage() {
       return;
     }
 
-    setProcessing(true);
     try {
-      const data = await apiAdmin<KeuanganActionResponse>("/api/keuangan/categories", {
-        method: "POST",
-        body: JSON.stringify(categoryForm),
-      });
+      const data = await createCategoryMutation.mutateAsync(categoryForm);
 
       if (data.success) {
         await showSuccess(data.message || '');
         setIsCategoryDialogOpen(false);
         setPage(1);
-        setTransactions([]);
-        setHasMore(true);
-        loadData(1, true);
+        setExtraTransactions([]);
       } else {
         await showError(data.error || '');
       }
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('keuangan.failedSaveCategory'));
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -930,11 +943,11 @@ export default function KeuanganPage() {
               />
             </div>
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsTransactionDialogOpen(false)} disabled={processing} size="sm" className="h-8 text-xs">
+              <Button type="button" variant="outline" onClick={() => setIsTransactionDialogOpen(false)} disabled={createTransactionMutation.isPending || updateTransactionMutation.isPending} size="sm" className="h-8 text-xs">
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={processing} size="sm" className="h-8 text-xs">
-                {processing && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
+              <Button type="submit" disabled={createTransactionMutation.isPending || updateTransactionMutation.isPending} size="sm" className="h-8 text-xs">
+                {(createTransactionMutation.isPending || updateTransactionMutation.isPending) && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
                 {t('common.save')}
               </Button>
             </DialogFooter>
@@ -980,11 +993,11 @@ export default function KeuanganPage() {
               />
             </div>
             <DialogFooter className="gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)} disabled={processing} size="sm" className="h-8 text-xs">
+              <Button type="button" variant="outline" onClick={() => setIsCategoryDialogOpen(false)} disabled={createCategoryMutation.isPending} size="sm" className="h-8 text-xs">
                 {t('common.cancel')}
               </Button>
-              <Button type="submit" disabled={processing} size="sm" className="h-8 text-xs">
-                {processing && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
+              <Button type="submit" disabled={createCategoryMutation.isPending} size="sm" className="h-8 text-xs">
+                {createCategoryMutation.isPending && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
                 {t('common.save')}
               </Button>
             </DialogFooter>

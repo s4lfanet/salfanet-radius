@@ -7,6 +7,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Server, Plus, Trash2, Edit, CheckCircle, XCircle, Copy, Loader2, Shield, Radio, Wifi, Activity, RefreshCw, Settings, X, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Router {
   id: string
@@ -84,10 +85,12 @@ interface RadiusSetupResponse {
 export default function RouterPage() {
   const { t } = useTranslation()
   const { addToast } = useToast();
-  const [loading, setLoading] = useState(true)
-  const [routers, setRouters] = useState<Router[]>([])
+  const queryClient = useQueryClient()
+  const routersQuery = useApiQuery<RoutersListResponse>('/api/network/routers')
+  const routers = routersQuery.data?.routers || []
+  const vpnClients = routersQuery.data?.vpnClients || []
+  const loading = routersQuery.isLoading
   const [statusMap, setStatusMap] = useState<Record<string, RouterStatus>>({})
-  const [vpnClients, setVpnClients] = useState<VpnClient[]>([])
   const [showModal, setShowModal] = useState(false)
   const [editingRouter, setEditingRouter] = useState<Router | null>(null)
   const [formData, setFormData] = useState({
@@ -121,6 +124,16 @@ export default function RouterPage() {
   const [scriptModalData, setScriptModalData] = useState<{ script: string; scriptRos6?: string; scriptRos7?: string; config: ScriptConfig } | null>(null)
   const [scriptRosTab, setScriptRosTab] = useState<6 | 7>(7)
 
+  // Mutations: create / update
+  const createMutation = useApiMutation<RouterSaveResponse>('/api/network/routers', {
+    method: 'POST',
+    invalidateQueries: [buildQueryKey('/api/network/routers')],
+  })
+  const updateMutation = useApiMutation<RouterSaveResponse>('/api/network/routers', {
+    method: 'PUT',
+    invalidateQueries: [buildQueryKey('/api/network/routers')],
+  })
+
   // Generate random RADIUS secret (16 chars alphanumeric)
   const generateSecret = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -131,26 +144,13 @@ export default function RouterPage() {
     return secret
   }
 
+  // Check router status when list data arrives
   useEffect(() => {
-    loadRouters()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const loadRouters = async () => {
-    try {
-      const data = await apiAdmin<RoutersListResponse>('/api/network/routers')
-      setRouters(data.routers || [])
-      setVpnClients(data.vpnClients || [])
-
-      if (data.routers && data.routers.length > 0) {
-        checkRoutersStatus(data.routers.map((r) => r.id))
-      }
-    } catch (error: unknown) {
-      console.error('Failed to load routers:', error)
-    } finally {
-      setLoading(false)
+    if (routersQuery.data?.routers && routersQuery.data.routers.length > 0) {
+      checkRoutersStatus(routersQuery.data.routers.map((r) => r.id))
     }
-  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routersQuery.data])
 
   const checkRoutersStatus = async (routerIds: string[]) => {
     try {
@@ -284,20 +284,15 @@ export default function RouterPage() {
     setCreating(true)
 
     try {
-      const url = '/api/network/routers'
-      const method = editingRouter ? 'PUT' : 'POST'
       const body = editingRouter ? { ...formData, id: editingRouter.id } : formData
+      const mutation = editingRouter ? updateMutation : createMutation
 
-      const data = await apiAdmin<RouterSaveResponse>(url, {
-        method,
-        body: JSON.stringify(body),
-      })
+      const data = await mutation.mutateAsync(body)
 
       showSuccess(editingRouter ? t('network.routerUpdated') : t('network.routerCreated'))
       setShowModal(false)
       setEditingRouter(null)
       resetForm()
-      loadRouters()
       // Auto-tampilkan RADIUS script yang sudah di-update
       const savedRouterId = data.router?.id || (editingRouter?.id)
       if (savedRouterId) {
@@ -343,7 +338,7 @@ export default function RouterPage() {
     try {
       await apiAdmin(`/api/network/routers?id=${id}`, { method: 'DELETE' })
       showSuccess(t('network.routerDeleted'))
-      loadRouters()
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/routers') })
     } catch (error: unknown) {
       showError((error instanceof Error ? error.message : String(error)) || t('network.failedDeleteRouter'))
     }

@@ -224,7 +224,7 @@ export default function SecuritySettingsPage() {
           <div className="flex justify-center">
             <div className="p-4 bg-white rounded-2xl shadow-[0_0_30px_rgba(188,19,254,0.3)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={qrCode} alt="2FA QR Code" width={200} height={200} />
+              <img src={qrCode} alt="2FA QR Code" width={200} height={200} loading="lazy" />
             </div>
           </div>
 

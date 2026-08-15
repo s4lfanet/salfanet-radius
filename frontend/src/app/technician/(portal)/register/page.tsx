@@ -547,7 +547,7 @@ export default function TechnicianRegisterPage() {
                           {form.installationPhotos.map((photo, index) => (
                             <div key={index} className="relative">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-600" />
+                              <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-600" loading="lazy" />
                               <button
                                 type="button"
                                 onClick={() => setForm((f) => ({ ...f, installationPhotos: f.installationPhotos.filter((_, i) => i !== index) }))}
