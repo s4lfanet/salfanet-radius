@@ -383,16 +383,18 @@ Only pre-existing errors: session.user.role typing + midtrans-client types
 - Closing sessions on user deletion should affect all NAS
 - No sync flow modifies radacct for active users
 
-### 10.2 Reconciliation Memory (Low Risk)
-While cursor pagination is now implemented, the SalfaNet user list (`pppoeUser.findMany`) is still loaded in full. This is acceptable because:
-- PPPoE users are typically in the thousands, not millions
-- Each user record is small (selected fields only)
-- RADIUS tables (which can be much larger) are now paginated
+### 10.2 Reconciliation Memory — FIXED
+Both RADIUS tables AND SalfaNet user list now use cursor pagination. No full-table loads remain.
 
-### 10.3 No Unique Constraint on username + nas_identifier (Medium Risk)
-The `radcheck`, `radreply`, `radusergroup` tables do not have a unique constraint on `(username, nas_identifier, attribute)`. This means duplicate entries can be created if sync runs concurrently. The `DELETE + INSERT` pattern mitigates this by cleaning first, but a unique constraint would provide a stronger guarantee.
+### 10.3 No Unique Constraint — FIXED
+Unique constraints added to all three RADIUS tables:
+- `radcheck`: `@@unique([username, attribute, nas_identifier])`
+- `radreply`: `@@unique([username, attribute, nas_identifier])` (was missing entirely)
+- `radusergroup`: `@@unique([username, groupname, nas_identifier])`
 
-**Mitigation:** Future schema migration should add unique constraints on `(username, attribute, nas_identifier)` for radcheck and `(username, nas_identifier)` for radusergroup.
+Migration applied on production VPS — no duplicate entries found, constraints added successfully.
+
+**Note:** MySQL treats NULL as distinct in unique indexes, so duplicates with `nas_identifier = NULL` are still possible at the DB level. The DELETE+INSERT pattern in application code handles this case. The unique constraint primarily protects the non-NULL (multi-NAS) case from concurrent sync races.
 
 ### 10.4 CoA Disconnect After Sync (Low Risk)
 Several routes call `disconnectPPPoEUser()` after RADIUS sync to force re-authentication. This is a network operation that can fail. If it fails, the user's session continues with old RADIUS data until they reconnect. This is non-critical — the RADIUS data is correct, just not applied to the active session.
