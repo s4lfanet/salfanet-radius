@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/lib/permissions';
 import {
   SimpleModal,
   ModalHeader,
@@ -276,7 +277,7 @@ export default function ManagementPage() {
             <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('management.title')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('management.subtitle')}</p>
           </div>
-          {hasPermission('users.create') && (
+          {hasPermission(PERMISSIONS.USERS_CREATE) && (
             <button
               onClick={openCreateModal}
               className="h-8 px-3 bg-primary hover:bg-primary/90 text-primary-foreground text-white text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 self-start sm:self-auto"
@@ -376,7 +377,7 @@ export default function ManagementPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {hasPermission('users.edit') && (user.role !== 'SUPER_ADMIN' || currentUserIsSuperAdmin) && (
+                      {hasPermission(PERMISSIONS.USERS_EDIT) && (user.role !== 'SUPER_ADMIN' || currentUserIsSuperAdmin) && (
                         <button
                           onClick={() => handleEdit(user)}
                           className="p-1.5 text-primary hover:bg-primary/10 rounded transition-colors"
@@ -387,7 +388,7 @@ export default function ManagementPage() {
                           </svg>
                         </button>
                       )}
-                      {hasPermission('users.delete') && user.role !== 'SUPER_ADMIN' && (
+                      {hasPermission(PERMISSIONS.USERS_DELETE) && user.role !== 'SUPER_ADMIN' && (
                         <button
                           onClick={() => handleDelete(user)}
                           className="p-1.5 text-destructive hover:bg-destructive/10 rounded transition-colors"
@@ -497,7 +498,7 @@ export default function ManagementPage() {
                       </td>
                       <td className="px-3 py-1.5">
                         <div className="flex items-center justify-center gap-1">
-                          {hasPermission('users.edit') && (user.role !== 'SUPER_ADMIN' || currentUserIsSuperAdmin) && (
+                          {hasPermission(PERMISSIONS.USERS_EDIT) && (user.role !== 'SUPER_ADMIN' || currentUserIsSuperAdmin) && (
                             <button
                               onClick={() => handleEdit(user)}
                               className="p-1 text-primary hover:bg-primary/10 rounded transition-colors"
@@ -508,7 +509,7 @@ export default function ManagementPage() {
                               </svg>
                             </button>
                           )}
-                          {hasPermission('users.delete') && user.role !== 'SUPER_ADMIN' && (
+                          {hasPermission(PERMISSIONS.USERS_DELETE) && user.role !== 'SUPER_ADMIN' && (
                             <button
                               onClick={() => handleDelete(user)}
                               className="p-1 text-destructive hover:bg-destructive/10 rounded transition-colors"

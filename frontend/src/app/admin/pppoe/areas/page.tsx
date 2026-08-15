@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, MapPin, Users, Search, X, Loader2 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/lib/permissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   SimpleModal,
@@ -118,7 +119,7 @@ export default function AreasPage() {
   const activeAreas = areas.filter((a) => a.isActive).length;
 
   const canView = hasPermission('customers.view');
-  const canCreate = hasPermission('customers.create');
+  const canCreate = hasPermission(PERMISSIONS.CUSTOMERS_CREATE);
 
   if (!permLoading && !canView) {
     return (
