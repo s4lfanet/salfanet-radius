@@ -105,6 +105,7 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'cron_history_cleanup',  name: 'History Cleanup',        description: 'Hapus cron history >30 hari', defaultSchedule: '0 4 * * *' },
   { type: 'radius_sync_retry',     name: 'RADIUS Sync Retry',      description: 'Retry failed FreeRADIUS syncs', defaultSchedule: '*/5 * * * *' },
   { type: 'radius_reconciliation', name: 'RADIUS Reconciliation',  description: 'Daily reconciliation SalfaNet vs FreeRADIUS', defaultSchedule: '0 6 * * *' },
+  { type: 'external_task_processor', name: 'External Task Processor', description: 'Process external task outbox (MikroTik, WhatsApp, Email, CoA)', defaultSchedule: '* * * * *' },
 ]
 
 // ─── Schedule config ────────────────────────────────────────────────────────

@@ -402,6 +402,35 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
               paidAt: now,
             },
           });
+
+          // ─── Record in Keuangan ledger (atomic with balance decrement) ────────
+          // Ensures auto-renewal balance usage is tracked in financial reports.
+          let subscriptionCategory = await tx.transactionCategory.findFirst({
+            where: { name: 'Subscription' },
+          });
+          if (!subscriptionCategory) {
+            subscriptionCategory = await tx.transactionCategory.create({
+              data: {
+                id: `cat_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+                name: 'Subscription',
+                type: 'INCOME',
+                description: 'Pembayaran subscription auto-renewal',
+              },
+            });
+          }
+          await tx.transaction.create({
+            data: {
+              id: `txn_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`,
+              categoryId: subscriptionCategory.id,
+              amount: amount,
+              type: 'INCOME',
+              description: `Auto-renewal ${user.username} - ${(user.profile as any).name || 'profile'}`,
+              reference: `AUTO-RENEW-${user.id}-${now.toISOString().slice(0, 10)}`,
+              notes: `Auto renewal dari saldo, profile: ${(user.profile as any).name || 'N/A'}`,
+              createdAt: now,
+              createdBy: 'system',
+            },
+          });
         });
       } catch (txError: any) {
         if (txError?.message === 'BALANCE_INSUFFICIENT') {

@@ -243,8 +243,26 @@ async function runWebhookLogCleanup() {
 
 async function runCronHistoryCleanup() {
   const thirtyDaysAgo = new Date(nowWIB().getTime() - 30 * 24 * 60 * 60 * 1000)
-  const result = await prisma.cronHistory.deleteMany({ where: { startedAt: { lt: thirtyDaysAgo } } })
-  return { deleted: result.count }
+  // Batch delete to avoid long table locks on large cron_history tables.
+  // Deletes in chunks of 5,000 rows until no more old records remain.
+  let totalDeleted = 0
+  const BATCH_SIZE = 5000
+  for (let i = 0; i < 100; i++) { // safety cap: 100 iterations = 500k rows max
+    const result = await prisma.$executeRaw`
+      DELETE FROM cron_history
+      WHERE id IN (
+        SELECT id FROM (
+          SELECT id FROM cron_history WHERE startedAt < ${thirtyDaysAgo} LIMIT ${BATCH_SIZE}
+        ) AS t
+      )
+    `
+    const affected = Number(result)
+    totalDeleted += affected
+    if (affected < BATCH_SIZE) break // no more rows to delete
+    // Small delay between batches to reduce lock contention
+    await new Promise((r) => setTimeout(r, 200))
+  }
+  return { deleted: totalDeleted }
 }
 
 async function runFreeradiusHealth() {
