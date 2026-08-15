@@ -76,13 +76,22 @@ interface ApiErrorResponse {
  * API error class — thrown by all apiCall variants.
  */
 export class ApiError extends Error {
+  public readonly status: number;
+  public readonly path: string;
+  /** Parsed JSON body from the error response (if available). */
+  public readonly body: unknown;
+
   constructor(
-    public readonly status: number,
+    status: number,
     message: string,
-    public readonly path: string,
+    path: string,
+    body?: unknown,
   ) {
     super(message);
     this.name = 'ApiError';
+    this.status = status;
+    this.path = path;
+    this.body = body;
   }
 }
 
@@ -154,8 +163,10 @@ export async function apiCall<T = unknown>(
 
   if (!res.ok) {
     let message = `API fetch failed: ${res.status} ${res.statusText}`;
+    let errorBody: unknown = undefined;
     try {
       const error: ApiErrorResponse = await res.json();
+      errorBody = error;
       message = error.message || error.error || message;
     } catch {
       // Response body is not JSON (e.g. HTML error page, empty body)
@@ -177,7 +188,7 @@ export async function apiCall<T = unknown>(
     if (res.status === 401) {
       triggerUnauthorized();
     }
-    throw new ApiError(res.status, message, path);
+    throw new ApiError(res.status, message, path, errorBody);
   }
 
   // Handle 204 No Content or empty body — return null for void responses

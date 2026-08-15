@@ -1214,8 +1214,7 @@ function AppVersionBadge() {
   const [info, setInfo] = useState<{ version: string; commit: string; hasUpdate: boolean } | null>(null);
 
   useEffect(() => {
-    fetch('/api/admin/system/info')
-      .then(r => r.ok ? r.json() : null)
+    apiAdmin<{ version: string; commit: string; hasUpdate: boolean } | null>('/api/admin/system/info')
       .then(d => { if (d) setInfo(d); })
       .catch(() => {});
   }, []);

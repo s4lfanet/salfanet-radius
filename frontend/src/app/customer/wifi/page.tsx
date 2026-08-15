@@ -9,6 +9,7 @@ import {
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { showConfirm } from '@/lib/sweetalert';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 interface WLANConfig {
   index: number;
@@ -82,15 +83,7 @@ export default function CustomerWiFiPage() {
     }
 
     try {
-      const res = await fetch('/api/customer/wifi', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) {
-        setNoDevice(true);
-        setDevice(null);
-        return;
-      }
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; reason?: string; device?: DeviceInfo; error?: string }>('/api/customer/wifi');
 
       if (!data.success) {
         if (data.reason === 'not_configured') {
@@ -100,7 +93,7 @@ export default function CustomerWiFiPage() {
         }
         setDevice(null);
       } else {
-        setDevice(data.device);
+        setDevice(data.device || null);
         setNoGenieACS(false);
         setNoDevice(false);
       }
@@ -132,20 +125,18 @@ export default function CustomerWiFiPage() {
     );
     if (!confirmed) return;
     setRebooting(true);
-    const token = localStorage.getItem('customer_token');
     try {
-      const res = await fetch('/api/customer/ont/reboot', {
+      const data = await apiCustomer<{ success: boolean; message?: string; error?: string }>('/api/customer/ont/reboot', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
       if (data.success) {
         toast('success', 'Reboot dikirim', data.message || 'Perangkat akan restart dalam beberapa detik.');
       } else {
         toast('error', 'Gagal', data.error || 'Gagal mengirim perintah reboot.');
       }
-    } catch {
-      toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
+    } catch (error) {
+      if (error instanceof ApiError) toast('error', 'Gagal', error.message);
+      else toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setRebooting(false);
     }
@@ -183,15 +174,10 @@ export default function CustomerWiFiPage() {
     if (!confirmed) return;
 
     setSaving(true);
-    const token = localStorage.getItem('customer_token');
 
     try {
-      const res = await fetch('/api/customer/wifi', {
+      const data = await apiCustomer<{ success: boolean; error?: string }>('/api/customer/wifi', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({
           deviceId: device._id,
           wlanIndex: editing.wlanIndex,
@@ -200,9 +186,6 @@ export default function CustomerWiFiPage() {
         }),
       });
 
-      if (!res.ok) throw new Error(`Server error ${res.status}`);
-      const data = await res.json();
-
       if (data.success) {
         toast('success', 'Berhasil', 'Konfigurasi WiFi dikirim ke perangkat. Tunggu 30–60 detik lalu sambungkan ulang.');
         setEditing(null);
@@ -210,8 +193,9 @@ export default function CustomerWiFiPage() {
       } else {
         toast('error', 'Gagal', data.error || 'Gagal mengubah konfigurasi WiFi.');
       }
-    } catch {
-      toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
+    } catch (error) {
+      if (error instanceof ApiError) toast('error', 'Gagal', error.message);
+      else toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setSaving(false);
     }

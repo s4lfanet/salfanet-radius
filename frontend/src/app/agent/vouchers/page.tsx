@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from '@/hooks/useTranslation';
 import { isExpiredWIB } from '@/lib/timezone';
+import { apiAgent } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -99,16 +100,15 @@ export default function AgentVouchersPage() {
       if (profileId) params.append('profileId', profileId);
       if (search) params.append('search', search);
 
-      const res = await fetch(`/api/agent/dashboard?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const data = await apiAgent<{
+        vouchers: Voucher[];
+        profiles: Profile[];
+        pagination: typeof pagination;
+      }>(`/api/agent/dashboard?${params.toString()}`);
 
-      if (res.ok) {
-        setVouchers(data.vouchers || []);
-        setProfiles(data.profiles || []);
-        setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
-      }
+      setVouchers(data.vouchers || []);
+      setProfiles(data.profiles || []);
+      setPagination(data.pagination || { page: 1, limit: 20, total: 0, totalPages: 0 });
     } catch (error) {
       console.error('Load vouchers error:', error);
     } finally {

@@ -22,6 +22,7 @@ import {
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
+import { apiAgent, ApiError } from '@/lib/api';
 
 interface TicketMessage {
   id: string;
@@ -116,10 +117,7 @@ export default function AgentTicketsPage() {
       if (!token) { router.push('/agent'); return; }
       const params = new URLSearchParams();
       if (status) params.append('status', status);
-      const res = await fetch(`/api/agent/tickets?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const data = await apiAgent<{ success: boolean; tickets: Ticket[] }>(`/api/agent/tickets?${params}`);
       if (data.success) setTickets(data.tickets);
     } catch {
       // silently ignore
@@ -130,14 +128,8 @@ export default function AgentTicketsPage() {
 
   const loadCategories = async () => {
     try {
-      const token = localStorage.getItem('agentToken');
-      const res = await fetch('/api/tickets/categories', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(Array.isArray(data) ? data : []);
-      }
+      const data = await apiAgent<Category[]>('/api/tickets/categories');
+      setCategories(Array.isArray(data) ? data : []);
     } catch { /* ignore */ }
   };
 
@@ -178,13 +170,14 @@ export default function AgentTicketsPage() {
           finalDescription += `\n\uD83D\uDDFA\uFE0F Maps: https://maps.google.com/?q=${latitude},${longitude}`;
         }
       }
-      const res = await fetch('/api/agent/tickets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ...form, description: finalDescription }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await apiAgent<{ success: boolean; ticket: { ticketNumber: string }; error?: string }>(
+        '/api/agent/tickets',
+        {
+          method: 'POST',
+          body: JSON.stringify({ ...form, description: finalDescription }),
+        },
+      );
+      if (data.success) {
         await showSuccess(`Tiket #${data.ticket.ticketNumber} berhasil dibuat!`);
         setForm({ subject: '', description: '', priority: 'MEDIUM', categoryId: '' });
         setLocationTag('');
@@ -195,8 +188,12 @@ export default function AgentTicketsPage() {
       } else {
         await showError(data.error || 'Gagal membuat tiket.');
       }
-    } catch {
-      await showError('Gagal membuat tiket.');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        await showError(error.message || 'Gagal membuat tiket.');
+      } else {
+        await showError('Gagal membuat tiket.');
+      }
     } finally {
       setCreating(false);
     }
@@ -208,13 +205,14 @@ export default function AgentTicketsPage() {
     setSendingReply(ticketId);
     try {
       const token = localStorage.getItem('agentToken');
-      const res = await fetch(`/api/agent/tickets/${ticketId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ message: msg }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const data = await apiAgent<{ success: boolean; error?: string }>(
+        `/api/agent/tickets/${ticketId}`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ message: msg }),
+        },
+      );
+      if (data.success) {
         setReplyText(prev => ({ ...prev, [ticketId]: '' }));
         // Reload tickets to refresh messages
         await loadTickets(filterStatus);
@@ -223,8 +221,12 @@ export default function AgentTicketsPage() {
       } else {
         await showError(data.error || 'Gagal mengirim balasan.');
       }
-    } catch {
-      await showError('Gagal mengirim balasan.');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        await showError(error.message || 'Gagal mengirim balasan.');
+      } else {
+        await showError('Gagal mengirim balasan.');
+      }
     } finally {
       setSendingReply(null);
     }

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
+import { apiAdmin, ApiError } from '@/lib/api';
 
 interface DeviceDetail {
   _id: string;
@@ -74,16 +75,16 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
 
   const fetchDeviceDetail = async () => {
     try {
-      const response = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/detail`);
-      const data = await response.json();
-      if (response.ok && data.device) {
+      const data = await apiAdmin<{ device?: DeviceDetail; error?: string }>(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/detail`);
+      if (data.device) {
         setDevice(data.device);
       } else {
         addToast({ type: 'error', title: t('genieacsDevice.dialogs.error'), description: data.error || t('genieacsDevice.deviceNotFound') });
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      const msg = error instanceof ApiError ? error.message : t('common.failedLoadData');
       console.error('Error:', error);
-      addToast({ type: 'error', title: t('genieacsDevice.dialogs.error'), description: t('common.failedLoadData') });
+      addToast({ type: 'error', title: t('genieacsDevice.dialogs.error'), description: msg });
     } finally {
       setLoading(false);
     }
@@ -105,9 +106,8 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
     })) return;
     setRefreshing(true);
     try {
-      const response = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/refresh`, { method: 'POST' });
-      const data = await response.json();
-      if (response.ok && data.success) {
+      const data = await apiAdmin<{ success?: boolean; error?: string }>(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/refresh`, { method: 'POST' });
+      if (data.success) {
         addToast({ type: 'success', title: t('genieacsDevice.dialogs.success'), description: t('genieacsDevice.dialogs.refreshSent'), duration: 2000 });
         setTimeout(() => handleRefresh(), 3000);
       } else {
@@ -130,10 +130,8 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
       variant: 'danger',
     })) return;
     try {
-      const response = await fetch(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/reboot`, { method: 'POST' });
-      if (response.ok) {
-        addToast({ type: 'success', title: t('genieacsDevice.dialogs.success'), description: t('genieacsDevice.dialogs.rebootSent'), duration: 2000 });
-      }
+      await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}/reboot`, { method: 'POST' });
+      addToast({ type: 'success', title: t('genieacsDevice.dialogs.success'), description: t('genieacsDevice.dialogs.rebootSent'), duration: 2000 });
     } catch {
       addToast({ type: 'error', title: t('genieacsDevice.dialogs.error'), description: t('genieacsDevice.dialogs.rebootFailed') });
     }

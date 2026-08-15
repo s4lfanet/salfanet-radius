@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAdmin, ApiError } from '@/lib/api';
 import {
   ClipboardList, CheckCircle2, Clock, AlertTriangle, Filter, RefreshCw,
   Loader2, MessageSquare, User, Phone,
@@ -44,11 +45,8 @@ export default function TechnicianDashboardPage() {
       if (filterStatus) params.append('status', filterStatus);
       if (filterPriority) params.append('priority', filterPriority);
       if (showMyTasks) params.append('mine', 'true');
-      const res = await fetch(`/api/technician/tickets?${params}`);
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data.tickets || []);
-      }
+      const data = await apiAdmin<{ tickets: Ticket[] }>(`/api/technician/tickets?${params}`);
+      setTickets(data.tickets || []);
     } catch {
       // silent
     } finally {
@@ -62,20 +60,18 @@ export default function TechnicianDashboardPage() {
   const handleAction = async (ticketId: string, action: string, status?: string) => {
     setActionLoading(ticketId);
     try {
-      const res = await fetch('/api/technician/tickets', {
+      await apiAdmin('/api/technician/tickets', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticketId, action, status }),
       });
-      if (res.ok) {
-        addToast({ type: 'success', title: 'Berhasil' });
-        loadTickets();
+      addToast({ type: 'success', title: 'Berhasil' });
+      loadTickets();
+    } catch (error) {
+      if (error instanceof ApiError) {
+        addToast({ type: 'error', title: error.message || 'Gagal melakukan aksi' });
       } else {
-        const data = await res.json();
-        addToast({ type: 'error', title: data.error || 'Gagal melakukan aksi' });
+        addToast({ type: 'error', title: 'Gagal melakukan aksi' });
       }
-    } catch {
-      addToast({ type: 'error', title: 'Gagal melakukan aksi' });
     } finally {
       setActionLoading(null);
     }

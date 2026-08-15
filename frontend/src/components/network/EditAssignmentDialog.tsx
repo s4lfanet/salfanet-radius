@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Wifi } from 'lucide-react';
+import { apiAdmin, ApiError } from '@/lib/api';
 
 interface ODP {
   id: string;
@@ -74,13 +75,9 @@ export default function EditAssignmentDialog({
   const fetchNearestODPs = async (customerId: string) => {
     try {
       setLoadingODPs(true);
-      const res = await fetch(
+      const odps = await apiAdmin<ODP[]>(
         `/api/network/customers/assign?customerId=${customerId}`
       );
-      if (!res.ok) {
-        throw new Error('Failed to fetch ODPs');
-      }
-      const odps = await res.json();
       setNearestODPs(odps);
 
       // Find and set current ODP
@@ -104,9 +101,8 @@ export default function EditAssignmentDialog({
 
     try {
       setLoading(true);
-      const res = await fetch('/api/network/customers/assign', {
+      await apiAdmin('/api/network/customers/assign', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: assignment.id,
           odpId: selectedODP.id,
@@ -115,15 +111,11 @@ export default function EditAssignmentDialog({
         }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to update assignment');
-      }
-
       onSuccess();
       handleClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : String(err));
+      const msg = err instanceof ApiError ? err.message : err instanceof Error ? err.message : String(err);
+      setError(msg);
     } finally {
       setLoading(false);
     }

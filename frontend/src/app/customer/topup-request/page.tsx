@@ -6,6 +6,7 @@ import { ArrowLeft, Upload, DollarSign, CreditCard, Smartphone, Banknote, Loader
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 export default function TopUpRequestPage() {
   const { t } = useTranslation();
@@ -43,17 +44,10 @@ export default function TopUpRequestPage() {
         data.append('proof', formData.proofFile);
       }
 
-      const token = localStorage.getItem('customer_token');
-      const response = await fetch('/api/customer/topup-request', {
+      await apiCustomer('/api/customer/topup-request', {
         method: 'POST',
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
         body: data,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || t('customer.requestFailed'));
-      }
 
       showSuccess(
         `${t('customer.topupRequestSentMsg')} Rp ${amount.toLocaleString('id-ID')} ${t('customer.sentToAdmin')}. ${t('customer.waitAdminConfirmation')}`,
@@ -62,7 +56,11 @@ export default function TopUpRequestPage() {
 
       router.push('/customer');
     } catch (error: unknown) {
-      showError((error instanceof Error ? error.message : String(error)) || t('customer.requestError'), t('common.failed'));
+      if (error instanceof ApiError) {
+        showError(error.message || t('customer.requestError'), t('common.failed'));
+      } else {
+        showError((error instanceof Error ? error.message : String(error)) || t('customer.requestError'), t('common.failed'));
+      }
     } finally {
       setSubmitting(false);
     }

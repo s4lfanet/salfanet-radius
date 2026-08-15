@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Ticket, MessageSquare, Plus, Filter } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { formatWIB } from '@/lib/timezone';
+import { apiCustomer } from '@/lib/api';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -65,20 +66,14 @@ export default function CustomerTicketsPage() {
     
     try {
       setLoading(true);
-      const token = localStorage.getItem('customer_token');
       const params = new URLSearchParams();
       params.append('customerId', customerId);
       if (statusFilter !== 'all') {
         params.append('status', statusFilter);
       }
       
-      const res = await fetch(`/api/tickets?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTickets(data);
-      }
+      const data = await apiCustomer<TicketItem[]>(`/api/tickets?${params.toString()}`);
+      setTickets(data);
     } catch (error) {
       console.error('Failed to fetch tickets:', error);
     } finally {

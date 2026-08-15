@@ -5,6 +5,7 @@ import { Bell, Check, CheckCheck, Trash2, X, AlertTriangle, TrendingUp, Trending
 import { formatWIB, nowWIB } from '@/lib/timezone';
 import Link from 'next/link';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { apiAgent } from '@/lib/api';
 
 interface Notification {
   id: string;
@@ -87,12 +88,13 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
     if (!agentId) return;
     const token = typeof window !== 'undefined' ? localStorage.getItem('agentToken') : null;
     if (!token) return;
-    
+
     try {
-      const res = await fetch('/api/agent/notifications?limit=10', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
+      const data = await apiAgent<{
+        success: boolean;
+        notifications: Notification[];
+        unreadCount: number;
+      }>('/api/agent/notifications?limit=10');
       if (data.success) {
         if (skipToasts || !enableToasts) {
           // Passive instance — just update dropdown data, no toasts
@@ -141,10 +143,8 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
 
   const markAsRead = async (notificationIds: string[]) => {
     try {
-      const token = localStorage.getItem('agentToken');
-      await fetch('/api/agent/notifications', {
+      await apiAgent('/api/agent/notifications', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ notificationIds }),
       });
       loadNotifications();
@@ -155,10 +155,8 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
 
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('agentToken');
-      await fetch('/api/agent/notifications', {
+      await apiAgent('/api/agent/notifications', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ markAll: true }),
       });
       loadNotifications();
@@ -169,10 +167,8 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
 
   const deleteNotification = async (id: string) => {
     try {
-      const token = localStorage.getItem('agentToken');
-      await fetch(`/api/agent/notifications?id=${id}`, {
+      await apiAgent(`/api/agent/notifications?id=${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
       });
       loadNotifications();
     } catch (error) {

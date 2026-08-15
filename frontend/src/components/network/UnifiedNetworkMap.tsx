@@ -6,6 +6,7 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 // Import icons
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -251,8 +252,7 @@ export default function UnifiedNetworkMap({
 
   // Fetch map settings (center + zoom) from admin settings
   useEffect(() => {
-    fetch('/api/settings/map')
-      .then(r => r.ok ? r.json() : null)
+    apiAdmin<{ settings?: { defaultLat: number; defaultLon: number; defaultZoom: number } } | null>('/api/settings/map')
       .then(data => {
         if (data?.settings) {
           setMapCenter([data.settings.defaultLat, data.settings.defaultLon]);
@@ -301,47 +301,40 @@ export default function UnifiedNetworkMap({
         setError(null);
 
         // Fetch infrastructure nodes and customers in parallel
-        const [nodesResponse, customersResponse] = await Promise.all([
-          fetch('/api/network/nodes?limit=1000'),
-          fetch('/api/customers/with-location?limit=1000'),
+        const [nodesData, customersData] = await Promise.all([
+          apiAdmin<{ data?: Record<string, unknown>[] }>('/api/network/nodes?limit=1000'),
+          apiAdmin<{ data?: Record<string, unknown>[] }>('/api/customers/with-location?limit=1000'),
         ]);
-
-        if (!nodesResponse.ok || !customersResponse.ok) {
-          throw new Error('Failed to fetch entities');
-        }
-
-        const nodesData = await nodesResponse.json();
-        const customersData = await customersResponse.json();
 
         // Combine infrastructure + customers
         const allEntities: MapEntity[] = [
           // Infrastructure nodes
           ...(nodesData.data || []).map((n: Record<string, unknown>) => ({
-            id: n.id,
-            type: n.type,
-            code: n.code,
-            name: n.name,
+            id: n.id as string,
+            type: n.type as MapEntity['type'],
+            code: n.code as string | undefined,
+            name: n.name as string,
             latitude: parseFloat(n.latitude as string),
             longitude: parseFloat(n.longitude as string),
-            status: n.status,
-            address: n.address,
-            metadata: n.metadata,
+            status: n.status as string,
+            address: n.address as string | null | undefined,
+            metadata: n.metadata as Record<string, unknown> | undefined,
           })),
           // Customers
           ...(customersData.data || []).map((c: Record<string, unknown>) => ({
-            id: c.id,
+            id: c.id as string,
             type: 'CUSTOMER' as const,
-            code: c.username,
-            username: c.username,
-            name: c.name,
+            code: c.username as string | undefined,
+            username: c.username as string | undefined,
+            name: c.name as string,
             latitude: parseFloat(c.latitude as string),
             longitude: parseFloat(c.longitude as string),
-            status: c.status,
-            address: c.address,
-            pppoe_profiles: c.pppoe_profiles,
-            speed: c.speed,
-            odpId: c.odpId,
-            odpName: c.odpName,
+            status: c.status as string,
+            address: c.address as string | null | undefined,
+            pppoe_profiles: c.pppoe_profiles as Record<string, unknown> | undefined,
+            speed: c.speed as string | undefined,
+            odpId: c.odpId as string | null | undefined,
+            odpName: c.odpName as string | undefined,
           })),
         ];
 

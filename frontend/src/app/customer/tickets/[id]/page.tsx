@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { ArrowLeft, Send, User, Clock } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -67,15 +68,9 @@ export default function TicketDetailPage() {
 
   const fetchTicket = async () => {
     try {
-      const token = localStorage.getItem('customer_token');
-      const res = await fetch(`/api/tickets?id=${ticketId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.length > 0) {
-          setTicket(data[0]);
-        }
+      const data = await apiCustomer<TicketDetail[]>(`/api/tickets?id=${ticketId}`);
+      if (data.length > 0) {
+        setTicket(data[0]);
       }
     } catch (error) {
       console.error('Failed to fetch ticket:', error);
@@ -86,11 +81,8 @@ export default function TicketDetailPage() {
 
   const fetchMessages = async () => {
     try {
-      const res = await fetch(`/api/tickets/messages?ticketId=${ticketId}&includeInternal=false`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data);
-      }
+      const data = await apiCustomer<Message[]>(`/api/tickets/messages?ticketId=${ticketId}&includeInternal=false`);
+      setMessages(data);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
     }
@@ -115,9 +107,8 @@ export default function TicketDetailPage() {
 
     setSending(true);
     try {
-      const res = await fetch('/api/tickets/messages', {
+      await apiCustomer('/api/tickets/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticketId,
           senderType: 'CUSTOMER',
@@ -127,16 +118,13 @@ export default function TicketDetailPage() {
         }),
       });
 
-      if (res.ok) {
-        setReplyText('');
-        fetchMessages();
-        toast('success', t('ticket.replySent') || 'Balasan terkirim');
-      } else {
-        toast('error', t('ticket.replyFailed'));
-      }
+      setReplyText('');
+      fetchMessages();
+      toast('success', t('ticket.replySent') || 'Balasan terkirim');
     } catch (error) {
       console.error('Failed to send reply:', error);
-      toast('error', t('ticket.replyFailed'));
+      if (error instanceof ApiError) toast('error', error.message || t('ticket.replyFailed'));
+      else toast('error', t('ticket.replyFailed'));
     } finally {
       setSending(false);
     }

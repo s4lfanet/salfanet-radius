@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import Link from 'next/link';
+import { apiAdmin } from '@/lib/api';
 
 interface Notification {
   id: string;
@@ -47,8 +48,7 @@ export default function NotificationDropdown() {
 
   const loadNotifications = async () => {
     try {
-      const res = await fetch('/api/notifications?limit=10');
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; notifications: Notification[]; unreadCount: number }>('/api/notifications?limit=10');
       if (data.success) {
         setNotifications(data.notifications);
         setUnreadCount(data.unreadCount);
@@ -60,9 +60,8 @@ export default function NotificationDropdown() {
 
   const markAsRead = async (notificationIds: string[]) => {
     try {
-      await fetch('/api/notifications', {
+      await apiAdmin('/api/notifications', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notificationIds }),
       });
       loadNotifications();
@@ -73,9 +72,8 @@ export default function NotificationDropdown() {
 
   const markAllAsRead = async () => {
     try {
-      await fetch('/api/notifications', {
+      await apiAdmin('/api/notifications', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markAll: true }),
       });
       loadNotifications();
@@ -86,7 +84,7 @@ export default function NotificationDropdown() {
 
   const deleteNotification = async (id: string) => {
     try {
-      await fetch(`/api/notifications?id=${id}`, {
+      await apiAdmin(`/api/notifications?id=${id}`, {
         method: 'DELETE',
       });
       loadNotifications();

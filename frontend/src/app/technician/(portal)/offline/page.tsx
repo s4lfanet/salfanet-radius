@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { WifiOff, Search, RefreshCw, Loader2, Clock, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api';
 
 interface OfflineUser {
   id: string;
@@ -29,8 +30,7 @@ export default function TechnicianOfflinePage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/technician/offline');
-      const data = await res.json();
+      const data = await apiAdmin<{ users: OfflineUser[] }>('/api/technician/offline');
       setUsers(data.users || []);
     } catch {
       addToast({ type: 'error', title: 'Failed to load data' });

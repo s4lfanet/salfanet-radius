@@ -5,6 +5,7 @@ import { nowWIB } from '@/lib/timezone';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAgent } from '@/lib/api';
 import {
   Wifi,
   WifiOff,
@@ -106,20 +107,16 @@ export default function AgentSessionsPage() {
     try {
       const token = localStorage.getItem('agentToken');
       if (!token) { router.push('/agent'); return; }
-      const res = await fetch('/api/agent/sessions', {
-        headers: { Authorization: `Bearer ${token}` },
+      const data = await apiAgent<{ sessions: Session[] }>('/api/agent/sessions', {
         signal: AbortSignal.timeout(15000),
       });
-      const data = await res.json();
 
-      if (res.ok) {
-        setSessions(data.sessions || []);
-        setStats({
-          total: data.sessions?.length || 0,
-          totalUpload: data.sessions?.reduce((sum: number, s: Session) => sum + (s.acctInputOctets || 0), 0) || 0,
-          totalDownload: data.sessions?.reduce((sum: number, s: Session) => sum + (s.acctOutputOctets || 0), 0) || 0,
-        });
-      }
+      setSessions(data.sessions || []);
+      setStats({
+        total: data.sessions?.length || 0,
+        totalUpload: data.sessions?.reduce((sum: number, s: Session) => sum + (s.acctInputOctets || 0), 0) || 0,
+        totalDownload: data.sessions?.reduce((sum: number, s: Session) => sum + (s.acctOutputOctets || 0), 0) || 0,
+      });
     } catch (error) {
       console.error('Load sessions error:', error);
     } finally {

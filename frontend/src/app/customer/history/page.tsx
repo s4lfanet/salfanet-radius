@@ -278,11 +278,35 @@ export default function PaymentHistoryPage() {
 
   const handlePrintInvoice = async (payment: PaymentHistory) => {
     try {
-      const token = localStorage.getItem('customer_token');
-      const res = await fetch(`/api/invoices/${payment.id}/pdf`, {
-        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-      });
-      const data = await res.json();
+      const data = await apiCustomer<{
+        success: boolean;
+        data?: {
+          company: {
+            logo?: string;
+            name: string;
+            address?: string;
+            phone?: string;
+            email?: string;
+            bankAccounts?: { bankName: string; accountNumber: string; accountName: string }[];
+          };
+          customer: {
+            name: string;
+            customerId?: string;
+            phone?: string;
+            username?: string;
+          };
+          invoice: {
+            number: string;
+            status: string;
+            date: string;
+            dueDate: string;
+            paidAt?: string;
+          };
+          items: { description: string; quantity: number; price: number; total: number }[];
+          tax?: { hasTax: boolean; baseAmount: number; taxRate: number; taxAmount: number };
+          amountFormatted: string;
+        };
+      }>(`/api/invoices/${payment.id}/pdf`);
       if (!data.success || !data.data) { toast('error', 'Gagal', 'Gagal mengambil data tagihan'); return; }
       const inv = data.data;
       const fmtCurr = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);

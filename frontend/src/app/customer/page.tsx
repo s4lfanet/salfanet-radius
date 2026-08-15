@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { formatWIB, nowWIB } from '@/lib/timezone';
 import { formatCurrency } from '@/lib/utils';
+import { apiCustomer, ApiError } from '@/lib/api';
 
 // Hardcoded Indonesian translations
 const translations: Record<string, string> = {
@@ -226,19 +227,12 @@ export default function CustomerDashboard() {
     const gateway = paymentGateways[0].provider;
     
     setGeneratingPayment(invoiceId);
-    const token = localStorage.getItem('customer_token');
 
     try {
-      const res = await fetch('/api/customer/invoice/regenerate-payment', {
+      const data = await apiCustomer<{ success: boolean; error?: string; paymentUrl?: string }>('/api/customer/invoice/regenerate-payment', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
         body: JSON.stringify({ invoiceId, gateway })
       });
-
-      const data = await res.json();
 
       if (data.success && data.paymentUrl) {
         // Refresh invoices to update payment link
@@ -251,7 +245,8 @@ export default function CustomerDashboard() {
       }
     } catch (error) {
       console.error('Regenerate payment error:', error);
-      toast('error', 'Gagal', t('customer.failedContactServer'));
+      if (error instanceof ApiError) toast('error', 'Gagal', error.message);
+      else toast('error', 'Gagal', t('customer.failedContactServer'));
     } finally {
       setGeneratingPayment(null);
     }
@@ -277,8 +272,7 @@ export default function CustomerDashboard() {
     if (!token) { router.push('/customer/login'); return; }
 
     try {
-      const res = await fetch('/api/customer/me', { headers: { 'Authorization': `Bearer ${token}` } });
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; user: CustomerUser }>('/api/customer/me');
 
       if (data.success) {
         setUser(data.user);
@@ -289,6 +283,12 @@ export default function CustomerDashboard() {
         router.push('/customer/login');
       }
     } catch (error) {
+      if (error instanceof ApiError && error.status === 401) {
+        localStorage.removeItem('customer_token');
+        localStorage.removeItem('customer_user');
+        router.push('/customer/login');
+        return;
+      }
       const userData = localStorage.getItem('customer_user');
       if (userData) { try { setUser(JSON.parse(userData)); } catch (e) { router.push('/customer/login'); } }
       else router.push('/customer/login');
@@ -299,8 +299,7 @@ export default function CustomerDashboard() {
     const token = localStorage.getItem('customer_token');
     if (!token) return;
     try {
-      const res = await fetch('/api/customer/invoices', { headers: { 'Authorization': `Bearer ${token}` } });
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; data?: { invoices?: Invoice[] } }>('/api/customer/invoices');
       if (data.success) setInvoices(data.data?.invoices || []);
     } catch (error) { console.error('Load invoices error:', error); }
   };
@@ -317,12 +316,10 @@ export default function CustomerDashboard() {
       body.append('accountName', manualForm.accountName.trim());
       if (manualForm.notes.trim()) body.append('notes', manualForm.notes.trim());
       if (manualForm.file) body.append('file', manualForm.file);
-      const res = await fetch(`/api/customer/invoices/${manualPayModal.id}/manual-payment`, {
+      const data = await apiCustomer<{ success: boolean; error?: string }>(`/api/customer/invoices/${manualPayModal.id}/manual-payment`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body,
       });
-      const data = await res.json();
       if (data.success) {
         toast('success', 'Bukti Transfer Terkirim', 'Admin akan mengkonfirmasi dalam 1×24 jam');
         setManualPayModal(null);
@@ -332,8 +329,9 @@ export default function CustomerDashboard() {
       } else {
         toast('error', 'Gagal', data.error || 'Gagal mengirim bukti transfer');
       }
-    } catch {
-      toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
+    } catch (error) {
+      if (error instanceof ApiError) toast('error', 'Gagal', error.message);
+      else toast('error', 'Error', 'Terjadi kesalahan. Silakan coba lagi.');
     } finally {
       setSubmittingManual(false);
     }
@@ -344,9 +342,7 @@ export default function CustomerDashboard() {
     if (!token) return;
     try {
       // Load WiFi data for device info and connected devices
-      const wifiRes = await fetch('/api/customer/wifi', { headers: { 'Authorization': `Bearer ${token}` } });
-      if (!wifiRes.ok) return; // server error (e.g. 502 during restart) — skip silently
-      const wifiData = await wifiRes.json();
+      const wifiData = await apiCustomer<{ success: boolean; reason?: string; device?: { _id?: string; manufacturer?: string; model?: string; status?: string; signalStrength?: { rxPower?: string | number }; connectedHosts?: ConnectedDevice[]; wlanConfigs?: WlanConfig[] } }>('/api/customer/wifi');
       if (wifiData.success && wifiData.device) {
         setOntDevice(wifiData.device);
         setConnectedDevices(wifiData.device.connectedHosts || []);
@@ -378,11 +374,9 @@ export default function CustomerDashboard() {
     }
 
     setUpdatingWifi(true);
-    const token = localStorage.getItem('customer_token');
     try {
-      const res = await fetch('/api/customer/wifi', {
+      const data = await apiCustomer<{ success: boolean; error?: string }>('/api/customer/wifi', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           deviceId: ontDevice._id,
           wlanIndex: editingWifi ?? 1,
@@ -390,7 +384,6 @@ export default function CustomerDashboard() {
           password: wifiForm.password,
         }),
       });
-      const data = await res.json();
       if (data.success) {
         toast('success', 'WiFi Berhasil Diperbarui', t('customer.wifiUpdateSuccess'));
         setEditingWifi(null);
@@ -400,7 +393,8 @@ export default function CustomerDashboard() {
         toast('error', 'Gagal', data.error || t('customer.failedUpdateWifi'));
       }
     } catch (error) { 
-      toast('error', 'Gagal', t('customer.failedUpdateWifi'));
+      if (error instanceof ApiError) toast('error', 'Gagal', error.message || t('customer.failedUpdateWifi'));
+      else toast('error', 'Gagal', t('customer.failedUpdateWifi'));
     } finally { 
       setUpdatingWifi(false); 
     }

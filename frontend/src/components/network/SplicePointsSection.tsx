@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { apiAdmin, ApiError } from '@/lib/api';
 import {
   Plus, Trash2, Link2, Cable, X, Zap, Settings, Circle,
   AlertTriangle, Check, RefreshCcw
@@ -124,8 +125,7 @@ export default function SplicePointsSection({
         deviceType,
         deviceId,
       });
-      const res = await fetch(`/api/network/splices?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ splices?: SplicePoint[] }>(`/api/network/splices?${params}`);
       setSplicePoints(data.splices || []);
     } catch (error) {
       console.error('Failed to load splice points:', error);
@@ -136,8 +136,7 @@ export default function SplicePointsSection({
 
   const loadCables = useCallback(async () => {
     try {
-      const res = await fetch('/api/network/cables');
-      const data = await res.json();
+      const data = await apiAdmin<{ cables?: FiberCable[] }>('/api/network/cables');
       setCables(data.cables || []);
     } catch (error) {
       console.error('Failed to load cables:', error);
@@ -146,8 +145,7 @@ export default function SplicePointsSection({
 
   const loadCoresForCable = async (cableId: string, target: 'A' | 'B') => {
     try {
-      const res = await fetch(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
-      const data = await res.json();
+      const data = await apiAdmin<{ cores?: FiberCore[] }>(`/api/network/cores?cableId=${cableId}&status=AVAILABLE`);
       if (target === 'A') {
         setCoresForCableA(data.cores || []);
       } else {
@@ -220,17 +218,10 @@ export default function SplicePointsSection({
         notes: formData.notes || null,
       };
 
-      const res = await fetch('/api/network/splices', {
+      await apiAdmin('/api/network/splices', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Gagal membuat splice');
-      }
 
       showSuccess('Splice berhasil dibuat');
       setIsCreateDialogOpen(false);
@@ -252,11 +243,7 @@ export default function SplicePointsSection({
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/network/splices/${splice.id}`, { method: 'DELETE' });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Gagal menghapus');
-      }
+      await apiAdmin(`/api/network/splices/${splice.id}`, { method: 'DELETE' });
       showSuccess('Splice berhasil dihapus');
       loadSplicePoints();
     } catch (error: unknown) {
