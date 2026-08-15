@@ -74,17 +74,48 @@ export const WIB_OFFSET = '+07:00';
 // Dynamic timezone getter - will be updated from company settings
 let currentTimezone = WIB_TIMEZONE;
 
+// Cache for DB-loaded timezone (refreshed periodically)
+let dbTimezoneCache: string | null = null;
+let dbTimezoneCacheTime = 0;
+const DB_TIMEZONE_CACHE_TTL = 60 * 1000; // 1 minute cache
+
 /**
  * Set the current timezone (called from company settings)
  */
 export function setCurrentTimezone(timezone: string) {
   currentTimezone = timezone;
+  dbTimezoneCache = timezone;
 }
 
 /**
  * Get the current configured timezone
  */
 export function getCurrentTimezone(): string {
+  return currentTimezone;
+}
+
+/**
+ * Load timezone from company settings (database).
+ * Caches for 1 minute to avoid repeated DB queries.
+ * Server-only — uses dynamic import to avoid circular dependencies.
+ */
+export async function refreshTimezoneFromDB(): Promise<string> {
+  const now = Date.now();
+  if (dbTimezoneCache && (now - dbTimezoneCacheTime) < DB_TIMEZONE_CACHE_TTL) {
+    currentTimezone = dbTimezoneCache;
+    return currentTimezone;
+  }
+  try {
+    const { prisma } = await import('@/server/db/client');
+    const company = await prisma.company.findFirst({ select: { timezone: true } });
+    if (company?.timezone) {
+      dbTimezoneCache = company.timezone;
+      dbTimezoneCacheTime = now;
+      currentTimezone = company.timezone;
+    }
+  } catch {
+    // Table might not exist or DB unavailable — use current/default
+  }
   return currentTimezone;
 }
 
@@ -265,8 +296,22 @@ export function daysUntilExpiry(date: Date | string | null | undefined): number 
  * Get current time in WIB-as-UTC format.
  * Returns a Date where UTC values represent current WIB time.
  * This is consistent with how Prisma reads MySQL DATETIME values.
+ *
+ * NOTE: This uses the cached timezone. For cron jobs that need the latest
+ * company timezone, call `await refreshTimezoneFromDB()` first, or use
+ * `nowWIBAsync()` instead.
  */
 export function nowWIB(): Date {
+  return new Date(Date.now() + getTimezoneOffsetMs());
+}
+
+/**
+ * Async variant of nowWIB() — refreshes timezone from DB before computing.
+ * Use this in cron jobs and critical business logic where the company
+ * timezone might have been changed since process start.
+ */
+export async function nowWIBAsync(): Promise<Date> {
+  await refreshTimezoneFromDB();
   return new Date(Date.now() + getTimezoneOffsetMs());
 }
 

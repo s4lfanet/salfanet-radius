@@ -1,5 +1,5 @@
 import { prisma } from '@/server/db/client';
-import { nowWIB } from '@/lib/timezone';
+import { nowWIB, nowWIBAsync } from '@/lib/timezone';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
@@ -11,7 +11,8 @@ import { shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-
  * POSTPAID: invoiceType=MONTHLY, dueDate=billingDay of current month
  */
 export async function runInvoiceGenerate(): Promise<{ generated: number; skipped: number; total: number; errors: string[] }> {
-  const now = nowWIB();
+  // Refresh timezone from DB — company might have changed it
+  const now = await nowWIBAsync();
   const errors: string[] = [];
 
   const company = await prisma.company.findFirst({
@@ -107,39 +108,76 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
       const paymentToken = randomBytes(32).toString('hex');
       const paymentLink = `${baseUrl}/pay/${paymentToken}`;
 
-      await prisma.invoice.create({
-        data: {
-          id: invoiceId,
-          invoiceNumber,
-          userId: user.id,
-          amount,
-          baseAmount,
-          addonAmount,
-          ...(taxRate !== null && { taxRate }),
-          dueDate,
-          status: 'PENDING',
-          invoiceType: invoiceType as any,
-          customerName: user.name,
-          customerPhone: user.phone,
-          customerEmail: user.email || null,
-          customerUsername: user.username,
-          paymentToken,
-          paymentLink,
-          createdAt: now,
-          // Create invoiceAddon records for each recurring addon
-          invoiceAddons: addonCharges.length > 0
-            ? {
-                create: addonCharges.map((a) => ({
-                  addonTypeId: a.addonTypeId,
-                  addonName: a.addonName,
-                  amount: a.amount,
-                })),
-              }
-            : undefined,
-        },
-      });
+      // ─── Idempotency: atomic create with conditional check ───────────────
+      // Use a transaction to atomically check + create.
+      // If another instance created the invoice between our findMany and now,
+      // the unique check inside the transaction will catch it.
+      let created = false;
+      try {
+        await prisma.$transaction(async (tx) => {
+          // Re-check inside transaction — if another instance already created
+          // an invoice for this user+month+type, skip (idempotency).
+          const existing = await tx.invoice.findFirst({
+            where: {
+              userId: user.id,
+              invoiceType: invoiceType as any,
+              dueDate: { gte: monthStart, lte: monthEnd },
+              status: { not: 'CANCELLED' },
+            },
+            select: { id: true },
+          });
+          if (existing) {
+            // Already created by another instance — skip
+            return;
+          }
 
-      generated++;
+          await tx.invoice.create({
+            data: {
+              id: invoiceId,
+              invoiceNumber,
+              userId: user.id,
+              amount,
+              baseAmount,
+              addonAmount,
+              ...(taxRate !== null && { taxRate }),
+              dueDate,
+              status: 'PENDING',
+              invoiceType: invoiceType as any,
+              customerName: user.name,
+              customerPhone: user.phone,
+              customerEmail: user.email || null,
+              customerUsername: user.username,
+              paymentToken,
+              paymentLink,
+              createdAt: now,
+              // Create invoiceAddon records for each recurring addon
+              invoiceAddons: addonCharges.length > 0
+                ? {
+                    create: addonCharges.map((a) => ({
+                      addonTypeId: a.addonTypeId,
+                      addonName: a.addonName,
+                      amount: a.amount,
+                    })),
+                  }
+                : undefined,
+            },
+          });
+          created = true;
+        });
+      } catch (txErr: any) {
+        // If unique constraint violation — another instance created it
+        if (txErr?.message?.includes('Unique') || txErr?.code === 'P2002') {
+          skipped++;
+          continue;
+        }
+        throw txErr;
+      }
+
+      if (created) {
+        generated++;
+      } else {
+        skipped++;
+      }
     } catch (err: any) {
       errors.push(`${user.username}: ${err?.message || err}`);
     }
@@ -153,7 +191,7 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
  * Invoice Status Update — change PENDING → OVERDUE when dueDate < now.
  */
 export async function runInvoiceStatusUpdate(): Promise<{ updated: number }> {
-  const now = nowWIB();
+  const now = await nowWIBAsync();
   const result = await prisma.invoice.updateMany({
     where: {
       status: 'PENDING',
@@ -172,7 +210,7 @@ export async function runInvoiceStatusUpdate(): Promise<{ updated: number }> {
  * Uses sendInvoiceReminder from whatsapp-templates.service (available in server context).
  */
 export async function runInvoiceReminder(): Promise<{ sent: number; skipped: number; total: number; errors: string[] }> {
-  const now = nowWIB();
+  const now = await nowWIBAsync();
   const errors: string[] = [];
 
   const remindBefore = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -212,6 +250,40 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
         continue;
       }
 
+      // ─── Idempotency: atomically claim this reminder BEFORE sending ───────
+      // Update sentReminders first — if another instance already claimed it,
+      // the update will be a no-op (we re-check sentDays inside transaction).
+      let claimed = false;
+      try {
+        await prisma.$transaction(async (tx) => {
+          const current = await tx.invoice.findUnique({
+            where: { id: inv.id },
+            select: { sentReminders: true },
+          });
+          let currentDays: number[] = [];
+          try { currentDays = current?.sentReminders ? JSON.parse(current.sentReminders) : []; } catch {}
+          if (currentDays.includes(daysUntilDue)) {
+            // Another instance already sent this reminder — skip
+            return;
+          }
+          currentDays.push(daysUntilDue);
+          await tx.invoice.update({
+            where: { id: inv.id },
+            data: { sentReminders: JSON.stringify(currentDays) },
+          });
+          claimed = true;
+        });
+      } catch {
+        // If transaction fails (e.g., row locked), skip this invoice
+        skipped++;
+        continue;
+      }
+
+      if (!claimed) {
+        skipped++;
+        continue;
+      }
+
       const { sendInvoiceReminder } = await import('@/server/services/notifications/whatsapp-templates.service');
       await sendInvoiceReminder({
         phone: inv.customerPhone!,
@@ -227,11 +299,6 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
         daysOverdue: inv.dueDate < now ? Math.ceil((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000)) : 0,
       });
 
-      sentDays.push(daysUntilDue);
-      await prisma.invoice.update({
-        where: { id: inv.id },
-        data: { sentReminders: JSON.stringify(sentDays) },
-      });
       sent++;
     } catch (err: any) {
       errors.push(`${inv.invoiceNumber}: ${err?.message || err}`);
@@ -246,7 +313,7 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
  * Auto Renewal — auto-renew PREPAID users from balance.
  */
 export async function runAutoRenewal(): Promise<{ renewed: number; skipped: number; total: number; errors: string[] }> {
-  const now = nowWIB();
+  const now = await nowWIBAsync();
   const errors: string[] = [];
 
   const renewWindow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
@@ -440,8 +507,9 @@ export async function runSuspendCheck(): Promise<{ suspended: number; total: num
   let suspended = 0;
   const errors: string[] = [];
 
+  const now = await nowWIBAsync();
   const approved = await prisma.suspendRequest.findMany({
-    where: { status: 'APPROVED', startDate: { lte: nowWIB() } },
+    where: { status: 'APPROVED', startDate: { lte: now } },
   });
   for (const req of approved) {
     try {
