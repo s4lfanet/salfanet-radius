@@ -991,6 +991,40 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.7.0 — 2026-08-15 — Fix: Diskon Pelanggan Tidak Diterapkan ke Tagihan
+
+### Summary
+Bug kritis: diskon pelanggan (field `discount` di `PppoeUser`) hanya diterapkan pada cron monthly invoice generation (postpaid) dan first invoice saat create customer. 5 path lain tidak mengurangi diskon dari base price, menyebabkan tagihan tidak sesuai dengan diskon yang sudah di-set di form tambah/edit pelanggan.
+
+### Root Cause
+Pattern yang benar (sudah ada di cron monthly + first invoice):
+```ts
+const baseAmount = Math.max(0, profile.price - (user.discount || 0));
+```
+
+Pattern yang salah (5 path lain, tidak mengurangi diskon):
+```ts
+const baseAmount = profile.price;  // BUG: tidak - user.discount
+```
+
+### Fixed Paths (5 bug)
+1. **Customer renewal API** (`/api/customer/renewal`) — perpanjangan dari customer portal
+2. **Admin renewal API** (`/api/admin/users/[id]/renewal`) — perpanjangan dari admin panel
+3. **PREPAID auto-renewal cron** (`invoice-jobs.ts`) — auto-renewal dari balance prepaid
+4. **Admin extend route** (`/api/pppoe/users/[id]/extend`) — perpanjangan langsung dari admin
+5. **Admin invoices/generate** (`/api/invoices/generate`) — generate invoice manual dari admin
+
+### Already Working (tidak diubah)
+- Cron monthly invoice generation (postpaid) — sudah apply diskon
+- First invoice saat create customer — sudah apply diskon
+- Save diskon di form tambah pelanggan — sudah berfungsi
+- Save diskon di form edit pelanggan (UserDetailModal) — sudah berfungsi
+
+### Commits
+- `2b55e056` — fix(billing): apply customer discount to all invoice generation paths
+
+---
+
 ### v5.6.0 — 2026-08-15 — Frontend Performance Optimization + Auto-Changelog Fix
 
 ### Summary
@@ -1015,6 +1049,8 @@ Frontend performance optimization pass: remove dead dependency, code-split heavy
 
 ### Commits
 - `9464c61d` — perf: remove dead sweetalert2 dep, move @types/leaflet to devDeps, dynamic import recharts, fix auto-changelog script path
+
+---
 
 ### v5.5.0 — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
 
@@ -1069,6 +1105,8 @@ Dua kategori perbaikan: (1) Critical fix untuk sync active session MikroTik → 
 - `0b330fe1` — fix(frontend): responsive, accessibility, and loading/error state improvements
 - `a13c609a` — fix(nav): menu navigation desktop/mobile audit - accessibility and UI fixes
 
+---
+
 ### v5.4.0 — 2026-08-15 — Final Production Completion (Security + safeCompare + JWT + CoA)
 
 ### Summary
@@ -1121,6 +1159,8 @@ Final production completion pass: safeCompare fail-closed hardening, JWT_SECRET 
 - `4cc0895e` — Sync test safeCompare with production
 - `ce0c4cfc` — Add auth checks to CoA and session disconnect routes
 - `27bf2bda` — Fix payment gateway config auth + credential logging + email timezone
+
+---
 
 ### v5.3.0 — 2026-08-15 — Final Production Hardening + E2E Verification
 
@@ -1186,71 +1226,7 @@ Final production hardening pass: timezone bug fixes (invoice due dates, hardcode
 | CRON_SECRET | 14 | 14 | 0 | VPS |
 | **Total** | **109** | **109** | **0** | |
 
-### v5.2.0 — 2026-08-15 — Production Hardening Audit (Cron + Security + Timezone)
-
-### Summary
-Comprehensive production hardening pass covering cron reliability, distributed locking, CRON_SECRET security, timezone handling, FreeRADIUS queue concurrency, GenieACS technician authorization, secret leak prevention, and frontend API error handling.
-
-### Cron System Hardening
-- **[FIXED]** Heartbeat integration: `cron-runner.ts` now starts a heartbeat timer that renews the DB lock periodically while a job is running. If renewal fails (LOCK_LOST), the job result is recorded as error to prevent duplicate processing.
-- **[FIXED]** Production fail-closed: In production (`NODE_ENV=production`), if the DB lock service fails, the job is NOT run. The in-memory `runningJobs` Set is now an optimization only, never the reliability mechanism. Development mode retains the in-memory fallback for convenience.
-- **[FIXED]** `CRON_SECRET` hardening: Both `cron-runner.ts` and `/api/cron` route now fail-fast in production if `CRON_SECRET` is not set. Secret comparison uses `timingSafeEqual` to prevent timing attacks. Secret length is logged, never the value.
-- **[FIXED]** Per-job HTTP timeout: Jobs now have configurable timeouts (120s default, 300s for heavy jobs like invoice_generate and radius_reconciliation).
-- **[FIXED]** `server-only` import removed from `cron-lock.service.ts`, `monitoring.service.ts`, and `db/client.ts` — this was the root cause of the original in-memory fallback issue (standalone cron-runner could not import server-only modules).
-- **[FIXED]** Cron schedule timezone: `cron-runner.ts` now loads company timezone from DB and passes it to `node-cron` via `{ timezone: companyTimezone }` option, ensuring jobs run at correct local time regardless of VPS system timezone.
-- **[FIXED]** `nextRun` calculation: Replaced heuristic interval estimation with `cron-parser` library for accurate next-run calculation in `/api/cron/status`.
-
-### Timezone Fixes
-- **[FIXED]** `cron-runner.ts`: Removed manual `+7h` manipulation (`new Date(now.getTime() + 7 * 60 * 60 * 1000)`). Now uses `new Date()` which respects the system timezone (`TZ=Asia/Jakarta` in production).
-- **[FIXED]** `getTimezoneOffset()` in both backend and frontend `timezone.ts`: Added explicit handling for UTC/GMT timezone (previously fell back to `+07:00` for UTC, causing incorrect offset calculations).
-- **[FIXED]** Frontend: Replaced hardcoded `'Asia/Jakarta'` in `formatInTimeZone()` calls with dynamic `getCurrentTimezone()` in 5 layout files (TechnicianPortalLayout, CustomerClientLayout, AgentLayoutClient, AdminClientLayout, customer/suspend page).
-
-### FreeRADIUS Queue Concurrency
-- **[FIXED]** Atomic claim in `processRetryQueue()`: Replaced unconditional `prisma.radiusSyncQueue.update()` with conditional `updateMany({ where: { id, status: { in: ['PENDING', 'FAILED'] } } })`. This prevents two workers from processing the same queue item simultaneously. If `count === 0`, the item was already claimed by another worker and is skipped.
-
-### GenieACS Technician Authorization
-- **[FIXED]** Technician device list route (`/api/technician/genieacs/devices`): Field technicians (non-admin) must now provide `routerId` or `areaId` query parameter. Devices are filtered to only show those matching customers in the assigned scope. This matches the security pattern already used in the technician customers route.
-- **[FIXED]** Technician single device route (`/api/technician/genieacs/devices/[deviceId]`): Field technicians must provide `routerId`/`areaId` and the device must match a customer in their assigned scope. Returns 403 if the device is not in their area.
-- **[FIXED]** `verifyTechnician()` in both GenieACS routes now returns `isAdminUser` flag for consistent authorization logic.
-
-### Secret Leak Prevention
-- **[FIXED]** Payment webhook (`/api/payment/webhook`): Removed raw body logging and form data logging. Signature headers are now truncated to first 16 characters instead of logged in full. Tripay signature validation log now truncates both received and expected signatures.
-- **[FIXED]** Payment token route (`/api/pay/[token]`): Removed debug `console.log` statements that logged the full payment token, invoice search results, and fallback search details.
-
-### Frontend API Error Handling
-- **[FIXED]** GenieACS files upload page: Added `res.ok` check before `res.json()` to prevent JSON parse errors on non-JSON error responses (e.g., 405 Method Not Allowed with HTML body).
-- **[FIXED]** Pay-manual page: Wrapped error response `response.json()` in try/catch to handle non-JSON error bodies gracefully.
-
-### Database Schema
-- **[VERIFIED]** All Prisma `@map()` and `@@map()` annotations are correct and match the production database. Every snake_case database column has an explicit field mapping. No mismatches found.
-
-### Tests
-- **[TESTED]** Timezone utility tests: 27/27 passed locally (`npx tsx tests/timezone.test.ts`). Covers `nowWIB()`, `parseDateAsWIB()`, `formatWIB()`, `isExpiredWIB()`, `daysUntilExpiry()`, `startOfDayWIBtoUTC`/`endOfDayWIBtoUTC`, and timezone switching (Asia/Jakarta ↔ UTC).
-- **[CREATED]** Cron lock service tests (`tests/cron-lock.test.ts`): Tests acquire/release, concurrent acquisition, release by non-owner, heartbeat renewal, heartbeat failure after release, and stale lock recovery. Must be run on the VPS where the database is accessible.
-
-### Files Changed
-- `backend/cron-runner.ts` — Complete rewrite with heartbeat, fail-closed, timezone, per-job timeout
-- `backend/src/app/api/cron/route.ts` — CRON_SECRET fail-fast + timingSafeEqual
-- `backend/src/server/cron/jobs.ts` — cron-parser for nextRun calculation
-- `backend/src/server/services/cron-lock.service.ts` — Removed `server-only` import
-- `backend/src/server/services/monitoring.service.ts` — Removed `server-only` import
-- `backend/src/server/db/client.ts` — Removed `server-only` import
-- `backend/src/server/services/radius/radius-sync-queue.service.ts` — Atomic claim
-- `backend/src/app/api/technician/genieacs/devices/route.ts` — routerId/areaId scope
-- `backend/src/app/api/technician/genieacs/devices/[deviceId]/route.ts` — Authorization check
-- `backend/src/app/api/payment/webhook/route.ts` — Secret leak fixes
-- `backend/src/app/api/pay/[token]/route.ts` — Removed debug logging
-- `backend/src/lib/timezone.ts` — UTC offset fix
-- `frontend/src/lib/timezone.ts` — UTC offset fix
-- `frontend/src/app/technician/TechnicianPortalLayout.tsx` — Dynamic timezone
-- `frontend/src/app/customer/CustomerClientLayout.tsx` — Dynamic timezone
-- `frontend/src/app/agent/AgentLayoutClient.tsx` — Dynamic timezone
-- `frontend/src/app/admin/AdminClientLayout.tsx` — Dynamic timezone
-- `frontend/src/app/customer/suspend/page.tsx` — Dynamic timezone
-- `frontend/src/app/admin/genieacs/files/page.tsx` — res.ok check
-- `frontend/src/app/pay-manual/page.tsx` — Error handling fix
-- `backend/tests/cron-lock.test.ts` — New test file
-- `backend/tests/timezone.test.ts` — New test file
+---
 
 <!-- AUTO-CHANGELOG:END -->
 

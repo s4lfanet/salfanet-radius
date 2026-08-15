@@ -6,6 +6,40 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.7.0] — 2026-08-15 — Fix: Diskon Pelanggan Tidak Diterapkan ke Tagihan
+
+### Summary
+Bug kritis: diskon pelanggan (field `discount` di `PppoeUser`) hanya diterapkan pada cron monthly invoice generation (postpaid) dan first invoice saat create customer. 5 path lain tidak mengurangi diskon dari base price, menyebabkan tagihan tidak sesuai dengan diskon yang sudah di-set di form tambah/edit pelanggan.
+
+### Root Cause
+Pattern yang benar (sudah ada di cron monthly + first invoice):
+```ts
+const baseAmount = Math.max(0, profile.price - (user.discount || 0));
+```
+
+Pattern yang salah (5 path lain, tidak mengurangi diskon):
+```ts
+const baseAmount = profile.price;  // BUG: tidak - user.discount
+```
+
+### Fixed Paths (5 bug)
+1. **Customer renewal API** (`/api/customer/renewal`) — perpanjangan dari customer portal
+2. **Admin renewal API** (`/api/admin/users/[id]/renewal`) — perpanjangan dari admin panel
+3. **PREPAID auto-renewal cron** (`invoice-jobs.ts`) — auto-renewal dari balance prepaid
+4. **Admin extend route** (`/api/pppoe/users/[id]/extend`) — perpanjangan langsung dari admin
+5. **Admin invoices/generate** (`/api/invoices/generate`) — generate invoice manual dari admin
+
+### Already Working (tidak diubah)
+- Cron monthly invoice generation (postpaid) — sudah apply diskon
+- First invoice saat create customer — sudah apply diskon
+- Save diskon di form tambah pelanggan — sudah berfungsi
+- Save diskon di form edit pelanggan (UserDetailModal) — sudah berfungsi
+
+### Commits
+- `2b55e056` — fix(billing): apply customer discount to all invoice generation paths
+
+---
+
 ## [5.6.0] — 2026-08-15 — Frontend Performance Optimization + Auto-Changelog Fix
 
 ### Summary
