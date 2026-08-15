@@ -1,6 +1,7 @@
 import 'server-only';
 import { prisma } from '@/server/db/client';
 import { randomUUID } from 'crypto';
+import { logCronLockAcquired, logCronLockDenied, logCronLockExpired, logCronHeartbeatFailure } from '@/server/services/monitoring.service';
 
 /**
  * Atomic Cron Lock Service (MySQL-based distributed lock)
@@ -53,6 +54,7 @@ export async function acquireCronLock(jobKey: string, ttlMs: number = DEFAULT_TT
       },
     });
 
+    logCronLockAcquired(jobKey);
     return ownerToken;
   } catch (err) {
     // Check if this is a unique constraint violation (lock already held)
@@ -84,6 +86,7 @@ export async function acquireCronLock(jobKey: string, ttlMs: number = DEFAULT_TT
         }
       }
       // Lock is held and not stale — we cannot acquire it
+      logCronLockDenied(jobKey);
       return null;
     }
 
@@ -155,4 +158,107 @@ export async function getAllLocks() {
  */
 export async function forceReleaseLock(jobKey: string): Promise<void> {
   await prisma.cronLock.deleteMany({ where: { jobKey } });
+}
+
+/**
+ * Renew (heartbeat) a cron lock.
+ *
+ * Extends the TTL of a lock that is still owned by the caller.
+ * Uses a conditional update — only succeeds if:
+ *   1. The lock still exists
+ *   2. The ownerToken matches (prevents renewing someone else's lock)
+ *   3. The lock has not expired yet (prevents renewing a stale lock
+ *      that may have been reclaimed by another instance)
+ *
+ * Returns true if the renewal succeeded, false if:
+ *   - The lock was released by another process
+ *   - The lock expired and was reclaimed
+ *   - The ownerToken doesn't match
+ *
+ * If renewal fails, the caller should stop processing and abort the job,
+ * because another instance may have taken over.
+ *
+ * Usage pattern for long-running jobs:
+ *   const token = await acquireCronLock('my-job', 5 * 60 * 1000); // 5 min TTL
+ *   if (!token) return; // lock held by another instance
+ *   try {
+ *     // Start a heartbeat interval (e.g., every 2 minutes)
+ *     const heartbeat = setInterval(async () => {
+ *       const ok = await renewCronLock('my-job', token, 5 * 60 * 1000);
+ *       if (!ok) {
+ *         console.error('[cron-lock] Heartbeat failed — aborting job (lock lost)');
+ *         throw new Error('LOCK_LOST');
+ *       }
+ *     }, 2 * 60 * 1000);
+ *
+ *     // ... do the work ...
+ *
+ *     clearInterval(heartbeat);
+ *   } finally {
+ *     clearInterval(heartbeat as any);
+ *     await releaseCronLock('my-job', token);
+ *   }
+ */
+export async function renewCronLock(
+  jobKey: string,
+  ownerToken: string,
+  ttlMs: number = DEFAULT_TTL_MS,
+): Promise<boolean> {
+  const now = new Date();
+  const newExpiresAt = new Date(now.getTime() + ttlMs);
+
+  try {
+    // Conditional update — only renew if we still own it AND it hasn't expired
+    const result = await prisma.cronLock.updateMany({
+      where: {
+        jobKey,
+        ownerToken, // Only our lock
+        expiresAt: { gte: now }, // Only if not yet expired
+      },
+      data: {
+        expiresAt: newExpiresAt,
+      },
+    });
+
+    if (result.count === 0) {
+      logCronHeartbeatFailure(jobKey);
+      console.error(`[cron-lock] Heartbeat failed for ${jobKey} — lock lost or expired`);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.error(`[cron-lock] Heartbeat error for ${jobKey}:`, err);
+    return false;
+  }
+}
+
+/**
+ * Create a heartbeat timer for a cron lock.
+ *
+ * Returns a NodeJS.Timeout that can be cleared with clearInterval().
+ * The heartbeat calls renewCronLock periodically.
+ * If renewal fails, the onLost callback is invoked.
+ *
+ * Usage:
+ *   const token = await acquireCronLock('my-job', 10 * 60 * 1000);
+ *   if (!token) return;
+ *   const heartbeat = startHeartbeat('my-job', token, 10 * 60 * 1000, 3 * 60 * 1000, () => {
+ *     throw new Error('LOCK_LOST');
+ *   });
+ *   try { ... } finally { clearInterval(heartbeat); await releaseCronLock('my-job', token); }
+ */
+export function startHeartbeat(
+  jobKey: string,
+  ownerToken: string,
+  ttlMs: number = DEFAULT_TTL_MS,
+  intervalMs: number = Math.floor(ttlMs / 3),
+  onLost?: () => void,
+): NodeJS.Timeout {
+  return setInterval(async () => {
+    const ok = await renewCronLock(jobKey, ownerToken, ttlMs);
+    if (!ok && onLost) {
+      onLost();
+    }
+  }, intervalMs);
 }

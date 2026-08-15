@@ -315,6 +315,10 @@ export async function POST(request: Request) {
 
       if (duplicateWebhook) {
         console.log(`[Webhook] Duplicate callback ignored for ${gateway}:${transactionId || orderId}`);
+        try {
+          const { logPaymentDuplicateCallback } = await import('@/server/services/monitoring.service');
+          logPaymentDuplicateCallback(gateway, transactionId || orderId);
+        } catch { /* monitoring is best-effort */ }
         return NextResponse.json({
           success: true,
           gateway,
@@ -505,35 +509,60 @@ async function handleVoucherOrder(
   console.log(`✅ Voucher order found: ${order.orderNumber}`);
 
   if (status === 'settlement' || status === 'capture') {
-    if (order.status !== 'PAID') {
-      // Update order to PAID
-      await prisma.voucherOrder.update({
-        where: { id: order.id },
-        data: {
-          status: 'PAID',
-          paidAt: paidAt || new Date()
-        }
-      });
+    // ─── ATOMIC IDEMPOTENCY GUARD ────────────────────────────────────────────
+    // Use updateMany with status condition — only one concurrent webhook
+    // will get count > 0 and proceed to settlement + voucher generation.
+    const markPaid = await prisma.voucherOrder.updateMany({
+      where: { id: order.id, status: { not: 'PAID' } },
+      data: {
+        status: 'PAID',
+        paidAt: paidAt || new Date(),
+      },
+    });
 
-      console.log(`✅ Order ${order.orderNumber} marked as PAID`);
-
-      // Create notification using NotificationService
+    if (markPaid.count === 0) {
+      console.log(`[Voucher Order] ⏭️  Order ${order.orderNumber} already PAID — skipping duplicate settlement`);
       try {
-        const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
-        await NotificationService.notifyPaymentReceived({
-          amount: order.totalAmount,
-          customerName: order.customerName,
-          gateway: gateway
-        });
-      } catch (notifError) {
-        console.error('[Voucher Order] Notification error:', notifError);
-      }
+        const { logPaymentIdempotencyHit } = await import('@/server/services/monitoring.service');
+        logPaymentIdempotencyHit(gateway, order.orderNumber);
+      } catch { /* monitoring is best-effort */ }
+      return;
+    }
 
-      // ============================================
-      // AUTO-GENERATE VOUCHERS
-      // ============================================
+    console.log(`✅ Order ${order.orderNumber} marked as PAID`);
+    try {
+      const { logPaymentSettlementSuccess } = await import('@/server/services/monitoring.service');
+      logPaymentSettlementSuccess(order.orderNumber, order.totalAmount);
+    } catch { /* monitoring is best-effort */ }
 
-      const vouchers = [];
+    // Create notification using NotificationService
+    try {
+      const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+      await NotificationService.notifyPaymentReceived({
+        amount: order.totalAmount,
+        customerName: order.customerName,
+        gateway: gateway
+      });
+    } catch (notifError) {
+      console.error('[Voucher Order] Notification error:', notifError);
+    }
+
+    // ============================================
+    // AUTO-GENERATE VOUCHERS
+    // ============================================
+    // Secondary idempotency check: if vouchers already exist for this order
+    // (e.g., from a race that somehow passed the guard), skip generation.
+    const existingVouchers = await prisma.hotspotVoucher.findMany({
+      where: { orderId: order.id },
+      select: { id: true, code: true },
+    });
+
+    const vouchers: { id: string; code: string }[] = [];
+
+    if (existingVouchers.length > 0) {
+      console.log(`[Voucher Order] ⏭️  ${existingVouchers.length} vouchers already exist for ${order.orderNumber} — skipping generation`);
+      vouchers.push(...existingVouchers);
+    } else {
       for (let i = 0; i < order.quantity; i++) {
         // Generate unique voucher code
         let voucherCode = '';
@@ -573,6 +602,7 @@ async function handleVoucherOrder(
       }
 
       console.log(`✅ Generated ${vouchers.length} vouchers for order ${order.orderNumber}`);
+    }
 
       // ============================================
       // AUTO-SYNC TO KEUANGAN TRANSACTIONS
@@ -688,8 +718,6 @@ async function handleVoucherOrder(
         }
       }
     }
-}
-
   }
 
 // Generate random voucher code

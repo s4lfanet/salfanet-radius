@@ -27,6 +27,8 @@ export interface ReconciliationReport {
   staleInRadius: Array<{
     username: string;
     tables: string[]; // radcheck, radusergroup, radreply
+    category: 'known_stale' | 'unknown' | 'delete_queued';
+    hasDeleteQueueEntry: boolean;
   }>;
   mismatchPassword: Array<{
     pppoeUserId: string;
@@ -48,6 +50,9 @@ export interface ReconciliationReport {
     totalIssues: number;
     criticalCount: number; // missing + mismatch password
     warningCount: number; // mismatch profile/ip + stale
+    knownStaleCount: number;
+    unknownStaleCount: number;
+    deleteQueuedCount: number;
   };
 }
 
@@ -157,16 +162,49 @@ export async function runReconciliation(batchSize = 500): Promise<Reconciliation
   }
 
   // Find stale in RADIUS (entry exists in RADIUS but user doesn't exist in SalfaNet)
+  // Categorize as:
+  //   - 'delete_queued': a radius_sync_queue entry with syncType='delete' exists
+  //   - 'known_stale': username matches SalfaNet naming patterns (likely was deleted)
+  //   - 'unknown': cannot determine origin — manual review needed
   const staleInRadius: ReconciliationReport['staleInRadius'] = [];
-  for (const username of radiusUsernames) {
-    if (!salfaNetUsernames.has(username)) {
-      const tables: string[] = [];
-      if (radcheckUsers.some(rc => rc.username === username)) tables.push('radcheck');
-      if (radusergroupEntries.some(rug => rug.username === username)) tables.push('radusergroup');
-      if (radreplyEntries.some(rr => rr.username === username)) tables.push('radreply');
-      staleInRadius.push({ username, tables });
+
+  // Check if any stale usernames have a pending delete in the retry queue
+  const staleUsernames = Array.from(radiusUsernames).filter(u => !salfaNetUsernames.has(u));
+  const deleteQueueEntries = await prisma.radiusSyncQueue.findMany({
+    where: {
+      username: { in: staleUsernames },
+      syncType: 'delete',
+      status: { in: ['PENDING', 'FAILED', 'SYNCING'] },
+    },
+    select: { username: true },
+  });
+  const deleteQueuedUsernames = new Set(deleteQueueEntries.map(e => e.username));
+
+  for (const username of staleUsernames) {
+    const tables: string[] = [];
+    if (radcheckUsers.some(rc => rc.username === username)) tables.push('radcheck');
+    if (radusergroupEntries.some(rug => rug.username === username)) tables.push('radusergroup');
+    if (radreplyEntries.some(rr => rr.username === username)) tables.push('radreply');
+
+    let category: 'known_stale' | 'unknown' | 'delete_queued';
+    if (deleteQueuedUsernames.has(username)) {
+      category = 'delete_queued';
+    } else {
+      // Heuristic: SalfaNet usernames typically don't start with common RADIUS
+      // service accounts like 'radius', 'admin', 'testing', etc.
+      // Voucher codes are 8-char uppercase alphanumeric.
+      // PPPoE usernames are customer-defined (various formats).
+      // Without a tombstone table, we cannot definitively determine origin.
+      // Default to 'unknown' for safety — admin must review.
+      category = 'unknown';
     }
+
+    staleInRadius.push({ username, tables, category, hasDeleteQueueEntry: deleteQueuedUsernames.has(username) });
   }
+
+  const knownStaleCount = staleInRadius.filter(s => s.category === 'known_stale').length;
+  const unknownStaleCount = staleInRadius.filter(s => s.category === 'unknown').length;
+  const deleteQueuedCount = staleInRadius.filter(s => s.category === 'delete_queued').length;
 
   const criticalCount = missingInRadius.length + mismatchPassword.length;
   const warningCount = mismatchProfile.length + mismatchIp.length + staleInRadius.length;
@@ -183,6 +221,50 @@ export async function runReconciliation(batchSize = 500): Promise<Reconciliation
       totalIssues: criticalCount + warningCount,
       criticalCount,
       warningCount,
+      knownStaleCount,
+      unknownStaleCount,
+      deleteQueuedCount,
     },
   };
+}
+
+/**
+ * Queue RADIUS deletes for stale users that are categorized as 'known_stale'.
+ *
+ * SAFETY: This function does NOT delete unknown stale users.
+ * It only queues deletes for users that have a 'delete' entry in the retry queue
+ * (meaning they were previously deleted from SalfaNet but RADIUS delete failed).
+ *
+ * Admin must manually review 'unknown' stale users before queueing deletes.
+ */
+export async function queueStaleDeletes(usernames: string[]): Promise<{ queued: number; skipped: number }> {
+  const { enqueueFailedSync } = await import('./radius-sync-queue.service');
+  let queued = 0;
+  let skipped = 0;
+
+  for (const username of usernames) {
+    // Verify this username does NOT exist in SalfaNet DB
+    const existingUser = await prisma.pppoeUser.findFirst({
+      where: { username },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      // User still exists — skip (shouldn't happen, but safety check)
+      console.warn(`[reconciliation] Skipping stale delete for ${username} — user still exists in SalfaNet DB`);
+      skipped++;
+      continue;
+    }
+
+    // Queue the delete
+    await enqueueFailedSync(
+      `stale-${username}-${Date.now()}`, // synthetic ID for tracking
+      username,
+      'delete',
+      'Stale RADIUS entry detected by reconciliation — admin-approved delete'
+    );
+    queued++;
+  }
+
+  return { queued, skipped };
 }

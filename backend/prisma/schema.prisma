@@ -380,7 +380,7 @@ model paymentGateway {
 
 model payment {
   id        String          @id
-  invoiceId String
+  invoiceId String          @unique
   amount    Int
   method    String
   gatewayId String?

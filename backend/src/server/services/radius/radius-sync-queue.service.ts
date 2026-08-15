@@ -1,6 +1,13 @@
 import 'server-only';
 import { prisma } from '@/server/db/client';
 import { randomUUID } from 'crypto';
+import {
+  logRadiusSyncSuccess,
+  logRadiusSyncFailure,
+  logRadiusRetry,
+  logRadiusDead,
+  logRadiusBackpressure,
+} from '@/server/services/monitoring.service';
 
 /**
  * RADIUS Sync Retry Queue Service
@@ -246,22 +253,74 @@ export async function syncSingleUserToRadius(pppoeUserId: string): Promise<void>
 }
 
 /**
+ * Delete all RADIUS entries for a username.
+ * Used when a PPPoE user is deleted from SalfaNet DB.
+ *
+ * Deletes ALL entries for the username across ALL nas_identifier values
+ * (not just one NAS) — this is intentional because the user no longer exists
+ * in SalfaNet and all their RADIUS entries should be removed.
+ *
+ * Also closes any open radacct sessions.
+ */
+export async function syncSingleUserDeleteToRadius(username: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    // Delete ALL entries for this username — across all NAS identifiers
+    // (user is deleted from SalfaNet, so all RADIUS entries are stale)
+    await tx.radcheck.deleteMany({ where: { username } });
+    await tx.radusergroup.deleteMany({ where: { username } });
+    await tx.radreply.deleteMany({ where: { username } });
+
+    // Close any open accounting sessions
+    await tx.radacct.updateMany({
+      where: { username, acctstoptime: null },
+      data: { acctstoptime: new Date() },
+    });
+  });
+}
+
+/**
  * Process due retries — called by cron job.
  * Processes entries in batches to avoid overwhelming the database.
  */
+/**
+ * Process due retries — called by cron job.
+ * Processes entries in batches to avoid overwhelming the database.
+ *
+ * Backpressure: if consecutive failures exceed a threshold, processing pauses
+ * early (circuit breaker). This prevents a burst of retries from overloading
+ * FreeRADIUS when it's down — the remaining entries will be retried on the
+ * next cron tick after backoff.
+ */
+const BACKPRESSURE_FAILURE_THRESHOLD = 5; // pause after 5 consecutive failures
+const BACKPRESSURE_DELAY_MS = 500; // small delay between entries during processing
+
 export async function processRetryQueue(batchSize = 50): Promise<{
   processed: number;
   succeeded: number;
   failed: number;
   dead: number;
+  paused: boolean;
 }> {
   const dueEntries = await getDueRetries(batchSize);
 
   let succeeded = 0;
   let failed = 0;
   let dead = 0;
+  let consecutiveFailures = 0;
+  let paused = false;
 
-  for (const entry of dueEntries) {
+  for (let i = 0; i < dueEntries.length; i++) {
+    const entry = dueEntries[i];
+
+    // Circuit breaker: if too many consecutive failures, pause processing
+    // Remaining entries will be retried on the next cron tick (with backoff)
+    if (consecutiveFailures >= BACKPRESSURE_FAILURE_THRESHOLD) {
+      logRadiusBackpressure(consecutiveFailures, dueEntries.length - i);
+      console.warn(`[radius-sync-queue] Backpressure: ${consecutiveFailures} consecutive failures — pausing processing (${dueEntries.length - i} entries deferred)`);
+      paused = true;
+      break;
+    }
+
     // Mark as SYNCING
     await prisma.radiusSyncQueue.update({
       where: { id: entry.id },
@@ -269,25 +328,43 @@ export async function processRetryQueue(batchSize = 50): Promise<{
     });
 
     try {
-      await syncSingleUserToRadius(entry.pppoeUserId);
+      if (entry.syncType === 'delete') {
+        // Delete sync — user may no longer exist in SalfaNet DB
+        // Just delete RADIUS entries by username
+        await syncSingleUserDeleteToRadius(entry.username);
+      } else {
+        // Full/password/profile/ip/status sync — user must exist
+        await syncSingleUserToRadius(entry.pppoeUserId);
+      }
       await markSynced(entry.id);
       succeeded++;
+      consecutiveFailures = 0; // reset on success
+      logRadiusSyncSuccess(entry.username, null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error';
       await markFailed(entry.id, errorMsg);
+      consecutiveFailures++;
+      logRadiusSyncFailure(entry.username, errorMsg);
 
       // Check if it became dead
       const updated = await prisma.radiusSyncQueue.findUnique({
         where: { id: entry.id },
-        select: { status: true },
+        select: { status: true, retryCount: true },
       });
       if (updated?.status === 'DEAD') {
         dead++;
+        logRadiusDead(entry.username, updated.retryCount, errorMsg);
       } else {
         failed++;
+        logRadiusRetry(entry.username, updated?.retryCount || 0, new Date(Date.now() + BACKOFF_SCHEDULE_MS[Math.min((updated?.retryCount || 1) - 1, BACKOFF_SCHEDULE_MS.length - 1)]).toISOString());
       }
+    }
+
+    // Small delay between entries to avoid burst-loading FreeRADIUS
+    if (BACKPRESSURE_DELAY_MS > 0 && i < dueEntries.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, BACKPRESSURE_DELAY_MS));
     }
   }
 
-  return { processed: dueEntries.length, succeeded, failed, dead };
+  return { processed: succeeded + failed + dead, succeeded, failed, dead, paused };
 }
