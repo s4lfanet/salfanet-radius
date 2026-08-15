@@ -15,11 +15,8 @@
  */
 import cron from 'node-cron'
 import { PrismaClient } from '@prisma/client'
-import { exec } from 'child_process'
-import { promisify } from 'util'
 import { timingSafeEqual } from 'crypto'
-
-const execAsync = promisify(exec)
+import http from 'http'
 
 // ─── Prisma (standalone, for schedule config only) ──────────────────────────
 
@@ -50,11 +47,23 @@ async function loadCompanyTimezone(): Promise<void> {
     const company = await prisma.company.findFirst({ select: { timezone: true } })
     if (company?.timezone) {
       companyTimezone = company.timezone
+      // Also update the timezone module's cache
+      try {
+        const { setCurrentTimezone } = await import('./src/lib/timezone')
+        setCurrentTimezone(company.timezone)
+      } catch { /* non-fatal */ }
     }
   } catch {
     // Table might not exist yet — use default
   }
 }
+
+// Periodically refresh timezone from DB (every 5 minutes)
+// This ensures cron schedule uses the correct timezone even if
+// company settings are changed without restarting the cron runner.
+setInterval(async () => {
+  await loadCompanyTimezone()
+}, 5 * 60 * 1000)
 
 // ─── CRON_SECRET validation ─────────────────────────────────────────────────
 
@@ -136,25 +145,54 @@ function getJobTimeout(jobType: string): number {
 
 /**
  * Trigger a job via HTTP POST to /api/cron.
+ * Uses Node.js built-in http module — NO shell curl, so CRON_SECRET
+ * is never exposed in the process list (ps/proc).
  * The API route handles all business logic (can import from src/server/*).
  * Returns the job result from the API.
  */
 async function triggerJobViaAPI(jobType: string): Promise<{ success?: boolean; error?: string; [key: string]: unknown }> {
-  const url = `${API_URL}/api/cron`
   const body = JSON.stringify({ type: jobType })
   const timeout = getJobTimeout(jobType)
 
-  // Use curl to avoid needing fetch/undici in standalone mode
-  const { stdout } = await execAsync(
-    `curl -s -X POST ${url} -H "Content-Type: application/json" -H "x-cron-secret: ${CRON_SECRET}" -d '${body.replace(/'/g, "'\\''")}'`,
-    { timeout }
-  )
-
-  try {
-    return JSON.parse(stdout)
-  } catch {
-    return { success: false, raw: stdout.slice(0, 500) }
+  // Parse API_URL to extract host/port
+  const url = new URL(API_URL)
+  const options: http.RequestOptions = {
+    hostname: url.hostname,
+    port: url.port || '80',
+    path: '/api/cron',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-cron-secret': CRON_SECRET,
+      'Content-Length': Buffer.byteLength(body),
+    },
   }
+
+  return new Promise((resolve) => {
+    const req = http.request(options, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data))
+        } catch {
+          resolve({ success: false, raw: data.slice(0, 500) })
+        }
+      })
+    })
+
+    req.on('error', (err) => {
+      resolve({ success: false, error: `HTTP request failed: ${err.message}` })
+    })
+
+    req.setTimeout(timeout, () => {
+      req.destroy(new Error('Job timeout'))
+      resolve({ success: false, error: `Job timeout after ${timeout / 1000}s` })
+    })
+
+    req.write(body)
+    req.end()
+  })
 }
 
 // ─── Job runner with atomic distributed lock + heartbeat + history logging ──

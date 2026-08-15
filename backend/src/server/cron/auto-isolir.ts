@@ -10,13 +10,14 @@
  *   6. Log to cron_history
  */
 import { prisma } from '@/server/db/client';
-import { nowWIB } from '@/lib/timezone';
+import { nowWIBAsync } from '@/lib/timezone';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 
 export async function runAutoIsolir(): Promise<{ isolated: number; total: number; errors: string[] }> {
   const errors: string[] = [];
-  const now = nowWIB();
+  // Refresh timezone from DB — company might have changed it
+  const now = await nowWIBAsync();
 
   // Check company settings
   const company = await prisma.company.findFirst({
@@ -88,11 +89,18 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       const nasIdentifier = user.router?.id || null;
       const authMode = user.router?.authMode || 'local';
 
-      // 1. Update DB status
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
+      // 1. Update DB status — ATOMIC conditional update.
+      // Only update if status is still 'active' — prevents double-isolation
+      // if another instance already isolated this user.
+      const updateResult = await prisma.pppoeUser.updateMany({
+        where: { id: user.id, status: 'active' },
         data: { status: 'isolated' },
       });
+
+      if (updateResult.count === 0) {
+        // Another instance already isolated this user — skip (idempotency)
+        continue;
+      }
 
       // 2. Update RADIUS: move to isolir group
       // Remove Auth-Type if exists
@@ -163,7 +171,7 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
  */
 export async function runAutoStop(): Promise<{ stopped: number; total: number; errors: string[] }> {
   const errors: string[] = [];
-  const now = nowWIB();
+  const now = await nowWIBAsync();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
   // Find users isolated more than 30 days ago
@@ -187,11 +195,17 @@ export async function runAutoStop(): Promise<{ stopped: number; total: number; e
     try {
       const nasIdentifier = user.router?.id || null;
 
-      // Update DB status
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
+      // Update DB status — ATOMIC conditional update.
+      // Only update if status is still 'isolated' — prevents double-stop.
+      const updateResult = await prisma.pppoeUser.updateMany({
+        where: { id: user.id, status: 'isolated' },
         data: { status: 'stop' },
       });
+
+      if (updateResult.count === 0) {
+        // Another instance already stopped this user — skip (idempotency)
+        continue;
+      }
 
       // Remove from all RADIUS tables
       await prisma.$executeRaw`

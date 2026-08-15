@@ -95,22 +95,19 @@ export async function POST(request: NextRequest) {
     // ─── Atomic distributed lock ─────────────────────────────────────────────
     // Prevents duplicate concurrent execution across multiple instances.
     //
-    // When called from the cron-runner (authenticated via CRON_SECRET), the
-    // runner already holds the distributed lock with heartbeat — so we skip
-    // locking here to avoid a double-lock deadlock. The runner is the
-    // authoritative lock holder.
+    // ALWAYS acquire the lock, even when called via CRON_SECRET.
+    // The cron-runner also holds its own lock, but this API-level lock
+    // provides defense-in-depth: if the runner's lock is stale and another
+    // runner takes over, the API lock prevents double execution.
     //
-    // For manual admin triggers (no CRON_SECRET), the API route acquires its
-    // own lock to prevent concurrent manual + automated execution.
+    // The lock uses ownerToken to ensure only the acquirer can release it.
     let ownerToken: string | null = null
-    if (!hasCronSecret) {
-      ownerToken = await acquireCronLock(jobType)
-      if (!ownerToken) {
-        return NextResponse.json(
-          { success: false, error: `Job ${jobType} is already running (lock held)` },
-          { status: 409 }
-        )
-      }
+    ownerToken = await acquireCronLock(jobType)
+    if (!ownerToken) {
+      return NextResponse.json(
+        { success: false, error: `Job ${jobType} is already running (lock held)` },
+        { status: 409 }
+      )
     }
 
     // Create history record
@@ -215,8 +212,7 @@ export async function POST(request: NextRequest) {
       })
       throw jobError
     } finally {
-      // Release the lock only if we acquired it (manual admin trigger).
-      // Cron-runner holds its own lock with heartbeat.
+      // Always release the lock (we always acquire it now).
       if (ownerToken) {
         await releaseCronLock(jobType, ownerToken).catch(() => {})
       }
@@ -234,19 +230,19 @@ async function runNotificationCheck() {
 }
 
 async function runActivityLogCleanup() {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(nowWIB().getTime() - 30 * 24 * 60 * 60 * 1000)
   const result = await prisma.activityLog.deleteMany({ where: { createdAt: { lt: thirtyDaysAgo } } })
   return { deleted: result.count }
 }
 
 async function runWebhookLogCleanup() {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  const sevenDaysAgo = new Date(nowWIB().getTime() - 7 * 24 * 60 * 60 * 1000)
   const result = await prisma.webhookLog.deleteMany({ where: { createdAt: { lt: sevenDaysAgo } } })
   return { deleted: result.count }
 }
 
 async function runCronHistoryCleanup() {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const thirtyDaysAgo = new Date(nowWIB().getTime() - 30 * 24 * 60 * 60 * 1000)
   const result = await prisma.cronHistory.deleteMany({ where: { startedAt: { lt: thirtyDaysAgo } } })
   return { deleted: result.count }
 }
