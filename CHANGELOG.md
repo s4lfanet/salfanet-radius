@@ -6,6 +6,61 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.5.0] — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
+
+### Summary
+Dua kategori perbaikan: (1) Critical fix untuk sync active session MikroTik → web (mismatch status aktif), dan (2) Frontend audit menyeluruh untuk responsive, accessibility, loading/error state, dan menu navigation consistency across all 4 role layouts.
+
+### Active Session Sync Fix (CRITICAL)
+- **[CRITICAL]** `listPppActive()` sebelumnya menelan error MikroTik API dan return empty Set → cron menganggap semua session stale dan menutupnya. Fix: sekarang throw error pada failure, sehingga cron skip cycle instead of false-closing sessions.
+- **[CRITICAL]** `iconv-lite` tidak tersedia di Next.js standalone deployment → semua MikroTik API calls gagal. Fix: tambah `iconv-lite` ke `serverExternalPackages`, copy ke standalone `node_modules` di postbuild.
+
+### Frontend Audit — Responsive Fixes
+- Fixed `grid-cols-N` tanpa mobile prefixes → `grid-cols-1/2 sm:grid-cols-N` di ~20+ pages:
+  - Referral stats, agent/technician login cards, technician isolated stats
+  - Splitter loss metrics dan ports, port selection dialogs
+  - User installation-photo grids, OLT tabs, GenieACS stats
+  - Hotspot agent/voucher report stats, IP pool, data usage cards
+  - PPPoE installation photos, SMTP settings, WhatsApp summaries
+  - Customer top-up payment methods, VPN status summaries
+  - Invoice generation results, Splitter/ODP/ODC diagrams
+  - Fiber cable presets, VPN client pool summaries
+- Added `overflow-x-auto` wrappers untuk tables yang bisa overflow di small screens:
+  - `admin/genieacs/files/page.tsx`
+  - `admin/genieacs/devices/[deviceId]/page.tsx`
+
+### Frontend Audit — Loading/Error State
+- Created route-level `loading.tsx` dan `error.tsx` untuk `/app/agent/` (sebelumnya missing)
+- Loading: centered `Loader2` spinner + "Memuat..."
+- Error: client component, logs error, generic Indonesian message, "Coba Lagi" + link ke `/agent`, shows error digest
+
+### Frontend Audit — Accessibility & Navigation
+- Added `aria-label` ke icon-only close buttons di semua 4 layout (Admin, Agent, Customer, Technician)
+- Added `aria-label` ke mobile menu/hamburger buttons where missing
+- Added `aria-expanded` ke Admin category dan submenu toggle buttons
+- Added `aria-label="X navigation"` ke semua nav landmarks
+- Increased close-button padding dari `p-1.5` → `p-2.5` untuk touch targets ≥44px
+- Fixed Admin submenu `max-h-96` → `max-h-[500px]` untuk accommodate GenieACS group (11 children)
+- Verified route-change sidebar closing behavior di semua layout
+- Verified semua 4 layout menggunakan single source of truth untuk menu (no desktop/mobile duplication)
+
+### Performance Audit Findings
+- Build: 13s compile + 5.6s TypeScript = ~20s total (Next.js 16 Turbopack)
+- Bundle: 8.8 MB total static (257 files), largest JS chunk 409 KB, largest CSS 539 KB (Tailwind v4)
+- Heavy deps properly code-split: `jspdf`, `xlsx`, `leaflet` menggunakan dynamic `await import()`
+- `sweetalert2` di `package.json` tapi TIDAK di-import (sudah diganti CyberToast) — dead dependency
+- `recharts` statically imported di `components/charts/index.tsx` — bisa di-optimize dengan dynamic import tapi low priority
+
+### Commits
+- `076501c0` — fix(critical): listPppActive must throw on error, not return empty Set
+- `54b45403` — fix: add iconv-lite to serverExternalPackages for standalone build
+- `432e3593` — fix: copy iconv-lite to standalone node_modules in postbuild
+- `fa9ddd1f` — fix: copy iconv-lite from pnpm store to standalone node_modules
+- `0b330fe1` — fix(frontend): responsive, accessibility, and loading/error state improvements
+- `a13c609a` — fix(nav): menu navigation desktop/mobile audit - accessibility and UI fixes
+
+---
+
 ## [5.4.0] — 2026-08-15 — Final Production Completion (Security + safeCompare + JWT + CoA)
 
 ### Summary
