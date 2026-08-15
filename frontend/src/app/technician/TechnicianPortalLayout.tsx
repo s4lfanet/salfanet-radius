@@ -27,6 +27,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { onUnauthorized } from '@/lib/api/client';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
@@ -566,6 +567,16 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
     registerGlobalToast(addToast);
     registerGlobalConfirm(confirm);
   }, [addToast, confirm]);
+
+  // Register global 401 handler — redirect to technician login on any API 401
+  useEffect(() => {
+    onUnauthorized(() => {
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/technician/login')) {
+        queryClient.clear();
+        router.push('/technician/login');
+      }
+    });
+  }, [router, queryClient]);
 
   useEffect(() => {
     const handleResize = () => {

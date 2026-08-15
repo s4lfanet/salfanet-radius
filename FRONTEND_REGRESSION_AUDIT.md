@@ -417,12 +417,12 @@ Audit regresif menyeluruh setelah migrasi React Query Phase 7-8. Audit mencakup 
 ### ✅ PASS — Image Lazy Loading
 - `loading="lazy"` added to `<img>` tags in Phase 7
 
-### ⚠️ WARNING — PPPoE Users Loads All Records
-- **File:** `admin/pppoe/users/page.tsx`
-- **Issue:** No server-side pagination — loads all PPPoE users at once
-- **Impact:** Performance with large user base
-- **Status:** NOT FIXED — requires backend API changes
-- **Severity:** P3
+### ✅ PASS — PPPoE Users Server-Side Pagination
+- **File:** `admin/pppoe/users/page.tsx`, `backend/src/app/api/pppoe/users/route.ts`
+- **Fix:** Server-side pagination, filtering, sorting, and debounced search implemented
+- **Params:** `page`, `limit`, `search`, `profileId`, `routerId`, `areaId`, `status`, `sortBy`, `sortOrder`
+- **Response:** `{ users, count, total, page, limit, totalPages }`
+- **Status:** 🔧 FIXED (was P3 warning)
 
 ---
 
@@ -443,7 +443,96 @@ Audit regresif menyeluruh setelah migrasi React Query Phase 7-8. Audit mencakup 
 
 ---
 
-## 21. Medium Issues (P2)
+## 22. Security & Continuation Audit (Phase 2)
+
+> Tanggal: 16 Agustus 2026
+> Mencakup: IDOR, authorization, global 401 handling, API contract types, query invalidation, direct-fetch migration
+
+### 🔧 FIXED — Backend Authorization Hardening (IDOR)
+8 admin route methods lacked `requirePermission()` checks:
+
+| Route | Method | Permission Added |
+|-------|--------|-----------------|
+| `admin/registrations/[id]` | DELETE | `registrations.reject` |
+| `admin/registrations/[id]/approve` | POST | `registrations.approve` |
+| `admin/topup-requests/[id]/approve` | POST | `invoices.approve` |
+| `admin/pppoe/users/[id]/deposit` | POST | `customers.edit` |
+| `admin/pppoe/users/[id]/deposit` | GET | `customers.view` |
+| `admin/referrals/[id]` | POST | `customers.edit` |
+| `admin/suspend-requests/[id]` | PATCH | `customers.isolate` |
+| `admin/isolate-user` | POST | `customers.isolate` |
+
+### 🔧 FIXED — Global 401 Handler
+- **File:** `frontend/src/lib/api/client.ts` — `onUnauthorized()` registration + debounced `triggerUnauthorized()`
+- **Layouts registered:**
+  - `AdminClientLayout.tsx` → redirects to `/admin/login`
+  - `CustomerClientLayout.tsx` → redirects to `/customer/login`
+  - `AgentLayoutClient.tsx` → redirects to `/agent`
+  - `TechnicianPortalLayout.tsx` → clears query cache, redirects to `/technician/login`
+- **Behavior:** Any API 401 triggers the registered handler (debounced 100ms) to clear state and redirect
+
+### 🔧 FIXED — Direct Fetch Migration (AdminClientLayout + UserDetailModal)
+- `AdminClientLayout.tsx`: 5 `fetch()` calls migrated to `apiAdmin()` with typed generics
+  - Permissions, company info, pending registrations, pending payments, notifications
+- `UserDetailModal.tsx`: All `fetch()` calls migrated to `apiAdmin()` with typed generics
+  - Activity tabs (sessions/auth/invoices), upload (installation + ID card), addons, promise to pay
+
+### 🔧 FIXED — Evoucher Resend Missing Invalidation
+- **File:** `admin/hotspot/evoucher/page.tsx`
+- **Issue:** `handleResendVoucher` did not invalidate `ordersQueryKey` after successful resend
+- **Fix:** Added `queryClient.invalidateQueries({ queryKey: ordersQueryKey })`
+
+### ✅ PASS — API Contract Type Consistency
+Audited 10 endpoints against backend response shapes:
+- `/api/admin/users/:id/permissions` — ✅ MATCH
+- `/api/company` (admin) — ✅ MATCH (returns raw company object)
+- `/api/company/info` (public) — ✅ MATCH (returns `{ success, data }`, handled with inline types)
+- `/api/admin/registrations` — ✅ MATCH
+- `/api/manual-payments` — ✅ MATCH
+- `/api/notifications` — ✅ MATCH
+- `/api/pppoe/users/:id/activity` — ✅ MATCH
+- `/api/upload/pppoe-customer` — ✅ MATCH (minor: `filename` field not typed, not used)
+- `/api/pppoe/users/:id/addons` — ✅ MATCH
+- `/api/addon-types` — ✅ MATCH
+- `/api/pppoe/users/:id/promise` — ✅ MATCH
+
+### ✅ PASS — Query Invalidation Audit (ONU, Tickets, Hotspot)
+- OLT list page: All mutations correctly invalidate `buildQueryKey('/api/network/olts')` — ✅
+- Admin tickets list: Correctly invalidates `ticketsQueryKey` + `statsQueryKey` — ✅
+- Admin ticket detail: Correctly invalidates `ticketQueryKey` + `messagesQueryKey` — ✅
+- Ticket categories: Correctly invalidates `categoriesQueryKey` — ✅
+- Hotspot profiles: Correctly invalidates `buildQueryKey('/api/hotspot/profiles')` — ✅
+- Hotspot voucher: Uses prefix-based invalidation `['/api/hotspot/voucher']` — ✅ (correct for broad invalidation)
+- Hotspot agents: All mutations correctly invalidate `agentsQueryKey` — ✅
+- Hotspot evoucher: All mutations invalidate `ordersQueryKey` — ✅ (resend fixed)
+- Hotspot templates: Correctly invalidates `buildQueryKey('/api/voucher-templates')` — ✅
+- Agent deposits: Correctly invalidates `depositsQueryKey` — ✅
+
+### ⚠️ WARNING — Remaining Manual State Management (Not React Query)
+The following pages use `apiAdmin()` (centralized client) but manage state manually instead of React Query. This is functionally correct but does not benefit from React Query caching/invalidation:
+- `admin/olt/[id]/page.tsx` — ONU sync, reboot, delete, batch reboot
+- `technician/(portal)/tickets/page.tsx` — ticket list and messages
+- `customer/tickets/create/page.tsx` — ticket creation form
+- **Severity:** P3 (low) — no functional bug, just architectural preference
+- **Status:** Documented — not migrated to avoid large refactoring per user instruction
+
+### ⏳ NOT VERIFIED — Tenant Isolation
+- Application is single-tenant (no `tenantId`/`companyId` on core models)
+- `company` table stores global configuration, not tenant ownership
+- Customer/agent/technician routes scope by authenticated identity
+- Admin routes are global by design in single-tenant deployment
+- True tenant-to-tenant isolation testing: **NOT APPLICABLE** (single-tenant)
+
+### ⚠️ WARNING — Remaining Authentication Risks
+- Customer and agent tokens remain in `localStorage` (not HTTP-only cookies)
+- Agent JWTs cannot be revoked server-side (no blocklist/session store)
+- Admin sessions have 30-day max age
+- No token rotation implemented
+- **Status:** Documented in SECURITY_AUDIT.md — cookie migration deferred pending end-to-end audit
+
+---
+
+## 23. Medium Issues (P2)
 
 | # | Issue | File | Status |
 |---|-------|------|--------|

@@ -121,6 +121,7 @@ export default function EVoucherManagementPage() {
       const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/admin/evoucher/orders/${orderId}/resend`, { method: 'POST' });
       if (data.success) {
         showSuccess(t('evoucher.orderResent'));
+        queryClient.invalidateQueries({ queryKey: ordersQueryKey });
       } else {
         showError(data.error || t('common.failed'));
       }
