@@ -4,6 +4,17 @@ import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from "@/lib/timezone";
 import { logActivity } from "@/server/services/activity-log.service";
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
+import { z, parseBody } from '@/lib/parse-body';
+
+const createTransactionSchema = z.object({
+  categoryId: z.string().min(1, 'Category is required'),
+  type: z.enum(['INCOME', 'EXPENSE']),
+  amount: z.number().int().positive('Amount must be positive'),
+  description: z.string().min(1, 'Description is required').max(500),
+  date: z.string().optional(),
+  reference: z.string().max(100).optional(),
+  notes: z.string().max(500).optional(),
+});
 
 // GET - List transactions with filters & stats
 export async function GET(request: NextRequest) {
@@ -220,16 +231,9 @@ export async function POST(request: NextRequest) {
   const authCheck = await requirePermission('keuangan.create');
   if (!authCheck.authorized) return authCheck.response;
   try {
-    const body = await request.json();
-    const { categoryId, type, amount, description, date, reference, notes } =
-      body;
-
-    if (!categoryId || !type || !amount || !description) {
-      return NextResponse.json(
-        { success: false, error: "Missing required fields" },
-        { status: 400 },
-      );
-    }
+    const { data, error } = await parseBody(request, createTransactionSchema);
+    if (error) return error;
+    const { categoryId, type, amount, description, date, reference, notes } = data;
 
     // Verify category exists
     const category = await prisma.transactionCategory.findUnique({

@@ -2,6 +2,12 @@
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
+import { z, parseBody } from '@/lib/parse-body';
+
+const verifyOtpSchema = z.object({
+  phone: z.string().min(8, 'Phone is required').max(20),
+  otpCode: z.string().min(4, 'OTP code is required').max(10),
+});
 
 export async function POST(request: NextRequest) {
   const limited = await rateLimit(request, RateLimitPresets.auth);
@@ -9,14 +15,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
   }
   try {
-    const { phone, otpCode } = await request.json();
-
-    if (!phone || !otpCode) {
-      return NextResponse.json(
-        { success: false, error: 'Phone and OTP code are required' },
-        { status: 400 }
-      );
-    }
+    const { data, error } = await parseBody(request, verifyOtpSchema);
+    if (error) return error;
+    const { phone, otpCode } = data;
 
     // Clean phone number
     let cleanPhone = phone.replace(/[^0-9]/g, '');

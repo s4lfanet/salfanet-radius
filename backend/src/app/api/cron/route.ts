@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/server/auth/config'
-import { unauthorized } from '@/lib/api-response'
+import { unauthorized, safeErrorResponse } from '@/lib/api-response'
 import { prisma } from '@/server/db/client'
 import { nowWIB } from '@/lib/timezone'
 import { CRON_JOB_MAP } from '@/server/cron/jobs'
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, history })
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
+    return safeErrorResponse(error)
   }
 }
 
@@ -218,7 +218,7 @@ export async function POST(request: NextRequest) {
       }
     }
   } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 500 })
+    return safeErrorResponse(error)
   }
 }
 

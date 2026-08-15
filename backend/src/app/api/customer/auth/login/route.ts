@@ -2,6 +2,15 @@
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
+import { z, parseBody } from '@/lib/parse-body';
+
+const loginSchema = z.object({
+  phone: z.string().max(20).optional(),
+  identifier: z.string().max(50).optional(),
+}).refine(
+  (data) => data.phone || data.identifier,
+  { message: 'Phone number or customer ID is required' }
+);
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,18 +23,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { phone, identifier } = await request.json();
-    
-    // Accept either phone or identifier
-    const input = identifier || phone;
-    console.log('[Customer Login] Input:', input);
+    const { data, error } = await parseBody(request, loginSchema);
+    if (error) return error;
+    const { phone, identifier } = data;
 
-    if (!input) {
-      return NextResponse.json(
-        { success: false, error: 'Phone number or customer ID is required' },
-        { status: 400 }
-      );
-    }
+    // Accept either phone or identifier
+    const input = identifier || phone || '';
 
     // Check if OTP is enabled
     const settings = await prisma.whatsapp_reminder_settings.findFirst();

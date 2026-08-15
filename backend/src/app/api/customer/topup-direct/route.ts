@@ -5,7 +5,14 @@ import { createXenditInvoice } from '@/server/services/payment/xendit.service';
 import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { nowWIB } from '@/lib/timezone';
+import { z, parseBody } from '@/lib/parse-body';
 import crypto from 'crypto';
+
+const topupDirectSchema = z.object({
+  amount: z.number().int().min(10000, 'Minimal top-up adalah Rp 10.000'),
+  gateway: z.string().min(1, 'Metode pembayaran harus dipilih').max(50),
+  paymentChannel: z.string().max(100).optional(),
+});
 
 // Helper to verify customer token
 async function verifyCustomerToken(request: NextRequest) {
@@ -48,23 +55,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { amount, gateway, paymentChannel } = body;
-
-    // Validate input
-    if (!amount || amount < 10000) {
-      return NextResponse.json(
-        { error: 'Minimal top-up adalah Rp 10.000' },
-        { status: 400 }
-      );
-    }
-
-    if (!gateway) {
-      return NextResponse.json(
-        { error: 'Metode pembayaran harus dipilih' },
-        { status: 400 }
-      );
-    }
+    const { data, error } = await parseBody(request, topupDirectSchema);
+    if (error) return error;
+    const { amount, gateway, paymentChannel } = data;
 
     // Verify payment gateway is active
     const gatewayConfig = await prisma.paymentGateway.findFirst({

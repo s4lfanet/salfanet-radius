@@ -102,19 +102,18 @@ export async function POST(req: NextRequest) {
         message: message,
       });
 
-      console.log(`? OTP sent via WhatsApp to ${formattedPhone}: ${otpCode}`);
+      // P0 security: never log OTP codes to console
+      console.log(`✅ OTP sent via WhatsApp to ${formattedPhone}`);
     } catch (error) {
-      console.error('? Failed to send WhatsApp OTP:', error);
+      console.error('❌ Failed to send WhatsApp OTP:', error);
       // Continue even if WhatsApp fails - OTP is still created
-      // User can check console for OTP in development
     }
 
     return NextResponse.json({
       success: true,
       message: 'OTP sent to your WhatsApp number',
       phoneNumber: formattedPhone,
-      // In development, include OTP in response
-      ...(process.env.NODE_ENV === 'development' && { otpCode }),
+      // P0 security: never return OTP code in API response, even in development
     });
   } catch (error) {
     console.error('Request OTP error:', error);

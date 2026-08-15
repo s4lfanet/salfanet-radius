@@ -16,6 +16,9 @@ export async function GET(req: NextRequest) {
   const routerId = searchParams.get('routerId');
   const status = searchParams.get('status');
   const paymentStatus = searchParams.get('paymentStatus');
+  // P0 security: passwords are excluded by default. Admin must explicitly
+  // request includePassword=true for backup exports containing credentials.
+  const includePassword = searchParams.get('includePassword') === 'true';
 
   try {
     // Build query filters
@@ -46,17 +49,32 @@ export async function GET(req: NextRequest) {
       where.status = 'isolated';
     }
 
-    // Fetch PPPoE users with relations (includes password for backup purposes)
+    // Fetch PPPoE users with relations
+    // P0 security: password is only fetched when includePassword=true
     const users = await prisma.pppoeUser.findMany({
       where,
-      include: {
-        profile: true,
-        router: {
-          select: { id: true, name: true, nasname: true }
-        },
-        area: {
-          select: { name: true }
-        }
+      select: {
+        id: true,
+        username: true,
+        password: includePassword, // Only select password when explicitly requested
+        name: true,
+        phone: true,
+        email: true,
+        address: true,
+        ipAddress: true,
+        macAddress: true,
+        billingDay: true,
+        expiredAt: true,
+        comment: true,
+        latitude: true,
+        longitude: true,
+        createdAt: true,
+        subscriptionType: true,
+        status: true,
+        customerId: true,
+        profile: { select: { name: true } },
+        router: { select: { id: true, name: true, nasname: true } },
+        area: { select: { name: true } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -67,7 +85,7 @@ export async function GET(req: NextRequest) {
       const rows = users.map((u, idx) => [
         idx + 1,
         u.username,
-        u.password,
+        includePassword ? (u.password || '') : '••••••',
         u.name,
         u.phone,
         u.profile.name,
@@ -124,7 +142,7 @@ export async function GET(req: NextRequest) {
       no: idx + 1,
       customerId: (u as any).customerId || '',
       username: u.username,
-      password: u.password,
+      password: includePassword ? (u.password || '') : '',
       name: u.name,
       phone: u.phone,
       email: u.email || '',

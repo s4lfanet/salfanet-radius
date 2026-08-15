@@ -252,6 +252,10 @@ model invoice {
   @@index([status])
   @@index([dueDate])
   @@index([invoiceType])
+  // Phase 7: composite indexes for common query patterns
+  @@index([userId, status]) // mark-paid, check-isolation: WHERE userId=? AND status=?
+  @@index([status, dueDate]) // cron invoice jobs: WHERE status IN (...) AND dueDate <= ?
+  @@index([paidAt]) // financial reports: WHERE paidAt BETWEEN ? AND ?
   @@map("invoices")
 }
 
@@ -394,6 +398,9 @@ model payment {
 
   @@index([gatewayId], map: "payments_gatewayId_fkey")
   @@index([invoiceId], map: "payments_invoiceId_fkey")
+  // Phase 7: indexes for financial reporting queries
+  @@index([status]) // filter by payment status
+  @@index([paidAt]) // financial reports: WHERE paidAt BETWEEN ? AND ?
   @@map("payments")
 }
 
@@ -591,6 +598,8 @@ model pppoeUser {
   @@index([phone]) // customer login by phone number
   @@index([expiredAt]) // cron auto-isolate expired users
   @@index([status, expiredAt]) // composite: filter active+expired users
+  @@index([subscriptionType, status]) // Phase 7: reporting queries
+  @@index([lastPaymentDate]) // Phase 7: renewal reports
   @@map("pppoe_users")
 }
 
@@ -2718,5 +2727,6 @@ model paymentAttempt {
   @@index([gateway])
   @@index([transactionId])
   @@index([mismatchFlagged])
+  @@index([invoiceId, status]) // Phase 7: find active attempts for invoice
   @@map("payment_attempts")
 }

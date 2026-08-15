@@ -44,6 +44,23 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
   });
   const usersWithInvoice = new Set(existingInvoices.map(i => i.userId).filter(Boolean) as string[]);
 
+  // Phase 7: Batch fetch all recurring addons for all users upfront (N+1 fix)
+  // Instead of querying addons per-user inside the loop, fetch all at once.
+  const allAddons = await prisma.customerAddon.findMany({
+    where: {
+      pppoeUserId: { in: users.map(u => u.id) },
+      endDate: null,
+      addonType: { isRecurring: true, isActive: true },
+    },
+    include: { addonType: { select: { id: true, name: true, price: true } } },
+  });
+  const addonsByUserId = new Map<string, typeof allAddons>();
+  for (const addon of allAddons) {
+    const list = addonsByUserId.get(addon.pppoeUserId) || [];
+    list.push(addon);
+    addonsByUserId.set(addon.pppoeUserId, list);
+  }
+
   let generated = 0;
   let skipped = 0;
 
@@ -84,15 +101,8 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
         amount = Math.round(baseAmount + (baseAmount * taxRate / 100));
       }
 
-      // Fetch active recurring addons for the user
-      const addons = await prisma.customerAddon.findMany({
-        where: {
-          pppoeUserId: user.id,
-          endDate: null,
-          addonType: { isRecurring: true, isActive: true },
-        },
-        include: { addonType: true },
-      });
+      // Phase 7: Use batch-fetched addons instead of per-user query (N+1 fix)
+      const addons = addonsByUserId.get(user.id) || [];
 
       // Calculate total addon charges (effective price = priceOverride ?? addonType.price)
       const addonCharges = addons.map((ca) => ({
@@ -227,10 +237,12 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
     },
   });
 
-  const waProviders = await prisma.whatsapp_providers.findMany({ where: { isActive: true } });
+  // Phase 7: Parallelize independent queries
+  const [waProviders, company] = await Promise.all([
+    prisma.whatsapp_providers.findMany({ where: { isActive: true } }),
+    prisma.company.findFirst({ select: { name: true, phone: true } }),
+  ]);
   const waAvailable = waProviders.length > 0;
-
-  const company = await prisma.company.findFirst({ select: { name: true, phone: true } });
 
   let sent = 0;
   let skipped = 0;
