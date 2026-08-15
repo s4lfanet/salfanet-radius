@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
 // POST /api/admin/data-usage — trigger manual aggregation
 export async function POST(request: NextRequest) {
-  const authCheck = await requirePermission('settings.view');
+  const authCheck = await requirePermission('settings.edit');
   if (!authCheck.authorized) return authCheck.response;
 
   try {
