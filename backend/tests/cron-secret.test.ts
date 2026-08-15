@@ -23,6 +23,8 @@ function assert(condition: boolean, message: string) {
 
 // Test timing-safe comparison logic (same as production code)
 function safeCompare(a: string, b: string): boolean {
+  // Fail-closed: reject empty strings regardless of match.
+  if (!a || !b || a.length === 0 || b.length === 0) return false;
   if (a.length !== b.length) return false;
   const { timingSafeEqual } = require('crypto');
   try {
