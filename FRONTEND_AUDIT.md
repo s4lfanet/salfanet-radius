@@ -3255,3 +3255,157 @@ Berdasarkan data profiling dari Phase 7.1-7.5, implementasi React Query untuk me
 - Smoke test: ✅ Health 200, Login 200, 404, PPPoE 401, Voucher 401, Sessions 401, Invoices 401, GenieACS 401, Upload 401
 - Tidak ada perubahan business logic, API endpoints, atau HTTP methods
 - React Query **diimplementasikan** berdasarkan data profiling nyata
+
+---
+
+## Phase 8 — Complete React Query Migration (15 Aug 2026) ✅
+
+> Tanggal: 15 Agustus 2026
+> Status: **SELESAI**
+> Typecheck: ✅ 0 errors
+> Build: ✅ Sukses (local + VPS)
+> Commit: `9f03f93f`
+> Deploy: ✅ All 4 PM2 processes online
+
+### Tujuan
+
+Melanjutkan migrasi React Query dari Phase 7 untuk semua halaman admin yang masih menggunakan pola lama `useEffect + apiAdmin + manual load()`. Phase 8 menyelesaikan migrasi menyeluruh untuk semua halaman admin yang relevan.
+
+### Scope
+
+#### 8.1 — Identifikasi Halaman Tersisa
+- 78 halaman admin diidentifikasi masih menggunakan pola lama
+- Halaman auth (login, 2FA) **tidak dimigrasi** (tidak ada data-fetching yang perlu caching)
+
+#### 8.2 — Settings Pages (15 files)
+| Page | Endpoint | staleTime | Notes |
+|------|----------|-----------|-------|
+| settings/company | `/api/company` | 30s | Form sync via useEffect |
+| settings/cloudflare-tunnel | `/api/settings/cloudflare-tunnel` | 30s | |
+| settings/cron | `/api/cron/jobs` | 30s | |
+| settings/database | `/api/database/*` | 30s | |
+| settings/email | `/api/settings/email` | 30s | |
+| settings/footer | `/api/settings/footer` | 30s | |
+| settings/genieacs | `/api/settings/genieacs` | 30s | |
+| settings/isolation | `/api/settings/isolation` | 30s | |
+| settings/isolation/mikrotik | `/api/settings/isolation/mikrotik` | 30s | |
+| settings/isolation/templates | `/api/settings/isolation/templates` | 30s | |
+| settings/referral | `/api/settings/referral` | 30s | |
+| settings/security | `/api/settings/security` | 30s | |
+| settings/subdomain | `/api/settings/subdomain` | 30s | |
+| settings/telegram | `/api/settings/telegram` | 30s | |
+
+#### 8.3 — GenieACS Remaining (5 files)
+| Page | Endpoint | staleTime |
+|------|----------|-----------|
+| genieacs/auto-provision | `/api/genieacs/*` | 1min |
+| genieacs/devices | `/api/genieacs/devices` | 30s |
+| genieacs/parameter-config | `/api/genieacs/parameter-config` | 30s |
+| genieacs/tasks | `/api/genieacs/tasks` | 30s |
+| genieacs/virtual-parameters | `/api/genieacs/virtual-parameters` | 30s |
+| genieacs/vp-scripts | `/api/genieacs/vp-scripts` | 30s |
+
+#### 8.4 — Network Remaining (10 files)
+| Page | Endpoint | staleTime |
+|------|----------|-----------|
+| network/customers | `/api/network/customers` | 30s |
+| network/diagrams | `/api/network/diagrams` | 30s |
+| network/fiber-cables | `/api/network/fiber-cables` | 30s |
+| network/fiber-cores | `/api/network/fiber-cores` | 30s |
+| network/fiber-joint-closures | `/api/network/fiber-joint-closures` | 30s |
+| network/map | `/api/network/map` | 30s |
+| network/odcs | `/api/network/odcs` | 30s |
+| network/splice-points | `/api/network/splice-points` | 30s |
+| network/unified-map | 4 endpoints | 30s |
+| network/vpn-client | 3 endpoints | 30s |
+| network/vpn-server | 2 endpoints | 30s |
+
+#### 8.5 — PPPoE + Hotspot Remaining (10 files)
+| Page | Endpoint | staleTime |
+|------|----------|-----------|
+| pppoe/addons | `/api/pppoe/addons` | 30s |
+| pppoe/profiles | `/api/pppoe/profiles` | 30s |
+| pppoe/registrations | `/api/pppoe/registrations` | 30s |
+| pppoe/stopped | `/api/pppoe/stopped` | 30s |
+| hotspot/agent | `/api/hotspot/agent/*` | 30s |
+| hotspot/agent/deposits | `/api/hotspot/agent/deposits` | 30s |
+| hotspot/evoucher | `/api/hotspot/evoucher` | 30s |
+| hotspot/profile | `/api/hotspot/profile` | 30s |
+| hotspot/rekap-voucher | `/api/hotspot/rekap-voucher` | 30s |
+| hotspot/template | `/api/hotspot/template` | 30s |
+
+#### 8.6 — FreeRADIUS + Other Admin (38 files)
+| Page | Endpoint | staleTime |
+|------|----------|-----------|
+| freeradius/backup | `/api/freeradius/backup` | 30s |
+| freeradius/config | `/api/freeradius/config` | 30s |
+| freeradius/logs | `/api/freeradius/logs` | 30s |
+| freeradius/radcheck | `/api/freeradius/radcheck` | 30s |
+| freeradius/radtest | `/api/freeradius/radtest` | 30s |
+| freeradius/status | `/api/freeradius/status` | 30s |
+| data-usage | `/api/data-usage/*` | 30s |
+| download-apk | `/api/settings/apk` | 30s |
+| ippool | `/api/ippool` | 30s |
+| isolated-users | `/api/isolated-users` | 30s |
+| laporan/analitik | `/api/laporan/analitik` | 30s |
+| logs/activity | `/api/logs/activity` | 30s |
+| management | `/api/management` | 30s |
+| manual-payments | `/api/manual-payments` | 30s |
+| notifications | `/api/notifications` | 30s |
+| olt/alerts | `/api/olt/alerts` | 30s |
+| olt/monitoring | `/api/olt/monitoring` | 30s (refetchInterval 30s) |
+| payment/bank-accounts | `/api/company` | 30s |
+| payment-gateway | `/api/payment-gateway/*` | 30s |
+| push-notifications | `/api/push/*` | 30s |
+| referrals | `/api/referrals` | 30s |
+| sessions/pppoe | `/api/sessions` | 30s (refetchInterval 10s) |
+| suspend-requests | `/api/suspend-requests` | 30s |
+| system | `/api/admin/system/info` | 30s |
+| technicians | `/api/technicians` | 30s |
+| topup-requests | `/api/topup-requests` | 30s |
+| tickets | `/api/tickets` | 30s |
+| tickets/[id] | `/api/tickets/*` | 30s |
+| tickets/categories | `/api/tickets/categories` | 30s |
+| whatsapp/history | `/api/whatsapp/history` | 30s |
+| whatsapp/notifications | `/api/whatsapp/notifications` | 30s |
+| whatsapp/providers | `/api/whatsapp/providers` | 30s |
+| whatsapp/send | `/api/whatsapp/*` | 30s |
+| whatsapp/templates | `/api/whatsapp/templates` | 30s |
+| inventory/categories | `/api/inventory/categories` | 30s |
+| inventory/items | `/api/inventory/items` | 30s |
+| inventory/movements | `/api/inventory/movements` | 30s |
+| inventory/suppliers | `/api/inventory/suppliers` | 30s |
+
+### Pattern yang Diterapkan
+
+1. **Data loading**: `useApiQuery<T>(endpoint, { params, staleTime, refetchInterval })`
+2. **Filter/pagination**: params dimasukkan ke query key untuk tracking otomatis
+3. **Mutations**: `apiAdmin()` + `queryClient.invalidateQueries({ queryKey: buildQueryKey(endpoint) })`
+4. **Refresh button**: `refetch()` dari useApiQuery
+5. **Reference data** (routers, company): `staleTime: 300000` (5 menit)
+6. **Form/edit state**: `useMemo` derive dari query data + `useEffect` sync ke local state
+7. **Polling**: `refetchInterval` menggantikan `setInterval` manual
+
+### Halaman yang TIDAK Dimigrasi (Intentional)
+
+- `admin/login` — auth flow, tidak ada data fetching untuk caching
+- `admin/auth/two-factor` — auth flow
+
+### Verification
+
+- `npx tsc --noEmit`: ✅ 0 errors
+- `npx next build` (local): ✅ Sukses
+- `pnpm build` (VPS): ✅ Sukses
+- PM2: ✅ All 4 processes online (frontend, backend, cron, wa)
+- Smoke test:
+  - Health: 200 ✅
+  - Frontend `/`: 200 ✅
+  - `/login`: 200 ✅
+  - `/customer/login`: 200 ✅
+  - `/technician/login`: 200 ✅
+  - Unknown route: 404 ✅
+  - Protected PPPoE (no auth): 401 ✅
+  - Upload logo (no auth): 401 ✅
+- Net code reduction: -875 lines (1570 insertions, 2445 deletions)
+- 80 files changed
+- Tidak ada perubahan business logic, API endpoints, atau HTTP methods
