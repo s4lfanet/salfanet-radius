@@ -181,6 +181,9 @@ export async function POST(request: NextRequest) {
         case 'radius_reconciliation':
           result = await runRadiusReconciliation()
           break
+        case 'external_task_processor':
+          result = await runExternalTaskProcessor()
+          break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }
       }
@@ -264,6 +267,11 @@ async function runFreeradiusHealth() {
 async function runRadiusSyncRetry() {
   const { processRetryQueue } = await import('@/server/services/radius/radius-sync-queue.service')
   return await processRetryQueue(50)
+}
+
+async function runExternalTaskProcessor() {
+  const { processExternalTasks } = await import('@/server/services/external-task-processor.service')
+  return await processExternalTasks()
 }
 
 /**
