@@ -5,6 +5,7 @@ import { sendDisconnectRequest, isRadclientAvailable } from '@/server/services/r
 import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { checkAuth } from '@/server/middleware/api-auth';
 
 // Check if CoA is available (radclient installed)
 let coaAvailable: boolean | null = null;
@@ -205,6 +206,10 @@ async function disconnectPPPoEUser(router: any, username: string): Promise<{ suc
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check: session disconnect requires admin authentication
+    const authCheck = await checkAuth();
+    if (!authCheck.authorized) return authCheck.response;
+
     const body = await request.json();
     const { sessionIds, usernames, useCoA } = body; // Support both session IDs or usernames, useCoA for PPPoE
 
