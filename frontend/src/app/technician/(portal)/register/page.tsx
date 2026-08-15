@@ -537,7 +537,7 @@ export default function TechnicianRegisterPage() {
                     <div className="space-y-2">
                       {/* Grid foto yang sudah diupload */}
                       {form.installationPhotos.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                           {form.installationPhotos.map((photo, index) => (
                             <div key={index} className="relative">
                               {/* eslint-disable-next-line @next/next/no-img-element */}

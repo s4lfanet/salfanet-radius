@@ -804,7 +804,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
       <div className={`flex items-center justify-between px-4 py-3 ${headerBg} shrink-0 transition-colors duration-200`}>
         <div className="flex items-center gap-2">
           {(step === 'form') && (
-            <button onClick={() => { setStep('type'); onTypeChange?.(null); }} className="p-1 hover:bg-white/20 rounded text-white">
+            <button onClick={() => { setStep('type'); onTypeChange?.(null); }} className="p-1 hover:bg-white/20 rounded text-white" aria-label="Back">
               <ChevronLeft className="w-4 h-4" />
             </button>
           )}
@@ -824,7 +824,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
             {step === 'setup' && 'Setup OTB — Penugasan Tabung'}
           </span>
         </div>
-        <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded text-white">
+        <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded text-white" aria-label="Close panel">
           <X className="w-4 h-4" />
         </button>
       </div>

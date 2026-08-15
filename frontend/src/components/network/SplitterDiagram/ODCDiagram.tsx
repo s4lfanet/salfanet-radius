@@ -398,7 +398,7 @@ export function ODCDiagram({
       {/* Port Utilization */}
       <div className="mt-4">
         <h4 className="text-sm font-semibold text-gray-900 mb-2">{t('network.odc.portUtilization')}</h4>
-        <div className="grid grid-cols-5 gap-2 text-center text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 text-center text-xs">
           {Object.entries(
             outputPorts.reduce((acc, port) => {
               acc[port.status] = (acc[port.status] || 0) + 1;

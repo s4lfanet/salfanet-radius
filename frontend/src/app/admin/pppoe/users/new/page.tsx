@@ -379,7 +379,7 @@ export default function NewPppoeUserPage() {
                 </label>
                 <p className="text-[10px] text-muted-foreground">Maks. 5 foto ({formData.installationPhotos.length}/5)</p>
                 {formData.installationPhotos.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {formData.installationPhotos.map((photo, i) => (
                       <div key={i} className="relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

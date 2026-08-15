@@ -554,7 +554,7 @@ export default function HotspotProfilePage() {
                     <ModalLabel>{t('hotspot.groupProfile')}</ModalLabel>
                     <ModalInput value={formData.groupProfile} onChange={(e) => setFormData({ ...formData, groupProfile: e.target.value })} placeholder={t('common.optional')} />
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <div className="col-span-1">
                       <ModalLabel required>{t('hotspot.sharedUsers')}</ModalLabel>
                       <ModalInput type="number" min={1} value={formData.sharedUsers} onChange={(e) => setFormData({ ...formData, sharedUsers: e.target.value })} required />

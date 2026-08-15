@@ -397,7 +397,7 @@ export default function OLTMonitoringPage() {
                 </div>
 
                 {/* Device Info */}
-                <div className="px-3 py-2 grid grid-cols-3 gap-x-2 border-b border-slate-100 dark:border-slate-800 text-center">
+                <div className="px-3 py-2 grid grid-cols-1 sm:grid-cols-3 gap-x-2 border-b border-slate-100 dark:border-slate-800 text-center">
                   <div>
                     <div className="text-[9px] text-slate-400 uppercase">Model</div>
                     <div className="text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">{olt.model ?? '-'}</div>

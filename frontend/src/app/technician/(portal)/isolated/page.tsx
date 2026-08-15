@@ -101,7 +101,7 @@ export default function TechnicianIsolatedPage() {
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <div className="bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl p-3 text-center">
             <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.totalIsolated}</p>
             <p className="text-[10px] text-slate-500 dark:text-[#e0d0ff]/60">Total</p>

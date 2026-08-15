@@ -565,7 +565,7 @@ export default function EmailSettingsPage() {
                     {t('emailSettings.smtp.title')}
                   </h3>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="col-span-2">
                       <label className="block text-xs font-medium mb-1">{t('emailSettings.smtp.host')} *</label>
                       <input

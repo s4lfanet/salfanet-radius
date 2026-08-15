@@ -122,7 +122,8 @@ function AgentSidebar({
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-1.5 hover:bg-sidebar-accent rounded-lg lg:hidden"
+              className="p-2.5 hover:bg-sidebar-accent rounded-lg lg:hidden"
+              aria-label="Close menu"
             >
               <X className="w-4 h-4 text-sidebar-foreground/60" />
             </button>
@@ -383,6 +384,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
               <button
                 onClick={handleLogout}
                 className="p-2 bg-card/50 hover:bg-card rounded-xl transition border border-border flex items-center justify-center"
+                aria-label="Logout"
               >
                 <LogOut className="w-4 h-4 text-foreground" />
               </button>

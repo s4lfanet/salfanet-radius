@@ -119,6 +119,7 @@ export default function GenieACSFilesPage() {
         <div className="grid md:grid-cols-2 gap-2">
           <input
             type="file"
+            aria-label="Upload firmware file"
             onChange={(e) => {
               const f = e.target.files?.[0] ?? null;
               setFile(f);
@@ -130,11 +131,13 @@ export default function GenieACSFilesPage() {
             value={fileName}
             onChange={(e) => setFileName(e.target.value)}
             placeholder="fileName"
+            aria-label="File name"
             className="border rounded px-3 py-2 text-sm font-mono"
           />
           <select
             value={fileType}
             onChange={(e) => setFileType(e.target.value)}
+            aria-label="File type"
             className="border rounded px-3 py-2 text-sm"
           >
             {fileTypes.map((t) => (
@@ -147,18 +150,21 @@ export default function GenieACSFilesPage() {
             value={oui}
             onChange={(e) => setOui(e.target.value)}
             placeholder="OUI (optional)"
+            aria-label="OUI"
             className="border rounded px-3 py-2 text-sm font-mono"
           />
           <input
             value={productClass}
             onChange={(e) => setProductClass(e.target.value)}
             placeholder="ProductClass (optional)"
+            aria-label="Product class"
             className="border rounded px-3 py-2 text-sm font-mono"
           />
           <input
             value={version}
             onChange={(e) => setVersion(e.target.value)}
             placeholder="Version (optional)"
+            aria-label="Version"
             className="border rounded px-3 py-2 text-sm font-mono"
           />
         </div>
@@ -174,8 +180,8 @@ export default function GenieACSFilesPage() {
         </div>
       </div>
 
-      <div className="border rounded-md overflow-hidden">
-        <table className="w-full text-sm">
+      <div className="border rounded-md overflow-x-auto">
+        <table className="w-full text-sm min-w-[640px]">
           <thead className="bg-slate-100 dark:bg-slate-800">
             <tr>
               <th className="text-left px-3 py-2">Name</th>

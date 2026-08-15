@@ -436,7 +436,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
               </button>
             </>
           )}
-          <button onClick={onClose} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500">
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500" aria-label="Close panel">
             <X className="w-4 h-4" />
           </button>
         </div>

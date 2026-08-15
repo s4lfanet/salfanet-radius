@@ -340,7 +340,7 @@ export default function CustomerReferralPage() {
 
       {/* Stats */}
       {referral?.code && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <CyberCard>
             <div className="text-center py-1">
               <Users className="w-5 h-5 mx-auto text-blue-500 mb-1" />

@@ -381,7 +381,7 @@ export default function RekapVoucherPage() {
       </div>
 
       {/* Revenue Breakdown: Admin vs Agent */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-card p-4 rounded-lg border border-border">
           <div className="text-[10px] text-muted-foreground uppercase mb-1">Pendapatan Admin</div>
           <div className="text-xl font-bold text-blue-400">{formatCurrency(totalAdminEarnings)}</div>
@@ -484,7 +484,7 @@ export default function RekapVoucherPage() {
                   </div>
                 )}
               </div>
-              <div className="grid grid-cols-4 gap-2 text-xs border-t border-border pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs border-t border-border pt-2">
                 <div className="text-center">
                   <div className="text-[10px] text-muted-foreground">{t('hotspot.qty')}</div>
                   <button onClick={() => openVoucherModal(item.batchCode, '')} className="font-medium text-primary hover:underline cursor-pointer">{item.totalQty}</button>

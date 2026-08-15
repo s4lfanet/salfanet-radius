@@ -1615,7 +1615,7 @@ export default function VpnServerPage() {
                       </div>
                     </div>
                     {l2tpStatus.connected && (
-                      <div className="mt-3 grid grid-cols-3 gap-3">
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="bg-muted/50 dark:bg-slate-900/60 rounded-lg p-2">
                           <p className="text-[10px] text-gray-500 uppercase mb-0.5">VPN IP (VPS)</p>
                           <p className="text-sm font-mono text-foreground">{l2tpStatus.vpnIp ?? '-'}</p>

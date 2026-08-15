@@ -289,7 +289,7 @@ export default function SplitterSection({
                   Estimasi Insertion Loss
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
                 <div className="p-2 bg-white dark:bg-gray-800 rounded">
                   <p className="text-[9px] text-gray-500">Input Loss</p>
                   <p className="text-sm font-bold text-orange-600">{config.inputLoss} dB</p>
@@ -315,7 +315,7 @@ export default function SplitterSection({
               <div className="flex-1 border-t dark:border-gray-700"></div>
             </div>
             
-            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2">
               {config.ports.map((port) => (
                 <div
                   key={port.portNumber}

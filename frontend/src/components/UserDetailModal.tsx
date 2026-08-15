@@ -792,7 +792,7 @@ export default function UserDetailModal({
                   <p className="text-[9px] text-muted-foreground dark:text-[#e0d0ff]/40 mt-1">Bisa upload beberapa foto. Maks. 5MB per foto. Kamera otomatis mengambil GPS.</p>
                 </div>
                 {formData.installationPhotos.length > 0 && (
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {formData.installationPhotos.map((photo, index) => (
                       <div key={index} className="relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}

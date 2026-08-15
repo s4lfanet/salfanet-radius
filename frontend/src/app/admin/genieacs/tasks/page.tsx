@@ -184,7 +184,7 @@ export default function GenieACSTasksPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
         <button
           onClick={() => setStatusFilter(statusFilter === 'pending' ? 'all' : 'pending')}
           className={`bg-card rounded-lg border p-2 transition-all ${
