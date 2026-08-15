@@ -376,30 +376,29 @@ This is a minor semantic improvement. Frontend should handle 409 as "already pro
 
 ## 10. REMAINING RISK
 
-### 10.1 Auto-Pay Cron Job (Low Risk)
-`server/cron/invoice-jobs.ts` line 283 decrements balance outside a transaction. This is a pre-existing issue in the cron module. Phase 2 scope excludes cron changes unless directly necessary for payment integrity. The auto-pay decrement is guarded by a pre-check (`if user.balance < amount: skip`), but the decrement itself is not atomic with the invoice mark-paid.
+### 10.1 Auto-Pay Cron Job — FIXED
+`server/cron/invoice-jobs.ts`: Balance decrement + expiry update + invoice mark-paid sekarang dalam single `$transaction` dengan atomic conditional `updateMany` (balance >= amount check). Jika crash, semua rollback.
 
-**Mitigation:** Will be addressed in a future phase when cron is audited.
+### 10.2 Agent Voucher Generation — FIXED
+`agent/generate-voucher/route.ts`: Voucher creation + balance decrement sekarang dalam single `$transaction` dengan atomic conditional balance check. Concurrent requests tidak bisa both generate vouchers dan both decrement.
 
-### 10.2 Agent Voucher Generation (Low Risk)
-`agent.repository.ts` `adjustBalance()` increments/decrements agent balance. This is called during voucher generation. Not in Phase 2 scope (voucher generation is a separate module).
+### 10.3 Admin Agent-Deposits PATCH — FIXED
+`admin/agent-deposits/route.ts`: `updateMany` dengan status condition (PENDING → PAID/CANCELLED) menggantikan `findUnique + check + update`. Concurrent approve tidak bisa double-process.
 
-**Mitigation:** Will be addressed when agent module is audited.
+### 10.4 Agent Balance Adjustment — FIXED
+`hotspot/agents/balance/route.ts`: Atomic increment/decrement menggantikan read-modify-write pattern. Concurrent adjustments tidak bisa lost update.
 
-### 10.3 Notes JSON Field (Medium Risk)
-Topup request status stored in `transaction.notes` JSON. While `JSON_EXTRACT` conditional update is atomic, it:
-- Cannot be indexed efficiently
-- Is slower than a dedicated status column
-- Requires raw SQL (not Prisma-native)
+### 10.5 Notes JSON Field (Low Risk — Technical Debt)
+Topup request status stored in `transaction.notes` JSON. While `JSON_EXTRACT` conditional update is atomic, it cannot be indexed efficiently and requires raw SQL.
 
 **Mitigation:** Future phase should migrate to a structured `topup_request` table or add a `status` column to `transaction`.
 
-### 10.4 Webhook Log Duplicate Entries (Low Risk, from Phase 1)
+### 10.6 Webhook Log Duplicate Entries (Low Risk, from Phase 1)
 Agent deposit webhook still uses `findFirst` for duplicate webhook log check. Business logic is protected by `updateMany` guard, but webhook log entries can still duplicate.
 
 **Mitigation:** Low impact — logs only, not business state.
 
-### 10.5 Notification Creation Outside Transaction (Low Risk)
+### 10.7 Notification Creation Outside Transaction (Low Risk)
 Agent deposit notifications are created outside the `$transaction`. If notification creation fails, the deposit is still settled correctly. Notifications are best-effort.
 
 **Mitigation:** Acceptable — notifications are non-critical.
@@ -410,13 +409,13 @@ Agent deposit notifications are created outside the `$transaction`. If notificat
 
 | Metric | Value |
 |--------|-------|
-| Files changed | 8 |
+| Files changed | 12 |
 | New files | 1 (topup-integrity.test.ts) |
-| Lines added | 709 |
-| Lines removed | 194 |
-| Endpoints fixed | 7 |
+| Lines added | 879 |
+| Lines removed | 261 |
+| Endpoints fixed | 11 |
 | Balance increment locations audited | 6 (all fixed or already atomic) |
-| Balance decrement locations audited | 1 (cron — out of scope) |
+| Balance decrement locations audited | 3 (all fixed) |
 | New tests | 18 (all PASS) |
 | Build status | PASS (VPS) |
 | Production status | ONLINE (HTTP 200) |
@@ -434,3 +433,7 @@ Agent deposit notifications are created outside the `$transaction`. If notificat
 | `/api/admin/pppoe/users/[id]/deposit` | Balance + financial tx non-atomic | Single $transaction |
 | `/api/manual-payments/[id]` (approve) | Non-atomic status + invoice + payment | updateMany + invoice.updateMany + dedup |
 | `/api/pppoe/users/[id]/mark-paid` | Non-atomic invoice + transaction records | invoice.updateMany + transaction dedup in $transaction |
+| `cron/invoice-jobs.ts` (auto-renewal) | Balance decrement non-atomic with expiry | updateMany (balance >= amount) + $transaction |
+| `/api/agent/generate-voucher` | Voucher creation + balance decrement non-atomic | updateMany (balance >= cost) + $transaction |
+| `/api/admin/agent-deposits` (PATCH) | TOCTOU (findUnique + check + update) | updateMany (PENDING → PAID/CANCELLED) + $transaction |
+| `/api/hotspot/agents/balance` (POST) | Read-modify-write race (lost update) | Atomic increment/decrement + $transaction |
