@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../../route';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // Helper to extract raw value from GenieACS format (handles {_value: x} format)
 function extractRawValue(val: unknown): unknown {
@@ -723,6 +724,8 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ deviceId: string }> }
 ) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
     

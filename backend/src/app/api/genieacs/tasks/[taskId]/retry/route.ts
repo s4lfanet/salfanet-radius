@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 interface RouteParams {
   params: Promise<{ taskId: string }>;
@@ -7,6 +8,8 @@ interface RouteParams {
 
 // POST - Retry a failed task
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { taskId } = await params;
 

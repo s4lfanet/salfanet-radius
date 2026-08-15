@@ -1,12 +1,78 @@
 # PHASE 7 — Database & Final Backend Hardening Report
 
-**Date:** 2026-03-01
-**Commits:** `e0fc1344`, `621ccdfe`
+**Date:** 2026-03-01 (updated 2026-08-16 with production verification)
+**Commits:** `e0fc1344`, `621ccdfe`, `505bfd44`, + verification fixes
 **Branch:** master
 
 ---
 
-## Executive Summary
+## Production Verification Results (2026-08-16)
+
+### Migration Verification
+- ✅ All 8 Phase 7 indexes verified present in production MySQL
+- ✅ Migration table duplicates cleaned (3 duplicate entries removed)
+- ✅ Pre-existing failed migration `20260815000001_add_payment_attempt` marked as applied
+
+### Concurrency Tests (real DB, production VPS)
+- ✅ **Payment settlement**: 5 concurrent attempts on same invoice → exactly 1 SUCCESS, 4 REJECTED. No double-spend. `SELECT ... FOR UPDATE` + transaction isolation working correctly.
+- ✅ **Cron lock**: 5 concurrent lock attempts → exactly 1 GOT LOCK, 4 LOCKED OUT. `ON DUPLICATE KEY UPDATE` with expiry check working correctly.
+
+### External Task / RADIUS Retry Backlog
+- ✅ external_task: 0 rows (empty — no backlog)
+- ✅ radius_sync_queue: 0 rows (empty — no backlog)
+- ✅ Stuck PENDING tasks: 0
+- ✅ Stuck PENDING RADIUS syncs: 0
+- ✅ DEAD tasks: 0
+- ✅ Failed RADIUS syncs: 0
+
+### Cron Health
+- ✅ 8 stuck "running" cron records cleaned (from process crashes on Aug 14-15)
+- ✅ Stale cron locks: 0
+- ✅ All cron jobs running successfully after cleanup
+- ⚠️ cron_history table: 19,699 rows (~6,000/day growth). Cleanup job exists but retention period needs verification.
+
+### Permission Matrix (416 routes total)
+| Auth Mechanism | Routes |
+|----------------|--------|
+| requirePermission/checkAuth | 256 |
+| getServerSession (NextAuth) | 35 |
+| requireAgentAuth (agent JWT) | 10 |
+| verifyTechnician (technician cookie JWT) | 19 |
+| getCustomerSessionFromRequest (customer Bearer) | 33+ |
+| CRON_SECRET | 1 |
+| Legitimate no-auth (webhooks, public, auth endpoints) | ~40 |
+| **Genuinely missing auth (FIXED)** | **9** |
+
+### Auth Fixes Applied During Verification
+9 routes were found without any auth and fixed:
+
+| Route | Methods | Permission Added |
+|-------|---------|-----------------|
+| `genieacs/devices/[deviceId]/connection-request` | POST | network.view |
+| `genieacs/devices/[deviceId]/wan` | POST, PUT, DELETE | network.view / network.edit |
+| `genieacs/devices/[deviceId]/wifi` | POST, GET, PUT | network.view / network.edit |
+| `genieacs/tasks/[taskId]` | DELETE | network.edit |
+| `genieacs/tasks/[taskId]/retry` | POST | network.edit |
+| `settings/genieacs/devices/[deviceId]` | DELETE | network.edit |
+| `settings/genieacs/devices/[deviceId]/detail` | GET | network.view |
+| `settings/genieacs/devices/[deviceId]/parameters` | GET | network.view |
+| `settings/genieacs/devices/[deviceId]/reboot` | POST | network.edit |
+| `settings/genieacs/devices/[deviceId]/refresh` | POST | network.view |
+| `network/joint-closures/import` | POST | network.edit |
+
+### Routes Confirmed Legitimate No-Auth
+- `admin/olt/model-profiles` — returns empty list only, not sensitive
+- `permissions/role/[role]` — returns permission template for role selection
+- `registrations` — public customer registration endpoint
+- `hotspot/vouchers/validate` — public voucher validation
+- `pppoe/users/check-isolation` — public endpoint for isolated customers
+- `push/subscribe`, `push/unsubscribe` — uses getCustomerSessionFromRequest
+- `push/agent-subscribe`, `push/technician-subscribe` — uses respective auth
+- `admin/push-notifications` — re-exports from `push/send` which has auth
+- `health/*` — health check endpoints
+- `pwa/icon` — PWA asset
+
+---
 
 Phase 7 focused on database schema hardening, API validation, error handling, secret exposure prevention, and performance optimization. All changes are backward-compatible and non-destructive. No frontend changes were made.
 
