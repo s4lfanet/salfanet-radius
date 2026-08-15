@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import {
   RefreshCw, GitBranch, Package, Server, Cpu, Clock,
   AlertCircle, Terminal, Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from '@/hooks/useTranslation';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 interface SystemInfo {
   version: string;
@@ -62,21 +62,8 @@ function CmdBlock({ children }: { children: string }) {
 
 export default function SystemPage() {
   const { t } = useTranslation();
-  const [info, setInfo]       = useState<SystemInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchInfo = useCallback(async () => {
-    try {
-      const data = await apiAdmin<SystemInfo>('/api/admin/system/info');
-      setInfo(data);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { fetchInfo(); }, [fetchInfo]);
+  // ─── React Query: System info ────────────────────────────────────────────────
+  const { data: info, isLoading: loading, refetch: refetchInfo } = useApiQuery<SystemInfo>('/api/admin/system/info', { staleTime: 30000 });
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -96,7 +83,7 @@ export default function SystemPage() {
             </div>
           )}
           <button
-            onClick={fetchInfo}
+            onClick={() => refetchInfo()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border hover:border-primary/30 text-muted-foreground text-xs transition-all"
           >
             <RefreshCw className="w-3 h-3" />

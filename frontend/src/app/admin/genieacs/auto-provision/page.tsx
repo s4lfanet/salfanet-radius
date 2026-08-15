@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
 
 interface ParamEntry {
@@ -30,32 +31,15 @@ const DEFAULT_FORM: FormState = {
 const PARAM_TYPES = ['xsd:string', 'xsd:boolean', 'xsd:int', 'xsd:unsignedInt', 'xsd:dateTime'];
 
 export default function AutoProvisionPage() {
+  const queryClient = useQueryClient();
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<{ data?: { provision?: { script?: string } } }>('/api/genieacs/auto-provision', { staleTime: 60000 });
+  const currentScript: string | null = queryData?.data?.provision?.script ?? null;
+  const invalidateAutoProvision = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/auto-provision') });
   const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [currentScript, setCurrentScript] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const json = await apiAdmin<{ data?: { provision?: { script?: string } } }>('/api/genieacs/auto-provision');
-      const { provision } = json.data ?? {};
-      if (provision?.script) setCurrentScript(provision.script);
-      else setCurrentScript(null);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
 
   const addParam = () => {
     setForm((f) => ({
@@ -93,7 +77,7 @@ export default function AutoProvisionPage() {
         body: JSON.stringify(body),
       });
       setSuccess('Auto-provision applied successfully.');
-      load();
+      invalidateAutoProvision();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -109,7 +93,7 @@ export default function AutoProvisionPage() {
     try {
       await apiAdmin('/api/genieacs/auto-provision', { method: 'DELETE' });
       setSuccess('Auto-provision removed.');
-      setCurrentScript(null);
+      invalidateAutoProvision();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -129,7 +113,7 @@ export default function AutoProvisionPage() {
           </p>
         </div>
         <button
-          onClick={load}
+          onClick={() => refetch()}
           disabled={loading}
           className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
         >

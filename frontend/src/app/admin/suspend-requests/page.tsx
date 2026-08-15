@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,7 @@ import {
 import { PauseCircle, CheckCircle2, XCircle, Clock, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface SuspendUser {
   id: string;
@@ -63,29 +64,24 @@ interface SuspendRequestsListResponse {
 
 export default function AdminSuspendRequestsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState('PENDING');
-  const [rows, setRows] = useState<SuspendRequest[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<SuspendRequest | null>(null);
   const [action, setAction] = useState<'APPROVE' | 'REJECT' | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
   const [processing, setProcessing] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<SuspendRequestsListResponse>(`/api/admin/suspend-requests?status=${filter}&limit=200`);
-      setRows(data.rows || []);
-      setTotal(data.total || 0);
-    } catch {
-      showError('Gagal memuat data');
-    } finally {
-      setLoading(false);
-    }
-  }, [filter]);
+  // ─── React Query: Suspend requests (status filter) ───────────────────────────
+  const { data: suspendData, isLoading: loading, refetch: refetchSuspend } = useApiQuery<SuspendRequestsListResponse>(
+    '/api/admin/suspend-requests',
+    { params: { status: filter, limit: 200 }, staleTime: 30000 }
+  );
+  const rows = suspendData?.rows || [];
+  const total = suspendData?.total || 0;
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  const invalidateSuspend = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/suspend-requests') });
+  };
 
   const openAction = (row: SuspendRequest, act: 'APPROVE' | 'REJECT') => {
     setSelected(row);
@@ -109,7 +105,7 @@ export default function AdminSuspendRequestsPage() {
       );
       setSelected(null);
       setAction(null);
-      await fetchData();
+      invalidateSuspend();
     } catch (error: unknown) {
       showError((error instanceof Error ? error.message : String(error)) || 'Terjadi kesalahan jaringan');
     } finally {
@@ -138,7 +134,7 @@ export default function AdminSuspendRequestsPage() {
             <p className="text-sm text-gray-500">{t('suspendRequests.subtitle')}</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={() => refetchSuspend()} disabled={loading}>
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
           Refresh
         </Button>

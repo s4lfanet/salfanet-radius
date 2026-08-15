@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePermissions } from '@/hooks/usePermissions';
 import { formatWIB } from '@/lib/timezone';
 import { Activity, Search, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 interface ActivityLogEntry {
   id: string;
@@ -46,43 +46,25 @@ const PAGE_SIZE = 25;
 export default function ActivityLogsPage() {
   const { t } = useTranslation();
   const { hasPermission } = usePermissions();
-  const [logs, setLogs] = useState<ActivityLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [moduleFilter, setModuleFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [offset, setOffset] = useState(0);
-  const [total, setTotal] = useState(0);
 
-  const fetchLogs = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({
-        limit: String(PAGE_SIZE),
-        offset: String(offset),
-        module: moduleFilter,
-        search,
-      });
-      const data = await apiAdmin<{ success: boolean; activities: ActivityLogEntry[]; total: number; error?: string }>(`/api/admin/activity-logs?${params.toString()}`);
-      if (data.success) {
-        setLogs(data.activities);
-        setTotal(data.total);
-      } else {
-        setError(data.error || 'Gagal memuat log aktivitas');
-      }
-    } catch (e: unknown) {
-      setError((e instanceof Error ? e.message : String(e)) || 'Terjadi kesalahan');
-    } finally {
-      setLoading(false);
+  const canView = !hasPermission || hasPermission('settings.view');
+
+  // ─── React Query: Activity logs (pagination + filters) ───────────────────────
+  const { data: rawData, isLoading: loading, refetch, error: queryError } = useApiQuery<{ success: boolean; activities: ActivityLogEntry[]; total: number; error?: string }>(
+    '/api/admin/activity-logs',
+    {
+      params: { limit: PAGE_SIZE, offset, module: moduleFilter, search },
+      enabled: canView,
+      staleTime: 30000,
     }
-  }, [offset, moduleFilter, search]);
-
-  useEffect(() => {
-    if (hasPermission && !hasPermission('settings.view')) return;
-    fetchLogs();
-  }, [fetchLogs, hasPermission]);
+  );
+  const logs = rawData?.activities || [];
+  const total = rawData?.total || 0;
+  const error = queryError ? (queryError instanceof Error ? queryError.message : String(queryError)) : (rawData && !rawData.success ? (rawData.error || 'Gagal memuat log aktivitas') : null);
 
   const handleSearch = () => {
     setOffset(0);
@@ -95,7 +77,7 @@ export default function ActivityLogsPage() {
   };
 
   const handleRefresh = () => {
-    fetchLogs();
+    refetch();
   };
 
   const hasNext = offset + PAGE_SIZE < total;

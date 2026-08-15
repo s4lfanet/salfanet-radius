@@ -1,11 +1,12 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight, Code2, Cpu, X, Lightbulb, Palette } from "lucide-react";
 import { SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton, ModalInput, ModalLabel, ModalSelect, ModalTextarea } from '@/components/cyberpunk/SimpleModal';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from "@/hooks/useTranslation";
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface VirtualParameter {
   id: string;
@@ -27,8 +28,10 @@ interface VirtualParameter {
 export default function VirtualParametersPage() {
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [items, setItems] = useState<VirtualParameter[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<{ success: boolean; data?: VirtualParameter[] }>("/api/settings/genieacs/virtual-parameters", { staleTime: 60000 });
+  const items: VirtualParameter[] = queryData?.data || [];
+  const invalidateVPs = () => queryClient.invalidateQueries({ queryKey: buildQueryKey("/api/settings/genieacs/virtual-parameters") });
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -48,24 +51,6 @@ export default function VirtualParametersPage() {
     description: "",
     isActive: true,
   });
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const data = await apiAdmin<{ success: boolean; data?: VirtualParameter[] }>("/api/settings/genieacs/virtual-parameters", { cache: "no-store" });
-      if (data.success) {
-        setItems(data.data || []);
-      }
-    } catch (error) {
-      console.error("Failed to load virtual parameters", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const resetForm = () => {
     setForm({ 
@@ -146,7 +131,7 @@ export default function VirtualParametersPage() {
 
       setShowForm(false);
       resetForm();
-      fetchData();
+      invalidateVPs();
       addToast({ type: 'success', title: t('common.success'), description: t('genieacs.paramSaved') });
     } catch (error: unknown) {
       console.error('Error submitting:', error);
@@ -169,7 +154,7 @@ export default function VirtualParametersPage() {
     try {
       const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/settings/genieacs/virtual-parameters/${vp.id}`, { method: "DELETE" });
       if (!data.success) throw new Error(data.error || t('genieacs.failedDeleteParam'));
-      setItems((prev) => prev.filter((item) => item.id !== vp.id));
+      invalidateVPs();
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('genieacs.failedDeleteParam') });
     } finally {
@@ -197,7 +182,7 @@ export default function VirtualParametersPage() {
         }),
       });
       if (!data.success) throw new Error(data.error || t('genieacs.failedChangeStatus'));
-      setItems((prev) => prev.map((item) => (item.id === vp.id ? { ...item, isActive: !item.isActive } : item)));
+      invalidateVPs();
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || t('genieacs.failedChangeStatus') });
     }
@@ -281,7 +266,7 @@ export default function VirtualParametersPage() {
                 <Code2 className="w-3 h-3" />
                 {t('common.docs')}
               </a>
-              <button onClick={fetchData} className="text-xs text-primary hover:underline">{t('common.refresh')}</button>
+              <button onClick={() => refetch()} className="text-xs text-primary hover:underline">{t('common.refresh')}</button>
             </div>
           </div>
 

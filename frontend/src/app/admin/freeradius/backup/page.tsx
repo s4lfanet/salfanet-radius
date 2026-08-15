@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface BackupFile {
     name: string;
@@ -46,10 +47,11 @@ function formatDate(iso: string) {
 
 export default function FreeRADIUSBackupPage() {
     const { addToast, confirm } = useToast();
+    const queryClient = useQueryClient();
+    const backupQueryKey = buildQueryKey('/api/admin/system/freeradius-backup');
 
     const [running, setRunning] = useState(false);
     const [log, setLog] = useState('');
-    const [backups, setBackups] = useState<BackupFile[]>([]);
     const [polling, setPolling] = useState(false);
     const [restoring, setRestoring] = useState<string | null>(null);
     const [restoreLog, setRestoreLog] = useState<{ file: string; log: string; ok: boolean } | null>(null);
@@ -59,16 +61,26 @@ export default function FreeRADIUSBackupPage() {
     const logRef = useRef<HTMLPreElement>(null);
     const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+    // ─── React Query: Backup data (log + backup list) ────────────────────────────
+    const { data: backupData, refetch } = useApiQuery<BackupDataResponse>('/api/admin/system/freeradius-backup', {
+        staleTime: 0, // always refetch for live log
+    });
+
+    const backups = backupData?.backups || [];
+
+    // Sync log and scroll to bottom when data changes
+    useEffect(() => {
+        if (backupData?.log !== undefined) setLog(backupData.log);
+        requestAnimationFrame(() => {
+            if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+        });
+    }, [backupData]);
+
     const fetchData = useCallback(async () => {
         try {
-            const data = await apiAdmin<BackupDataResponse>('/api/admin/system/freeradius-backup');
-            if (data.log !== undefined) setLog(data.log);
-            if (data.backups) setBackups(data.backups);
-            requestAnimationFrame(() => {
-                if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
-            });
+            await refetch();
         } catch (e: unknown) { /* ignore — polling will retry */ console.warn('Failed to fetch backup data:', e); }
-    }, []);
+    }, [refetch]);
 
     const stopPolling = useCallback(() => {
         if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -90,9 +102,8 @@ export default function FreeRADIUSBackupPage() {
     }, [fetchData, stopPolling]);
 
     useEffect(() => {
-        fetchData();
         return () => { if (pollRef.current) clearInterval(pollRef.current); };
-    }, [fetchData]);
+    }, []);
 
     const handleBackup = async () => {
         if (!await confirm({
@@ -182,7 +193,7 @@ export default function FreeRADIUSBackupPage() {
             if (restData.success) {
                 addToast({ type: 'success', title: 'Restore berhasil', description: `${restData.restored} file dipulihkan`, duration: 4000 });
                 setUploadFile(null);
-                fetchData();
+                queryClient.invalidateQueries({ queryKey: backupQueryKey });
             } else {
                 addToast({ type: 'error', title: 'Restore gagal', description: restData.error || 'Lihat log di bawah' });
             }

@@ -1,6 +1,6 @@
 'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Plus, Trash2, RefreshCw, Network, Activity, Layers, Link2, Unlink } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -15,6 +15,7 @@ import {
   ModalLabel,
 } from '@/components/cyberpunk';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 const API_BASE = '/api/admin/ippool';
 
@@ -87,10 +88,7 @@ interface PoolMappingResponse {
 
 export default function IPPoolPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [pools, setPools] = useState<Pool[]>([]);
-  const [stats, setStats] = useState<PoolStats | null>(null);
-  const [mappings, setMappings] = useState<PoolMapping[]>([]);
+  const queryClient = useQueryClient();
   const [details, setDetails] = useState<PoolDetails | null>(null);
   const [selectedPool, setSelectedPool] = useState<string | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -100,26 +98,20 @@ export default function IPPoolPage() {
   const [expandData, setExpandData] = useState({ pool_name: '', network: '', start: '2', end: '254' });
   const [mapData, setMapData] = useState({ groupname: '', pool_name: '' });
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // ─── React Query: Pools, Stats, Mappings ─────────────────────────────────────
+  const { data: poolsData, isLoading: loading } = useApiQuery<PoolListResponse>(API_BASE, { staleTime: 30000 });
+  const pools = poolsData?.data || [];
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [poolsData, statsData, mapData] = await Promise.all([
-        apiAdmin<PoolListResponse>(`${API_BASE}`),
-        apiAdmin<PoolStatsResponse>(`${API_BASE}/stats`),
-        apiAdmin<PoolMappingListResponse>(`${API_BASE}/mappings/list`),
-      ]);
-      setPools(poolsData.data || []);
-      setStats(statsData.data || null);
-      setMappings(mapData.data || []);
-    } catch (err: unknown) {
-      showError((err instanceof Error ? err.message : String(err)) || 'Failed to load IP pool data');
-    } finally {
-      setLoading(false);
-    }
+  const { data: statsData } = useApiQuery<PoolStatsResponse>(`${API_BASE}/stats`, { staleTime: 30000 });
+  const stats = statsData?.data || null;
+
+  const { data: mappingsData } = useApiQuery<PoolMappingListResponse>(`${API_BASE}/mappings/list`, { staleTime: 30000 });
+  const mappings = mappingsData?.data || [];
+
+  const invalidatePoolData = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey(API_BASE) });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey(`${API_BASE}/stats`) });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey(`${API_BASE}/mappings/list`) });
   };
 
   const loadDetails = async (poolName: string) => {
@@ -151,7 +143,7 @@ export default function IPPoolPage() {
         showSuccess(`Pool "${formData.pool_name}" created with ${data.data.total_ips} IPs`);
         setIsCreateOpen(false);
         setFormData({ pool_name: '', network: '', start: '2', end: '254' });
-        loadData();
+        invalidatePoolData();
       } else {
         showError(data.message || 'Failed to create pool');
       }
@@ -178,7 +170,7 @@ export default function IPPoolPage() {
       if (data.success) {
         showSuccess(`Pool expanded: ${data.data.added} new IPs added (total: ${data.data.total_ips})`);
         setIsExpandOpen(false);
-        loadData();
+        invalidatePoolData();
       } else {
         showError(data.message || 'Failed to expand pool');
       }
@@ -194,7 +186,7 @@ export default function IPPoolPage() {
       const data = await apiAdmin<PoolDeleteResponse>(`${API_BASE}?poolName=${encodeURIComponent(poolName)}`, { method: 'DELETE' });
       if (data.success) {
         showSuccess(`Pool "${poolName}" deleted (${data.data.deleted} IPs removed)`);
-        loadData();
+        invalidatePoolData();
       } else {
         showError(data.message || 'Failed to delete pool');
       }
@@ -217,7 +209,7 @@ export default function IPPoolPage() {
         showSuccess(`Mapped group "${mapData.groupname}" → pool "${mapData.pool_name}"`);
         setIsMapOpen(false);
         setMapData({ groupname: '', pool_name: '' });
-        loadData();
+        invalidatePoolData();
       } else {
         showError(data.message || 'Failed to map pool');
       }
@@ -233,7 +225,7 @@ export default function IPPoolPage() {
       const data = await apiAdmin<PoolMappingResponse>(`${API_BASE}/mappings/${id}`, { method: 'DELETE' });
       if (data.success) {
         showSuccess('Mapping removed');
-        loadData();
+        invalidatePoolData();
       } else {
         showError(data.message || 'Failed to remove mapping');
       }
@@ -262,7 +254,7 @@ export default function IPPoolPage() {
           <p className="text-sm text-gray-400 mt-1">RADIUS ippool module — dynamic IP allocation per speed tier</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={loadData} className="p-2 text-gray-400 hover:text-cyan-400 transition-colors" title="Refresh">
+          <button onClick={() => invalidatePoolData()} className="p-2 text-gray-400 hover:text-cyan-400 transition-colors" title="Refresh">
             <RefreshCw className="w-5 h-5" />
           </button>
           <button onClick={() => setIsMapOpen(true)} className="px-3 py-2 bg-purple-600/20 text-purple-400 rounded-lg hover:bg-purple-600/30 flex items-center gap-2 text-sm">

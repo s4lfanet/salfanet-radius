@@ -5,6 +5,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Building2, Save, Loader2, Plus, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface BankAccount {
   bankName: string;
@@ -15,24 +16,20 @@ interface BankAccount {
 export default function BankAccountsPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    fetchBankAccounts();
-  }, []);
+  // ─── React Query: Company data (for bank accounts) ───────────────────────────
+  const { data: companyData, isLoading: loading } = useApiQuery<{ bankAccounts?: BankAccount[] }>('/api/company', { staleTime: 30000 });
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
 
-  const fetchBankAccounts = async () => {
-    try {
-      const data = await apiAdmin<{ bankAccounts?: BankAccount[] }>('/api/company');
-      setBankAccounts(data.bankAccounts || []);
-    } catch (error) {
-      console.error('Error fetching bank accounts:', error);
-    } finally {
-      setLoading(false);
+  // Initialize local editable state from server data on first load
+  useEffect(() => {
+    if (companyData?.bankAccounts && bankAccounts.length === 0) {
+      setBankAccounts(companyData.bankAccounts);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyData]);
 
   const addAccount = () => {
     setBankAccounts(prev => [...prev, { bankName: '', accountNumber: '', accountName: '' }]);
@@ -62,6 +59,7 @@ export default function BankAccountsPage() {
         body: JSON.stringify({ ...current, bankAccounts }),
       });
       addToast({ type: 'success', title: t('common.success'), description: t('settings.bankAccountsSaved') || 'Rekening bank berhasil disimpan', duration: 2500 });
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/company') });
     } catch {
       addToast({ type: 'error', title: t('common.error'), description: t('settings.saveSettingsFailed') });
     } finally {

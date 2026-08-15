@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import {
@@ -9,7 +9,7 @@ import {
   ChevronDown, ChevronUp, Copy, ExternalLink, Check, CreditCard, Eye,
   FileText, Clock, Ban, MapPin, Hash,
 } from 'lucide-react';
-import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 
 interface UnpaidInvoice {
   id: string;
@@ -52,37 +52,18 @@ interface Stats {
 
 export default function IsolatedUsersMonitorPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [users, setUsers] = useState<IsolatedUser[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'online' | 'offline'>('all');
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const fetchData = useCallback(async (silent = false) => {
-    try {
-      if (!silent) setLoading(true);
-      else setRefreshing(true);
-      const data = await apiAdmin<{ success: boolean; data: IsolatedUser[]; stats: Stats }>('/api/admin/isolated-users');
-      if (data.success) {
-        setUsers(data.data);
-        setStats(data.stats);
-      }
-    } catch (err) {
-      console.error('Failed to fetch isolated users:', err);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(() => fetchData(true), 30000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
+  // ─── React Query: Isolated users (30s polling) ──────────────────────────────
+  const { data: rawData, isLoading: loading, isFetching: refreshing, refetch } = useApiQuery<{ success: boolean; data: IsolatedUser[]; stats: Stats }>(
+    '/api/admin/isolated-users',
+    { refetchInterval: 30000, staleTime: 30000 }
+  );
+  const users = rawData?.data || [];
+  const stats = rawData?.stats || null;
 
   const copyLink = (link: string, id: string) => {
     navigator.clipboard.writeText(link);
@@ -150,8 +131,8 @@ export default function IsolatedUsersMonitorPage() {
           </p>
         </div>
         <button
-          onClick={() => fetchData()}
-          disabled={refreshing}
+          onClick={() => refetch()}
+          disabled={refreshing && !loading}
           className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg hover:bg-primary/20 transition-all text-sm text-primary"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />

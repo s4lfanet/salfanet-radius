@@ -1,6 +1,6 @@
 ﻿'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Plus, Pencil, Trash2, CheckCircle2, XCircle, FileText, RefreshCw, Download, Upload, ChevronRight, ChevronDown, Eye, Radio, Wifi, WifiOff, RotateCcw } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -16,6 +16,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { pppoeApi, apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface PPPoEProfile {
   id: string; name: string; description: string | null; price: number;
@@ -97,8 +98,22 @@ const defaultForm = {
 
 export default function PPPoEProfilesPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [profiles, setProfiles] = useState<PPPoEProfile[]>([]);
+  const queryClient = useQueryClient();
+  const profilesQueryKey = buildQueryKey('/api/pppoe/profiles');
+
+  // ─── React Query: Profiles list ─────────────────────────────────────────────
+  const { data: profilesData, isLoading: loading } = useApiQuery<{ profiles: PPPoEProfile[] }>('/api/pppoe/profiles');
+  const profiles = profilesData?.profiles || [];
+
+  // ─── React Query: Routers (reference data — 5min stale) ─────────────────────
+  const routersQueryKey = buildQueryKey('/api/pppoe/profiles/sync-mikrotik');
+  const { data: routersData, refetch: refetchRouters } = useApiQuery<RouterListResponse>('/api/pppoe/profiles/sync-mikrotik', { staleTime: 5 * 60 * 1000 });
+  const routers = routersData?.routers || [];
+
+  // ─── React Query: RADIUS IP Pools (reference data — 5min stale) ─────────────
+  const { data: radiusPoolsData } = useApiQuery<RadiusPoolListResponse>('/api/admin/ippool', { staleTime: 5 * 60 * 1000 });
+  const radiusPools = radiusPoolsData?.data || radiusPoolsData?.pools || [];
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<PPPoEProfile | null>(null);
   const [deleteProfileId, setDeleteProfileId] = useState<string | null>(null);
@@ -116,15 +131,11 @@ export default function PPPoEProfilesPage() {
 
   // Router picker state
   const [syncMikrotikTarget, setSyncMikrotikTarget] = useState<PPPoEProfile | null>(null);
-  const [routers, setRouters] = useState<RouterOption[]>([]);
   const [selectedRouterIds, setSelectedRouterIds] = useState<string[]>([]);
   const [syncIpPoolName, setSyncIpPoolName] = useState('');
   const [syncLocalAddress, setSyncLocalAddress] = useState('');
   const [syncPoolRanges, setSyncPoolRanges] = useState('');
   const [syncLockedRouter, setSyncLockedRouter] = useState(false);
-
-  // RADIUS IP Pool options (fetched from radippool)
-  const [radiusPools, setRadiusPools] = useState<{ pool_name: string; total_ips: number; start_ip: string; end_ip: string }[]>([]);
 
   // Import state
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -132,30 +143,6 @@ export default function PPPoEProfilesPage() {
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState<{ success: number; error: number; errors: string[] } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => { loadProfiles(); loadRouterList(); loadRadiusPools(); }, []);
-
-  const loadProfiles = async () => {
-    try { const data = await pppoeApi.listProfiles(); setProfiles(data.profiles || []); }
-    catch (e) { console.error('Load error:', e); }
-    finally { setLoading(false); }
-  };
-
-  const loadRadiusPools = async () => {
-    try {
-      const json = await apiAdmin<RadiusPoolListResponse>('/api/admin/ippool');
-      // API returns { success, data: [{ pool_name, total_ips, start_ip, end_ip }] }
-      const pools = json.data || json.pools || [];
-      setRadiusPools(pools);
-    } catch (e) { console.error('Load RADIUS pools error:', e); }
-  };
-
-  const loadRouterList = async () => {
-    try {
-      const data = await apiAdmin<RouterListResponse>('/api/pppoe/profiles/sync-mikrotik');
-      setRouters(data.routers || []);
-    } catch { setRouters([]); }
-  };
 
   const toKbpsDisplay = (speed: string, unit: UnitType) => {
     const n = parseFloat(speed);
@@ -235,7 +222,7 @@ export default function PPPoEProfilesPage() {
       };
       try {
         await pppoeApi.saveProfile(payload);
-        setIsDialogOpen(false); setEditingProfile(null); resetForm(); loadProfiles(); setFieldErrors({});
+        setIsDialogOpen(false); setEditingProfile(null); resetForm(); queryClient.invalidateQueries({ queryKey: profilesQueryKey }); setFieldErrors({});
         await showSuccess(editingProfile ? t('pppoe.profileUpdated') : t('pppoe.profileCreated'));
       } catch (e: unknown) {
         const eObj = e as { details?: unknown };
@@ -294,7 +281,7 @@ export default function PPPoEProfilesPage() {
     if (!confirmed) return;
     try {
       await pppoeApi.deleteProfile(deleteProfileId);
-      await showSuccess(t('pppoe.profileDeleted')); loadProfiles();
+      await showSuccess(t('pppoe.profileDeleted')); queryClient.invalidateQueries({ queryKey: profilesQueryKey });
     } catch (e: unknown) { console.error('Delete error:', e); await showError((e instanceof Error ? e.message : String(e)) || t('common.failed')); }
     finally { setDeleteProfileId(null); }
   };
@@ -306,7 +293,7 @@ export default function PPPoEProfilesPage() {
     try {
       const result = await pppoeApi.syncRadiusProfiles();
       await showSuccess(result.message || 'Berhasil sync ke FreeRADIUS');
-      loadProfiles();
+      queryClient.invalidateQueries({ queryKey: profilesQueryKey });
     } catch (e: unknown) { await showError((e instanceof Error ? e.message : String(e)) || 'Gagal sync ke FreeRADIUS'); }
     finally { setSyncingRadiusId(null); }
   };
@@ -322,9 +309,8 @@ export default function PPPoEProfilesPage() {
     // Always reload router list fresh when opening the modal
     setLoadingRouters(true);
     try {
-      const data = await apiAdmin<RouterListResponse>('/api/pppoe/profiles/sync-mikrotik');
-      const freshRouters: RouterOption[] = data.routers || [];
-      setRouters(freshRouters);
+      const { data: freshData } = await refetchRouters();
+      const freshRouters: RouterOption[] = freshData?.routers || [];
       setSelectedRouterIds(freshRouters.map(r => r.id));
     } catch {
       setSelectedRouterIds(routers.map(r => r.id));
@@ -343,16 +329,18 @@ export default function PPPoEProfilesPage() {
       const result = await pppoeApi.syncMikrotikProfiles({ id: target.id, routerIds: selectedRouterIds, ipPoolName: syncIpPoolName.trim(), localAddress: syncLocalAddress.trim(), poolRanges: syncPoolRanges.trim() }) as unknown as SyncMikrotikResult;
       // Immediately update profiles state + modal fields so next open pre-fills correctly
       if (result.savedProfile) {
-        setProfiles(prev => prev.map(p =>
-          p.id === target.id
-            ? { ...p, ipPoolName: result.savedProfile!.ipPoolName, ipPoolRange: result.savedProfile!.ipPoolRange, localAddress: result.savedProfile!.localAddress }
-            : p
-        ));
+        queryClient.setQueryData<{ profiles: PPPoEProfile[] }>(profilesQueryKey, (old) => ({
+          profiles: (old?.profiles || []).map(p =>
+            p.id === target.id
+              ? { ...p, ipPoolName: result.savedProfile!.ipPoolName, ipPoolRange: result.savedProfile!.ipPoolRange, localAddress: result.savedProfile!.localAddress }
+              : p
+          ),
+        }));
         setSyncIpPoolName(result.savedProfile.ipPoolName || '');
         setSyncPoolRanges(result.savedProfile.ipPoolRange || '');
         setSyncLocalAddress(result.savedProfile.localAddress || '');
       }
-      loadProfiles();
+      queryClient.invalidateQueries({ queryKey: profilesQueryKey });
       const debugInfo = result.debug?.length ? `\n\nDetail:\n${result.debug.join('\n')}` : '';
       if (result.success) {
         await showSuccess((result.message || 'Berhasil sync ke MikroTik') + debugInfo);
@@ -465,7 +453,7 @@ export default function PPPoEProfilesPage() {
     } catch { error++; errors.push('Gagal membaca file CSV'); }
     setImporting(false);
     setImportResults({ success, error, errors });
-    if (success > 0) loadProfiles();
+    if (success > 0) queryClient.invalidateQueries({ queryKey: profilesQueryKey });
   };
 
   if (loading) {

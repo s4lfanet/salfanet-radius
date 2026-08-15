@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import {
   Gift, Save, Loader2, ToggleLeft, ToggleRight,
@@ -27,7 +28,8 @@ interface ReferralConfigResponse {
 export default function ReferralSettingsPage() {
   const { addToast } = useToast();
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: queryData, isLoading: loading } = useApiQuery<ReferralConfigResponse>('/api/admin/referrals/config', { staleTime: 300000 });
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<ReferralConfig>({
     enabled: false,
@@ -38,21 +40,10 @@ export default function ReferralSettingsPage() {
   });
 
   useEffect(() => {
-    fetchConfig();
-  }, []);
-
-  const fetchConfig = async () => {
-    try {
-      const data = await apiAdmin<ReferralConfigResponse>('/api/admin/referrals/config');
-      if (data.success) {
-        setConfig(data.config);
-      }
-    } catch (error: unknown) {
-      console.error('Fetch config error:', error);
-    } finally {
-      setLoading(false);
+    if (queryData?.success) {
+      setConfig(queryData.config);
     }
-  };
+  }, [queryData]);
 
   const saveConfig = async () => {
     setSaving(true);
@@ -65,6 +56,7 @@ export default function ReferralSettingsPage() {
       if (data.success) {
         addToast({ type: 'success', title: 'Berhasil!', description: t('referrals.saveSuccess') });
         setConfig(data.config);
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/referrals/config') });
       } else {
         addToast({ type: 'error', title: 'Error', description: data.error || t('referrals.saveError') });
       }

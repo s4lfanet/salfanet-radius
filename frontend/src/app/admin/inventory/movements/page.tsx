@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   TrendingUp,
   TrendingDown,
@@ -50,9 +51,7 @@ interface Movement {
 
 export default function StockMovementsPage() {
   const { t } = useTranslation();
-  const [movements, setMovements] = useState<Movement[]>([]);
-  const [items, setItems] = useState<Item[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterItem, setFilterItem] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -65,27 +64,16 @@ export default function StockMovementsPage() {
     notes: '',
   });
 
-  useEffect(() => {
-    loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const movementsQueryKey = buildQueryKey('/api/inventory/movements');
+  const itemsQueryKey = buildQueryKey('/api/inventory/items');
 
-  const loadData = async () => {
-    setLoading(true);
-    try {
-      const [movementsData, itemsData] = await Promise.all([
-        apiAdmin<Movement[]>('/api/inventory/movements'),
-        apiAdmin<Item[]>('/api/inventory/items'),
-      ]);
+  // ─── React Query: Movements ───────────────────────────────────────────────────
+  const { data: movementsData, isLoading: loading } = useApiQuery<Movement[]>('/api/inventory/movements');
+  const movements = movementsData || [];
 
-      setMovements(movementsData || []);
-      setItems(itemsData || []);
-    } catch (error) {
-      await showError(t('inventory.failedLoadData'));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // ─── React Query: Items (reference data — 5min stale) ─────────────────────────
+  const { data: itemsData } = useApiQuery<Item[]>('/api/inventory/items', { staleTime: 5 * 60 * 1000 });
+  const items = itemsData || [];
 
   const resetForm = () => {
     setFormData({
@@ -114,7 +102,8 @@ export default function StockMovementsPage() {
       await showSuccess(t('inventory.movementCreated'));
       setIsDialogOpen(false);
       resetForm();
-      loadData();
+      queryClient.invalidateQueries({ queryKey: movementsQueryKey });
+      queryClient.invalidateQueries({ queryKey: itemsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('inventory.failedRecordMovement'));
     }
@@ -233,7 +222,7 @@ export default function StockMovementsPage() {
                 </select>
 
                 <button
-                  onClick={loadData}
+                  onClick={() => { queryClient.invalidateQueries({ queryKey: movementsQueryKey }); queryClient.invalidateQueries({ queryKey: itemsQueryKey }); }}
                   className="px-3 py-2 bg-muted text-muted-foreground rounded-lg hover:bg-muted/80 transition-colors text-sm font-medium"
                 >
                   <RefreshCcw className="h-4 w-4" />

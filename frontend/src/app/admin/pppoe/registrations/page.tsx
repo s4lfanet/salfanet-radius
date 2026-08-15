@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import {
@@ -30,6 +30,7 @@ import {
   ModalButton,
 } from '@/components/cyberpunk';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface Registration {
   id: string;
@@ -102,49 +103,45 @@ interface RoutersListResponse {
 
 export default function RegistrationsPage() {
   const { t } = useTranslation();
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchFilter, setSearchFilter] = useState('');
+
+  // ─── React Query: Registrations list (auto-refetches on filter change) ───────
+  const registrationsQueryKey = buildQueryKey('/api/admin/registrations', {
+    status: statusFilter !== 'all' ? statusFilter : undefined,
+    search: searchFilter || undefined,
+  });
+  const { data: registrationsData, isLoading: loading } = useApiQuery<RegistrationsListResponse>('/api/admin/registrations', {
+    params: {
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      search: searchFilter || undefined,
+    },
+  });
+  const registrations = registrationsData?.registrations || [];
+  const stats = registrationsData?.stats || null;
+
+  // ─── React Query: Areas (reference data — 5min stale) ────────────────────────
+  const { data: areasData } = useApiQuery<AreasListResponse>('/api/pppoe/areas', { staleTime: 5 * 60 * 1000 });
+  const areas = areasData?.areas || [];
+
+  // ─── React Query: Routers (reference data — 5min stale) ──────────────────────
+  const { data: routersData } = useApiQuery<RoutersListResponse>('/api/pppoe/profiles/sync-mikrotik', { staleTime: 5 * 60 * 1000 });
+  const routers = routersData?.routers || [];
+
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState<Registration | null>(null);
   const [installationFee, setInstallationFee] = useState('');
   const [subscriptionType, setSubscriptionType] = useState<'POSTPAID' | 'PREPAID'>('POSTPAID');
   const [billingDay, setBillingDay] = useState('1');
   const [approveAreaId, setApproveAreaId] = useState('');
-  const [areas, setAreas] = useState<Area[]>([]);
   const [approveRouterId, setApproveRouterId] = useState('');
-  const [routers, setRouters] = useState<Router[]>([]);
   const [approving, setApproving] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
   const [marking, setMarking] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-
-  const fetchRegistrations = async () => {
-    try {
-      const params = new URLSearchParams();
-      if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
-      if (searchFilter) params.set('search', searchFilter);
-
-      const data = await apiAdmin<RegistrationsListResponse>(`/api/admin/registrations?${params}`);
-      setRegistrations(data.registrations || []);
-      setStats(data.stats);
-    } catch (error: unknown) {
-      console.error('Failed to fetch registrations:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchRegistrations();
-    apiAdmin<AreasListResponse>('/api/pppoe/areas').then((d) => setAreas(d.areas || [])).catch(() => {});
-    apiAdmin<RoutersListResponse>('/api/pppoe/profiles/sync-mikrotik').then((d) => setRouters(d.routers || [])).catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, searchFilter]);
 
   const handleApproveClick = (registration: Registration) => {
     setSelectedRegistration(registration);
@@ -179,7 +176,7 @@ export default function RegistrationsPage() {
         `Total: Rp ${data.invoice.amount.toLocaleString('id-ID')}`
       );
       setApproveModalOpen(false);
-      fetchRegistrations();
+      queryClient.invalidateQueries({ queryKey: registrationsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedApprove'));
     } finally {
@@ -203,7 +200,7 @@ export default function RegistrationsPage() {
       });
       await showSuccess(t('pppoe.rejected'));
       setRejectModalOpen(false);
-      fetchRegistrations();
+      queryClient.invalidateQueries({ queryKey: registrationsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedReject'));
     } finally {
@@ -218,7 +215,7 @@ export default function RegistrationsPage() {
         method: 'POST',
       });
       await showSuccess(t('pppoe.installedWithInvoice').replace('{invoice}', data.invoice.invoiceNumber));
-      fetchRegistrations();
+      queryClient.invalidateQueries({ queryKey: registrationsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('pppoe.failedMarkInstalled'));
     } finally {
@@ -236,7 +233,7 @@ export default function RegistrationsPage() {
         method: 'DELETE',
       });
       await showSuccess(t('common.registrationDeleted'));
-      fetchRegistrations();
+      queryClient.invalidateQueries({ queryKey: registrationsQueryKey });
     } catch (error: unknown) {
       await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDeleteRegistration'));
     } finally {
@@ -279,7 +276,7 @@ export default function RegistrationsPage() {
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('pppoe.registrationsSubtitle')}</p>
           </div>
           <button
-            onClick={fetchRegistrations}
+            onClick={() => queryClient.invalidateQueries({ queryKey: registrationsQueryKey })}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted"
           >
             <RefreshCw className="w-3.5 h-3.5" />

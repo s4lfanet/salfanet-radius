@@ -26,6 +26,7 @@ import {
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface EmailSettings {
   id?: string;
@@ -242,6 +243,9 @@ const templateTypes = Object.keys(templateConfig) as (keyof typeof templateConfi
 export default function EmailSettingsPage() {
   const { t } = useTranslation();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: settingsData, isLoading: loading } = useApiQuery<EmailSettings>('/api/settings/email', { staleTime: 300000 });
+  const { data: templatesResponse, isLoading: loadingTemplates } = useApiQuery<EmailTemplatesResponse>('/api/settings/email/templates', { staleTime: 300000 });
   const [activeTab, setActiveTab] = useState<'settings' | 'templates' | 'history'>('settings');
 
   const [settings, setSettings] = useState<EmailSettings>({
@@ -258,7 +262,6 @@ export default function EmailSettingsPage() {
     notifyInvoice: true,
     notifyPayment: true,
   });
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -267,61 +270,26 @@ export default function EmailSettingsPage() {
 
   // Templates state
   const [templates, setTemplates] = useState<Record<string, EmailTemplate>>({});
-  const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [savingTemplate, setSavingTemplate] = useState<string | null>(null);
   const [activeTemplateTab, setActiveTemplateTab] = useState<string>('registration-approval');
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string>('');
 
   useEffect(() => {
-    const initializeData = async () => {
-      await fetchSettings();
-    };
-    initializeData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const data = await apiAdmin<EmailSettings>('/api/settings/email');
-      setSettings(data);
-      // Only fetch templates after settings loaded successfully
-      await fetchTemplates();
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message?.includes('401') && !window.location.pathname.includes('/login')) {
-        console.error('Unauthorized - session expired');
-        window.location.href = '/admin/login';
-        return;
-      }
-      console.error('Error fetching settings:', error);
-    } finally {
-      setLoading(false);
+    if (settingsData) {
+      setSettings(settingsData);
     }
-  };
+  }, [settingsData]);
 
-  const fetchTemplates = async () => {
-    setLoadingTemplates(true);
-    try {
-      const data = await apiAdmin<EmailTemplatesResponse>('/api/settings/email/templates');
-
-      if (data.success) {
-        const templatesMap: Record<string, EmailTemplate> = {};
-        data.data.forEach((t: EmailTemplate) => {
-          templatesMap[t.type] = t;
-        });
-        setTemplates(templatesMap);
-      }
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message?.includes('401') && !window.location.pathname.includes('/login')) {
-        console.error('Unauthorized - session expired');
-        window.location.href = '/admin/login';
-        return;
-      }
-      console.error('Fetch templates error:', error);
-    } finally {
-      setLoadingTemplates(false);
+  useEffect(() => {
+    if (templatesResponse?.success) {
+      const templatesMap: Record<string, EmailTemplate> = {};
+      templatesResponse.data.forEach((t: EmailTemplate) => {
+        templatesMap[t.type] = t;
+      });
+      setTemplates(templatesMap);
     }
-  };
+  }, [templatesResponse]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -332,7 +300,7 @@ export default function EmailSettingsPage() {
       });
 
       addToast({ type: 'success', title: t('emailSettings.messages.saved'), description: t('emailSettings.messages.savedDesc') });
-      fetchSettings();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/email') });
     } catch (error: unknown) {
       if (error instanceof Error && error.message?.includes('401')) {
         addToast({ type: 'warning', title: t('emailSettings.messages.sessionExpired'), description: t('emailSettings.messages.sessionExpiredDesc') });
@@ -383,7 +351,7 @@ export default function EmailSettingsPage() {
 
       if (data.success) {
         showSuccess('Template updated successfully!');
-        fetchTemplates();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/email/templates') });
       } else {
         showError(data.error || t('settings.failedUpdateTemplate'));
       }

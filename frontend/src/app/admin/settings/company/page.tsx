@@ -8,6 +8,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useAppStore } from '@/lib/store';
 import { setCurrentTimezone } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import type { Company } from '@/types/api';
 
 interface BankAccount {
@@ -63,6 +64,8 @@ export default function CompanySettingsPage() {
   const { t } = useTranslation();
   const { setCompany } = useAppStore();
   const { addToast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: companyData, isLoading: loading } = useApiQuery<CompanySettingsResponse>('/api/company', { staleTime: 300000 });
   const [settings, setSettings] = useState<CompanySettings>({
     name: '',
     email: '',
@@ -81,45 +84,33 @@ export default function CompanySettingsPage() {
     logo: '',
   });
   const [initialTimezone, setInitialTimezone] = useState('Asia/Jakarta');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const data = await apiAdmin<CompanySettingsResponse>('/api/company');
-      if (data) {
-        setSettings({
-          id: data.id || '',
-          name: data.name || '',
-          email: data.email || '',
-          phone: data.phone || '',
-          address: data.address || '',
-          baseUrl: data.baseUrl || '',
-          timezone: data.timezone || 'Asia/Jakarta',
-          bankAccounts: data.bankAccounts || [],
-          poweredBy: data.poweredBy || 'SALFANET RADIUS',
-          customerIdPrefix: data.customerIdPrefix || '',
-          footerAdmin: data.footerAdmin || '',
-          footerCustomer: data.footerCustomer || '',
-          footerTechnician: data.footerTechnician || '',
-          footerAgent: data.footerAgent || '',
-          invoiceGenerateDays: data.invoiceGenerateDays || 7,
-          logo: data.logo || '',
-        });
-        setInitialTimezone(data.timezone || 'Asia/Jakarta');
-      }
-    } catch (error: unknown) {
-      console.error('Error fetching settings:', error);
-    } finally {
-      setLoading(false);
+    if (companyData) {
+      setSettings({
+        id: companyData.id || '',
+        name: companyData.name || '',
+        email: companyData.email || '',
+        phone: companyData.phone || '',
+        address: companyData.address || '',
+        baseUrl: companyData.baseUrl || '',
+        timezone: companyData.timezone || 'Asia/Jakarta',
+        bankAccounts: companyData.bankAccounts || [],
+        poweredBy: companyData.poweredBy || 'SALFANET RADIUS',
+        customerIdPrefix: companyData.customerIdPrefix || '',
+        footerAdmin: companyData.footerAdmin || '',
+        footerCustomer: companyData.footerCustomer || '',
+        footerTechnician: companyData.footerTechnician || '',
+        footerAgent: companyData.footerAgent || '',
+        invoiceGenerateDays: companyData.invoiceGenerateDays || 7,
+        logo: companyData.logo || '',
+      });
+      setInitialTimezone(companyData.timezone || 'Asia/Jakarta');
     }
-  };
+  }, [companyData]);
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -210,6 +201,7 @@ export default function CompanySettingsPage() {
       setInitialTimezone(settings.timezone);
 
       setSaving(false);
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/company') });
       await handleRestartServices();
     } catch (error: unknown) {
       setSaving(false);
@@ -243,6 +235,7 @@ export default function CompanySettingsPage() {
       setCurrentTimezone(settings.timezone);
       setInitialTimezone(settings.timezone);
 
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/company') });
       addToast({ type: 'success', title: t('common.success'), description: t('settings.companySaved'), duration: 2000 });
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: error instanceof Error ? error.message : t('settings.saveSettingsFailed') });

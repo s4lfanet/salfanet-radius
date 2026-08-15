@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 interface RadCheckItem {
     id: number;
@@ -21,11 +22,9 @@ interface RadCheckItem {
 export default function RadCheckPage() {
     const { t } = useTranslation();
     const { addToast, confirm } = useToast();
-    const [items, setItems] = useState<RadCheckItem[]>([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [mockMode, setMockMode] = useState(false);
 
     // New Item State
@@ -37,29 +36,23 @@ export default function RadCheckPage() {
         value: ''
     });
 
-    const fetchItems = async () => {
-        setLoading(true);
-        try {
-            const data = await apiAdmin<{ success: boolean; data: RadCheckItem[]; total?: number; error?: string }>(`/api/freeradius/radcheck?page=${page}&limit=10&search=${search}`);
+    const radcheckQueryKey = buildQueryKey('/api/freeradius/radcheck', { page, limit: 10, search });
 
-            if (data.success) {
-                setItems(data.data);
-                setTotalPages(Math.ceil((data.total || 0) / 10));
-                if (data.error && data.error.includes('mock')) {
-                    setMockMode(true);
-                }
-            }
-        } catch (error) {
-            console.error('Error fetching radcheck:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // ─── React Query: RadCheck list (auto-refetches on page/search change) ───────
+    const { data: radcheckData, isLoading: loading } = useApiQuery<{ success: boolean; data: RadCheckItem[]; total?: number; error?: string }>('/api/freeradius/radcheck', {
+        params: { page, limit: 10, search },
+        placeholderData: 'keepPreviousData',
+    });
 
+    const items = radcheckData?.data || [];
+    const totalPages = Math.ceil((radcheckData?.total || 0) / 10);
+
+    // Detect mock mode from response
     useEffect(() => {
-        fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, search]);
+        if (radcheckData?.error && radcheckData.error.includes('mock')) {
+            setMockMode(true);
+        }
+    }, [radcheckData]);
 
     const handleDelete = async (id: number) => {
         if (await confirm({
@@ -72,7 +65,7 @@ export default function RadCheckPage() {
             try {
                 await apiAdmin(`/api/freeradius/radcheck?id=${id}`, { method: 'DELETE' });
                 addToast({ type: 'success', title: 'Deleted!', description: 'Item has been deleted.' });
-                fetchItems();
+                queryClient.invalidateQueries({ queryKey: radcheckQueryKey });
             } catch (err) {
                 addToast({ type: 'error', title: 'Error', description: 'Failed to delete item' });
             }
@@ -94,7 +87,7 @@ export default function RadCheckPage() {
             addToast({ type: 'success', title: t('common.success'), description: t('radius.createSuccess') });
             setShowAdd(false);
             setNewItem({ username: '', attribute: 'Cleartext-Password', op: ':=', value: '' });
-            fetchItems();
+            queryClient.invalidateQueries({ queryKey: radcheckQueryKey });
         } catch (err) {
             addToast({ type: 'error', title: 'Error', description: 'Failed to create item' });
         }

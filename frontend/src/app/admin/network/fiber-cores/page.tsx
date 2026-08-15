@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
@@ -8,6 +8,7 @@ import {
   Bookmark, Cable, Filter, Eye, Tag, Layers, Activity
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
 // Fiber color coding (TIA-598-D standard)
 const FIBER_COLORS: Record<string, string> = {
@@ -58,9 +59,7 @@ const STATUSES = ['AVAILABLE', 'ASSIGNED', 'RESERVED', 'DAMAGED'] as const;
 
 export default function FiberCoresPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [cores, setCores] = useState<FiberCore[]>([]);
-  const [cables, setCables] = useState<FiberCable[]>([]);
+  const queryClient = useQueryClient();
   const [pagination, setPagination] = useState({
     total: 0,
     page: 1,
@@ -72,6 +71,35 @@ export default function FiberCoresPage() {
   const [filterCable, setFilterCable] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // React Query: cores (with filter/pagination params), cables
+  const coresQuery = useApiQuery<{ cores?: FiberCore[]; pagination?: { total?: number; totalPages?: number }; error?: string }>('/api/network/cores', {
+    params: {
+      page: pagination.page,
+      limit: pagination.limit,
+      ...(filterCable && { cableId: filterCable }),
+      ...(filterStatus && { status: filterStatus }),
+    },
+    staleTime: 30000,
+  });
+  const cablesQuery = useApiQuery<{ cables?: FiberCable[] }>('/api/network/cables', {
+    staleTime: 30000,
+  });
+
+  const cores = coresQuery.data?.cores || [];
+  const cables = cablesQuery.data?.cables || [];
+  const loading = coresQuery.isLoading;
+
+  // Sync pagination totals from query response
+  useEffect(() => {
+    if (coresQuery.data?.pagination) {
+      setPagination(prev => ({
+        ...prev,
+        total: coresQuery.data.pagination?.total || 0,
+        totalPages: coresQuery.data.pagination?.totalPages || 0,
+      }));
+    }
+  }, [coresQuery.data]);
 
   // Selection
   const [selectedCores, setSelectedCores] = useState<Set<string>>(new Set());
@@ -85,51 +113,6 @@ export default function FiberCoresPage() {
   // Assignment form
   const [assignToType, setAssignToType] = useState('ODP');
   const [assignToId, setAssignToId] = useState('');
-
-  const loadCores = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: String(pagination.page),
-        limit: String(pagination.limit),
-      });
-
-      if (filterCable) params.append('cableId', filterCable);
-      if (filterStatus) params.append('status', filterStatus);
-
-      const data = await apiAdmin<{ cores?: FiberCore[]; pagination?: { total?: number; totalPages?: number }; error?: string }>(`/api/network/cores?${params}`);
-
-      setCores(data.cores || []);
-      setPagination(prev => ({
-        ...prev,
-        total: data.pagination?.total || 0,
-        totalPages: data.pagination?.totalPages || 0,
-      }));
-    } catch (error: unknown) {
-      const err = error as Error;
-      showError(err.message || t('fiberCore.noData'));
-    } finally {
-      setLoading(false);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterCable, filterStatus, pagination.page, pagination.limit]);
-
-  const loadCables = useCallback(async () => {
-    try {
-      const data = await apiAdmin<{ cables?: FiberCable[] }>('/api/network/cables');
-      setCables(data.cables || []);
-    } catch (error) {
-      console.error('Failed to load cables:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadCables();
-  }, [loadCables]);
-
-  useEffect(() => {
-    loadCores();
-  }, [loadCores]);
 
   const handleSelectAll = () => {
     if (selectedCores.size === filteredCores.length) {
@@ -193,7 +176,7 @@ export default function FiberCoresPage() {
       showSuccess(data.message || t('common.success'));
       setIsActionDialogOpen(false);
       setSelectedCores(new Set());
-      loadCores();
+      queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/cores') });
     } catch (error: unknown) {
       const err = error as Error;
       showError(err.message || t('common.failed'));
@@ -290,7 +273,7 @@ export default function FiberCoresPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => loadCores()}
+            onClick={() => coresQuery.refetch()}
             disabled={loading}
             className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1 disabled:opacity-50"
           >

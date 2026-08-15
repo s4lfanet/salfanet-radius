@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import {
   Shield,
   Server,
@@ -42,7 +43,8 @@ export default function IsolationSettingsPage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { addToast, confirm } = useToast();
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: queryData, isLoading: loading } = useApiQuery<{ success: boolean; data: Partial<IsolationSettings> }>('/api/settings/isolation', { staleTime: 300000 });
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<IsolationSettings>({
     isolationEnabled: true,
@@ -60,35 +62,23 @@ export default function IsolationSettingsPage() {
   });
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    try {
-      const data = await apiAdmin<{ success: boolean; data: Partial<IsolationSettings> }>('/api/settings/isolation');
-
-      if (data.success) {
-        setSettings({
-          isolationEnabled: data.data.isolationEnabled ?? true,
-          isolationIpPool: data.data.isolationIpPool || '192.168.200.0/24',
-          isolationServerIp: data.data.isolationServerIp || '',
-          isolationRateLimit: data.data.isolationRateLimit || '64k/64k',
-          isolationRedirectUrl: data.data.isolationRedirectUrl || '',
-          isolationMessage: data.data.isolationMessage || 'Akun Anda telah diisolir karena masa berlangganan habis. Silakan lakukan pembayaran untuk mengaktifkan kembali layanan.',
-          isolationAllowDns: data.data.isolationAllowDns ?? true,
-          isolationAllowPayment: data.data.isolationAllowPayment ?? true,
-          isolationNotifyWhatsapp: data.data.isolationNotifyWhatsapp ?? true,
-          isolationNotifyEmail: data.data.isolationNotifyEmail ?? false,
-          gracePeriodDays: data.data.gracePeriodDays || 0,
-          baseUrl: data.data.baseUrl || '',
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
-    } finally {
-      setLoading(false);
+    if (queryData?.success) {
+      setSettings({
+        isolationEnabled: queryData.data.isolationEnabled ?? true,
+        isolationIpPool: queryData.data.isolationIpPool || '192.168.200.0/24',
+        isolationServerIp: queryData.data.isolationServerIp || '',
+        isolationRateLimit: queryData.data.isolationRateLimit || '64k/64k',
+        isolationRedirectUrl: queryData.data.isolationRedirectUrl || '',
+        isolationMessage: queryData.data.isolationMessage || 'Akun Anda telah diisolir karena masa berlangganan habis. Silakan lakukan pembayaran untuk mengaktifkan kembali layanan.',
+        isolationAllowDns: queryData.data.isolationAllowDns ?? true,
+        isolationAllowPayment: queryData.data.isolationAllowPayment ?? true,
+        isolationNotifyWhatsapp: queryData.data.isolationNotifyWhatsapp ?? true,
+        isolationNotifyEmail: queryData.data.isolationNotifyEmail ?? false,
+        gracePeriodDays: queryData.data.gracePeriodDays || 0,
+        baseUrl: queryData.data.baseUrl || '',
+      });
     }
-  };
+  }, [queryData]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -100,7 +90,7 @@ export default function IsolationSettingsPage() {
 
       if (data.success) {
         addToast({ type: 'success', title: t('common.success'), description: t('isolation.settingsSaved'), duration: 2000 });
-        fetchSettings();
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/isolation') });
       } else {
         throw new Error(data.error);
       }
