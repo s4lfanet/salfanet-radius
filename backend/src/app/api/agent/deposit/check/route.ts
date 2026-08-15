@@ -1,9 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { requireAgentAuth } from '@/server/middleware/agent-auth';
 
 /**
  * GET /api/agent/deposit/check
  * Check agent deposit status by token or orderId
+ * - Token-based lookup is a capability URL (token is a 32-byte secret)
+ * - OrderId-based lookup requires agent authentication and ownership verification
  */
 export async function GET(request: NextRequest) {
   try {
@@ -21,13 +24,18 @@ export async function GET(request: NextRequest) {
     let deposit;
 
     if (orderId) {
-      // Find by deposit ID (order_id from Midtrans is the deposit UUID)
+      // OrderId-based lookup requires agent authentication and ownership verification
+      const agentAuth = await requireAgentAuth(request);
+      if (!agentAuth.authorized) return agentAuth.response;
       deposit = await prisma.agentDeposit.findUnique({
         where: { id: orderId },
         include: { agent: true },
       });
+      if (deposit && deposit.agentId !== agentAuth.agentId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
     } else if (token) {
-      // Find by payment token
+      // Token-based lookup: token is a 32-byte secret capability URL
       deposit = await prisma.agentDeposit.findFirst({
         where: { paymentToken: token },
         include: { agent: true },

@@ -1,8 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { randomBytes, randomUUID } from 'crypto';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { toUTC, nowWIB } from '@/lib/timezone';
 
 function generatePaymentToken(): string {
@@ -14,8 +13,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requirePermission('customers.edit');
+    if (!auth.authorized) return auth.response;
     const { id: userId } = await params;
 
     // Get user data

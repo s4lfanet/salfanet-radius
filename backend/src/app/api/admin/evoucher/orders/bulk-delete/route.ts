@@ -3,16 +3,12 @@ import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
 import { logActivity } from '@/server/services/activity-log.service';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
+    const auth = await requirePermission('invoices.approve');
+    if (!auth.authorized) return auth.response;
 
     const { orderIds } = await req.json();
 
@@ -42,10 +38,12 @@ export async function POST(req: NextRequest) {
     });
 
     // Log activity
+    const session = await getServerSession(authOptions);
+    const sessionUser = session?.user as { id?: string; username?: string; role?: string } | undefined;
     await logActivity({
-      userId: session.user.id,
-      username: session.user.username,
-      userRole: session.user.role,
+      userId: auth.userId,
+      username: sessionUser?.username || 'admin',
+      userRole: sessionUser?.role || 'ADMIN',
       action: 'BULK_DELETE_ORDERS',
       description: `Bulk deleted ${result.count} e-voucher order(s)`,
       module: 'voucher',
