@@ -7,6 +7,7 @@ import { SplitterNode, Port, FiberConnection, FeederCableAssignment } from '@/co
 import { useTranslation } from '@/hooks/useTranslation';
 import Link from 'next/link';
 import { apiAdmin } from '@/lib/api';
+import { showError, showConfirm } from '@/lib/sweetalert';
 
 // ─── Network diagram entity types ────────────────────────────────────────────
 interface OtbListItem { id: string; name: string; code: string; }
@@ -189,7 +190,7 @@ export default function NetworkDiagramsPage() {
       setAssignJc('');
       setAssignLength('');
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : String(err));
+      showError(err instanceof Error ? err.message : String(err));
     } finally {
       setAssignSaving(false);
     }
@@ -197,12 +198,12 @@ export default function NetworkDiagramsPage() {
 
   // Remove a tube→JC assignment
   const handleRemoveSegment = async (segmentId: string) => {
-    if (!confirm('Hapus penugasan tabung ini?')) return;
+    if (!(await showConfirm('Hapus penugasan tabung ini?'))) return;
     try {
       await apiAdmin(`/api/network/otbs/${selectedOTB}/segments?segmentId=${segmentId}`, { method: 'DELETE' });
       const refreshed = await apiAdmin<OtbDetail>(`/api/network/otbs/${selectedOTB}`);
       setOtbDetail(refreshed);
-    } catch (err: unknown) { alert(err instanceof Error ? err.message : String(err)); }
+    } catch (err: unknown) { showError(err instanceof Error ? err.message : String(err)); }
   };
 
   // Transform JC data to SplitterNode format

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { RefreshCw, BarChart3, TrendingUp, Download, Upload, Users, Calendar, Zap } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { showSuccess, showError } from '@/lib/sweetalert';
 
 interface UsageRecord {
   username: string;
@@ -118,13 +119,13 @@ export default function DataUsagePage() {
     try {
       const data = await apiAdmin<AggregateResponse>(`${API_BASE}/aggregate`, { method: 'POST' });
       if (data.success) {
-        alert(`Aggregation complete: ${data.data.processed} users processed`);
+        showSuccess(`Aggregation complete: ${data.data.processed} users processed`);
         if (tab === 'top') loadTop();
         else if (tab === 'monthly') loadMonthly();
         else loadUserUsage();
       }
     } catch (err: unknown) {
-      alert('Failed to trigger aggregation');
+      showError('Failed to trigger aggregation');
     }
   };
 

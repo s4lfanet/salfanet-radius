@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Loader2, MapPin, ChevronLeft, Server, Search, Box, GitBranch, Database, Wifi, Trash2 } from 'lucide-react';
-import Swal from 'sweetalert2';
+import { showSuccess, showError, showInfo } from '@/lib/sweetalert';
 
 export type AddNodeType = 'OTB' | 'JOINT_CLOSURE' | 'ODC' | 'ODP' | 'OLT';
 
@@ -619,7 +619,7 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
       const jcObj = jcs.find(j => j.id === jcId);
       setExisting(prev => [...prev.filter(s => s.fromPort !== tubeNum), { ...data, fromPort: tubeNum, toDevice: jcObj ?? { name: jcId } }]);
       setPendingJC(prev => { const n = { ...prev }; delete n[tubeKey]; return n; });
-    } catch (err: unknown) { alert(err instanceof Error ? err.message : String(err)); }
+    } catch (err: unknown) { showError(err instanceof Error ? err.message : String(err)); }
     finally { setSaving(null); }
   };
 
@@ -736,11 +736,11 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
       });
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || 'Gagal menempatkan OLT');
-      Swal.fire({ icon: 'success', title: `OLT "${olt.name}" ditempatkan`, timer: 1500, showConfirmButton: false });
+      showSuccess(`OLT "${olt.name}" ditempatkan`);
       onCreated({ ...olt, latitude: lat, longitude: lng, type: 'OLT' });
       onClose();
     } catch (err: unknown) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
+      showError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -791,11 +791,14 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
         setCreatedNode({ ...node, _formData: formData });
         setStep('setup');
       } else {
-        Swal.fire({ icon: 'success', title: 'Node berhasil ditambahkan', text: selectedType === 'JOINT_CLOSURE' ? 'Gunakan 🔗 Hubungkan di peta untuk menghubungkan ke device lain' : undefined, timer: 2000, showConfirmButton: false });
+        showSuccess('Node berhasil ditambahkan', 'Berhasil!');
+        if (selectedType === 'JOINT_CLOSURE') {
+          showInfo('Gunakan 🔗 Hubungkan di peta untuk menghubungkan ke device lain', 'Tips');
+        }
         onClose();
       }
     } catch (err: unknown) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
+      showError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
