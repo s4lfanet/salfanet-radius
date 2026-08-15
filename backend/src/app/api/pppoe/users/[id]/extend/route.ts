@@ -156,8 +156,8 @@ export async function POST(
     const paymentToken = crypto.randomBytes(32).toString('hex');
     const paymentLink = `${baseUrl}/pay/${paymentToken}`;
     
-    // Calculate PPN if enabled on profile
-    const extendBaseAmount = newProfile.price;
+    // Calculate PPN if enabled on profile (apply user discount to base price)
+    const extendBaseAmount = Math.max(0, newProfile.price - (user.discount || 0));
     let extendAmount = extendBaseAmount;
     let extendTaxRate: number | null = null;
     if (newProfile.ppnActive && newProfile.ppnRate > 0) {

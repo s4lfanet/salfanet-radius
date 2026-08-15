@@ -124,8 +124,8 @@ export async function POST(request: NextRequest) {
           invoiceType = 'MONTHLY';
         }
 
-        // Calculate amount (apply PPN if enabled)
-        const baseAmount = user.profile.price;
+        // Calculate amount (apply user discount + PPN if enabled)
+        const baseAmount = Math.max(0, user.profile.price - (user.discount || 0));
         let amount = baseAmount;
         let taxRate: number | null = null;
         if (user.profile.ppnActive && user.profile.ppnRate > 0) {
