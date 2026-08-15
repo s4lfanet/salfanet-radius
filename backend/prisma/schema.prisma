@@ -1010,6 +1010,39 @@ model radiusSyncQueue {
   @@map("radius_sync_queue")
 }
 
+// ─── External Task Outbox ───────────────────────────────────────────────────
+// Transactional outbox pattern: external side effects (MikroTik, WhatsApp,
+// Email, FreeRADIUS reload, CoA) are recorded in the same DB transaction as
+// the main operation, then processed asynchronously by a cron-based worker.
+//
+// This ensures: if DB succeeds but external fails, the task is retried.
+// Idempotency is enforced via uniqueConstraint (entityType + entityId + operation).
+// The worker checks current state before applying side effects to avoid duplicates.
+model externalTask {
+  id             String   @id @default(uuid())
+  entityType     String   @db.VarChar(32) @map("entity_type") // pppoe_user, invoice, payment
+  entityId       String   @db.VarChar(64) @map("entity_id")
+  operation      String   @db.VarChar(32) // create, update, delete, sync_radius, sync_mikrotik, send_wa, send_email, coa_disconnect, reload_radius
+  status         String   @default("PENDING") @db.VarChar(16) // PENDING, PROCESSING, SUCCESS, FAILED, DEAD
+  retryCount     Int      @default(0) @map("retry_count")
+  maxRetries     Int      @default(5) @map("max_retries")
+  payload        Json     // operation-specific data (username, password, routerId, etc.)
+  result         String?  @db.Text // last result message
+  lastError      String?  @db.Text @map("last_error")
+  lastAttemptAt  DateTime? @map("last_attempt_at")
+  nextRetryAt    DateTime? @map("next_retry_at")
+  completedAt    DateTime? @map("completed_at")
+  failedAt       DateTime? @map("failed_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@unique([entityType, entityId, operation])
+  @@index([status])
+  @@index([nextRetryAt])
+  @@index([entityType, entityId])
+  @@map("external_task")
+}
+
 // ─── Atomic Cron Lock (MySQL-based distributed lock) ────────────────────────
 // Replaces in-memory Set + findFirst race condition.
 // Uses INSERT ... ON DUPLICATE KEY UPDATE for atomic acquisition.

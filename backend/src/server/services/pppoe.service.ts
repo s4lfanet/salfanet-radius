@@ -1,5 +1,5 @@
-/**
- * PPPoE User service — business logic extracted from route handlers.
+﻿/**
+ * PPPoE User service â€” business logic extracted from route handlers.
  * All DB mutations, RADIUS sync, notifications and activity logging live here.
  */
 
@@ -17,7 +17,7 @@ import { randomBytes } from 'crypto';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface CreatePppoeUserInput {
   username: string;
@@ -87,7 +87,7 @@ export interface UpdatePppoeUserInput {
   discountNote?: string | null;
 }
 
-// ─── List ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface ListPppoeUsersParams {
   status?: string | null;
@@ -183,7 +183,7 @@ export async function listPppoeUsers(params: ListPppoeUsersParams) {
   // For local routers, also poll MikroTik /ppp/active because
   // local-auth users bypass RADIUS accounting and won't appear in radacct.
   // Group users by router to determine which routers need polling.
-  // Skip MikroTik polling for stopped users — they can't be online
+  // Skip MikroTik polling for stopped users â€” they can't be online
   const localRouterIds = new Set<string>();
   if (params.status !== 'stop') {
     for (const u of users) {
@@ -214,7 +214,7 @@ export async function listPppoeUsers(params: ListPppoeUsersParams) {
   };
 }
 
-// ─── Get one ──────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Get one â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function getPppoeUserById(id: string) {
   const user = await prisma.pppoeUser.findUnique({
@@ -246,7 +246,7 @@ export async function getPppoeUserById(id: string) {
   return { user, activeSession };
 }
 
-// ─── Create ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createPppoeUser(
   data: CreatePppoeUserInput & { noPppoeAccount?: boolean },
@@ -307,7 +307,7 @@ export async function createPppoeUser(
   const profile = await prisma.pppoeProfile.findUnique({ where: { id: profileId } });
   if (!profile) throw Object.assign(new Error('Profile not found'), { code: 'NOT_FOUND' });
 
-  // Calculate expiredAt — must be in WIB-as-UTC format (same as nowWIB()) for correct cron comparison
+  // Calculate expiredAt â€” must be in WIB-as-UTC format (same as nowWIB()) for correct cron comparison
   const now = new Date();
   let finalExpiredAt: Date;
   if (subscriptionType === 'POSTPAID') {
@@ -316,7 +316,7 @@ export async function createPppoeUser(
     const validBillingDay = billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 31) : 1;
     finalExpiredAt.setDate(validBillingDay);
     finalExpiredAt.setHours(23, 59, 59, 999);
-    finalExpiredAt = toUTC(finalExpiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
+    finalExpiredAt = toUTC(finalExpiredAt); // Convert local WIB â†’ WIB-as-UTC for Prisma/MySQL
   } else {
     if (expiredAt) {
       finalExpiredAt = new Date(expiredAt);
@@ -328,7 +328,7 @@ export async function createPppoeUser(
         finalExpiredAt.setDate(finalExpiredAt.getDate() + profile.validityValue);
       }
       finalExpiredAt.setHours(23, 59, 59, 999);
-      finalExpiredAt = toUTC(finalExpiredAt); // Convert local WIB → WIB-as-UTC for Prisma/MySQL
+      finalExpiredAt = toUTC(finalExpiredAt); // Convert local WIB â†’ WIB-as-UTC for Prisma/MySQL
     }
   }
 
@@ -338,25 +338,25 @@ export async function createPppoeUser(
     if (!router) throw Object.assign(new Error('Router not found'), { code: 'NOT_FOUND' });
   }
 
-  // Check duplicate NIK (idCardNumber) — warning only, not blocking
+  // Check duplicate NIK (idCardNumber) â€” warning only, not blocking
   if (idCardNumber) {
     const existingNik = await prisma.pppoeUser.findFirst({
       where: { idCardNumber },
       select: { username: true, name: true },
     });
     if (existingNik) {
-      console.log(`[PSB] NIK "${idCardNumber}" sudah terdaftar atas nama: ${existingNik.name} (${existingNik.username}) — warning only`);
+      console.log(`[PSB] NIK "${idCardNumber}" sudah terdaftar atas nama: ${existingNik.name} (${existingNik.username}) â€” warning only`);
     }
   }
 
-  // Check duplicate phone — warning only, not blocking
+  // Check duplicate phone â€” warning only, not blocking
   if (resolvedPhone && resolvedPhone !== '-') {
     const existingPhone = await prisma.pppoeUser.findFirst({
       where: { phone: resolvedPhone },
       select: { username: true, name: true },
     });
     if (existingPhone) {
-      console.log(`[PSB] No HP "${resolvedPhone}" sudah terdaftar atas nama: ${existingPhone.name} (${existingPhone.username}) — warning only`);
+      console.log(`[PSB] No HP "${resolvedPhone}" sudah terdaftar atas nama: ${existingPhone.name} (${existingPhone.username}) â€” warning only`);
     }
   }
 
@@ -401,68 +401,163 @@ export async function createPppoeUser(
     } as never,
   });
 
-  // RADIUS sync - skip for static/MAC-only customers
+  // Resolve area name for notifications (before transaction)
+  let areaName: string | undefined;
+  if (areaId) {
+    const area = await prisma.pppoeArea.findUnique({ where: { id: areaId }, select: { name: true } });
+    areaName = area?.name;
+  }
+
+  // â”€â”€â”€ ATOMIC: DB create + RADIUS sync + invoice in single transaction â”€â”€â”€â”€â”€â”€
+  // External side effects (MikroTik, WhatsApp, Email) are enqueued to the
+  // external_task outbox table within the same transaction, ensuring they
+  // are only created if the DB operation succeeds.
   let radiusSynced = false;
+
   if (!noPppoeAccount && password) {
     try {
-      // nas_identifier = routerId for multi-tenant isolation (NULL = global)
       const nasIdentifier = routerId || null;
 
-      // Delete old entries (avoid duplicates on re-create)
-      await prisma.radcheck.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
-      await prisma.radusergroup.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
-      await prisma.radreply.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+      await prisma.$transaction(async (tx) => {
+        // RADIUS sync (DB-level â€” atomic with user creation)
+        await tx.radcheck.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+        await tx.radusergroup.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
+        await tx.radreply.deleteMany({ where: { username, nas_identifier: nasIdentifier } });
 
-      await prisma.radcheck.create({
-        data: { username, attribute: 'Cleartext-Password', op: ':=', value: password, nas_identifier: nasIdentifier },
-      });
-
-      await prisma.radusergroup.create({
-        data: { username, groupname: profile.groupName, priority: 0, nas_identifier: nasIdentifier },
-      });
-
-      if (ipAddress) {
-        await prisma.radreply.create({
-          data: { username, attribute: 'Framed-IP-Address', op: ':=', value: ipAddress, nas_identifier: nasIdentifier },
+        await tx.radcheck.create({
+          data: { username, attribute: 'Cleartext-Password', op: ':=', value: password, nas_identifier: nasIdentifier },
         });
-      }
 
-      await prisma.pppoeUser.update({
-        where: { id: user.id },
-        data: { syncedToRadius: true, lastSyncAt: new Date() },
-      });
-      radiusSynced = true;
-    } catch (syncError) {
-      console.error('RADIUS sync error:', syncError);
-    }
-
-    // Create PPP Secret in MikroTik (conditional by router authMode)
-    // local  → enabled (secret is primary auth)
-    // radius → disabled (secret is backup only, RADIUS is primary)
-    if (routerId) {
-      try {
-        const router = await prisma.router.findUnique({
-          where: { id: routerId },
-          select: { authMode: true },
+        await tx.radusergroup.create({
+          data: { username, groupname: profile.groupName, priority: 0, nas_identifier: nasIdentifier },
         });
-        const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
-        if (shouldCreate) {
-          const mtProfile = await getMikrotikProfileName(profileId);
-          managePppSecret(routerId, 'create', {
-            username,
-            password,
-            profile: mtProfile || undefined,
-            disabled,
-            comment: `Salfanet-${user.id.slice(0, 8)}`,
-          }).then((r) => {
-            console.log(`[PPP_SECRET] create for "${username}" on router ${routerId}: ${r.message}`)
-          }).catch((e) => {
-            console.error(`[PPP_SECRET] create failed for "${username}":`, e?.message || e)
+
+        if (ipAddress) {
+          await tx.radreply.create({
+            data: { username, attribute: 'Framed-IP-Address', op: ':=', value: ipAddress, nas_identifier: nasIdentifier },
           });
         }
-      } catch (e: any) {
-        console.error(`[PPP_SECRET] lookup router authMode failed:`, e?.message || e);
-      }
+
+        await tx.pppoeUser.update({
+          where: { id: user.id },
+          data: { syncedToRadius: true, lastSyncAt: new Date() },
+        });
+
+        // â”€â”€â”€ Enqueue external tasks (same transaction) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        const { enqueueTask } = await import('./external-task.service');
+
+        // MikroTik PPP secret creation
+        if (routerId) {
+          const router = await tx.router.findUnique({
+            where: { id: routerId },
+            select: { authMode: true },
+          });
+          const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
+          if (shouldCreate) {
+            const mtProfile = await getMikrotikProfileName(profileId);
+            await enqueueTask(tx, 'pppoe_user', user.id, 'sync_mikrotik_create', {
+              routerId,
+              username,
+              password,
+              profile: mtProfile || undefined,
+              disabled,
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+          }
+        }
+
+        // FreeRADIUS reload
+        await enqueueTask(tx, 'pppoe_user', user.id, 'reload_radius', {});
+
+        // First invoice (if requested) â€” inside transaction
+        const firstInvoice = (data as any).firstInvoice as 'none' | 'prorate' | 'full' | undefined;
+        if (firstInvoice && firstInvoice !== 'none') {
+          const userDiscount = typeof data.discount === 'number' ? data.discount : (parseInt(String(data.discount)) || 0);
+          const baseAmount = Math.max(0, profile.price - userDiscount);
+          let invoiceAmount = baseAmount;
+          if (firstInvoice === 'prorate' && subscriptionType !== 'PREPAID') {
+            const registrationDate = registeredAt ? new Date(registeredAt + 'T00:00:00') : new Date();
+            registrationDate.setHours(0, 0, 0, 0);
+            const year = registrationDate.getFullYear();
+            const month = registrationDate.getMonth();
+            const currentDay = registrationDate.getDate();
+            const bd = billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 28) : 1;
+            let nextBilling: Date;
+            if (currentDay < bd) { nextBilling = new Date(year, month, bd); }
+            else { nextBilling = new Date(year, month + 1, bd); }
+            const msPerDay = 1000 * 60 * 60 * 24;
+            const daysActive = Math.max(1, Math.ceil((nextBilling.getTime() - registrationDate.getTime()) / msPerDay));
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            invoiceAmount = Math.ceil((daysActive / daysInMonth) * baseAmount);
+          }
+          let taxRate: number | null = null;
+          if (profile.ppnActive && profile.ppnRate > 0) {
+            taxRate = Number(profile.ppnRate);
+            invoiceAmount = Math.round(invoiceAmount + (invoiceAmount * taxRate / 100));
+          }
+          const invoiceId = crypto.randomUUID();
+          const invoiceNumber = generateInvoiceNumber();
+          const company = await tx.company.findFirst({ select: { baseUrl: true } });
+          const baseUrl = company?.baseUrl || 'http://localhost:3000';
+          const paymentToken = randomBytes(32).toString('hex');
+          const paymentLink = `${baseUrl}/pay/${paymentToken}`;
+          await tx.invoice.create({
+            data: {
+              id: invoiceId,
+              invoiceNumber,
+              userId: user.id,
+              amount: invoiceAmount,
+              baseAmount,
+              ...(taxRate !== null && { taxRate }),
+              dueDate: finalExpiredAt,
+              status: 'PENDING',
+              invoiceType: 'MONTHLY',
+              customerName: resolvedName,
+              customerPhone: resolvedPhone,
+              customerUsername: username,
+              paymentToken,
+              paymentLink,
+              createdAt: new Date(),
+            },
+          });
+        }
+
+        // WhatsApp notification
+        await enqueueTask(tx, 'pppoe_user', user.id, 'send_wa', {
+          template: 'admin_create_user',
+          data: {
+            customerName: resolvedName,
+            customerPhone: resolvedPhone,
+            customerId: user.customerId || undefined,
+            username,
+            password,
+            profileName: profile.name,
+            area: areaName,
+            expiredAt: finalExpiredAt,
+          },
+          idempotencyKey: `create_user_${user.id}`,
+        });
+
+        // Email notification
+        if (email) {
+          await enqueueTask(tx, 'pppoe_user', user.id, 'send_email', {
+            template: 'admin_create_user',
+            data: {
+              email,
+              customerName: resolvedName,
+              username,
+              password,
+              profileName: profile.name,
+              area: areaName,
+            },
+            idempotencyKey: `create_user_email_${user.id}`,
+          });
+        }
+      });
+
+      radiusSynced = true;
+    } catch (syncError) {
+      console.error('RADIUS sync / external task enqueue error:', syncError);
     }
   } else if (noPppoeAccount && ipAddress) {
     try {
@@ -475,109 +570,6 @@ export async function createPppoeUser(
       });
     } catch (syncError) {
       console.error('Static IP sync error:', syncError);
-    }
-  }
-
-  // Create first invoice if requested
-  const firstInvoice = (data as any).firstInvoice as 'none' | 'prorate' | 'full' | undefined;
-  if (firstInvoice && firstInvoice !== 'none') {
-    try {
-      // Apply discount to base price (same logic as cron invoice-jobs)
-      const userDiscount = typeof data.discount === 'number' ? data.discount : (parseInt(String(data.discount)) || 0);
-      const baseAmount = Math.max(0, profile.price - userDiscount);
-      let invoiceAmount = baseAmount;
-      if (firstInvoice === 'prorate' && subscriptionType !== 'PREPAID') {
-        // Calculate prorate: days from today to next billing date
-        const registrationDate = registeredAt ? new Date(registeredAt + 'T00:00:00') : new Date();
-        registrationDate.setHours(0, 0, 0, 0);
-        const year = registrationDate.getFullYear();
-        const month = registrationDate.getMonth();
-        const currentDay = registrationDate.getDate();
-        const bd = billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 28) : 1;
-        let nextBilling: Date;
-        if (currentDay < bd) { nextBilling = new Date(year, month, bd); }
-        else { nextBilling = new Date(year, month + 1, bd); }
-        const msPerDay = 1000 * 60 * 60 * 24;
-        const daysActive = Math.max(1, Math.ceil((nextBilling.getTime() - registrationDate.getTime()) / msPerDay));
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        invoiceAmount = Math.ceil((daysActive / daysInMonth) * baseAmount);
-      }
-      // Apply PPN if active on profile
-      let taxRate: number | null = null;
-      if (profile.ppnActive && profile.ppnRate > 0) {
-        taxRate = Number(profile.ppnRate);
-        invoiceAmount = Math.round(invoiceAmount + (invoiceAmount * taxRate / 100));
-      }
-      const invoiceId = crypto.randomUUID();
-      const invoiceNumber = generateInvoiceNumber();
-      const company = await prisma.company.findFirst({ select: { baseUrl: true } });
-      const baseUrl = company?.baseUrl || 'http://localhost:3000';
-      const paymentToken = randomBytes(32).toString('hex');
-      const paymentLink = `${baseUrl}/pay/${paymentToken}`;
-      await prisma.invoice.create({
-        data: {
-          id: invoiceId,
-          invoiceNumber,
-          userId: user.id,
-          amount: invoiceAmount,
-          baseAmount,
-          ...(taxRate !== null && { taxRate }),
-          dueDate: finalExpiredAt,
-          status: 'PENDING',
-          invoiceType: 'MONTHLY',
-          customerName: resolvedName,
-          customerPhone: resolvedPhone,
-          customerUsername: username,
-          paymentToken,
-          paymentLink,
-          createdAt: new Date(),
-        },
-      });
-    } catch (invoiceError) {
-      console.error('First invoice creation error:', invoiceError);
-    }
-  }
-
-  // Notifications
-  let areaName: string | undefined;
-  if (areaId) {
-    const area = await prisma.pppoeArea.findUnique({ where: { id: areaId }, select: { name: true } });
-    areaName = area?.name;
-  }
-
-  try {
-    await sendAdminCreateUser({
-      customerName: resolvedName,
-      customerPhone: resolvedPhone,
-      customerId: user.customerId || undefined,
-      username,
-      password,
-      profileName: profile.name,
-      area: areaName,
-      expiredAt: finalExpiredAt,
-    });
-  } catch (waError) {
-    console.error('WhatsApp notification error:', waError);
-  }
-
-  if (email) {
-    try {
-      const company = await prisma.company.findFirst();
-      if (company) {
-        const { EmailService } = await import('@/server/services/notifications/email.service');
-        await EmailService.sendAdminCreateUser({
-          email,
-          customerName: resolvedName,
-          username,
-          password,
-          profileName: profile.name,
-          area: areaName,
-          companyName: company.name,
-          companyPhone: company.phone || '',
-        });
-      }
-    } catch (emailError) {
-      console.error('Email notification error:', emailError);
     }
   }
 
@@ -604,7 +596,7 @@ export async function createPppoeUser(
   return { user: { ...user, syncedToRadius: radiusSynced }, radiusSynced };
 }
 
-// ─── Update ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function updatePppoeUser(
   data: UpdatePppoeUserInput,
@@ -662,7 +654,7 @@ export async function updatePppoeUser(
       ...(data.billingDay !== undefined && { billingDay: Math.min(Math.max(parseInt(String(data.billingDay)), 1), 28) }),
       // expiredAt: if explicitly provided, save it directly with correct timezone handling.
       // Date-only string (YYYY-MM-DD) ? end of day WIB (23:59:59 WIB = 16:59:59 UTC).
-      // No longer auto-recalculate expiredAt from billingDay on every edit �
+      // No longer auto-recalculate expiredAt from billingDay on every edit ï¿½
       // that was the bug causing expiredAt to silently reset to "next month" on any save.
       ...(data.expiredAt && (() => {
         const expStr = String(data.expiredAt);
@@ -685,158 +677,101 @@ export async function updatePppoeUser(
   });
 
   // RADIUS re-sync if critical fields changed (including status change)
+  // RADIUS re-sync if critical fields changed (including status change)
   if (data.username || data.password || data.profileId || data.ipAddress !== undefined || data.routerId !== undefined || (data.status && data.status !== currentUser.status)) {
     try {
       const oldUsername = currentUser.username;
       const newUsername = data.username || currentUser.username;
-
       const finalRouterId = data.routerId !== undefined ? data.routerId : currentUser.routerId;
-      // nas_identifier = routerId for multi-tenant isolation (NULL = global)
       const nasIdentifier = finalRouterId || null;
       const oldNasIdentifier = currentUser.routerId || null;
-
-      // Delete old entries scoped to old NAS + NULL + new NAS to avoid orphaned rows
-      // while preserving entries belonging to OTHER NAS identifiers.
-      // (sync-all-radius may have created entries with NULL nas_identifier,
-      //  so we include NULL in the cleanup. But we must NOT delete entries
-      //  belonging to a different router/NAS that this user doesn't belong to.)
-      const nasIdentifiersToClean = [oldNasIdentifier, nasIdentifier];
-      await prisma.radcheck.deleteMany({
-        where: {
-          username: oldUsername,
-          OR: [
-            { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
-            { nas_identifier: null },
-          ],
-        },
-      });
-      await prisma.radreply.deleteMany({
-        where: {
-          username: oldUsername,
-          OR: [
-            { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
-            { nas_identifier: null },
-          ],
-        },
-      });
-      await prisma.radusergroup.deleteMany({
-        where: {
-          username: oldUsername,
-          OR: [
-            { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
-            { nas_identifier: null },
-          ],
-        },
-      });
-
-      // If username changed, update radacct so accounting records follow
-      if (oldUsername !== newUsername) {
-        await prisma.$executeRaw`UPDATE radacct SET username = ${newUsername} WHERE username = ${oldUsername}`;
-        await prisma.$executeRaw`UPDATE radpostauth SET username = ${newUsername} WHERE username = ${oldUsername}`;
-      }
-      let router = null;
-      if (finalRouterId) {
-        router = await prisma.router.findUnique({ where: { id: finalRouterId }, select: { id: true, nasname: true } });
-      }
-
-      // Determine effective status after this update (new status if being changed, otherwise current)
       const effectiveStatus = data.status || currentUser.status;
 
-      // RADIUS re-sync must respect the user's effective status:
-      // - active: full sync (password, profile group, static IP)
-      // - isolated: allow auth but use isolir group, no static IP
-      // - blocked/stop: keep RADIUS tables empty � user must remain unreachable
-      if (effectiveStatus === 'blocked' || effectiveStatus === 'stop') {
-        // Tables already cleared by deleteMany above � do NOT re-add any entries
-      } else if (effectiveStatus === 'isolated') {
-        // Keep login allowed but restrict to isolir group
-        await prisma.radcheck.create({
-          data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
+      // ATOMIC: RADIUS sync + DB update in single transaction
+      // External side effects (MikroTik, CoA, reload) are enqueued to outbox.
+      await prisma.$transaction(async (tx) => {
+        const nasIdentifiersToClean = [oldNasIdentifier, nasIdentifier];
+        await tx.radcheck.deleteMany({
+          where: {
+            username: oldUsername,
+            OR: [
+              { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
+              { nas_identifier: null },
+            ],
+          },
         });
-        // NOTE: NAS-IP-Address NOT stored in radcheck (breaks auth in VPN/NAT setups)
-        await prisma.radusergroup.create({
-          data: { username: newUsername, groupname: 'isolir', priority: 1, nas_identifier: nasIdentifier },
+        await tx.radreply.deleteMany({
+          where: {
+            username: oldUsername,
+            OR: [
+              { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
+              { nas_identifier: null },
+            ],
+          },
         });
-        // No Framed-IP-Address � isolated users get IP from pool-isolir
-      } else {
-        // active (default): full sync
-        await prisma.radcheck.create({
-          data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
+        await tx.radusergroup.deleteMany({
+          where: {
+            username: oldUsername,
+            OR: [
+              { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
+              { nas_identifier: null },
+            ],
+          },
         });
-        // NOTE: NAS-IP-Address NOT stored in radcheck (breaks auth in VPN/NAT setups)
-        await prisma.radusergroup.create({
-          data: { username: newUsername, groupname: newProfile.groupName, priority: 0, nas_identifier: nasIdentifier },
-        });
-        const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
-        if (finalIp) {
-          await prisma.radreply.create({
-            data: { username: newUsername, attribute: 'Framed-IP-Address', op: ':=', value: finalIp, nas_identifier: nasIdentifier },
-          });
+
+        if (oldUsername !== newUsername) {
+          await tx.$executeRaw`UPDATE radacct SET username = ${newUsername} WHERE username = ${oldUsername}`;
+          await tx.$executeRaw`UPDATE radpostauth SET username = ${newUsername} WHERE username = ${oldUsername}`;
         }
-      }
 
-      await prisma.pppoeUser.update({
-        where: { id },
-        data: { syncedToRadius: true, lastSyncAt: new Date() },
-      });
-
-      // Reload FreeRADIUS so NAS/SQL changes take effect immediately
-      try {
-        await reloadFreeRadius();
-      } catch (reloadErr) {
-        console.error('[User Update] FreeRADIUS reload error:', reloadErr);
-      }
-
-      // If profile changed, apply new rate limit via CoA
-      const profileChanged = data.profileId && data.profileId !== currentUser.profileId;
-      if (profileChanged && newProfile) {
-        const activeSession = await prisma.radacct.findFirst({
-          where: { username: newUsername, acctstoptime: null },
-          select: { acctsessionid: true, nasipaddress: true, framedipaddress: true },
-        });
-
-        if (activeSession) {
-          const routerRow = await prisma.router.findFirst({
-            where: {
-              OR: [
-                { nasname: activeSession.nasipaddress ?? '' },
-                { ipAddress: activeSession.nasipaddress ?? '' },
-              ],
-            },
-            select: { ipAddress: true, nasname: true, port: true, username: true, password: true, secret: true },
-          }) || await prisma.router.findFirst({
-            where: { isActive: true },
-            select: { ipAddress: true, nasname: true, port: true, username: true, password: true, secret: true },
+        if (effectiveStatus === 'blocked' || effectiveStatus === 'stop') {
+          // Tables already cleared - do NOT re-add entries
+        } else if (effectiveStatus === 'isolated') {
+          await tx.radcheck.create({
+            data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
           });
-
-          if (routerRow) {
-            const newRateLimit = newProfile.rateLimit || `${newProfile.downloadSpeed}M/${newProfile.uploadSpeed}M`;
-            await changePPPoERateLimit(
-              {
-                ipAddress: routerRow.ipAddress,
-                nasname: routerRow.nasname,
-                port: routerRow.port,
-                username: routerRow.username || '',
-                password: routerRow.password || '',
-                secret: routerRow.secret,
-              },
-              oldUsername,
-              newRateLimit,
-              {
-                acctSessionId: activeSession.acctsessionid || undefined,
-                nasIpAddress: routerRow.ipAddress,
-                framedIpAddress: activeSession.framedipaddress || undefined,
-              },
-              { allowDisconnect: true }
-            );
+          await tx.radusergroup.create({
+            data: { username: newUsername, groupname: 'isolir', priority: 1, nas_identifier: nasIdentifier },
+          });
+        } else {
+          await tx.radcheck.create({
+            data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
+          });
+          await tx.radusergroup.create({
+            data: { username: newUsername, groupname: newProfile.groupName, priority: 0, nas_identifier: nasIdentifier },
+          });
+          const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
+          if (finalIp) {
+            await tx.radreply.create({
+              data: { username: newUsername, attribute: 'Framed-IP-Address', op: ':=', value: finalIp, nas_identifier: nasIdentifier },
+            });
           }
         }
-      }
 
-      // Update PPP Secret in MikroTik (conditional by router authMode)
-      if (finalRouterId) {
-        try {
-          const router = await prisma.router.findUnique({
+        await tx.pppoeUser.update({
+          where: { id },
+          data: { syncedToRadius: true, lastSyncAt: new Date() },
+        });
+
+        // Enqueue external tasks (same transaction)
+        const { enqueueTask } = await import('./external-task.service');
+
+        // FreeRADIUS reload
+        await enqueueTask(tx, 'pppoe_user', id, 'reload_radius', {});
+
+        // CoA disconnect for credential change
+        if ((data.username && data.username !== currentUser.username) || data.password) {
+          await enqueueTask(tx, 'pppoe_user', id, 'coa_disconnect', { username: oldUsername });
+        }
+
+        // CoA disconnect for status change (block/isolate)
+        if (data.status && data.status !== currentUser.status && ['blocked', 'stop', 'isolated'].includes(data.status)) {
+          await enqueueTask(tx, 'pppoe_user', id, 'coa_disconnect', { username: newUsername });
+        }
+
+        // MikroTik PPP secret update
+        if (finalRouterId) {
+          const router = await tx.router.findUnique({
             where: { id: finalRouterId },
             select: { authMode: true },
           });
@@ -844,73 +779,38 @@ export async function updatePppoeUser(
           if (shouldCreate) {
             const mtProfile = await getMikrotikProfileName(newProfile.id);
             const usernameChanged = oldUsername && oldUsername !== newUsername;
+            const mtDisabled = effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled;
 
             if (usernameChanged) {
-              // Delete old secret then create new (rename fails if target name already exists)
-              managePppSecret(finalRouterId, 'delete', { username: oldUsername, password: currentUser.password }).then((r) => {
-                console.log(`[PPP_SECRET] delete old "${oldUsername}" on router ${finalRouterId}: ${r.message}`)
-              }).catch((e) => {
-                console.error(`[PPP_SECRET] delete old failed for "${oldUsername}":`, e?.message || e)
+              await enqueueTask(tx, 'pppoe_user', id + '_old', 'sync_mikrotik_delete', {
+                routerId: finalRouterId, username: oldUsername,
               });
-              managePppSecret(finalRouterId, 'create', {
-                username: newUsername,
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_create', {
+                routerId: finalRouterId, username: newUsername,
                 password: data.password || currentUser.password,
-                profile: mtProfile || undefined,
-                disabled: effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled,
-                comment: `Salfanet-${id.slice(0, 8)}`,
-              }).then((r) => {
-                console.log(`[PPP_SECRET] create new "${newUsername}" on router ${finalRouterId}: ${r.message}`)
-              }).catch((e) => {
-                console.error(`[PPP_SECRET] create new failed for "${newUsername}":`, e?.message || e)
+                profile: mtProfile || undefined, disabled: mtDisabled,
+                comment: 'Salfanet-' + id.slice(0, 8),
               });
             } else {
-              // Same username — just update password/profile
-              managePppSecret(finalRouterId, 'update', {
-                username: newUsername,
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_update', {
+                routerId: finalRouterId, username: newUsername,
                 password: data.password || currentUser.password,
-                profile: mtProfile || undefined,
-                disabled: effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled,
-                comment: `Salfanet-${id.slice(0, 8)}`,
-              }).then((r) => {
-                console.log(`[PPP_SECRET] update for "${newUsername}" on router ${finalRouterId}: ${r.message}`)
-              }).catch((e) => {
-                console.error(`[PPP_SECRET] update failed for "${newUsername}":`, e?.message || e)
+                profile: mtProfile || undefined, disabled: mtDisabled,
+                comment: 'Salfanet-' + id.slice(0, 8),
               });
             }
           }
-        } catch (e: any) {
-          console.error(`[PPP_SECRET] update lookup router authMode failed:`, e?.message || e);
         }
-      }
+      });
     } catch (syncError) {
       console.error('RADIUS re-sync error:', syncError);
     }
   }
-
-  // Username or password changed: disconnect old session so user reconnects with new credentials
-  if ((data.username && data.username !== currentUser.username) || data.password) {
-    try {
-      const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
-      // Disconnect old username session (if username changed, old session still uses old name)
-      const targetUsername = (data.username && data.username !== currentUser.username) ? currentUser.username : currentUser.username;
-      await disconnectPPPoEUser(targetUsername).catch((e: Error) =>
-        console.error('[User Update] CoA disconnect (credential change) error:', e.message)
-      );
-      console.log(`[User Update] CoA disconnect sent for "${targetUsername}" — credential change, user will reconnect with new credentials`);
-    } catch { /* ignore */ }
   }
 
-  // Status change: CoA disconnect
-  if (data.status && data.status !== currentUser.status) {
-    if (['blocked', 'stop', 'isolated'].includes(data.status)) {
-      try {
-        const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
-        await disconnectPPPoEUser(currentUser.username).catch((e: Error) =>
-          console.error('[User Update] CoA disconnect error:', e.message)
-        );
-      } catch { /* ignore */ }
-    }
-  }
+  // CoA disconnect is now enqueued as external task in the transaction above
+
+  // Activity log
 
   // Activity log
   try {
@@ -940,7 +840,7 @@ export async function updatePppoeUser(
   return user;
 }
 
-// ─── Delete ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Delete â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function deletePppoeUser(
   id: string,
@@ -950,89 +850,57 @@ export async function deletePppoeUser(
   const user = await prisma.pppoeUser.findUnique({ where: { id } });
   if (!user) throw Object.assign(new Error('User not found'), { code: 'NOT_FOUND' });
 
-  // 1. Kick active PPPoE session(s) on MikroTik (so the connection drops immediately)
+  // â”€â”€â”€ ATOMIC: RADIUS cleanup + user delete + external task enqueue â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // All DB operations in a single transaction. External side effects
+  // (MikroTik kick, MikroTik secret delete) are enqueued to the outbox.
   try {
-    if (user.routerId) {
-      const kicked = await kickPppoeSession(user.routerId, user.username);
-      if (kicked > 0) {
-        console.log(`[DELETE] Kicked ${kicked} active session(s) for ${user.username} on router ${user.routerId}`);
-      }
-    } else {
-      // No specific router — try all active routers
-      const activeRouters = await prisma.router.findMany({
-        where: { isActive: true },
-        select: { id: true },
+    await prisma.$transaction(async (tx) => {
+      // RADIUS DB cleanup (radcheck, radreply, radusergroup, radacct)
+      await tx.radcheck.deleteMany({ where: { username: user.username } });
+      await tx.radreply.deleteMany({ where: { username: user.username } });
+      await tx.radusergroup.deleteMany({ where: { username: user.username } });
+      // Stop any open accounting sessions and mark them terminated
+      await tx.radacct.updateMany({
+        where: { username: user.username, acctstoptime: null },
+        data: { acctstoptime: new Date() },
       });
-      for (const r of activeRouters) {
-        try {
-          const kicked = await kickPppoeSession(r.id, user.username);
-          if (kicked > 0) {
-            console.log(`[DELETE] Kicked ${kicked} active session(s) for ${user.username} on router ${r.id}`);
-          }
-        } catch (e) {
-          console.error(`[DELETE] Kick error on router ${r.id}:`, e);
+
+      // Delete user from SalfaNet DB
+      await tx.pppoeUser.delete({ where: { id } });
+
+      // â”€â”€â”€ Enqueue external tasks (same transaction) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      const { enqueueTask } = await import('./external-task.service');
+
+      // MikroTik: kick active sessions
+      await enqueueTask(tx, 'pppoe_user', id, 'coa_disconnect', {
+        username: user.username,
+      });
+
+      // MikroTik: delete PPP secret
+      if (user.routerId) {
+        await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_delete', {
+          routerId: user.routerId,
+          username: user.username,
+        });
+      } else {
+        // No specific router â€” enqueue delete for all active routers
+        const activeRouters = await tx.router.findMany({
+          where: { isActive: true },
+          select: { id: true },
+        });
+        for (const r of activeRouters) {
+          // Use unique entityId per router to avoid unique constraint collision
+          await enqueueTask(tx, 'pppoe_user', `${id}_${r.id}`, 'sync_mikrotik_delete', {
+            routerId: r.id,
+            username: user.username,
+          });
         }
       }
-    }
-  } catch (kickError) {
-    console.error('[DELETE] Kick active session error:', kickError);
-  }
-
-  // 2. Delete PPP secret from MikroTik (if router assigned)
-  try {
-    if (user.routerId) {
-      await managePppSecret(user.routerId, 'delete', { username: user.username });
-    } else {
-      const activeRouters = await prisma.router.findMany({
-        where: { isActive: true },
-        select: { id: true },
-      });
-      for (const r of activeRouters) {
-        try {
-          await managePppSecret(r.id, 'delete', { username: user.username });
-        } catch (e) {
-          console.error(`[DELETE] PPP secret delete error on router ${r.id}:`, e);
-        }
-      }
-    }
-  } catch (secretError) {
-    console.error('[DELETE] PPP secret cleanup error:', secretError);
-  }
-
-  // 3. RADIUS DB cleanup (radcheck, radreply, radusergroup, radacct)
-  let radiusDeleteSuccess = true;
-  try {
-    await prisma.radcheck.deleteMany({ where: { username: user.username } });
-    await prisma.radreply.deleteMany({ where: { username: user.username } });
-    await prisma.radusergroup.deleteMany({ where: { username: user.username } });
-    // Stop any open accounting sessions and mark them terminated
-    await prisma.radacct.updateMany({
-      where: { username: user.username, acctstoptime: null },
-      data: { acctstoptime: new Date() },
     });
-  } catch (syncError) {
-    console.error('RADIUS cleanup error:', syncError);
-    radiusDeleteSuccess = false;
-  }
-
-  await prisma.pppoeUser.delete({ where: { id } });
-
-  // If RADIUS delete failed, enqueue to retry queue for async cleanup
-  // The user is already deleted from SalfaNet DB, so the retry queue
-  // will use syncSingleUserDeleteToRadius (which only needs the username)
-  if (!radiusDeleteSuccess) {
-    try {
-      const { enqueueFailedSync } = await import('./radius/radius-sync-queue.service');
-      await enqueueFailedSync(
-        id, // pppoeUserId (user is deleted, but ID is kept for tracking)
-        user.username,
-        'delete',
-        'RADIUS delete failed during user deletion — queued for retry'
-      );
-      console.log(`[DELETE] RADIUS delete for ${user.username} enqueued to retry queue`);
-    } catch (enqueueError) {
-      console.error('[DELETE] Failed to enqueue RADIUS delete retry:', enqueueError);
-    }
+  } catch (deleteError: any) {
+    console.error('[DELETE] DB transaction error:', deleteError);
+    // If the transaction failed, the user is NOT deleted â€” safe to retry
+    throw deleteError;
   }
 
   // Invalidate profiles cache (user count changed)
