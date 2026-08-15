@@ -973,6 +973,7 @@ export async function deletePppoeUser(
   }
 
   // 3. RADIUS DB cleanup (radcheck, radreply, radusergroup, radacct)
+  let radiusDeleteSuccess = true;
   try {
     await prisma.radcheck.deleteMany({ where: { username: user.username } });
     await prisma.radreply.deleteMany({ where: { username: user.username } });
@@ -984,9 +985,28 @@ export async function deletePppoeUser(
     });
   } catch (syncError) {
     console.error('RADIUS cleanup error:', syncError);
+    radiusDeleteSuccess = false;
   }
 
   await prisma.pppoeUser.delete({ where: { id } });
+
+  // If RADIUS delete failed, enqueue to retry queue for async cleanup
+  // The user is already deleted from SalfaNet DB, so the retry queue
+  // will use syncSingleUserDeleteToRadius (which only needs the username)
+  if (!radiusDeleteSuccess) {
+    try {
+      const { enqueueFailedSync } = await import('./radius/radius-sync-queue.service');
+      await enqueueFailedSync(
+        id, // pppoeUserId (user is deleted, but ID is kept for tracking)
+        user.username,
+        'delete',
+        'RADIUS delete failed during user deletion — queued for retry'
+      );
+      console.log(`[DELETE] RADIUS delete for ${user.username} enqueued to retry queue`);
+    } catch (enqueueError) {
+      console.error('[DELETE] Failed to enqueue RADIUS delete retry:', enqueueError);
+    }
+  }
 
   // Invalidate profiles cache (user count changed)
   try { await invalidateKey(CACHE_KEYS.profiles); } catch {}

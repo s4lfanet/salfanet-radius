@@ -1,9 +1,10 @@
 # Payment Idempotency Audit
 
 **Date:** 2026-08-16
-**Status:** ✅ VERIFIED (atomic transactions + idempotency guards)
+**Status:** ✅ FIXED (atomic transactions + idempotency guards + voucher atomicity)
 **Deployed:** 2026-08-15, commit `ebe89923`, VPS `192.168.54.129`
-**DB Migration:** Unique index on `transactions.reference` created and applied
+**DB Migration:** Unique index on `transactions.reference` + unique index on `payments.invoiceId`
+**Phase 4 Update:** 2026-08-16 — voucher payment atomicity fixed, payment unique constraint added
 
 ---
 
@@ -106,14 +107,18 @@ Result: Only Webhook A processes the payment.
 | Build (local) | ✅ Exit 0 |
 | Build (VPS) | ✅ Exit 0 |
 | DB migration applied | ✅ VERIFIED — unique index on `transactions.reference` exists on VPS |
+| Payment unique constraint migration | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (VPS deployment) |
 | Transaction atomicity | ✅ VERIFIED (code inspection) |
 | updateMany idempotency guard | ✅ VERIFIED (code inspection) |
+| Voucher order updateMany guard | ✅ VERIFIED (code inspection — Phase 4 fix) |
+| Voucher order secondary dedup check | ✅ VERIFIED (code inspection — Phase 4 fix) |
 | INSERT IGNORE for financial sync | ✅ VERIFIED (code inspection) |
 | Webhook endpoint live | ✅ VERIFIED — `/api/payment/webhook` responds on VPS |
-| Duplicate webhook handling | ⏳ NOT VERIFIED — requires running backend with payment gateway |
-| Concurrent webhook handling | ⏳ NOT VERIFIED — requires running backend with payment gateway |
-| Amount mismatch rejection | ⏳ NOT VERIFIED — requires running backend with payment gateway |
-| handleVoucherOrder atomicity | ⚠️ KNOWN LIMITATION — uses findFirst+update (not updateMany) |
+| Duplicate callback handling | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (payment gateway) |
+| Concurrent webhook handling | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (running backend + MySQL) |
+| Amount mismatch rejection | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (payment gateway) |
+| handleVoucherOrder atomicity | ✅ FIXED — now uses `updateMany` with status condition (Phase 4) |
+| Payment concurrency DB test | ⏳ NOT VERIFIED — REQUIRES EXTERNAL ENVIRONMENT (MySQL test database) |
 
 ## Known Limitations
 

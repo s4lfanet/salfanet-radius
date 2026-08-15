@@ -34,6 +34,7 @@ export const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'suspend_check',         name: 'Suspend Check',          description: 'Cek user yang perlu disuspend',              defaultSchedule: '0 * * * *',   defaultScheduleLabel: 'Every hour' },
   { type: 'cron_history_cleanup',  name: 'History Cleanup',        description: 'Hapus cron history >30 hari',                defaultSchedule: '0 4 * * *',   defaultScheduleLabel: 'Daily at 4 AM' },
   { type: 'radius_sync_retry',     name: 'RADIUS Sync Retry',      description: 'Retry failed FreeRADIUS syncs (exponential backoff)', defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
+  { type: 'radius_reconciliation', name: 'RADIUS Reconciliation',  description: 'Daily reconciliation between SalfaNet and FreeRADIUS (detect drift, report mismatches)', defaultSchedule: '0 6 * * *',   defaultScheduleLabel: 'Daily at 6 AM' },
 ];
 
 export const CRON_JOB_MAP = new Map(CRON_JOB_DEFS.map(j => [j.type, j]));
