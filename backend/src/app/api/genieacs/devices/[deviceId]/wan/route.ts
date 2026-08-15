@@ -55,7 +55,7 @@ async function clearPendingTasks(host: string, deviceId: string, authHeader: str
 
 // POST - Update existing WAN connection (PPPoE creds, enable, VLAN, service)
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  const authCheck = await requirePermission('network.view');
+  const authCheck = await requirePermission('network.edit');
   if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;

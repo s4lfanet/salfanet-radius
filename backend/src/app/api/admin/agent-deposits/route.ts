@@ -111,6 +111,34 @@ export async function PATCH(request: NextRequest) {
           },
         });
 
+        // ─── Record in Keuangan ledger (atomic with balance update) ────────────
+        let depositCategory = await tx.transactionCategory.findFirst({
+          where: { name: 'Deposit Agent' },
+        });
+        if (!depositCategory) {
+          depositCategory = await tx.transactionCategory.create({
+            data: {
+              id: Math.random().toString(36).substring(2, 15),
+              name: 'Deposit Agent',
+              type: 'INCOME',
+              description: 'Deposit saldo agent',
+            },
+          });
+        }
+        await tx.transaction.create({
+          data: {
+            id: Math.random().toString(36).substring(2, 15),
+            categoryId: depositCategory.id,
+            amount: deposit.amount,
+            type: 'INCOME',
+            description: `Deposit agent ${deposit.agent.name} (admin approve)`,
+            reference: `AGENT-DEPOSIT-ADMIN-${depositId}`,
+            notes: `Agent: ${deposit.agent.name}, Bank: ${targetBankLabel}`,
+            createdAt: nowWIB(),
+            createdBy: 'admin',
+          },
+        });
+
         await tx.agentNotification.create({
           data: {
             id: Math.random().toString(36).substring(2, 15),

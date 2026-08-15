@@ -249,6 +249,35 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        // ─── Record in Keuangan ledger (atomic with balance update) ────────────
+        // Ensures agent deposits are visible in financial reports.
+        let depositCategory = await tx.transactionCategory.findFirst({
+          where: { name: 'Deposit Agent' },
+        });
+        if (!depositCategory) {
+          depositCategory = await tx.transactionCategory.create({
+            data: {
+              id: Math.random().toString(36).substring(2, 15),
+              name: 'Deposit Agent',
+              type: 'INCOME',
+              description: 'Deposit saldo agent',
+            },
+          });
+        }
+        await tx.transaction.create({
+          data: {
+            id: Math.random().toString(36).substring(2, 15),
+            categoryId: depositCategory.id,
+            amount: deposit.amount,
+            type: 'INCOME',
+            description: `Deposit agent ${deposit.agent.name} (webhook)`,
+            reference: `AGENT-DEPOSIT-${deposit.id}`,
+            notes: `Agent: ${deposit.agent.name}, Method: ${deposit.paymentGateway || 'gateway'}`,
+            createdAt: new Date(),
+            createdBy: 'system',
+          },
+        });
+
         return { alreadyProcessed: false as const, updatedAgent };
       });
 
