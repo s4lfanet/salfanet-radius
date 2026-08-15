@@ -206,8 +206,18 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     queryClient.clear();
+    // Server-side logout: invalidate the session token in the database
+    try {
+      const token = localStorage.getItem('customer_token');
+      if (token) {
+        await fetch('/api/customer/auth/logout', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+      }
+    } catch { /* non-fatal — proceed with client-side cleanup */ }
     localStorage.removeItem('customer_token');
     localStorage.removeItem('customer_user');
     router.push('/customer/login');

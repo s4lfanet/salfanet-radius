@@ -1,8 +1,7 @@
 ﻿import { prisma } from '@/server/db/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { nanoid } from 'nanoid'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 
 /**
  * POST /api/admin/pppoe/users/[id]/deposit
@@ -13,8 +12,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const authCheck = await requirePermission('customers.edit')
+    if (!authCheck.authorized) return authCheck.response
     const { id } = await params
     const body = await request.json()
     const { amount, paymentMethod, note } = body
@@ -107,6 +106,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requirePermission('customers.view')
+    if (!authCheck.authorized) return authCheck.response
     const { id } = await params
 
     const transactions = await prisma.transaction.findMany({

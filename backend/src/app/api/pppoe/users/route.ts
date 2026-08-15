@@ -12,15 +12,25 @@ import {
   deletePppoeUser,
 } from '@/server/services/pppoe.service';
 
-// GET - List all PPPoE users
+// GET - List PPPoE users (server-side pagination, search, filter)
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return unauthorized();
 
   try {
     const { searchParams } = new URL(request.url);
-    const users = await listPppoeUsers({ status: searchParams.get('status') });
-    return ok({ users, count: users.length });
+    const users = await listPppoeUsers({
+      status: searchParams.get('status'),
+      search: searchParams.get('search'),
+      profileId: searchParams.get('profileId'),
+      routerId: searchParams.get('routerId'),
+      areaId: searchParams.get('areaId'),
+      page: searchParams.get('page') ? parseInt(searchParams.get('page')!, 10) : null,
+      limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!, 10) : null,
+      sortBy: searchParams.get('sortBy'),
+      sortOrder: searchParams.get('sortOrder') as 'asc' | 'desc' | null,
+    });
+    return ok(users);
   } catch (error) {
     console.error('Get PPPoE users error:', error);
     return serverError();

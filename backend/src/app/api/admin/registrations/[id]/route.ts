@@ -1,10 +1,14 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('registrations.reject');
+  if (!authCheck.authorized) return authCheck.response;
+
   try {
     const { id } = await params;
 
