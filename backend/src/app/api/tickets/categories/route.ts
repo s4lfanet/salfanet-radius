@@ -1,16 +1,15 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { verifyAgentToken } from '@/server/auth/agent-jwt';
 
 // GET - List all categories
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authCheck = await requirePermission('customers.view');
 
     // Allow customer Bearer token or Agent JWT as fallback
-    if (!session) {
+    if (!authCheck.authorized) {
       const bearerToken = req.headers.get('authorization')?.replace('Bearer ', '');
       if (bearerToken) {
         // Try agent JWT first
@@ -24,11 +23,11 @@ export async function GET(req: NextRequest) {
             select: { userId: true },
           });
           if (!customerSession) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            return authCheck.response;
           }
         }
       } else {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return authCheck.response;
       }
     }
     const { searchParams } = new URL(req.url);

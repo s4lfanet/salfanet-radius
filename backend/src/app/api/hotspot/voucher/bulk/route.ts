@@ -1,14 +1,11 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('vouchers.view');
+  if (!authCheck.authorized) return authCheck.response;
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
 
@@ -74,10 +71,9 @@ HOTSPOT789`;
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('vouchers.generate');
+    if (!authCheck.authorized) return authCheck.response;
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const profileId = formData.get('profileId') as string;

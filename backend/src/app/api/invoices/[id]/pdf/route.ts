@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { formatCurrencyExport, formatDateExport } from '@/lib/utils/export';
-import { checkAuth } from '@/server/middleware/api-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // Get single invoice PDF data
 export async function GET(
@@ -9,10 +9,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   // Accept both admin (NextAuth session) and customer (Bearer token) auth
-  const auth = await checkAuth();
+  const authCheck = await requirePermission('invoices.view');
   let customerId: string | null = null;
 
-  if (!auth.authorized) {
+  if (!authCheck.authorized) {
     // Try customer Bearer token as fallback
     const bearerToken = req.headers.get('authorization')?.replace('Bearer ', '');
     if (bearerToken) {
@@ -26,7 +26,7 @@ export async function GET(
       }
       customerId = customerSession.userId;
     } else {
-      return auth.response;
+      return authCheck.response;
     }
   }
 

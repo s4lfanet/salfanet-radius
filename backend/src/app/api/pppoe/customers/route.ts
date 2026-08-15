@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 function generateCustomerId(prefix = ''): string {
   return prefix + Math.floor(10000000 + Math.random() * 90000000).toString();
@@ -13,8 +14,8 @@ function generateId(): string {
 
 // GET - List all customers
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -104,8 +105,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create customer
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await requirePermission('customers.create');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const body = await request.json();
@@ -156,8 +157,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update customer
 export async function PUT(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await requirePermission('customers.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const body = await request.json();

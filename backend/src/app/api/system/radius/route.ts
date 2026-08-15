@@ -2,12 +2,13 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 const execAsync = promisify(exec);
 
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     // Get FreeRADIUS service status
     const { stdout } = await execAsync('systemctl status freeradius');
@@ -53,6 +54,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('settings.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { action } = await request.json();
     
@@ -75,9 +78,9 @@ export async function POST(request: NextRequest) {
     if (isActive) {
       // Log activity
       try {
-        const session = await getServerSession(authOptions);
+        const session = authCheck.session;
         await logActivity({
-          userId: (session?.user as any)?.id,
+          userId: authCheck.userId,
           username: (session?.user as any)?.username || 'Admin',
           userRole: (session?.user as any)?.role,
           action: 'RESTART_RADIUS',

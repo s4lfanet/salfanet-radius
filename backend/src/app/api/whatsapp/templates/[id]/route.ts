@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // PUT - Update template
 export async function PUT(
@@ -7,6 +8,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requirePermission('whatsapp.templates');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await params;
     const body = await request.json();
     const { name, type, message, isActive } = body;
@@ -40,6 +44,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requirePermission('whatsapp.templates');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await params;
 
     await prisma.whatsapp_templates.delete({

@@ -1,16 +1,13 @@
 ﻿import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 // GET - Get all payment gateway configs
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('settings.payment');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const configs = await prisma.paymentGateway.findMany({
       select: {
@@ -46,10 +43,8 @@ export async function GET() {
 
 // POST - Create or update payment gateway config
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('settings.payment');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { provider, ...data } = body;

@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { formatWIB } from '@/lib/timezone';
 
@@ -9,6 +10,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requirePermission('hotspot.view');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await params;
     const { searchParams } = new URL(request.url);
     const year = searchParams.get('year');

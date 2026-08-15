@@ -2,11 +2,12 @@
 import { prisma } from '@/server/db/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, badRequest, unauthorized, serverError } from '@/lib/api-response';
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('notifications.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = request.nextUrl;
     const unreadOnly = searchParams.get('unreadOnly') === 'true';

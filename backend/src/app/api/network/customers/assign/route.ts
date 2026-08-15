@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
 
@@ -26,11 +25,9 @@ function calculateDistance(
 
 // GET - Get all customer assignments or get nearest ODPs for a customer
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('customerId');
 
@@ -146,11 +143,9 @@ export async function GET(request: NextRequest) {
 
 // POST - Create new customer assignment
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const body = await request.json();
     const { customerId, odpId, portNumber, notes } = body;
 
@@ -268,11 +263,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update customer assignment
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const body = await request.json();
     const { id, odpId, portNumber, notes } = body;
 
@@ -394,11 +387,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Remove customer assignment
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

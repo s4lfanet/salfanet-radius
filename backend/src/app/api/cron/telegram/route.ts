@@ -1,8 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { unauthorized, forbidden, badRequest, serverError } from '@/lib/api-response';
+import { badRequest, serverError } from '@/lib/api-response';
 
 /**
  * GET /api/cron/telegram — get telegram bot status (native Next.js)
@@ -12,11 +11,9 @@ import { unauthorized, forbidden, badRequest, serverError } from '@/lib/api-resp
  */
 
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('settings.cron');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return unauthorized();
-    if (session.user.role !== 'SUPER_ADMIN') return forbidden();
-
     const config = await prisma.telegramBackupSettings.findFirst();
     return NextResponse.json({
       success: true,
@@ -35,11 +32,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('settings.cron');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return unauthorized();
-    if (session.user.role !== 'SUPER_ADMIN') return forbidden();
-
     const body = await request.json();
     const { action } = body;
     if (!action || !['start', 'stop', 'test'].includes(action)) {

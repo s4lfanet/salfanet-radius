@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // Generate unique ticket number
 function generateTicketNumber(): string {
@@ -78,11 +77,11 @@ async function sendTicketNotification(
 // GET - List tickets (for customer or admin)
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authCheck = await requirePermission('customers.view');
 
-    // If no admin session, try customer Bearer token
+    // If no admin permission, try customer Bearer token
     let customerUserId: string | null = null;
-    if (!session) {
+    if (!authCheck.authorized) {
       const bearerToken = req.headers.get('authorization')?.replace('Bearer ', '');
       if (bearerToken) {
         const customerSession = await prisma.customerSession.findFirst({
@@ -94,7 +93,7 @@ export async function GET(req: NextRequest) {
         }
       }
       if (!customerUserId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        return authCheck.response;
       }
     }
 
@@ -183,6 +182,8 @@ export async function GET(req: NextRequest) {
 // POST - Create new ticket
 export async function POST(req: NextRequest) {
   try {
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
     const body = await req.json();
     const {
       customerId,

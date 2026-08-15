@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
-import { unauthorized } from '@/lib/api-response'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { getAllScheduleConfigs, CRON_JOB_MAP } from '@/server/cron/jobs'
 import { prisma } from '@/server/db/client'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) return unauthorized()
+  const authCheck = await requirePermission('settings.cron')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const schedules = await getAllScheduleConfigs()
@@ -18,11 +16,8 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) return unauthorized()
-  if ((session.user as any)?.role !== 'SUPERADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const authCheck = await requirePermission('settings.cron')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const body = await request.json()
@@ -49,12 +44,12 @@ export async function PUT(request: Request) {
         jobType,
         schedule,
         enabled: enabled ?? true,
-        updatedBy: (session.user as any)?.email || 'admin',
+        updatedBy: authCheck.session.user?.email || 'admin',
       },
       update: {
         schedule,
         enabled: enabled ?? true,
-        updatedBy: (session.user as any)?.email || 'admin',
+        updatedBy: authCheck.session.user?.email || 'admin',
       },
     })
 
@@ -68,11 +63,8 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) return unauthorized()
-  if ((session.user as any)?.role !== 'SUPERADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN') {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
+  const authCheck = await requirePermission('settings.cron')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const { searchParams } = new URL(request.url)

@@ -2,8 +2,7 @@
 import { prisma } from '@/server/db/client';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { sendPaymentSuccess } from '@/server/services/notifications/whatsapp-templates.service';
 import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 import { EmailService } from '@/server/services/notifications/email.service';
@@ -18,6 +17,8 @@ function generatePaymentToken(): string {
 
 // DELETE - Delete invoice(s)
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('invoices.delete');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
@@ -56,8 +57,8 @@ export async function DELETE(request: NextRequest) {
 
 // GET - List invoices with filters
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('invoices.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // UNPAID, PAID, PENDING, OVERDUE
@@ -147,6 +148,8 @@ export async function GET(request: NextRequest) {
 
 // POST - Create invoice manually
 export async function POST(request: NextRequest) {
+  const authCheck = await requirePermission('invoices.create');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { userId, amount, dueDate, notes } = body;
@@ -230,6 +233,8 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update invoice (mark as paid, etc)
 export async function PUT(request: NextRequest) {
+  const authCheck = await requirePermission('invoices.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
     const { id, status, paidAt } = body;

@@ -3,8 +3,7 @@ import { WhatsAppService } from '@/server/services/notifications/whatsapp.servic
 import { EmailService } from '@/server/services/notifications/email.service';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { getCurrentTimezone } from '@/lib/timezone';
 
 function formatBankAccountsForWA(bankAccounts: any): string {
@@ -32,6 +31,10 @@ interface BroadcastRequest {
 
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await requirePermission('whatsapp.broadcast');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
+
     const body: BroadcastRequest = await request.json();
     const { userIds, message, subject, channel = 'whatsapp', delay = 2000 } = body;
 
@@ -322,7 +325,6 @@ export async function POST(request: NextRequest) {
 
     // Log activity
     try {
-      const session = await getServerSession(authOptions);
       const totalSent = results.whatsapp.sent + results.email.sent;
       const totalFailed = results.whatsapp.failed + results.email.failed;
 

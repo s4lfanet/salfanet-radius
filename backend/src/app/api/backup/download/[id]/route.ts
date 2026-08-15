@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { readFile } from 'fs/promises';
 
 export async function GET(
@@ -9,16 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Check if user is SUPER_ADMIN
-    if (session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const authCheck = await requirePermission('settings.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const { id } = await params;
 
@@ -31,7 +23,7 @@ export async function GET(
       return NextResponse.json({ error: 'Backup not found' }, { status: 404 });
     }
 
-    console.log(`[Download API] User ${session.user.username} downloading backup ${backup.filename}`);
+    console.log(`[Download API] User ${(session.user as any).username} downloading backup ${backup.filename}`);
 
     // Read file
     const fileBuffer = await readFile(backup.filepath);

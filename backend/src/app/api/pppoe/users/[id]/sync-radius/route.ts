@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
-import { ok, unauthorized, notFound, serverError } from '@/lib/api-response';
+import { requirePermission } from '@/server/middleware/api-auth';
+import { ok, notFound, serverError } from '@/lib/api-response';
 import { prisma } from '@/server/db/client';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
 
@@ -10,8 +9,8 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('customers.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { id } = await params;

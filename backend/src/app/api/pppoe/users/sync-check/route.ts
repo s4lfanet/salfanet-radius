@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { listPppSecrets, managePppSecret, getMikrotikProfileName, shouldCreatePppSecret } from '@/server/services/mikrotik/ppp-secret.service';
 import { reloadFreeRadius } from '@/server/services/radius/freeradius.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 /**
  * GET /api/pppoe/users/sync-check
@@ -12,8 +11,8 @@ import { authOptions } from '@/server/auth/config';
  * Returns list of users missing from MikroTik.
  */
 export async function GET(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     // Get all active routers with local auth mode
@@ -84,8 +83,8 @@ export async function GET(request: Request) {
  * Body: { usernames: string[] } — list of usernames to fix
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await requirePermission('customers.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const body = await request.json();

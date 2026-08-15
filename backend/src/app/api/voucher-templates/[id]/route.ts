@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET single template
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requirePermission('vouchers.view');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await context.params;
     const template = await prisma.voucherTemplate.findUnique({
       where: { id }
@@ -35,6 +39,9 @@ export async function PUT(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requirePermission('hotspot.manage');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await context.params;
     const body = await request.json();
     const { name, htmlTemplate, isDefault, isActive } = body;
@@ -84,6 +91,9 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authCheck = await requirePermission('vouchers.delete');
+    if (!authCheck.authorized) return authCheck.response;
+
     const { id } = await context.params;
     await prisma.voucherTemplate.delete({
       where: { id }

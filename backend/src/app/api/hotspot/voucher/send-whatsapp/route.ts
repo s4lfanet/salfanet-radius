@@ -1,15 +1,12 @@
 ﻿import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service'
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requirePermission('whatsapp.send')
+    if (!authCheck.authorized) return authCheck.response
     const { phone, vouchers } = await request.json()
 
     if (!vouchers || !Array.isArray(vouchers) || vouchers.length === 0) {

@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { randomBytes } from 'crypto'
 import { sendInvoiceReminder } from '@/server/services/notifications/whatsapp-templates.service'
@@ -15,10 +14,8 @@ import { EmailService } from '@/server/services/notifications/email.service'
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requirePermission('invoices.edit')
+    if (!authCheck.authorized) return authCheck.response
     const body = await request.json()
     const { invoiceId, channel = 'both' } = body
 

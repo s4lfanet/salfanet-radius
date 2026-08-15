@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
-import { unauthorized } from '@/lib/api-response';
 import { executeMultipleCommands, TelnetConfig } from '@/lib/olt/telnet';
 
 function parseKeyValueOutput(output: string): Record<string, string> {
@@ -176,8 +174,8 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string; onuId: string }> }
 ) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { id, onuId } = await params;

@@ -1,5 +1,4 @@
-﻿import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+﻿import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { RouterOSAPI } from 'node-routeros'
 
@@ -57,10 +56,8 @@ async function cmd(
 // so the proxy sees an active connection and never closes it prematurely.
 // The important header is X-Accel-Buffering: no which disables nginx buffering.
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  if (!session) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
-  }
+  const authCheck = await requirePermission('vpn.manage')
+  if (!authCheck.authorized) return authCheck.response
 
   const body = await request.json()
   const { host, username, password, apiPort, subnet, name, serverId } = body

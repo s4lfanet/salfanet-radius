@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { restoreBackup } from '@/server/services/backup.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { unlink, mkdir } from 'fs/promises';
 import { createWriteStream } from 'fs';
 import { Readable } from 'stream';
@@ -14,18 +13,11 @@ export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
-    // Check if user is SUPER_ADMIN
-    if (session.user.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: Only SUPER_ADMIN can restore database' }, { status: 403 });
-    }
-
-    console.log(`[Restore API] User ${session.user.username} initiated database restore`);
+    console.log(`[Restore API] User ${(session.user as any).username} initiated database restore`);
 
     const formData = await request.formData();
     const file = formData.get('file') as File;

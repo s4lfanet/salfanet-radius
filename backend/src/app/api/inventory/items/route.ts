@@ -1,15 +1,12 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // GET - Get all items with filters
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('categoryId');
@@ -84,10 +81,9 @@ export async function GET(request: NextRequest) {
 // POST - Create item
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     const body = await request.json();
     const {
@@ -145,7 +141,7 @@ export async function POST(request: NextRequest) {
           previousStock: 0,
           newStock: currentStock,
           notes: 'Initial stock',
-          userId: session.user.id,
+          userId: authCheck.userId,
           userName: session.user.name || session.user.username,
         },
       });
@@ -170,10 +166,8 @@ export async function POST(request: NextRequest) {
 // PUT - Update item
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const body = await request.json();
     const {
@@ -246,10 +240,8 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete item
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');

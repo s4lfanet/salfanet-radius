@@ -1,4 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 const RouterOSAPI = require('node-routeros').RouterOSAPI;
 
@@ -13,6 +14,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const authCheck = await requirePermission('routers.manage');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const { id } = await params;
 

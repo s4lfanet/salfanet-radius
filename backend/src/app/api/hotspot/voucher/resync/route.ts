@@ -1,6 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service'
 
@@ -10,10 +9,8 @@ import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.servi
  */
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authCheck = await requirePermission('hotspot.manage')
+    if (!authCheck.authorized) return authCheck.response
     const vouchers = await prisma.hotspotVoucher.findMany({
       where: {
         status: { in: ['WAITING', 'ACTIVE'] }

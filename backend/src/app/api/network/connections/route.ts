@@ -10,8 +10,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // Color mapping for connection types
 const CONNECTION_COLORS: Record<string, string> = {
@@ -26,9 +25,9 @@ const CONNECTION_COLORS: Record<string, string> = {
 };
 
 export async function GET(request: NextRequest) {
+  const authCheck = await requirePermission('network.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     // Fetch all active cable_segments with their cable info
     const segments = await prisma.cable_segments.findMany({
@@ -155,9 +154,9 @@ export async function GET(request: NextRequest) {
  * Deletes all cable_segments between two devices (and optionally the cable if orphaned)
  */
 export async function DELETE(request: NextRequest) {
+  const authCheck = await requirePermission('network.edit');
+  if (!authCheck.authorized) return authCheck.response;
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const url = new URL(request.url);
     const fromId = url.searchParams.get('from');

@@ -4,8 +4,6 @@ import { ok, fail } from '@/lib/genieacs/helpers';
 import { getFiles, uploadFile, deleteFile } from '@/lib/genieacs/api-client';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 
 export async function GET() {
   const auth = await requirePermission('settings.genieacs');
@@ -35,7 +33,7 @@ export async function POST(req: NextRequest) {
     if (!(file instanceof Blob)) return fail('file is required', 400);
     const buf = new Uint8Array(await file.arrayBuffer());
     await uploadFile(fileName, buf, { fileType, oui, productClass, version });
-    const session = await getServerSession(authOptions);
+    const session = auth.session;
     await logActivity({
       username: session?.user?.name ?? 'unknown',
       userId: session?.user?.id,
@@ -60,7 +58,7 @@ export async function DELETE(req: NextRequest) {
     const fileName = body?.fileName;
     if (!fileName || typeof fileName !== 'string') return fail('fileName is required', 400);
     await deleteFile(fileName);
-    const session = await getServerSession(authOptions);
+    const session = auth.session;
     await logActivity({
       username: session?.user?.name ?? 'unknown',
       userId: session?.user?.id,

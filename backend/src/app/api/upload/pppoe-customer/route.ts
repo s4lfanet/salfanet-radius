@@ -2,17 +2,14 @@
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { getUploadDir } from '@/lib/upload-dir';
 
 // POST - Upload foto pelanggan (KTP atau foto instalasi)
 // FormData: file (File), type ('idCard' | 'installation')
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('customers.edit');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const formData = await request.formData();

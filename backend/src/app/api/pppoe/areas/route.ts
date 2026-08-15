@@ -3,10 +3,13 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { cacheAside, invalidateKey, CACHE_KEYS, CACHE_TTL } from '@/server/cache/redis';
 
 // GET - List all areas
 export async function GET() {
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
   try {
     const areas = await cacheAside(
       CACHE_KEYS.areas,
@@ -40,7 +43,9 @@ export async function GET() {
 // POST - Create new area
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
     const body = await request.json();
     const { name, description, isActive } = body;
 
