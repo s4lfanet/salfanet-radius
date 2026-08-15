@@ -59,6 +59,11 @@ export default function GenieACSFilesPage() {
       if (productClass) fd.append('productClass', productClass);
       if (version) fd.append('version', version);
       const res = await fetch(buildUrl('/api/genieacs/files'), { method: 'POST', body: fd, credentials: 'include' });
+      if (!res.ok) {
+        let errMsg = `Upload failed (${res.status})`;
+        try { const errJson = await res.json(); errMsg = errJson.error || errMsg; } catch { /* not JSON */ }
+        throw new Error(errMsg);
+      }
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Upload failed');
       setFile(null);

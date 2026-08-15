@@ -10,6 +10,7 @@ import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast'
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatWIB } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
+import { getCurrentTimezone } from '@/lib/timezone';
 import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '@/hooks/useTheme';
 import { PushNotificationToggle } from '@/components/push-notification-toggle';
@@ -367,7 +368,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
             <Clock className="w-4 h-4 text-muted-foreground" />
             <span className="text-xs text-muted-foreground">
               {now
-                ? formatInTimeZone(now, 'Asia/Jakarta', 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })
+                ? formatInTimeZone(now, getCurrentTimezone(), 'EEEE, d MMMM yyyy  HH:mm:ss', { locale: localeId })
                 : ''}
             </span>
             {/* Bell */}

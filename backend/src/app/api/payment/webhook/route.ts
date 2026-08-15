@@ -30,7 +30,6 @@ export async function POST(request: Request) {
       const formData = await request.text();
       rawBody = formData;
       body = Object.fromEntries(new URLSearchParams(formData));
-      console.log('[Webhook] Parsed form data:', body);
     } else {
       rawBody = await request.text();
       body = JSON.parse(rawBody);
@@ -38,14 +37,11 @@ export async function POST(request: Request) {
 
     const signature = request.headers.get('x-callback-token') || request.headers.get('x-signature') || request.headers.get('x-callback-signature');
 
+    // Log webhook receipt — do NOT log raw body (may contain PII) or full signature.
     console.log('=== PAYMENT WEBHOOK RECEIVED ===');
     console.log('Timestamp:', new Date().toISOString());
     console.log('Content-Type:', contentType);
-    console.log('Raw Body:', JSON.stringify(body, null, 2));
-    console.log('Headers:', {
-      signature: signature,
-      contentType: contentType,
-    });
+    console.log('Signature:', signature ? `${signature.substring(0, 16)}...` : 'none');
 
     // Normalize payload (e.g., Xendit invoice events send { event, data })
     const payload: any = (body && body.event && body.data) ? body.data : body;
@@ -271,8 +267,8 @@ export async function POST(request: Request) {
           .digest('hex');
 
         console.log('[Tripay] Signature validation:', {
-          received: receivedSignature,
-          expected: expectedSignature,
+          received: receivedSignature.substring(0, 16) + '...',
+          expected: expectedSignature.substring(0, 16) + '...',
           match: receivedSignature === expectedSignature
         });
 

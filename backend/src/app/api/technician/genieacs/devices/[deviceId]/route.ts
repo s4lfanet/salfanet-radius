@@ -16,13 +16,13 @@ async function verifyTechnician(req: NextRequest) {
         select: { id: true, isActive: true, role: true },
       });
       if (!adminUser?.isActive || adminUser.role !== 'TECHNICIAN') return null;
-      return { id: adminUser.id };
+      return { id: adminUser.id, isAdminUser: true as const };
     }
     const tech = await prisma.technician.findUnique({
       where: { id: payload.id as string },
       select: { id: true, isActive: true },
     });
-    return tech?.isActive ? tech : null;
+    return tech?.isActive ? { ...tech, isAdminUser: false as const } : null;
   } catch {
     return null;
   }
@@ -269,6 +269,34 @@ export async function GET(
   const { deviceId } = await params;
   if (!deviceId) return NextResponse.json({ error: 'Device ID required' }, { status: 400 });
 
+  // Field technicians must verify the device belongs to a customer
+  // in their assigned router/area (passed as query params).
+  if (!tech.isAdminUser) {
+    const { searchParams } = new URL(req.url);
+    const routerId = searchParams.get('routerId') || undefined;
+    const areaId = searchParams.get('areaId') || undefined;
+    if (!routerId && !areaId) {
+      return NextResponse.json(
+        { error: 'routerId or areaId parameter is required' },
+        { status: 400 },
+      );
+    }
+    const matchingUser = await prisma.pppoeUser.findFirst({
+      where: {
+        username: deviceId,
+        ...(routerId ? { routerId } : {}),
+        ...(areaId ? { areaId } : {}),
+      },
+      select: { id: true },
+    });
+    if (!matchingUser) {
+      return NextResponse.json(
+        { error: 'Device not found in your assigned area' },
+        { status: 403 },
+      );
+    }
+  }
+
   const credentials = await getGenieACSCredentials();
   if (!credentials) {
     return NextResponse.json({ success: false, error: 'GenieACS not configured' }, { status: 400 });
@@ -350,6 +378,34 @@ export async function POST(
 
   const { deviceId } = await params;
   if (!deviceId) return NextResponse.json({ error: 'Device ID required' }, { status: 400 });
+
+  // Field technicians must verify the device belongs to a customer
+  // in their assigned router/area (passed as query params).
+  if (!tech.isAdminUser) {
+    const { searchParams } = new URL(req.url);
+    const routerId = searchParams.get('routerId') || undefined;
+    const areaId = searchParams.get('areaId') || undefined;
+    if (!routerId && !areaId) {
+      return NextResponse.json(
+        { error: 'routerId or areaId parameter is required' },
+        { status: 400 },
+      );
+    }
+    const matchingUser = await prisma.pppoeUser.findFirst({
+      where: {
+        username: deviceId,
+        ...(routerId ? { routerId } : {}),
+        ...(areaId ? { areaId } : {}),
+      },
+      select: { id: true },
+    });
+    if (!matchingUser) {
+      return NextResponse.json(
+        { error: 'Device not found in your assigned area' },
+        { status: 403 },
+      );
+    }
+  }
 
   const credentials = await getGenieACSCredentials();
   if (!credentials) {
