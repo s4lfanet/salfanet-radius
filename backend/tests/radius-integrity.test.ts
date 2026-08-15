@@ -101,8 +101,8 @@ describe('Phase 3 — FreeRADIUS Synchronization Hardening', () => {
       // The update section should NOT have unconditional deleteMany by username only
       // Find the section around line 698
       const updateSection = content.substring(
-        content.indexOf('Delete old entries scoped'),
-        content.indexOf('If username changed')
+        content.indexOf('nasIdentifiersToClean = [oldNasIdentifier'),
+        content.indexOf('enqueueTask', content.indexOf('nasIdentifiersToClean = [oldNasIdentifier'))
       );
       expect(updateSection).toContain('oldNasIdentifier');
       expect(updateSection).toContain('nasIdentifiersToClean');
