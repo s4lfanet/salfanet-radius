@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 4.8.0 — Phase 6C complete (API Client Correctness & Type-Safety Hardening) + Phase 6B (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 4.9.0 — Phase 6D complete (UI State & Error Handling Audit) + Phase 6C (API Client Correctness & Type-Safety Hardening) + Phase 6B (Frontend Type-Safety Hardening) + Phase 6A (Full API Contract & Type-Safety Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -240,6 +240,42 @@ Setiap batch diverifikasi dengan:
 - **Migrated**: 52 batch, 361 fetch calls
 - **Remaining**: ~176 fetch calls di halaman admin lainnya
 - **Phase 3** (pending): middleware improvements, error boundaries, theme improvements
+
+---
+
+## 🔒 Phase 6D — UI State & Error Handling Audit (v4.9.0)
+
+Standardisasi error handling, loading states, dan confirmation dialogs di seluruh frontend.
+
+Dokumentasi lengkap: [`FRONTEND_AUDIT.md`](FRONTEND_AUDIT.md)
+
+### Hasil
+
+| Metric | Before | After |
+|--------|--------|-------|
+| `alert()` calls | 23 | 0 |
+| `Swal.fire()` direct | 14 | 0 |
+| bare `confirm()` | 15 | 0 |
+| silent catch blocks | 22 | 0 |
+| error.tsx boundaries | 1 | 4 |
+| loading.tsx boundaries | 1 | 4 |
+| not-found.tsx | 0 | 1 |
+| shared feedback components | 0 | 3 |
+
+### Yang Dikerjakan
+
+1. **alert() → toast** — 23 occurrences di 7 files, diganti dengan `showError`/`showSuccess`/`showInfo`
+2. **confirm() → showConfirm()** — 15 occurrences di 12 files, diganti dengan `await showConfirm()`
+3. **Swal.fire() → CyberToast bridge** — 14 occurrences di 3 files (AddNodePanel, NetworkNodePanel, unified-map)
+4. **Silent catch blocks** — 22 occurrences di 10 files, ditambah `console.error`/`console.warn`
+5. **Error/loading/not-found boundaries** — root, customer, technician portals
+6. **Shared feedback components** — `EmptyState`, `LoadingSpinner`, `ErrorState` di `components/feedback/`
+
+### Verification
+- TypeScript: 0 errors
+- Build: success
+- No business logic, API endpoint, or HTTP method changes
+- React Query not implemented (deferred to Phase 7)
 
 ---
 

@@ -3038,3 +3038,113 @@ Lihat: [`docs/TYPE_SAFETY_EXCEPTIONS.md`](docs/TYPE_SAFETY_EXCEPTIONS.md) untuk 
 - Tidak ada perubahan UI behavior
 - Semua `as unknown as` memiliki inline comment penjelasan
 - React Query **tidak diimplementasikan** di phase ini
+
+---
+
+## Phase 6D — Frontend UI State & Error Handling Audit
+
+> Tanggal: 15 Agustus 2026
+> Status: **SELESAI**
+> Typecheck: ✅ 0 errors
+> Build: ✅ Sukses
+
+### Tujuan
+
+Standardisasi error handling, loading states, dan confirmation dialogs di seluruh frontend. Menghilangkan inconsistent patterns (alert, Swal.fire, window.confirm, silent catch).
+
+### Temuan Audit
+
+| Issue | Count | Severity |
+|-------|-------|----------|
+| `alert()` untuk error/success | 23 | High |
+| `Swal.fire()` direct (bypass CyberToast) | 14 | Medium |
+| bare `confirm()` / `window.confirm()` | 15 | Medium |
+| Silent catch blocks (empty catch) | 22 | High |
+| Missing error/loading/not-found boundaries | 6 | Medium |
+| No shared feedback components | — | Low |
+
+### Perbaikan
+
+#### 6D.2 — alert() → toast (23 occurrences, 7 files)
+
+| File | Count | Replacement |
+|------|-------|-------------|
+| `olt/[id]/page.tsx` | 11 | `showError`/`showSuccess`/`showInfo` |
+| `network/infrastruktur/page.tsx` | 4 | `showError` |
+| `network/diagrams/page.tsx` | 2 | `showError` |
+| `laporan/page.tsx` | 2 | `showError` |
+| `download-apk/page.tsx` | 1 | `showError` |
+| `data-usage/page.tsx` | 2 | `showSuccess`/`showError` |
+| `AddNodePanel.tsx` | 1 | `showError` |
+
+#### 6D.3 — confirm() → showConfirm() (15 occurrences, 12 files)
+
+| File | Count |
+|------|-------|
+| `olt/[id]/page.tsx` | 1 |
+| `network/infrastruktur/page.tsx` | 4 |
+| `customer/wifi/page.tsx` | 2 |
+| `genieacs/auto-provision/page.tsx` | 1 |
+| `customer/suspend/page.tsx` | 1 |
+| `network/diagrams/page.tsx` | 1 |
+| `genieacs/faults/page.tsx` | 1 |
+| `genieacs/vp-scripts/page.tsx` | 1 |
+| `genieacs/config/page.tsx` | 1 |
+| `genieacs/files/page.tsx` | 1 |
+| `genieacs/provisions/page.tsx` | 1 |
+| `genieacs/presets/page.tsx` | 1 |
+| `technician/(portal)/genieacs/page.tsx` | 1 |
+
+#### 6D.4 — Silent catch blocks (22 occurrences, 10 files)
+
+| File | Count | Fix |
+|------|-------|-----|
+| `payment/failed/page.tsx` | 2 | `console.error` (critical) |
+| `pppoe/users/new/page.tsx` | 2 | `console.warn` (non-critical) |
+| `network/trace/page.tsx` | 1 | `console.error` |
+| `freeradius/backup/page.tsx` | 1 | `console.warn` (polling retry) |
+| `tickets/page.tsx` | 2 | `console.warn` (non-critical) |
+| `network/vpn-server/page.tsx` | 1 | `console.warn` (intentional fallback) |
+| `network/vpn-client/page.tsx` | 2 | `console.warn` (localStorage) |
+| `settings/subdomain/page.tsx` | 1 | `console.warn` (keep default) |
+| `TechnicianPortalLayout.tsx` | 3 | `console.warn` (audio/location) |
+| `CustomerClientLayout.tsx` | 8 | `console.warn` (localStorage/polling) |
+
+#### 6D.5 — Swal.fire() → CyberToast (14 occurrences, 3 files)
+
+| File | Count | Replacement |
+|------|-------|-------------|
+| `NetworkNodePanel.tsx` | 5 | `showSuccess`/`showError`/`showConfirm` |
+| `AddNodePanel.tsx` | 4 | `showSuccess`/`showError`/`showInfo` |
+| `network/unified-map/page.tsx` | 5 | `showSuccess`/`showError`/`showConfirm` |
+
+#### 6D.6 — Route Boundaries
+
+| Boundary | Before | After |
+|----------|--------|-------|
+| `app/error.tsx` | ❌ | ✅ |
+| `app/loading.tsx` | ❌ | ✅ |
+| `app/not-found.tsx` | ❌ | ✅ |
+| `app/admin/error.tsx` | ✅ | ✅ (existing) |
+| `app/admin/loading.tsx` | ✅ | ✅ (existing) |
+| `app/customer/error.tsx` | ❌ | ✅ |
+| `app/customer/loading.tsx` | ❌ | ✅ |
+| `app/technician/error.tsx` | ❌ | ✅ |
+| `app/technician/loading.tsx` | ❌ | ✅ |
+
+#### 6D.7 — Shared Feedback Components
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `EmptyState` | `components/feedback/EmptyState.tsx` | Consistent "no data" UI |
+| `LoadingSpinner` | `components/feedback/LoadingSpinner.tsx` | Consistent loading indicator |
+| `ErrorState` | `components/feedback/ErrorState.tsx` | Consistent error display with retry |
+
+### Verification
+
+- `npx tsc --noEmit`: ✅ 0 errors
+- `npx next build`: ✅ Sukses
+- VPS deploy: ✅ All PM2 processes online
+- Smoke test: ✅ Health 200, Login 200, 404 page works, PPPoE 401, Upload 401
+- Tidak ada perubahan business logic, API endpoints, atau HTTP methods
+- React Query **tidak diimplementasikan** di phase ini

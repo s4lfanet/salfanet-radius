@@ -6,6 +6,34 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [4.9.0] — 2026-08-15 — Phase 6D: UI State & Error Handling Audit
+
+### Error Handling Standardization
+- Replaced 23 `alert()` calls with `showError`/`showSuccess`/`showInfo` from CyberToast bridge (7 files)
+- Replaced 15 bare `confirm()`/`window.confirm()` with `await showConfirm()` (12 files)
+- Replaced 14 direct `Swal.fire()` calls with CyberToast bridge (3 files: AddNodePanel, NetworkNodePanel, unified-map)
+- Fixed 22 silent catch blocks — added `console.error`/`console.warn` with `unknown` typed catch variables (10 files)
+
+### Route Boundaries
+- Added root `error.tsx`, `loading.tsx`, `not-found.tsx`
+- Added `customer/error.tsx`, `customer/loading.tsx`
+- Added `technician/error.tsx`, `technician/loading.tsx`
+- Total: 4 error boundaries, 4 loading boundaries, 1 not-found page
+
+### Shared Components
+- `components/feedback/EmptyState.tsx` — consistent "no data" UI
+- `components/feedback/LoadingSpinner.tsx` — consistent loading indicator
+- `components/feedback/ErrorState.tsx` — consistent error display with retry
+- Updated `components/feedback/index.ts` barrel exports
+
+### Verification
+- `npx tsc --noEmit`: 0 errors
+- `npx next build`: success
+- No business logic, API endpoint, or HTTP method changes
+- React Query not implemented (deferred to Phase 7)
+
+---
+
 ## [4.8.0] — 2026-08-14 — Phase 6C: API Client Correctness & Type-Safety Hardening
 
 ### Critical Fix
