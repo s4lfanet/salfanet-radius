@@ -990,17 +990,17 @@ model radiusSyncQueue {
   id             String   @id
   pppoeUserId    String   @map("pppoe_user_id")
   username       String   @db.VarChar(64)
-  syncType       String   @db.VarChar(32) // full, password, profile, ip, status, delete
+  syncType       String   @db.VarChar(32) @map("sync_type") // full, password, profile, ip, status, delete
   status         String   @default("PENDING") @db.VarChar(16) // PENDING, SYNCING, SYNCED, FAILED, DEAD
-  retryCount     Int      @default(0)
-  maxRetries     Int      @default(5)
-  lastError      String?  @db.Text
-  lastAttemptAt  DateTime?
-  nextRetryAt    DateTime?
-  completedAt    DateTime?
-  failedAt       DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  retryCount     Int      @default(0) @map("retry_count")
+  maxRetries     Int      @default(5) @map("max_retries")
+  lastError      String?  @db.Text @map("last_error")
+  lastAttemptAt  DateTime? @map("last_attempt_at")
+  nextRetryAt    DateTime? @map("next_retry_at")
+  completedAt    DateTime? @map("completed_at")
+  failedAt       DateTime? @map("failed_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   @@index([status])
   @@index([nextRetryAt])
