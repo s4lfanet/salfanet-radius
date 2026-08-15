@@ -2,20 +2,20 @@
 import { prisma } from '@/server/db/client';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { nowWIB } from '@/lib/timezone';
+import { z, parseBody } from '@/lib/parse-body';
 // ⚠️ TZ NOTE: CustomerSession.createdAt uses @default(now()) = MySQL CURRENT_TIMESTAMP.
 // MySQL timezone = WIB (+07:00) → stored as WIB wall clock. Prisma reads back as WIB-as-UTC.
 // All datetime comparisons against createdAt MUST use nowWIB() (not Date.now() or new Date()).
 
+const sendOtpSchema = z.object({
+  phone: z.string().min(8, 'Phone number is required').max(20),
+});
+
 export async function POST(request: NextRequest) {
   try {
-    const { phone } = await request.json();
-
-    if (!phone) {
-      return NextResponse.json(
-        { success: false, error: 'Phone number is required' },
-        { status: 400 }
-      );
-    }
+    const { data, error } = await parseBody(request, sendOtpSchema);
+    if (error) return error;
+    const { phone } = data;
 
     // Check if OTP is enabled
     const settings = await prisma.whatsapp_reminder_settings.findFirst();
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     console.error('Send OTP error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: 'Failed to send OTP. Please try again.' },
       { status: 500 }
     );
   }
