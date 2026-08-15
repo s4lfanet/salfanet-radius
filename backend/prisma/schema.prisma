@@ -1012,10 +1012,10 @@ model radiusSyncQueue {
 // Replaces in-memory Set + findFirst race condition.
 // Uses INSERT ... ON DUPLICATE KEY UPDATE for atomic acquisition.
 model cronLock {
-  jobKey      String   @id @db.VarChar(64) // unique per job type, e.g. "invoice_generate"
-  ownerToken  String   @db.VarChar(64) // random token to identify lock owner
-  acquiredAt  DateTime @default(now())
-  expiresAt   DateTime // TTL — stale locks are reclaimable
+  jobKey      String   @id @db.VarChar(64) @map("job_key") // unique per job type, e.g. "invoice_generate"
+  ownerToken  String   @db.VarChar(64) @map("owner_token") // random token to identify lock owner
+  acquiredAt  DateTime @default(now()) @map("acquired_at")
+  expiresAt   DateTime @map("expires_at") // TTL — stale locks are reclaimable
 
   @@map("cron_lock")
 }
