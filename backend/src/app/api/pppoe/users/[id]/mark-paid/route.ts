@@ -50,57 +50,97 @@ export async function POST(
     }
 
     const now = new Date();
-    const markedCount = unpaidInvoices.length;
-    const totalAmount = unpaidInvoices.reduce((sum, inv) => sum + inv.amount, 0);
 
-    // Mark all unpaid invoices as paid
-    await prisma.invoice.updateMany({
-      where: {
-        userId: id,
-        status: { in: ['PENDING', 'OVERDUE'] },
-      },
-      data: {
-        status: 'PAID',
-        paidAt: now,
-      },
-    });
-
-    // Find or create transaction category for subscription
-    let category = await prisma.transactionCategory.findFirst({
-      where: { name: 'Subscription', type: 'INCOME' },
-    });
-    
-    if (!category) {
-      category = await prisma.transactionCategory.create({
+    // ─── ATOMIC: mark invoices paid + create transaction records ────────────────
+    // Use updateMany with status condition to prevent double-processing under
+    // concurrent requests. Only invoices still PENDING/OVERDUE will be updated.
+    // Transaction records are created only for invoices that were actually marked
+    // paid in this call — preventing duplicate financial records.
+    const result = await prisma.$transaction(async (tx) => {
+      // Atomic conditional update — only updates invoices still PENDING/OVERDUE
+      const markResult = await tx.invoice.updateMany({
+        where: {
+          userId: id,
+          status: { in: ['PENDING', 'OVERDUE'] },
+        },
         data: {
-          id: generateCategoryId(),
-          name: 'Subscription',
-          type: 'INCOME',
+          status: 'PAID',
+          paidAt: now,
         },
       });
-    }
 
-    // Create transaction records
-    for (const invoice of unpaidInvoices) {
-      await prisma.transaction.create({
-        data: {
-          id: await generateTransactionId(),
-          categoryId: category.id,
-          type: 'INCOME',
-          amount: invoice.amount,
-          description: `Pembayaran tagihan ${invoice.invoiceNumber}`,
-          reference: invoice.invoiceNumber,
-          date: now,
+      const markedCount = markResult.count;
+
+      if (markedCount === 0) {
+        return { markedCount: 0, totalAmount: 0, alreadyProcessed: true as const };
+      }
+
+      // Re-fetch the invoices that were just marked paid (for transaction records)
+      const markedInvoices = await tx.invoice.findMany({
+        where: {
+          userId: id,
+          status: 'PAID',
+          paidAt: now,
         },
+        orderBy: { dueDate: 'asc' },
       });
+
+      const totalAmount = markedInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+
+      // Find or create transaction category for subscription
+      let category = await tx.transactionCategory.findFirst({
+        where: { name: 'Subscription', type: 'INCOME' },
+      });
+
+      if (!category) {
+        category = await tx.transactionCategory.create({
+          data: {
+            id: generateCategoryId(),
+            name: 'Subscription',
+            type: 'INCOME',
+          },
+        });
+      }
+
+      // Create transaction records — check for existing records to prevent duplicates
+      for (const invoice of markedInvoices) {
+        const existingTx = await tx.transaction.findFirst({
+          where: { reference: invoice.invoiceNumber },
+        });
+
+        if (!existingTx) {
+          await tx.transaction.create({
+            data: {
+              id: await generateTransactionId(),
+              categoryId: category.id,
+              type: 'INCOME',
+              amount: invoice.amount,
+              description: `Pembayaran tagihan ${invoice.invoiceNumber}`,
+              reference: invoice.invoiceNumber,
+              date: now,
+            },
+          });
+        }
+      }
+
+      // Update user status to active
+      await tx.pppoeUser.update({
+        where: { id },
+        data: { status: 'active' },
+        select: { username: true },
+      });
+
+      return { markedCount, totalAmount, alreadyProcessed: false as const };
+    });
+
+    if (result.alreadyProcessed) {
+      return NextResponse.json(
+        { error: 'No pending invoices found (already processed)' },
+        { status: 409 }
+      );
     }
 
-    // Update user status to active
-    const updatedUser = await prisma.pppoeUser.update({
-      where: { id },
-      data: { status: 'active' },
-      select: { username: true },
-    });
+    const { markedCount, totalAmount } = result;
 
     // Restore RADIUS tables so the user reconnects with correct profile.
     // Critical when user was isolated (radusergroup = 'isolir') — without this
