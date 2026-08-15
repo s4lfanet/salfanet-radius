@@ -234,7 +234,7 @@ export default function VpnClientPage() {
         const parsed = JSON.parse(saved);
         setApplyRoutingForm(prev => ({ ...prev, ...parsed }));
       }
-    } catch { /* ignore */ }
+    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to restore routing SSH credentials from localStorage:', e); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -260,7 +260,7 @@ export default function VpnClientPage() {
     // Persist credentials for next time
     try {
       localStorage.setItem('routing_ssh_credentials', JSON.stringify({ host, port, username }));
-    } catch { /* ignore */ }
+    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to persist routing SSH credentials:', e); }
     setApplyRoutingRunning(true);
     setApplyRoutingOutput('Menjalankan routing script...\n');
     try {

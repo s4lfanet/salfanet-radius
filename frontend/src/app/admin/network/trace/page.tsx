@@ -67,7 +67,7 @@ function LogicalTraceTab() {
           ...((odps as { odps?: NetworkNode[] }).odps || (odps as { data?: NetworkNode[] }).data || []).map((n) => ({ ...n, type: 'ODP' as const })),
         ];
         setNodes(allNodes);
-      } catch { /* silent */ }
+      } catch (e: unknown) { console.error('Failed to load network nodes:', e); }
     })();
   }, []);
 

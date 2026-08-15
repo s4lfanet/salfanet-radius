@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface Fault {
   _id?: string;
@@ -53,7 +54,7 @@ export default function GenieACSFaultsPage() {
   }, [load]);
 
   const remove = async (id: string) => {
-    if (!confirm(`Delete fault "${id}"?`)) return;
+    if (!(await showConfirm(`Delete fault "${id}"?`))) return;
     try {
       const json = await apiAdmin<FaultDeleteResponse>('/api/genieacs/faults', {
         method: 'DELETE',

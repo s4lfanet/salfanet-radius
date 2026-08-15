@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { formatWIB } from '@/lib/timezone';
 import { formatInTimeZone } from 'date-fns-tz';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
+import { showConfirm } from '@/lib/sweetalert';
 import { PauseCircle, CheckCircle2, XCircle, Clock, AlertCircle, Loader2, Calendar } from 'lucide-react';
 
 interface SuspendRequest {
@@ -96,7 +97,7 @@ export default function CustomerSuspendPage() {
 
   const handleCancel = async () => {
     if (!current || !token) return;
-    if (!confirm('Yakin ingin membatalkan permintaan suspend ini?')) return;
+    if (!(await showConfirm('Yakin ingin membatalkan permintaan suspend ini?'))) return;
     setCancelling(true);
     setMsg(null);
     try {

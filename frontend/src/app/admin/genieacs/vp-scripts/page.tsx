@@ -8,6 +8,7 @@ import {
   Download, Upload,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface VpScript {
   _id: string;
@@ -141,7 +142,7 @@ export default function VpScriptsPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm(`Hapus VP script "${id}"? Ini juga akan menghapusnya dari GenieACS.`)) return;
+    if (!(await showConfirm(`Hapus VP script "${id}"? Ini juga akan menghapusnya dari GenieACS.`))) return;
     setError(null);
     try {
       const json = await apiAdmin<VpSaveResponse>(`/api/genieacs/virtual-parameters/${encodeURIComponent(id)}`, {

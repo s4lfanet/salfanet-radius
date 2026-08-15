@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Plus, Trash2, Save, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface ParamEntry {
   path: string;
@@ -101,7 +102,7 @@ export default function AutoProvisionPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Remove auto-provision preset and provision script from GenieACS?')) return;
+    if (!(await showConfirm('Remove auto-provision preset and provision script from GenieACS?'))) return;
     setDeleting(true);
     setError(null);
     setSuccess(null);

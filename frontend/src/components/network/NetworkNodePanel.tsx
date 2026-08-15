@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Edit2, Trash2, Save, XCircle, Loader2, MapPin, Server, Box, GitBranch, ChevronRight, ExternalLink } from 'lucide-react';
-import Swal from 'sweetalert2';
+import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 
 export interface MapEntity {
   id: string;
@@ -379,9 +379,9 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
         longitude: parseFloat(String(updated.longitude)) || entity.longitude,
       });
 
-      Swal.fire({ icon: 'success', title: 'Saved', timer: 1200, showConfirmButton: false });
+      showSuccess('Node saved successfully');
     } catch (err: unknown) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
+      showError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
@@ -389,16 +389,8 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
 
   const handleDelete = async () => {
     if (!entity) return;
-    const result = await Swal.fire({
-      icon: 'warning',
-      title: 'Delete Node?',
-      text: `Are you sure you want to delete "${entity.name}"?`,
-      showCancelButton: true,
-      confirmButtonText: 'Delete',
-      confirmButtonColor: '#ef4444',
-      cancelButtonText: 'Cancel',
-    });
-    if (!result.isConfirmed) return;
+    const confirmed = await showConfirm(`Are you sure you want to delete "${entity.name}"?`, 'Delete Node?', 'Delete', 'Cancel');
+    if (!confirmed) return;
 
     try {
       const base = getApiBase(entity.type);
@@ -415,11 +407,11 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
       const data = await res.json();
       if (!res.ok && data.error) throw new Error(data.error);
 
-      Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false });
+      showSuccess('Node deleted successfully');
       onDeleted(entity.id);
       onClose();
     } catch (err: unknown) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
+      showError(err instanceof Error ? err.message : String(err));
     }
   };
 

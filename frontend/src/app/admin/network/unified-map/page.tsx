@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import FilterPanel from '@/components/network/FilterPanel';
 import NetworkNodePanel, { type MapEntity } from '@/components/network/NetworkNodePanel';
 import type { ConnectionLine } from '@/components/network/UnifiedNetworkMap';
-import Swal from 'sweetalert2';
+import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
 
 // Dynamic imports (client-side only) — prevents Lucide icon hydration mismatch
@@ -214,43 +214,29 @@ export default function UnifiedMapPage() {
         }),
       });
 
-      Swal.fire({
-        icon: 'success',
-        title: 'Koneksi Berhasil!',
-        html: `<div class="text-sm text-left">${data.summary}</div>`,
-        timer: 3000,
-        showConfirmButton: false,
-      });
+      showSuccess(data.summary || 'Koneksi berhasil dibuat', 'Koneksi Berhasil!');
 
       // Reset and refresh
       setConnectSource(null);
       setConnectTarget(null);
       setRefreshKey(k => k + 1);
     } catch (err: unknown) {
-      Swal.fire({ icon: 'error', title: 'Gagal Menghubungkan', text: err instanceof Error ? err.message : String(err) });
+      showError(err instanceof Error ? err.message : String(err), 'Gagal Menghubungkan');
     } finally {
       setConnecting(false);
     }
   };
 
   const deleteConnection = async (fromId: string, toId: string) => {
-    const confirm = await Swal.fire({
-      icon: 'warning',
-      title: 'Hapus Koneksi?',
-      text: 'Semua segment antara kedua device ini akan dihapus.',
-      showCancelButton: true,
-      confirmButtonColor: '#ef4444',
-      confirmButtonText: 'Hapus',
-      cancelButtonText: 'Batal',
-    });
-    if (!confirm.isConfirmed) return;
+    const confirmed = await showConfirm('Semua segment antara kedua device ini akan dihapus.', 'Hapus Koneksi?', 'Hapus', 'Batal');
+    if (!confirmed) return;
 
     try {
       await apiAdmin(`/api/network/connections?from=${fromId}&to=${toId}`, { method: 'DELETE' });
-      Swal.fire({ icon: 'success', title: 'Koneksi dihapus', timer: 1500, showConfirmButton: false });
+      showSuccess('Koneksi dihapus');
       setRefreshKey(k => k + 1);
     } catch (err: unknown) {
-      Swal.fire({ icon: 'error', title: 'Error', text: err instanceof Error ? err.message : String(err) });
+      showError(err instanceof Error ? err.message : String(err));
     }
   };
 

@@ -89,7 +89,7 @@ export default function NewPppoeUserPage() {
         const data = await pppoeApi.listUsers({ search: formData.idCardNumber });
         const found = (data.users || []).find((u: PppoeUser) => u.idCardNumber === formData.idCardNumber);
         setFormWarnings(w => ({ ...w, nik: found ? `⚠️ NIK sudah terdaftar: ${found.name}` : '' }));
-      } catch { /* ignore */ }
+      } catch (e: unknown) { /* ignore — non-critical duplicate check */ console.warn('Duplicate NIK check failed:', e); }
     }, 500);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [formData.idCardNumber]);
@@ -105,7 +105,7 @@ export default function NewPppoeUserPage() {
         const data = await pppoeApi.listUsers({ search: formData.phone });
         const found = (data.users || []).find((u: PppoeUser) => u.phone === formData.phone);
         setFormWarnings(w => ({ ...w, phone: found ? `⚠️ No HP sudah terdaftar: ${found.name}` : '' }));
-      } catch { /* ignore */ }
+      } catch (e: unknown) { /* ignore — non-critical duplicate check */ console.warn('Duplicate phone check failed:', e); }
     }, 500);
     return () => { clearTimeout(timer); controller.abort(); };
   }, [formData.phone]);

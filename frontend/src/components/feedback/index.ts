@@ -1,12 +1,11 @@
 /**
  * Feedback Components — Barrel Export
  *
- * Shared feedback UI: loading spinners, empty states, error boundaries.
+ * Shared feedback UI: loading spinners, empty states, error states, error boundaries.
  *
  * @module components/feedback
  */
 
-// Future exports:
-// export { LoadingSpinner } from './LoadingSpinner'
-// export { EmptyState } from './EmptyState'
-// export { ErrorBoundary } from './ErrorBoundary'
+export { LoadingSpinner } from './LoadingSpinner';
+export { EmptyState } from './EmptyState';
+export { ErrorState } from './ErrorState';

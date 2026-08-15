@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface WLANConfig {
   index: number;
@@ -126,7 +127,7 @@ export default function CustomerWiFiPage() {
   };
 
   const handleReboot = async () => {
-    const confirmed = window.confirm(
+    const confirmed = await showConfirm(
       'Reboot modem/ONT?\n\nPerangkat akan restart dan koneksi internet terputus sementara 1-2 menit.'
     );
     if (!confirmed) return;
@@ -176,7 +177,7 @@ export default function CustomerWiFiPage() {
       return;
     }
 
-    const confirmed = window.confirm(
+    const confirmed = await showConfirm(
       `Konfirmasi perubahan WiFi:\nSSID: ${ssid}\nPassword: ${password ? '*'.repeat(password.length) : '(tidak diubah)'}\n\nPerangkat akan restart sebentar setelah perubahan diterapkan.`
     );
     if (!confirmed) return;

@@ -22,6 +22,7 @@ import {
   Eye, UserPlus, Trash2,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
+import { showError, showSuccess, showInfo, showWarning, showConfirm } from '@/lib/sweetalert';
 
 interface ONU {
   id: string;
@@ -1829,9 +1830,13 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         body: JSON.stringify({ oltId: id, protocol }),
       });
       const data = await res.json();
-      alert(data.message || (data.success ? 'Connection successful' : 'Connection failed'));
+      if (data.success) {
+        showSuccess(data.message || 'Connection successful');
+      } else {
+        showError(data.message || 'Connection failed');
+      }
     } catch (e) {
-      alert('Test failed');
+      showError('Test failed');
     } finally {
       setTesting(null);
     }
@@ -1843,10 +1848,10 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       const res = await fetch(`/api/olt/${id}/sync`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        if (!silent) alert(`Sync failed: ${data.error ?? 'Unknown error'}`);
+        if (!silent) showError(`Sync failed: ${data.error ?? 'Unknown error'}`);
       } else if (data.background) {
         // Sync is running in background — auto-refresh after 30s
-        if (!silent) alert(data.message ?? 'Sync started — data will refresh automatically');
+        if (!silent) showInfo(data.message ?? 'Sync started — data will refresh automatically');
         setTimeout(async () => {
           await fetchOLT();
           setPolling(false);
@@ -1854,11 +1859,11 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         return; // don't clear polling yet — keep button disabled during wait
       } else {
         await fetchOLT();
-        if (!silent) alert(data.message ?? 'OLT sync completed');
+        if (!silent) showSuccess(data.message ?? 'OLT sync completed');
       }
     } catch (e) {
       console.error('Sync failed', e);
-      if (!silent) alert('Sync failed — check network connection');
+      if (!silent) showError('Sync failed — check network connection');
     } finally {
       setPolling(false);
     }
@@ -1870,20 +1875,20 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       const res = await fetch(`/api/olt/${id}/onus/${onuId}/reboot`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? 'Reboot failed');
+        showError(data.error ?? 'Reboot failed');
       } else {
         setConfirmReboot(null);
         await handleSyncOLT({ silent: true });
       }
     } catch (e) {
-      alert('Reboot request failed');
+      showError('Reboot request failed');
     } finally {
       setRebootingOnu(null);
     }
   };
 
   const handleDeleteOnu = async (onu: ONU) => {
-    const confirmed = window.confirm(
+    const confirmed = await showConfirm(
       `Hapus ONU ${onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`} dari OLT?\n\nAksi ini akan clear config service dan unregister ONU.`
     );
     if (!confirmed) return;
@@ -1893,15 +1898,15 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       const res = await fetch(`/api/olt/${id}/onus/${onu.id}/delete`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error ?? 'Delete ONU failed');
+        showError(data.error ?? 'Delete ONU failed');
       } else {
         await fetchOLT();
         if (data.sync?.success === false) {
-          alert(data.message ?? 'ONU deleted, but sync failed');
+          showWarning(data.message ?? 'ONU deleted, but sync failed');
         }
       }
     } catch (e) {
-      alert('Delete ONU request failed');
+      showError('Delete ONU request failed');
     } finally {
       setDeletingOnu(null);
     }

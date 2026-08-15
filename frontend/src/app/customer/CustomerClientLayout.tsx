@@ -80,7 +80,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         if (typeof parsed.unread === 'number') setUnreadCount(parsed.unread);
         if (parsed.lastChecked) lastCheckedRef.current = parsed.lastChecked;
       }
-    } catch { /* ignore */ }
+    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to load notifications from localStorage:', e); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -93,7 +93,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         unread: unreadCount,
         lastChecked: lastCheckedRef.current,
       }));
-    } catch { /* ignore */ }
+    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to save notifications to localStorage:', e); }
   }, [notifHistory, unreadCount]);
 
   const handleClearAllNotifications = () => {
@@ -153,8 +153,9 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           fire({ type: 'info', title: event.title, description: event.message, duration: 7000 });
         }
       }
-    } catch {
-      // silently ignore
+    } catch (e: unknown) {
+      // silently ignore — non-critical notification polling
+      console.warn('Notification poll failed:', e);
     }
   }, []);
 
@@ -165,7 +166,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       const cachedName = localStorage.getItem('_co_name');
       if (cachedLogo) setCompanyLogo(cachedLogo);
       if (cachedName) setCompanyName(cachedName);
-    } catch { /* ignore */ }
+    } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to load cached company info:', e); }
     loadCompanyInfo();
     const token = localStorage.getItem('customer_token');
     const handleResize = () => { if (localStorage.getItem('customer_token')) setSidebarOpen(window.innerWidth >= 1024); };
@@ -189,16 +190,17 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       const data = await res.json();
       if (data.company?.name) {
         setCompanyName(data.company.name);
-        try { localStorage.setItem('_co_name', data.company.name); } catch { /* ignore */ }
+        try { localStorage.setItem('_co_name', data.company.name); } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to cache company name:', e); }
       }
       if (data.company?.logo) {
         setCompanyLogo(data.company.logo);
-        try { localStorage.setItem('_co_logo', data.company.logo); } catch { /* ignore */ }
+        try { localStorage.setItem('_co_logo', data.company.logo); } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to cache company logo:', e); }
       } else {
-        try { localStorage.removeItem('_co_logo'); } catch { /* ignore */ }
+        try { localStorage.removeItem('_co_logo'); } catch (e: unknown) { /* ignore — localStorage may be unavailable */ console.warn('Failed to remove cached company logo:', e); }
       }
-    } catch {
-      // ignore
+    } catch (e: unknown) {
+      // ignore — non-critical company info fetch
+      console.warn('Failed to load company info:', e);
     }
   };
 

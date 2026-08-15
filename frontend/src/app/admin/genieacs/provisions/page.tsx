@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Loader2, Plus, Trash2, Save, RefreshCw, Download, Upload } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface Provision {
   _id: string;
@@ -102,7 +103,7 @@ export default function GenieACSProvisionsPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm(`Delete provision "${id}"?`)) return;
+    if (!(await showConfirm(`Delete provision "${id}"?`))) return;
     try {
       const json = await apiAdmin<{ success: boolean; error?: string }>(`/api/genieacs/provisions/${encodeURIComponent(id)}`, {
         method: 'DELETE',

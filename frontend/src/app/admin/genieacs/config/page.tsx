@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, RefreshCw, Save, Trash2, Plus } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface ConfigItem {
   _id: string;
@@ -53,7 +54,7 @@ export default function GenieACSConfigPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm(`Delete config "${id}"?`)) return;
+    if (!(await showConfirm(`Delete config "${id}"?`))) return;
     try {
       const json = await apiAdmin<{ success: boolean; error?: string }>('/api/genieacs/config', {
         method: 'DELETE',

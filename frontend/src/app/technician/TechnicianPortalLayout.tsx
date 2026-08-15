@@ -132,7 +132,7 @@ function SidebarPushToggle({ techId }: { techId: string }) {
           body: JSON.stringify({ technicianId: techId, subscription: sub.toJSON() }),
         }).catch(() => { /* silent sync */ });
       }
-    } catch { /* ignore */ }
+    } catch (e: unknown) { /* ignore — service worker may not be available */ console.warn('Service worker registration failed:', e); }
   };
 
   useEffect(() => {
@@ -290,7 +290,7 @@ function NotificationBell() {
       });
       const unread = items.filter((n: { isRead: boolean }) => !n.isRead).length;
       setCount(prev => Math.max(prev, unread));
-    } catch { /* silent */ }
+    } catch (e: unknown) { /* silent — non-critical ticket polling */ console.warn('Failed to load tickets for notification bell:', e); }
   };
 
   // Listen for push notifications from service worker
@@ -309,7 +309,7 @@ function NotificationBell() {
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
         osc.start(ctx.currentTime);
         osc.stop(ctx.currentTime + 0.5);
-      } catch { /* audio not available */ }
+      } catch (e: unknown) { /* audio not available */ console.warn('Audio playback not available:', e); }
     };
 
     const handler = (event: MessageEvent) => {

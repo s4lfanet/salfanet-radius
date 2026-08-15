@@ -106,7 +106,7 @@ export default function SubdomainSettingsPage() {
             } else {
               setDomain(host);
             }
-          } catch { /* keep default */ }
+          } catch (e: unknown) { /* keep default domain on parse error */ console.warn('Failed to parse URL, keeping default domain:', e); }
         }
       } catch (err) {
         console.error(err);

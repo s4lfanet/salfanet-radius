@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Loader2, RefreshCw, Trash2, Upload } from 'lucide-react';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { showConfirm } from '@/lib/sweetalert';
 
 interface FileItem {
   _id: string;
@@ -87,7 +88,7 @@ export default function GenieACSFilesPage() {
   };
 
   const remove = async (name: string) => {
-    if (!confirm(`Delete file "${name}"?`)) return;
+    if (!(await showConfirm(`Delete file "${name}"?`))) return;
     try {
       const json = await apiAdmin<{ success: boolean; error?: string }>('/api/genieacs/files', {
         method: 'DELETE',

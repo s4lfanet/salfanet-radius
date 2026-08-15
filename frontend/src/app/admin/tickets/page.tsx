@@ -121,7 +121,7 @@ export default function AdminTicketsPage() {
     try {
       const data = await apiAdmin<DispatchDataResult>(`/api/tickets/dispatch-data${search ? `?customerSearch=${encodeURIComponent(search)}` : ''}`);
       setDispatchData(data);
-    } catch { /* ignore */ } finally {
+    } catch (e: unknown) { /* ignore — non-critical dispatch data load */ console.warn('Failed to load dispatch data:', e); } finally {
       setDispatchDataLoading(false);
     }
   }, []);
@@ -141,7 +141,7 @@ export default function AdminTicketsPage() {
       try {
         const data = await apiAdmin<DispatchDataResult>(`/api/tickets/dispatch-data?customerSearch=${encodeURIComponent(value)}`);
         setDispatchData(data);
-      } catch { /* ignore */ } finally {
+      } catch (e: unknown) { /* ignore — non-critical customer search */ console.warn('Failed to search customers:', e); } finally {
         setCustomerSearchLoading(false);
       }
     }, 400);

@@ -758,7 +758,7 @@ export default function VpnServerPage() {
                 addToast({ type: 'error', title: 'Setup VPN Gagal', description: errMsg });
               }
             }
-          } catch { /* ignore JSON parse errors on partial lines */ }
+          } catch (e: unknown) { /* ignore JSON parse errors on partial lines */ console.warn('JSON parse error on partial line:', e); }
         }
       }
     } catch (error: unknown) {
