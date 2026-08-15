@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   },
   images: { unoptimized: true },
   // Node.js-only packages used in API routes
-  serverExternalPackages: ['node-routeros', 'source-map-support', 'ssh2', 'cpu-features', 'sshcrypto'],
+  serverExternalPackages: ['node-routeros', 'iconv-lite', 'source-map-support', 'ssh2', 'cpu-features', 'sshcrypto'],
   // Fix workspace root detection issue in pnpm monorepo
   turbopack: {
     root: path.resolve(__dirname, '..'),
