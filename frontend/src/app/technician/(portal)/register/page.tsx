@@ -11,6 +11,7 @@ import {
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
+import { apiAdmin } from '@/lib/api/client';
 
 interface Profile {
   id: string;
@@ -80,8 +81,7 @@ export default function TechnicianRegisterPage() {
   const [gpsLoading, setGpsLoading] = useState(false);
 
   useEffect(() => {
-    fetch('/api/technician/form-data')
-      .then((r) => r.json())
+    apiAdmin<{ profiles?: Profile[]; routers?: Router[]; areas?: Area[] }>('/api/technician/form-data')
       .then((d) => {
         setProfiles(d.profiles ?? []);
         setRouters(d.routers ?? []);
@@ -132,15 +132,10 @@ export default function TechnicianRegisterPage() {
       if (form.longitude.trim()) body.longitude = form.longitude.trim();
       if (form.registeredAt.trim()) body.registeredAt = form.registeredAt.trim();
 
-      const res = await fetch('/api/technician/customers/create', {
+      const data = await apiAdmin<{ user?: { customerId?: string } }>('/api/technician/customers/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error ?? 'Gagal membuat pelanggan');
-      }
       setSuccess({ customerId: data.user?.customerId ?? '', name: form.name, username: form.username });
       addToast({ type: 'success', title: 'Berhasil', description: `Pelanggan ${form.name} berhasil dibuat` });
     } catch (err: unknown) {
@@ -525,9 +520,8 @@ export default function TechnicianRegisterPage() {
                           const fd = new FormData();
                           fd.append('file', file);
                           fd.append('type', 'idCard');
-                          const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-                          const result = await res.json();
-                          if (result.success) { setForm((f) => ({ ...f, idCardPhoto: result.url })); return result.url; }
+                          const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+                          if (result.success) { setForm((f) => ({ ...f, idCardPhoto: result.url ?? '' })); return result.url ?? null; }
                           addToast({ type: 'error', title: result.error || 'Upload KTP gagal' }); return null;
                         } catch { addToast({ type: 'error', title: 'Upload KTP gagal' }); return null; }
                         finally { setUploadingKtp(false); }
@@ -570,11 +564,11 @@ export default function TechnicianRegisterPage() {
                             const fd = new FormData();
                             fd.append('file', file);
                             fd.append('type', 'installation');
-                            const res = await fetch('/api/upload/pppoe-customer', { method: 'POST', body: fd });
-                            const result = await res.json();
-                            if (result.success) {
-                              setForm((f) => ({ ...f, installationPhotos: [...f.installationPhotos, result.url] }));
-                              return result.url;
+                            const result = await apiAdmin<{ success: boolean; url?: string; error?: string }>('/api/upload/pppoe-customer', { method: 'POST', body: fd });
+                            if (result.success && result.url) {
+                              const url = result.url;
+                              setForm((f) => ({ ...f, installationPhotos: [...f.installationPhotos, url] }));
+                              return url;
                             }
                             addToast({ type: 'error', title: result.error || 'Upload foto instalasi gagal' }); return null;
                           } catch { addToast({ type: 'error', title: 'Upload foto instalasi gagal' }); return null; }
