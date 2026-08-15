@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const auth = await requirePermission('settings.genieacs');
   if (!auth.authorized) return auth.response;
   const limited = await rateLimit(req, RateLimitPresets.moderate);
-  if (limited) return limited;
+  if (limited) return fail('Too many requests', 429);
   try {
     const body = await req.json();
     const { _id, script, description } = body ?? {};
