@@ -25,6 +25,7 @@ import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast'
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatInTimeZone } from 'date-fns-tz';
 import { id as localeId } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MenuItem {
   titleKey: string;
@@ -196,6 +197,7 @@ function AgentSidebar({
 function AgentLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [agent, setAgent] = useState<AgentData | null>(null);
   const [company, setCompany] = useState<{ name: string; logo: string | null }>({ name: '', logo: null });
@@ -268,6 +270,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleLogout = () => {
+    queryClient.clear();
     localStorage.removeItem('agentData');
     localStorage.removeItem('agentToken');
     router.push('/agent');

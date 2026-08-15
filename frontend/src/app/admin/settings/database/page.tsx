@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/lib/permissions';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
@@ -217,7 +218,7 @@ export default function DatabaseSettingsPage() {
   };
 
   // Permission check
-  const canEdit = hasPermission('settings.edit');
+  const canEdit = hasPermission(PERMISSIONS.SETTINGS_EDIT);
 
   if (!permLoading && !canView) {
     return (

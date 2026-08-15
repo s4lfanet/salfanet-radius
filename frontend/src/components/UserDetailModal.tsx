@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Loader2, CheckCircle2, XCircle, Clock, Eye, EyeOff, MapPin, Map, Camera, ImageIcon, ZoomIn } from 'lucide-react';
-import { formatWIB, formatLocalDate, todayWIBStr, nowWIB } from '@/lib/timezone';
+import { formatWIB, formatLocalDate, todayWIBStr, nowWIB, isExpiredWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showSuccess, showError, showWarning, showConfirm } from '@/lib/sweetalert';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
@@ -207,6 +207,7 @@ export default function UserDetailModal({
       }
     } catch (error) {
       console.error('Load tab data error:', error);
+      showError('Gagal memuat data tab');
     } finally {
       setLoading(false);
     }
@@ -1183,7 +1184,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
   };
 
   const active = addons.filter(a => !a.endDate || new Date(a.endDate) >= new Date());
-  const past = addons.filter(a => a.endDate && new Date(a.endDate) < new Date());
+  const past = addons.filter(a => a.endDate && isExpiredWIB(a.endDate));
   const selectedType = addonTypes.find(t => t.id === form.addonTypeId);
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Memuat layanan tambahan...</div>;

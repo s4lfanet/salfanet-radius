@@ -3,6 +3,7 @@ import { showSuccess, showError } from '@/lib/sweetalert';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from '@/hooks/useTranslation';
+import { isExpiredWIB } from '@/lib/timezone';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -351,7 +352,7 @@ export default function AgentVouchersPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400 dark:text-slate-500">Expired:</span>
-                    <span className={voucher.expiresAt && new Date(voucher.expiresAt) < new Date() ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}>
+                    <span className={voucher.expiresAt && isExpiredWIB(voucher.expiresAt) ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}>
                       {voucher.expiresAt ? formatLocal(voucher.expiresAt, 'dd MMM HH:mm') : '-'}
                     </span>
                   </div>
@@ -426,7 +427,7 @@ export default function AgentVouchersPage() {
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {voucher.expiresAt ? (
-                        <span className={new Date(voucher.expiresAt) < new Date() ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}>
+                        <span className={isExpiredWIB(voucher.expiresAt) ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}>
                           {formatLocal(voucher.expiresAt, 'dd MMM yyyy HH:mm')}
                         </span>
                       ) : '-'}

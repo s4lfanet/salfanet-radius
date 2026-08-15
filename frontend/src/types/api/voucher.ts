@@ -34,7 +34,19 @@ export interface HotspotVoucher {
 
 export interface HotspotVoucherListResponse {
   vouchers: HotspotVoucher[];
-  total?: number;
+  batches: string[];
+  codeTypes?: { value: string; label: string }[];
+  total: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
+  stats: {
+    total: number;
+    waiting: number;
+    active: number;
+    expired: number;
+    totalValue: number;
+  };
 }
 
 export interface HotspotVoucherResponse {

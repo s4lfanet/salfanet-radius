@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense, useRef, TouchEvent } from '
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession, signOut, SessionProvider } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
 import {
   LayoutDashboard,
@@ -579,6 +580,7 @@ function AdminLayoutContent({
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [sidebarOpen, setSidebarOpen] = useState(false); // Default FALSE untuk mobile
   const [mounted, setMounted] = useState(false);
   const [pendingRegistrations, setPendingRegistrations] = useState(0);
@@ -710,9 +712,10 @@ function AdminLayoutContent({
     }
 
     await signOut({ redirect: false });
+    queryClient.clear();
     // Manual redirect to current origin
     window.location.href = `${window.location.origin}/admin/login`;
-  }, [session]);
+  }, [session, queryClient]);
 
   useEffect(() => {
     setMounted(true);

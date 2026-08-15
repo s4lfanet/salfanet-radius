@@ -1,6 +1,7 @@
 ﻿'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
+import { PERMISSIONS } from '@/lib/permissions';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -1250,7 +1251,7 @@ export default function PppoeUsersPage() {
   const blockedUsers = usersWithOnline.filter((u) => u.status === 'blocked').length;
 
   const canView = hasPermission('customers.view');
-  const canCreate = hasPermission('customers.create');
+  const canCreate = hasPermission(PERMISSIONS.CUSTOMERS_CREATE);
 
   if (!permLoading && !canView) {
     return (<div className="flex flex-col items-center justify-center min-h-[60vh]">

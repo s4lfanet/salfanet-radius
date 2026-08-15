@@ -15,7 +15,11 @@ export const PERMISSIONS = {
 
   // Customers / PPPoE
   CUSTOMERS_VIEW: 'customers.view',
+  CUSTOMERS_CREATE: 'customers.create',
   USERS_VIEW: 'users.view',
+  USERS_CREATE: 'users.create',
+  USERS_EDIT: 'users.edit',
+  USERS_DELETE: 'users.delete',
   REGISTRATIONS_VIEW: 'registrations.view',
 
   // Hotspot
@@ -38,6 +42,7 @@ export const PERMISSIONS = {
 
   // Settings
   SETTINGS_VIEW: 'settings.view',
+  SETTINGS_EDIT: 'settings.edit',
   SETTINGS_PAYMENT: 'settings.payment',
   SETTINGS_GENIEACS: 'settings.genieacs',
 

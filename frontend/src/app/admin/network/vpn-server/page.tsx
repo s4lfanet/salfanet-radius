@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { Shield, Server, Plus, Pencil, Trash2, Zap, Activity, CheckCircle, XCircle, Settings, Terminal, RefreshCw, FileText, X, Wifi, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { formatWIB } from '@/lib/timezone';
 
 interface VpnServer {
   id: string
@@ -1467,7 +1468,7 @@ export default function VpnServerPage() {
                               <p className="text-xs font-mono text-foreground">{peer.allowedIps || '–'}</p>
                               <p className="text-xs text-muted-foreground">{peer.endpoint || 'no endpoint'} • {peer.transfer || '–'}</p>
                               <p className="text-xs text-muted-foreground truncate max-w-[200px]">{peer.publicKey}</p>
-                              {peer.lastHandshake && <p className="text-xs text-teal-400">Handshake: {new Date(peer.lastHandshake).toLocaleString('id-ID')}</p>}
+                              {peer.lastHandshake && <p className="text-xs text-teal-400">Handshake: {formatWIB(peer.lastHandshake, 'dd MMM HH:mm')}</p>}
                             </div>
                             <button onClick={() => handleWgRemovePeer(peer.publicKey)} className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors" title="Hapus peer">
                               <Trash2 className="w-4 h-4" />

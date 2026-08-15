@@ -16,6 +16,7 @@ import {
 } from '@/components/cyberpunk';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { formatWIB } from '@/lib/timezone';
 
 const API_BASE = '/api/admin/ippool';
 
@@ -418,7 +419,7 @@ export default function IPPoolPage() {
                           <td className="px-2 py-1 text-gray-300">{a.username}</td>
                           <td className="px-2 py-1 font-mono text-gray-500">{a.callingstationid}</td>
                           <td className="px-2 py-1 font-mono text-gray-500">{a.nasipaddress}</td>
-                          <td className="px-2 py-1 text-gray-500">{a.expiry_time ? new Date(a.expiry_time).toLocaleString() : '-'}</td>
+                          <td className="px-2 py-1 text-gray-500">{a.expiry_time ? formatWIB(a.expiry_time, 'dd MMM HH:mm') : '-'}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -7,6 +7,7 @@ import { formatWIB, nowWIB, todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { useApiQuery } from '@/lib/api/hooks';
+import { showError } from '@/lib/sweetalert';
 
 interface RekapVoucher {
   batchCode: string;
@@ -164,6 +165,7 @@ export default function RekapVoucherPage() {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Export failed:', error);
+      showError('Gagal export data');
     }
   };
 

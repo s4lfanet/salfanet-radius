@@ -33,6 +33,7 @@ import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast'
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatInTimeZone } from 'date-fns-tz';
 import { id as localeId } from 'date-fns/locale';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface TechnicianData {
   id: string;
@@ -544,6 +545,7 @@ function TechSidebar({
 function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
   const { addToast, confirm } = useToast();
@@ -602,6 +604,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
     } catch {
       // ignore
     }
+    queryClient.clear();
     router.replace('/technician/login');
   };
 

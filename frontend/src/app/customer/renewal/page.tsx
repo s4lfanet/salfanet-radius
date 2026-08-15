@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { formatWIB } from '@/lib/timezone';
+import { formatWIB, isExpiredWIB } from '@/lib/timezone';
 
 export const dynamic = 'force-dynamic';
 
@@ -246,7 +246,7 @@ export default function RenewalPage() {
   };
 
   const selectedPkg = packages.find(p => p.id === selectedPackageId) || user?.profile;
-  const isExpired = user?.expiredAt ? new Date(user.expiredAt) < new Date() : false;
+  const isExpired = user?.expiredAt ? isExpiredWIB(user.expiredAt) : false;
   const daysLeft = user?.expiredAt
     ? Math.ceil((new Date(user.expiredAt).getTime() - Date.now()) / 86400000)
     : null;

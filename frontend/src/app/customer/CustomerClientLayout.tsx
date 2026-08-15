@@ -12,6 +12,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { id as localeId } from 'date-fns/locale';
 import { useTheme } from '@/hooks/useTheme';
 import { PushNotificationToggle } from '@/components/push-notification-toggle';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MenuItem {
   name: string;
@@ -43,6 +44,7 @@ interface NotifEvent {
 function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [companyName, setCompanyName] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -205,6 +207,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   };
 
   const handleLogout = () => {
+    queryClient.clear();
     localStorage.removeItem('customer_token');
     localStorage.removeItem('customer_user');
     router.push('/customer/login');
