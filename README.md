@@ -1023,8 +1023,6 @@ const baseAmount = profile.price;  // BUG: tidak - user.discount
 ### Commits
 - `2b55e056` — fix(billing): apply customer discount to all invoice generation paths
 
----
-
 ### v5.6.0 — 2026-08-15 — Frontend Performance Optimization + Auto-Changelog Fix
 
 ### Summary
@@ -1049,8 +1047,6 @@ Frontend performance optimization pass: remove dead dependency, code-split heavy
 
 ### Commits
 - `9464c61d` — perf: remove dead sweetalert2 dep, move @types/leaflet to devDeps, dynamic import recharts, fix auto-changelog script path
-
----
 
 ### v5.5.0 — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
 
@@ -1105,8 +1101,6 @@ Dua kategori perbaikan: (1) Critical fix untuk sync active session MikroTik → 
 - `0b330fe1` — fix(frontend): responsive, accessibility, and loading/error state improvements
 - `a13c609a` — fix(nav): menu navigation desktop/mobile audit - accessibility and UI fixes
 
----
-
 ### v5.4.0 — 2026-08-15 — Final Production Completion (Security + safeCompare + JWT + CoA)
 
 ### Summary
@@ -1159,8 +1153,6 @@ Final production completion pass: safeCompare fail-closed hardening, JWT_SECRET 
 - `4cc0895e` — Sync test safeCompare with production
 - `ce0c4cfc` — Add auth checks to CoA and session disconnect routes
 - `27bf2bda` — Fix payment gateway config auth + credential logging + email timezone
-
----
 
 ### v5.3.0 — 2026-08-15 — Final Production Hardening + E2E Verification
 
@@ -1225,8 +1217,6 @@ Final production hardening pass: timezone bug fixes (invoice due dates, hardcode
 | FreeRADIUS Concurrency | 12 | 12 | 0 | VPS |
 | CRON_SECRET | 14 | 14 | 0 | VPS |
 | **Total** | **109** | **109** | **0** | |
-
----
 
 <!-- AUTO-CHANGELOG:END -->
 
