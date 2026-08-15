@@ -7,6 +7,7 @@ import { Shield, Search, RefreshCw, Loader2, Wifi, WifiOff, DollarSign, ChevronD
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatCurrency } from '@/lib/utils';
+import { apiAdmin } from '@/lib/api/client';
 
 interface UnpaidInvoice {
   id: string;
@@ -53,8 +54,7 @@ export default function TechnicianIsolatedPage() {
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/technician/isolated');
-      const data = await res.json();
+      const data = await apiAdmin<{ success: boolean; data?: IsolatedUser[]; stats?: Stats | null }>('/api/technician/isolated');
       if (data.success) {
         setUsers(data.data || []);
         setStats(data.stats || null);

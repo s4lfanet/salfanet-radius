@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Wifi, Search, RefreshCw, Loader2, Signal, Clock, ArrowDown, ArrowUp } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api/client';
 
 interface Session {
   id: string;
@@ -59,8 +60,7 @@ export default function TechnicianOnlinePage() {
       if (routerFilter) params.set('routerId', routerFilter);
       if (search) params.set('search', search);
 
-      const res = await fetch(`/api/technician/sessions?${params}`);
-      const data = await res.json();
+      const data = await apiAdmin<{ sessions?: Session[]; pagination?: Pagination }>(`/api/technician/sessions?${params}`);
       setSessions(data.sessions || []);
       if (data.pagination) setPagination(data.pagination);
     } catch {
@@ -72,7 +72,7 @@ export default function TechnicianOnlinePage() {
   }, [routerFilter, search]);
 
   useEffect(() => {
-    fetch('/api/technician/form-data').then(r => r.json()).then(d => setRouters(d.routers || [])).catch(() => {});
+    apiAdmin<{ routers?: Router[] }>('/api/technician/form-data').then(d => setRouters(d.routers || [])).catch(() => {});
   }, []);
 
   useEffect(() => {

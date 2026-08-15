@@ -10,6 +10,8 @@ import {
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB, isExpiredWIB } from '@/lib/timezone';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { apiCustomer } from '@/lib/api';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,6 +54,12 @@ interface CreatedInvoice {
   newExpiredDate: string;
 }
 
+type MeResponse = Partial<UserInfo> & { user?: UserInfo };
+type PackagesResponse = { success: boolean; packages: PackageOption[] };
+type GatewaysResponse = { success: boolean; gateways: PaymentGateway[] };
+type RenewalResponse = { success: boolean; error?: string };
+type CompanyInfoResponse = { success: boolean; data?: { bankAccounts: AdminBankAccount[] } };
+
 type Step = 'select' | 'payment-choice' | 'online-pay' | 'offline-pay' | 'success';
 
 export default function RenewalPage() {
@@ -61,13 +69,9 @@ export default function RenewalPage() {
     addToast({ type, title, description: desc, duration: type === 'error' ? 8000 : 5000 });
   }, [addToast]);
 
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<UserInfo | null>(null);
-  const [packages, setPackages] = useState<PackageOption[]>([]);
-  const [paymentGateways, setPaymentGateways] = useState<PaymentGateway[]>([]);
+  const queryClient = useQueryClient();
+
   const [selectedPackageId, setSelectedPackageId] = useState('');
-  const [canRenew, setCanRenew] = useState<boolean | null>(null);
-  const [cantRenewReason, setCantRenewReason] = useState('');
   const [creating, setCreating] = useState(false);
   const [createdInvoice, setCreatedInvoice] = useState<CreatedInvoice | null>(null);
   const [step, setStep] = useState<Step>('select');
@@ -75,7 +79,6 @@ export default function RenewalPage() {
   const [processingGateway, setProcessingGateway] = useState(false);
 
   // Admin bank accounts
-  const [adminBankAccounts, setAdminBankAccounts] = useState<AdminBankAccount[]>([]);
   const [selectedAdminBank, setSelectedAdminBank] = useState<AdminBankAccount | null>(null);
 
   // Manual payment state
@@ -91,76 +94,80 @@ export default function RenewalPage() {
   const formatCurrency = (n: number) =>
     new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(n);
 
+  // Redirect to login if no customer token
   useEffect(() => {
     const token = localStorage.getItem('customer_token');
     if (!token) { router.push('/customer/login'); return; }
-    loadData();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const loadData = async () => {
-    const token = localStorage.getItem('customer_token');
-    if (!token) return;
-    setLoading(true);
-    try {
-      const [meRes, pkgRes, gwRes, renewRes, companyRes] = await Promise.all([
-        fetch('/api/customer/me', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/customer/packages', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/public/payment-gateways'),
-        fetch('/api/customer/renewal', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('/api/company/info'),
-      ]);
+  // Customer profile
+  const { data: meData, isLoading: meLoading } = useApiQuery<MeResponse>(
+    '/api/customer/me',
+    { mode: 'customer', staleTime: 60000, queryOptions: { refetchOnWindowFocus: true } },
+  );
 
-      const meData = await meRes.json();
-      const pkgData = await pkgRes.json();
-      const gwData = await gwRes.json();
-      const renewData = await renewRes.json();
-      const companyData = await companyRes.json();
+  // Available packages
+  const { data: pkgData, isLoading: pkgLoading } = useApiQuery<PackagesResponse>(
+    '/api/customer/packages',
+    { mode: 'customer', staleTime: 60000 },
+  );
 
-      if (companyData.success && Array.isArray(companyData.data?.bankAccounts)) {
-        setAdminBankAccounts(companyData.data.bankAccounts);
-      }
+  // Payment gateways (public endpoint)
+  const { data: gwData, isLoading: gwLoading } = useApiQuery<GatewaysResponse>(
+    '/api/public/payment-gateways',
+    { staleTime: 300000 },
+  );
 
-      if (meData.user || meData.id) {
-        const u = meData.user || meData;
-        setUser(u);
-        setSelectedPackageId(u.profile?.id || '');
-      }
-      if (pkgData.success) {
-        setPackages(pkgData.packages || []);
-      }
-      if (gwData.success) {
-        const gws = gwData.gateways || [];
-        setPaymentGateways(gws);
-        if (gws.length > 0) setSelectedGateway(gws[0].provider);
-      }
-      if (renewData.success !== false) {
-        setCanRenew(true);
-      } else {
-        setCanRenew(false);
-        setCantRenewReason(renewData.error || 'Perpanjangan belum tersedia');
-      }
-    } catch {
-      toast('error', 'Gagal', 'Gagal memuat data');
-    } finally {
-      setLoading(false);
+  // Renewal data
+  const { data: renewData, isLoading: renewLoading } = useApiQuery<RenewalResponse>(
+    '/api/customer/renewal',
+    { mode: 'customer', staleTime: 30000, refetchInterval: 30000, queryOptions: { refetchOnWindowFocus: true } },
+  );
+
+  // Company info (public endpoint)
+  const { data: companyData, isLoading: companyLoading } = useApiQuery<CompanyInfoResponse>(
+    '/api/company/info',
+    { staleTime: 300000 },
+  );
+
+  const loading = meLoading || pkgLoading || gwLoading || renewLoading || companyLoading;
+
+  const user: UserInfo | null = meData ? (meData.user || (meData.id ? (meData as UserInfo) : null)) : null;
+  const packages = pkgData?.packages || [];
+  const paymentGateways = gwData?.gateways || [];
+  const adminBankAccounts = companyData?.data?.bankAccounts || [];
+  const canRenew = renewData ? renewData.success !== false : null;
+  const cantRenewReason = renewData?.error || '';
+
+  // Set default selected package from current profile
+  useEffect(() => {
+    if (user?.profile?.id && !selectedPackageId) {
+      setSelectedPackageId(user.profile.id);
     }
-  };
+  }, [user, selectedPackageId]);
+
+  // Set default gateway selection once gateways load
+  useEffect(() => {
+    if (paymentGateways.length > 0 && !selectedGateway) {
+      setSelectedGateway(paymentGateways[0].provider);
+    }
+  }, [paymentGateways, selectedGateway]);
 
   const handleCreateRenewal = async () => {
-    const token = localStorage.getItem('customer_token');
-    if (!token || !selectedPackageId) return;
+    if (!selectedPackageId) return;
     setCreating(true);
     try {
-      const res = await fetch('/api/customer/renewal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ newProfileId: selectedPackageId !== user?.profile?.id ? selectedPackageId : undefined }),
-      });
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; invoice?: CreatedInvoice; error?: string }>(
+        '/api/customer/renewal',
+        {
+          method: 'POST',
+          body: JSON.stringify({ newProfileId: selectedPackageId !== user?.profile?.id ? selectedPackageId : undefined }),
+        },
+      );
       if (data.success && data.invoice) {
         setCreatedInvoice(data.invoice);
         setStep('payment-choice');
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/customer/renewal') });
       } else {
         toast('error', 'Gagal', data.error || 'Gagal membuat invoice perpanjangan');
       }
@@ -174,17 +181,18 @@ export default function RenewalPage() {
   const handleConfirmGateway = async () => {
     if (!createdInvoice || !selectedGateway) return;
     setProcessingGateway(true);
-    const token = localStorage.getItem('customer_token');
     try {
-      const res = await fetch('/api/customer/invoice/regenerate-payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ invoiceId: createdInvoice.id, gateway: selectedGateway }),
-      });
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; paymentUrl?: string; error?: string }>(
+        '/api/customer/invoice/regenerate-payment',
+        {
+          method: 'POST',
+          body: JSON.stringify({ invoiceId: createdInvoice.id, gateway: selectedGateway }),
+        },
+      );
       if (data.success && data.paymentUrl) {
         window.open(data.paymentUrl, '_blank', 'noopener,noreferrer');
         setStep('success');
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/customer/renewal') });
       } else if (createdInvoice.paymentLink) {
         window.open(createdInvoice.paymentLink, '_blank', 'noopener,noreferrer');
         setStep('success');
@@ -219,22 +227,23 @@ export default function RenewalPage() {
     if (!proofFile) { toast('warning', 'Bukti Transfer', 'Upload bukti transfer diperlukan'); return; }
 
     setSubmittingManual(true);
-    const token = localStorage.getItem('customer_token');
     const formData = new FormData();
     formData.append('bankName', finalBank);
     formData.append('accountName', accountName.trim());
     if (paymentNotes.trim()) formData.append('notes', paymentNotes.trim());
     formData.append('file', proofFile);
     try {
-      const res = await fetch(`/api/customer/invoices/${createdInvoice.id}/manual-payment`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const data = await res.json();
+      const data = await apiCustomer<{ success: boolean; error?: string }>(
+        `/api/customer/invoices/${createdInvoice.id}/manual-payment`,
+        {
+          method: 'POST',
+          body: formData,
+        },
+      );
       if (data.success) {
         toast('success', 'Berhasil', 'Bukti transfer dikirim. Menunggu konfirmasi admin.');
         setStep('success');
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/customer/renewal') });
       } else {
         toast('error', 'Gagal', data.error || 'Gagal mengirim pembayaran. Silakan coba lagi.');
       }
@@ -523,7 +532,7 @@ export default function RenewalPage() {
             <span className="text-sm font-bold text-white">Upload Bukti Transfer</span>
           </div>
 
-          {/* Admin Bank Accounts â€” transfer destination */}
+          {/* Admin Bank Accounts — transfer destination */}
           {adminBankAccounts.length > 0 && (
             <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-cyan-500/30">
               <div className="flex items-center gap-2 mb-3">
@@ -608,7 +617,7 @@ export default function RenewalPage() {
             <CyberButton onClick={handleSubmitManual} disabled={submittingManual} className="w-full" variant="purple">
               {submittingManual ? <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim...</> : <><Banknote className="w-4 h-4" /> Kirim Bukti Transfer</>}
             </CyberButton>
-            <p className="text-[10px] text-muted-foreground text-center">Pembayaran akan dikonfirmasi admin dalam 1Ã—24 jam</p>
+            <p className="text-[10px] text-muted-foreground text-center">Pembayaran akan dikonfirmasi admin dalam 1×24 jam</p>
           </CyberCard>
         </div>
       )}
@@ -639,5 +648,3 @@ export default function RenewalPage() {
     </div>
   );
 }
-
-

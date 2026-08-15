@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Phone, Lock, Loader2, Save, Key } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api/client';
 
 interface Profile {
   id: string;
@@ -28,8 +29,7 @@ export default function TechnicianProfilePage() {
   const [showPwForm, setShowPwForm] = useState(false);
 
   useEffect(() => {
-    fetch('/api/technician/profile')
-      .then((r) => r.json())
+    apiAdmin<{ profile?: Profile }>('/api/technician/profile')
       .then((data) => {
         if (data.profile) {
           setProfile(data.profile);
@@ -44,19 +44,13 @@ export default function TechnicianProfilePage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/technician/profile', {
+      await apiAdmin('/api/technician/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       });
-      const data = await res.json();
-      if (res.ok) {
-        addToast({ type: 'success', title: t('techPortal.profileUpdated') });
-      } else {
-        addToast({ type: 'error', title: data.error || t('techPortal.profileError') });
-      }
-    } catch {
-      addToast({ type: 'error', title: t('techPortal.profileError') });
+      addToast({ type: 'success', title: t('techPortal.profileUpdated') });
+    } catch (e: unknown) {
+      addToast({ type: 'error', title: (e as Error).message || t('techPortal.profileError') });
     } finally {
       setSaving(false);
     }
@@ -73,21 +67,15 @@ export default function TechnicianProfilePage() {
     }
     setChangingPw(true);
     try {
-      const res = await fetch('/api/technician/profile', {
+      await apiAdmin('/api/technician/profile', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword }),
       });
-      const data = await res.json();
-      if (res.ok) {
-        addToast({ type: 'success', title: t('techPortal.passwordChanged') });
-        setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setShowPwForm(false);
-      } else {
-        addToast({ type: 'error', title: data.error || t('techPortal.passwordError') });
-      }
-    } catch {
-      addToast({ type: 'error', title: t('techPortal.passwordError') });
+      addToast({ type: 'success', title: t('techPortal.passwordChanged') });
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setShowPwForm(false);
+    } catch (e: unknown) {
+      addToast({ type: 'error', title: (e as Error).message || t('techPortal.passwordError') });
     } finally {
       setChangingPw(false);
     }

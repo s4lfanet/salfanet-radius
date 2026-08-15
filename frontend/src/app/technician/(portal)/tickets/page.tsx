@@ -41,6 +41,7 @@ import {
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
+import { apiAdmin } from '@/lib/api/client';
 
 interface TicketData {
   id: string;
@@ -158,9 +159,7 @@ export default function TechnicianTicketsPage() {
       if (filterPriority) p.set('priority', filterPriority);
       if (search) p.set('search', search);
       if (showMine) p.set('mine', 'true');
-      const res = await fetch(`/api/technician/tickets?${p}`);
-      if (!res.ok) throw new Error(t('techPortal.failedLoadTickets'));
-      const data = await res.json();
+      const data = await apiAdmin<{ tickets?: TicketData[] }>(`/api/technician/tickets?${p}`);
       setTickets(data.tickets ?? []);
     } catch {
       addToast({ type: 'error', title: t('techPortal.failedLoadTickets') });
@@ -175,9 +174,7 @@ export default function TechnicianTicketsPage() {
   const loadMessages = useCallback(async (ticketId: string) => {
     setMessagesLoading(true);
     try {
-      const res = await fetch(`/api/tickets/messages?ticketId=${ticketId}`);
-      if (!res.ok) throw new Error('Gagal memuat pesan');
-      const data = await res.json();
+      const data = await apiAdmin<TicketMessage[]>(`/api/tickets/messages?ticketId=${ticketId}`);
       setMessages(Array.isArray(data) ? data : []);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
     } catch {
@@ -207,13 +204,10 @@ export default function TechnicianTicketsPage() {
   async function doAction(ticketId: string, action: string, extra?: Record<string, unknown>) {
     setActionLoading(ticketId + action);
     try {
-      const res = await fetch('/api/technician/tickets', {
+      await apiAdmin('/api/technician/tickets', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ticketId, action, ...extra }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || t('techPortal.actionFailed'));
       addToast({ type: 'success', title: t('techPortal.actionCompleted') });
       await loadTickets();
       if (detailTicket?.id === ticketId) {
@@ -272,14 +266,11 @@ export default function TechnicianTicketsPage() {
       if (photoFile) {
         const fd = new FormData();
         fd.append('file', photoFile);
-        const upRes = await fetch('/api/technician/upload', { method: 'POST', body: fd });
-        const upData = await upRes.json();
-        if (!upRes.ok) throw new Error(upData.error || 'Gagal mengupload foto');
+        const upData = await apiAdmin<{ url: string }>('/api/technician/upload', { method: 'POST', body: fd });
         uploadedUrls = [upData.url];
       }
-      const res = await fetch('/api/technician/tickets', {
+      await apiAdmin('/api/technician/tickets', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ticketId: detailTicket.id,
           action: 'reply',
@@ -287,8 +278,6 @@ export default function TechnicianTicketsPage() {
           attachments: uploadedUrls.length > 0 ? uploadedUrls : undefined,
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
       addToast({ type: 'success', title: 'Pesan terkirim' });
       setReplyMessage('');
       setPhotoFile(null);
