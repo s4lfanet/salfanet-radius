@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { nowWIB } from '@/lib/timezone';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 /**
  * Verify credentials and return user info for NextAuth authorize().
@@ -22,6 +23,10 @@ import { nowWIB } from '@/lib/timezone';
  *   400 { error: 'Username and password are required' }
  */
 export async function POST(req: NextRequest) {
+  const limited = await rateLimit(req, RateLimitPresets.auth);
+  if (limited) {
+    return NextResponse.json({ success: false, error: 'Too many requests. Please try again later.' }, { status: 429 });
+  }
   try {
     const { username, password } = await req.json();
 

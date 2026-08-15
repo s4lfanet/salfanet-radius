@@ -3,6 +3,13 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { managePppSecret, kickPppoeSession, shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
+import { parseBody, z } from '@/lib/parse-body';
+
+// Zod schema for isolate-user — prevents mass assignment and validates input
+const isolateUserSchema = z.object({
+  username: z.string().min(1).max(64),
+  reason: z.string().max(500).optional(),
+});
 
 /**
  * POST /api/admin/isolate-user
@@ -14,15 +21,9 @@ export async function POST(request: NextRequest) {
     const authCheck = await requirePermission('customers.isolate');
     if (!authCheck.authorized) return authCheck.response;
 
-    const body = await request.json();
-    const { username, reason } = body;
-
-    if (!username) {
-      return NextResponse.json(
-        { success: false, error: 'Username is required' },
-        { status: 400 }
-      );
-    }
+    const { data, error } = await parseBody(request, isolateUserSchema);
+    if (error) return error;
+    const { username, reason } = data;
 
     const user = await prisma.pppoeUser.findUnique({
       where: { username },

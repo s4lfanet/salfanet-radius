@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 /**
  * GET /api/agent/deposit/payment-methods?gateway=duitku&amount=100000
  * Returns available payment methods for the given gateway and amount
  */
 export async function GET(request: NextRequest) {
+  const limited = await rateLimit(request, RateLimitPresets.relaxed);
+  if (limited) {
+    return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+  }
   try {
     const { searchParams } = new URL(request.url);
     const gateway = searchParams.get('gateway');

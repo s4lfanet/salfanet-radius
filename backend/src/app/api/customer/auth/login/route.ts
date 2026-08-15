@@ -1,9 +1,19 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { nanoid } from 'nanoid';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit: 10 attempts per 15 minutes per IP (brute force protection)
+    const limited = await rateLimit(request, RateLimitPresets.auth);
+    if (limited) {
+      return NextResponse.json(
+        { success: false, message: 'Terlalu banyak percobaan. Coba lagi dalam 15 menit.' },
+        { status: 429 }
+      );
+    }
+
     const { phone, identifier } = await request.json();
     
     // Accept either phone or identifier
