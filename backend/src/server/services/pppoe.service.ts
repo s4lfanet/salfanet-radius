@@ -695,12 +695,39 @@ export async function updatePppoeUser(
       const nasIdentifier = finalRouterId || null;
       const oldNasIdentifier = currentUser.routerId || null;
 
-      // Delete ALL old entries for old username — regardless of nas_identifier
+      // Delete old entries scoped to old NAS + NULL + new NAS to avoid orphaned rows
+      // while preserving entries belonging to OTHER NAS identifiers.
       // (sync-all-radius may have created entries with NULL nas_identifier,
-      //  so filtering by nas_identifier would leave orphaned rows)
-      await prisma.radcheck.deleteMany({ where: { username: oldUsername } });
-      await prisma.radreply.deleteMany({ where: { username: oldUsername } });
-      await prisma.radusergroup.deleteMany({ where: { username: oldUsername } });
+      //  so we include NULL in the cleanup. But we must NOT delete entries
+      //  belonging to a different router/NAS that this user doesn't belong to.)
+      const nasIdentifiersToClean = [oldNasIdentifier, nasIdentifier];
+      await prisma.radcheck.deleteMany({
+        where: {
+          username: oldUsername,
+          OR: [
+            { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
+            { nas_identifier: null },
+          ],
+        },
+      });
+      await prisma.radreply.deleteMany({
+        where: {
+          username: oldUsername,
+          OR: [
+            { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
+            { nas_identifier: null },
+          ],
+        },
+      });
+      await prisma.radusergroup.deleteMany({
+        where: {
+          username: oldUsername,
+          OR: [
+            { nas_identifier: { in: nasIdentifiersToClean.filter((n): n is string => n !== null) } },
+            { nas_identifier: null },
+          ],
+        },
+      });
 
       // If username changed, update radacct so accounting records follow
       if (oldUsername !== newUsername) {
