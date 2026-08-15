@@ -173,7 +173,7 @@ export default function InvoicesPage() {
   // ─── React Query: Mutations ──────────────────────────────────────────────────
   const markAsPaidMutation = useApiMutation<InvoiceResponse>('/api/invoices', {
     method: 'PUT',
-    invalidateQueries: [invoicesQueryKey],
+    invalidateQueries: [invoicesQueryKey, buildQueryKey('/api/invoices/counts'), buildQueryKey('/api/pppoe/users')],
   });
   const sendReminderMutation = useApiMutation<InvoiceSendReminderResponse & { error?: string }, { invoiceId: string }>('/api/invoices/send-reminder', {
     method: 'POST',
@@ -183,7 +183,7 @@ export default function InvoicesPage() {
   });
   const generateMutation = useApiMutation<InvoiceGenerateResponse & { error?: string }>('/api/invoices/generate', {
     method: 'POST',
-    invalidateQueries: [invoicesQueryKey],
+    invalidateQueries: [invoicesQueryKey, buildQueryKey('/api/invoices/counts'), buildQueryKey('/api/pppoe/users')],
   });
 
   const isSendingWA = (invoiceId: string) => sendReminderMutation.isPending && sendReminderMutation.variables?.invoiceId === invoiceId;
@@ -327,7 +327,9 @@ export default function InvoicesPage() {
     try {
       const data = await invoiceApi.delete(invoice.id);
       if (data.success) {
-        queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/invoices') });
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/invoices/counts') });
+        queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users') });
         showToast(t('invoices.invoiceDeleted'), 'success');
       } else {
         await showError(data.error || t('common.failedDelete'));
