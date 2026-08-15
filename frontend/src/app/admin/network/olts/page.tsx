@@ -10,6 +10,7 @@ import {
 import MapPicker from '@/components/MapPicker';
 import Link from 'next/link';
 import { apiAdmin, buildUrl } from '@/lib/api';
+import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import type { OLTListResponse, RouterListResponse } from '@/types/api';
 
 // Vendor → available models (aligned with backend vendor libs + OIDs)
@@ -159,10 +160,16 @@ interface OltSubmitResult {
 
 export default function OLTsPage() {
   const { t } = useTranslation();
-  const [loading, setLoading] = useState(true);
-  const [olts, setOlts] = useState<OLT[]>([]);
-  const [routers, setRouters] = useState<Router[]>([]);
-  const [oltProfiles, setOltProfiles] = useState<OLTProfile[]>([]);
+  const queryClient = useQueryClient();
+  const oltsQuery = useApiQuery<OLTListResponse>('/api/network/olts');
+  const routersQuery = useApiQuery<RouterListResponse>('/api/network/routers');
+  const profilesQuery = useApiQuery<{ profiles: OLTProfile[] }>('/api/admin/olt/model-profiles');
+  // API OLT type has different fields than local OLT (e.g. isOnline, monitoringEnabled vs routers, _count)
+  const olts = (oltsQuery.data?.olts || []) as unknown as OLT[];
+  // API Router is structurally compatible with local Router (superset of fields)
+  const routers = routersQuery.data?.routers || [];
+  const oltProfiles = profilesQuery.data?.profiles || [];
+  const loading = oltsQuery.isLoading || routersQuery.isLoading || profilesQuery.isLoading;
   const [oltStatusMap, setOltStatusMap] = useState<Record<string, OLTStatus>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingOlt, setEditingOlt] = useState<OLT | null>(null);
@@ -172,7 +179,25 @@ export default function OLTsPage() {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
+  // Mutations: create / update / delete / import
+  const createMutation = useApiMutation<OltSubmitResult>('/api/network/olts', {
+    method: 'POST',
+    invalidateQueries: [buildQueryKey('/api/network/olts')],
+  });
+  const updateMutation = useApiMutation<OltSubmitResult>('/api/network/olts', {
+    method: 'PUT',
+    invalidateQueries: [buildQueryKey('/api/network/olts')],
+  });
+  const deleteMutation = useApiMutation<OltSubmitResult>('/api/network/olts', {
+    method: 'DELETE',
+    invalidateQueries: [buildQueryKey('/api/network/olts')],
+  });
+  const importMutation = useApiMutation<ImportResult>('/api/network/olts/import', {
+    method: 'POST',
+    invalidateQueries: [buildQueryKey('/api/network/olts')],
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     ipAddress: '',
@@ -194,9 +219,8 @@ export default function OLTsPage() {
     routerIds: [] as string[],
   });
 
+  // Auto-refresh status setiap 30 detik
   useEffect(() => {
-    loadData();
-    // Auto-refresh status setiap 30 detik
     const interval = setInterval(() => {
       checkOLTsStatus();
     }, 30000);
@@ -211,31 +235,6 @@ export default function OLTsPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [olts.length]);
-
-  const loadData = async () => {
-    try {
-      const [oltsData, routersData, profilesData] = await Promise.all([
-        apiAdmin<OLTListResponse>('/api/network/olts'),
-        apiAdmin<RouterListResponse>('/api/network/routers'),
-        apiAdmin<{ profiles: OLTProfile[] }>('/api/admin/olt/model-profiles'),
-      ]);
-      // API OLT type has different fields than local OLT (e.g. isOnline, monitoringEnabled vs routers, _count)
-      const loadedOlts = (oltsData.olts || []) as unknown as OLT[];
-      setOlts(loadedOlts);
-      // API Router is structurally compatible with local Router (superset of fields)
-      setRouters(routersData.routers || []);
-      setOltProfiles(profilesData.profiles || []);
-
-      // Check OLT status
-      if (loadedOlts.length > 0) {
-        checkOLTsStatus(loadedOlts);
-      }
-    } catch (error: unknown) {
-      console.error('Load error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const checkOLTsStatus = async (oltList?: OLT[]) => {
     const oltsToCheck = oltList || olts;
@@ -315,7 +314,7 @@ export default function OLTsPage() {
         );
         // Refresh OLTs to update is_online status
         if (editingOlt) {
-          loadData();
+          queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/olts') });
         }
       } else {
         showError(
@@ -363,23 +362,19 @@ export default function OLTsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const method = editingOlt ? 'PUT' : 'POST';
       const payload = {
         ...formData,
         ...(editingOlt && { id: editingOlt.id }),
       };
-      
-      const result = await apiAdmin<OltSubmitResult>('/api/network/olts', {
-        method,
-        body: JSON.stringify(payload),
-      });
+
+      const mutation = editingOlt ? updateMutation : createMutation;
+      const result = await mutation.mutateAsync(payload);
 
       if (result.success) {
         await showSuccess(editingOlt ? t('common.updated') : t('common.created'));
         setIsDialogOpen(false);
         setEditingOlt(null);
         resetForm();
-        loadData();
       } else {
         await showError(result.error || t('common.saveError'));
       }
@@ -397,14 +392,10 @@ export default function OLTsPage() {
     if (!confirmed) return;
 
     try {
-      const result = await apiAdmin<OltSubmitResult>('/api/network/olts', {
-        method: 'DELETE',
-        body: JSON.stringify({ id: olt.id }),
-      });
+      const result = await deleteMutation.mutateAsync({ id: olt.id });
 
       if (result.success) {
         await showSuccess(t('common.deleted'));
-        loadData();
       } else {
         await showError(result.error || t('common.deleteError'));
       }
@@ -441,10 +432,7 @@ export default function OLTsPage() {
     formData.append('file', file);
 
     try {
-      const result = await apiAdmin<ImportResult>('/api/network/olts/import', {
-        method: 'POST',
-        body: formData,
-      });
+      const result = await importMutation.mutateAsync(formData);
 
       if (result.success) {
         let message = `Import completed!\n\n`;
@@ -463,7 +451,6 @@ export default function OLTsPage() {
         }
 
         await showSuccess(message);
-        loadData();
         setIsImportDialogOpen(false);
       } else {
         await showError(result.error || t('common.importError'));

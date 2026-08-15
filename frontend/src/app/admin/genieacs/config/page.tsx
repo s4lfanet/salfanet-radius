@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Loader2, RefreshCw, Save, Trash2, Plus } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
 
 interface ConfigItem {
@@ -11,33 +12,24 @@ interface ConfigItem {
 }
 
 export default function GenieACSConfigPage() {
-  const [items, setItems] = useState<ConfigItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [newId, setNewId] = useState('');
   const [newValue, setNewValue] = useState('');
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const json = await apiAdmin<{ success: boolean; data?: ConfigItem[]; error?: string }>('/api/genieacs/config', { cache: 'no-store' });
-      if (!json.success) throw new Error(json.error || 'Failed to load');
-      setItems(json.data || []);
-      const map: Record<string, string> = {};
-      for (const it of json.data || []) map[it._id] = String(it.value ?? '');
-      setDraft(map);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<{ success: boolean; data?: ConfigItem[]; error?: string }>('/api/genieacs/config', { staleTime: 60000 });
+  const items: ConfigItem[] = queryData?.data || [];
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  const invalidateConfig = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/config') });
+
+  // Sync draft from server data whenever the query refetches
+  const serverDraft = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const it of items) map[it._id] = String(it.value ?? '');
+    return map;
+  }, [items]);
+  useEffect(() => { setDraft(serverDraft); }, [serverDraft]);
 
   const saveOne = async (id: string, value: string) => {
     setError(null);
@@ -47,7 +39,7 @@ export default function GenieACSConfigPage() {
         body: JSON.stringify({ id, value }),
       });
       if (!json.success) throw new Error(json.error || 'Save failed');
-      await load();
+      invalidateConfig();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -61,7 +53,7 @@ export default function GenieACSConfigPage() {
         body: JSON.stringify({ id }),
       });
       if (!json.success) throw new Error(json.error || 'Delete failed');
-      await load();
+      invalidateConfig();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -75,7 +67,7 @@ export default function GenieACSConfigPage() {
           <p className="text-sm text-slate-500">Konfigurasi runtime GenieACS NBI</p>
         </div>
         <button
-          onClick={load}
+          onClick={() => refetch()}
           className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800"
         >
           <RefreshCw className="w-4 h-4" /> Refresh

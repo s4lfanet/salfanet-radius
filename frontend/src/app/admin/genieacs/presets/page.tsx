@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { Loader2, Plus, Trash2, Save, RefreshCw, Download, Upload } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { showConfirm } from '@/lib/sweetalert';
 
 interface Preset {
@@ -24,8 +25,6 @@ const empty: Preset = {
 };
 
 export default function GenieACSPresetsPage() {
-  const [items, setItems] = useState<Preset[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState<Preset | null>(null);
   const [editJson, setEditJson] = useState('');
@@ -33,22 +32,12 @@ export default function GenieACSPresetsPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [restoring, setRestoring] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const json = await apiAdmin<{ success: boolean; data?: Preset[]; error?: string }>('/api/genieacs/presets', { cache: 'no-store' });
-      if (!json.success) throw new Error(json.error || 'Failed to load');
-      setItems(json.data || []);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const { data: queryData, isLoading: loading, refetch } = useApiQuery<{ success: boolean; data?: Preset[]; error?: string }>('/api/genieacs/presets', { staleTime: 60000 });
+  const items: Preset[] = queryData?.data || [];
 
-  useEffect(() => { load(); }, [load]);
+  const invalidatePresets = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/genieacs/presets') });
 
   function flash(msg: string) {
     setSuccessMsg(msg);
@@ -75,7 +64,7 @@ export default function GenieACSPresetsPage() {
       if (!json.success) throw new Error(json.error || 'Restore gagal');
       const r = json.results?.presets;
       flash(`Restore selesai: ${r?.ok ?? 0} preset dipulihkan${r?.errors?.length ? `, ${r.errors.length} error` : ''}`);
-      await load();
+      invalidatePresets();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -113,7 +102,7 @@ export default function GenieACSPresetsPage() {
       if (!json.success) throw new Error(json.error || 'Save failed');
       setEditing(null);
       flash(`Preset "${body._id}" tersimpan`);
-      await load();
+      invalidatePresets();
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -129,7 +118,7 @@ export default function GenieACSPresetsPage() {
       });
       if (!json.success) throw new Error(json.error || 'Delete failed');
       flash(`Preset "${id}" dihapus`);
-      await load();
+      invalidatePresets();
     } catch (e) {
       setError((e as Error).message);
     }
@@ -146,7 +135,7 @@ export default function GenieACSPresetsPage() {
           <p className="text-sm text-slate-500">Kelola preset provisioning di NBI server · {items.length} preset</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button onClick={load} disabled={loading}
+          <button onClick={() => refetch()} disabled={loading}
             className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>

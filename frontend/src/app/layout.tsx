@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 import { ClientProviders } from "@/components/client-providers";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 import { getCompanyInfo } from "@/lib/api/server";
 
 export const dynamic = 'force-dynamic';
@@ -103,8 +104,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}
       >
-        {children}
-        <ClientProviders />
+        <QueryProvider>
+          {children}
+          <ClientProviders />
+        </QueryProvider>
       </body>
     </html>
   );

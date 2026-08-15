@@ -263,6 +263,7 @@ export function CameraPhotoInput({
               isDark ? 'border-[#00ff88]/60' : 'border-green-400/60 dark:border-[#00ff88]/60'
             }`}
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+            loading="lazy"
           />
           {/* Success badge */}
           <div className="absolute top-1.5 left-1.5 flex items-center gap-1 px-2 py-0.5 text-[9px] bg-black/60 text-green-400 rounded-full backdrop-blur-sm">

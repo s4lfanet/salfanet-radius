@@ -682,6 +682,7 @@ export default function ManualPaymentsPage() {
                       src={selectedPayment.receiptImage}
                       alt={t('manualPayment.transferReceipt')}
                       className="max-w-full h-auto rounded-lg border-2 border-accent/30 shadow-[0_0_20px_rgba(0,247,255,0.2)]"
+                      loading="lazy"
                     />
                   </div>
                 </div>

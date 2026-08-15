@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
+import { useApiQuery } from '@/lib/api/hooks';
 import {
   RefreshCcw, Route, Link2, AlertTriangle, ChevronRight, MapPin, Cable, Box, GitBranch, Zap,
   type LucideIcon,
@@ -46,30 +47,27 @@ type TabId = 'logical' | 'physical';
 // ─── Logical Trace Tab ────────────────────────────────────────────────────────
 function LogicalTraceTab() {
   const { t } = useTranslation();
-  const [nodes, setNodes] = React.useState<NetworkNode[]>([]);
+  const oltsQuery = useApiQuery<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/olts');
+  const jcsQuery = useApiQuery<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/joint-closures');
+  const odcsQuery = useApiQuery<{ odcs?: NetworkNode[] } | NetworkNode[]>('/api/network/odcs');
+  const odpsQuery = useApiQuery<{ odps?: NetworkNode[]; data?: NetworkNode[] } | NetworkNode[]>('/api/network/odps');
+  const nodes: NetworkNode[] = React.useMemo(() => {
+    const olts = oltsQuery.data;
+    const jcs = jcsQuery.data;
+    const odcs = odcsQuery.data;
+    const odps = odpsQuery.data;
+    if (!olts && !jcs && !odcs && !odps) return [];
+    const allNodes: NetworkNode[] = [
+      ...((olts as { data?: NetworkNode[] })?.data || []).map((n) => ({ ...n, type: 'OLT' as const })),
+      ...((jcs as { data?: NetworkNode[] })?.data || []).map((n) => ({ ...n, type: 'JOINT_CLOSURE' as const })),
+      ...((odcs as { odcs?: NetworkNode[] })?.odcs || []).map((n) => ({ ...n, type: 'ODC' as const })),
+      ...((odps as { odps?: NetworkNode[] })?.odps || (odps as { data?: NetworkNode[] })?.data || []).map((n) => ({ ...n, type: 'ODP' as const })),
+    ];
+    return allNodes;
+  }, [oltsQuery.data, jcsQuery.data, odcsQuery.data, odpsQuery.data]);
   const [traceResult, setTraceResult] = React.useState<LogicalTraceResult | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const [olts, jcs, odcs, odps] = await Promise.all([
-          apiAdmin<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/olts'),
-          apiAdmin<{ data?: NetworkNode[] } | NetworkNode[]>('/api/network/joint-closures'),
-          apiAdmin<{ odcs?: NetworkNode[] } | NetworkNode[]>('/api/network/odcs'),
-          apiAdmin<{ odps?: NetworkNode[]; data?: NetworkNode[] } | NetworkNode[]>('/api/network/odps'),
-        ]);
-        const allNodes: NetworkNode[] = [
-          ...((olts as { data?: NetworkNode[] }).data || []).map((n) => ({ ...n, type: 'OLT' as const })),
-          ...((jcs as { data?: NetworkNode[] }).data || []).map((n) => ({ ...n, type: 'JOINT_CLOSURE' as const })),
-          ...((odcs as { odcs?: NetworkNode[] }).odcs || []).map((n) => ({ ...n, type: 'ODC' as const })),
-          ...((odps as { odps?: NetworkNode[] }).odps || (odps as { data?: NetworkNode[] }).data || []).map((n) => ({ ...n, type: 'ODP' as const })),
-        ];
-        setNodes(allNodes);
-      } catch (e: unknown) { console.error('Failed to load network nodes:', e); }
-    })();
-  }, []);
 
   const handleTrace = async (fromId: string, toId: string) => {
     setIsLoading(true); setError(null); setTraceResult(null);

@@ -700,7 +700,7 @@ export default function TechnicianTicketsPage() {
                                     className="block rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:opacity-90 transition-opacity"
                                   >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={url} alt="Foto lampiran" className="max-w-[200px] max-h-[200px] object-cover" />
+                                    <img src={url} alt="Foto lampiran" className="max-w-[200px] max-h-[200px] object-cover" loading="lazy" />
                                   </button>
                                 ))}
                               </div>
@@ -733,7 +733,7 @@ export default function TechnicianTicketsPage() {
                     {photoPreview && (
                       <div className="relative inline-block mb-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photoPreview} alt="Preview" className="h-20 w-auto rounded-xl border border-slate-200 dark:border-slate-700 object-cover" />
+                        <img src={photoPreview} alt="Preview" className="h-20 w-auto rounded-xl border border-slate-200 dark:border-slate-700 object-cover" loading="lazy" />
                         <button
                           onClick={() => { setPhotoFile(null); setPhotoPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                           className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
@@ -812,6 +812,7 @@ export default function TechnicianTicketsPage() {
             alt="Foto tiket"
             className="max-w-full max-h-full object-contain rounded-xl"
             onClick={(e) => e.stopPropagation()}
+            loading="lazy"
           />
           <button
             onClick={() => setLightboxUrl(null)}

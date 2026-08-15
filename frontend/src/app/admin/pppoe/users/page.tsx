@@ -2,8 +2,16 @@
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import type {
+  PppoeUserListResponse,
+  PppoeProfileListResponse,
+  PppoeAreaListResponse,
+  PppoeOnlineStatusResponse,
+  RouterListResponse,
+} from '@/types/api';
 import {
   Plus, Pencil, Trash2, Users, CheckCircle2, MapPin, Map, MoreVertical,
   Shield, ShieldOff, Ban, Download, Upload, Search, Filter, X, Eye, EyeOff, RefreshCcw, DollarSign, Loader2, Zap,
@@ -28,7 +36,7 @@ import {
   ModalLabel,
   ModalButton,
 } from '@/components/cyberpunk';
-import { pppoeApi, invoiceApi, networkApi, apiAdmin, buildUrl } from '@/lib/api';
+import { pppoeApi, invoiceApi, apiAdmin, buildUrl } from '@/lib/api';
 
 interface PppoeUser {
   id: string; username: string; name: string; phone: string; email: string | null;
@@ -348,7 +356,7 @@ function AddPppoeUserModal({ isOpen, onClose, onSuccess, profiles, routers, area
                   {formData.installationPhotos.map((photo, index) => (
                     <div key={index} className="relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded border border-border dark:border-[#00f7ff]/20" />
+                      <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded border border-border dark:border-[#00f7ff]/20" loading="lazy" />
                       <button type="button" onClick={() => handleRemoveInstallationPhoto(index)} className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-[9px] hover:bg-red-600"><X className="w-2.5 h-2.5" /></button>
                     </div>
                   ))}
@@ -380,10 +388,6 @@ export default function PppoeUsersPage() {
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
-  const [users, setUsers] = useState<PppoeUser[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [routers, setRouters] = useState<Router[]>([]);
-  const [areas, setAreas] = useState<Area[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<PppoeUser | null>(null);
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
@@ -419,7 +423,6 @@ export default function PppoeUsersPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncImportResult | null>(null);
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
-  const [invoiceCounts, setInvoiceCounts] = useState<Record<string, number>>({});
   const [extending, setExtending] = useState<string | null>(null);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [selectedUserForExtend, setSelectedUserForExtend] = useState<PppoeUser | null>(null);
@@ -440,68 +443,86 @@ export default function PppoeUsersPage() {
   const [sendingBroadcast, setSendingBroadcast] = useState(false);
   const [printDialogUser, setPrintDialogUser] = useState<PppoeUser | null>(null);
 
-  useEffect(() => { loadData(); }, []);
+  // ─── React Query data fetching ──────────────────────────────────────
+  const queryClient = useQueryClient();
+
+  // Users list — fetched once, stale for 30s
+  const usersQuery = useApiQuery<PppoeUserListResponse>('/api/pppoe/users', {
+    staleTime: 30000,
+  });
+  // API PppoeUser uses pppoe_profiles/nas/pppoe_areas; local PppoeUser uses profile/router/area
+  const users = (usersQuery.data?.users as unknown as PppoeUser[]) || [];
 
   // Realtime online/offline status polling — refresh every 10 seconds
   // without reloading the entire page. Only fetches the online username set.
+  const usernames = useMemo(() => users.map(u => u.username).join(','), [users]);
+  const onlineQuery = useApiQuery<PppoeOnlineStatusResponse>(
+    '/api/pppoe/users/online-status',
+    {
+      params: { usernames },
+      refetchInterval: 10000,
+      enabled: users.length > 0,
+    },
+  );
+  const onlineSet = useMemo(
+    () => new Set(onlineQuery.data?.online || []),
+    [onlineQuery.data],
+  );
+  // Merge online status into users — only updates if there's an actual change
+  const usersWithOnline = useMemo(() => {
+    let changed = false;
+    const next = users.map(u => {
+      const isOnline = onlineSet.has(u.username);
+      if (u.isOnline !== isOnline) { changed = true; return { ...u, isOnline }; }
+      return u;
+    });
+    return changed ? next : users;
+  }, [users, onlineSet]);
+
+  // Profiles — rarely changes, cache for 5 minutes
+  const profilesQuery = useApiQuery<PppoeProfileListResponse>('/api/pppoe/profiles', {
+    staleTime: 300000,
+  });
+  const profiles: Profile[] = (profilesQuery.data?.profiles as unknown as Profile[]) || [];
+
+  // Routers/NAS — rarely changes, cache for 5 minutes
+  const routersQuery = useApiQuery<RouterListResponse>('/api/network/routers', {
+    staleTime: 300000,
+  });
+  const routers: Router[] = (routersQuery.data?.routers as unknown as Router[]) || [];
+
+  // Areas — rarely changes, cache for 5 minutes
+  const areasQuery = useApiQuery<PppoeAreaListResponse>('/api/pppoe/areas', {
+    staleTime: 300000,
+  });
+  const areas: Area[] = (areasQuery.data?.areas as unknown as Area[]) || [];
+
+  // Invoice counts for all users — enabled only when users are loaded
+  const userIds = useMemo(() => users.map(u => u.id).join(','), [users]);
+  const invoiceCountsQuery = useApiQuery<InvoiceCountsResponse>(
+    '/api/invoices/counts',
+    {
+      params: { userIds },
+      enabled: users.length > 0,
+    },
+  );
+  const invoiceCounts: Record<string, number> = invoiceCountsQuery.data?.counts || {};
+
+  // Sync loading state with queries
   useEffect(() => {
-    if (users.length === 0) return;
-    let cancelled = false;
+    if (!usersQuery.isLoading) setLoading(false);
+  }, [usersQuery.isLoading]);
 
-    const pollOnlineStatus = async () => {
-      try {
-        const usernames = users.map(u => u.username).join(',');
-        const data = await pppoeApi.getOnlineStatus(usernames);
-        if (cancelled || !data.online) return;
-        const onlineSet = new Set(data.online as string[]);
-        setUsers(prev => {
-          // Only update if there's an actual change to avoid unnecessary re-renders
-          let changed = false;
-          const next = prev.map(u => {
-            const isOnline = onlineSet.has(u.username);
-            if (u.isOnline !== isOnline) { changed = true; return { ...u, isOnline }; }
-            return u;
-          });
-          return changed ? next : prev;
-        });
-      } catch (e) { /* silent — polling errors are non-fatal */ }
-    };
-
-    // Poll immediately, then every 10 seconds
-    pollOnlineStatus();
-    const interval = setInterval(pollOnlineStatus, 10000);
-
-    return () => { cancelled = true; clearInterval(interval); };
-  }, [users.length]);
-
-  const loadData = async () => {
-    try {
-      const [usersData, profilesData, routersData, areasData] = await Promise.all([
-        pppoeApi.listUsers(), pppoeApi.listProfiles(), networkApi.listRouters(), pppoeApi.listAreas(),
-      ]);
-      // API PppoeUser uses pppoe_profiles/nas/pppoe_areas; local PppoeUser uses profile/router/area
-      const loadedUsers = usersData.users as unknown as PppoeUser[];
-      setUsers(loadedUsers);
-      setProfiles(profilesData.profiles || []);
-      setRouters(routersData.routers || []);
-      setAreas(areasData.areas || []);
-
-      // Load invoice counts for all users
-      if (loadedUsers.length > 0) {
-        const userIds = loadedUsers.map((u: PppoeUser) => u.id).join(',');
-        const invoiceData = await apiAdmin<InvoiceCountsResponse>(`/api/invoices/counts?userIds=${userIds}`);
-        if (invoiceData.success) {
-          setInvoiceCounts(invoiceData.counts || {});
-        }
-      }
-    } catch (error) { console.error('Load data error:', error); }
-    finally { setLoading(false); }
+  // Helper to invalidate all user-related queries (replaces loadData)
+  const invalidateUserData = () => {
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users') });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/invoices/counts') });
   };
 
   const handleSaveUser = async (data: Record<string, unknown>) => {
     try {
       await pppoeApi.updateUser(data as { id: string; [key: string]: unknown });
-      await loadData(); await showSuccess(t('management.userUpdated'));
+      invalidateUserData(); await showSuccess(t('management.userUpdated'));
     } catch (error: unknown) { console.error('Save user error:', error); await showError(error instanceof Error ? error.message : t('management.failedSaveUser')); throw error; }
   };
 
@@ -591,7 +612,7 @@ export default function PppoeUsersPage() {
       <div class="content">
       <div class="header">
         <div class="brand-wrap">
-          ${inv.company.logo ? `<div class="logo-box"><img src="${inv.company.logo}" style="max-height:58px;max-width:58px;width:auto;object-fit:contain" alt="Logo"></div>` : ''}
+          ${inv.company.logo ? `<div class="logo-box"><img src="${inv.company.logo}" style="max-height:58px;max-width:58px;width:auto;object-fit:contain" alt="Logo" loading="lazy"></div>` : ''}
           <div>
             <div class="company-name">${inv.company.name}</div>
             <div class="company-sub">
@@ -729,7 +750,7 @@ export default function PppoeUsersPage() {
         .btn-close { flex: 1; padding: 10px; background: #6b7280; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
       </style></head><body>
       <div class="receipt">
-      ${inv.company.logo ? `<img class="logo" src="${inv.company.logo}" alt="Logo">` : ''}
+      ${inv.company.logo ? `<img class="logo" src="${inv.company.logo}" alt="Logo" loading="lazy">` : ''}
       <div class="center bold big">${inv.company.name}</div>
       ${inv.company.address ? `<div class="center sm">${inv.company.address}</div>` : ''}
       ${inv.company.phone ? `<div class="center sm">Telp: ${inv.company.phone}</div>` : ''}
@@ -803,7 +824,7 @@ export default function PppoeUsersPage() {
     try {
       await pppoeApi.deleteUser(deleteUserId);
       await showSuccess(t('management.userDeleted'));
-      loadData();
+      invalidateUserData();
     } catch (error: unknown) {
       console.error('Delete error:', error);
       await showError(error instanceof Error ? error.message : t('common.failed'));
@@ -818,9 +839,12 @@ export default function PppoeUsersPage() {
     try {
       await pppoeApi.updateStatus(userId, newStatus);
       // Optimistic update: update user status in list immediately
-      setUsers(prev => prev.map(u => u.id === userId ? { ...u, status: newStatus } : u));
+      queryClient.setQueryData(buildQueryKey('/api/pppoe/users'), (old: PppoeUserListResponse | undefined) => {
+        if (!old) return old;
+        return { ...old, users: (old.users as unknown as PppoeUser[]).map(u => u.id === userId ? { ...u, status: newStatus } : u) };
+      });
       await showSuccess(`Status: ${newStatus}`);
-      loadData();
+      invalidateUserData();
       setActionMenuOpen(null);
     } catch (error: unknown) { console.error('Status error:', error); await showError(error instanceof Error ? error.message : t('common.failed')); }
   };
@@ -828,7 +852,7 @@ export default function PppoeUsersPage() {
   const handleSyncToRadius = async (user: PppoeUser) => {
     try {
       await pppoeApi.syncRadius(user.id);
-      await showSuccess(`${user.username} berhasil di-sync ke RADIUS`); loadData();
+      await showSuccess(`${user.username} berhasil di-sync ke RADIUS`); invalidateUserData();
     } catch (e: unknown) { await showError(e instanceof Error ? e.message : 'Gagal sync ke RADIUS'); }
   };
 
@@ -846,7 +870,7 @@ export default function PppoeUsersPage() {
         t('pppoe.invoicesMarkedPaid').replace('{count}', String(result.invoicesCount)).replace('{amount}', String(result.totalAmount?.toLocaleString('id-ID'))),
         t('common.success')
       );
-      loadData();
+      invalidateUserData();
     } catch (error: unknown) {
       console.error('Mark paid error:', error);
       await showError(error instanceof Error ? error.message : t('pppoe.failedMarkPaid'));
@@ -873,7 +897,7 @@ export default function PppoeUsersPage() {
         t('common.success')
       );
       setIsExtendModalOpen(false);
-      loadData();
+      invalidateUserData();
     } catch (error: unknown) {
       await showError(error instanceof Error ? error.message : t('pppoe.failedExtendValidity'));
     } finally {
@@ -887,7 +911,7 @@ export default function PppoeUsersPage() {
     if (!confirmed) return;
     try {
       await pppoeApi.bulkUpdateStatus(Array.from(selectedUsers), newStatus);
-      await showSuccess(t('pppoe.usersUpdated').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); loadData();
+      await showSuccess(t('pppoe.usersUpdated').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); invalidateUserData();
     } catch (error: unknown) { console.error('Bulk error:', error); await showError(error instanceof Error ? error.message : t('common.failed')); }
   };
 
@@ -909,7 +933,7 @@ export default function PppoeUsersPage() {
     if (!confirmed) return;
     try {
       await Promise.all(Array.from(selectedUsers).map(id => pppoeApi.deleteUser(id)));
-      await showSuccess(t('pppoe.usersDeleted').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); loadData();
+      await showSuccess(t('pppoe.usersDeleted').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); invalidateUserData();
     } catch (error: unknown) { console.error('Bulk delete error:', error); await showError(error instanceof Error ? error.message : t('common.failed')); }
   };
 
@@ -1101,7 +1125,7 @@ export default function PppoeUsersPage() {
       }) as SyncImportResult;
       if (data.success) {
         setSyncResult(data);
-        loadData();
+        invalidateUserData();
         if (data.stats.failed === 0) {
           await showSuccess(t('common.success'));
         }
@@ -1135,7 +1159,7 @@ export default function PppoeUsersPage() {
     try {
       const formData = new FormData(); formData.append('file', importFile);
       const data = await pppoeApi.bulkUpload(formData) as BulkUploadResponse;
-      setImportResult(data.results); loadData(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }, 3000);
+      setImportResult(data.results); invalidateUserData(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }, 3000);
     } catch (error: unknown) { console.error('Import error:', error); await showError(t('pppoe.importFailed') + ': ' + (error instanceof Error ? error.message : '')); }
     finally { setImporting(false); }
   };
@@ -1149,7 +1173,7 @@ export default function PppoeUsersPage() {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
+  const filteredUsers = usersWithOnline.filter((user) => {
     const matchesSearch = searchQuery === '' || user.username.toLowerCase().includes(searchQuery.toLowerCase()) || user.name.toLowerCase().includes(searchQuery.toLowerCase()) || user.phone.includes(searchQuery);
     const matchesProfile = filterProfile === '' || user.profile.id === filterProfile;
     const matchesRouter = filterRouter === '' || (filterRouter === 'global' ? !user.routerId : user.routerId === filterRouter);
@@ -1216,14 +1240,14 @@ export default function PppoeUsersPage() {
   // Calculate stats
   const now = nowWIB();
   const startOfMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-  const registrationsThisMonth = users.filter((u) => new Date(u.createdAt) >= startOfMonth).length;
-  const renewalsThisMonth = users.filter((u) => {
+  const registrationsThisMonth = usersWithOnline.filter((u) => new Date(u.createdAt) >= startOfMonth).length;
+  const renewalsThisMonth = usersWithOnline.filter((u) => {
     const updated = new Date(u.updatedAt);
     const created = new Date(u.createdAt);
     return updated >= startOfMonth && updated.getTime() !== created.getTime();
   }).length;
-  const isolatedExpired = users.filter((u) => u.status === 'isolated' || (u.expiredAt && isExpired(u.expiredAt))).length;
-  const blockedUsers = users.filter((u) => u.status === 'blocked').length;
+  const isolatedExpired = usersWithOnline.filter((u) => u.status === 'isolated' || (u.expiredAt && isExpired(u.expiredAt))).length;
+  const blockedUsers = usersWithOnline.filter((u) => u.status === 'blocked').length;
 
   const canView = hasPermission('customers.view');
   const canCreate = hasPermission('customers.create');
@@ -1698,7 +1722,7 @@ export default function PppoeUsersPage() {
         <AddPppoeUserModal
           isOpen={isDialogOpen && !editingUser}
           onClose={() => { setIsDialogOpen(false); setEditingUser(null); }}
-          onSuccess={() => loadData()}
+          onSuccess={() => invalidateUserData()}
           profiles={profiles}
           routers={routers}
           areas={areas}

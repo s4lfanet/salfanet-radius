@@ -319,7 +319,7 @@ export default function NewPppoeUserPage() {
                 {formData.idCardPhoto ? (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={formData.idCardPhoto} alt="KTP" className="w-full max-w-xs h-32 object-cover rounded-lg border-2 border-emerald-500" />
+                    <img src={formData.idCardPhoto} alt="KTP" className="w-full max-w-xs h-32 object-cover rounded-lg border-2 border-emerald-500" loading="lazy" />
                     <button type="button" onClick={() => field('idCardPhoto', '')}
                       className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-red-600">
                       <X className="w-3 h-3" />
@@ -383,7 +383,7 @@ export default function NewPppoeUserPage() {
                     {formData.installationPhotos.map((photo, i) => (
                       <div key={i} className="relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photo} alt={`Instalasi ${i + 1}`} className="w-full h-16 object-cover rounded border" />
+                        <img src={photo} alt={`Instalasi ${i + 1}`} className="w-full h-16 object-cover rounded border" loading="lazy" />
                         <button type="button" onClick={() => setFormData(prev => ({ ...prev, installationPhotos: prev.installationPhotos.filter((_, idx) => idx !== i) }))}
                           className="absolute top-0.5 right-0.5 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
                           <X className="h-2.5 w-2.5" />

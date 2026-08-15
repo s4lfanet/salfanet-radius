@@ -412,7 +412,7 @@ export default function DownloadApkPage() {
         <div className="w-44 h-44 mx-auto rounded-xl border border-slate-700 bg-slate-800/60 flex items-center justify-center overflow-hidden mb-3">
           {currentLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={currentLogo} alt="Logo" className="max-h-full max-w-full object-contain p-3" />
+            <img src={currentLogo} alt="Logo" className="max-h-full max-w-full object-contain p-3" loading="lazy" />
           ) : (
             <div className="flex flex-col items-center gap-2">
               <ImageIcon className="w-10 h-10 text-slate-600" />
