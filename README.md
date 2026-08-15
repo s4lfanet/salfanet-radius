@@ -991,6 +991,33 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.6.0 — 2026-08-15 — Frontend Performance Optimization + Auto-Changelog Fix
+
+### Summary
+Frontend performance optimization pass: remove dead dependency, code-split heavy chart library, fix broken auto-changelog script path.
+
+### Performance Optimizations
+- **[REMOVED]** `sweetalert2` dari `dependencies` — dead dependency, sudah diganti CyberToast bridge (`@/lib/sweetalert`). Reduce install size ~150KB.
+- **[MOVED]** `@types/leaflet` dari `dependencies` ke `devDependencies` — type-only package, tidak perlu di production deps.
+- **[CODE-SPLIT]** `recharts` (~400KB) sebelumnya static import di `components/charts/index.tsx` → sekarang dynamic import via `next/dynamic` dengan `ssr: false`. recharts hanya loaded saat chart components dibutuhkan (dashboard/analitik pages), tidak di initial bundle untuk non-chart pages.
+  - Split: `charts/RechartsComponents.tsx` (internal, recharts imports) + `charts/index.tsx` (public API, dynamic load)
+  - Non-recharts components (`ChartCard`, `TopRevenueSources`) tetap static export
+
+### Auto-Changelog Fix
+- **[FIXED]** `sync-readme-changelog.mjs` dipindah dari `backend/scripts/` ke root `scripts/` — GitHub Action (`sync-readme-changelog.yml`) memanggil `node scripts/sync-readme-changelog.mjs` dari repo root, tapi file ada di `backend/scripts/` setelah monorepo restructure. Auto-sync README changelog sekarang berfungsi lagi.
+- **[VERIFIED]** Script berjalan sukses dari root: `node scripts/sync-readme-changelog.mjs` → "README.md updated from CHANGELOG.md"
+
+### Build Performance
+- Compile: 11.2s (Turbopack, sebelumnya 13.0s) — 14% faster
+- TypeScript: 6.2s
+- Total: ~18s
+- Bundle: 8,863 KB (257 files) — recharts sekarang di separate chunk (443 KB), hanya loaded on-demand
+
+### Commits
+- `9464c61d` — perf: remove dead sweetalert2 dep, move @types/leaflet to devDeps, dynamic import recharts, fix auto-changelog script path
+
+---
+
 ### v5.5.0 — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
 
 ### Summary
@@ -1232,35 +1259,6 @@ Comprehensive production hardening pass covering cron reliability, distributed l
 - `frontend/src/app/pay-manual/page.tsx` — Error handling fix
 - `backend/tests/cron-lock.test.ts` — New test file
 - `backend/tests/timezone.test.ts` — New test file
-
----
-
-### v5.1.0 — 2026-08-15 — Phase 8: Complete React Query Migration
-
-### Summary
-Completed React Query migration for all remaining admin pages. 80 files changed, net reduction of 875 lines of code. All admin pages now use `useApiQuery`/`useQueryClient` instead of manual `useEffect + apiAdmin + load()` patterns.
-
-### Pages Migrated (65+ pages across 8 batches)
-- **Settings** (15 files): company, cloudflare-tunnel, cron, database, email, footer, genieacs, isolation (+ mikrotik + templates), referral, security, subdomain, telegram
-- **GenieACS** (6 files): auto-provision, devices, parameter-config, tasks, virtual-parameters, vp-scripts
-- **Network** (11 files): customers, diagrams, fiber-cables, fiber-cores, fiber-joint-closures, map, odcs, splice-points, unified-map, vpn-client, vpn-server
-- **PPPoE + Hotspot** (10 files): addons, profiles, registrations, stopped, agent (+ deposits), evoucher, profile, rekap-voucher, template
-- **FreeRADIUS** (6 files): backup, config, logs, radcheck, radtest, status
-- **Other admin** (23 files): data-usage, download-apk, ippool, isolated-users, laporan/analitik, logs/activity, management, manual-payments, notifications, olt/alerts, olt/monitoring, payment/bank-accounts, payment-gateway, push-notifications, referrals, sessions/pppoe, suspend-requests, system, technicians, topup-requests, tickets (+ [id] + categories), whatsapp (5 files), inventory (4 files)
-
-### Key Changes
-- Mutations now use `queryClient.invalidateQueries()` instead of manual `load()` reloads
-- Filter/pagination params included in query keys for automatic refetch tracking
-- Reference data (routers, company, templates) cached with `staleTime: 300000` (5 min)
-- Polling uses `refetchInterval` instead of `setInterval`
-- Form/edit state synced from query data via `useMemo` + `useEffect`
-- Auth pages (login, 2FA) intentionally NOT migrated
-
-### Verification
-- `npx tsc --noEmit`: 0 errors
-- `npx next build`: success (local + VPS)
-- PM2: all 4 processes online
-- Smoke tests: health 200, login 200, 404, protected 401, upload 401
 
 ---
 
