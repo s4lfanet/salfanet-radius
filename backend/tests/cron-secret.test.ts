@@ -33,14 +33,14 @@ function safeCompare(a: string, b: string): boolean {
 }
 
 function testSafeCompare() {
-  console.log('\n--- Test: Timing-safe comparison ---');
+  console.log('\n--- Test: Timing-safe comparison (fail-closed) ---');
 
   assert(safeCompare('abc123', 'abc123') === true, 'Equal strings match');
   assert(safeCompare('abc123', 'abc124') === false, 'Different strings do not match');
-  // Note: safeCompare('', '') returns true (empty buffers are equal).
-  // Production code prevents this via: cronSecret && headerSecret && safeCompare(...)
-  // which short-circuits on empty strings before calling safeCompare.
-  assert(safeCompare('', '') === true, 'Empty strings technically match (production guards via && short-circuit)');
+  // Fail-closed: empty strings always return false, even if both are empty.
+  assert(safeCompare('', '') === false, 'Empty strings do not match (fail-closed)');
+  assert(safeCompare('', 'abc') === false, 'Empty first arg does not match');
+  assert(safeCompare('abc', '') === false, 'Empty second arg does not match');
   assert(safeCompare('abc', 'abcd') === false, 'Different lengths do not match');
   assert(safeCompare('a', 'b') === false, 'Single char mismatch');
 }

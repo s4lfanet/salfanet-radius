@@ -26,8 +26,12 @@ import { timingSafeEqual } from 'crypto'
 /**
  * Timing-safe string comparison to prevent timing attacks on CRON_SECRET.
  * Returns true if both strings are equal (same length + same bytes).
+ * Fail-closed: empty strings always return false, even if both are empty.
  */
 function safeCompare(a: string, b: string): boolean {
+  // Fail-closed: reject empty strings regardless of match.
+  // This prevents accidental authentication when secrets are not configured.
+  if (!a || !b || a.length === 0 || b.length === 0) return false
   if (a.length !== b.length) return false
   try {
     return timingSafeEqual(Buffer.from(a), Buffer.from(b))
