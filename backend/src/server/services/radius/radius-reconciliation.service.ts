@@ -62,19 +62,39 @@ export interface ReconciliationReport {
  * Uses cursor pagination to avoid loading entire RADIUS tables into memory.
  */
 export async function runReconciliation(batchSize = 500): Promise<ReconciliationReport> {
-  // Get all active PPPoE users (not deleted) — select only needed fields
-  const salfaNetUsers = await prisma.pppoeUser.findMany({
-    select: {
-      id: true,
-      username: true,
-      password: true,
-      ipAddress: true,
-      routerId: true,
-      profileId: true,
-      status: true,
-      profile: { select: { groupName: true } },
-    },
-  });
+  // Get all active PPPoE users (not deleted) — read in batches using cursor pagination
+  // to avoid loading the entire user table into memory on large deployments.
+  const salfaNetUsers: Array<{
+    id: string;
+    username: string;
+    password: string;
+    ipAddress: string | null;
+    routerId: string | null;
+    profileId: string | null;
+    status: string;
+    profile: { groupName: string } | null;
+  }> = [];
+
+  let userCursor: string | undefined;
+  do {
+    const batch = await prisma.pppoeUser.findMany({
+      take: batchSize,
+      ...(userCursor ? { skip: 1, cursor: { id: userCursor } } : {}),
+      orderBy: { id: 'asc' },
+      select: {
+        id: true,
+        username: true,
+        password: true,
+        ipAddress: true,
+        routerId: true,
+        profileId: true,
+        status: true,
+        profile: { select: { groupName: true } },
+      },
+    });
+    salfaNetUsers.push(...batch);
+    userCursor = batch.length > 0 ? batch[batch.length - 1].id : undefined;
+  } while (userCursor);
 
   // Build lookup maps for SalfaNet users
   const salfaNetUsernames = new Set(salfaNetUsers.map(u => u.username));
