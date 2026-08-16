@@ -522,6 +522,8 @@ function qrisListenerManifest(pkg: string): string {
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
@@ -544,6 +546,14 @@ function qrisListenerManifest(pkg: string): string {
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
+        </service>
+        <service
+            android:name=".WatchdogService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Monitor payment notifications for QRIS transactions" />
         </service>
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
@@ -809,6 +819,9 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= 33) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
         }
+
+        // Start watchdog foreground service to keep listener alive
+        WatchdogService.start(this)
 
         findViewById<Button>(R.id.btnSave).setOnClickListener {
             prefs.edit()
@@ -1092,6 +1105,172 @@ class QrisNotificationListener : NotificationListenerService() {
 `;
 }
 
+function qrisWatchdogService(pkg: string): string {
+  return `package ${pkg}
+
+import android.app.AlarmManager
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.IBinder
+import android.os.SystemClock
+import android.provider.Settings
+import android.service.notification.NotificationListenerService
+import android.util.Log
+
+class WatchdogService : Service() {
+
+    companion object {
+        private const val CHANNEL_ID = "qris_watchdog_channel"
+        private const val NOTIF_ID = 9999
+        private const val WATCHDOG_INTERVAL_MS = 15 * 60 * 1000L // 15 minutes
+        private const val PENDING_ALARM_REQUEST = 1001
+
+        fun start(context: Context) {
+            val intent = Intent(context, WatchdogService::class.java)
+            if (Build.VERSION.SDK_INT >= 26) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        createChannel()
+        startForeground(NOTIF_ID, buildNotification())
+        Log.i("QrisWatchdog", "WatchdogService started — keeping listener alive")
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Check if notification listener is still enabled
+        checkListenerEnabled()
+        // Schedule next watchdog check
+        scheduleNextCheck()
+        // Return START_STICKY so Android tries to restart us if killed
+        return START_STICKY
+    }
+
+    private fun checkListenerEnabled() {
+        val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
+        val isEnabled = flat != null && flat.contains(packageName)
+        if (!isEnabled) {
+            Log.w("QrisWatchdog", "Notification listener is DISABLED — sending rebind request + notification")
+            // Try to force rebind the notification listener service
+            try {
+                val component = ComponentName(this, QrisNotificationListener::class.java)
+                NotificationListenerService.requestRebind(component)
+                Log.i("QrisWatchdog", "requestRebind sent for QrisNotificationListener")
+            } catch (e: Exception) {
+                Log.e("QrisWatchdog", "requestRebind failed: ${e.message}")
+            }
+            // Also send a notification prompting user to re-enable
+            sendReEnableNotification()
+        } else {
+            Log.i("QrisWatchdog", "Notification listener is active ✓")
+            // Even if enabled, send requestRebind to refresh the connection
+            try {
+                val component = ComponentName(this, QrisNotificationListener::class.java)
+                NotificationListenerService.requestRebind(component)
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    private fun sendReEnableNotification() {
+        val notifManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        val pendingIntent = PendingIntent.getActivity(
+            this, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val notif = Notification.Builder(this, CHANNEL_ID)
+            .setContentTitle("QRIS Listener Berhenti!")
+            .setContentText("Tap untuk mengaktifkan kembali listener notifikasi")
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        notifManager.notify(NOTIF_ID + 1, notif)
+    }
+
+    private fun scheduleNextCheck() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, WatchdogService::class.java)
+        val pendingIntent = PendingIntent.getService(
+            this, PENDING_ALARM_REQUEST, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val triggerAt = SystemClock.elapsedRealtime() + WATCHDOG_INTERVAL_MS
+        alarmManager.setInexactRepeating(
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            triggerAt,
+            WATCHDOG_INTERVAL_MS,
+            pendingIntent
+        )
+        Log.i("QrisWatchdog", "Next watchdog check scheduled in 15 minutes")
+    }
+
+    private fun createChannel() {
+        if (Build.VERSION.SDK_INT >= 26) {
+            val channel = NotificationChannel(
+                CHANNEL_ID,
+                "QRIS Watchdog",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Keeps QRIS Listener running in background"
+                setShowBadge(false)
+            }
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun buildNotification(): Notification {
+        val builder = if (Build.VERSION.SDK_INT >= 26) {
+            Notification.Builder(this, CHANNEL_ID)
+        } else {
+            Notification.Builder(this)
+        }
+        return builder
+            .setContentTitle("Salfanet QRIS Listener")
+            .setContentText("Berjalan di background — memantau notifikasi pembayaran")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .setPriority(Notification.PRIORITY_LOW)
+            .build()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.w("QrisWatchdog", "WatchdogService destroyed — scheduling restart via AlarmManager")
+        // Schedule a restart even if we're being destroyed
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(this, WatchdogService::class.java)
+        val pendingIntent = PendingIntent.getService(
+            this, PENDING_ALARM_REQUEST, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.set(
+            AlarmManager.ELAPSED_REALTIME_WAKEUP,
+            SystemClock.elapsedRealtime() + 5000, // restart in 5 seconds
+            pendingIntent
+        )
+    }
+}
+`;
+}
+
 function qrisBootReceiver(pkg: string): string {
   return `package ${pkg}
 
@@ -1104,7 +1283,8 @@ import android.util.Log
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            Log.i("QrisBootReceiver", "Boot completed — NotificationListenerService will auto-resume")
+            Log.i("QrisBootReceiver", "Boot completed — starting WatchdogService")
+            WatchdogService.start(context)
         }
     }
 }
@@ -1167,6 +1347,7 @@ async function writeProjectToDisk(
     writeFileSync(join(projectDir, 'app/src/main/AndroidManifest.xml'), qrisListenerManifest(cfg.pkg));
     writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/MainActivity.kt`), qrisListenerActivity(cfg.pkg));
     writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/QrisNotificationListener.kt`), qrisNotificationListener(cfg.pkg));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/WatchdogService.kt`), qrisWatchdogService(cfg.pkg));
     writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/BootReceiver.kt`), qrisBootReceiver(cfg.pkg));
     writeFileSync(join(projectDir, 'app/src/main/res/layout/activity_main.xml'), qrisListenerLayoutXml());
     writeFileSync(join(projectDir, 'app/src/main/res/values/strings.xml'), stringsXml(appName));
