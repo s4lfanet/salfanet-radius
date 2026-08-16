@@ -145,15 +145,37 @@ export async function managePppSecret(
     } else {
       // enable / disable / update
       if (!existing) {
+        // Secret doesn't exist — for enable/disable, create it (upsert behavior)
+        // This handles cases where secret was never created (e.g. was on RADIUS mode)
+        if (action === 'enable' || action === 'disable') {
+          const disabledVal = action === 'disable' ? 'yes' : 'no'
+          const entry: string[] = [
+            `=name=${params.username}`,
+            `=password=${params.password || ''}`,
+            `=service=${service}`,
+            `=disabled=${disabledVal}`,
+          ]
+          if (params.profile) entry.push(`=profile=${params.profile}`)
+          if (params.comment !== undefined) entry.push(`=comment=${params.comment}`)
+          await menu('/ppp/secret/add', entry)
+          return { success: true, action, username: params.username, message: `Created secret (disabled=${disabledVal})` }
+        }
         return { success: false, action, username: params.username, message: 'Secret not found' }
       }
       const id = existing['.id'] || existing.id
       if (action === 'disable') {
-        await menu('/ppp/secret/set', [`=.id=${id}`, `=disabled=yes`])
-        return { success: true, action, username: params.username, message: 'Disabled' }
+        const upd: string[] = [`=.id=${id}`, `=disabled=yes`]
+        // Also update profile if provided (e.g. change to isolir profile while disabled)
+        if (params.profile) upd.push(`=profile=${params.profile}`)
+        await menu('/ppp/secret/set', upd)
+        return { success: true, action, username: params.username, message: 'Disabled' + (params.profile ? ` (profile=${params.profile})` : '') }
       } else if (action === 'enable') {
-        await menu('/ppp/secret/set', [`=.id=${id}`, `=disabled=no`])
-        return { success: true, action, username: params.username, message: 'Enabled' }
+        const upd: string[] = [`=.id=${id}`, `=disabled=no`]
+        // Also update profile if provided (e.g. restore original profile or set isolir)
+        if (params.profile) upd.push(`=profile=${params.profile}`)
+        if (params.password) upd.push(`=password=${params.password}`)
+        await menu('/ppp/secret/set', upd)
+        return { success: true, action, username: params.username, message: 'Enabled' + (params.profile ? ` (profile=${params.profile})` : '') }
       } else if (action === 'update') {
         const upd: string[] = [`=.id=${id}`]
         if (params.password) upd.push(`=password=${params.password}`)
