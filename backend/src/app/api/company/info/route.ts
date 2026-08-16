@@ -2,8 +2,10 @@
 import { prisma } from '@/server/db/client';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
+// Company info is public, read-only, and rarely changes.
+// Use veryRelaxed limit (500/min) + Cache-Control so browser/proxy caches it.
 export async function GET(request: NextRequest) {
-  const limited = await rateLimit(request, RateLimitPresets.relaxed);
+  const limited = await rateLimit(request, RateLimitPresets.veryRelaxed);
   if (limited) {
     return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
   }
@@ -38,6 +40,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: company
+    }, {
+      headers: {
+        // Cache for 5 minutes in browser/proxy — company info rarely changes
+        'Cache-Control': 'public, max-age=300, s-maxage=300',
+      },
     });
   } catch (error: any) {
     console.error('Get company info error:', error);
