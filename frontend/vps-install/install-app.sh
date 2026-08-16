@@ -301,6 +301,12 @@ setup_prisma() {
     # Fix Prisma engine permissions first
     fix_prisma_engines
 
+    # fix_prisma_engines changes dir to APP_DIR, so re-cd to backend
+    cd ${APP_DIR}/backend || {
+        print_error "Failed to return to ${APP_DIR}/backend"
+        return 1
+    }
+
     ensure_mysql_ready_for_app_setup || return 1
     
     # Disable Prisma update notifications
@@ -315,7 +321,7 @@ setup_prisma() {
 
     # Generate Prisma Client
     print_info "Generating Prisma Client..."
-    if ! "$PRISMA_BIN" generate 2>&1 | tee /tmp/prisma-generate.log; then
+    if ! "$PRISMA_BIN" generate --schema="${APP_DIR}/backend/prisma/schema.prisma" 2>&1 | tee /tmp/prisma-generate.log; then
         print_error "Prisma generate failed!"
         cat /tmp/prisma-generate.log
         return 1
@@ -327,7 +333,7 @@ setup_prisma() {
     print_info "Creating database tables with Prisma..."
     print_info "This will create 47+ tables for the application..."
     
-    if ! "$PRISMA_BIN" db push --accept-data-loss --skip-generate 2>&1 | tee /tmp/prisma-push.log; then
+    if ! "$PRISMA_BIN" db push --accept-data-loss --skip-generate --schema="${APP_DIR}/backend/prisma/schema.prisma" 2>&1 | tee /tmp/prisma-push.log; then
         print_error "Prisma db push failed!"
         cat /tmp/prisma-push.log
         return 1
