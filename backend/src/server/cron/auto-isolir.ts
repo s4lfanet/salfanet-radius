@@ -142,20 +142,40 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
       if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
         if (connType === 'PPPOE') {
           // PPPoE: enable + change profile to 'isolir'
-          managePppSecret(user.router.id, 'enable', { username: user.username, password: user.password, profile: 'isolir' })
-            .then(r => console.log(`[AUTO_ISOLIR] PPP secret enable+isolir for ${user.username}: ${r.message}`))
-            .catch(e => console.error(`[AUTO_ISOLIR] PPP secret enable failed for ${user.username}:`, e?.message || e));
+          // AWAIT — must complete before kick so user gets isolir profile on reconnect
+          try {
+            const r = await managePppSecret(user.router.id, 'enable', {
+              username: user.username,
+              password: user.password,
+              profile: 'isolir',
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+            console.log(`[AUTO_ISOLIR] PPP secret enable+isolir for ${user.username}: ${r.message}`);
+          } catch (e: any) {
+            console.error(`[AUTO_ISOLIR] PPP secret enable failed for ${user.username}:`, e?.message || e);
+          }
 
           // Kick active PPPoE session via MikroTik API (critical for local — CoA doesn't work on local-auth sessions)
-          kickPppoeSession(user.router.id, user.username)
-            .then(kicked => console.log(`[AUTO_ISOLIR] Kicked ${kicked} PPPoE session(s) for ${user.username}`))
-            .catch(e => console.error(`[AUTO_ISOLIR] Kick failed for ${user.username}:`, e?.message || e));
+          try {
+            const kicked = await kickPppoeSession(user.router.id, user.username);
+            console.log(`[AUTO_ISOLIR] Kicked ${kicked} PPPoE session(s) for ${user.username}`);
+          } catch (e: any) {
+            console.error(`[AUTO_ISOLIR] Kick failed for ${user.username}:`, e?.message || e);
+          }
         } else if (connType === 'HOTSPOT') {
           // Hotspot: disable hotspot user
-          import('./mikrotik/arp-hotspot.service').then(({ manageHotspotUser }) =>
-            manageHotspotUser(user.router!.id, 'update', { username: user.username, password: user.password, disabled: true, comment: 'Auto-isolir' })
-          ).then(r => console.log(`[AUTO_ISOLIR] Hotspot disable for ${user.username}: ${r.message}`))
-            .catch(e => console.error(`[AUTO_ISOLIR] Hotspot disable failed for ${user.username}:`, e?.message || e));
+          try {
+            const { manageHotspotUser, kickHotspotSession } = await import('./mikrotik/arp-hotspot.service');
+            const r = await manageHotspotUser(user.router!.id, 'update', {
+              username: user.username, password: user.password, disabled: true, comment: 'Auto-isolir'
+            });
+            console.log(`[AUTO_ISOLIR] Hotspot disable for ${user.username}: ${r.message}`);
+            // Also kick active hotspot session
+            const kicked = await kickHotspotSession(user.router!.id, user.username);
+            console.log(`[AUTO_ISOLIR] Kicked ${kicked} hotspot session(s) for ${user.username}`);
+          } catch (e: any) {
+            console.error(`[AUTO_ISOLIR] Hotspot disable failed for ${user.username}:`, e?.message || e);
+          }
         }
         // STATIC_IP: isolation handled via RADIUS group change (radusergroup → isolir)
         // No MikroTik action needed — ARP entry stays, but RADIUS assigns isolir profile
@@ -241,22 +261,28 @@ export async function runAutoStop(): Promise<{ stopped: number; total: number; e
       const connType = user.connectionType || 'PPPOE';
       if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
         if (connType === 'PPPOE') {
-          managePppSecret(user.router.id, 'disable', { username: user.username, password: user.password })
-            .then(r => console.log(`[AUTO_STOP] PPP secret disable for ${user.username}: ${r.message}`))
-            .catch(e => console.error(`[AUTO_STOP] PPP secret disable failed for ${user.username}:`, e?.message || e));
-
-          kickPppoeSession(user.router.id, user.username)
-            .then(kicked => console.log(`[AUTO_STOP] Kicked ${kicked} PPPoE session(s) for ${user.username}`))
-            .catch(e => console.error(`[AUTO_STOP] Kick failed for ${user.username}:`, e?.message || e));
+          try {
+            const r = await managePppSecret(user.router.id, 'disable', { username: user.username, password: user.password });
+            console.log(`[AUTO_STOP] PPP secret disable for ${user.username}: ${r.message}`);
+          } catch (e: any) {
+            console.error(`[AUTO_STOP] PPP secret disable failed for ${user.username}:`, e?.message || e);
+          }
+          try {
+            const kicked = await kickPppoeSession(user.router.id, user.username);
+            console.log(`[AUTO_STOP] Kicked ${kicked} PPPoE session(s) for ${user.username}`);
+          } catch (e: any) {
+            console.error(`[AUTO_STOP] Kick failed for ${user.username}:`, e?.message || e);
+          }
         } else if (connType === 'HOTSPOT') {
-          import('./mikrotik/arp-hotspot.service').then(({ manageHotspotUser, kickHotspotSession }) => {
-            manageHotspotUser(user.router!.id, 'update', { username: user.username, password: user.password, disabled: true })
-              .then(r => console.log(`[AUTO_STOP] Hotspot disable for ${user.username}: ${r.message}`))
-              .catch(e => console.error(`[AUTO_STOP] Hotspot disable failed for ${user.username}:`, e?.message || e));
-            kickHotspotSession(user.router!.id, user.username)
-              .then(kicked => console.log(`[AUTO_STOP] Kicked ${kicked} hotspot session(s) for ${user.username}`))
-              .catch(e => console.error(`[AUTO_STOP] Hotspot kick failed for ${user.username}:`, e?.message || e));
-          });
+          try {
+            const { manageHotspotUser, kickHotspotSession } = await import('./mikrotik/arp-hotspot.service');
+            const r = await manageHotspotUser(user.router!.id, 'update', { username: user.username, password: user.password, disabled: true });
+            console.log(`[AUTO_STOP] Hotspot disable for ${user.username}: ${r.message}`);
+            const kicked = await kickHotspotSession(user.router!.id, user.username);
+            console.log(`[AUTO_STOP] Kicked ${kicked} hotspot session(s) for ${user.username}`);
+          } catch (e: any) {
+            console.error(`[AUTO_STOP] Hotspot disable failed for ${user.username}:`, e?.message || e);
+          }
         }
         // STATIC_IP: RADIUS tables already cleared, ARP entry can stay (no auth without RADIUS)
       }
