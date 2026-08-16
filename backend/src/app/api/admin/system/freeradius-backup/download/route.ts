@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { existsSync, statSync, createReadStream } from 'fs';
 import path from 'path';
 import { getAppDir, getBackupDir, SAFE_BACKUP_FILENAME } from '../route';
@@ -8,8 +7,9 @@ import { getAppDir, getBackupDir, SAFE_BACKUP_FILENAME } from '../route';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
   if (session.user.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }

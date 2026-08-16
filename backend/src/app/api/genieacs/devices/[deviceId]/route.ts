@@ -3,8 +3,6 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, fail } from '@/lib/genieacs/helpers';
 import { getDevice, deleteDevice } from '@/lib/genieacs/api-client';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 
 /**
  * GET /api/genieacs/devices/[deviceId]
@@ -14,7 +12,7 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ deviceId: string }> },
 ) {
-  const auth = await requirePermission('settings.genieacs');
+  const auth = await requirePermission('network.view');
   if (!auth.authorized) return auth.response;
 
   try {
@@ -37,10 +35,9 @@ export async function DELETE(
   try {
     const { deviceId } = await params;
     await deleteDevice(deviceId);
-    const session = await getServerSession(authOptions);
     await logActivity({
-      username: session?.user?.name ?? 'unknown',
-      userId: session?.user?.id,
+      username: auth.session?.user?.name ?? 'unknown',
+      userId: auth.session?.user?.id,
       action: 'genieacs.device.delete',
       description: `Deleted GenieACS device: ${deviceId}`,
       module: 'genieacs',

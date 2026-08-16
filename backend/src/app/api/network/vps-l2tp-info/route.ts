@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/server/auth/config'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { readFile } from 'fs/promises'
 
 const L2TP_INFO_FILE = '/etc/salfanet/l2tp/l2tp-server-info.json'
 
 export async function GET() {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authCheck = await requirePermission('network.view')
+  if (!authCheck.authorized) return authCheck.response
 
   try {
     const raw = await readFile(L2TP_INFO_FILE, 'utf8')
