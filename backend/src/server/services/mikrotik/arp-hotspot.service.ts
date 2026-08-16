@@ -4,6 +4,22 @@ import { prisma } from '@/server/db/client'
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 
+/**
+ * Wrapper for api.write('/.../print', [query]) that handles node-routeros bug:
+ * when a query filter returns no results, node-routeros throws UNKNOWNREPLY: !empty
+ * instead of returning an empty array. This catches that and returns [].
+ */
+async function safePrint(menu: (...args: any[]) => Promise<any[]>, path: string, args?: any[]): Promise<any[]> {
+  try {
+    return await menu(path, args || [])
+  } catch (err: any) {
+    if (err?.errno === 'UNKNOWNREPLY' || String(err?.message || '').includes('!empty')) {
+      return [] // no results — return empty array
+    }
+    throw err
+  }
+}
+
 async function getRouterConfig(routerId: string) {
   const router = await prisma.router.findUnique({
     where: { id: routerId },
@@ -77,7 +93,7 @@ export async function manageArpEntry(
 
     if (action === 'delete') {
       // Find ARP entry by IP address and remove it
-      const entries = (await menu('/ip/arp/print', [`?address=${params.ipAddress}`])) as Array<any>
+      const entries = await safePrint(menu, '/ip/arp/print', [`?address=${params.ipAddress}`])
       if (entries.length === 0) {
         return { success: true, action, message: `ARP entry for ${params.ipAddress} already absent` }
       }
@@ -93,7 +109,7 @@ export async function manageArpEntry(
         return { success: false, action, message: 'IP address required for ARP create' }
       }
       // Check if entry already exists for this IP
-      const existing = (await menu('/ip/arp/print', [`?address=${params.ipAddress}`])) as Array<any>
+      const existing = await safePrint(menu, '/ip/arp/print', [`?address=${params.ipAddress}`])
       const macVal = params.macAddress || '00:00:00:00:00:00'
       if (existing.length > 0) {
         // Update existing entry
@@ -119,7 +135,7 @@ export async function manageArpEntry(
       const newIp = params.ipAddress
       if (oldIp && oldIp !== newIp) {
         // Remove old ARP entry
-        const oldEntries = (await menu('/ip/arp/print', [`?address=${oldIp}`])) as Array<any>
+        const oldEntries = await safePrint(menu, '/ip/arp/print', [`?address=${oldIp}`])
         for (const entry of oldEntries) {
           const id = entry['.id'] || entry.id
           if (id) await menu('/ip/arp/remove', [`=.id=${id}`])
@@ -127,7 +143,7 @@ export async function manageArpEntry(
       }
       // Upsert new entry
       const macVal = params.macAddress || '00:00:00:00:00:00'
-      const existing = (await menu('/ip/arp/print', [`?address=${newIp}`])) as Array<any>
+      const existing = await safePrint(menu, '/ip/arp/print', [`?address=${newIp}`])
       if (existing.length > 0) {
         const id = existing[0]['.id'] || existing[0].id
         const upd: string[] = [`=.id=${id}`, `=mac-address=${macVal}`]
@@ -203,7 +219,7 @@ export async function manageHotspotUser(
     const lookupName = action === 'update' && params.oldUsername ? params.oldUsername : params.username
 
     if (action === 'delete') {
-      const users = (await menu('/ip/hotspot/user/print', [`?name=${params.username}`])) as Array<any>
+      const users = await safePrint(menu, '/ip/hotspot/user/print', [`?name=${params.username}`])
       if (users.length === 0) {
         return { success: true, action, message: `Hotspot user ${params.username} already absent` }
       }
@@ -219,7 +235,7 @@ export async function manageHotspotUser(
         return { success: false, action, message: 'Username required for hotspot create' }
       }
       // Check if user already exists
-      const existing = (await menu('/ip/hotspot/user/print', [`?name=${params.username}`])) as Array<any>
+      const existing = await safePrint(menu, '/ip/hotspot/user/print', [`?name=${params.username}`])
       const disabledVal = params.disabled ? 'yes' : 'no'
       if (existing.length > 0) {
         // Update existing
@@ -248,7 +264,7 @@ export async function manageHotspotUser(
     if (action === 'update') {
       // If username changed, delete old and create new
       if (params.oldUsername && params.oldUsername !== params.username) {
-        const oldUsers = (await menu('/ip/hotspot/user/print', [`?name=${params.oldUsername}`])) as Array<any>
+        const oldUsers = await safePrint(menu, '/ip/hotspot/user/print', [`?name=${params.oldUsername}`])
         for (const u of oldUsers) {
           const id = u['.id'] || u.id
           if (id) await menu('/ip/hotspot/user/remove', [`=.id=${id}`])
@@ -267,7 +283,7 @@ export async function manageHotspotUser(
         return { success: true, action, message: `Hotspot user renamed from ${params.oldUsername} to ${params.username}` }
       }
       // Same username — update in place
-      const existing = (await menu('/ip/hotspot/user/print', [`?name=${params.username}`])) as Array<any>
+      const existing = await safePrint(menu, '/ip/hotspot/user/print', [`?name=${params.username}`])
       if (existing.length === 0) {
         // Not found — create instead
         const disabledVal = params.disabled ? 'yes' : 'no'
@@ -330,7 +346,16 @@ export async function kickHotspotSession(routerId: string, username: string): Pr
         setTimeout(() => reject(new Error(`connect timeout for ${host}:${apiPort} after 20s`)), 20000)
       ),
     ])
-    const active = (await api.write('/ip/hotspot/active/print', [`?user=${username}`])) as Array<any>
+    // node-routeros throws UNKNOWNREPLY: !empty when query returns no results
+    let active: Array<any> = []
+    try {
+      active = (await api.write('/ip/hotspot/active/print', [`?user=${username}`])) as Array<any>
+    } catch (queryErr: any) {
+      if (queryErr?.errno === 'UNKNOWNREPLY' || String(queryErr?.message || '').includes('!empty')) {
+        return 0 // no active session — nothing to kick
+      }
+      throw queryErr
+    }
     let kicked = 0
     for (const session of active) {
       const id = session['.id'] || session.id
