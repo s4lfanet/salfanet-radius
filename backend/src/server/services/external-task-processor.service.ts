@@ -162,6 +162,31 @@ async function executeSyncMikrotik(payload: any, action: 'create' | 'update' | '
   const { managePppSecret } = await import('./mikrotik/ppp-secret.service');
   if (!payload.routerId || !payload.username) throw new Error('Missing routerId or username in payload');
 
+  // ── Check current user status from DB ──────────────────────────────────
+  // Task may be processed long after it was created. User status may have
+  // changed since then. Override profile/disabled based on CURRENT status:
+  //   isolated → profile='isolir', disabled=false (user can login to isolir profile)
+  //   stop/blocked → disabled=true (prevent login)
+  //   active → use payload profile/disabled as-is
+  let effectiveProfile = payload.profile;
+  let effectiveDisabled = payload.disabled;
+  try {
+    const user = await prisma.pppoeUser.findFirst({
+      where: { username: payload.username },
+      select: { status: true },
+    });
+    if (user) {
+      if (user.status === 'isolated') {
+        effectiveProfile = 'isolir';
+        effectiveDisabled = false;
+      } else if (user.status === 'stop' || user.status === 'blocked') {
+        effectiveDisabled = true;
+      }
+    }
+  } catch (e) {
+    // If DB lookup fails, use payload values as-is
+  }
+
   // managePppSecret already handles idempotency internally:
   // - create: uses API add, which will fail if duplicate (caught and logged)
   // - update: uses API set, which will fail if not found (caught and logged)
@@ -171,8 +196,8 @@ async function executeSyncMikrotik(payload: any, action: 'create' | 'update' | '
     const result = await managePppSecret(payload.routerId, action, {
       username: payload.username,
       password: payload.password,
-      profile: payload.profile,
-      disabled: payload.disabled,
+      profile: effectiveProfile,
+      disabled: effectiveDisabled,
       comment: payload.comment,
     });
     return `MikroTik ${action} for ${payload.username}: ${result.message}`;
