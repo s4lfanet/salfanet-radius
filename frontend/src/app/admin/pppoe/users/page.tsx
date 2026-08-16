@@ -488,8 +488,10 @@ export default function PppoeUsersPage() {
   const totalCount = usersQuery.data?.total || 0;
   const totalPages = usersQuery.data?.totalPages || 1;
 
-  // Realtime online/offline status polling — refresh every 10 seconds
-  // without reloading the entire page. Only fetches the online username set.
+  // Realtime online/offline + status polling — refresh every 10 seconds
+  // without reloading the entire page. Fetches online username set + status map
+  // (isolated/active/stop/blocked) so status changes from cron auto-isolir
+  // or manual actions by other admins are reflected in realtime.
   const usernames = useMemo(() => users.map(u => u.username).join(','), [users]);
   const onlineQuery = useApiQuery<PppoeOnlineStatusResponse>(
     '/api/pppoe/users/online-status',
@@ -503,16 +505,26 @@ export default function PppoeUsersPage() {
     () => new Set(onlineQuery.data?.online || []),
     [onlineQuery.data],
   );
-  // Merge online status into users — only updates if there's an actual change
+  const statusMap = useMemo(
+    () => onlineQuery.data?.statusMap || {},
+    [onlineQuery.data],
+  );
+  // Merge online status AND user status (isolated/active/stop) into users
+  // — only updates if there's an actual change to avoid unnecessary re-renders
   const usersWithOnline = useMemo(() => {
     let changed = false;
     const next = users.map(u => {
       const isOnline = onlineSet.has(u.username);
-      if (u.isOnline !== isOnline) { changed = true; return { ...u, isOnline }; }
+      const newStatus = statusMap[u.username];
+      const statusChanged = newStatus && newStatus !== u.status;
+      if (u.isOnline !== isOnline || statusChanged) {
+        changed = true;
+        return { ...u, isOnline, status: statusChanged ? newStatus : u.status };
+      }
       return u;
     });
     return changed ? next : users;
-  }, [users, onlineSet]);
+  }, [users, onlineSet, statusMap]);
 
   // Profiles — rarely changes, cache for 5 minutes
   const profilesQuery = useApiQuery<PppoeProfileListResponse>('/api/pppoe/profiles', {
