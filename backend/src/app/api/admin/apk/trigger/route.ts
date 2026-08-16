@@ -1484,9 +1484,17 @@ class QrisNotificationListener : NotificationListenerService() {
             .putString(PREF_DEBUG_LAST_EWALLET, "[\${packageName}]\\n\${rawText}")
             .apply()
 
-        val amount = extractAmount(rawText) ?: run {
+        val amount = extractAmount(rawText)
+
+        if (amount == null) {
+            // Pola tidak cocok — tetap kirim raw_text ke server dengan amount=0
+            // Server punya fallback parsing (sama seperti PHP qris_notify.php)
+            Log.w(TAG, "[\${displayLabel}] Pola tidak cocok, kirim raw_text ke server untuk parsing")
             prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
-                "Tidak cocok pola:\\n\${rawText.take(150)}").apply()
+                "Pola tidak cocok, kirim ke server:\\n\${rawText.take(150)}").apply()
+            scope.launch {
+                sendToServer(serverUrl, deviceKey, 0, packageName, rawText.take(255))
+            }
             return
         }
 
