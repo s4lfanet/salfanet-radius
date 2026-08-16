@@ -420,10 +420,11 @@ android {
     kotlinOptions { jvmTarget = '17' }
 }
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.appcompat:appcompat:1.7.0'
     implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.work:work-runtime-ktx:2.9.0'
-    implementation 'androidx.core:core-ktx:1.12.0'
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3'
+    implementation 'androidx.work:work-runtime-ktx:2.9.1'
 }
 `;
 }
@@ -520,10 +521,10 @@ function qrisListenerManifest(pkg: string): string {
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <application
         android:allowBackup="true"
         android:label="@string/app_name"
@@ -541,21 +542,17 @@ function qrisListenerManifest(pkg: string): string {
         </activity>
         <service
             android:name=".QrisNotificationListener"
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
-            android:exported="false">
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Memantau notifikasi pembayaran QRIS untuk konfirmasi pembayaran otomatis" />
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
-        <service
-            android:name=".WatchdogService"
-            android:foregroundServiceType="specialUse"
-            android:exported="false">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Monitor payment notifications for QRIS transactions" />
-        </service>
-        <receiver android:name=".BootReceiver" android:exported="true">
+        <receiver android:name=".BootReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
@@ -754,154 +751,479 @@ function qrisListenerLayoutXml(): string {
 function qrisListenerActivity(pkg: string): string {
   return `package ${pkg}
 
-import android.Manifest
-import android.app.Activity
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
-import android.text.method.ScrollingMovementMethod
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
-import android.widget.Toast
+import android.service.notification.NotificationListenerService as NLS
+import android.text.InputType
+import android.view.View
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import org.json.JSONArray
-import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-    companion object {
-        const val PREFS_NAME = "qris_listener_prefs"
-        const val PREF_WEBHOOK_URL = "webhook_url"
-        const val PREF_DEVICE_KEY = "device_key"
-        const val PREF_REGEX = "regex"
-        const val PREF_LOGS = "logs"
-        const val DEFAULT_REGEX = "Rp\\\\s*([\\\\d.,]+)"
+
+    private lateinit var prefs: SharedPreferences
+    private lateinit var etServerUrl: EditText
+    private lateinit var etDeviceKey: EditText
+    private lateinit var swEnabled: Switch
+    private lateinit var tvPermStatus: TextView
+    private lateinit var tvConnStatus: TextView
+    private lateinit var btnGrantPermission: Button
+    private lateinit var btnForceReconnect: Button
+    private lateinit var btnBatteryOpt: Button
+    private lateinit var tvDebug: TextView
+
+    private var lastAutoReconnectAttempt = 0L
+
+    private val handler = Handler(Looper.getMainLooper())
+    private val refreshRunnable: Runnable = object : Runnable {
+        override fun run() {
+            refreshDebug()
+            autoReconnectIfNeeded()
+            handler.postDelayed(this, 3000)
+        }
     }
 
-    private lateinit var tvStatus: TextView
-    private lateinit var tvLog: TextView
-    private lateinit var etWebhookUrl: EditText
-    private lateinit var etDeviceKey: EditText
-    private lateinit var etRegex: EditText
+    private val cBlue    get() = 0xFF1565C0.toInt()
+    private val cGreen   get() = 0xFF2E7D32.toInt()
+    private val cRed     get() = 0xFFC62828.toInt()
+    private val cSurface get() = 0xFFF0F2F5.toInt()
+    private val cCard    get() = 0xFFFFFFFF.toInt()
+    private val cBorder  get() = 0xFFE0E0E0.toInt()
+    private val cTextSec get() = 0xFF757575.toInt()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        prefs = getSharedPreferences(QrisNotificationListener.PREFS_NAME, Context.MODE_PRIVATE)
+        QrisWatchdogWorker.schedule(this)
 
-        tvStatus = findViewById(R.id.tvStatus)
-        tvLog = findViewById(R.id.tvLog)
-        etWebhookUrl = findViewById(R.id.etWebhookUrl)
-        etDeviceKey = findViewById(R.id.etDeviceKey)
-        etRegex = findViewById(R.id.etRegex)
-        tvLog.movementMethod = ScrollingMovementMethod()
+        val scroll = ScrollView(this).apply { setBackgroundColor(cSurface) }
+        val root   = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        scroll.addView(root)
 
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        // Header
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setBackgroundColor(cBlue)
+            setPadding(dp(16), dp(28), dp(16), dp(20))
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            try {
+                addView(ImageView(this@MainActivity).apply {
+                    setImageResource(R.mipmap.ic_launcher_round)
+                    layoutParams = LinearLayout.LayoutParams(dp(52), dp(52))
+                })
+            } catch (_: Exception) {}
+            addView(LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(dp(14), 0, 0, 0)
+                addView(TextView(this@MainActivity).apply {
+                    text = "QRIS Mandiri Listener"
+                    textSize = 19f
+                    setTextColor(0xFFFFFFFF.toInt())
+                    setTypeface(typeface, android.graphics.Typeface.BOLD)
+                })
+                addView(TextView(this@MainActivity).apply {
+                    text = "Salfanet Radius — Konfirmasi pembayaran QRIS otomatis"
+                    textSize = 11f
+                    setTextColor(0xFFBBDEFB.toInt())
+                })
+            })
+        })
 
-        // Load defaults from strings.xml (pre-filled at build time)
-        val defaultWebhook = getString(R.string.default_webhook_url)
-        val defaultKey = getString(R.string.default_device_key)
-
-        etWebhookUrl.setText(prefs.getString(PREF_WEBHOOK_URL, defaultWebhook))
-        etDeviceKey.setText(prefs.getString(PREF_DEVICE_KEY, defaultKey))
-        etRegex.setText(prefs.getString(PREF_REGEX, DEFAULT_REGEX))
-
-        // Request POST_NOTIFICATIONS permission
-        if (Build.VERSION.SDK_INT >= 33) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
-        }
-
-        // Start watchdog foreground service to keep listener alive
-        WatchdogService.start(this)
-
-        findViewById<Button>(R.id.btnSave).setOnClickListener {
-            prefs.edit()
-                .putString(PREF_WEBHOOK_URL, etWebhookUrl.text.toString().trim())
-                .putString(PREF_DEVICE_KEY, etDeviceKey.text.toString().trim())
-                .putString(PREF_REGEX, etRegex.text.toString().trim())
-                .apply()
-            Toast.makeText(this, "Konfigurasi disimpan", Toast.LENGTH_SHORT).show()
-            updateStatus()
-        }
-
-        findViewById<Button>(R.id.btnEnableNotif).setOnClickListener {
-            val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-            startActivity(intent)
-        }
-
-        findViewById<Button>(R.id.btnDisableBattery).setOnClickListener {
-            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                intent.data = Uri.parse("package:$packageName")
-                startActivity(intent)
-            } else {
-                Toast.makeText(this, "Optimasi baterai sudah dinonaktifkan", Toast.LENGTH_SHORT).show()
+        // STATUS LAYANAN
+        root.addView(sectionLabel("Status Layanan"))
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(cCard)
+            setPadding(dp(16), dp(14), dp(16), dp(14))
+            layoutParams = cardLp()
+            addView(run {
+                tvPermStatus = TextView(this@MainActivity).apply { textSize = 14f }
+                tvPermStatus
+            })
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                addView(TextView(this@MainActivity).apply {
+                    text = "Catatan Android 13+: Setelan > Aplikasi > QRIS Listener > menu opsi > Izinkan Setelan Terbatas > Akses Notifikasi"
+                    textSize = 11f
+                    setTextColor(0xFF7A4800.toInt())
+                    setBackgroundColor(0xFFFFF8E1.toInt())
+                    setPadding(dp(10), dp(8), dp(10), dp(8))
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = dp(6); bottomMargin = dp(6) }
+                })
             }
-        }
+            addView(run {
+                btnGrantPermission = Button(this@MainActivity).apply {
+                    text = "Beri Izin Akses Notifikasi"
+                    setTextColor(0xFFFFFFFF.toInt())
+                    setBackgroundColor(cRed)
+                    setOnClickListener { startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+                    ).apply { topMargin = dp(6); bottomMargin = dp(8) }
+                }
+                btnGrantPermission
+            })
+            addView(divider())
+            addView(run {
+                tvConnStatus = TextView(this@MainActivity).apply {
+                    textSize = 14f
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = dp(4) }
+                }
+                tvConnStatus
+            })
+            addView(divider())
+            addView(run {
+                btnForceReconnect = Button(this@MainActivity).apply {
+                    text = "Paksa Reconnect"
+                    setTextColor(0xFFFFFFFF.toInt())
+                    setBackgroundColor(0xFFE65100.toInt())
+                    setOnClickListener { forceReconnect() }
+                    visibility = View.GONE
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+                    ).apply { topMargin = dp(6); bottomMargin = dp(4) }
+                }
+                btnForceReconnect
+            })
+            addView(divider())
+            addView(run {
+                btnBatteryOpt = Button(this@MainActivity).apply {
+                    text = "Nonaktifkan Optimasi Baterai"
+                    setTextColor(0xFFFFFFFF.toInt())
+                    setBackgroundColor(0xFFE65100.toInt())
+                    setOnClickListener { requestIgnoreBatteryOptimizations() }
+                    visibility = View.GONE
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp(44)
+                    ).apply { topMargin = dp(6); bottomMargin = dp(4) }
+                }
+                btnBatteryOpt
+            })
+            addView(TextView(this@MainActivity).apply {
+                text = "Wajib dinonaktifkan agar service tidak dibunuh sistem saat di background. " +
+                        "Xiaomi/Redmi tambahan: Pengaturan > Aplikasi > QRIS Listener > Aktifkan Autostart."
+                textSize = 11f
+                setTextColor(cTextSec)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(4) }
+            })
+        })
 
-        findViewById<Button>(R.id.btnTestNotif).setOnClickListener {
-            val testText = "Pembayaran diterima Rp 150.000 dari QRIS"
-            QrisNotificationListener.processNotification(this, testText, "TestApp")
-        }
+        // KONFIGURASI
+        root.addView(sectionLabel("Konfigurasi"))
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(cCard)
+            setPadding(dp(16), dp(16), dp(16), dp(16))
+            layoutParams = cardLp()
+            addView(label("URL Server (qris_notify.php)"))
+            addView(run {
+                etServerUrl = EditText(this@MainActivity).apply {
+                    hint = "https://domain.com/api/qris_notify.php"
+                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
+                    textSize = 14f
+                    setText(prefs.getString(QrisNotificationListener.PREF_SERVER_URL, ""))
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply { bottomMargin = dp(16) }
+                }
+                etServerUrl
+            })
+            addView(label("Device Key"))
+            addView(run {
+                etDeviceKey = EditText(this@MainActivity).apply {
+                    hint = "Paste device key dari halaman admin"
+                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    textSize = 14f
+                    setText(prefs.getString(QrisNotificationListener.PREF_DEVICE_KEY, ""))
+                }
+                etDeviceKey
+            })
+            addView(divider())
+            addView(run {
+                swEnabled = Switch(this@MainActivity).apply {
+                    text = "Aktifkan Listener"
+                    isChecked = prefs.getBoolean(QrisNotificationListener.PREF_ENABLED, false)
+                    textSize = 15f
+                }
+                swEnabled
+            })
+        })
 
-        refreshLogs()
+        // TOMBOL SIMPAN
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(12), dp(4), dp(12), dp(4))
+            addView(Button(this@MainActivity).apply {
+                text = "SIMPAN & TERAPKAN"
+                textSize = 15f
+                setTextColor(0xFFFFFFFF.toInt())
+                setBackgroundColor(cBlue)
+                setOnClickListener { saveSettings() }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, dp(52)
+                )
+            })
+        })
+
+        // Info app dipantau
+        root.addView(TextView(this).apply {
+            text = "Memantau: DANA | GoPay | ShopeePay | BRImo | BCA Mobile | Mandiri"
+            textSize = 11f
+            setTextColor(cTextSec)
+            gravity = android.view.Gravity.CENTER
+            setPadding(dp(16), dp(8), dp(16), dp(4))
+        })
+
+        // DEBUG LOG
+        root.addView(sectionLabel("Debug Log"))
+        root.addView(LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(0xFF1A1A2E.toInt())
+            setPadding(dp(14), dp(14), dp(14), dp(14))
+            layoutParams = cardLp()
+            addView(run {
+                tvDebug = TextView(this@MainActivity).apply {
+                    textSize = 11f
+                    setTextColor(0xFF7EC8A0.toInt())
+                    setTypeface(android.graphics.Typeface.MONOSPACE)
+                }
+                tvDebug
+            })
+            addView(Button(this@MainActivity).apply {
+                text = "Refresh"
+                textSize = 12f
+                setTextColor(0xFFE0E0E0.toInt())
+                setBackgroundColor(0xFF2D3561.toInt())
+                setOnClickListener { refreshDebug() }
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, dp(38)
+                ).apply { topMargin = dp(10) }
+            })
+        })
+        root.addView(View(this).apply {
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(24))
+        })
+
+        setContentView(scroll)
+        updateStatusUI()
+        refreshDebug()
     }
 
     override fun onResume() {
         super.onResume()
-        updateStatus()
-        refreshLogs()
+        updateStatusUI()
+        refreshDebug()
+        autoReconnectIfNeeded()
+        handler.postDelayed(refreshRunnable, 3000)
     }
 
-    private fun updateStatus() {
-        val enabled = isNotificationListenerEnabled()
-        val hasConfig = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getString(PREF_WEBHOOK_URL, null) != null
-
-        val statusText = buildString {
-            append("Status: ")
-            append(if (enabled) "AKTIF ✓" else "NONAKTIF ✗")
-            append("\\n")
-            append("Config: ")
-            append(if (hasConfig) "Tersimpan" else "Belum disimpan")
-        }
-        tvStatus.text = statusText
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(refreshRunnable)
     }
 
-    private fun isNotificationListenerEnabled(): Boolean {
-        val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-        return flat != null && flat.contains(packageName)
+    private fun updateStatusUI() {
+        val ok = isNotificationAccessGranted()
+        tvPermStatus.text = if (ok) "Izin Notifikasi: Diberikan" else "Izin Notifikasi: Belum Diberikan"
+        tvPermStatus.setTextColor(if (ok) cGreen else cRed)
+        btnGrantPermission.visibility = if (ok) View.GONE else View.VISIBLE
+
+        val batteryOk = isIgnoringBatteryOptimizations()
+        btnBatteryOpt.visibility = if (batteryOk) View.GONE else View.VISIBLE
     }
 
-    fun refreshLogs() {
-        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val logsJson = prefs.getString(PREF_LOGS, "[]")
-        try {
-            val arr = JSONArray(logsJson)
-            val sb = StringBuilder()
-            val count = minOf(arr.length(), 20)
-            for (i in 0 until count) {
-                val entry = arr.getJSONObject(i)
-                val time = entry.optString("time", "")
-                val amount = entry.optString("amount", "")
-                val status = entry.optString("status", "")
-                val emoji = if (status == "success") "✅" else "❌"
-                sb.append("$emoji [$time] Rp$amount - $status\\n")
-            }
-            tvLog.text = if (sb.isEmpty()) "Belum ada log." else sb.toString()
+    private fun isNotificationAccessGranted(): Boolean {
+        val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: ""
+        return flat.contains(packageName)
+    }
+
+    private fun isIgnoringBatteryOptimizations(): Boolean {
+        return try {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            pm.isIgnoringBatteryOptimizations(packageName)
         } catch (e: Exception) {
-            tvLog.text = "Belum ada log."
+            true
         }
+    }
+
+    private fun requestIgnoreBatteryOptimizations() {
+        try {
+            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                data = Uri.parse("package:\${packageName}")
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            } catch (_: Exception) {
+                Toast.makeText(this, "Buka manual: Pengaturan > Baterai > QRIS Listener > Tidak dibatasi", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun autoReconnectIfNeeded() {
+        val enabled   = prefs.getBoolean(QrisNotificationListener.PREF_ENABLED, false)
+        val connected = prefs.getBoolean(QrisNotificationListener.PREF_DEBUG_CONNECTED, false)
+        if (!enabled || connected) return
+
+        val permOk = isNotificationAccessGranted()
+        val hasUrl = !prefs.getString(QrisNotificationListener.PREF_SERVER_URL, "").isNullOrEmpty()
+        val hasKey = !prefs.getString(QrisNotificationListener.PREF_DEVICE_KEY, "").isNullOrEmpty()
+        if (!permOk || !hasUrl || !hasKey) return
+
+        val now = System.currentTimeMillis()
+        if (now - lastAutoReconnectAttempt < 15_000L) return
+        lastAutoReconnectAttempt = now
+
+        val svcIntent = Intent(this, QrisNotificationListener::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(svcIntent)
+        } else {
+            startService(svcIntent)
+        }
+        try {
+            NLS.requestRebind(ComponentName(this, QrisNotificationListener::class.java))
+        } catch (_: Exception) {}
+    }
+
+    private fun saveSettings() {
+        val url = etServerUrl.text.toString().trim()
+        val key = etDeviceKey.text.toString().trim()
+
+        if (url.isEmpty()) { etServerUrl.error = "URL server wajib diisi"; return }
+        if (!url.startsWith("http")) { etServerUrl.error = "URL harus dimulai http/https"; return }
+        if (key.isEmpty()) { etDeviceKey.error = "Device key wajib diisi"; return }
+
+        prefs.edit()
+            .putString(QrisNotificationListener.PREF_SERVER_URL, url)
+            .putString(QrisNotificationListener.PREF_DEVICE_KEY, key)
+            .putBoolean(QrisNotificationListener.PREF_ENABLED, swEnabled.isChecked)
+            .apply()
+
+        Toast.makeText(this, "Pengaturan disimpan! Service tetap aktif.", Toast.LENGTH_SHORT).show()
+        tvDebug.text = "Memulai service... tunggu 2-3 detik"
+
+        val svcIntent = Intent(this, QrisNotificationListener::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(svcIntent)
+        } else {
+            startService(svcIntent)
+        }
+        NLS.requestRebind(ComponentName(this, QrisNotificationListener::class.java))
+
+        handler.postDelayed({ refreshDebug() }, 2000)
+        handler.postDelayed({ refreshDebug() }, 5000)
+    }
+
+    private fun forceReconnect() {
+        val cn = ComponentName(this, QrisNotificationListener::class.java)
+        val svcIntent = Intent(this, QrisNotificationListener::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(svcIntent)
+        } else {
+            startService(svcIntent)
+        }
+
+        val delays = listOf(0L, 2000L, 5000L, 10000L, 18000L, 28000L)
+        for (delay in delays) {
+            handler.postDelayed({
+                try { NLS.requestRebind(cn) } catch (_: Exception) {}
+            }, delay)
+        }
+
+        Toast.makeText(this, "Mencoba reconnect... tunggu 30 detik.", Toast.LENGTH_LONG).show()
+
+        for (delay in listOf(3000L, 8000L, 15000L, 22000L, 32000L)) {
+            handler.postDelayed({ refreshDebug() }, delay)
+        }
+    }
+
+    private fun refreshDebug() {
+        val connected = prefs.getBoolean(QrisNotificationListener.PREF_DEBUG_CONNECTED, false)
+        val since     = prefs.getString(QrisNotificationListener.PREF_DEBUG_CONNECTED_SINCE, "-") ?: "-"
+        val permOk    = isNotificationAccessGranted()
+
+        tvConnStatus.text = if (connected)
+            "Service: Terhubung (sejak \${since})"
+        else
+            "Service: Tidak Terhubung"
+        tvConnStatus.setTextColor(if (connected) cGreen else cRed)
+
+        btnForceReconnect.visibility = if (!connected && permOk) View.VISIBLE else View.GONE
+
+        val sb = StringBuilder()
+        sb.appendLine("=== Status Service ===")
+        sb.appendLine(if (connected) "Terhubung: YA (sejak \${since})" else "Terhubung: TIDAK")
+        sb.appendLine()
+
+        sb.appendLine("=== DANA / e-wallet terakhir ===")
+        val lastEwallet = prefs.getString(QrisNotificationListener.PREF_DEBUG_LAST_EWALLET, "(belum ada)") ?: "(belum ada)"
+        val lastResult  = prefs.getString(QrisNotificationListener.PREF_DEBUG_LAST_RESULT, "") ?: ""
+        sb.appendLine(lastEwallet)
+        if (lastResult.isNotEmpty()) sb.appendLine("-> \${lastResult}")
+        sb.appendLine()
+
+        sb.appendLine("=== 10 notif terakhir (semua app) ===")
+        val rawJson = prefs.getString(QrisNotificationListener.PREF_DEBUG_LAST_10, "[]") ?: "[]"
+        try {
+            val arr = JSONArray(rawJson)
+            if (arr.length() == 0) {
+                sb.appendLine("(belum ada notifikasi tercatat)")
+            } else {
+                for (i in 0 until arr.length()) {
+                    val obj = arr.getJSONObject(i)
+                    sb.appendLine("[\${obj.optString("time")}] \${obj.optString("pkg")}: \${obj.optString("title")}")
+                }
+            }
+        } catch (_: Exception) {
+            sb.appendLine("(error membaca log)")
+        }
+
+        tvDebug.text = sb.toString().trimEnd()
+    }
+
+    private fun dp(dp: Int) = (dp * resources.displayMetrics.density + 0.5f).toInt()
+
+    private fun cardLp() = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+    ).apply { setMargins(dp(12), 0, dp(12), dp(8)) }
+
+    private fun sectionLabel(text: String) = TextView(this).apply {
+        this.text = text.uppercase()
+        textSize = 11f
+        setTextColor(cBlue)
+        setTypeface(typeface, android.graphics.Typeface.BOLD)
+        setPadding(dp(16), dp(16), dp(16), dp(6))
+    }
+
+    private fun label(text: String) = TextView(this).apply {
+        this.text = text
+        textSize = 13f
+        setTextColor(cTextSec)
+        setPadding(0, 0, 0, dp(4))
+    }
+
+    private fun divider() = View(this).apply {
+        setBackgroundColor(cBorder)
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 1
+        ).apply { topMargin = dp(12); bottomMargin = dp(12) }
     }
 }
 `;
@@ -910,192 +1232,461 @@ class MainActivity : AppCompatActivity() {
 function qrisNotificationListener(pkg: string): string {
   return `package ${pkg}
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.ComponentName
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.pm.ServiceInfo
+import android.media.RingtoneManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import android.speech.tts.TextToSpeech
+import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.OutputStreamWriter
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.regex.Pattern
 
-
 class QrisNotificationListener : NotificationListenerService() {
 
     companion object {
-        const val PREFS_NAME = "qris_listener_prefs"
-        const val PREF_WEBHOOK_URL = "webhook_url"
-        const val PREF_DEVICE_KEY = "device_key"
-        const val PREF_REGEX = "regex"
-        const val PREF_LOGS = "logs"
-        const val DEFAULT_REGEX = "Rp\\\\s*([\\\\d.,]+)"
+        private const val TAG = "QrisListener"
 
-        // E-wallet packages to listen to
-        val TARGET_PACKAGES = setOf(
-            "com.gojek.gopay",
-            "com.gojek.gopaymerchant",
-            "com.dana",
-            "com.ovo",
-            "com.shopee.id",
-            "com.tencent.ewallet",
-            "id.co.bca.mybca",
-            "com.bca",
-            "com.bri.brimo",
-            "com.bni",
-            "com.bankmandiri.mandirionline",
-            "com.jenius",
-            "com.linkaja",
-            "com.sakuku",
-            "com.bankjatim.mobilebanking",
-            "com.bsi.mobile",
-            "com.bankbsi.indomaret",
-            "id.co.cimbniaga.mobile",
-            "com.bankbpdjatim",
+        const val CHANNEL_FG_ID    = "qris_fg_channel"
+        const val CHANNEL_ALERT_ID = "qris_alert_channel"
+        const val FOREGROUND_NOTIF_ID = 9001
+        const val PAYMENT_NOTIF_BASE  = 9100
+
+        private val MONITORED_APPS = mapOf(
+            "id.dana"              to "DANA",
+            "com.gojek.app"        to "GoPay",
+            "com.shopee.id"        to "ShopeePay",
+            "com.bri.brimo"        to "BRImo",
+            "id.co.bankbri.brimo"  to "BRImo",
+            "com.bca.mobile"       to "BCA Mobile",
+            "com.mandiri.smartpay" to "Mandiri",
+            "com.beatcom.network"  to "Mandiri",
         )
 
-        fun processNotification(context: Context, text: String, sourceApp: String) {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val webhookUrl = prefs.getString(PREF_WEBHOOK_URL, null)
-            val deviceKey = prefs.getString(PREF_DEVICE_KEY, null)
-            val regexStr = prefs.getString(PREF_REGEX, null) ?: DEFAULT_REGEX
+        private val BLOCKED_APPS = setOf(
+            "com.whatsapp",
+            "com.whatsapp.w4b",
+            "com.android.mms",
+            "com.google.android.apps.messaging",
+            "org.telegram.messenger",
+            "org.telegram.plus",
+            "org.thunderdog.challegram",
+            "com.facebook.orca",
+            "com.instagram.android",
+            "com.twitter.android",
+            "jp.naver.line.android",
+            "com.kakao.talk",
+            "com.viber.voip",
+            "com.skype.raider",
+            "com.discord",
+            "com.tencent.mm",
+        )
 
-            if (webhookUrl.isNullOrEmpty() || deviceKey.isNullOrEmpty()) {
-                addLog(context, "0", "no_config")
+        private val PAYMENT_PATTERNS = listOf(
+            Pattern.compile(
+                """(?:menerima|diterima|masuk|received|transfer\\s+masuk|pembayaran\\s+masuk)[^Rp0-9]*[Rp\\s]*(\\d{1,3}(?:[.,]\\d{3})*)""",
+                Pattern.CASE_INSENSITIVE
+            ),
+            Pattern.compile(
+                """Rp\\s*(\\d{1,3}(?:[.,]\\d{3})*)(?:\\s*telah\\s*diterima|\\s*berhasil\\s*diterima)""",
+                Pattern.CASE_INSENSITIVE
+            ),
+            Pattern.compile(
+                """Rp\\s*(\\d{1,3}(?:[.,]\\d{3})*)\\s+dari\\s+\\S+\\s+berhasil\\s*diterima""",
+                Pattern.CASE_INSENSITIVE
+            ),
+            Pattern.compile(
+                """berhasil\\s+diterima\\s+Rp\\s*(\\d{1,3}(?:[.,]\\d{3})*)""",
+                Pattern.CASE_INSENSITIVE
+            ),
+            Pattern.compile(
+                """(?:kamu|anda)?\\s*menerima\\s+[Rp\\s]*(\\d{1,3}(?:[.,]\\d{3})*)""",
+                Pattern.CASE_INSENSITIVE
+            ),
+            Pattern.compile(
+                """Rp\\s*(\\d{1,3}(?:[.,]\\d{3})*)\\s+diterima\\b""",
+                Pattern.CASE_INSENSITIVE
+            ),
+        )
+
+        const val PREFS_NAME       = "qris_listener_prefs"
+        const val PREF_SERVER_URL  = "server_url"
+        const val PREF_DEVICE_KEY  = "device_key"
+        const val PREF_ENABLED     = "enabled"
+
+        const val PREF_DEBUG_CONNECTED       = "debug_connected"
+        const val PREF_DEBUG_CONNECTED_SINCE = "debug_connected_since"
+        const val PREF_DEBUG_LAST_EWALLET    = "debug_last_ewallet"
+        const val PREF_DEBUG_LAST_RESULT     = "debug_last_result"
+        const val PREF_DEBUG_LAST_10         = "debug_last_10"
+
+        private val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    }
+
+    private val scope = CoroutineScope(Dispatchers.IO)
+    private lateinit var prefs: SharedPreferences
+    private var tts: TextToSpeech? = null
+    private var paymentNotifCounter = PAYMENT_NOTIF_BASE
+
+    private val recentlySent = mutableMapOf<Int, Long>()
+
+    private val rebindHandler = Handler(Looper.getMainLooper())
+    private var rebindRetryCount = 0
+    private val maxRebindRetries = 36
+    private val rebindRunnable: Runnable = object : Runnable {
+        override fun run() {
+            if (prefs.getBoolean(PREF_DEBUG_CONNECTED, false)) {
+                rebindRetryCount = 0
                 return
             }
-
-            // Extract amount using regex
-            val amount = extractAmount(text, regexStr)
-            if (amount <= 0) {
-                addLog(context, "0", "no_amount")
+            if (rebindRetryCount >= maxRebindRetries) {
+                Log.w(TAG, "rebind: batas retry tercapai, berhenti")
+                rebindRetryCount = 0
                 return
             }
-
-            // Send to webhook in background thread
-            Thread {
-                try {
-                    val payload = JSONObject().apply {
-                        put("device_key", deviceKey)
-                        put("amount", amount)
-                        put("source_app", sourceApp)
-                        put("raw_text", text)
-                        put("timestamp", System.currentTimeMillis())
-                    }
-
-                    val conn = (URL(webhookUrl).openConnection() as HttpURLConnection).apply {
-                        requestMethod = "POST"
-                        setRequestProperty("Content-Type", "application/json")
-                        setRequestProperty("Accept", "application/json")
-                        connectTimeout = 15000
-                        readTimeout = 15000
-                        doOutput = true
-                    }
-
-                    OutputStreamWriter(conn.outputStream, "UTF-8").use { it.write(payload.toString()) }
-
-                    val responseCode = conn.responseCode
-                    val response = if (responseCode == 200) {
-                        conn.inputStream.bufferedReader().readText()
-                    } else {
-                        conn.errorStream?.bufferedReader()?.readText() ?: "HTTP $responseCode"
-                    }
-                    conn.disconnect()
-
-                    val respJson = JSONObject(response)
-                    val success = respJson.optBoolean("success", false)
-                    val status = if (success) "success" else "failed: \${respJson.optString(\"error\", \"unknown\")}"
-
-                    addLog(context, amount.toString(), status)
-
-                    if (success) {
-                        // Vibrate on success
-                        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
-                        vibrator.vibrate(300)
-                    }
-                } catch (e: Exception) {
-                    addLog(context, amount.toString(), "error: \${e.message}")
-                }
-            }.start()
-        }
-
-        private fun extractAmount(text: String, regexStr: String): Long {
+            rebindRetryCount++
+            Log.i(TAG, "rebind retry #\${rebindRetryCount}")
             try {
-                val pattern = Pattern.compile(regexStr)
-                val matcher = pattern.matcher(text)
-                if (matcher.find()) {
-                    val rawAmount = matcher.group(1) ?: return 0
-                    // Remove dots and commas (Indonesian number format)
-                    val cleanAmount = rawAmount.replace(".", "").replace(",", "")
-                    return cleanAmount.toLongOrNull() ?: 0
-                }
+                requestRebind(ComponentName(this@QrisNotificationListener, QrisNotificationListener::class.java))
             } catch (e: Exception) {
-                // Regex error, try default
-                val defaultPattern = Pattern.compile(DEFAULT_REGEX)
-                val matcher = defaultPattern.matcher(text)
-                if (matcher.find()) {
-                    val rawAmount = matcher.group(1) ?: return 0
-                    val cleanAmount = rawAmount.replace(".", "").replace(",", "")
-                    return cleanAmount.toLongOrNull() ?: 0
-                }
+                Log.e(TAG, "requestRebind gagal: \${e.message}")
             }
-            return 0
-        }
-
-        private fun addLog(context: Context, amount: String, status: String) {
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-            val logsJson = prefs.getString(PREF_LOGS, "[]")
-            try {
-                val arr = JSONArray(logsJson)
-                val entry = JSONObject().apply {
-                    put("time", time)
-                    put("amount", amount)
-                    put("status", status)
-                }
-                arr.put(0, entry) // Add to front
-                // Keep only last 20
-                val trimmed = JSONArray()
-                val count = minOf(arr.length(), 20)
-                for (i in 0 until count) {
-                    trimmed.put(arr.getJSONObject(i))
-                }
-                prefs.edit().putString(PREF_LOGS, trimmed.toString()).apply()
-            } catch (e: Exception) {
-                // Reset logs on error
-                prefs.edit().putString(PREF_LOGS, "[]").apply()
-            }
+            rebindHandler.postDelayed(this, 10_000L)
         }
     }
 
-    override fun onNotificationPosted(sbn: StatusBarNotification) {
-        val packageName = sbn.packageName
-        if (packageName !in TARGET_PACKAGES) return
+    override fun onCreate() {
+        super.onCreate()
+        prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        createNotifChannels()
+        QrisWatchdogWorker.schedule(this)
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                val result = tts?.setLanguage(Locale("in", "ID"))
+                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    tts?.language = Locale.getDefault()
+                }
+                Log.i(TAG, "TTS initialized")
+            } else {
+                Log.w(TAG, "TTS init failed, status=\${status}")
+            }
+        }
+        Log.i(TAG, "Service onCreate")
+    }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        startForegroundCompat()
+        Log.i(TAG, "onStartCommand - service dimulai")
+        return START_STICKY
+    }
+
+    override fun onListenerConnected() {
+        super.onListenerConnected()
+        startForegroundCompat()
+        rebindHandler.removeCallbacks(rebindRunnable)
+        rebindRetryCount = 0
+        prefs.edit()
+            .putBoolean(PREF_DEBUG_CONNECTED, true)
+            .putString(PREF_DEBUG_CONNECTED_SINCE, timeFmt.format(Date()))
+            .apply()
+        Log.i(TAG, "Listener terhubung")
+    }
+
+    override fun onListenerDisconnected() {
+        super.onListenerDisconnected()
+        prefs.edit()
+            .putBoolean(PREF_DEBUG_CONNECTED, false)
+            .apply()
+        Log.w(TAG, "Listener terputus - memulai rebind retry loop...")
+        rebindHandler.removeCallbacks(rebindRunnable)
+        rebindRetryCount = 0
+        rebindHandler.post(rebindRunnable)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        rebindHandler.removeCallbacks(rebindRunnable)
+        prefs.edit().putBoolean(PREF_DEBUG_CONNECTED, false).apply()
+        tts?.stop()
+        tts?.shutdown()
+        tts = null
+        Log.w(TAG, "Service onDestroy")
+    }
+
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        sbn ?: return
+        val packageName = sbn.packageName ?: return
+
+        if (packageName in BLOCKED_APPS) return
+
+        val appLabel = MONITORED_APPS[packageName]
         val notification = sbn.notification ?: return
+
+        val category = notification.category
+        if (category == Notification.CATEGORY_MESSAGE ||
+            category == Notification.CATEGORY_EMAIL ||
+            category == Notification.CATEGORY_SOCIAL) return
+
         val extras = notification.extras ?: return
+        val title   = extras.getString(Notification.EXTRA_TITLE) ?: ""
+        val text    = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
+        val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: ""
+        val textLines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES)
+            ?.joinToString(" ") { it.toString() } ?: ""
+        val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString() ?: ""
+        val rawText = listOf(title, text, bigText, textLines, subText)
+            .filter { it.isNotEmpty() }.distinct().joinToString(" | ")
 
-        val title = extras.getCharSequence("android.title")?.toString() ?: ""
-        val text = extras.getCharSequence("android.text")?.toString() ?: ""
-        val bigText = extras.getCharSequence("android.bigText")?.toString() ?: ""
+        logRecentNotif(packageName, title)
 
-        val fullText = "$title $text $bigText"
+        if (!prefs.getBoolean(PREF_DEBUG_CONNECTED, false)) {
+            prefs.edit()
+                .putBoolean(PREF_DEBUG_CONNECTED, true)
+                .putString(PREF_DEBUG_CONNECTED_SINCE, timeFmt.format(Date()))
+                .apply()
+        }
 
-        // Only process if it looks like a payment notification
-        val keywords = listOf("rp", "transfer", "pembayaran", "diterima", "qris", "masuk", "payment")
-        val hasKeyword = keywords.any { fullText.lowercase().contains(it) }
-        if (!hasKeyword) return
+        if (!prefs.getBoolean(PREF_ENABLED, false)) return
 
-        processNotification(this, fullText, packageName)
+        val serverUrl = prefs.getString(PREF_SERVER_URL, "") ?: ""
+        val deviceKey = prefs.getString(PREF_DEVICE_KEY, "") ?: ""
+        if (serverUrl.isEmpty() || deviceKey.isEmpty()) return
+
+        val displayLabel = appLabel ?: packageName
+
+        Log.d(TAG, "[\${displayLabel}] \${rawText}")
+
+        prefs.edit()
+            .putString(PREF_DEBUG_LAST_EWALLET, "[\${packageName}]\\n\${rawText}")
+            .apply()
+
+        val amount = extractAmount(rawText) ?: run {
+            prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
+                "Tidak cocok pola:\\n\${rawText.take(150)}").apply()
+            return
+        }
+
+        val now = System.currentTimeMillis()
+        val lastSent = recentlySent[amount] ?: 0L
+        if (now - lastSent < 60_000L) {
+            Log.d(TAG, "[\${displayLabel}] Duplikat Rp\${amount} diabaikan (\${now - lastSent}ms lalu)")
+            prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
+                "Duplikat diabaikan: Rp\${amount}\\n(\${((now - lastSent) / 1000)}d lalu dari \${packageName})").apply()
+            return
+        }
+        recentlySent[amount] = now
+        recentlySent.entries.removeIf { now - it.value > 120_000L }
+
+        Log.i(TAG, "[\${displayLabel}] Terdeteksi: Rp\${amount}")
+        prefs.edit().putString(PREF_DEBUG_LAST_RESULT, "Mengirim Rp\${amount} ke server...").apply()
+
+        playPaymentAlert(displayLabel, amount)
+
+        scope.launch {
+            sendToServer(serverUrl, deviceKey, amount, packageName, rawText.take(255))
+        }
+    }
+
+    private fun logRecentNotif(pkg: String, title: String) {
+        val raw = prefs.getString(PREF_DEBUG_LAST_10, "[]") ?: "[]"
+        val arr = try { JSONArray(raw) } catch (_: Exception) { JSONArray() }
+        val entry = JSONObject().put("pkg", pkg).put("title", title).put("time", timeFmt.format(Date()))
+        val newArr = JSONArray()
+        newArr.put(entry)
+        for (i in 0 until minOf(9, arr.length())) newArr.put(arr.getJSONObject(i))
+        prefs.edit().putString(PREF_DEBUG_LAST_10, newArr.toString()).apply()
+    }
+
+    private fun playPaymentAlert(appLabel: String, amount: Int) {
+        val formatted = NumberFormat.getNumberInstance(Locale("id", "ID")).format(amount)
+
+        try {
+            val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+            val ringtone = RingtoneManager.getRingtone(applicationContext, alarmUri)
+            ringtone?.play()
+        } catch (e: Exception) {
+            Log.e(TAG, "Ringtone error: \${e.message}")
+        }
+
+        tts?.speak(
+            "Pembayaran Q R I S masuk, Rp \${formatted}",
+            TextToSpeech.QUEUE_FLUSH,
+            null,
+            "qris_payment"
+        )
+
+        val pi = PendingIntent.getActivity(
+            this, 0, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+        val notif = NotificationCompat.Builder(this, CHANNEL_ALERT_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("Pembayaran QRIS Masuk!")
+            .setContentText("\${appLabel} — Rp \${formatted} diterima")
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("\${appLabel} mendeteksi pembayaran masuk Rp \${formatted}.\\nMengirim konfirmasi ke server..."))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVibrate(longArrayOf(0, 300, 200, 300, 200, 500))
+            .setSound(alarmUri)
+            .setLights(0xFF00FF00.toInt(), 500, 500)
+            .setAutoCancel(true)
+            .setContentIntent(pi)
+            .build()
+
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(paymentNotifCounter++, notif)
+    }
+
+    private fun startForegroundCompat() {
+        val notif = buildForegroundNotif()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(FOREGROUND_NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(FOREGROUND_NOTIF_ID, notif)
+        }
+    }
+
+    private fun buildForegroundNotif(): Notification {
+        val pi = PendingIntent.getActivity(
+            this, 0, Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(this, CHANNEL_FG_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle("QRIS Listener Aktif")
+            .setContentText("Memantau notifikasi DANA, GoPay, ShopeePay, BRImo, BCA, Mandiri")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setOngoing(true)
+            .setShowWhen(false)
+            .setContentIntent(pi)
+            .build()
+    }
+
+    private fun createNotifChannels() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            nm.createNotificationChannel(NotificationChannel(
+                CHANNEL_FG_ID,
+                "QRIS Listener - Status Berjalan",
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = "Notifikasi status service QRIS Listener (selalu tampil saat aktif)"
+                setShowBadge(false)
+            })
+
+            nm.createNotificationChannel(NotificationChannel(
+                CHANNEL_ALERT_ID,
+                "QRIS - Pembayaran Masuk",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Notifikasi konfirmasi pembayaran QRIS (suara + getar)"
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 300, 200, 300, 200, 500)
+                val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    val attrs = android.media.AudioAttributes.Builder()
+                        .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                        .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                        .build()
+                    setSound(soundUri, attrs)
+                }
+            })
+        }
+    }
+
+    private fun extractAmount(text: String): Int? {
+        for (pattern in PAYMENT_PATTERNS) {
+            val matcher = pattern.matcher(text)
+            if (matcher.find()) {
+                val raw = matcher.group(1) ?: continue
+                val cleaned = raw.replace("[.,]".toRegex(), "")
+                return cleaned.toIntOrNull()
+            }
+        }
+        return null
+    }
+
+    private fun sendToServer(
+        serverUrl: String,
+        deviceKey: String,
+        amount: Int,
+        sourceApp: String,
+        rawText: String
+    ) {
+        try {
+            val url  = URL(serverUrl)
+            val conn = url.openConnection() as HttpURLConnection
+            conn.apply {
+                requestMethod  = "POST"
+                connectTimeout = 15_000
+                readTimeout    = 15_000
+                doOutput       = true
+                setRequestProperty("Content-Type", "application/json; charset=utf-8")
+                setRequestProperty("Accept", "application/json")
+                setRequestProperty("X-QRIS-Client", "SalfanetAndroid/2.0")
+            }
+
+            val payload = JSONObject().apply {
+                put("device_key", deviceKey)
+                put("amount",     amount)
+                put("source_app", sourceApp)
+                put("raw_text",   rawText)
+                put("timestamp",  System.currentTimeMillis() / 1000)
+            }
+
+            conn.outputStream.use { os: OutputStream -> os.write(payload.toString().toByteArray(Charsets.UTF_8)) }
+
+            val responseCode = conn.responseCode
+            val response = conn.inputStream.bufferedReader().readText()
+            conn.disconnect()
+
+            Log.i(TAG, "Server [\${responseCode}]: \${response}")
+
+            val resultMsg = if (responseCode == 200) {
+                val json = JSONObject(response)
+                if (json.optBoolean("success")) {
+                    "COCOK: Nominal Rp\${amount} dikirim ke server"
+                } else {
+                    "Server: \${json.optString("error")}"
+                }
+            } else {
+                "HTTP \${responseCode} dari server"
+            }
+
+            prefs.edit().putString(PREF_DEBUG_LAST_RESULT, resultMsg).apply()
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Gagal kirim ke server: \${e.message}")
+            prefs.edit().putString(PREF_DEBUG_LAST_RESULT, "Error: \${e.message?.take(80)}").apply()
+        }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification) {
@@ -1105,167 +1696,120 @@ class QrisNotificationListener : NotificationListenerService() {
 `;
 }
 
-function qrisWatchdogService(pkg: string): string {
+function qrisWatchdogWorker(pkg: string): string {
   return `package ${pkg}
 
-import android.app.AlarmManager
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.app.Service
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
-import android.os.IBinder
-import android.os.SystemClock
 import android.provider.Settings
-import android.service.notification.NotificationListenerService
-import android.util.Log
+import android.service.notification.NotificationListenerService as NLS
+import androidx.core.app.NotificationCompat
+import androidx.work.CoroutineWorker
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.WorkerParameters
+import java.util.concurrent.TimeUnit
 
-class WatchdogService : Service() {
+class QrisWatchdogWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 
     companion object {
-        private const val CHANNEL_ID = "qris_watchdog_channel"
-        private const val NOTIF_ID = 9999
-        private const val WATCHDOG_INTERVAL_MS = 15 * 60 * 1000L // 15 minutes
-        private const val PENDING_ALARM_REQUEST = 1001
+        private const val WORK_NAME = "qris_watchdog"
+        private const val NOTIF_ID_REVOKED = 9002
+        private const val PREF_LAST_REVOKED_ALERT = "last_revoked_alert_at"
+        private const val ALERT_COOLDOWN_MS = 6 * 60 * 60 * 1000L
 
-        fun start(context: Context) {
-            val intent = Intent(context, WatchdogService::class.java)
-            if (Build.VERSION.SDK_INT >= 26) {
-                context.startForegroundService(intent)
+        fun schedule(context: Context) {
+            val request = PeriodicWorkRequestBuilder<QrisWatchdogWorker>(15, TimeUnit.MINUTES).build()
+            WorkManager.getInstance(context).enqueueUniquePeriodicWork(
+                WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                request
+            )
+        }
+    }
+
+    override suspend fun doWork(): Result {
+        val ctx = applicationContext
+        val prefs = ctx.getSharedPreferences(QrisNotificationListener.PREFS_NAME, Context.MODE_PRIVATE)
+
+        val enabled = prefs.getBoolean(QrisNotificationListener.PREF_ENABLED, false)
+        if (!enabled) return Result.success()
+
+        val hasUrl = !prefs.getString(QrisNotificationListener.PREF_SERVER_URL, "").isNullOrEmpty()
+        val hasKey = !prefs.getString(QrisNotificationListener.PREF_DEVICE_KEY, "").isNullOrEmpty()
+        if (!hasUrl || !hasKey) return Result.success()
+
+        if (!isNotificationAccessGranted(ctx)) {
+            maybeAlertRevoked(ctx, prefs)
+            return Result.success()
+        }
+
+        val connected = prefs.getBoolean(QrisNotificationListener.PREF_DEBUG_CONNECTED, false)
+        if (!connected) {
+            val svcIntent = Intent(ctx, QrisNotificationListener::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ctx.startForegroundService(svcIntent)
             } else {
-                context.startService(intent)
+                ctx.startService(svcIntent)
             }
-        }
-    }
-
-    override fun onCreate() {
-        super.onCreate()
-        createChannel()
-        startForeground(NOTIF_ID, buildNotification())
-        Log.i("QrisWatchdog", "WatchdogService started — keeping listener alive")
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Check if notification listener is still enabled
-        checkListenerEnabled()
-        // Schedule next watchdog check
-        scheduleNextCheck()
-        // Return START_STICKY so Android tries to restart us if killed
-        return START_STICKY
-    }
-
-    private fun checkListenerEnabled() {
-        val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-        val isEnabled = flat != null && flat.contains(packageName)
-        if (!isEnabled) {
-            Log.w("QrisWatchdog", "Notification listener is DISABLED — sending rebind request + notification")
-            // Try to force rebind the notification listener service
             try {
-                val component = ComponentName(this, QrisNotificationListener::class.java)
-                NotificationListenerService.requestRebind(component)
-                Log.i("QrisWatchdog", "requestRebind sent for QrisNotificationListener")
-            } catch (e: Exception) {
-                Log.e("QrisWatchdog", "requestRebind failed: ${e.message}")
-            }
-            // Also send a notification prompting user to re-enable
-            sendReEnableNotification()
-        } else {
-            Log.i("QrisWatchdog", "Notification listener is active ✓")
-            // Even if enabled, send requestRebind to refresh the connection
-            try {
-                val component = ComponentName(this, QrisNotificationListener::class.java)
-                NotificationListenerService.requestRebind(component)
-            } catch (e: Exception) {
-                // ignore
-            }
+                NLS.requestRebind(ComponentName(ctx, QrisNotificationListener::class.java))
+            } catch (_: Exception) {}
         }
+
+        return Result.success()
     }
 
-    private fun sendReEnableNotification() {
-        val notifManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
+    private fun isNotificationAccessGranted(ctx: Context): Boolean {
+        val flat = Settings.Secure.getString(ctx.contentResolver, "enabled_notification_listeners") ?: ""
+        return flat.contains(ctx.packageName)
+    }
+
+    private fun maybeAlertRevoked(ctx: Context, prefs: SharedPreferences) {
+        val now = System.currentTimeMillis()
+        val last = prefs.getLong(PREF_LAST_REVOKED_ALERT, 0L)
+        if (now - last < ALERT_COOLDOWN_MS) return
+        prefs.edit().putLong(PREF_LAST_REVOKED_ALERT, now).apply()
+
+        ensureAlertChannel(ctx)
+
+        val pi = PendingIntent.getActivity(
+            ctx, 0, Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
-        val notif = Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("QRIS Listener Berhenti!")
-            .setContentText("Tap untuk mengaktifkan kembali listener notifikasi")
+        val notif = NotificationCompat.Builder(ctx, QrisNotificationListener.CHANNEL_ALERT_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setContentIntent(pendingIntent)
+            .setContentTitle("QRIS Listener Berhenti Memantau")
+            .setContentText("Izin akses notifikasi tercabut sistem. Tap untuk aktifkan ulang.")
+            .setStyle(NotificationCompat.BigTextStyle()
+                .bigText("Android mencabut izin akses notifikasi QRIS Listener (biasanya karena battery manager membunuh app). Pembayaran QRIS TIDAK akan terdeteksi otomatis sampai izin diaktifkan ulang. Tap notifikasi ini untuk buka pengaturan."))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ERROR)
             .setAutoCancel(true)
+            .setContentIntent(pi)
             .build()
-        notifManager.notify(NOTIF_ID + 1, notif)
+
+        val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        nm.notify(NOTIF_ID_REVOKED, notif)
     }
 
-    private fun scheduleNextCheck() {
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, WatchdogService::class.java)
-        val pendingIntent = PendingIntent.getService(
-            this, PENDING_ALARM_REQUEST, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val triggerAt = SystemClock.elapsedRealtime() + WATCHDOG_INTERVAL_MS
-        alarmManager.setInexactRepeating(
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            triggerAt,
-            WATCHDOG_INTERVAL_MS,
-            pendingIntent
-        )
-        Log.i("QrisWatchdog", "Next watchdog check scheduled in 15 minutes")
-    }
-
-    private fun createChannel() {
-        if (Build.VERSION.SDK_INT >= 26) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "QRIS Watchdog",
-                NotificationManager.IMPORTANCE_LOW
+    private fun ensureAlertChannel(ctx: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            nm.createNotificationChannel(NotificationChannel(
+                QrisNotificationListener.CHANNEL_ALERT_ID,
+                "QRIS - Pembayaran Masuk",
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Keeps QRIS Listener running in background"
-                setShowBadge(false)
-            }
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
+                description = "Notifikasi konfirmasi pembayaran QRIS (suara + getar)"
+            })
         }
-    }
-
-    private fun buildNotification(): Notification {
-        val builder = if (Build.VERSION.SDK_INT >= 26) {
-            Notification.Builder(this, CHANNEL_ID)
-        } else {
-            Notification.Builder(this)
-        }
-        return builder
-            .setContentTitle("Salfanet QRIS Listener")
-            .setContentText("Berjalan di background — memantau notifikasi pembayaran")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setOngoing(true)
-            .setPriority(Notification.PRIORITY_LOW)
-            .build()
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onDestroy() {
-        super.onDestroy()
-        Log.w("QrisWatchdog", "WatchdogService destroyed — scheduling restart via AlarmManager")
-        // Schedule a restart even if we're being destroyed
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, WatchdogService::class.java)
-        val pendingIntent = PendingIntent.getService(
-            this, PENDING_ALARM_REQUEST, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.set(
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            SystemClock.elapsedRealtime() + 5000, // restart in 5 seconds
-            pendingIntent
-        )
     }
 }
 `;
@@ -1277,14 +1821,32 @@ function qrisBootReceiver(pkg: string): string {
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 
-
 class BootReceiver : BroadcastReceiver() {
+
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
-            Log.i("QrisBootReceiver", "Boot completed — starting WatchdogService")
-            WatchdogService.start(context)
+        if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
+
+        val prefs = context.getSharedPreferences(
+            QrisNotificationListener.PREFS_NAME, Context.MODE_PRIVATE
+        )
+        val enabled = prefs.getBoolean(QrisNotificationListener.PREF_ENABLED, false)
+        val hasUrl  = !prefs.getString(QrisNotificationListener.PREF_SERVER_URL, "").isNullOrEmpty()
+        val hasKey  = !prefs.getString(QrisNotificationListener.PREF_DEVICE_KEY, "").isNullOrEmpty()
+
+        if (enabled && hasUrl && hasKey) {
+            Log.i("BootReceiver", "Device booted — memulai QrisNotificationListener")
+            val svcIntent = Intent(context, QrisNotificationListener::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(svcIntent)
+            } else {
+                context.startService(svcIntent)
+            }
+            QrisWatchdogWorker.schedule(context)
+        } else {
+            Log.d("BootReceiver", "Listener tidak aktif atau belum dikonfigurasi, skip.")
         }
     }
 }
@@ -1295,8 +1857,7 @@ const gradlewScript = () => `#!/bin/sh
 set -e
 APP_HOME="$(cd "$(dirname "$0")" && pwd -P)"
 CLASSPATH="$APP_HOME/gradle/wrapper/gradle-wrapper.jar"
-[ -n "$JAVA_HOME" ] && JAVACMD="$JAVA_HOME/bin/java" || JAVACMD="java"
-exec "$JAVACMD" "-Dorg.gradle.appname=$(basename "$0")" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+exec java -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
 `;
 
 // ─── write project to disk ───────────────────────────────────────────────────
@@ -1347,7 +1908,7 @@ async function writeProjectToDisk(
     writeFileSync(join(projectDir, 'app/src/main/AndroidManifest.xml'), qrisListenerManifest(cfg.pkg));
     writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/MainActivity.kt`), qrisListenerActivity(cfg.pkg));
     writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/QrisNotificationListener.kt`), qrisNotificationListener(cfg.pkg));
-    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/WatchdogService.kt`), qrisWatchdogService(cfg.pkg));
+    writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/QrisWatchdogWorker.kt`), qrisWatchdogWorker(cfg.pkg));
     writeFileSync(join(projectDir, `app/src/main/java/${pkgPath}/BootReceiver.kt`), qrisBootReceiver(cfg.pkg));
     writeFileSync(join(projectDir, 'app/src/main/res/layout/activity_main.xml'), qrisListenerLayoutXml());
     writeFileSync(join(projectDir, 'app/src/main/res/values/strings.xml'), stringsXml(appName));
