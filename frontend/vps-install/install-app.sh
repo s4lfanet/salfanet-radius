@@ -395,20 +395,29 @@ seed_database() {
     fi
 
     # Try comprehensive seed first
+    # Note: pipe to tee masks exit code — use PIPESTATUS to get tsx's real exit code
     if [ -n "$SEED_DIR" ] && [ -f "${SEED_DIR}/seeds/seed-all.ts" ]; then
         print_info "Running comprehensive seed from ${SEED_DIR}/seeds/..."
-        if $TSX_BIN ${SEED_DIR}/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log; then
+        set +e
+        $TSX_BIN ${SEED_DIR}/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log
+        local seed_exit=${PIPESTATUS[0]}
+        set -e
+        if [ "$seed_exit" -eq 0 ]; then
             print_success "Comprehensive seed completed"
         else
-            print_warning "Comprehensive seed had issues, trying individual seeds..."
+            print_warning "Comprehensive seed had issues (exit $seed_exit), trying individual seeds..."
             run_individual_seeds
         fi
     elif [ -n "$SEED_DIR" ] && [ -f "${SEED_DIR}/seed.ts" ]; then
         print_info "Running default seed from ${SEED_DIR}/..."
-        if $TSX_BIN ${SEED_DIR}/seed.ts 2>&1 | tee /tmp/seed.log; then
+        set +e
+        $TSX_BIN ${SEED_DIR}/seed.ts 2>&1 | tee /tmp/seed.log
+        local seed_exit=${PIPESTATUS[0]}
+        set -e
+        if [ "$seed_exit" -eq 0 ]; then
             print_success "Default seed completed"
         else
-            print_warning "Default seed had issues, trying individual seeds..."
+            print_warning "Default seed had issues (exit $seed_exit), trying individual seeds..."
             run_individual_seeds
         fi
     else
