@@ -26,6 +26,10 @@ export async function GET() {
         footerCustomer: 'Powered by SALFANET RADIUS',
         footerTechnician: 'Powered by SALFANET RADIUS',
         footerAgent: 'Powered by SALFANET RADIUS',
+        qrisStaticCode: null,
+        qrisMerchantName: null,
+        qrisEnabled: false,
+        qrisDeviceKey: null,
       });
     }
 
@@ -83,6 +87,10 @@ export async function POST(request: Request) {
           footerAgent: data.footerAgent,
           bankAccounts: bankAccounts,
           invoiceGenerateDays: data.invoiceGenerateDays ? parseInt(data.invoiceGenerateDays) : undefined,
+          qrisStaticCode: data.qrisStaticCode ?? undefined,
+          qrisMerchantName: data.qrisMerchantName ?? undefined,
+          qrisEnabled: data.qrisEnabled ?? undefined,
+          qrisDeviceKey: data.qrisDeviceKey ?? undefined,
         },
       });
     } else {
@@ -106,6 +114,10 @@ export async function POST(request: Request) {
           footerAgent: data.footerAgent || 'Powered by SALFANET RADIUS',
           bankAccounts: bankAccounts,
           invoiceGenerateDays: data.invoiceGenerateDays ? parseInt(data.invoiceGenerateDays) : 7,
+          qrisStaticCode: data.qrisStaticCode ?? null,
+          qrisMerchantName: data.qrisMerchantName ?? null,
+          qrisEnabled: data.qrisEnabled ?? false,
+          qrisDeviceKey: data.qrisDeviceKey ?? null,
         },
       });
     }

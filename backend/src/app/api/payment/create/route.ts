@@ -6,6 +6,7 @@ import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { createPaymentAttempt } from '@/server/services/payment/payment-attempt.service';
+import { staticToDynamic, generateUniqueAmount } from '@/lib/qris';
 import nodeCrypto from 'crypto';
 import { z } from '@/lib/parse-body';
 
@@ -14,7 +15,7 @@ const paymentCreateSchema = z.object({
   invoiceId: z.string().uuid().optional(),
   orderNumber: z.string().max(64).optional(),
   amount: z.number().int().positive().optional(),
-  gateway: z.enum(['midtrans', 'xendit', 'duitku', 'tripay', 'manual', 'cash', 'transfer']),
+  gateway: z.enum(['midtrans', 'xendit', 'duitku', 'tripay', 'manual', 'cash', 'transfer', 'qris_own']),
   type: z.enum(['invoice', 'voucher']).optional(),
   paymentMethod: z.string().max(64).optional(),
   paymentToken: z.string().max(128).optional(),
@@ -160,6 +161,77 @@ export async function POST(request: NextRequest) {
     // Warn if paymentToken not provided (backward compat — will be enforced later)
     if (!paymentToken) {
       console.warn(`[Payment Create] ⚠️  No paymentToken provided for invoice ${invoice.invoiceNumber} — backward compat mode. This will be enforced in a future release.`);
+    }
+
+    // ── QRIS Mandiri (qris_own) — no third-party gateway needed ──────────────
+    if (gateway === 'qris_own') {
+      const company = await prisma.company.findFirst();
+      if (!company || !company.qrisEnabled || !company.qrisStaticCode) {
+        return NextResponse.json(
+          { error: 'QRIS Mandiri belum dikonfigurasi. Buka Admin → Payment Gateway → QRIS Mandiri.' },
+          { status: 400 }
+        );
+      }
+
+      const uniqueAmount = generateUniqueAmount(invoice.amount, invoice.id);
+      let qrString: string;
+      try {
+        qrString = staticToDynamic(company.qrisStaticCode, uniqueAmount);
+      } catch (e) {
+        return NextResponse.json(
+          { error: 'Gagal generate QRIS: ' + (e instanceof Error ? e.message : 'Unknown error') },
+          { status: 500 }
+        );
+      }
+
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+      await prisma.qrisPending.create({
+        data: {
+          id: crypto.randomUUID(),
+          invoiceId: invoice.id,
+          userId: invoice.userId,
+          orderId,
+          baseAmount: invoice.amount,
+          uniqueAmount,
+          qrString,
+          status: 'pending',
+          expiresAt,
+        },
+      });
+
+      // Create webhook log
+      try {
+        await prisma.webhookLog.create({
+          data: {
+            id: crypto.randomUUID(),
+            gateway: 'qris_own',
+            orderId,
+            status: 'pending',
+            transactionId: null,
+            amount: uniqueAmount,
+            payload: JSON.stringify({ type: 'qris_own', invoiceId: invoice.id, uniqueAmount, createdAt: new Date() }),
+            response: JSON.stringify({ qrString: qrString.substring(0, 100) + '...' }),
+            success: true,
+          },
+        });
+      } catch (logError) {
+        console.error('Failed to create webhook log:', logError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        orderId,
+        paymentUrl: '',
+        snapToken: '',
+        qrString,
+        gateway: 'qris_own',
+        isQrisOwn: true,
+        amount: invoice.amount,
+        uniqueAmount,
+        expiresAt,
+        note: `Transfer TEPAT Rp ${uniqueAmount.toLocaleString('id-ID')} (jangan dibulatkan)`,
+      });
     }
 
     // Check if payment gateway is active

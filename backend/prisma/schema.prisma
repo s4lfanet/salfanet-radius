@@ -132,7 +132,34 @@ model company {
   referralRewardBoth     Boolean? @default(false) // Also reward the referred customer
   referralReferredAmount Int?     @default(0) // Reward amount for referred customer
 
+  // QRIS Mandiri (tanpa pihak ke-3) — konversi QRIS statis dari bank ke dinamis
+  qrisStaticCode         String?  @db.Text // Kode QRIS statis dari bank/merchant
+  qrisMerchantName       String?  @db.VarChar(191) // Nama merchant untuk display
+  qrisEnabled            Boolean? @default(false) // Enable/disable QRIS mandiri
+  qrisDeviceKey          String?  @db.VarChar(100) // Device key for Android QrisListener app auth
+
   @@map("companies")
+}
+
+model qrisPending {
+  id           String    @id
+  invoiceId    String?
+  userId       String?
+  orderId      String    @unique
+  baseAmount   Int
+  uniqueAmount Int
+  qrString     String    @db.Text
+  status       String    @default("pending") // pending | paid | expired
+  sourceApp    String?
+  expiresAt    DateTime
+  paidAt       DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([uniqueAmount])
+  @@index([status])
+  @@index([invoiceId])
+  @@map("qris_pending")
 }
 
 model isolationTemplate {
