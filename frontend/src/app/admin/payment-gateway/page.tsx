@@ -6,7 +6,7 @@ import { showSuccess, showError, showConfirm, showToast } from '@/lib/sweetalert
 import { formatWIB } from '@/lib/timezone';
 import { 
   Loader2, CreditCard, Wallet, Save, Eye, EyeOff, CheckCircle2, AlertCircle, 
-  Copy, Check, List, RefreshCw, Search, ChevronLeft, ChevronRight, X
+  Copy, Check, List, RefreshCw, Search, ChevronLeft, ChevronRight, X, QrCode
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -62,6 +62,8 @@ export default function PaymentGatewayPage() {
   const [xenditForm, setXenditForm] = useState({ apiKey: '', webhookToken: '', environment: 'sandbox', isActive: false });
   const [duitkuForm, setDuitkuForm] = useState({ merchantCode: '', apiKey: '', environment: 'sandbox', isActive: false });
   const [tripayForm, setTripayForm] = useState({ merchantCode: '', apiKey: '', privateKey: '', environment: 'sandbox', isActive: false });
+  const [qrisForm, setQrisForm] = useState({ staticCode: '', merchantName: '', enabled: false, deviceKey: '' });
+  const [qrisTest, setQrisTest] = useState({ orderId: '', loading: false, result: null as null | { success: boolean; message: string; invoiceId?: string; baseAmount?: number; uniqueAmount?: number } });
 
   // ─── React Query: Payment gateway configs ────────────────────────────────────
   const { data: configsData, isLoading: loading } = useApiQuery<PaymentGateway[]>('/api/payment-gateway/config', { staleTime: 30000 });
@@ -113,6 +115,28 @@ export default function PaymentGatewayPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configsData]);
 
+  // Fetch QRIS settings from /api/company
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiAdmin<{ qrisStaticCode?: string; qrisMerchantName?: string; qrisEnabled?: boolean; qrisDeviceKey?: string }>('/api/company');
+        if (!cancelled && res) {
+          setQrisForm({
+            staticCode: res.qrisStaticCode || '',
+            merchantName: res.qrisMerchantName || '',
+            enabled: res.qrisEnabled || false,
+            deviceKey: res.qrisDeviceKey || '',
+          });
+        }
+      } catch (e) {
+        console.error('Failed to fetch QRIS settings:', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ─── React Query: Webhook logs (page + filter) ───────────────────────────────
   const logsParams: Record<string, unknown> = {
     page: logsPage,
@@ -146,6 +170,48 @@ export default function PaymentGatewayPage() {
   };
 
   const toggleSecret = (key: string) => setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }));
+
+  const saveQris = async () => {
+    setSaving(true);
+    try {
+      await apiAdmin('/api/company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          qrisStaticCode: qrisForm.staticCode,
+          qrisMerchantName: qrisForm.merchantName,
+          qrisEnabled: qrisForm.enabled,
+          qrisDeviceKey: qrisForm.deviceKey,
+        }),
+      });
+      await showSuccess('QRIS Mandiri configuration saved');
+    } catch (error: unknown) {
+      await showError((error instanceof Error ? error.message : String(error)) || 'Failed to save QRIS settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const runQrisTest = async () => {
+    setQrisTest(prev => ({ ...prev, loading: true, result: null }));
+    try {
+      const res = await apiAdmin<{ success: boolean; message: string; invoiceId?: string; baseAmount?: number; uniqueAmount?: number; error?: string }>('/api/payment/qris-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: qrisTest.orderId }),
+      });
+      setQrisTest(prev => ({ ...prev, result: res, loading: false }));
+      if (res.success) {
+        await showSuccess(res.message);
+      } else {
+        await showError(res.error || res.message);
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      setQrisTest(prev => ({ ...prev, result: { success: false, message: msg }, loading: false }));
+      await showError(msg);
+    }
+  };
 
   const copyWebhookUrl = async () => {
     const webhookUrl = `${window.location.origin}/api/payment/webhook`;
@@ -227,7 +293,8 @@ export default function PaymentGatewayPage() {
             { id: 'midtrans', label: 'Midtrans', icon: CreditCard, active: midtransActive },
             { id: 'xendit', label: 'Xendit', icon: Wallet, active: xenditActive },
             { id: 'duitku', label: 'Duitku', icon: Wallet, active: duitkuActive },
-            { id: 'tripay', label: 'Tripay', icon: Wallet, active: tripayActive }
+            { id: 'tripay', label: 'Tripay', icon: Wallet, active: tripayActive },
+            { id: 'qris', label: 'QRIS Mandiri', icon: QrCode, active: qrisForm.enabled }
           ].map(tab => (
             <button
               key={tab.id}
@@ -564,6 +631,134 @@ export default function PaymentGatewayPage() {
               <button onClick={() => saveGateway('tripay', { tripayMerchantCode: tripayForm.merchantCode, tripayApiKey: tripayForm.apiKey, tripayPrivateKey: tripayForm.privateKey, tripayEnvironment: tripayForm.environment, isActive: tripayForm.isActive })} disabled={saving || !tripayForm.merchantCode || !tripayForm.apiKey || !tripayForm.privateKey} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-white text-xs font-medium rounded-lg disabled:opacity-50">
                 {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
                 Save Tripay Configuration
+              </button>
+            </div>
+          )}
+
+          {/* QRIS Mandiri Tab */}
+          {activeTab === 'qris' && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-2 bg-muted rounded-lg">
+                <div>
+                  <p className="text-xs font-medium">QRIS Mandiri (Tanpa Pihak Ke-3)</p>
+                  <p className="text-[10px] text-muted-foreground">Gunakan QRIS dari rekening bank Anda sendiri — tanpa biaya admin</p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" checked={qrisForm.enabled} onChange={(e) => setQrisForm({ ...qrisForm, enabled: e.target.checked })} className="sr-only peer" />
+                  <div className="w-8 h-4 bg-muted-foreground/30 peer-focus:ring-2 peer-focus:ring-primary/30 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-teal-500"></div>
+                </label>
+              </div>
+
+              <div className="p-2.5 bg-info/10 border border-info/20 rounded-lg">
+                <p className="text-[10px] text-info">ℹ️ Sistem akan otomatis mengkonversi QRIS statis dari bank Anda menjadi QRIS dinamis dengan nominal tagihan pelanggan. Uang masuk langsung ke rekening bank Anda tanpa perantara.</p>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-medium text-foreground">Kode QRIS Statis</label>
+                <textarea
+                  value={qrisForm.staticCode}
+                  onChange={(e) => setQrisForm({ ...qrisForm, staticCode: e.target.value.trim() })}
+                  className="w-full mt-1 px-2.5 py-1.5 text-xs font-mono border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
+                  rows={3}
+                  placeholder="Paste kode QRIS statis dari aplikasi bank Anda (dimulai dengan 00020101...)"
+                />
+                <p className="mt-1 text-[9px] text-muted-foreground">
+                  Cara mendapatkan: Mobile Banking → Menu QRIS Merchant → Tampilkan QR → Salin teks QR / Screenshot lalu decode dengan QR scanner.
+                </p>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-medium text-foreground">Nama Merchant</label>
+                <input
+                  type="text"
+                  value={qrisForm.merchantName}
+                  onChange={(e) => setQrisForm({ ...qrisForm, merchantName: e.target.value })}
+                  className="w-full mt-1 px-2.5 py-1.5 text-sm border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
+                  placeholder="Contoh: CV Rizanet Indonesia"
+                  maxLength={100}
+                />
+                <p className="mt-1 text-[9px] text-muted-foreground">Nama yang tampil di halaman pembayaran pelanggan.</p>
+              </div>
+
+              {/* Device Key untuk Android QrisListener */}
+              <div className="p-2.5 bg-muted rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold">Device Key — Android Listener (Opsional)</p>
+                    <p className="text-[10px] text-muted-foreground">Jika diisi, pembayaran QRIS otomatis terdeteksi via aplikasi Android QrisListener.</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={qrisForm.deviceKey}
+                    onChange={(e) => setQrisForm({ ...qrisForm, deviceKey: e.target.value })}
+                    className="flex-1 px-2.5 py-1.5 text-xs font-mono border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
+                    placeholder="Kosongkan jika tidak pakai Android listener"
+                    maxLength={100}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const key = crypto.randomUUID().replace(/-/g, '').substring(0, 32);
+                      setQrisForm({ ...qrisForm, deviceKey: key });
+                    }}
+                    className="px-2.5 py-1.5 text-xs bg-muted-foreground/20 hover:bg-muted-foreground/30 rounded-lg whitespace-nowrap"
+                  >
+                    Generate
+                  </button>
+                </div>
+              </div>
+
+              {qrisForm.deviceKey ? (
+                <div className="p-2.5 bg-success/10 border border-success/20 rounded-lg">
+                  <p className="text-[10px] text-success">✅ Android Listener aktif. Pembayaran QRIS akan terdeteksi otomatis saat notifikasi e-wallet (DANA, GoPay, BRImo, dll) masuk ke HP listener.</p>
+                  <p className="text-[9px] text-muted-foreground mt-1">Webhook URL Android: <code className="bg-muted px-1 rounded">{typeof window !== 'undefined' ? window.location.origin : ''}/api/payment/qris-notify</code></p>
+                </div>
+              ) : (
+                <div className="p-2 bg-warning/10 border border-warning/20 rounded-lg">
+                  <p className="text-[10px] text-warning">⚠️ Tanpa Device Key, konfirmasi pembayaran QRIS dilakukan manual oleh admin. Isi Device Key di atas lalu install app Android QrisListener untuk deteksi otomatis.</p>
+                </div>
+              )}
+
+              {/* Simulasi / Testing QRIS Mandiri */}
+              <div className="p-2.5 bg-orange-500/10 border border-orange-500/20 rounded-lg space-y-2">
+                <p className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">🧪 Simulasi Pembayaran QRIS (Testing)</p>
+                <p className="text-[10px] text-muted-foreground">Masukkan Order ID dari invoice QRIS Mandiri yang masih pending untuk mensimulasikan pembayaran masuk tanpa menggunakan HP Android.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={qrisTest.orderId}
+                    onChange={(e) => setQrisTest(prev => ({ ...prev, orderId: e.target.value, result: null }))}
+                    className="flex-1 px-2.5 py-1.5 text-xs font-mono border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
+                    placeholder="Order ID (contoh: QRIS-abc123...)"
+                  />
+                  <button
+                    type="button"
+                    onClick={runQrisTest}
+                    disabled={qrisTest.loading || !qrisTest.orderId.trim()}
+                    className="px-3 py-1.5 text-xs font-medium bg-orange-500 hover:bg-orange-600 text-white rounded-lg disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {qrisTest.loading ? ' Testing...' : ' Jalankan'}
+                  </button>
+                </div>
+                {qrisTest.result && (
+                  <div className={`p-2 rounded-lg text-[10px] ${qrisTest.result.success ? 'bg-success/10 border border-success/20 text-success' : 'bg-destructive/10 border border-destructive/20 text-destructive'}`}>
+                    <p className="font-semibold">{qrisTest.result.message}</p>
+                    {qrisTest.result.success && qrisTest.result.invoiceId && (
+                      <p className="text-muted-foreground mt-0.5">Invoice: {qrisTest.result.invoiceId} • Base: Rp {qrisTest.result.baseAmount?.toLocaleString('id-ID')} • Unique: Rp {qrisTest.result.uniqueAmount?.toLocaleString('id-ID')}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={saveQris}
+                disabled={saving || (qrisForm.enabled && !qrisForm.staticCode)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium rounded-lg disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />}
+                Save QRIS Mandiri Configuration
               </button>
             </div>
           )}
