@@ -163,6 +163,7 @@ export default function GenieACSDevicesPage() {
   const invalidateDevices = () => queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/settings/genieacs/devices') });
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all');
 
   // Modal states
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -616,14 +617,20 @@ export default function GenieACSDevicesPage() {
     </div>
   );
 
-  const filteredDevices = devices.filter(d =>
-    d.serialNumber?.toLowerCase().includes(search.toLowerCase()) ||
-    d.manufacturer?.toLowerCase().includes(search.toLowerCase()) ||
-    d.model?.toLowerCase().includes(search.toLowerCase()) ||
-    d.pppoeUsername?.toLowerCase().includes(search.toLowerCase()) ||
-    d.pppoeIP?.toLowerCase().includes(search.toLowerCase()) ||
-    d.tr069IP?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredDevices = devices.filter(d => {
+    const matchesSearch =
+      d.serialNumber?.toLowerCase().includes(search.toLowerCase()) ||
+      d.manufacturer?.toLowerCase().includes(search.toLowerCase()) ||
+      d.model?.toLowerCase().includes(search.toLowerCase()) ||
+      d.pppoeUsername?.toLowerCase().includes(search.toLowerCase()) ||
+      d.pppoeIP?.toLowerCase().includes(search.toLowerCase()) ||
+      d.tr069IP?.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'online' && d.status === 'Online') ||
+      (statusFilter === 'offline' && d.status !== 'Online');
+    return matchesSearch && matchesStatus;
+  });
 
   const onlineCount = devices.filter(d => d.status === 'Online').length;
   const offlineCount = devices.filter(d => d.status === 'Offline').length;
@@ -767,6 +774,15 @@ export default function GenieACSDevicesPage() {
                     className="w-full pl-7 pr-2 py-1.5 text-xs border border-border rounded-lg bg-card focus:ring-1 focus:ring-primary"
                   />
                 </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as 'all' | 'online' | 'offline')}
+                  className="px-2 py-1.5 text-xs border border-border rounded-lg bg-card focus:ring-1 focus:ring-primary"
+                >
+                  <option value="all">{t('common.all') || 'All'}</option>
+                  <option value="online">{t('common.online')}</option>
+                  <option value="offline">{t('common.offline')}</option>
+                </select>
                 <button
                   onClick={handleRefresh}
                   disabled={refreshing}
@@ -1856,9 +1872,9 @@ export default function GenieACSDevicesPage() {
         </div>,
         document.body
       )}
-\n    </div>
-      </div >
-    </div >
+    </div>
+      </div>
+    </div>
   );
 }
 
