@@ -197,7 +197,18 @@ export async function kickPppoeSession(routerId: string, username: string): Prom
           timeout: 15,
         })
         await api.connect()
-        const active = (await api.write('/ppp/active/print', [`?name=${username}`])) as Array<any>
+        // node-routeros throws UNKNOWNREPLY: !empty when query returns no results
+        // Catch this and treat as empty array (0 sessions = nothing to kick)
+        let active: Array<any> = []
+        try {
+          active = (await api.write('/ppp/active/print', [`?name=${username}`])) as Array<any>
+        } catch (queryErr: any) {
+          if (queryErr?.errno === 'UNKNOWNREPLY' || String(queryErr?.message || '').includes('!empty')) {
+            // No active session for this user — nothing to kick
+            return 0
+          }
+          throw queryErr
+        }
         let kicked = 0
         for (const session of active) {
           const id = session['.id'] || session.id
