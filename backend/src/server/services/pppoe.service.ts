@@ -85,6 +85,7 @@ export interface UpdatePppoeUserInput {
   registeredAt?: string;
   discount?: number | string;
   discountNote?: string | null;
+  connectionType?: string;  // PPPOE | STATIC_IP | HOTSPOT — changing this triggers MikroTik sync
 }
 
 // â”€â”€â”€ List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -446,20 +447,42 @@ export async function createPppoeUser(
         // â”€â”€â”€ Enqueue external tasks (same transaction) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         const { enqueueTask } = await import('./external-task.service');
 
-        // MikroTik PPP secret creation
+        // MikroTik sync — based on connectionType
         if (routerId) {
           const router = await tx.router.findUnique({
             where: { id: routerId },
             select: { authMode: true },
           });
           const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
-          if (shouldCreate) {
-            const mtProfile = await getMikrotikProfileName(profileId);
+          const mtProfile = await getMikrotikProfileName(profileId);
+          const effectiveConnType = connectionType || 'PPPOE';
+
+          if (effectiveConnType === 'PPPOE' && shouldCreate) {
+            // PPPoE: create PPP secret
             await enqueueTask(tx, 'pppoe_user', user.id, 'sync_mikrotik_create', {
               routerId,
               username,
               password,
               profile: mtProfile || undefined,
+              disabled,
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+          } else if (effectiveConnType === 'STATIC_IP') {
+            // Static IP: create ARP entry on MikroTik
+            await enqueueTask(tx, 'pppoe_user', user.id, 'sync_mikrotik_arp_create', {
+              routerId,
+              ipAddress: ipAddress || '',
+              macAddress: macAddress || '',
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+          } else if (effectiveConnType === 'HOTSPOT') {
+            // Hotspot: create hotspot user on MikroTik
+            await enqueueTask(tx, 'pppoe_user', user.id, 'sync_mikrotik_hotspot_create', {
+              routerId,
+              username,
+              password,
+              profile: mtProfile || undefined,
+              ipAddress: ipAddress || '',
               disabled,
               comment: `Salfanet-${user.id.slice(0, 8)}`,
             });
@@ -673,12 +696,19 @@ export async function updatePppoeUser(
       ...(data.registeredAt && { createdAt: new Date(data.registeredAt) }),
       ...(data.discount !== undefined && { discount: parseInt(String(data.discount)) || 0 }),
       ...(data.discountNote !== undefined && { discountNote: data.discountNote || null }),
+      ...(data.connectionType && { connectionType: data.connectionType as any }),
     } as never,
   });
 
+  // Detect connectionType change
+  const connectionTypeChanged = data.connectionType && data.connectionType !== currentUser.connectionType;
+  const oldConnectionType = currentUser.connectionType;
+  const newConnectionType = data.connectionType || currentUser.connectionType;
+
   // RADIUS re-sync if critical fields changed (including status change)
   // RADIUS re-sync if critical fields changed (including status change)
-  if (data.username || data.password || data.profileId || data.ipAddress !== undefined || data.routerId !== undefined || (data.status && data.status !== currentUser.status)) {
+  // Also trigger on connectionType change: PPPOE needs radcheck/radusergroup, non-PPPOE needs them removed
+  if (data.username || data.password || data.profileId || data.ipAddress !== undefined || data.routerId !== undefined || (data.status && data.status !== currentUser.status) || connectionTypeChanged) {
     try {
       const oldUsername = currentUser.username;
       const newUsername = data.username || currentUser.username;
@@ -726,6 +756,19 @@ export async function updatePppoeUser(
 
         if (effectiveStatus === 'blocked' || effectiveStatus === 'stop') {
           // Tables already cleared - do NOT re-add entries
+        } else if (newConnectionType !== 'PPPOE') {
+          // Non-PPPoE (STATIC_IP / HOTSPOT): no Cleartext-Password needed in RADIUS
+          // For STATIC_IP: only add Framed-IP-Address in radreply (for RADIUS-assigned IP)
+          if (newConnectionType === 'STATIC_IP') {
+            const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
+            if (finalIp) {
+              await tx.radreply.create({
+                data: { username: newUsername, attribute: 'Framed-IP-Address', op: ':=', value: finalIp, nas_identifier: nasIdentifier },
+              });
+            }
+          }
+          // HOTSPOT: RADIUS auth handled differently (Hotspot User Manager or MikroTik local)
+          // No radcheck/radusergroup entries needed here
         } else if (effectiveStatus === 'isolated') {
           await tx.radcheck.create({
             data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
@@ -769,18 +812,64 @@ export async function updatePppoeUser(
           await enqueueTask(tx, 'pppoe_user', id, 'coa_disconnect', { username: newUsername });
         }
 
-        // MikroTik PPP secret update
+        // MikroTik sync — handle connectionType transitions
         if (finalRouterId) {
           const router = await tx.router.findUnique({
             where: { id: finalRouterId },
             select: { authMode: true },
           });
           const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
-          if (shouldCreate) {
-            const mtProfile = await getMikrotikProfileName(newProfile.id);
-            const usernameChanged = oldUsername && oldUsername !== newUsername;
-            const mtDisabled = effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled;
+          const mtProfile = await getMikrotikProfileName(newProfile.id);
+          const usernameChanged = oldUsername && oldUsername !== newUsername;
+          const mtDisabled = effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled;
+          const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
+          const finalMac = data.macAddress !== undefined ? data.macAddress : currentUser.macAddress;
 
+          if (connectionTypeChanged) {
+            // Connection type transition — clean up old type's MikroTik entries, create new type's entries
+
+            // 1. Remove old connection type's entries from MikroTik
+            if (oldConnectionType === 'PPPOE') {
+              // Was PPPoE: delete PPP secret
+              await enqueueTask(tx, 'pppoe_user', id + '_old_secret', 'sync_mikrotik_delete', {
+                routerId: finalRouterId, username: oldUsername,
+              });
+            } else if (oldConnectionType === 'STATIC_IP') {
+              // Was Static IP: delete ARP entry
+              await enqueueTask(tx, 'pppoe_user', id + '_old_arp', 'sync_mikrotik_arp_delete', {
+                routerId: finalRouterId, ipAddress: currentUser.ipAddress || '', macAddress: currentUser.macAddress || '',
+              });
+            } else if (oldConnectionType === 'HOTSPOT') {
+              // Was Hotspot: delete hotspot user
+              await enqueueTask(tx, 'pppoe_user', id + '_old_hotspot', 'sync_mikrotik_hotspot_delete', {
+                routerId: finalRouterId, username: oldUsername,
+              });
+            }
+
+            // 2. Create new connection type's entries in MikroTik
+            if (newConnectionType === 'PPPOE' && shouldCreate) {
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_create', {
+                routerId: finalRouterId, username: newUsername,
+                password: data.password || currentUser.password,
+                profile: mtProfile || undefined, disabled: mtDisabled,
+                comment: 'Salfanet-' + id.slice(0, 8),
+              });
+            } else if (newConnectionType === 'STATIC_IP') {
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_arp_create', {
+                routerId: finalRouterId, ipAddress: finalIp || '', macAddress: finalMac || '',
+                comment: 'Salfanet-' + id.slice(0, 8),
+              });
+            } else if (newConnectionType === 'HOTSPOT') {
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_hotspot_create', {
+                routerId: finalRouterId, username: newUsername,
+                password: data.password || currentUser.password,
+                profile: mtProfile || undefined, ipAddress: finalIp || '',
+                disabled: mtDisabled,
+                comment: 'Salfanet-' + id.slice(0, 8),
+              });
+            }
+          } else if (newConnectionType === 'PPPOE' && shouldCreate) {
+            // No connectionType change — normal PPPoE PPP secret update
             if (usernameChanged) {
               await enqueueTask(tx, 'pppoe_user', id + '_old', 'sync_mikrotik_delete', {
                 routerId: finalRouterId, username: oldUsername,
@@ -796,6 +885,31 @@ export async function updatePppoeUser(
                 routerId: finalRouterId, username: newUsername,
                 password: data.password || currentUser.password,
                 profile: mtProfile || undefined, disabled: mtDisabled,
+                comment: 'Salfanet-' + id.slice(0, 8),
+              });
+            }
+          } else if (newConnectionType === 'STATIC_IP' && !connectionTypeChanged) {
+            // Static IP — update ARP entry if IP/MAC changed
+            if (data.ipAddress !== undefined || data.macAddress !== undefined) {
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_arp_update', {
+                routerId: finalRouterId,
+                oldIpAddress: currentUser.ipAddress || '',
+                newIpAddress: finalIp || '',
+                macAddress: finalMac || '',
+                comment: 'Salfanet-' + id.slice(0, 8),
+              });
+            }
+          } else if (newConnectionType === 'HOTSPOT' && !connectionTypeChanged) {
+            // Hotspot — update hotspot user if credentials changed
+            if (data.username || data.password || data.ipAddress !== undefined) {
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_hotspot_update', {
+                routerId: finalRouterId,
+                oldUsername: oldUsername,
+                newUsername: newUsername,
+                password: data.password || currentUser.password,
+                profile: mtProfile || undefined,
+                ipAddress: finalIp || '',
+                disabled: mtDisabled,
                 comment: 'Salfanet-' + id.slice(0, 8),
               });
             }
@@ -815,6 +929,7 @@ export async function updatePppoeUser(
     if (data.username !== user.username) changes.username = data.username;
     if (data.profileId !== user.profileId) changes.profileId = data.profileId;
     if (data.status !== currentUser.status) changes.status = data.status;
+    if (connectionTypeChanged) changes.connectionType = { from: oldConnectionType, to: newConnectionType };
 
     await logActivity({
       userId: (session?.user as never as { id: string })?.id,
@@ -873,24 +988,45 @@ export async function deletePppoeUser(
         username: user.username,
       });
 
-      // MikroTik: delete PPP secret
+      // MikroTik: delete entry based on connectionType
+      const connType = user.connectionType || 'PPPOE';
       if (user.routerId) {
-        await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_delete', {
-          routerId: user.routerId,
-          username: user.username,
-        });
+        if (connType === 'PPPOE') {
+          await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_delete', {
+            routerId: user.routerId,
+            username: user.username,
+          });
+        } else if (connType === 'STATIC_IP') {
+          await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_arp_delete', {
+            routerId: user.routerId,
+            ipAddress: user.ipAddress || '',
+            macAddress: user.macAddress || '',
+          });
+        } else if (connType === 'HOTSPOT') {
+          await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_hotspot_delete', {
+            routerId: user.routerId,
+            username: user.username,
+          });
+        }
       } else {
-        // No specific router â€” enqueue delete for all active routers
+        // No specific router: enqueue delete for all active routers
         const activeRouters = await tx.router.findMany({
           where: { isActive: true },
           select: { id: true },
         });
         for (const r of activeRouters) {
           // Use unique entityId per router to avoid unique constraint collision
-          await enqueueTask(tx, 'pppoe_user', `${id}_${r.id}`, 'sync_mikrotik_delete', {
-            routerId: r.id,
-            username: user.username,
-          });
+          const op = connType === 'STATIC_IP' ? 'sync_mikrotik_arp_delete' :
+                     connType === 'HOTSPOT' ? 'sync_mikrotik_hotspot_delete' :
+                     'sync_mikrotik_delete';
+          const payload: Record<string, unknown> = { routerId: r.id };
+          if (connType === 'STATIC_IP') {
+            payload.ipAddress = user.ipAddress || '';
+            payload.macAddress = user.macAddress || '';
+          } else {
+            payload.username = user.username;
+          }
+          await enqueueTask(tx, 'pppoe_user', `${id}_${r.id}`, op, payload);
         }
       }
     });

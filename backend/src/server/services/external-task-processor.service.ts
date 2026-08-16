@@ -114,6 +114,18 @@ async function executeTask(task: {
       return executeSyncMikrotik(task.payload, 'update');
     case 'sync_mikrotik_delete':
       return executeSyncMikrotik(task.payload, 'delete');
+    case 'sync_mikrotik_arp_create':
+      return executeSyncMikrotikArp(task.payload, 'create');
+    case 'sync_mikrotik_arp_update':
+      return executeSyncMikrotikArp(task.payload, 'update');
+    case 'sync_mikrotik_arp_delete':
+      return executeSyncMikrotikArp(task.payload, 'delete');
+    case 'sync_mikrotik_hotspot_create':
+      return executeSyncMikrotikHotspot(task.payload, 'create');
+    case 'sync_mikrotik_hotspot_update':
+      return executeSyncMikrotikHotspot(task.payload, 'update');
+    case 'sync_mikrotik_hotspot_delete':
+      return executeSyncMikrotikHotspot(task.payload, 'delete');
     case 'send_wa':
       return executeSendWhatsApp(task.payload);
     case 'send_email':
@@ -172,6 +184,70 @@ async function executeSyncMikrotik(payload: any, action: 'create' | 'update' | '
     // Idempotent: if create fails because secret already exists, treat as success
     if (action === 'create' && (error?.message?.includes('already exists') || error?.message?.includes('failure: already'))) {
       return `MikroTik create for ${payload.username}: already exists (idempotent skip)`;
+    }
+    throw error;
+  }
+}
+
+/**
+ * MikroTik ARP entry sync for Static IP customers — idempotent.
+ * - create: upsert ARP entry (update if exists)
+ * - update: remove old IP entry, upsert new
+ * - delete: remove if exists, skip if absent
+ */
+async function executeSyncMikrotikArp(payload: any, action: 'create' | 'update' | 'delete'): Promise<string> {
+  const { manageArpEntry } = await import('./mikrotik/arp-hotspot.service');
+  if (!payload.routerId) throw new Error('Missing routerId in ARP payload');
+  if (action !== 'delete' && !payload.ipAddress) throw new Error('Missing ipAddress in ARP payload');
+
+  try {
+    const result = await manageArpEntry(payload.routerId, action, {
+      ipAddress: payload.ipAddress || '',
+      macAddress: payload.macAddress || '',
+      comment: payload.comment,
+      oldIpAddress: payload.oldIpAddress,
+    });
+    if (!result.success) throw new Error(result.message);
+    return `MikroTik ARP ${action} for ${payload.ipAddress || payload.oldIpAddress}: ${result.message}`;
+  } catch (error: any) {
+    // Idempotent: if delete fails because entry doesn't exist, treat as success
+    if (action === 'delete' && (error?.message?.includes('not found') || error?.message?.includes('no such item') || error?.message?.includes('already absent'))) {
+      return `MikroTik ARP delete: already absent (idempotent skip)`;
+    }
+    throw error;
+  }
+}
+
+/**
+ * MikroTik Hotspot user sync — idempotent.
+ * - create: upsert hotspot user (update if exists)
+ * - update: handle username change (delete old + create new), or update in place
+ * - delete: remove if exists, skip if absent
+ */
+async function executeSyncMikrotikHotspot(payload: any, action: 'create' | 'update' | 'delete'): Promise<string> {
+  const { manageHotspotUser } = await import('./mikrotik/arp-hotspot.service');
+  if (!payload.routerId || !payload.username) throw new Error('Missing routerId or username in hotspot payload');
+
+  try {
+    const result = await manageHotspotUser(payload.routerId, action, {
+      username: payload.username,
+      password: payload.password,
+      profile: payload.profile,
+      ipAddress: payload.ipAddress,
+      disabled: payload.disabled,
+      comment: payload.comment,
+      oldUsername: payload.oldUsername,
+    });
+    if (!result.success) throw new Error(result.message);
+    return `MikroTik Hotspot ${action} for ${payload.username}: ${result.message}`;
+  } catch (error: any) {
+    // Idempotent: if delete fails because user doesn't exist, treat as success
+    if (action === 'delete' && (error?.message?.includes('not found') || error?.message?.includes('no such item') || error?.message?.includes('already absent'))) {
+      return `MikroTik Hotspot delete for ${payload.username}: already absent (idempotent skip)`;
+    }
+    // Idempotent: if create fails because user already exists, treat as success
+    if (action === 'create' && (error?.message?.includes('already exists') || error?.message?.includes('failure: already'))) {
+      return `MikroTik Hotspot create for ${payload.username}: already exists (idempotent skip)`;
     }
     throw error;
   }
