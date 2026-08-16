@@ -44,8 +44,8 @@ expect {
     }
 }
 
-# Wait for installation to complete (up to 30 minutes)
-set timeout 1800
+# Wait for installation to complete (up to 40 minutes)
+set timeout 2400
 expect {
     "INSTALASI SELESAI" {
         puts "\nINSTALL COMPLETED"
