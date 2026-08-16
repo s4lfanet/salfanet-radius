@@ -219,9 +219,14 @@ export default function UserDetailModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     // For PPPoE, don't send ipAddress (IP comes from pool)
-    const submitData = { ...formData, id: user?.id };
+    const submitData: Record<string, unknown> = { ...formData, id: user?.id };
     if (submitData.connectionType === 'PPPOE') {
       submitData.ipAddress = '';
+    }
+    // Don't send password if empty — backend will use existing password from DB
+    // This prevents overwriting MikroTik secret with empty password
+    if (!submitData.password) {
+      delete submitData.password;
     }
     await onSave(submitData);
     onClose();
