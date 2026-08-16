@@ -12,7 +12,7 @@
 - [ ] MikroTik firewall configured (IP pool, profile, filter, NAT)
 - [ ] Payment gateway address-list added
 - [ ] Nginx/Traefik passes X-Real-IP header
-- [ ] Middleware enabled (`src/middleware.ts`)
+- [ ] Middleware enabled (`src/proxy.ts`)
 - [ ] Cron service running (`pm2 list`)
 
 ### ✅ Phase 2: Manual Isolation Test
@@ -25,15 +25,16 @@
 
 3. **Manually isolate a test user**:
    ```bash
-   curl -X POST http://localhost:3000/api/admin/isolate-user \
+   curl -X PUT http://localhost:3000/api/pppoe/users/status \
      -H "Content-Type: application/json" \
-     -d '{"username": "testuser123", "reason": "Manual test"}'
+     -H "Cookie: <auth_cookie>" \
+     -d '{"userId": "USER_ID", "status": "isolated"}'
    ```
 
 4. **Check database**:
    ```sql
    SELECT username, status FROM pppoe_users WHERE username = 'testuser123';
-   -- Should show: status = 'ISOLATED'
+   -- Should show: status = 'isolated'
    
    SELECT * FROM radusergroup WHERE username = 'testuser123';
    -- Should show: groupname = 'isolir'
@@ -43,7 +44,7 @@
    ```
 
 5. **Expected Result**:
-   - ✅ User status changed to `ISOLATED`
+   - ✅ User status changed to `isolated`
    - ✅ radusergroup set to `isolir`
    - ✅ Session disconnected
    - ✅ User can still login (password not removed)
@@ -98,10 +99,10 @@
    User tries: http://google.com
    ```
 
-2. **Check middleware logs**:
+2. **Check proxy logs**:
    ```bash
    # On server
-   journalctl -u salfanet-radius -f
+   pm2 logs salfanet-frontend --lines 50 | grep -i isol
    ```
    
    **Expected log**:
@@ -217,25 +218,28 @@
 
 #### Test 6: Auto-Restoration After Payment
 
-1. **Wait for auto-renewal cron** (runs every 5 minutes)
+1. **Wait for webhook processing** (realtime via payment gateway webhook)
    
-   OR manually trigger:
+   OR manually trigger cron to verify:
    ```bash
    curl -X POST http://localhost:3000/api/cron \
      -H "Content-Type: application/json" \
-     -d '{"type": "auto_renewal"}'
+     -d '{"type": "pppoe_auto_isolir"}'
    ```
 
 2. **Check user status**:
    ```sql
    SELECT username, status, expiredAt FROM pppoe_users WHERE username = 'testuser123';
-   -- Should show: status = 'ACTIVE', expiredAt = NOW() + 30 days
+   -- Should show: status = 'active', expiredAt = NOW() + 30 days
    ```
 
 3. **Check RADIUS tables**:
    ```sql
    SELECT * FROM radusergroup WHERE username = 'testuser123';
-   -- Should show: groupname = 'default' (not 'isolir')
+   -- Should show: groupname = normal profile (not 'isolir')
+   
+   SELECT * FROM radcheck WHERE username = 'testuser123' AND attribute = 'Auth-Type';
+   -- Should be empty (no Auth-Type:Reject)
    
    SELECT * FROM radreply WHERE username = 'testuser123' AND attribute = 'Framed-IP-Address';
    -- Should show: static IP restored (if configured)
@@ -360,8 +364,8 @@ add chain=forward src-address=192.168.200.0/24 \
 
 **Diagnosis**:
 ```bash
-# Check middleware logs
-journalctl -u salfanet-radius -f | grep MIDDLEWARE
+# Check proxy logs
+pm2 logs salfanet-frontend --lines 50 | grep -i isol
 
 # Check X-Real-IP header
 curl -H "X-Real-IP: 192.168.200.50" http://localhost:3000/
@@ -384,9 +388,12 @@ location / {
 **Fix MikroTik NAT**:
 ```routeros
 /ip firewall nat
-add chain=dstnat src-address=192.168.200.0/24 \
-    protocol=tcp dst-port=80 \
-    dst-address=!YOUR_SERVER_IP \
+# Primary: Dynamic address-list
+add chain=dstnat src-address-list=isolir protocol=tcp dst-port=80 \
+    action=dst-nat to-addresses=YOUR_SERVER_IP to-ports=80
+
+# Fallback: CIDR statis
+add chain=dstnat src-address=192.168.200.0/24 protocol=tcp dst-port=80 \
     action=dst-nat to-addresses=YOUR_SERVER_IP to-ports=80
 ```
 
@@ -420,7 +427,7 @@ EXPLAIN SELECT
   r.framedipaddress, r.acctstarttime
 FROM pppoe_users u
 LEFT JOIN radacct r ON u.username = r.username AND r.acctstoptime IS NULL
-WHERE u.status = 'ISOLATED';
+WHERE u.status = 'isolated';
 
 -- Should use index on:
 -- - pppoe_users.status
@@ -461,7 +468,8 @@ If issues persist after following this guide:
 1. Check logs:
    ```bash
    # Next.js logs
-   pm2 logs salfanet-radius
+   pm2 logs salfanet-frontend
+   pm2 logs salfanet-backend
    
    # Cron logs
    pm2 logs salfanet-cron
@@ -488,4 +496,4 @@ If issues persist after following this guide:
 
 **End of Testing Guide**
 
-*Last Updated: February 2, 2026*
+*Last Updated: August 16, 2026*
