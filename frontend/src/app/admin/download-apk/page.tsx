@@ -5,7 +5,7 @@ import {
   Smartphone, Download, Shield, Wifi, Users, UserCheck,
   CheckCircle2, XCircle, Clock, AlertTriangle, RefreshCw,
   Terminal, Copy, Check, HardDrive, ChevronDown,
-  Package, Globe, Upload, ImageIcon,
+  Package, Globe, Upload, ImageIcon, QrCode,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { showError } from '@/lib/sweetalert';
@@ -79,6 +79,17 @@ const ROLES = [
     iconBg: 'bg-violet-500/20 text-violet-400',
     btn: 'from-violet-600 to-violet-700 hover:from-violet-500 hover:to-violet-600',
     pathSuffix: '/agent',
+  },
+  {
+    key: 'qris_listener',
+    label: 'QRIS Listener',
+    description: 'App Android untuk mendengarkan notifikasi e-wallet & verifikasi pembayaran QRIS otomatis.',
+    icon: <QrCode className="w-5 h-5" />,
+    gradient: 'from-rose-600 to-rose-800',
+    border: 'border-rose-500/30',
+    iconBg: 'bg-rose-500/20 text-rose-400',
+    btn: 'from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600',
+    pathSuffix: '',
   },
 ] as const;
 
