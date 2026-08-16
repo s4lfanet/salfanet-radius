@@ -73,7 +73,7 @@ export async function managePppSecret(
       port: apiPort,
       user: router.username || '',
       password: router.password || '',
-      timeout: 10,
+      timeout: 15,
     })
     await api.connect()
 
@@ -184,7 +184,7 @@ export async function kickPppoeSession(routerId: string, username: string): Prom
       port: apiPort,
       user: router.username || '',
       password: router.password || '',
-      timeout: 10,
+      timeout: 15,
     })
     await api.connect()
     const active = (await api.write('/ppp/active/print', [`?name=${username}`])) as Array<any>
@@ -226,7 +226,7 @@ export async function listPppSecrets(routerId: string): Promise<Array<{ name: st
       port: apiPort,
       user: router.username || '',
       password: router.password || '',
-      timeout: 10,
+      timeout: 15,
     })
     await api.connect()
     const secrets = (await api.write('/ppp/secret/print')) as Array<any>
@@ -264,7 +264,7 @@ export async function listPppActive(routerId: string): Promise<Set<string>> {
       port: apiPort,
       user: router.username || '',
       password: router.password || '',
-      timeout: 10,
+      timeout: 15,
     })
     await api.connect()
     const active = (await api.write('/ppp/active/print')) as Array<any>

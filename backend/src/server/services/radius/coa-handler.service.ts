@@ -391,7 +391,7 @@ export async function disconnectPPPoEUser(username: string) {
       console.log(`[CoA] CoA failed for ${username}: ${coaErr?.message}`)
     }
 
-    // ── STEP 3: MikroTik API disconnect (with hard 5s timeout) ─────
+    // ── STEP 3: MikroTik API disconnect (with hard 15s timeout) ─────
     let apiSuccess = false
     if (nas.username && nas.password) {
       const port = (nas as any).port || 8728
@@ -406,11 +406,12 @@ export async function disconnectPPPoEUser(username: string) {
                 port: tryPort,
                 user: nas!.username,
                 password: nas!.password,
-                timeout: 3,
+                timeout: 10,
               }
               const api = new RouterOSAPI(apiOpts)
               await api.connect()
-              const activePPP = await api.write('/ppp/active/print')
+              // Use query filter to only fetch sessions for this user (not all 558 sessions)
+              const activePPP = await api.write('/ppp/active/print', [`?name=${username}`])
               const pppSession = activePPP.find(
                 (p: any) => p.name === username || p.username === username
               )
@@ -422,7 +423,7 @@ export async function disconnectPPPoEUser(username: string) {
               try { await api.close() } catch {}
               return false
             })(),
-            5000,
+            15000,
             `MikroTik API ${coaTargetIp}:${tryPort}`
           )
           if (apiResult) {
@@ -517,7 +518,7 @@ export async function addToMikrotikAddressList(
             port,
             user: nas!.username || '',
             password: nas!.password || '',
-            timeout: 3,
+            timeout: 10,
           }
           const api = new RouterOSAPI(apiOpts)
           await api.connect()
@@ -539,7 +540,7 @@ export async function addToMikrotikAddressList(
           try { await api.close() } catch {}
           return true
         })(),
-        5000,
+        15000,
         `MikroTik API AddressList ${targetIp}:${port}`
       )
 
