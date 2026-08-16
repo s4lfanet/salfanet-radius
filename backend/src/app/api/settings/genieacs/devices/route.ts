@@ -16,6 +16,11 @@ let _deviceCache: DeviceListCache | null = null;
 const CACHE_TTL_MS = 300_000; // 5 min – stale-while-revalidate in background
 let _bgRefreshRunning = false; // prevent concurrent background fetches
 
+// Export cache clearer so mutations (delete, etc.) can invalidate stale cache
+export function invalidateDeviceCache() {
+  _deviceCache = null;
+}
+
 // Helper to safely convert any value to string
 function safeString(val: any): string {
   if (val === null || val === undefined) return '-';
