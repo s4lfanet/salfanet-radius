@@ -65,7 +65,7 @@ export async function manageArpEntry(
       port: apiPort,
       user: router.username || '',
       password: router.password || '',
-      timeout: 10,
+      timeout: 15,
     })
     await api.connect()
     const menu = api.write.bind(api)
@@ -184,7 +184,7 @@ export async function manageHotspotUser(
       port: apiPort,
       user: router.username || '',
       password: router.password || '',
-      timeout: 10,
+      timeout: 15,
     })
     await api.connect()
     const menu = api.write.bind(api)
@@ -312,7 +312,7 @@ export async function kickHotspotSession(routerId: string, username: string): Pr
       port: apiPort,
       user: router.username || '',
       password: router.password || '',
-      timeout: 10,
+      timeout: 15,
     })
     await api.connect()
     const active = (await api.write('/ip/hotspot/active/print', [`?user=${username}`])) as Array<any>
