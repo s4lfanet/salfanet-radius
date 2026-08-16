@@ -9,6 +9,7 @@ import {
   FileCode2,
   Sliders,
   Zap,
+  BookOpen,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
     label: 'Auto-Provision',
     icon: Zap,
   },
+  { href: '/admin/genieacs/guide', label: 'Panduan', icon: BookOpen },
 ];
 
 interface Props {

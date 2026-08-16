@@ -14,6 +14,7 @@
  */
 
 import 'server-only';
+import crypto from 'crypto';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
 import { basicAuthHeader } from './helpers';
 import type {
@@ -353,4 +354,183 @@ export async function deleteConfig(id: string): Promise<void> {
 
 /* ---------- Files ---------- */
 // Files management removed — use GenieACS UI directly for firmware/file uploads.
+
+/* ---------- Direct Connection Request (bypass GenieACS) ---------- */
+// Ported from salfanet-radius-go internal/api/handlers/genieacs_ext.go
+// sendDirectConnectionRequest + buildDigestAuth + parseDigestParams.
+// Used when GenieACS server cannot reach the device directly but the
+// Salfanet backend can (same network as the CPE).
+
+/**
+ * Parse a Digest WWW-Authenticate challenge into a key/value map.
+ * Ported from Go parseDigestParams.
+ */
+function parseDigestParams(challenge: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  const s = challenge.replace(/^Digest\s+/i, '').trim();
+  // Split by comma but tolerate quoted values containing commas.
+  const parts: string[] = [];
+  let buf = '';
+  let inQuotes = false;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === '"') inQuotes = !inQuotes;
+    if (ch === ',' && !inQuotes) {
+      parts.push(buf);
+      buf = '';
+    } else {
+      buf += ch;
+    }
+  }
+  if (buf) parts.push(buf);
+  for (const part of parts) {
+    const p = part.trim();
+    const idx = p.indexOf('=');
+    if (idx < 0) continue;
+    const key = p.slice(0, idx).trim();
+    let val = p.slice(idx + 1).trim();
+    val = val.replace(/^"(.*)"$/, '$1');
+    result[key] = val;
+  }
+  return result;
+}
+
+/**
+ * Build a Digest Authorization header from a WWW-Authenticate challenge.
+ * Ported from Go buildDigestAuth (RFC 2617, MD5, qop=auth).
+ */
+function buildDigestAuth(
+  challenge: string,
+  uri: string,
+  username: string,
+  password: string,
+  method: string,
+): string {
+  const params = parseDigestParams(challenge);
+  const realm = params['realm'] ?? '';
+  const nonce = params['nonce'] ?? '';
+  const qop = params['qop'] ?? '';
+  const opaque = params['opaque'] ?? '';
+
+  const cnonce = crypto
+    .randomBytes(16)
+    .toString('hex');
+  const nc = '00000001';
+
+  const ha1 = crypto
+    .createHash('md5')
+    .update(`${username}:${realm}:${password}`)
+    .digest('hex');
+  const ha2 = crypto
+    .createHash('md5')
+    .update(`${method}:${uri}`)
+    .digest('hex');
+
+  let response: string;
+  if (qop === 'auth') {
+    const respData = `${ha1}:${nonce}:${nc}:${cnonce}:${qop}:${ha2}`;
+    response = crypto.createHash('md5').update(respData).digest('hex');
+  } else {
+    const respData = `${ha1}:${nonce}:${ha2}`;
+    response = crypto.createHash('md5').update(respData).digest('hex');
+  }
+
+  let auth = `Digest username="${username}", realm="${realm}", nonce="${nonce}", uri="${uri}", response="${response}"`;
+  if (qop) auth += `, qop=${qop}, nc=${nc}, cnonce="${cnonce}"`;
+  if (opaque) auth += `, opaque="${opaque}"`;
+  return auth;
+}
+
+/**
+ * Send a connection request directly to the device, bypassing GenieACS.
+ * Tries basic auth first, falls back to digest auth on 401 challenge.
+ * Ported from Go sendDirectConnectionRequest.
+ */
+export async function sendDirectConnectionRequest(
+  crURL: string,
+  crUser: string,
+  crPass: string,
+  deviceID: string,
+): Promise<{ ok: boolean; status: number; method: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  try {
+    // No auth needed
+    if (!crUser && !crPass) {
+      const resp = await fetch(crURL, { method: 'GET', signal: controller.signal });
+      await resp.text().catch(() => undefined);
+      clearTimeout(timer);
+      console.log(`[GenieACS] direct CR sent (no auth) device=${deviceID} status=${resp.status}`);
+      return { ok: resp.ok, status: resp.status, method: 'none' };
+    }
+
+    // Try basic auth first
+    const basic = Buffer.from(`${crUser}:${crPass}`).toString('base64');
+    const resp1 = await fetch(crURL, {
+      method: 'GET',
+      headers: { Authorization: `Basic ${basic}` },
+      signal: controller.signal,
+    });
+    const body1 = await resp1.text().catch(() => '');
+    if (resp1.status === 200) {
+      clearTimeout(timer);
+      console.log(`[GenieACS] direct CR sent (basic auth) device=${deviceID} status=200`);
+      return { ok: true, status: 200, method: 'basic' };
+    }
+
+    // 401 → try digest
+    if (resp1.status === 401) {
+      const authHeader = resp1.headers.get('www-authenticate') || '';
+      if (/digest/i.test(authHeader)) {
+        let digestURI = crURL;
+        try {
+          const u = new URL(crURL);
+          digestURI = u.pathname + u.search;
+        } catch {
+          /* keep full URL */
+        }
+        const digestAuth = buildDigestAuth(authHeader, digestURI, crUser, crPass, 'GET');
+        const resp2 = await fetch(crURL, {
+          method: 'GET',
+          headers: { Authorization: digestAuth },
+          signal: controller.signal,
+        });
+        await resp2.text().catch(() => undefined);
+        clearTimeout(timer);
+        console.log(`[GenieACS] direct CR sent (digest auth) device=${deviceID} status=${resp2.status}`);
+        return { ok: resp2.ok, status: resp2.status, method: 'digest' };
+      }
+    }
+
+    clearTimeout(timer);
+    console.log(`[GenieACS] direct CR sent (fallback) device=${deviceID} status=${resp1.status}`);
+    return { ok: resp1.ok, status: resp1.status, method: 'basic-fallback' };
+  } catch (err) {
+    clearTimeout(timer);
+    console.error(`[GenieACS] direct CR failed device=${deviceID}:`, err);
+    return { ok: false, status: 0, method: 'error' };
+  }
+}
+
+/**
+ * Extract ConnectionRequestURL/Username/Password from a raw GenieACS device.
+ * Returns empty strings when not present.
+ */
+export function extractConnectionRequestInfo(device: any): {
+  crURL: string;
+  crUser: string;
+  crPass: string;
+} {
+  let crURL = '';
+  let crUser = '';
+  let crPass = '';
+  const igd = device?.InternetGatewayDevice;
+  const mgmt = igd?.ManagementServer;
+  if (mgmt) {
+    crURL = mgmt.ConnectionRequestURL?._value ?? '';
+    crUser = mgmt.ConnectionRequestUsername?._value ?? '';
+    crPass = mgmt.ConnectionRequestPassword?._value ?? '';
+  }
+  return { crURL, crUser, crPass };
+}
 
