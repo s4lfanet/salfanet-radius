@@ -94,12 +94,15 @@ export async function managePppSecret(
         // Idempotent: update existing secret
         const id = existing['.id'] || existing.id
         const upd: string[] = [`=.id=${id}`, `=disabled=${disabledVal}`, `=service=${service}`]
-        if (params.password !== undefined) upd.push(`=password=${params.password}`)
+        // Only update password if a non-empty password is provided
+        // Empty string would overwrite the existing password with blank
+        if (params.password) upd.push(`=password=${params.password}`)
         if (params.profile) upd.push(`=profile=${params.profile}`)
         if (params.comment !== undefined) upd.push(`=comment=${params.comment}`)
         await menu('/ppp/secret/set', upd)
         return { success: true, action, username: params.username, message: `Updated existing secret (disabled=${disabledVal})` }
       } else {
+        // Create new secret — password is required
         const entry: string[] = [
           `=name=${params.username}`,
           `=password=${params.password || ''}`,
@@ -127,7 +130,7 @@ export async function managePppSecret(
       } else {
         const id = existing['.id'] || existing.id
         const upd: string[] = [`=.id=${id}`, `=name=${newUsername}`]
-        if (params.password !== undefined) upd.push(`=password=${params.password}`)
+        if (params.password) upd.push(`=password=${params.password}`)
         if (params.profile) upd.push(`=profile=${params.profile}`)
         await menu('/ppp/secret/set', upd)
         return { success: true, action, username: newUsername, message: `Renamed from ${params.username}` }
@@ -153,7 +156,7 @@ export async function managePppSecret(
         return { success: true, action, username: params.username, message: 'Enabled' }
       } else if (action === 'update') {
         const upd: string[] = [`=.id=${id}`]
-        if (params.password !== undefined) upd.push(`=password=${params.password}`)
+        if (params.password) upd.push(`=password=${params.password}`)
         if (params.profile) upd.push(`=profile=${params.profile}`)
         if (params.disabled !== undefined) upd.push(`=disabled=${disabledVal}`)
         if (upd.length > 1) {
