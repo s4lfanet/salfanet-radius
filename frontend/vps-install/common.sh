@@ -443,6 +443,7 @@ ensure_ufw_enabled() {
     # Ensure public web ports stay open for app access
     ufw allow 80/tcp comment 'HTTP' 2>/dev/null || true
     ufw allow 443/tcp comment 'HTTPS' 2>/dev/null || true
+    ufw allow 8080/tcp comment 'HTTP Alt (Nginx)' 2>/dev/null || true
 
     # Reasonable defaults for public servers
     ufw default deny incoming >/dev/null 2>&1 || true
