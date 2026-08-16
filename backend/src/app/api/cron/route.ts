@@ -95,19 +95,23 @@ export async function POST(request: NextRequest) {
     // ─── Atomic distributed lock ─────────────────────────────────────────────
     // Prevents duplicate concurrent execution across multiple instances.
     //
-    // ALWAYS acquire the lock, even when called via CRON_SECRET.
-    // The cron-runner also holds its own lock, but this API-level lock
-    // provides defense-in-depth: if the runner's lock is stale and another
-    // runner takes over, the API lock prevents double execution.
+    // When called via CRON_SECRET (from cron-runner), SKIP the API-level lock
+    // because the cron-runner already holds its own lock. The cron-runner's
+    // lock is the authoritative guard — acquiring a second lock here would
+    // always fail (deadlock: runner holds lock → API tries same lock → fails).
     //
-    // The lock uses ownerToken to ensure only the acquirer can release it.
+    // When called via admin session (manual trigger from UI), acquire the lock
+    // to prevent concurrent execution with the cron-runner.
     let ownerToken: string | null = null
-    ownerToken = await acquireCronLock(jobType)
-    if (!ownerToken) {
-      return NextResponse.json(
-        { success: false, error: `Job ${jobType} is already running (lock held)` },
-        { status: 409 }
-      )
+    if (!hasCronSecret) {
+      // Manual trigger from admin UI — acquire lock
+      ownerToken = await acquireCronLock(jobType)
+      if (!ownerToken) {
+        return NextResponse.json(
+          { success: false, error: `Job ${jobType} is already running (lock held)` },
+          { status: 409 }
+        )
+      }
     }
 
     // Create history record
