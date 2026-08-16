@@ -160,11 +160,12 @@ export interface PppoeAreaResponse {
 }
 
 // === Online Status ===
-// GET /api/pppoe/users/online-status returns { online, onlineCount, total, timestamp }
+// GET /api/pppoe/users/online-status returns { online, onlineCount, total, statusMap, timestamp }
 export interface PppoeOnlineStatusResponse {
   online: string[];
   onlineCount: number;
   total: number;
+  statusMap?: Record<string, string>;
   timestamp: ISODateString;
 }
 
