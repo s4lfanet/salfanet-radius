@@ -91,17 +91,23 @@ install_freeradius_packages() {
 }
 
 restore_from_backup() {
-    local FR_BACKUP_DIR="${APP_DIR}/freeradius-config"
-    
-    if [ ! -d "$FR_BACKUP_DIR" ]; then
+    # Try monorepo path first (backend/freeradius-config/), then legacy root path
+    local FR_BACKUP_DIR=""
+    if [ -d "${APP_DIR}/backend/freeradius-config" ]; then
+        FR_BACKUP_DIR="${APP_DIR}/backend/freeradius-config"
+    elif [ -d "${APP_DIR}/freeradius-config" ]; then
+        FR_BACKUP_DIR="${APP_DIR}/freeradius-config"
+    fi
+
+    if [ -z "$FR_BACKUP_DIR" ]; then
         return 1
     fi
-    
+
     if [ ! -f "$FR_BACKUP_DIR/mods-available/sql" ] && [ ! -f "$FR_BACKUP_DIR/mods-enabled/sql" ]; then
         return 1
     fi
-    
-    print_info "Found FreeRADIUS backup configs in project..."
+
+    print_info "Found FreeRADIUS backup configs at: $FR_BACKUP_DIR"
     print_info "Restoring configuration from backup..."
     
     # Restore SQL module
