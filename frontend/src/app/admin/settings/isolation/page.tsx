@@ -351,7 +351,7 @@ export default function IsolationSettingsPage() {
                 type="url"
                 value={settings.isolationRedirectUrl}
                 onChange={(e) => setSettings({ ...settings, isolationRedirectUrl: e.target.value })}
-                placeholder={`${settings.baseUrl}/isolated`}
+                placeholder={settings.baseUrl ? `${settings.baseUrl}/isolated` : 'https://radius.salfa.my.id/isolated'}
                 className="w-full px-3 py-1.5 text-sm border border-border rounded-lg focus:ring-2 focus:ring-primary dark:bg-input dark:text-foreground"
               />
               <p className="text-[10px] text-muted-foreground mt-0.5">
