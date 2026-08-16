@@ -5,6 +5,32 @@ import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 export const dynamic = 'force-dynamic';
 
 /**
+ * Server-side amount extraction from raw notification text.
+ * Same patterns as QrisNotificationListener.kt PAYMENT_PATTERNS.
+ * Used as fallback when Android app can't parse amount (e.g. new DANA Bisnis format).
+ */
+const PAYMENT_PATTERNS: RegExp[] = [
+  /(?:menerima|diterima|masuk|received|transfer\s+masuk|pembayaran\s+masuk)[^Rp0-9]*[Rp\s]*(\d{1,3}(?:[.,]\d{3})*)/iu,
+  /Rp\s*(\d{1,3}(?:[.,]\d{3})*)(?:\s*telah\s*diterima|\s*berhasil\s*diterima)/iu,
+  /Rp\s*(\d{1,3}(?:[.,]\d{3})*)\s+dari\s+\S+\s+berhasil\s+diterima/iu,
+  /berhasil\s+diterima\s+Rp\s*(\d{1,3}(?:[.,]\d{3})*)/iu,
+  /(?:kamu|anda)?\s*menerima\s+[Rp\s]*(\d{1,3}(?:[.,]\d{3})*)/iu,
+  /Rp\s*(\d{1,3}(?:[.,]\d{3})*)\s+diterima\b/iu,
+];
+
+function extractAmountFromText(text: string): number | null {
+  for (const pattern of PAYMENT_PATTERNS) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      const cleaned = match[1].replace(/[.,]/g, '');
+      const val = parseInt(cleaned, 10);
+      if (val > 0) return val;
+    }
+  }
+  return null;
+}
+
+/**
  * POST /api/payment/qris-notify — Webhook dari Android QrisListener app
  * Public endpoint (no auth) but protected by device_key
  * Body: { device_key, amount, source_app, raw_text, timestamp }
@@ -20,11 +46,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { device_key, amount, source_app, raw_text, timestamp } = body;
+    const { device_key, source_app, raw_text, timestamp } = body;
+    let amount = typeof body.amount === 'number' ? body.amount : 0;
+
+    // Server-side fallback: if amount not sent or 0, parse from raw_text
+    // (same as PHP qris_notify.php — supports MacroDroid/Tasker and cases
+    //  where Android app regex didn't match the notification format)
+    if ((!amount || amount <= 0) && raw_text) {
+      amount = extractAmountFromText(raw_text) ?? 0;
+    }
 
     if (!device_key || !amount || amount <= 0) {
       return NextResponse.json(
-        { error: 'device_key dan amount wajib diisi' },
+        { error: 'device_key dan amount wajib diisi (langsung atau lewat raw_text yang bisa di-parse)' },
         { status: 400 }
       );
     }
