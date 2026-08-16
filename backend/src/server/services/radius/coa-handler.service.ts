@@ -411,7 +411,18 @@ export async function disconnectPPPoEUser(username: string) {
               const api = new RouterOSAPI(apiOpts)
               await api.connect()
               // Use query filter to only fetch sessions for this user (not all 558 sessions)
-              const activePPP = await api.write('/ppp/active/print', [`?name=${username}`])
+              // node-routeros throws UNKNOWNREPLY: !empty when query returns no results
+              let activePPP: any[] = []
+              try {
+                activePPP = await api.write('/ppp/active/print', [`?name=${username}`])
+              } catch (queryErr: any) {
+                if (queryErr?.errno === 'UNKNOWNREPLY' || String(queryErr?.message || '').includes('!empty')) {
+                  // No active session — nothing to kick
+                  try { await api.close() } catch {}
+                  return false
+                }
+                throw queryErr
+              }
               const pppSession = activePPP.find(
                 (p: any) => p.name === username || p.username === username
               )
