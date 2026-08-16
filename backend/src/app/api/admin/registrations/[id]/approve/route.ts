@@ -232,9 +232,10 @@ export async function POST(
       // Password
       await prisma.radcheck.upsert({
         where: {
-          username_attribute: {
+          username_attribute_nas_identifier: {
             username,
             attribute: 'Cleartext-Password',
+            nas_identifier: null,
           },
         },
         create: {
@@ -251,9 +252,10 @@ export async function POST(
       // Add to group
       await prisma.radusergroup.upsert({
         where: {
-          username_groupname: {
+          username_groupname_nas_identifier: {
             username,
             groupname: registration.profile.groupName,
+            nas_identifier: null,
           },
         },
         create: {
