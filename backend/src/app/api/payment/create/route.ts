@@ -163,6 +163,9 @@ export async function POST(request: NextRequest) {
       console.warn(`[Payment Create] ⚠️  No paymentToken provided for invoice ${invoice.invoiceNumber} — backward compat mode. This will be enforced in a future release.`);
     }
 
+    // Generate orderId early — used by qris_own and gateway flows
+    const orderId = `${invoice.invoiceNumber}-${Date.now()}-${nodeCrypto.randomBytes(4).toString('hex')}`;
+
     // ── QRIS Mandiri (qris_own) — no third-party gateway needed ──────────────
     if (gateway === 'qris_own') {
       const company = await prisma.company.findFirst();
@@ -234,6 +237,58 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // ── Offline payment methods (manual, cash, transfer) — no gateway needed ──
+    if (gateway === 'manual' || gateway === 'cash' || gateway === 'transfer') {
+      // Create payment record
+      try {
+        await prisma.payment.create({
+          data: {
+            id: crypto.randomUUID(),
+            invoiceId: invoice.id,
+            amount: invoice.amount,
+            method: gateway,
+            gatewayId: null,
+            status: 'pending',
+          }
+        });
+      } catch (paymentError: any) {
+        if (paymentError?.code !== 'P2002') {
+          console.error('[Payment Create] Failed to create offline payment record:', paymentError);
+        }
+      }
+
+      // Log to webhook log
+      try {
+        await prisma.webhookLog.create({
+          data: {
+            id: crypto.randomUUID(),
+            gateway,
+            orderId,
+            status: 'pending',
+            transactionId: null,
+            amount: invoice.amount,
+            payload: JSON.stringify({ type: 'invoice', invoiceId: invoice.id, method: gateway, createdAt: new Date() }),
+            response: JSON.stringify({ method: gateway, note: 'Offline payment — awaiting confirmation' }),
+            success: true,
+          }
+        });
+      } catch (logError) {
+        console.error('Failed to create webhook log:', logError);
+      }
+
+      return NextResponse.json({
+        success: true,
+        orderId,
+        paymentUrl: '',
+        snapToken: '',
+        gateway,
+        isOffline: true,
+        note: gateway === 'cash' ? 'Pembayaran tunai — konfirmasi ke admin' :
+              gateway === 'transfer' ? 'Transfer manual — konfirmasi bukti transfer ke admin' :
+              'Pembayaran manual — konfirmasi ke admin',
+      });
+    }
+
     // Check if payment gateway is active
     const gatewayConfig = await prisma.paymentGateway.findUnique({
       where: { provider: gateway }
@@ -245,12 +300,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-    // ─── PAYMENT ATTEMPT: DB-level idempotency ────────────────────────────────
-    // Create a PaymentAttempt record with a unique orderId.
-    // This atomically cancels any existing active attempts for this invoice
-    // and prevents duplicate payment attempts under concurrent requests.
-    const orderId = `${invoice.invoiceNumber}-${Date.now()}-${nodeCrypto.randomBytes(4).toString('hex')}`;
 
     // Get customer info (use snapshot if user deleted)
     const customerName = invoice.user?.name || invoice.customerName || 'Customer';
