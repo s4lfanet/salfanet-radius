@@ -9,15 +9,27 @@ export async function POST(request: NextRequest) {
     const authCheck = await requirePermission('customers.edit');
     if (!authCheck.authorized) return authCheck.response;
 
-    const { id } = await request.json();
-    if (!id) {
-      return NextResponse.json({ error: 'Profile ID is required' }, { status: 400 });
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch {
+      // Empty body — sync all profiles
     }
+    const { id } = body;
 
-    const profile = await prisma.pppoeProfile.findUnique({ where: { id } }) as any;
-    if (!profile) {
+    // If id provided, sync single profile; otherwise sync all
+    const profiles = id
+      ? await prisma.pppoeProfile.findMany({ where: { id } })
+      : await prisma.pppoeProfile.findMany();
+
+    if (profiles.length === 0) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
+
+    let syncedCount = 0;
+    const errors: string[] = [];
+
+    for (const profile of profiles) {
 
     const rateLimit = profile.rateLimit || `${profile.downloadSpeed}M/${profile.uploadSpeed}M`;
     const mikrotikProfileName = profile.groupName;
@@ -133,10 +145,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Mark profile as synced
-    const updated = await prisma.pppoeProfile.update({
-      where: { id },
+    await prisma.pppoeProfile.update({
+      where: { id: profile.id },
       data: { syncedToRadius: true, lastSyncAt: new Date() },
     });
+    syncedCount++;
+    } // end for loop
 
     // Reload FreeRADIUS so profile changes take effect immediately
     try {
@@ -145,10 +159,17 @@ export async function POST(request: NextRequest) {
       console.warn('FreeRADIUS reload failed after profile sync:', e);
     }
 
+    if (id) {
+      return NextResponse.json({
+        success: true,
+        message: `Profile "${profiles[0].name}" berhasil disinkronkan ke FreeRADIUS`,
+      });
+    }
+
     return NextResponse.json({
       success: true,
-      message: `Profile "${profile.name}" berhasil disinkronkan ke FreeRADIUS`,
-      profile: updated,
+      message: `${syncedCount} profile berhasil disinkronkan ke FreeRADIUS`,
+      synced: syncedCount,
     });
   } catch (error) {
     console.error('Sync RADIUS error:', error);
