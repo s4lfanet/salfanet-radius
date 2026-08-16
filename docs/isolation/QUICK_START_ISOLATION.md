@@ -36,22 +36,27 @@ add list=payment-gateways address=api.xendit.co
 add list=payment-gateways address=passport.duitku.com
 
 /ip firewall filter
+# Primary: Dynamic address-list (di-populate oleh RADIUS Mikrotik-Address-List)
+add chain=forward src-address-list=isolir protocol=udp dst-port=53 action=accept
+add chain=forward src-address-list=isolir dst-address=YOUR_SERVER_IP dst-port=80,443 protocol=tcp action=accept
+add chain=forward src-address-list=isolir dst-address-list=payment-gateways action=accept
+add chain=forward src-address-list=isolir action=drop
+
+# Fallback: CIDR statis
 add chain=forward src-address=192.168.200.0/24 protocol=udp dst-port=53 action=accept
-add chain=forward src-address=192.168.200.0/24 dst-address=103.xxx.xxx.xxx action=accept
+add chain=forward src-address=192.168.200.0/24 dst-address=YOUR_SERVER_IP dst-port=80,443 protocol=tcp action=accept
 add chain=forward src-address=192.168.200.0/24 dst-address-list=payment-gateways action=accept
 add chain=forward src-address=192.168.200.0/24 action=drop
 
 /ip firewall nat
-add chain=dstnat src-address=192.168.200.0/24 protocol=tcp dst-port=80 \
-    dst-address=!103.xxx.xxx.xxx dst-address-list=!payment-gateways \
-    action=dst-nat to-addresses=103.xxx.xxx.xxx
+# Primary: Dynamic address-list
+add chain=dstnat src-address-list=isolir protocol=tcp dst-port=80 action=dst-nat to-addresses=YOUR_SERVER_IP to-ports=80
 
-add chain=dstnat src-address=192.168.200.0/24 protocol=tcp dst-port=443 \
-    dst-address=!103.xxx.xxx.xxx dst-address-list=!payment-gateways \
-    action=dst-nat to-addresses=103.xxx.xxx.xxx to-ports=443
+# Fallback: CIDR statis
+add chain=dstnat src-address=192.168.200.0/24 protocol=tcp dst-port=80 action=dst-nat to-addresses=YOUR_SERVER_IP to-ports=80
 ```
 
-**Replace `103.xxx.xxx.xxx`** with:
+**Replace `YOUR_SERVER_IP`** with:
 - Direct IP: Your router's public IP
 - VPN: Your VPN server IP or domain
 
@@ -63,8 +68,9 @@ add chain=dstnat src-address=192.168.200.0/24 protocol=tcp dst-port=443 \
 -- Create 'isolir' group
 INSERT INTO radgroupreply (groupname, attribute, op, value)
 VALUES 
-  ('isolir', 'Mikrotik-Address-Pool', ':=', 'pool-isolir'),
-  ('isolir', 'Mikrotik-Rate-Limit', ':=', '64k/64k');
+  ('isolir', 'Framed-Pool', ':=', 'pool-isolir'),
+  ('isolir', 'Mikrotik-Rate-Limit', ':=', '64k/64k'),
+  ('isolir', 'Mikrotik-Address-List', ':=', 'isolir');
 ```
 
 **Or via MikroTik**:
@@ -80,17 +86,18 @@ VALUES
 **Test User**: Create or use existing expired user
 
 ```bash
-# Manually isolate a user
-curl -X POST http://localhost:3000/api/admin/isolate-user \
+# Manually isolate a user via admin panel or API
+# Admin Panel: PPPoE Users → Click user → Change Status → Isolated
+curl -X PUT http://localhost:3000/api/pppoe/users/status \
   -H "Content-Type: application/json" \
-  -d '{"username": "testuser"}'
+  -H "Cookie: <auth_cookie>" \
+  -d '{"userId": "USER_ID", "status": "isolated"}'
 ```
 
 **Expected Result**:
 ```json
 {
-  "success": true,
-  "message": "User testuser isolated successfully"
+  "success": true
 }
 ```
 
