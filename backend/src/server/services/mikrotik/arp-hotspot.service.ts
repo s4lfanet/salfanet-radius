@@ -67,7 +67,12 @@ export async function manageArpEntry(
       password: router.password || '',
       timeout: 15,
     })
-    await api.connect()
+    await Promise.race([
+      api.connect(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`connect timeout for ${host}:${apiPort} after 20s`)), 20000)
+      ),
+    ])
     const menu = api.write.bind(api)
 
     if (action === 'delete') {
@@ -186,7 +191,12 @@ export async function manageHotspotUser(
       password: router.password || '',
       timeout: 15,
     })
-    await api.connect()
+    await Promise.race([
+      api.connect(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`connect timeout for ${host}:${apiPort} after 20s`)), 20000)
+      ),
+    ])
     const menu = api.write.bind(api)
 
     // For update with username change, delete old and create new
@@ -314,7 +324,12 @@ export async function kickHotspotSession(routerId: string, username: string): Pr
       password: router.password || '',
       timeout: 15,
     })
-    await api.connect()
+    await Promise.race([
+      api.connect(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`connect timeout for ${host}:${apiPort} after 20s`)), 20000)
+      ),
+    ])
     const active = (await api.write('/ip/hotspot/active/print', [`?user=${username}`])) as Array<any>
     let kicked = 0
     for (const session of active) {
