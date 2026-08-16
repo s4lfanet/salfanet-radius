@@ -56,14 +56,38 @@ export async function GET() {
   const shortCommit  = localCommit !== 'unknown' ? localCommit.slice(0, 7) : 'unknown';
   const commitDate   = git('git log -1 --format="%ci"', appDir);
   const commitMsg    = git('git log -1 --format="%s"', appDir);
+  const gitBranch    = git('git rev-parse --abbrev-ref HEAD', appDir);
+  const totalCommits = git('git rev-list --count HEAD', appDir);
+
+  // Auto-generate build number: count commits since last version tag
+  let buildNumber = 0;
+  try {
+    buildNumber = parseInt(
+      execSync('git rev-list --count HEAD --since="2 days ago"', { cwd: appDir, timeout: 5000, stdio: 'pipe' }).toString().trim()
+    ) || 0;
+  } catch { /* ignore */ }
+
+  // Auto-version: package.json version + commit count as build suffix
+  // e.g. "2.35.0" + 1500 total commits => "2.35.0+1500"
+  const autoVersion = totalCommits !== 'unknown'
+    ? `${appVersion}+${totalCommits}`
+    : appVersion;
 
   // Fetch remote commit without full pull (fast)
   let remoteCommit = 'unknown';
   let hasUpdate    = false;
+  let behindCount  = 0;
   try {
     execSync('git fetch origin master --quiet', { cwd: appDir, timeout: 10000, stdio: 'pipe' });
     remoteCommit = git('git rev-parse origin/master', appDir);
     hasUpdate    = localCommit !== 'unknown' && remoteCommit !== 'unknown' && localCommit !== remoteCommit;
+    if (hasUpdate) {
+      try {
+        behindCount = parseInt(
+          execSync('git rev-list --count HEAD..origin/master', { cwd: appDir, timeout: 5000, stdio: 'pipe' }).toString().trim()
+        ) || 0;
+      } catch { /* ignore */ }
+    }
   } catch { /* network unavailable */ }
 
   const logExists = existsSync('/tmp/salfanet-update.log');
@@ -82,11 +106,15 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    version:       appVersion,
+    version:       autoVersion,
+    baseVersion:   appVersion,
     commit:        shortCommit,
     commitFull:    localCommit,
     commitDate,
     commitMessage: commitMsg,
+    gitBranch,
+    totalCommits:  totalCommits !== 'unknown' ? parseInt(totalCommits) : 0,
+    behindCount,
     remoteCommit:  remoteCommit !== 'unknown' ? remoteCommit.slice(0, 7) : 'unknown',
     hasUpdate,
     updateRunning,
