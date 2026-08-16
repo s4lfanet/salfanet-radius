@@ -874,7 +874,8 @@ export async function updatePppoeUser(
               });
             }
           } else if (newConnectionType === 'PPPOE' && shouldCreate) {
-            // No connectionType change — normal PPPoE PPP secret update
+            // No connectionType change — normal PPPoE PPP secret sync
+            // Always use sync_mikrotik_create (idempotent upsert) — works even if secret was never created
             if (usernameChanged) {
               await enqueueTask(tx, 'pppoe_user', id + '_old', 'sync_mikrotik_delete', {
                 routerId: finalRouterId, username: oldUsername,
@@ -886,7 +887,8 @@ export async function updatePppoeUser(
                 comment: 'Salfanet-' + id.slice(0, 8),
               });
             } else {
-              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_update', {
+              // Use create (upsert) instead of update — handles case where secret doesn't exist yet
+              await enqueueTask(tx, 'pppoe_user', id, 'sync_mikrotik_create', {
                 routerId: finalRouterId, username: newUsername,
                 password: data.password || currentUser.password,
                 profile: mtProfile || undefined, disabled: mtDisabled,

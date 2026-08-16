@@ -218,7 +218,12 @@ export default function UserDetailModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSave({ ...formData, id: user?.id });
+    // For PPPoE, don't send ipAddress (IP comes from pool)
+    const submitData = { ...formData, id: user?.id };
+    if (submitData.connectionType === 'PPPOE') {
+      submitData.ipAddress = '';
+    }
+    await onSave(submitData);
     onClose();
   };
 
@@ -442,8 +447,12 @@ export default function UserDetailModal({
                     value={formData.ipAddress}
                     onChange={(e) => setFormData({ ...formData, ipAddress: e.target.value })}
                     className={inputCls}
-                    placeholder={t('userModal.ipPlaceholder')}
+                    placeholder={formData.connectionType === 'PPPOE' ? 'Otomatis dari IP Pool' : t('userModal.ipPlaceholder')}
+                    disabled={formData.connectionType === 'PPPOE'}
                   />
+                  {formData.connectionType === 'PPPOE' && (
+                    <p className="text-[10px] text-muted-foreground mt-1">IP Address otomatis dari IP Pool MikroTik/RADIUS</p>
+                  )}
                 </div>
                 <div className="col-span-2">
                   <label className={labelCls}>{t('userModal.address')}</label>
