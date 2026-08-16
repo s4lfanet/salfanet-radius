@@ -54,10 +54,10 @@ export interface ExternalTaskPayload {
 
 /**
  * Enqueue an external task. Uses upsert to enforce idempotency:
- * if a task for the same (entityType, entityId, operation) already exists
- * and is not SUCCESS/DEAD, it resets to PENDING for retry.
- * If it is SUCCESS, it's a no-op (already done).
- * If it is DEAD, it resets to PENDING (manual retry).
+ * if a task for the same (entityType, entityId, operation) already exists,
+ * it ALWAYS resets to PENDING with the new payload — even if previously SUCCESS.
+ * This ensures re-enqueue after state changes (e.g. authMode change, connectionType change)
+ * actually triggers a new sync, not silently skipped.
  */
 export async function enqueueTask(
   tx: Prisma.TransactionClient | typeof prisma,
@@ -84,31 +84,16 @@ export async function enqueueTask(
       nextRetryAt,
     },
     update: {
-      // Only reset if not already SUCCESS
-      ...(await shouldResetTask(tx as typeof prisma, id) ? {
-        status: 'PENDING',
-        retryCount: 0,
-        payload: payload as any,
-        lastError: null,
-        nextRetryAt,
-        failedAt: null,
-      } : {}),
+      // Always reset to PENDING with new payload — enqueue means there's a new change to sync
+      status: 'PENDING',
+      retryCount: 0,
+      payload: payload as any,
+      lastError: null,
+      nextRetryAt,
+      failedAt: null,
+      completedAt: null,
     },
   });
-}
-
-/**
- * Check if a task should be reset (re-enqueued).
- * Returns true if task is PENDING, PROCESSING, FAILED, or DEAD.
- * Returns false if task is SUCCESS (already done — don't redo).
- */
-async function shouldResetTask(
-  tx: typeof prisma,
-  id: string
-): Promise<boolean> {
-  const existing = await tx.externalTask.findUnique({ where: { id }, select: { status: true } });
-  if (!existing) return true;
-  return existing.status !== 'SUCCESS';
 }
 
 /**
