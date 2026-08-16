@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -289,5 +289,3 @@ export default function GenieACSSettingsPage() {
     </div>
   );
 }
-
-
