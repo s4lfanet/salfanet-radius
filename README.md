@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.5.0 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav) + Phase 7 (React Query + Performance) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.11.0 — MikroTik Local-Auth Sync, Realtime Status, MAC Cleanup & Installer Fixes + Phase 7 (React Query + Performance) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -19,7 +19,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 |----------|-----------------|
 | **RADIUS / Auth** | FreeRADIUS 3.0.26, PAP/CHAP/MS-CHAP, VPN L2TP/IPSec, PPPoE & Hotspot, CoA real-time speed/disconnect, **IP Pool management**, **Multi-NAS isolation** |
 | **VPN Management** | MikroTik CHR via API, VPS built-in WireGuard & L2TP/IPsec peer management, configurable IP pool & gateway per protocol, auto-generated RouterOS scripts |
-| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)**, **true optimistic update (reactivate/delete instant)** |
+| **PPPoE Management** | Customer accounts, profile-based bandwidth, isolation, IP assignment, MikroTik auto-sync, foto KTP+instalasi via kamera HP, GPS otomatis, **realtime online/offline status (polling 10s)**, **realtime status isolir/aktif (polling 10s)**, **PSB wizard 3-step (adopt dari home.pmynet.id)**, **true optimistic update (reactivate/delete instant)**, **placeholder MAC rejection** |
 | **IP Pool** | RADIUS ippool module — dynamic IP allocation per speed tier, pool create/expand/delete, Pool-Name → group mapping, utilization stats |
 | **Data Usage Reporting** | Per-user bandwidth tracking (daily aggregation via cron), monthly summary, top consumers, GB upload/download per period |
 | **Hotspot Voucher** | 8 code types, batch up to 25,000, agent distribution, auto-sync with RADIUS, print templates |
@@ -36,7 +36,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
 | **Security** | Session timeout 30 min, idle warning, RBAC, HTTPS/SSL |
 | **Performance** | **Redis cache untuk data non-realtime** (profiles, areas, routers), graceful degradation jika Redis unavailable |
-| **Auth Modes** | `local` (MikroTik primary) dan `radius` (FreeRADIUS primary, PPP secret backup disabled). **hybrid mode obsolete** |
+| **Auth Modes** | `local` (MikroTik primary) dan `radius` (FreeRADIUS primary, PPP secret backup disabled). **Auto-migrate radius → local: create PPP secrets from existing customer data + disconnect RADIUS sessions**. **hybrid mode obsolete** |
 | **RADIUS Setup** | Auto-generated RouterOS script pakai **IP asli VPS** (bukan domain/Cloudflare proxy), VPN-specific address selection |
 | **Bahasa** | Bahasa Indonesia (full) |
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
@@ -991,6 +991,65 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.11.0 — 2026-08-16 — MikroTik Local-Auth Sync, Realtime Status, MAC Cleanup & Installer Fixes
+
+### Summary
+Batch fix untuk sinkronisasi MikroTik local-auth (isolir profile, password, active sessions), realtime status polling di halaman pelanggan, hapus placeholder MAC address, fix 429 rate limit, dan perbaikan kritis path di installer/uninstaller/updater scripts.
+
+### MikroTik Local-Auth Fixes
+- **[CRITICAL]** Isolir profile ditimpa oleh `sync_mikrotik_create` task — task menggunakan profile dari DB (PAKET 100MBPS) alih-alih `isolir`. Fix: cek status user terbaru dari DB sebelum eksekusi task, override profile ke `isolir` jika status=`isolated`.
+- **[CRITICAL]** Isolated user di-disable (`disabled=true`) — SALAH. Isolated user harus tetap enabled agar bisa login dan dapat isolir profile. Fix: hanya `stop`/`blocked` yang di-disable.
+- **[FIX]** Empty password dari form edit menimpa PPP secret MikroTik dengan password kosong. Fix: truthy check sebelum kirim password ke MikroTik.
+- **[FIX]** Isolir pada local-auth router tidak update PPP secret profile — hanya kick session. Fix: `enable`/`disable` action juga update profile saat provided.
+- **[FIX]** MikroTik API calls fire-and-forget causing race condition. Fix: await semua MikroTik operations dalam urutan yang benar (update secret → kick session).
+
+### Active Sessions untuk Local-Auth Routers
+- **[FEATURE]** Dashboard dan halaman sessions sekarang menampilkan active sessions dari MikroTik `/ppp/active` untuk local-auth routers (sebelumnya hanya dari `radacct`).
+- **[FEATURE]** PPPoE online/offline status polling dari MikroTik `/ppp/active` untuk non-RADIUS routers.
+- **[FEATURE]** Hotspot active sessions dari MikroTik untuk local-auth routers.
+- **[FIX]** `listPppActive()` tidak lagi menelan error — throw agar cron skip cycle instead of false-closing sessions.
+- **[FIX]** `iconv-lite` ditambahkan ke `serverExternalPackages` untuk Next.js standalone deployment.
+
+### Realtime Status Polling
+- **[FEATURE]** Halaman data pelanggan sekarang polling status (isolated/active/stop/blocked) setiap 10 detik tanpa reload halaman. Sebelumnya status hanya update saat manual refresh.
+- **[FEATURE]** Endpoint `/api/pppoe/users/online-status` sekarang return `statusMap` (username → status) bersamaan dengan online set.
+
+### MAC Address Cleanup
+- **[FIX]** Placeholder MAC addresses (`00:00:00:00:00:00`, `AA:BB:CC:DD:EE:FF`, dll) tidak lagi disimpan di database. Validasi `isPlaceholderMac()` menolak MAC placeholder saat create/update user.
+- **[FIX]** ARP service tidak lagi default ke `00:00:00:00:00:00` saat MAC kosong — MikroTik menerima ARP entry tanpa MAC.
+- **[FIX]** Cleanup script untuk set placeholder MAC yang sudah ada di DB ke `null`.
+
+### Rate Limit Fix
+- **[FIX]** `/api/company/info` return 429 Too Many Requests setelah navigasi normal. Fix: naikkan rate limit dari `relaxed` (100/min) ke `veryRelaxed` (500/min), tambah Cache-Control header, dan throttle frontend fetch ke 5 menit.
+
+### Auth Mode & Connection Type Migration
+- **[FEATURE]** Support perubahan authMode router (radius → local) dengan auto-create PPP secrets dari existing customer data.
+- **[FEATURE]** Support perubahan connectionType customer (PPPoE → Static IP / Hotspot) dengan cleanup MikroTik entries lama.
+- **[FIX]** CoA disconnect untuk kick session lama saat authMode atau connectionType berubah.
+
+### Customer Delete Fix
+- **[FIX]** Delete customer tidak mengirim password konfirmasi ke backend. Fix: frontend DELETE helper sekarang mengirim `{ confirmPassword }`.
+- **[FIX]** `external_task.id` dan `entity_id` terlalu pendek untuk composite IDs. Fix: widen ke `VARCHAR(191)`.
+
+### Installer/Updater/Uninstaller Fixes
+- **[CRITICAL]** `updater.sh` line 318: `apply_sql_migrations || true ────` punya trailing dashes yang menyebabkan bash syntax error. Fix: hapus trailing dashes.
+- **[CRITICAL]** `updater.sh`: 15 referensi path `$APP_DIR/vps-install/` SALAH — seharusnya `$APP_DIR/frontend/vps-install/`. Post-update steps untuk auth fix, security, VPN, WireGuard, dan L2TP silently skipped karena path tidak ditemukan. Fix: semua path diperbaiki.
+- **[FIX]** `vps-uninstaller.sh`: reinstall instruction menunjuk ke `/root/SALFANET-RADIUS-main/vps-install` (legacy). Fix: `/root/salfanet-radius/frontend/vps-install`.
+
+### Commits
+- `e612ed42` — fix: remove default/placeholder MAC addresses from customer data
+- `f12eccef` — feat: realtime status (isolated/active/stop) polling on customer page
+- `4d5046c5` — fix: sync_mikrotik_create task overwrites isolir profile with original package
+- `c8b42f4c` — fix: resolve 429 Too Many Requests on /api/company/info
+- `c91165de` — fix: isolir on local-auth routers — update PPP secret profile + await MikroTik calls
+- `8306a0b2` — feat: show MikroTik local-auth active sessions on dashboard & sessions page
+- `b5a26caf` — fix: prevent empty password from overwriting MikroTik PPP secret
+- `c111a9d8` — fix: use sync_mikrotik_create (upsert) + CoA disconnect on authMode & connectionType change
+- `6b11f5fa` — feat: support connectionType change & authMode migration with MikroTik sync
+- `75c7fc70` — fix: delete customer — send confirmPassword to backend
+
+---
+
 ### v5.7.0 — 2026-08-15 — Fix: Diskon Pelanggan Tidak Diterapkan ke Tagihan
 
 ### Summary
@@ -1023,6 +1082,8 @@ const baseAmount = profile.price;  // BUG: tidak - user.discount
 ### Commits
 - `2b55e056` — fix(billing): apply customer discount to all invoice generation paths
 
+---
+
 ### v5.6.0 — 2026-08-15 — Frontend Performance Optimization + Auto-Changelog Fix
 
 ### Summary
@@ -1047,6 +1108,8 @@ Frontend performance optimization pass: remove dead dependency, code-split heavy
 
 ### Commits
 - `9464c61d` — perf: remove dead sweetalert2 dep, move @types/leaflet to devDeps, dynamic import recharts, fix auto-changelog script path
+
+---
 
 ### v5.5.0 — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
 
@@ -1101,6 +1164,8 @@ Dua kategori perbaikan: (1) Critical fix untuk sync active session MikroTik → 
 - `0b330fe1` — fix(frontend): responsive, accessibility, and loading/error state improvements
 - `a13c609a` — fix(nav): menu navigation desktop/mobile audit - accessibility and UI fixes
 
+---
+
 ### v5.4.0 — 2026-08-15 — Final Production Completion (Security + safeCompare + JWT + CoA)
 
 ### Summary
@@ -1154,69 +1219,7 @@ Final production completion pass: safeCompare fail-closed hardening, JWT_SECRET 
 - `ce0c4cfc` — Add auth checks to CoA and session disconnect routes
 - `27bf2bda` — Fix payment gateway config auth + credential logging + email timezone
 
-### v5.3.0 — 2026-08-15 — Final Production Hardening + E2E Verification
-
-### Summary
-Final production hardening pass: timezone bug fixes (invoice due dates, hardcoded Asia/Jakarta in 11 backend files), new E2E test suite (cron schedule, FreeRADIUS concurrency, CRON_SECRET), and full VPS production verification.
-
-### Timezone Hardening
-- **[FIXED]** Invoice due date calculation: `invoices/route.ts` now uses `nowWIB()` instead of `new Date()` for invoice number generation
-- **[FIXED]** Registration approve route: due date now uses `nowWIB()` instead of `Date.now()`
-- **[FIXED]** Registration mark-installed route: due date now uses `nowWIB()` instead of `Date.now()`
-- **[FIXED]** Invoice import route: default due date now uses `nowWIB()` instead of `Date.now()`
-- **[FIXED]** 11 backend files: replaced hardcoded `'Asia/Jakarta'` with `getCurrentTimezone()` (21 replacements total):
-  - `payment/webhook/route.ts` (1)
-  - `manual-payments/[id]/route.ts` (1)
-  - `notifications/whatsapp-templates.service.ts` (5)
-  - `notifications/telegram.service.ts` (3)
-  - `lib/utils/export.ts` (4)
-  - `whatsapp/broadcast/route.ts` (2)
-  - `telegram/test/route.ts` (1)
-  - `telegram/test-backup/route.ts` (1)
-  - `keuangan/export/route.ts` (1)
-  - `invoices/export/route.ts` (1)
-  - `evoucher/purchase/route.ts` (1)
-
-### New E2E Tests
-- **[TESTED]** `cron-schedule.test.ts`: 40/40 passed on VPS — tests all 19 production cron schedules with cron-parser, timezone difference (Jakarta vs UTC), month boundary, edge cases (06:59, 07:00, 07:01, 23:00, 00:00)
-- **[TESTED]** `freeradius-concurrency.test.ts`: 12/12 passed on VPS — tests atomic claim with 2 workers, status transitions (PENDING/FAILED/SYNCING/COMPLETED/DEAD), 10-item batch with no overlap
-- **[TESTED]** `cron-secret.test.ts`: 14/14 passed on VPS — tests timing-safe comparison, secret not in logs, API with correct/wrong/empty/no/malformed secret
-
-### Production Verification (VPS 192.168.54.129)
-- **[PRODUCTION VERIFIED]** All PM2 processes online (backend, cron, frontend, wa)
-- **[PRODUCTION VERIFIED]** Backend health: OK (port 3001)
-- **[PRODUCTION VERIFIED]** Frontend health: 200 OK (port 3000)
-- **[PRODUCTION VERIFIED]** Nginx: active, config test OK (port 8080)
-- **[PRODUCTION VERIFIED]** MySQL: active, timezone +07:00
-- **[PRODUCTION VERIFIED]** FreeRADIUS: active (v3.0.26)
-- **[PRODUCTION VERIFIED]** OS timezone: Asia/Jakarta
-- **[PRODUCTION VERIFIED]** CRON_SECRET: SET (length: 64)
-- **[PRODUCTION VERIFIED]** DATABASE_URL: SET
-- **[PRODUCTION VERIFIED]** NEXTAUTH_SECRET: SET
-- **[PRODUCTION VERIFIED]** No pending migrations
-- **[PRODUCTION VERIFIED]** payments.invoiceId unique index: EXISTS (non_unique=0)
-- **[PRODUCTION VERIFIED]** webhook_logs table: EXISTS
-- **[PRODUCTION VERIFIED]** All recent cron jobs: SUCCESS (hotspot_sync, freeradius_health, pppoe_session_sync, disconnect_sessions, pppoe_auto_isolir, radius_sync_retry)
-- **[PRODUCTION VERIFIED]** Automated cron (CRON_SECRET): 200 OK (no 409 double-lock)
-- **[PRODUCTION VERIFIED]** Manual trigger without auth: 401 Unauthorized
-- **[PRODUCTION VERIFIED]** GenieACS technician routes: routerId/areaId requirement present in code
-- **[PRODUCTION VERIFIED]** Backend build: SUCCESS
-- **[PRODUCTION VERIFIED]** Frontend build: SUCCESS
-
-### Not Set (Configuration Issues, Not Code Issues)
-- RADIUS_COA_SECRET: NOT SET (needed for CoA/Disconnect packets)
-- GENIEACS_HOST/USER/PASS: NOT SET (GenieACS integration not configured)
-- JWT_SECRET: NOT SET (falls back to NEXTAUTH_SECRET)
-
-### Test Summary
-| Test Suite | Tests | Passed | Failed | Environment |
-|------------|-------|--------|--------|-------------|
-| Timezone | 27 | 27 | 0 | VPS |
-| Cron Schedule | 40 | 40 | 0 | VPS |
-| Cron Lock | 16 | 16 | 0 | VPS |
-| FreeRADIUS Concurrency | 12 | 12 | 0 | VPS |
-| CRON_SECRET | 14 | 14 | 0 | VPS |
-| **Total** | **109** | **109** | **0** | |
+---
 
 <!-- AUTO-CHANGELOG:END -->
 

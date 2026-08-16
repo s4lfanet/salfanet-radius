@@ -502,7 +502,7 @@ main() {
     echo -e "${CYAN}System is now clean and ready for fresh installation.${NC}"
     echo ""
     echo "To reinstall, run:"
-    echo "  cd /root/SALFANET-RADIUS-main/vps-install"
+    echo "  cd /root/salfanet-radius/frontend/vps-install"
     echo "  ./vps-installer.sh"
     echo ""
 }
