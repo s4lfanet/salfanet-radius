@@ -15,10 +15,14 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 
 interface SystemInfo {
   version: string;
+  baseVersion: string;
   commit: string;
   commitFull: string;
   commitDate: string;
   commitMessage: string;
+  gitBranch: string;
+  totalCommits: number;
+  behindCount: number;
   remoteCommit: string;
   hasUpdate: boolean;
   updateRunning: boolean;
@@ -212,11 +216,11 @@ export default function SystemPage() {
       ) : info ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <InfoCard icon={<Package className="w-4 h-4" />}  label={t('system.version')}      value={`v${info.version}`} />
-          <InfoCard icon={<GitBranch className="w-4 h-4" />} label={t('system.commit')}       value={info.commit} />
+          <InfoCard icon={<GitBranch className="w-4 h-4" />} label="Branch"                    value={info.gitBranch || 'master'} />
+          <InfoCard icon={<GitCommit className="w-4 h-4" />} label={t('system.commit')}       value={info.commit} />
           <InfoCard icon={<Server className="w-4 h-4" />}   label="Node.js"                   value={info.nodeVersion} />
           <InfoCard icon={<Cpu className="w-4 h-4" />}      label="Platform"                  value={info.platform} />
           <InfoCard icon={<Clock className="w-4 h-4" />}    label={t('system.uptime')}        value={formatUptime(info.uptime)} />
-          <InfoCard icon={<Terminal className="w-4 h-4" />} label={t('system.remoteCommit')}  value={info.remoteCommit} />
         </div>
       ) : null}
 
@@ -234,7 +238,7 @@ export default function SystemPage() {
           <div className="flex items-center gap-3">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             <p className="text-xs font-bold">
-              {t('system.updateAvailable')} — {info.commit} → {info.remoteCommit}
+              {t('system.updateAvailable')} — {info.commit} → {info.remoteCommit} ({info.behindCount || '?'} commit{info.behindCount !== 1 ? 's' : ''} behind)
             </p>
           </div>
           <div className="flex gap-2">
@@ -263,7 +267,9 @@ export default function SystemPage() {
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-green-500/10 border border-green-500/30 text-green-400">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-            <p className="text-xs font-bold">Sistem sudah up to date ({info.commit})</p>
+            <p className="text-xs font-bold">
+              Sistem sudah up to date ({info.commit}) — {info.totalCommits || 0} total commits di branch {info.gitBranch || 'master'}
+            </p>
           </div>
           <button
             onClick={fetchChangelog}
