@@ -41,6 +41,9 @@ export default function StoppedSubscriptionsPage() {
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [pageSize, setPageSize] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const handleExport = async () => {
     try {
@@ -116,9 +119,16 @@ export default function StoppedSubscriptionsPage() {
     }
   };
 
-  const handleDelete = async (userId: string) => {
-    const confirmed = await showConfirm(t('common.deleteConfirmPermanent'));
-    if (!confirmed) return;
+  const handleDeleteClick = (userId: string) => {
+    setDeleteUserId(userId);
+    setDeletePassword('');
+  };
+
+  const handleDelete = async () => {
+    if (!deleteUserId) return;
+    if (!deletePassword.trim()) { await showError('Masukkan password superadmin untuk konfirmasi hapus pelanggan.'); return; }
+    const userId = deleteUserId;
+    setDeleting(true);
 
     // TRUE optimistic update: remove from list BEFORE API call
     const userToRestore = users.find(u => u.id === userId);
@@ -128,7 +138,7 @@ export default function StoppedSubscriptionsPage() {
     setSelectedUsers(prev => { const n = new Set(prev); n.delete(userId); return n; });
 
     try {
-      await pppoeApi.deleteUser(userId);
+      await pppoeApi.deleteUser(userId, deletePassword);
       await showSuccess(t('common.customerDeleted'));
       queryClient.invalidateQueries({ queryKey: usersQueryKey });
     } catch (error: unknown) {
@@ -139,7 +149,11 @@ export default function StoppedSubscriptionsPage() {
         }));
       }
       console.error('Delete error:', error);
-      await showError((error instanceof Error ? error.message : String(error)) || t('common.failedDelete'));
+      await showError(error instanceof Error ? error.message : String(error) || t('common.failedDelete'));
+    } finally {
+      setDeleting(false);
+      setDeleteUserId(null);
+      setDeletePassword('');
     }
   };
 
@@ -318,7 +332,7 @@ export default function StoppedSubscriptionsPage() {
                     <Shield className="h-4 w-4 drop-shadow-[0_0_3px_rgba(0,255,136,0.5)]" />
                   </button>
                   <button
-                    onClick={() => handleDelete(user.id)}
+                    onClick={() => handleDeleteClick(user.id)}
                     className="p-2 text-destructive hover:bg-destructive/20 rounded border border-transparent hover:border-destructive/40 transition-all"
                     title={t('pppoe.permanentDelete')}
                   >
@@ -418,7 +432,7 @@ export default function StoppedSubscriptionsPage() {
                           <Shield className="h-3 w-3 drop-shadow-[0_0_3px_rgba(0,255,136,0.5)]" />
                         </button>
                         <button 
-                          onClick={() => handleDelete(user.id)} 
+                          onClick={() => handleDeleteClick(user.id)} 
                           className="p-1 text-destructive hover:bg-destructive/20 rounded border border-transparent hover:border-destructive/40 transition-all"
                           title={t('pppoe.permanentDelete')}
                         >
@@ -456,6 +470,53 @@ export default function StoppedSubscriptionsPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Password Confirmation Modal */}
+      {deleteUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setDeleteUserId(null); setDeletePassword(''); }}>
+          <div className="bg-card border border-border rounded-lg p-6 max-w-sm w-full mx-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="w-14 h-14 bg-destructive/20 rounded-full flex items-center justify-center mx-auto mb-3 border-2 border-destructive/50">
+                <Trash2 className="w-7 h-7 text-destructive" />
+              </div>
+              <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteUser')}</h2>
+              <p className="text-xs text-muted-foreground">{t('pppoe.deleteConfirm')}</p>
+            </div>
+            <div className="text-left mb-4">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                🔒 Password Superadmin
+              </label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => setDeletePassword(e.target.value)}
+                placeholder="Masukkan password superadmin"
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded focus:ring-2 focus:ring-destructive/30"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && !deleting && deletePassword.trim()) handleDelete(); }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Demi keamanan, masukkan password superadmin untuk mengonfirmasi penghapusan pelanggan.
+              </p>
+            </div>
+            <div className="flex justify-center gap-2">
+              <button
+                onClick={() => { setDeleteUserId(null); setDeletePassword(''); }}
+                className="px-4 py-2 text-xs border border-border rounded hover:bg-muted"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting || !deletePassword.trim()}
+                className="px-4 py-2 text-xs bg-destructive text-white rounded hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {deleting ? 'Menghapus...' : t('common.delete')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </div>
   );

@@ -394,6 +394,9 @@ export default function PppoeUsersPage() {
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
+  const [bulkDeletePassword, setBulkDeletePassword] = useState('');
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [modalLatLng, setModalLatLng] = useState<{ lat: string; lng: string } | undefined>();
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -853,7 +856,7 @@ export default function PppoeUsersPage() {
     if (!deletePassword.trim()) { await showError('Masukkan password superadmin untuk konfirmasi hapus pelanggan.'); return; }
     setDeleting(true);
     try {
-      await pppoeApi.deleteUser(deleteUserId);
+      await pppoeApi.deleteUser(deleteUserId, deletePassword);
       await showSuccess(t('management.userDeleted'));
       invalidateUserData();
     } catch (error: unknown) {
@@ -960,12 +963,19 @@ export default function PppoeUsersPage() {
 
   const handleBulkDelete = async () => {
     if (selectedUsers.size === 0) return;
-    const confirmed = await showConfirm(t('pppoe.deleteConfirmUsers').replace('{count}', String(selectedUsers.size)));
-    if (!confirmed) return;
+    setBulkDeletePassword('');
+    setBulkDeleteModalOpen(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (!bulkDeletePassword.trim()) { await showError('Masukkan password superadmin untuk konfirmasi hapus pelanggan.'); return; }
+    setBulkDeleting(true);
     try {
-      await Promise.all(Array.from(selectedUsers).map(id => pppoeApi.deleteUser(id)));
+      await Promise.all(Array.from(selectedUsers).map(id => pppoeApi.deleteUser(id, bulkDeletePassword)));
       await showSuccess(t('pppoe.usersDeleted').replace('{count}', String(selectedUsers.size))); setSelectedUsers(new Set()); invalidateUserData();
+      setBulkDeleteModalOpen(false);
     } catch (error: unknown) { console.error('Bulk delete error:', error); await showError(error instanceof Error ? error.message : t('common.failed')); }
+    finally { setBulkDeleting(false); setBulkDeletePassword(''); }
   };
 
   const handleOpenNotificationMenu = (type: 'outage' | 'invoice' | 'payment') => {
@@ -1836,6 +1846,40 @@ export default function PppoeUsersPage() {
             <ModalButton variant="secondary" onClick={() => { setDeleteUserId(null); setDeletePassword(''); }}>{t('common.cancel')}</ModalButton>
             <ModalButton variant="danger" onClick={handleDelete} disabled={deleting || !deletePassword.trim()}>
               {deleting ? 'Menghapus...' : t('common.delete')}
+            </ModalButton>
+          </ModalFooter>
+        </SimpleModal>
+
+        {/* Bulk Delete Dialog */}
+        <SimpleModal isOpen={bulkDeleteModalOpen} onClose={() => { setBulkDeleteModalOpen(false); setBulkDeletePassword(''); }} size="sm">
+          <ModalBody className="text-center py-6">
+            <div className="w-14 h-14 bg-[#ff4466]/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#ff4466]/50">
+              <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
+            </div>
+            <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteUser')}</h2>
+            <p className="text-xs text-muted-foreground mb-4">{selectedUsers.size} pelanggan akan dihapus permanen.</p>
+            <div className="text-left">
+              <label className="block text-xs font-medium text-muted-foreground mb-1">
+                🔒 Password Superadmin
+              </label>
+              <input
+                type="password"
+                value={bulkDeletePassword}
+                onChange={(e) => setBulkDeletePassword(e.target.value)}
+                placeholder="Masukkan password superadmin"
+                className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30 focus:ring-2 focus:ring-destructive/30"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === 'Enter' && !bulkDeleting && bulkDeletePassword.trim()) confirmBulkDelete(); }}
+              />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Demi keamanan, masukkan password superadmin untuk mengonfirmasi penghapusan massal pelanggan.
+              </p>
+            </div>
+          </ModalBody>
+          <ModalFooter className="justify-center">
+            <ModalButton variant="secondary" onClick={() => { setBulkDeleteModalOpen(false); setBulkDeletePassword(''); }}>{t('common.cancel')}</ModalButton>
+            <ModalButton variant="danger" onClick={confirmBulkDelete} disabled={bulkDeleting || !bulkDeletePassword.trim()}>
+              {bulkDeleting ? 'Menghapus...' : t('common.delete')}
             </ModalButton>
           </ModalFooter>
         </SimpleModal>

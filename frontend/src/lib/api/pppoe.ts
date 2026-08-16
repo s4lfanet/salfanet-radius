@@ -97,9 +97,12 @@ export const pppoeApi = {
     });
   },
 
-  /** Delete PPPoE user */
-  deleteUser(id: string): Promise<PppoeUserDeleteResponse> {
-    return apiAdmin<PppoeUserDeleteResponse>(`/api/pppoe/users?id=${id}`, { method: 'DELETE' });
+  /** Delete PPPoE user (requires superadmin password confirmation) */
+  deleteUser(id: string, confirmPassword: string): Promise<PppoeUserDeleteResponse> {
+    return apiAdmin<PppoeUserDeleteResponse>(`/api/pppoe/users?id=${id}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ confirmPassword }),
+    });
   },
 
   /** Update user status (active, suspended, stop, etc.) */
