@@ -25,11 +25,22 @@ export async function POST(
     if (!authCheck.authorized) return authCheck.response;
     const { id } = await params;
     const body = await request.json();
-    const { installationFee = 0, subscriptionType = 'POSTPAID', billingDay = 1, areaId, routerId } = body;
+    const {
+      installationFee = 0,
+      subscriptionType = 'POSTPAID',
+      billingDay = 1,
+      areaId,
+      routerId,
+      connectionType = 'PPPOE',
+      ipAddress,
+      macAddress,
+      username: customUsername,
+      password: customPassword,
+    } = body;
 
     // Installation fee is optional, default to 0
     const fee = installationFee || 0;
-    
+
     // Validate subscriptionType
     if (!['POSTPAID', 'PREPAID'].includes(subscriptionType)) {
       return NextResponse.json(
@@ -37,7 +48,15 @@ export async function POST(
         { status: 400 }
       );
     }
-    
+
+    // Validate connectionType
+    if (!['PPPOE', 'STATIC_IP', 'HOTSPOT'].includes(connectionType)) {
+      return NextResponse.json(
+        { error: 'Invalid connection type' },
+        { status: 400 }
+      );
+    }
+
     // Validate billingDay (1-31)
     const validBillingDay = Math.min(Math.max(parseInt(billingDay) || 1, 1), 31);
 
@@ -61,9 +80,13 @@ export async function POST(
       );
     }
 
-    // Generate username and password
-    const username = generateUsername(registration.name, registration.phone);
-    const password = username;
+    // Generate username and password (allow admin override)
+    const username = (customUsername && customUsername.trim())
+      ? customUsername.trim()
+      : generateUsername(registration.name, registration.phone);
+    const password = (customPassword && customPassword.trim())
+      ? customPassword.trim()
+      : username;
 
     // Check if username already exists
     const existingUser = await prisma.pppoeUser.findUnique({
@@ -151,6 +174,13 @@ export async function POST(
         expiredAt: expiredAt,
         referredById: referredById,
         referralCode: await generateUniqueReferralCode(),
+        connectionType: connectionType as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT',
+        ...(ipAddress && { ipAddress }),
+        ...(macAddress && { macAddress }),
+        idCardNumber: registration.idCardNumber,
+        idCardPhoto: registration.idCardPhoto,
+        latitude: registration.latitude,
+        longitude: registration.longitude,
       } as any,
     });
 
@@ -197,43 +227,45 @@ export async function POST(
       }
     }
 
-    // Sync to RADIUS (radcheck + radusergroup)
-    // Password
-    await prisma.radcheck.upsert({
-      where: {
-        username_attribute: {
+    // Sync to RADIUS (radcheck + radusergroup) — only for PPPOE connection type
+    if (connectionType === 'PPPOE') {
+      // Password
+      await prisma.radcheck.upsert({
+        where: {
+          username_attribute: {
+            username,
+            attribute: 'Cleartext-Password',
+          },
+        },
+        create: {
           username,
           attribute: 'Cleartext-Password',
+          op: ':=',
+          value: password,
         },
-      },
-      create: {
-        username,
-        attribute: 'Cleartext-Password',
-        op: ':=',
-        value: password,
-      },
-      update: {
-        value: password,
-      },
-    });
+        update: {
+          value: password,
+        },
+      });
 
-    // Add to group
-    await prisma.radusergroup.upsert({
-      where: {
-        username_groupname: {
+      // Add to group
+      await prisma.radusergroup.upsert({
+        where: {
+          username_groupname: {
+            username,
+            groupname: registration.profile.groupName,
+          },
+        },
+        create: {
           username,
           groupname: registration.profile.groupName,
+          priority: 1,
         },
-      },
-      create: {
-        username,
-        groupname: registration.profile.groupName,
-        priority: 1,
-      },
-      update: {
-        groupname: registration.profile.groupName,
-      },
-    });
+        update: {
+          groupname: registration.profile.groupName,
+        },
+      });
+    }
 
     // Mark as synced and keep active (matches tambah pelanggan flow)
     await prisma.pppoeUser.update({

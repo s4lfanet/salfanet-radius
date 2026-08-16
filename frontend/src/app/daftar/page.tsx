@@ -94,6 +94,14 @@ function DaftarPageInner() {
       addToast({ type: 'error', title: 'Form Tidak Lengkap', description: 'Mohon lengkapi semua field yang wajib diisi' });
       return;
     }
+    if (!formData.idCardNumber || formData.idCardNumber.trim().length < 16) {
+      addToast({ type: 'error', title: 'Nomor KTP Wajib', description: 'Mohon masukkan nomor KTP (16 digit)' });
+      return;
+    }
+    if (!idCardPhoto) {
+      addToast({ type: 'error', title: 'Foto KTP Wajib', description: 'Mohon upload foto KTP Anda' });
+      return;
+    }
     if (!formData.latitude || !formData.longitude) {
       addToast({ type: 'error', title: 'Lokasi Diperlukan', description: 'Mohon pilih lokasi GPS Anda di peta' });
       return;
@@ -443,7 +451,7 @@ function DaftarPageInner() {
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
                   <CreditCard className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Nomor KTP
+                  Nomor KTP <span className="text-[#ff44cc]">*</span>
                 </label>
                 <input
                   type="text"
@@ -451,6 +459,7 @@ function DaftarPageInner() {
                   value={formData.idCardNumber}
                   onChange={(e) => setFormData({ ...formData, idCardNumber: e.target.value.replace(/\D/g, '').slice(0, 16) })}
                   maxLength={16}
+                  required
                   className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none font-mono tracking-widest"
                 />
               </div>
@@ -459,7 +468,7 @@ function DaftarPageInner() {
               <div>
                 <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
                   <Camera className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Foto KTP
+                  Foto KTP <span className="text-[#ff44cc]">*</span>
                 </label>
                 <CameraPhotoInput
                   photoUrl={idCardPhoto}
