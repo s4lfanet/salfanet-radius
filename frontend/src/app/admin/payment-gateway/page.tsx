@@ -174,9 +174,8 @@ export default function PaymentGatewayPage() {
   const saveQris = async () => {
     setSaving(true);
     try {
-      await apiAdmin('/api/company', {
+      await apiAdmin('/api/payment-gateway/qris-mandiri', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           qrisStaticCode: qrisForm.staticCode,
           qrisMerchantName: qrisForm.merchantName,
