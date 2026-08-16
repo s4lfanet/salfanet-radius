@@ -892,7 +892,7 @@ Jika warning menunjukkan HTTP publik tidak reachable, fokus perbaikan di NAT/por
 
 ```bash
 # Firewall
-ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp
+ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw allow 8080/tcp
 ufw allow 1812/udp && ufw allow 1813/udp && ufw allow 3799/udp
 ```
 

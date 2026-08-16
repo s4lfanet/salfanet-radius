@@ -654,9 +654,10 @@ configure_firewall_nginx() {
             print_warning "UFW aktif meski environment=${DEPLOY_ENV_LABEL:-LXC/Container} — menambahkan rules HTTP/HTTPS"
             ufw allow 80/tcp comment 'HTTP' 2>/dev/null || true
             ufw allow 443/tcp comment 'HTTPS' 2>/dev/null || true
+            ufw allow 8080/tcp comment 'HTTP Alt (Nginx)' 2>/dev/null || true
         else
             print_info "UFW firewall dilewati (${DEPLOY_ENV_LABEL:-LXC/Container})"
-            print_info "Buka port 80 dan 443 di Proxmox Datacenter Firewall"
+            print_info "Buka port 80, 443, dan 8080 di Proxmox Datacenter Firewall"
         fi
         return 0
     fi
@@ -664,7 +665,8 @@ configure_firewall_nginx() {
     print_info "Configuring firewall for Nginx..."
     ufw allow 80/tcp comment 'HTTP' 2>/dev/null || true
     ufw allow 443/tcp comment 'HTTPS' 2>/dev/null || true
-    print_success "Firewall configured"
+    ufw allow 8080/tcp comment 'HTTP Alt (Nginx)' 2>/dev/null || true
+    print_success "Firewall configured (ports 80, 443, 8080)"
 }
 
 verify_external_web_access() {
