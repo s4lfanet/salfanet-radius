@@ -229,44 +229,44 @@ export async function POST(
 
     // Sync to RADIUS (radcheck + radusergroup) — only for PPPOE connection type
     if (connectionType === 'PPPOE') {
-      // Password
-      await prisma.radcheck.upsert({
-        where: {
-          username_attribute_nas_identifier: {
+      // Password — use findFirst + create/update since compound unique includes nullable nas_identifier
+      const existingRadcheck = await prisma.radcheck.findFirst({
+        where: { username, attribute: 'Cleartext-Password', nas_identifier: null },
+      });
+      if (existingRadcheck) {
+        await prisma.radcheck.update({
+          where: { id: existingRadcheck.id },
+          data: { value: password },
+        });
+      } else {
+        await prisma.radcheck.create({
+          data: {
             username,
             attribute: 'Cleartext-Password',
-            nas_identifier: null,
+            op: ':=',
+            value: password,
           },
-        },
-        create: {
-          username,
-          attribute: 'Cleartext-Password',
-          op: ':=',
-          value: password,
-        },
-        update: {
-          value: password,
-        },
-      });
+        });
+      }
 
       // Add to group
-      await prisma.radusergroup.upsert({
-        where: {
-          username_groupname_nas_identifier: {
+      const existingRadusergroup = await prisma.radusergroup.findFirst({
+        where: { username, groupname: registration.profile.groupName, nas_identifier: null },
+      });
+      if (existingRadusergroup) {
+        await prisma.radusergroup.update({
+          where: { id: existingRadusergroup.id },
+          data: { groupname: registration.profile.groupName },
+        });
+      } else {
+        await prisma.radusergroup.create({
+          data: {
             username,
             groupname: registration.profile.groupName,
-            nas_identifier: null,
+            priority: 1,
           },
-        },
-        create: {
-          username,
-          groupname: registration.profile.groupName,
-          priority: 1,
-        },
-        update: {
-          groupname: registration.profile.groupName,
-        },
-      });
+        });
+      }
     }
 
     // Mark as synced and keep active (matches tambah pelanggan flow)
