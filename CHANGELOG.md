@@ -6,6 +6,45 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.12.0] — 2026-08-17 — QRIS Mandiri Payment, Auto-Update System, Installer & Cloudflare Tunnel Fixes
+
+### Summary
+Batch fitur dan fix: implementasi QRIS Mandiri payment gateway (static-to-dynamic QRIS + Android listener), sistem auto-update dari admin panel (changelog + git pull + build + PM2 restart), auto-version dari git commit count, fix port 8080 UFW di semua installer scripts, fix cloudflare tunnel nginx port switching, dan fix installer seed exit code masking.
+
+### QRIS Mandiri Payment Gateway
+- **[FEATURE]** Implementasi QRIS Mandiri (qris_own) — konversi static QRIS ke dynamic QRIS dengan amount unik per invoice (TLV parser, CRC16 EMVCo standard)
+- **[FEATURE]** Android QrisListener app support — webhook `/api/payment/qris-notify` menerima notifikasi pembayaran dari Android listener
+- **[FEATURE]** QRIS test simulation endpoint `/api/payment/qris-test` untuk testing tanpa Android app
+- **[FEATURE]** QRIS status polling endpoint `/api/payment/qris-status` untuk cek status pembayaran
+- **[FEATURE]** QRIS Mandiri tab di admin payment-gateway page — konfigurasi static code, merchant name, device key, test simulation
+- **[FEATURE]** `qris.ts` utility library — validateQris, staticToDynamic, generateUniqueAmount (deterministic suffix 1-999 dari MD5 hash invoice ID)
+- **[FEATURE]** QrisPending model di Prisma schema untuk tracking pending QRIS payments
+- **[FEATURE]** QRIS fields di company model: qrisStaticCode, qrisMerchantName, qrisEnabled, qrisDeviceKey
+
+### Auto-Update System
+- **[FEATURE]** Backend API `/api/admin/system/changelog` (GET) — fetch git log antara local vs remote commit sebagai changelog
+- **[FEATURE]** Backend API `/api/admin/system/changelog` (POST) — execute update: git pull, prisma db push, pnpm install + build (backend & frontend), PM2 restart semua service, dengan step-by-step progress reporting
+- **[FEATURE]** Frontend admin/system page — tombol "Lihat Changelog" dan "Update Sekarang" dengan konfirmasi dan progress display
+- **[FEATURE]** Auto-version dari git commit count — version format `2.35.0+1398` (base version + total commits), tidak perlu manual update package.json
+- **[FEATURE]** System info API sekarang return gitBranch, totalCommits, behindCount, baseVersion
+
+### Installer Fixes
+- **[FIX]** Port 8080 ditambahkan ke UFW rules di semua installer scripts (install-nginx.sh, common.sh, install-security.sh, install-wizard.html, README.md) — Cloudflare tunnel menggunakan port 8080
+- **[FIX]** `seed_database` pipe-to-tee masks exit code — gunakan PIPESTATUS untuk real exit code detection
+- **[FIX]** Cloudflare tunnel `switch_nginx_port` regex tidak handle `[::]:80` dan `default_server` format — fix regex pattern
+
+### Commits
+- `6f46dcf2` — feat: implement QRIS Mandiri payment gateway
+- `597e3790` — fix: add port 8080 to UFW firewall rules in all installer scripts
+- `01147df8` — feat: add auto-changelog and manual update from admin/system page
+- `788ee001` — fix: showConfirm signature and regex flag for TS compatibility
+- `fde04827` — feat: auto-version from git commit count + show branch, total commits, behind count
+- `3b9a4e9c` — fix: installer seed_database pipe-to-tee masks exit code
+- `da73801a` — fix: cloudflare tunnel switch_nginx_port regex
+- `a90bb57a` — chore: remove debug scripts from repo
+
+---
+
 ## [5.11.0] — 2026-08-16 — MikroTik Local-Auth Sync, Realtime Status, MAC Cleanup & Installer Fixes
 
 ### Summary
