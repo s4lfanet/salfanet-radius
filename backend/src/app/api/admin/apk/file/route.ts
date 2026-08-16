@@ -6,7 +6,7 @@ import { join } from 'path';
 export const dynamic = 'force-dynamic';
 
 const APK_DIR = '/var/data/salfanet/apk';
-const VALID_ROLES = ['admin', 'customer', 'technician', 'agent'] as const;
+const VALID_ROLES = ['admin', 'customer', 'technician', 'agent', 'qris_listener'] as const;
 type RoleKey = typeof VALID_ROLES[number];
 
 export async function GET(req: NextRequest) {

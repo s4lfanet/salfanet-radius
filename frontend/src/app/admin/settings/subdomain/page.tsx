@@ -234,7 +234,7 @@ curl -H "Host: admin.${domain}" http://localhost:3000/`;
         <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
         <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
           <p className="font-semibold">Cara kerja subdomain routing:</p>
-          <p>Middleware aplikasi (<code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">src/proxy.ts</code>) membaca header <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">Host</code> dari setiap request. Jika subdomain dikenali, request akan otomatis diarahkan ke halaman portal yang sesuai tanpa redirect (URL tetap).</p>
+          <p>Middleware aplikasi (<code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">src/middleware.ts</code>) membaca header <code className="bg-blue-100 dark:bg-blue-900 px-1 rounded">Host</code> dari setiap request. Jika subdomain dikenali, request akan otomatis di-rewrite ke halaman portal yang sesuai tanpa redirect (URL tetap).</p>
         </div>
       </div>
 
