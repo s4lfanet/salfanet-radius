@@ -1,17 +1,15 @@
 ﻿import { NextResponse } from 'next/server';
 import { spawn } from 'child_process';
 import fs from 'fs';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 // Log file path
 const LOG_FILE = '/var/log/freeradius/radius.log'; // Adjust for your system
 
 export async function GET(req: Request) {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
     if (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'ADMIN') {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

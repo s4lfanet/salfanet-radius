@@ -18,13 +18,8 @@ import * as path from 'path';
 const ROOT = path.resolve(__dirname, '..');
 const SRC_ROOT = path.join(ROOT, 'src');
 const SCHEMA_PATH = path.join(ROOT, 'prisma', 'schema.prisma');
-const MIGRATION_PATH = path.join(
-  ROOT,
-  'prisma',
-  'migrations',
-  '20260301000001_phase7_composite_indexes',
-  'migration.sql',
-);
+// Phase 8: migrations consolidated into 0_init baseline.
+// Index checks are done against schema.prisma directly (the source of truth).
 
 function readFile(absPath: string): string {
   return fs.readFileSync(absPath, 'utf-8');
@@ -257,51 +252,52 @@ describe('Phase 7 — Database & Final Backend Hardening', () => {
     });
   });
 
-  // ─── 7. Migration SQL — Non-destructive ─────────────────────────────────
-  describe('Migration SQL — non-destructive, additive only', () => {
-    const migration = readFile(MIGRATION_PATH);
+  // ─── 7. Schema Indexes — Non-destructive (consolidated into 0_init baseline) ──
+  describe('Schema indexes — present in schema.prisma', () => {
+    const schema = readFile(SCHEMA_PATH);
 
-    it('migration file exists', () => {
-      expect(migration).toBeTruthy();
+    it('schema contains composite indexes (additive, non-destructive)', () => {
+      expect(schema).toMatch(/@@index\(\[userId,\s*status\]\)/);
+      expect(schema).toMatch(/@@index\(\[status,\s*dueDate\]\)/);
+      expect(schema).toMatch(/@@index\(\[paidAt\]\)/);
     });
 
-    it('only uses CREATE INDEX (additive, non-destructive)', () => {
-      const lines = migration.split('\n').filter(
-        (l) => l.trim().startsWith('CREATE') || l.trim().startsWith('ALTER') || l.trim().startsWith('DROP')
-      );
-      for (const line of lines) {
-        expect(line).toMatch(/CREATE INDEX/);
-      }
-    });
-
-    it('does not contain DROP TABLE or DROP COLUMN', () => {
-      expect(migration).not.toMatch(/DROP TABLE/i);
-      expect(migration).not.toMatch(/DROP COLUMN/i);
-      expect(migration).not.toMatch(/DROP INDEX/i);
+    it('schema does not contain destructive operations', () => {
+      // Schema files don't contain DROP statements — only migrations do.
+      // This is a sanity check that the schema is declarative.
+      expect(schema).not.toMatch(/DROP TABLE/i);
+      expect(schema).not.toMatch(/DROP COLUMN/i);
     });
 
     it('does not contain ALTER TABLE (no schema changes)', () => {
-      expect(migration).not.toMatch(/ALTER TABLE/i);
+      // Schema is declarative; no ALTER statements.
+      expect(schema).not.toMatch(/ALTER TABLE/i);
     });
 
     it('creates invoice composite indexes', () => {
-      expect(migration).toMatch(/invoices_userId_status_idx/);
-      expect(migration).toMatch(/invoices_status_dueDate_idx/);
-      expect(migration).toMatch(/invoices_paidAt_idx/);
+      expect(schema).toMatch(/@@index\(\[userId,\s*status\]\)/);
+      expect(schema).toMatch(/@@index\(\[status,\s*dueDate\]\)/);
+      expect(schema).toMatch(/@@index\(\[paidAt\]\)/);
     });
 
     it('creates payment indexes', () => {
-      expect(migration).toMatch(/payments_status_idx/);
-      expect(migration).toMatch(/payments_paidAt_idx/);
+      const paymentSection = schema.match(/model payment \{[\s\S]*?\}/);
+      expect(paymentSection).toBeTruthy();
+      expect(paymentSection![0]).toMatch(/@@index\(\[status\]\)/);
+      expect(paymentSection![0]).toMatch(/@@index\(\[paidAt\]\)/);
     });
 
     it('creates pppoe_users composite indexes', () => {
-      expect(migration).toMatch(/pppoe_users_subscriptionType_status_idx/);
-      expect(migration).toMatch(/pppoe_users_lastPaymentDate_idx/);
+      const pppoeSection = schema.match(/model pppoeUser \{[\s\S]*?\}/);
+      expect(pppoeSection).toBeTruthy();
+      expect(pppoeSection![0]).toMatch(/@@index\(\[subscriptionType,\s*status\]\)/);
+      expect(pppoeSection![0]).toMatch(/@@index\(\[lastPaymentDate\]\)/);
     });
 
     it('creates payment_attempts composite index', () => {
-      expect(migration).toMatch(/payment_attempts_invoiceId_status_idx/);
+      const paSection = schema.match(/model paymentAttempt \{[\s\S]*?\}/);
+      expect(paSection).toBeTruthy();
+      expect(paSection![0]).toMatch(/@@index\(\[invoiceId,\s*status\]\)/);
     });
   });
 

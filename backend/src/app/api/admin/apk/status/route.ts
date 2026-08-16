@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { existsSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
@@ -11,8 +10,10 @@ const VALID_ROLES = ['admin', 'customer', 'technician', 'agent'] as const;
 type RoleKey = typeof VALID_ROLES[number];
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  const authCheck = await requirePermission('settings.view');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
+  if (session.user.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

@@ -181,6 +181,9 @@ export async function POST(request: NextRequest) {
         case 'external_task_processor':
           result = await runExternalTaskProcessor()
           break
+        case 'financial_reconciliation':
+          result = await runFinancialReconciliation()
+          break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }
       }
@@ -286,6 +289,11 @@ async function runRadiusSyncRetry() {
 async function runExternalTaskProcessor() {
   const { processExternalTasks } = await import('@/server/services/external-task-processor.service')
   return await processExternalTasks()
+}
+
+async function runFinancialReconciliation() {
+  const { runFinancialReconciliation: reconcile } = await import('@/server/cron/financial-reconciliation')
+  return await reconcile()
 }
 
 /**

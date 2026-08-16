@@ -31,10 +31,10 @@ export async function GET(request: NextRequest) {
       period_end: r.period_end,
       upload_bytes: Number(r.acctinputoctets || 0),
       download_bytes: Number(r.acctoutputoctets || 0),
-      total_bytes: Number((r.acctinputoctets || 0n) + (r.acctoutputoctets || 0n)),
+      total_bytes: Number((r.acctinputoctets || BigInt(0)) + (r.acctoutputoctets || BigInt(0))),
       upload_gb: (Number(r.acctinputoctets || 0) / 1e9).toFixed(3),
       download_gb: (Number(r.acctoutputoctets || 0) / 1e9).toFixed(3),
-      total_gb: (Number((r.acctinputoctets || 0n) + (r.acctoutputoctets || 0n)) / 1e9).toFixed(3),
+      total_gb: (Number((r.acctinputoctets || BigInt(0)) + (r.acctoutputoctets || BigInt(0))) / 1e9).toFixed(3),
     }));
 
     return NextResponse.json({ success: true, data });
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const usageMap = new Map<string, { input: bigint; output: bigint }>();
     for (const s of sessions) {
-      const existing = usageMap.get(s.username) || { input: 0n, output: 0n };
+      const existing = usageMap.get(s.username) || { input: BigInt(0), output: BigInt(0) };
       usageMap.set(s.username, {
         input: existing.input + BigInt(s.acctinputoctets || 0),
         output: existing.output + BigInt(s.acctoutputoctets || 0),

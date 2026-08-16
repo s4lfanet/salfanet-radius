@@ -1,14 +1,11 @@
 ﻿import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.genieacs');
+    if (!authCheck.authorized) return authCheck.response;
     // Get GenieACS credentials
     const credentials = await getGenieACSCredentials();
 

@@ -1,6 +1,5 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/server/auth/config";
+import { requirePermission } from "@/server/middleware/api-auth";
 import { prisma } from "@/server/db/client";
 
 // Disable caching - always fetch fresh data
@@ -10,10 +9,8 @@ export const revalidate = 0;
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authCheck = await requirePermission('dashboard.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     // Get all active routers
     const routers = await prisma.router.findMany({

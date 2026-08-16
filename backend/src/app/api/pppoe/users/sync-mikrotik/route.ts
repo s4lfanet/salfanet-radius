@@ -1,6 +1,4 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { RouterOSAPI } from 'node-routeros';
@@ -56,10 +54,8 @@ interface SyncResult {
 // GET - Preview PPPoE secrets from MikroTik (without importing)
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('network.view');
+    if (!authCheck.authorized) return authCheck.response;
     const { searchParams } = new URL(request.url);
     const routerId = searchParams.get('routerId');
 
