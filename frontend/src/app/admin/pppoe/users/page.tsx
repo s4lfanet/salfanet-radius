@@ -63,6 +63,7 @@ interface PppoeUser {
   area?: { id: string; name: string } | null;
   discount?: number | null;
   discountNote?: string | null;
+  connectionType?: 'PPPOE' | 'STATIC_IP' | 'HOTSPOT' | null;
   registeredByTechnician?: { id: string; name: string } | null;
   balance?: number;
 }

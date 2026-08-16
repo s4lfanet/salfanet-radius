@@ -39,6 +39,7 @@ interface User {
   createdAt?: string | null;
   discount?: number | null;
   discountNote?: string | null;
+  connectionType?: 'PPPOE' | 'STATIC_IP' | 'HOTSPOT' | null;
   registeredByTechnicianId?: string | null;
   registeredByTechnician?: { id: string; name: string } | null;
 }
@@ -137,6 +138,7 @@ export default function UserDetailModal({
     registeredAt: '',
     discount: 0,
     discountNote: '',
+    connectionType: 'PPPOE' as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT',
   });
 
   useEffect(() => {
@@ -166,6 +168,7 @@ export default function UserDetailModal({
         registeredAt: user.createdAt ? formatWIB(user.createdAt, 'yyyy-MM-dd') : '',
         discount: user.discount || 0,
         discountNote: user.discountNote || '',
+        connectionType: user.connectionType || 'PPPOE',
       });
     }
   }, [user]);
@@ -414,6 +417,23 @@ export default function UserDetailModal({
                       </option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Tipe Koneksi</label>
+                  <select
+                    value={formData.connectionType}
+                    onChange={(e) => setFormData({ ...formData, connectionType: e.target.value as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT' })}
+                    className={selectCls}
+                  >
+                    <option value="PPPOE">PPPoE</option>
+                    <option value="STATIC_IP">Static IP (ARP)</option>
+                    <option value="HOTSPOT">Hotspot</option>
+                  </select>
+                  {(formData.connectionType !== 'PPPOE') && (
+                    <p className="text-[10px] text-amber-500 mt-1">
+                      Mengubah tipe koneksi akan sync ulang konfigurasi MikroTik (hapus entry lama, buat entry baru).
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className={labelCls}>{t('userModal.ipAddress')}</label>

@@ -325,6 +325,63 @@ export async function PUT(request: NextRequest) {
       },
     });
 
+    // Detect authMode change for MikroTik routers — trigger bulk sync of existing customers
+    const authModeChanged = isMikrotik && authMode && currentRouter.authMode && authMode !== currentRouter.authMode;
+    let migrationSummary: { triggered: boolean; mode: string; usersAffected: number } | null = null;
+
+    if (authModeChanged) {
+      try {
+        const { enqueueTask } = await import('@/server/services/external-task.service');
+        const { getMikrotikProfileName } = await import('@/server/services/mikrotik/ppp-secret.service');
+
+        // Get all active/isolated PPPoE users on this router (PPPoE connection type only)
+        const users = await prisma.pppoeUser.findMany({
+          where: {
+            routerId: id,
+            status: { in: ['active', 'isolated'] },
+            connectionType: 'PPPOE',
+          },
+          select: { id: true, username: true, password: true, profileId: true, status: true },
+        });
+
+        if (authMode === 'local') {
+          // radius → local: enable PPP secrets (MikroTik becomes primary auth)
+          for (const u of users) {
+            const mtProfile = await getMikrotikProfileName(u.profileId);
+            const disabled = u.status === 'isolated';
+            await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_update', {
+              routerId: id,
+              username: u.username,
+              password: u.password,
+              profile: mtProfile || undefined,
+              disabled,
+              comment: `Salfanet-${u.id.slice(0, 8)}`,
+            });
+          }
+          migrationSummary = { triggered: true, mode: 'radius→local', usersAffected: users.length };
+          console.log(`[ROUTER_UPDATE] authMode radius→local: enqueued ${users.length} sync_mikrotik_update tasks for router ${id}`);
+        } else if (authMode === 'radius') {
+          // local → radius: disable PPP secrets (RADIUS becomes primary, secret = backup)
+          for (const u of users) {
+            const mtProfile = await getMikrotikProfileName(u.profileId);
+            await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_update', {
+              routerId: id,
+              username: u.username,
+              password: u.password,
+              profile: mtProfile || undefined,
+              disabled: true,  // disable secret — RADIUS is now primary
+              comment: `Salfanet-${u.id.slice(0, 8)}`,
+            });
+          }
+          migrationSummary = { triggered: true, mode: 'local→radius', usersAffected: users.length };
+          console.log(`[ROUTER_UPDATE] authMode local→radius: enqueued ${users.length} sync_mikrotik_update (disabled) tasks for router ${id}`);
+        }
+      } catch (migrateError) {
+        console.error('[ROUTER_UPDATE] authMode migration sync error:', migrateError);
+        // Non-fatal — DB update already succeeded, sync can be retried via migrate-local-auth endpoint
+      }
+    }
+
     // Restart FreeRADIUS to reload NAS table
     await reloadFreeRadius();
 
@@ -347,6 +404,8 @@ export async function PUT(request: NextRequest) {
             ipAddress: ipAddress || undefined,
             nasIpAddress: nasIpAddress || undefined,
             isActive: isActive !== undefined ? isActive : undefined,
+            authModeChanged: authModeChanged || undefined,
+            authModeMigration: migrationSummary || undefined,
           },
         },
       });
@@ -360,7 +419,12 @@ export async function PUT(request: NextRequest) {
       include: { vpnClient: { select: { id: true, name: true, vpnIp: true } } },
     });
     await invalidateKey(CACHE_KEYS.routers);
-    return NextResponse.json({ success: true, router: updatedRouter ?? router, vpnClientChanged: vpnClientId !== undefined });
+    return NextResponse.json({
+      success: true,
+      router: updatedRouter ?? router,
+      vpnClientChanged: vpnClientId !== undefined,
+      authModeMigration: migrationSummary,
+    });
   } catch (error) {
     console.error('Update router error:', error);
     return NextResponse.json({ error: 'Failed to update router' }, { status: 500 });
