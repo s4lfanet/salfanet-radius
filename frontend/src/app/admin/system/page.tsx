@@ -132,9 +132,10 @@ export default function SystemPage() {
 
   const runUpdate = useCallback(async () => {
     const confirmed = await showConfirm(
-      'Konfirmasi Update',
       'Sistem akan melakukan git pull, build, dan restart semua service. Pastikan tidak ada user yang sedang aktif. Lanjutkan?',
-      { confirmButtonText: 'Ya, Update Sekarang', cancelButtonText: 'Batal' }
+      'Konfirmasi Update',
+      'Ya, Update Sekarang',
+      'Batal'
     );
     if (!confirmed) return;
 
@@ -161,7 +162,7 @@ export default function SystemPage() {
     } catch (err: any) {
       let parsedError = err.message;
       try {
-        const match = err.message?.match(/\{.*\}/s);
+        const match = err.message?.match(/\{[\s\S]*\}/);
         if (match) {
           const parsed = JSON.parse(match[0]);
           if (parsed.steps) setUpdateSteps(parsed.steps);
