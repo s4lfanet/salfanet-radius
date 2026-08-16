@@ -770,7 +770,11 @@ function AdminLayoutContent({
   }, [session, status]);
 
   // Load company data (use public endpoint — works before login)
+  // Throttled: only fetch once per 5 minutes (matches server Cache-Control)
   useEffect(() => {
+    const lastFetch = (window as any).__companyInfoLastFetch || 0;
+    if (Date.now() - lastFetch < 5 * 60 * 1000) return;
+    (window as any).__companyInfoLastFetch = Date.now();
     apiAdmin<{ data?: { name?: string; email?: string; phone?: string; address?: string; baseUrl?: string; logo?: string }; name?: string; email?: string; phone?: string; address?: string; baseUrl?: string; logo?: string }>('/api/company/info')
       .then((data) => {
         const c = data.data || data;
