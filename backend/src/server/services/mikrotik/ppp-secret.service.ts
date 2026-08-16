@@ -75,7 +75,13 @@ export async function managePppSecret(
       password: router.password || '',
       timeout: 15,
     })
-    await api.connect()
+    // Hard timeout for connect — node-routeros timeout only applies to read/write
+    await Promise.race([
+      api.connect(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`connect timeout for ${host}:${apiPort} after 20s`)), 20000)
+      ),
+    ])
 
     const menu = api.write.bind(api)
     const allSecrets = (await menu('/ppp/secret/print')) as Array<any>
@@ -179,28 +185,38 @@ export async function kickPppoeSession(routerId: string, username: string): Prom
   const apiPort = router.port || 8728
   let api: any
   try {
-    api = new RouterOSAPI({
-      host,
-      port: apiPort,
-      user: router.username || '',
-      password: router.password || '',
-      timeout: 15,
-    })
-    await api.connect()
-    const active = (await api.write('/ppp/active/print', [`?name=${username}`])) as Array<any>
-    let kicked = 0
-    for (const session of active) {
-      const id = session['.id'] || session.id
-      if (id) {
-        try {
-          await api.write('/ppp/active/remove', [`=.id=${id}`])
-          kicked++
-        } catch (e) {
-          console.error(`[KICK] Failed to remove session ${id} for ${username}:`, e)
+    // Hard timeout wrapper — prevents api.connect() from hanging forever
+    // node-routeros `timeout` option only applies to read/write, NOT TCP connect
+    const result = await Promise.race([
+      (async () => {
+        api = new RouterOSAPI({
+          host,
+          port: apiPort,
+          user: router.username || '',
+          password: router.password || '',
+          timeout: 15,
+        })
+        await api.connect()
+        const active = (await api.write('/ppp/active/print', [`?name=${username}`])) as Array<any>
+        let kicked = 0
+        for (const session of active) {
+          const id = session['.id'] || session.id
+          if (id) {
+            try {
+              await api.write('/ppp/active/remove', [`=.id=${id}`])
+              kicked++
+            } catch (e) {
+              console.error(`[KICK] Failed to remove session ${id} for ${username}:`, e)
+            }
+          }
         }
-      }
-    }
-    return kicked
+        return kicked
+      })(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`kickPppoeSession timeout for ${username} on ${host}:${apiPort} after 20s`)), 20000)
+      ),
+    ])
+    return result
   } catch (e: any) {
     console.error(`[KICK] Failed for ${username} on router ${router.name}:`, e?.message || e)
     return 0
@@ -228,7 +244,12 @@ export async function listPppSecrets(routerId: string): Promise<Array<{ name: st
       password: router.password || '',
       timeout: 15,
     })
-    await api.connect()
+    await Promise.race([
+      api.connect(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`connect timeout for ${host}:${apiPort} after 20s`)), 20000)
+      ),
+    ])
     const secrets = (await api.write('/ppp/secret/print')) as Array<any>
     return secrets.map((s) => ({
       name: s.name,
@@ -266,7 +287,12 @@ export async function listPppActive(routerId: string): Promise<Set<string>> {
       password: router.password || '',
       timeout: 15,
     })
-    await api.connect()
+    await Promise.race([
+      api.connect(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`connect timeout for ${host}:${apiPort} after 20s`)), 20000)
+      ),
+    ])
     const active = (await api.write('/ppp/active/print')) as Array<any>
     const usernames = new Set<string>()
     for (const s of active) {
