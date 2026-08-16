@@ -138,6 +138,7 @@ const JOB_TIMEOUTS: Record<string, number> = {
   auto_stop: 180,             // 3 min — per-user processing
   notification_check: 180,    // 3 min — bulk notifications
   session_monitor: 180,       // 3 min — session analysis
+  external_task_processor: 300, // 5 min — MikroTik API calls (8s timeout each)
 }
 const DEFAULT_JOB_TIMEOUT = 120 // 2 min
 
