@@ -1432,7 +1432,7 @@ export async function POST(req: NextRequest) {
   }
 
   const startUrl   = `${baseUrl}${ROLES[role].pathSuffix}`;
-  const startedAt  = new Date().toISOString();
+  const startedAt  = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString();
   const projectDir = `/tmp/salfanet-build-${role}-${Date.now()}`;
 
   // Mark as building
@@ -1443,7 +1443,7 @@ export async function POST(req: NextRequest) {
     await writeProjectToDisk(projectDir, role, appName, startUrl, baseUrl, logoPath);
   } catch (err) {
     writeFileSync(statusFile, JSON.stringify({
-      status: 'failed', startedAt, finishedAt: new Date().toISOString(),
+      status: 'failed', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
       error: `Gagal generate project: ${err}`,
     }));
     return NextResponse.json({ error: 'Gagal generate project' }, { status: 500 });
@@ -1482,18 +1482,18 @@ export async function POST(req: NextRequest) {
           const dst  = join(roleDir, 'app.apk');
           copyFileSync(src, dst);
           writeFileSync(statusFile, JSON.stringify({
-            status: 'done', startedAt, finishedAt: new Date().toISOString(),
+            status: 'done', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
             appName, url: startUrl, apkSize: statSync(dst).size,
           }));
         } else {
           writeFileSync(statusFile, JSON.stringify({
-            status: 'failed', startedAt, finishedAt: new Date().toISOString(),
+            status: 'failed', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
             error: 'File APK tidak ditemukan setelah build selesai.',
           }));
         }
       } else {
         writeFileSync(statusFile, JSON.stringify({
-          status: 'failed', startedAt, finishedAt: new Date().toISOString(),
+          status: 'failed', startedAt, finishedAt: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(),
           error: `Gradle exit code ${code}. Cek: /var/data/salfanet/apk/${role}/build.log`,
         }));
       }
