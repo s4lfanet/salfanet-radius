@@ -109,6 +109,7 @@ configure_ufw() {
             ufw allow 22/tcp   comment 'SSH'                    2>/dev/null || true
             ufw allow 80/tcp   comment 'HTTP'                   2>/dev/null || true
             ufw allow 443/tcp  comment 'HTTPS'                  2>/dev/null || true
+            ufw allow 8080/tcp comment 'HTTP Alt (Nginx)'        2>/dev/null || true
             ufw allow 1812/udp comment 'RADIUS Authentication'  2>/dev/null || true
             ufw allow 1813/udp comment 'RADIUS Accounting'      2>/dev/null || true
             ufw allow 3799/udp comment 'RADIUS CoA'             2>/dev/null || true
@@ -132,6 +133,7 @@ configure_ufw() {
     ufw allow 22/tcp   comment 'SSH'               2>/dev/null || true
     ufw allow 80/tcp   comment 'HTTP'              2>/dev/null || true
     ufw allow 443/tcp  comment 'HTTPS'             2>/dev/null || true
+    ufw allow 8080/tcp comment 'HTTP Alt (Nginx)'  2>/dev/null || true
     ufw allow 1812/udp comment 'RADIUS Authentication' 2>/dev/null || true
     ufw allow 1813/udp comment 'RADIUS Accounting' 2>/dev/null || true
     ufw allow 3799/udp comment 'RADIUS CoA'        2>/dev/null || true
