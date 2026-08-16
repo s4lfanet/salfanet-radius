@@ -48,6 +48,18 @@ export const useAppStore = create<AppState>()(
       initializeTimezone: async () => {
         // Initialize timezone from server on app load
         // Use /api/company/info (public) instead of /api/company (auth required)
+        // Throttle: only fetch once per 5 minutes (matches server Cache-Control)
+        const lastFetch = (typeof window !== 'undefined' && (window as any).__companyInfoLastFetch) || 0;
+        const now = Date.now();
+        if (now - lastFetch < 5 * 60 * 1000) {
+          // Use stored timezone from persist
+          const currentTz = get().company.timezone;
+          setCurrentTimezone(currentTz);
+          return;
+        }
+        if (typeof window !== 'undefined') {
+          (window as any).__companyInfoLastFetch = now;
+        }
         try {
           const response = await fetch('/api/company/info');
           if (response.ok) {
