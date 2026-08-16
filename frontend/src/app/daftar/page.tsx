@@ -444,7 +444,7 @@ function DaftarPageInner() {
             <div className="space-y-4">
               <p className="text-[10px] font-bold text-[#00f7ff] uppercase tracking-widest flex items-center gap-2">
                 <span className="w-8 h-[1px] bg-gradient-to-r from-[#00f7ff] to-transparent"></span>
-                Dokumen Identitas (Opsional)
+                Dokumen Identitas (Wajib)
               </p>
 
               {/* KTP Number */}
