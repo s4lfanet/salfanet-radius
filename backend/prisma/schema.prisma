@@ -1028,7 +1028,7 @@ model radiusSyncQueue {
 // Idempotency is enforced via uniqueConstraint (entityType + entityId + operation).
 // The worker checks current state before applying side effects to avoid duplicates.
 model externalTask {
-  id             String   @id @default(uuid())
+  id             String   @id @default(uuid()) @db.VarChar(191)
   entityType     String   @db.VarChar(32) @map("entity_type") // pppoe_user, invoice, payment
   entityId       String   @db.VarChar(64) @map("entity_id")
   operation      String   @db.VarChar(32) // create, update, delete, sync_radius, sync_mikrotik, send_wa, send_email, coa_disconnect, reload_radius
