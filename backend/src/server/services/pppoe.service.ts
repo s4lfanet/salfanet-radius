@@ -812,6 +812,11 @@ export async function updatePppoeUser(
           await enqueueTask(tx, 'pppoe_user', id, 'coa_disconnect', { username: newUsername });
         }
 
+        // CoA disconnect for connectionType change — kick old session so user re-auth with new connection type
+        if (connectionTypeChanged) {
+          await enqueueTask(tx, 'pppoe_user', id + '_ct_coa', 'coa_disconnect', { username: oldUsername });
+        }
+
         // MikroTik sync — handle connectionType transitions
         if (finalRouterId) {
           const router = await tx.router.findUnique({
