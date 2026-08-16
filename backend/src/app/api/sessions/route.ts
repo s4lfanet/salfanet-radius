@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
+import { batchFetchMikrotikActiveSessions, parseUptime, type MikrotikActiveSession } from '@/server/services/mikrotik/active-sessions.service';
 
 // ─── Formatting helpers ─────────────────────────────────────────────────────
 
@@ -136,6 +137,7 @@ export async function GET(request: NextRequest) {
         username: true,
         password: true,
         port: true,
+        authMode: true,
       },
     });
 
@@ -509,6 +511,93 @@ export async function GET(request: NextRequest) {
           s.dataSource = s.dataSource === 'radius' ? 'radius+realtime' : s.dataSource;
         }
       }
+    }
+
+    // ── 4e. Fetch active sessions from MikroTik local-auth routers ────────
+    // Routers with authMode='local' authenticate PPPoE/Hotspot locally and
+    // do NOT send RADIUS accounting records. Their sessions won't appear in
+    // radacct. Fetch them directly from MikroTik API and merge.
+    const existingUsernames = new Set(allSessions.map(s => s.username));
+    const mikrotikType = type as 'pppoe' | 'hotspot' | null;
+    const mikrotikSessions = await batchFetchMikrotikActiveSessions(routers, mikrotikType);
+
+    // Look up pppoeUser and hotspotVoucher for MikroTik sessions
+    const mikrotikUsernames = [...new Set(mikrotikSessions.map(s => s.username))];
+    const [mtPppoeUsers, mtHotspotVouchers] = await Promise.all([
+      prisma.pppoeUser.findMany({
+        where: { username: { in: mikrotikUsernames } },
+        select: {
+          id: true, username: true, customerId: true, name: true, phone: true,
+          profile: { select: { name: true } },
+          area: { select: { id: true, name: true } },
+        },
+      }),
+      prisma.hotspotVoucher.findMany({
+        where: { code: { in: mikrotikUsernames } },
+        select: {
+          id: true, code: true, status: true, batchCode: true,
+          firstLoginAt: true, expiresAt: true,
+          agent: { select: { id: true, name: true } },
+          profile: { select: { name: true } },
+        },
+      }),
+    ]);
+    const mtPppoeByUsername = new Map(mtPppoeUsers.map(u => [u.username, u]));
+    const mtVoucherByCode = new Map(mtHotspotVouchers.map(v => [v.code, v]));
+
+    for (const ms of mikrotikSessions) {
+      // Skip if already in radacct sessions (avoid duplicates)
+      if (existingUsernames.has(ms.username)) continue;
+
+      const pppoeUser = mtPppoeByUsername.get(ms.username);
+      const voucher = mtVoucherByCode.get(ms.username);
+      // Only show sessions for registered users
+      if (!pppoeUser && !voucher) continue;
+
+      const sessionType = pppoeUser ? 'pppoe' : 'hotspot';
+      const duration = parseUptime(ms.uptime);
+      const uploadBytes = ms.txBytes;  // tx = upload (from router perspective)
+      const downloadBytes = ms.rxBytes; // rx = download
+
+      allSessions.push({
+        id: `mt-${ms.routerId}-${ms.username}`,
+        username: ms.username,
+        sessionId: ms.sessionId,
+        type: sessionType,
+        nasIpAddress: null,
+        framedIpAddress: ms.ipAddress,
+        macAddress: ms.macAddress || '-',
+        calledStationId: '-',
+        startTime: duration > 0 ? new Date(now - duration * 1000).toISOString() : new Date().toISOString(),
+        lastUpdate: new Date(now).toISOString(),
+        duration,
+        durationFormatted: formatDuration(duration),
+        uploadBytes,
+        downloadBytes,
+        totalBytes: uploadBytes + downloadBytes,
+        uploadFormatted: formatBytes(uploadBytes),
+        downloadFormatted: formatBytes(downloadBytes),
+        totalFormatted: formatBytes(uploadBytes + downloadBytes),
+        router: { id: ms.routerId, name: ms.routerName },
+        user: sessionType === 'pppoe' && pppoeUser ? {
+          id: pppoeUser.id,
+          customerId: pppoeUser.customerId ?? null,
+          name: pppoeUser.name,
+          phone: pppoeUser.phone,
+          profile: pppoeUser.profile?.name ?? null,
+          area: pppoeUser.area ?? null,
+        } : null,
+        voucher: sessionType === 'hotspot' && voucher ? {
+          id: voucher.id,
+          status: voucher.status,
+          profile: voucher.profile?.name ?? null,
+          batchCode: voucher.batchCode,
+          expiresAt: voucher.expiresAt ? new Date(voucher.expiresAt).toISOString() : null,
+          agent: voucher.agent ? { id: voucher.agent.id, name: voucher.agent.name } : null,
+        } : null,
+        dataSource: 'mikrotik',
+      });
+      existingUsernames.add(ms.username);
     }
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────

@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/client";
 import { requirePermission } from "@/server/middleware/api-auth";
 import { getRecentActivities } from "@/server/services/activity-log.service";
 import { nowWIB, startOfDayWIBtoUTC } from "@/lib/timezone";
+import { batchFetchMikrotikActiveSessions } from "@/server/services/mikrotik/active-sessions.service";
 
 // Disable caching for this route - always fetch fresh data
 export const dynamic = 'force-dynamic';
@@ -150,6 +151,42 @@ export async function GET(request: NextRequest) {
           return latestStop.getTime() < new Date(v.firstLoginAt).getTime();
         }).length;
         activeSessionsHotspot += syntheticCount;
+      }
+
+      // ── Supplement: MikroTik local-auth sessions ──
+      // Routers with authMode='local' authenticate locally and don't send
+      // RADIUS accounting. Fetch active sessions directly from MikroTik API.
+      const localRouters = await prisma.router.findMany({
+        where: { isActive: true, authMode: { not: 'radius' } },
+        select: { id: true, authMode: true },
+      });
+      if (localRouters.length > 0) {
+        const mtSessions = await batchFetchMikrotikActiveSessions(localRouters, null);
+        // Get all registered usernames to filter ghost sessions
+        const mtUsernames = [...new Set(mtSessions.map(s => s.username))];
+        if (mtUsernames.length > 0) {
+          const [mtPppoeUsers, mtVouchers] = await Promise.all([
+            prisma.pppoeUser.findMany({
+              where: { username: { in: mtUsernames } },
+              select: { username: true },
+            }),
+            prisma.hotspotVoucher.findMany({
+              where: { code: { in: mtUsernames } },
+              select: { code: true },
+            }),
+          ]);
+          const mtPppoeSet = new Set(mtPppoeUsers.map(u => u.username));
+          const mtVoucherSet = new Set(mtVouchers.map(v => v.code));
+          for (const s of mtSessions) {
+            // Skip if already counted via radacct
+            if (onlineUsernames.has(s.username)) continue;
+            if (mtPppoeSet.has(s.username)) {
+              activeSessionsPPPoE++;
+            } else if (mtVoucherSet.has(s.username)) {
+              activeSessionsHotspot++;
+            }
+          }
+        }
       }
     } catch (e) {
       console.error('[Dashboard] Error counting active sessions:', e);
