@@ -775,7 +775,7 @@ class MainActivity : AppCompatActivity() {
         const val PREF_DEVICE_KEY = "device_key"
         const val PREF_REGEX = "regex"
         const val PREF_LOGS = "logs"
-        const val DEFAULT_REGEX = "Rp\\s*([\\d.,]+)"
+        const val DEFAULT_REGEX = "Rp\\\\s*([\\\\d.,]+)"
     }
 
     private lateinit var tvStatus: TextView
@@ -858,7 +858,7 @@ class MainActivity : AppCompatActivity() {
         val statusText = buildString {
             append("Status: ")
             append(if (enabled) "AKTIF ✓" else "NONAKTIF ✗")
-            append("\n")
+            append("\\n")
             append("Config: ")
             append(if (hasConfig) "Tersimpan" else "Belum disimpan")
         }
@@ -883,7 +883,7 @@ class MainActivity : AppCompatActivity() {
                 val amount = entry.optString("amount", "")
                 val status = entry.optString("status", "")
                 val emoji = if (status == "success") "✅" else "❌"
-                sb.append("$emoji [$time] Rp$amount - $status\n")
+                sb.append("$emoji [$time] Rp$amount - $status\\n")
             }
             tvLog.text = if (sb.isEmpty()) "Belum ada log." else sb.toString()
         } catch (e: Exception) {
@@ -925,7 +925,7 @@ class QrisNotificationListener : NotificationListenerService() {
         const val PREF_DEVICE_KEY = "device_key"
         const val PREF_REGEX = "regex"
         const val PREF_LOGS = "logs"
-        const val DEFAULT_REGEX = "Rp\\s*([\\d.,]+)"
+        const val DEFAULT_REGEX = "Rp\\\\s*([\\\\d.,]+)"
 
         // E-wallet packages to listen to
         val TARGET_PACKAGES = setOf(
@@ -954,7 +954,7 @@ class QrisNotificationListener : NotificationListenerService() {
             val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             val webhookUrl = prefs.getString(PREF_WEBHOOK_URL, null)
             val deviceKey = prefs.getString(PREF_DEVICE_KEY, null)
-            val regexStr = prefs.getString(PREF_REGEX, DEFAULT_REGEX)
+            val regexStr = prefs.getString(PREF_REGEX, null) ?: DEFAULT_REGEX
 
             if (webhookUrl.isNullOrEmpty() || deviceKey.isNullOrEmpty()) {
                 addLog(context, "0", "no_config")
