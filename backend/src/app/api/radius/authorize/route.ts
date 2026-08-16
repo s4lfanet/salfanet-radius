@@ -88,19 +88,18 @@ export async function POST(request: NextRequest) {
         }
 
         // Cek apakah masa aktif sudah habis (expiredAt lewat)
-        // Skip rejection if autoIsolationEnabled=false (TETAP TERHUBUNG / No Action)
+        // If autoIsolationEnabled=false: allow expired user to stay connected (No Action)
+        // If autoIsolationEnabled=true: allow login (204) so radusergroup can apply isolir profile.
+        //   The cron will update status to 'isolated' and move radusergroup to 'isolir'.
+        //   Rejecting here would prevent the user from ever getting the isolir profile,
+        //   leaving them fully disconnected instead of isolated.
         if (pppoeUser.expiredAt && now > new Date(pppoeUser.expiredAt)) {
-          if (pppoeUser.autoIsolationEnabled !== false) {
-            const message = 'Masa Aktif Habis - Segera Bayar Tagihan';
-            console.log(`[AUTHORIZE] REJECT: PPPoE user ${username} expired at ${pppoeUser.expiredAt}`);
-            await logRejection(username, message);
-            return NextResponse.json({
-              "control:Auth-Type": "Reject",
-              "reply:Reply-Message": message
-            }, { status: 200 });
+          if (pppoeUser.autoIsolationEnabled === false) {
+            console.log(`[AUTHORIZE] ALLOW (no-action): PPPoE user ${username} expired but autoIsolationEnabled=false`);
+            return new NextResponse(null, { status: 204 });
           }
-          // autoIsolationEnabled=false: allow expired user to stay connected
-          console.log(`[AUTHORIZE] ALLOW (no-action): PPPoE user ${username} expired but autoIsolationEnabled=false`);
+          // autoIsolationEnabled=true: allow login so isolir profile can be applied
+          console.log(`[AUTHORIZE] ALLOW (expired): PPPoE user ${username} expired, isolir profile will be applied by radusergroup`);
           return new NextResponse(null, { status: 204 });
         }
 

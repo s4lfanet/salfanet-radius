@@ -1257,7 +1257,8 @@ async function handleInvoicePayment(
     include: {
       user: {
         include: {
-          profile: true
+          profile: true,
+          router: { select: { id: true, authMode: true } }
         }
       }
     }
@@ -1728,7 +1729,7 @@ async function handleInvoicePayment(
               `;
             await prisma.$executeRaw`
                 INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-                VALUES (${user.username}, ${profile.groupName}, 0, ${nasIdentifier})
+                VALUES (${user.username}, ${profile.groupName}, 1, ${nasIdentifier})
                 ON DUPLICATE KEY UPDATE groupname = ${profile.groupName}
               `;
 
@@ -1759,22 +1760,23 @@ async function handleInvoicePayment(
             // 4b. Restore PPP secret profile in MikroTik (critical for local mode)
             //     Change profile back to original + enable + kick active session
             if (user.routerId && shouldManagePppSecretForSuspend((user as any).router?.authMode)) {
-              managePppSecret(user.routerId, 'enable', {
-                username: user.username,
-                password: user.password,
-                profile: profile.groupName,
-              }).then((r) => {
+              try {
+                const r = await managePppSecret(user.routerId, 'enable', {
+                  username: user.username,
+                  password: user.password,
+                  profile: profile.groupName,
+                });
                 console.log(`✅ [Webhook] PPP secret restored to "${profile.groupName}" for ${user.username}: ${r.message}`);
-              }).catch((e) => {
+              } catch (e: any) {
                 console.error(`[Webhook] PPP secret restore failed for ${user.username}:`, e?.message || e);
-              });
+              }
 
-              // Kick active session via MikroTik API (for local sessions)
-              kickPppoeSession(user.routerId, user.username).then((kicked) => {
+              try {
+                const kicked = await kickPppoeSession(user.routerId, user.username);
                 console.log(`✅ [Webhook] Kicked ${kicked} session(s) for ${user.username}`);
-              }).catch((e) => {
+              } catch (e: any) {
                 console.error(`[Webhook] Kick failed for ${user.username}:`, e?.message || e);
-              });
+              }
             }
 
             // Update registration status to ACTIVE if this is installation invoice

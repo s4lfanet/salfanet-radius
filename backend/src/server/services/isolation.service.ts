@@ -108,6 +108,11 @@ export function isIpInIsolationPool(ipAddress: string, isolationPool: string): b
 
     const mask = parseInt(subnetMask);
     
+    // Guard edge cases: mask=0 matches all, mask=32 is exact match
+    // JavaScript bit shifts > 31 produce 0, so handle explicitly
+    if (mask === 0) return true;
+    if (mask === 32) return ipAddress === networkAddr;
+    
     // Convert IP addresses to numbers
     const ipToNumber = (ip: string) => {
       return ip.split('.').reduce((acc, octet) => (acc << 8) + parseInt(octet), 0);
