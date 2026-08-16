@@ -315,12 +315,12 @@ if [ -n "$USE_BRANCH" ]; then
     backup_genieacs_data
     (cd "$APP_DIR/backend" && npx prisma db push --accept-data-loss 2>/dev/null || npx prisma db push)
     restore_genieacs_data
-    apply_sql_migrations || true ────────────────────────────────
+    apply_sql_migrations || true
     # Migrate legacy admin_user -> admin_users if needed and ensure
     # at least one active SUPER_ADMIN exists.
-    if [ -f "$APP_DIR/vps-install/fix-auth-after-update.sh" ]; then
+    if [ -f "$APP_DIR/frontend/vps-install/fix-auth-after-update.sh" ]; then
         print_step "Running auth self-heal checks"
-        APP_DIR="$APP_DIR" bash "$APP_DIR/vps-install/fix-auth-after-update.sh" 2>&1 | tail -10 || true
+        APP_DIR="$APP_DIR" bash "$APP_DIR/frontend/vps-install/fix-auth-after-update.sh" 2>&1 | tail -10 || true
     fi
 
     print_step "Building application"
@@ -414,8 +414,8 @@ if [ -n "$USE_BRANCH" ]; then
     pm2 save
 
     # ─── Security: pastikan fail2ban + UFW + cleanup cron terpasang ──────
-    if [ -f "$APP_DIR/vps-install/install-security.sh" ]; then
-        source "$APP_DIR/vps-install/install-security.sh"
+    if [ -f "$APP_DIR/frontend/vps-install/install-security.sh" ]; then
+        source "$APP_DIR/frontend/vps-install/install-security.sh"
         # Hanya setup cleanup cron dan fail2ban (UFW sudah dikonfigurasi saat install)
         setup_cleanup_cron 2>/dev/null || true
         # Pastikan fail2ban running jika sudah terinstall
@@ -428,24 +428,24 @@ if [ -n "$USE_BRANCH" ]; then
     # ─── VPN post-update (sama seperti mode release) ──────────────────────
     # VPN Client (CHR forwarding)
     if [ -f "/usr/local/bin/vpn-connect" ]; then
-        REINSTALL_VPN=true bash "$APP_DIR/vps-install/install-vpn-client.sh" 2>/dev/null \
+        REINSTALL_VPN=true bash "$APP_DIR/frontend/vps-install/install-vpn-client.sh" 2>/dev/null \
             && print_success "VPN client (CHR mode) helper diperbarui" || true
     fi
     # WireGuard Server
-    if [ -f "/etc/wireguard/wg-server-info.json" ] && [ -f "$APP_DIR/vps-install/install-wg-server.sh" ]; then
+    if [ -f "/etc/wireguard/wg-server-info.json" ] && [ -f "$APP_DIR/frontend/vps-install/install-wg-server.sh" ]; then
         WG_IFACE=$(grep -o '"interface": *"[^"]*"' /etc/wireguard/wg-server-info.json 2>/dev/null | sed 's/.*: *"//;s/"//' || echo "wg0")
         WG_PORT=$(grep -o '"listenPort": *[0-9]*' /etc/wireguard/wg-server-info.json 2>/dev/null | grep -o '[0-9]*$' || echo "51820")
         WG_SUBNET=$(grep -o '"subnet": *"[^"]*"' /etc/wireguard/wg-server-info.json 2>/dev/null | sed 's/.*: *"//;s/"//' || echo "10.200.0.0/24")
         WG_IFACE="$WG_IFACE" WG_PORT="$WG_PORT" WG_SUBNET="$WG_SUBNET" \
-            bash "$APP_DIR/vps-install/install-wg-server.sh" 2>/dev/null \
+            bash "$APP_DIR/frontend/vps-install/install-wg-server.sh" 2>/dev/null \
             && print_success "WireGuard server diperbarui" || true
     fi
     # L2TP/IPsec Server
-    if [ -f "/etc/salfanet/l2tp/l2tp-server-info.json" ] && [ -f "$APP_DIR/vps-install/install-l2tp-server.sh" ]; then
+    if [ -f "/etc/salfanet/l2tp/l2tp-server-info.json" ] && [ -f "$APP_DIR/frontend/vps-install/install-l2tp-server.sh" ]; then
         L2TP_PSK=$(grep -o '"ipsecPsk": *"[^"]*"' /etc/salfanet/l2tp/l2tp-server-info.json 2>/dev/null | sed 's/.*: *"//;s/"//' || echo "")
         L2TP_SUBNET=$(grep -o '"subnet": *"[^"]*"' /etc/salfanet/l2tp/l2tp-server-info.json 2>/dev/null | sed 's/.*: *"//;s/"//' || echo "10.201.0.0/24")
         L2TP_PSK="$L2TP_PSK" L2TP_SUBNET="$L2TP_SUBNET" \
-            bash "$APP_DIR/vps-install/install-l2tp-server.sh" 2>/dev/null \
+            bash "$APP_DIR/frontend/vps-install/install-l2tp-server.sh" 2>/dev/null \
             && print_success "L2TP/IPsec server diperbarui" || true
     fi
 
@@ -634,9 +634,9 @@ print_step "Applying seed data (new templates & config)"
 VPN_CLIENT_CONF="/etc/vpn/vpn.conf"
 if [ -f "$VPN_CLIENT_CONF" ] || systemctl is-active --quiet vpn-tunnel 2>/dev/null || [ -f "/usr/local/bin/vpn-connect" ]; then
     print_step "Update VPN Client (CHR forwarding — SSTP/L2TP client)"
-    if [ -f "$APP_DIR/vps-install/install-vpn-client.sh" ]; then
+    if [ -f "$APP_DIR/frontend/vps-install/install-vpn-client.sh" ]; then
         # Re-install hanya update helper scripts + service file, tidak reset konfigurasi
-        REINSTALL_VPN=true bash "$APP_DIR/vps-install/install-vpn-client.sh" 2>/dev/null \
+        REINSTALL_VPN=true bash "$APP_DIR/frontend/vps-install/install-vpn-client.sh" 2>/dev/null \
             && print_success "VPN client (CHR mode) helper diperbarui" \
             || print_info "VPN client update skipped (tidak kritis)"
     fi
@@ -651,11 +651,11 @@ if [ -f "$WG_INFO" ]; then
     WG_SUBNET=$(grep -o '"subnet": *"[^"]*"' "$WG_INFO" 2>/dev/null | sed 's/.*: *"//;s/"//' || echo "10.200.0.0/24")
     WG_PORT=$(grep -o '"listenPort": *[0-9]*' "$WG_INFO" 2>/dev/null | grep -o '[0-9]*$' || echo "51820")
 
-    if [ -f "$APP_DIR/vps-install/install-wg-server.sh" ]; then
+    if [ -f "$APP_DIR/frontend/vps-install/install-wg-server.sh" ]; then
         print_info "Re-running WireGuard server installer (idempotent, peers tidak terputus)"
         # jalankan dengan subnet/port yang sama dari info file yang ada
         WG_IFACE="$WG_IFACE" WG_PORT="$WG_PORT" WG_SUBNET="$WG_SUBNET" \
-            bash "$APP_DIR/vps-install/install-wg-server.sh" \
+            bash "$APP_DIR/frontend/vps-install/install-wg-server.sh" \
             && print_success "WireGuard server diperbarui (wg-server-info.json + wg syncconf)" \
             || print_info "WireGuard update gagal — cek: systemctl status wg-quick@${WG_IFACE}"
     else
@@ -671,14 +671,14 @@ fi
 L2TP_INFO="/etc/salfanet/l2tp/l2tp-server-info.json"
 if [ -f "$L2TP_INFO" ]; then
     print_step "Update L2TP/IPsec VPN Server"
-    if [ -f "$APP_DIR/vps-install/install-l2tp-server.sh" ]; then
+    if [ -f "$APP_DIR/frontend/vps-install/install-l2tp-server.sh" ]; then
         # Preserve PSK agar NAS tidak perlu rekonfigurasi
         L2TP_PSK=$(grep -o '"ipsecPsk": *"[^"]*"' "$L2TP_INFO" 2>/dev/null | sed 's/.*: *"//;s/"//' || echo "")
         L2TP_SUBNET=$(grep -o '"subnet": *"[^"]*"' "$L2TP_INFO" 2>/dev/null | sed 's/.*: *"//;s/"//' || echo "10.201.0.0/24")
 
         print_info "Re-running L2TP server installer (PSK dipertahankan)"
         L2TP_PSK="$L2TP_PSK" L2TP_SUBNET="$L2TP_SUBNET" \
-            bash "$APP_DIR/vps-install/install-l2tp-server.sh" \
+            bash "$APP_DIR/frontend/vps-install/install-l2tp-server.sh" \
             && print_success "L2TP/IPsec server diperbarui" \
             || print_info "L2TP update gagal — cek: systemctl status xl2tpd"
     else
