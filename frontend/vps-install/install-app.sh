@@ -553,9 +553,12 @@ fix_permissions() {
     print_info "Setting ownership to ${APP_USER}:${APP_GROUP}..."
     chown -R ${APP_USER}:${APP_GROUP} ${APP_DIR}
     
-    # Fix file permissions (preserve execute for binaries)
-    find ${APP_DIR} -type f -exec chmod 644 {} \;
-    find ${APP_DIR} -type d -exec chmod 755 {} \;
+    # Fix file permissions — exclude node_modules (binaries there need execute)
+    print_info "Setting file permissions..."
+    find ${APP_DIR} -type f -not -path "*/node_modules/*" -exec chmod 644 {} \;
+    find ${APP_DIR} -type d -not -path "*/node_modules/*" -exec chmod 755 {} \;
+    # Ensure node_modules directories are accessible
+    find ${APP_DIR} -type d -path "*/node_modules/*" -exec chmod 755 {} \; 2>/dev/null || true
     
     # Restore execute permissions for binaries
     print_info "Restoring execute permissions for binaries..."
