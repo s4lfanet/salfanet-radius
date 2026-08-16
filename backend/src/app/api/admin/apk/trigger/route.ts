@@ -521,6 +521,7 @@ function qrisListenerManifest(pkg: string): string {
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -543,6 +544,7 @@ function qrisListenerManifest(pkg: string): string {
         <service
             android:name=".QrisNotificationListener"
             android:exported="false"
+            android:label="QRIS Notification Listener"
             android:foregroundServiceType="specialUse"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <property
@@ -930,10 +932,10 @@ class MainActivity : AppCompatActivity() {
             setBackgroundColor(cCard)
             setPadding(dp(16), dp(16), dp(16), dp(16))
             layoutParams = cardLp()
-            addView(label("URL Server (qris_notify.php)"))
+            addView(label("URL Server (qris-notify endpoint)"))
             addView(run {
                 etServerUrl = EditText(this@MainActivity).apply {
-                    hint = "https://domain.com/api/qris_notify.php"
+                    hint = "https://radius.salfa.my.id/api/payment/qris-notify"
                     inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_URI
                     textSize = 14f
                     setText(prefs.getString(QrisNotificationListener.PREF_SERVER_URL, ""))
