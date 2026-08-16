@@ -139,6 +139,7 @@ export default function UserDetailModal({
     discount: 0,
     discountNote: '',
     connectionType: 'PPPOE' as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT',
+    forceSyncMikrotik: false,
   });
 
   useEffect(() => {
@@ -169,6 +170,7 @@ export default function UserDetailModal({
         discount: user.discount || 0,
         discountNote: user.discountNote || '',
         connectionType: user.connectionType || 'PPPOE',
+        forceSyncMikrotik: false,
       });
     }
   }, [user]);
@@ -227,6 +229,10 @@ export default function UserDetailModal({
     // This prevents overwriting MikroTik secret with empty password
     if (!submitData.password) {
       delete submitData.password;
+    }
+    // Only send forceSyncMikrotik if checked
+    if (!submitData.forceSyncMikrotik) {
+      delete submitData.forceSyncMikrotik;
     }
     await onSave(submitData);
     onClose();
@@ -837,6 +843,26 @@ export default function UserDetailModal({
                   </div>
                 )}
               </div>
+
+              {/* Force Sync MikroTik */}
+              {formData.connectionType === 'PPPOE' && formData.routerId && (
+                <label className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/30 rounded-lg cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.forceSyncMikrotik}
+                    onChange={(e) => setFormData({ ...formData, forceSyncMikrotik: e.target.checked })}
+                    className="w-4 h-4 accent-amber-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                      🔄 Sync PPPoE Secret ke MikroTik
+                    </span>
+                    <p className="text-[10px] text-amber-600/70 dark:text-amber-400/60 mt-0.5">
+                      Centang jika PPPoE secret belum ada di MikroTik (local-auth) atau perlu di-update. Akan membuat/update PPP secret dengan username, password, dan profile paket yang dipilih.
+                    </p>
+                  </div>
+                </label>
+              )}
 
               <div className="flex justify-end gap-2 pt-4 border-t border-border dark:border-[#bc13fe]/30">
                 <button
