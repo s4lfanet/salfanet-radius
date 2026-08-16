@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, fail } from '@/lib/genieacs/helpers';
-import { createOrUpdateVirtualParameter, deleteVirtualParameter } from '@/lib/genieacs/api-client';
+import { createOrUpdateVirtualParameter, deleteVirtualParameter, getVirtualParameter } from '@/lib/genieacs/api-client';
 import { prisma } from '@/server/db/client';
 
 export async function GET(
@@ -13,9 +13,16 @@ export async function GET(
 
   try {
     const { vpId } = await params;
-    const vp = await prisma.genieacsVpScript.findUnique({ where: { name: vpId } });
-    if (!vp) return fail('Virtual parameter not found', 404);
-    return ok({ _id: vp.name, script: vp.script, description: vp.description, syncedAt: vp.syncedAt, syncError: vp.syncError });
+    // GenieACS is source of truth
+    try {
+      const remote = await getVirtualParameter(vpId);
+      if (!remote) return fail('Virtual parameter not found', 404);
+      return ok({ _id: (remote as { _id?: string })._id, script: (remote as { script?: string }).script, description: (remote as { description?: string }).description, syncedAt: new Date(), syncError: null });
+    } catch (nbiErr) {
+      const vp = await prisma.genieacsVpScript.findUnique({ where: { name: vpId } });
+      if (!vp) return fail('Virtual parameter not found', 404);
+      return ok({ _id: vp.name, script: vp.script, description: vp.description, syncedAt: vp.syncedAt, syncError: vp.syncError ?? (nbiErr as Error).message });
+    }
   } catch (e) {
     return fail((e as Error).message);
   }
@@ -34,20 +41,20 @@ export async function PUT(
     const { script, description } = body ?? {};
     if (typeof script !== 'string') return fail('script is required', 400);
 
-    await prisma.genieacsVpScript.upsert({
-      where: { name: vpId },
-      update: { script, description: description ?? null, syncedAt: null, syncError: null, updatedAt: new Date() },
-      create: { name: vpId, script, description: description ?? null },
-    });
-
+    // 1. Push to GenieACS (source of truth)
     let syncError: string | null = null;
     try {
       await createOrUpdateVirtualParameter(vpId, script);
-      await prisma.genieacsVpScript.update({ where: { name: vpId }, data: { syncedAt: new Date(), syncError: null } });
     } catch (syncErr) {
       syncError = (syncErr as Error).message;
-      await prisma.genieacsVpScript.update({ where: { name: vpId }, data: { syncError } });
     }
+
+    // 2. Update Prisma cache
+    await prisma.genieacsVpScript.upsert({
+      where: { name: vpId },
+      update: { script, description: description ?? null, syncedAt: syncError ? null : new Date(), syncError, updatedAt: new Date() },
+      create: { name: vpId, script, description: description ?? null, syncedAt: syncError ? null : new Date(), syncError },
+    });
     return ok({ _id: vpId, syncError });
   } catch (e) {
     return fail((e as Error).message);
@@ -63,8 +70,16 @@ export async function DELETE(
 
   try {
     const { vpId } = await params;
+    // 1. Delete from GenieACS (source of truth)
+    try {
+      await deleteVirtualParameter(vpId);
+    } catch (err) {
+      if (!String((err as Error).message).includes('404')) {
+        return fail(`Failed to delete from GenieACS: ${(err as Error).message}`);
+      }
+    }
+    // 2. Delete from Prisma cache
     await prisma.genieacsVpScript.deleteMany({ where: { name: vpId } });
-    try { await deleteVirtualParameter(vpId); } catch { /* ignore if not found */ }
     return ok({ _id: vpId });
   } catch (e) {
     return fail((e as Error).message);

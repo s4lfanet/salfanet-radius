@@ -226,6 +226,7 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.config', href: '/admin/genieacs/config', requiredPermission: 'settings.genieacs' },
           { titleKey: 'nav.autoProvision', href: '/admin/genieacs/auto-provision', requiredPermission: 'settings.genieacs' },
           { titleKey: 'nav.files', href: '/admin/genieacs/files', requiredPermission: 'settings.genieacs' },
+          { titleKey: 'nav.genieacsSettings', href: '/admin/genieacs/settings', requiredPermission: 'settings.genieacs' },
         ],
       },
       {
@@ -342,7 +343,6 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.database', href: '/admin/settings/database', requiredPermission: 'settings.view' },
           { titleKey: 'nav.security', href: '/admin/settings/security', requiredPermission: 'settings.view' },
           { titleKey: 'nav.cronJobs', href: '/admin/settings/cron', requiredPermission: 'settings.cron' },
-          { titleKey: 'nav.genieacs', href: '/admin/settings/genieacs', requiredPermission: 'settings.genieacs' },
           { titleKey: 'nav.systemUpdate', href: '/admin/system', requiredPermission: 'settings.view' },
           { titleKey: 'nav.cloudflare_tunnel', href: '/admin/settings/cloudflare-tunnel', requiredPermission: 'settings.view' },
           { titleKey: 'nav.subdomainRouting', href: '/admin/settings/subdomain', requiredPermission: 'settings.view' },
