@@ -1,7 +1,7 @@
 # 🛡️ Isolation System - Complete Workflow Analysis
 
-**Date**: March 27, 2026  
-**Version**: 2.11.6  
+**Date**: August 16, 2026  
+**Version**: 5.11.0  
 **Type**: Technical Documentation
 
 ---
@@ -214,17 +214,18 @@ CREATE TABLE radacct (
 ┌──────────────────────────────────────────────────────────┐
 │  Cron: PPPoE Auto-Isolir (Runs Every Hour)              │
 ├──────────────────────────────────────────────────────────┤
-│  Location: src/lib/cron/pppoe-sync.ts                   │
-│  Function: autoIsolatePPPoEUsers()                       │
+│  Location: src/server/cron/auto-isolir.ts               │
+│  Function: runAutoIsolir()                               │
 └──────────────────────────────────────────────────────────┘
                           │
                           ▼
          ┌────────────────────────────────┐
          │  Query Expired Users           │
          │  WHERE:                        │
-         │  - status = 'ACTIVE'           │
-         │  - expiredAt < CURDATE()       │
+         │  - status = 'active'           │
+         │  - expiredAt < now - graceDays │
          │  - autoIsolationEnabled = true │
+         │  - PREPAID & POSTPAID handled  │
          └────────────────────────────────┘
                           │
                           ▼
@@ -240,45 +241,40 @@ CREATE TABLE radacct (
             └─────────┘  └──────────┘
 ```
 
-### Phase 2: Status Update (SUSPENDED vs ISOLATED)
-
-**Important Note**: Sistem ini menggunakan status **SUSPENDED**, bukan ISOLATED!
+### Phase 2: Status Update (isolated)
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│  Update User Status                                      │
+│  Update User Status (atomic conditional update)          │
 ├──────────────────────────────────────────────────────────┤
 │  UPDATE pppoe_users                                      │
-│  SET status = 'SUSPENDED'                                │
-│  WHERE id = :userId                                      │
+│  SET status = 'isolated'                                 │
+│  WHERE id = :userId AND status = 'active'                │
+│  (if count=0, another instance already did it — skip)    │
 └──────────────────────────────────────────────────────────┘
                           │
                           ▼
 ┌──────────────────────────────────────────────────────────┐
-│  Update RADIUS Authentication                            │
+│  Update RADIUS Tables (dibungkus prisma.$transaction)    │
 ├──────────────────────────────────────────────────────────┤
-│  1. Keep password (untuk bisa login):                    │
-│     INSERT INTO radcheck (username, attribute, value)    │
-│     VALUES (:username, 'Cleartext-Password', :password)  │
-│                                                           │
-│  2. Force REJECT (tidak bisa login):                     │
-│     INSERT INTO radcheck (username, attribute, value)    │
-│     VALUES (:username, 'Auth-Type', 'Reject')            │
-│                                                           │
-│  3. Add reject message:                                  │
-│     INSERT INTO radreply (username, attribute, value)    │
-│     VALUES (:username, 'Reply-Message',                  │
-│             'Akun Ditangguhkan - Hubungi Admin')         │
+│  1. HAPUS Auth-Type:Reject dari radcheck (allow login!) │
+│  2. Keep/insert Cleartext-Password di radcheck           │
+│  3. Pindah radusergroup ke 'isolir' (priority: 1)        │
+│  4. HAPUS Framed-IP-Address dari radreply (pakai pool)   │
+└──────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌──────────────────────────────────────────────────────────┐
+│  MikroTik: Add IP aktif ke address-list 'isolir'         │
+│  (Memblokir internet segera sebelum user reconnect)      │
 └──────────────────────────────────────────────────────────┘
 ```
 
 **Current Implementation**:
-- Status = **SUSPENDED** (bukan ISOLATED)
-- Auth-Type = **Reject** (user **TIDAK BISA LOGIN**)
-- Reply-Message = "Akun Ditangguhkan - Hubungi Admin"
-
-**Issue Identified**: ⚠️
-Sistem saat ini **SUSPEND** user (reject auth), bukan **ISOLATE** (allow login tapi batasi akses).
+- Status = **isolated** (bukan SUSPENDED)
+- Auth-Type = **dihapus** (user **BISA LOGIN** untuk dapat isolir profile)
+- Reply-Message = **dihapus** (tidak diperlukan)
+- RADIUS updates dibungkus **prisma.$transaction** untuk atomicity
 
 ### Phase 3: RADIUS Group Assignment
 
@@ -305,10 +301,11 @@ Sistem saat ini **SUSPEND** user (reject auth), bukan **ISOLATE** (allow login t
 
 **radgroupreply Configuration** (per-router di UI):
 ```sql
-INSERT INTO radgroupreply (groupname, attribute, value)
+INSERT INTO radgroupreply (groupname, attribute, op, value)
 VALUES 
-  ('isolir', 'Framed-IP-Address', 'pool-isolir'),
-  ('isolir', 'Mikrotik-Rate-Limit', '64k/64k');
+  ('isolir', 'Framed-Pool', ':=', 'pool-isolir'),
+  ('isolir', 'Mikrotik-Rate-Limit', ':=', '64k/64k'),
+  ('isolir', 'Mikrotik-Address-List', ':=', 'isolir');
 ```
 
 ### Phase 4: Disconnect Active Session
@@ -359,33 +356,28 @@ VALUES
 │  User Tries to Login Again                               │
 ├──────────────────────────────────────────────────────────┤
 │  1. MikroTik sends RADIUS Access-Request                 │
-│  2. FreeRADIUS checks radcheck:                          │
-│     - Auth-Type = 'Reject' ❌                            │
-│  3. FreeRADIUS sends Access-Reject with message          │
-│  4. User CANNOT login (current implementation)           │
-└──────────────────────────────────────────────────────────┘
-```
-
-**Expected Behavior for TRUE Isolation**:
-```
-┌──────────────────────────────────────────────────────────┐
-│  User Tries to Login (TRUE ISOLATION)                    │
-├──────────────────────────────────────────────────────────┤
-│  1. MikroTik sends RADIUS Access-Request                 │
-│  2. FreeRADIUS checks radcheck:                          │
+│  2. Authorize hook (src/app/api/radius/authorize):       │
+│     - status = 'isolated'? → ALLOW (204)                 │
+│     - expiredAt < now AND autoIsolationEnabled=true?     │
+│       → ALLOW (204) — cron akan isolir                   │
+│     - expiredAt < now AND autoIsolationEnabled=false?    │
+│       → ALLOW (204) — user tetap terhubung (No Action)   │
+│  3. FreeRADIUS checks radcheck:                          │
 │     - Cleartext-Password = <password> ✅                 │
 │     - NO Auth-Type Reject                                │
-│  3. FreeRADIUS checks radusergroup:                      │
+│  4. FreeRADIUS checks radusergroup:                      │
 │     - groupname = 'isolir'                               │
-│  4. FreeRADIUS sends Access-Accept with:                 │
-│     - Framed-IP-Address = pool-isolir                    │
+│  5. FreeRADIUS sends Access-Accept with:                 │
+│     - Framed-Pool = pool-isolir                          │
 │     - Mikrotik-Rate-Limit = 64k/64k                      │
-│  5. User gets IP from 192.168.200.0/24                   │
-│  6. MikroTik firewall rules apply:                       │
-│     - Allow DNS                                          │
-│     - Allow payment server                               │
-│     - Redirect HTTP to landing page                      │
-│     - Block all other internet                           │
+│     - Mikrotik-Address-List = isolir                     │
+│  6. User gets IP from 192.168.200.0/24                   │
+│  7. MikroTik firewall rules apply:                       │
+│     - src-address-list=isolir: Allow DNS                 │
+│     - src-address-list=isolir: Allow billing server      │
+│     - src-address-list=isolir: Redirect HTTP to landing  │
+│     - src-address-list=isolir: Block all other internet  │
+│     - CIDR fallback rules also present                    │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -395,198 +387,86 @@ VALUES
 
 ### 1. Cron Job Configuration
 
-**File**: `src/lib/cron/config.ts`
+**File**: `src/server/cron/auto-isolir.ts`
 
 ```typescript
-{
-  type: 'pppoe_auto_isolir',
-  name: 'PPPoE Auto Isolir',
-  description: 'Auto-isolate expired PPPoE users and move to isolir group',
-  schedule: '0 * * * *', // Every hour
-  enabled: true,
-  async execute() {
-    const { autoIsolatePPPoEUsers } = await import('./pppoe-sync');
-    return autoIsolatePPPoEUsers();
-  }
-}
-```
-
-### 2. Main Isolation Function
-
-**File**: `src/lib/cron/pppoe-sync.ts`
-
-```typescript
-export async function autoIsolatePPPoEUsers(): Promise<{ 
-  success: boolean
-  isolated: number
-  error?: string 
+export async function runAutoIsolir(): Promise<{
+  isolated: number; total: number; errors: string[]
 }> {
-  // 1. Find expired users
-  const expiredUsers = await prisma.$queryRaw`
-    SELECT id, username, password, status, expiredAt, profileId
-    FROM pppoe_users
-    WHERE status = 'ACTIVE'
-      AND expiredAt < CURDATE()
-  `;
-
-  for (const user of expiredUsers) {
-    // 2. Update status to SUSPENDED
-    await prisma.pppoeUser.update({
-      where: { id: user.id },
-      data: { status: 'SUSPENDED' }
-    });
-
-    // 3. Keep password (for re-auth)
-    await prisma.$executeRaw`
-      INSERT INTO radcheck (username, attribute, op, value)
-      VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password})
-      ON DUPLICATE KEY UPDATE value = ${user.password}
-    `;
-
-    // 4. Force reject (CURRENT IMPLEMENTATION - NOT ISOLATION!)
-    await prisma.$executeRaw`
-      INSERT INTO radcheck (username, attribute, op, value)
-      VALUES (${user.username}, 'Auth-Type', ':=', 'Reject')
-      ON DUPLICATE KEY UPDATE value = 'Reject'
-    `;
-
-    // 5. Add reject message
-    await prisma.$executeRaw`
-      INSERT INTO radreply (username, attribute, op, value)
-      VALUES (${user.username}, 'Reply-Message', ':=', 
-              'Akun Ditangguhkan - Hubungi Admin')
-      ON DUPLICATE KEY UPDATE 
-        value = 'Akun Ditangguhkan - Hubungi Admin'
-    `;
-
-    // 6. Move to isolir group (kept for tracking)
-    await prisma.$executeRaw`
-      DELETE FROM radusergroup WHERE username = ${user.username}
-    `;
-    await prisma.$executeRaw`
-      INSERT INTO radusergroup (username, groupname, priority)
-      VALUES (${user.username}, 'isolir', 1)
-    `;
-
-    // 7. Remove static IP
-    await prisma.$executeRaw`
-      DELETE FROM radreply 
-      WHERE username = ${user.username} 
-        AND attribute = 'Framed-IP-Address'
-    `;
-
-    // 8. Disconnect via MikroTik API
-    await disconnectViaMikrotikAPI(user.username);
-    
-    // 9. Fallback: CoA disconnect
-    const { disconnectPPPoEUser } = await import('../services/coaService');
-    await disconnectPPPoEUser(user.username);
-    
-    // 10. Close session in radacct
-    await prisma.$executeRaw`
-      UPDATE radacct 
-      SET acctstoptime = NOW(), 
-          acctterminatecause = 'Admin-Reset'
-      WHERE username = ${user.username} 
-        AND acctstoptime IS NULL
-    `;
-  }
+  // 1. Check company settings (isolationEnabled, gracePeriodDays)
+  // 2. Find expired users:
+  //    PREPAID: status='active', expiredAt < now - graceDays, autoIsolationEnabled=true
+  //    POSTPAID: status='active', has overdue invoice
+  // 3. Per user:
+  //    a. Atomic conditional update: status='active' → 'isolated'
+  //       (if count=0, another instance already did it — skip)
+  //    b. RADIUS updates (dibungkus prisma.$transaction):
+  //       - HAPUS Auth-Type:Reject dari radcheck
+  //       - INSERT/UPDATE Cleartext-Password di radcheck
+  //       - DELETE + INSERT radusergroup → 'isolir' (priority: 1)
+  //       - DELETE Framed-IP-Address dari radreply
+  //    c. addToMikrotikAddressList: Add IP aktif ke address-list 'isolir'
+  //    d. MikroTik API: enable PPP secret + change profile ke 'isolir'
+  //    e. MikroTik API: kick active PPPoE session
+  //    f. CoA disconnect (force re-auth)
+  // 4. Auto-stop: isolated > 30 hari → stop (hapus dari semua RADIUS table)
+  //    CATATAN: 30 hari dihitung dari expiredAt (known limitation)
 }
 ```
 
-### 3. MikroTik API Disconnect
+### 2. Manual Status Change
 
-**File**: `src/lib/cron/pppoe-sync.ts`
+**File**: `src/app/api/pppoe/users/status/route.ts`
 
 ```typescript
-async function disconnectViaMikrotikAPI(username: string) {
-  // 1. Get active session
-  const session = await prisma.radacct.findFirst({
-    where: { username, acctstoptime: null },
-    select: { nasipaddress: true }
-  });
-
-  // 2. Get router config
-  const router = await prisma.router.findFirst({
-    where: { 
-      OR: [
-        { nasname: session.nasipaddress },
-        { ipAddress: session.nasipaddress }
-      ]
-    }
-  });
-
-  // 3. Connect to MikroTik
-  const api = new RouterOSAPI({
-    host: router.ipAddress,
-    port: router.port || 8728,
-    user: router.username,
-    password: router.password,
-    timeout: 15
-  });
-
-  await api.connect();
-
-  // 4. Find active PPPoE session
-  const activeSessions = await api.write(
-    '/ppp/active/print', 
-    [`?name=${username}`]
-  );
-
-  // 5. Remove session
-  for (const s of activeSessions) {
-    await api.write('/ppp/active/remove', [`=.id=${s['.id']}`]);
-  }
-
-  await api.close();
-}
+// DB status + RADIUS updates dibungkus prisma.$transaction:
+// - active:  Hapus Auth-Type, restore Cleartext-Password, restore radusergroup ke group normal, restore Framed-IP
+// - isolated: Hapus Auth-Type, keep Cleartext-Password, move radusergroup ke 'isolir', hapus Framed-IP
+// - blocked:  Hapus semua entry dari radcheck, radusergroup, radreply
+// - stop:     Sama seperti blocked (intent berbeda)
+//
+// Setelah transaction: MikroTik PPP secret + CoA disconnect (best-effort, di luar transaction)
 ```
 
-### 4. CoA Disconnect Service
+### 3. CoA & MikroTik Disconnect
 
-**File**: `src/lib/services/coaService.ts`
+**File**: `src/server/services/radius/coa-handler.service.ts`
 
 ```typescript
-export async function sendCoADisconnect(
-  username: string,
-  nasIpAddress: string,
-  nasSecret: string,
-  sessionId?: string,
-  framedIp?: string
-) {
-  // 1. Mark session in database FIRST (guaranteed)
-  if (sessionId) {
-    await markSessionStopped(sessionId, username, 'Admin-Reset');
-  }
+// disconnectPPPoEUser(username, routerId?) — multi-pronged approach:
+// 1. Mark session stopped in radacct (database first — guaranteed)
+// 2. Send CoA Disconnect-Request via radclient to NAS:3799
+// 3. MikroTik API: /ppp/active/remove (if router config available)
+//
+// addToMikrotikAddressList(nasIp, userIp, listName) — instant block:
+// Connects to MikroTik API and adds IP to firewall address-list.
+// Used during isolation to block internet before user reconnects.
+//
+// shouldManagePppSecretForSuspend(authMode) — determines if PPP secret
+// management is needed (only for local auth mode, not RADIUS auth).
+```
 
-  // 2. Build CoA packet
-  const coaAttributes = [
-    `NAS-IP-Address=${nasIpAddress}`,
-    `User-Name=${username}`
-  ];
-  
-  if (framedIp) {
-    coaAttributes.push(`Framed-IP-Address=${framedIp}`);
-  }
-  
-  if (sessionId) {
-    coaAttributes.push(`Acct-Session-Id=${sessionId}`);
-  }
+### 4. Payment Recovery (Webhook)
 
-  // 3. Write to temp file
-  const tmpFile = `/tmp/coa-${Date.now()}.txt`;
-  await writeFile(tmpFile, coaAttributes.join('\n') + '\n');
+**File**: `src/app/api/payment/webhook/route.ts`
 
-  // 4. Send CoA via radclient
-  const command = `radclient -t 2 -r 1 -x ${nasIpAddress}:3799 disconnect ${nasSecret} < ${tmpFile}`;
-  const { stdout } = await execAsync(command, { timeout: 8000 });
-
-  // 5. Check for ACK
-  const success = stdout.includes('Disconnect-ACK') || 
-                  stdout.includes('code 44');
-
-  return { success, message: success ? 'ACK' : 'No ACK' };
-}
+```typescript
+// handleInvoicePayment() — called when invoice payment is confirmed:
+// 1. Find invoice with user.profile AND user.router (select id, authMode)
+// 2. Validate amount, check idempotency
+// 3. prisma.$transaction:
+//    a. Mark invoice PAID, create payment record
+//    b. Update user: status='active', extend expiredAt
+//    c. Restore RADIUS: radcheck (Cleartext-Password), radusergroup (priority: 1),
+//       radreply (Framed-IP-Address if static)
+// 4. After transaction (await, bukan fire-and-forget):
+//    a. managePppSecret: restore PPP secret to normal profile
+//    b. kickPppoeSession: kick active session for reconnect
+//    c. CoA disconnect: force re-authentication
+// 5. Send notifications (WhatsApp, email)
+//
+// FIX: router include ditambahkan ke query agar shouldManagePppSecretForSuspend
+// bekerja dengan benar untuk local-auth users.
 ```
 
 ---
@@ -621,59 +501,29 @@ add name=isolir \\
     comment="Profile untuk user yang diisolir"
 ```
 
-**3. Firewall Filter** (Allow DNS & Payment Only)
+**3. Firewall Filter** (Primary: address-list, Fallback: CIDR)
 ```routeros
 /ip firewall filter
-# Allow DNS
-add chain=forward \\
-    src-address=192.168.200.0/24 \\
-    protocol=udp dst-port=53 \\
-    action=accept \\
-    comment="Allow DNS for isolated users"
+# Primary: Dynamic address-list (di-populate oleh RADIUS Mikrotik-Address-List)
+add chain=forward src-address-list=isolir protocol=udp dst-port=53 action=accept comment="SALFANET-ISOLIR Allow DNS UDP"
+add chain=forward src-address-list=isolir protocol=tcp dst-port=53 action=accept comment="SALFANET-ISOLIR Allow DNS TCP"
+add chain=forward src-address-list=isolir dst-address=<SERVER_IP> dst-port=80,443 protocol=tcp action=accept comment="SALFANET-ISOLIR Allow billing"
+add chain=forward src-address-list=isolir action=drop comment="SALFANET-ISOLIR Block internet"
 
-# Allow ICMP
-add chain=forward \\
-    src-address=192.168.200.0/24 \\
-    protocol=icmp \\
-    action=accept \\
-    comment="Allow ping for isolated users"
-
-# Allow access to payment server
-add chain=forward \\
-    src-address=192.168.200.0/24 \\
-    dst-address=<SERVER_IP> \\
-    action=accept \\
-    comment="Allow access to payment server"
-
-# Block all other internet
-add chain=forward \\
-    src-address=192.168.200.0/24 \\
-    action=drop \\
-    comment="Block internet for isolated users"
+# Fallback: CIDR statis (untuk sesi yang belum dapat address-list)
+add chain=forward src-address=192.168.200.0/24 protocol=udp dst-port=53 action=accept comment="SALFANET-ISOLIR Allow DNS UDP (CIDR fallback)"
+add chain=forward src-address=192.168.200.0/24 dst-address=<SERVER_IP> dst-port=80,443 protocol=tcp action=accept comment="SALFANET-ISOLIR Allow billing (CIDR fallback)"
+add chain=forward src-address=192.168.200.0/24 action=drop comment="SALFANET-ISOLIR Block internet (CIDR fallback)"
 ```
 
 **4. Firewall NAT** (Redirect HTTP to Landing Page)
 ```routeros
 /ip firewall nat
-# Redirect HTTP to landing page
-add chain=dstnat \\
-    src-address=192.168.200.0/24 \\
-    protocol=tcp dst-port=80 \\
-    dst-address=!<SERVER_IP> \\
-    action=dst-nat \\
-    to-addresses=<SERVER_IP> \\
-    to-ports=80 \\
-    comment="Redirect HTTP to isolation landing page"
+# Primary: Dynamic address-list
+add chain=dstnat src-address-list=isolir protocol=tcp dst-port=80 action=dst-nat to-addresses=<SERVER_IP> to-ports=80 comment="SALFANET-ISOLIR Redirect HTTP to billing"
 
-# Redirect HTTPS to landing page
-add chain=dstnat \\
-    src-address=192.168.200.0/24 \\
-    protocol=tcp dst-port=443 \\
-    dst-address=!<SERVER_IP> \\
-    action=dst-nat \\
-    to-addresses=<SERVER_IP> \\
-    to-ports=443 \\
-    comment="Redirect HTTPS to isolation landing page"
+# Fallback: CIDR statis
+add chain=dstnat src-address=192.168.200.0/24 protocol=tcp dst-port=80 action=dst-nat to-addresses=<SERVER_IP> to-ports=80 comment="SALFANET-ISOLIR Redirect HTTP to billing (CIDR fallback)"
 ```
 
 **5. CoA Configuration**
@@ -688,73 +538,37 @@ set accept=yes
 -- Konfigurasi group isolir di RADIUS
 INSERT INTO radgroupreply (groupname, attribute, op, value)
 VALUES 
-  ('isolir', 'Framed-IP-Address', ':=', 'pool-isolir'),
-  ('isolir', 'Mikrotik-Rate-Limit', ':=', '64k/64k');
+  ('isolir', 'Framed-Pool', ':=', 'pool-isolir'),
+  ('isolir', 'Mikrotik-Rate-Limit', ':=', '64k/64k'),
+  ('isolir', 'Mikrotik-Address-List', ':=', 'isolir');
 ```
 
 ---
 
-## 🔍 Current Implementation Issues
+## 🔍 Implementation Status (August 2026)
 
-### ⚠️ Issue #1: SUSPEND vs ISOLATE
+### ✅ Issue #1: SUSPEND vs ISOLATE — RESOLVED
+System sekarang **ISOLATES** user (allow login, limit access).
+Auth-Type:Reject **dihapus** saat isolasi. User boleh login dengan Cleartext-Password.
+Group 'isolir' mengontrol IP pool dan rate limit via radgroupreply.
+MikroTik firewall mengontrol akses internet.
 
-**Current Behavior**: System **SUSPENDS** user (Auth-Type = Reject)
-**Expected Behavior**: System should **ISOLATE** user (allow login, limit access)
+### ✅ Issue #2: Status Naming — RESOLVED
+Status sekarang menggunakan `isolated` (lowercase) di seluruh codebase.
 
-**Problem Code** (`src/lib/cron/pppoe-sync.ts:273-277`):
-```typescript
-// This BLOCKS login completely
-await prisma.$executeRaw`
-  INSERT INTO radcheck (username, attribute, op, value)
-  VALUES (${user.username}, 'Auth-Type', ':=', 'Reject')
-  ON DUPLICATE KEY UPDATE value = 'Reject'
-`;
-```
+### ✅ Issue #3: Grace Period — RESOLVED
+Grace period sudah diimplementasi: `expiredAt < now - graceDays * 24h`.
+`gracePeriodDays` diambil dari company settings.
 
-**Fix Required**:
-```typescript
-// Remove Auth-Type Reject completely
-// User should be able to login with password
-// Group 'isolir' will control IP pool and rate limit
-// MikroTik firewall will control access
-
-// DELETE this line:
-// - Auth-Type = Reject
-
-// KEEP only:
-// - Cleartext-Password (allow login)
-// - radusergroup = 'isolir' (apply group attributes)
-// - radgroupreply for 'isolir' (pool + rate limit)
-```
-
-### ⚠️ Issue #2: Status Naming Confusion
-
-**Current**: `status = 'SUSPENDED'` (implies cannot login)
-**Better**: `status = 'ISOLATED'` (implies limited access)
-
-**Recommendation**:
-```sql
--- Add new status enum value
-ALTER TABLE pppoe_users 
-MODIFY COLUMN status ENUM('ACTIVE', 'ISOLATED', 'SUSPENDED', 'BLOCKED');
-
--- Update cron to use ISOLATED
-UPDATE pppoe_users SET status = 'ISOLATED' WHERE ...
-```
-
-### ⚠️ Issue #3: Grace Period Not Implemented
-
-**Setting exists**: `company.gracePeriodDays`
-**Not used in**: Cron job query
-
-**Fix Required**:
-```typescript
-// Current query
-WHERE expiredAt < CURDATE()
-
-// Should be
-WHERE expiredAt < DATE_SUB(CURDATE(), INTERVAL ${gracePeriodDays} DAY)
-```
+### ✅ Additional Fixes (August 2026)
+- RADIUS updates dibungkus `prisma.$transaction` (atomicity)
+- `addToMikrotikAddressList` dipanggil saat isolasi (instant block)
+- Firewall rules menggunakan `src-address-list=isolir` (dynamic) + CIDR fallback
+- Authorize route meng-allow expired users (204) bukan reject
+- Webhook payment recovery: router include untuk PPP secret restore
+- Webhook: PPP restore + kick di-await (bukan fire-and-forget)
+- `radusergroup` priority distandarisasi ke 1
+- `/admin` dihapus dari isolated IP allowedPaths di proxy.ts
 
 ---
 
@@ -869,9 +683,9 @@ Payment & Restore Flow:
 
 ### Problem: User cannot login after expiry
 
-**Symptom**: User gets "Akun Ditangguhkan" message
+**Symptom**: User tidak bisa login sama sekali
 
-**Root Cause**: Auth-Type = 'Reject' in radcheck
+**Root Cause**: Mungkin Auth-Type:Reject masih ada di radcheck (dari versi lama)
 
 **Check**:
 ```sql
@@ -886,6 +700,9 @@ DELETE FROM radcheck
 WHERE username = 'user123' 
   AND attribute = 'Auth-Type';
 ```
+
+**Note**: Pada code terbaru, Auth-Type:Reject tidak lagi ditambahkan saat isolasi.
+Jika masih ada, kemungkinan dari versi lama yang belum di-clean up.
 
 ### Problem: User can login but gets normal internet
 
@@ -973,78 +790,22 @@ echo "User-Name=user123" | radclient -x <NAS_IP>:3799 disconnect <SECRET>
 
 ---
 
-## 📝 Recommendations for Fix
+## 📝 Recommendations for Future Improvement
 
-### 1. Update Cron Job Logic
+### 1. Add `isolatedAt` field to pppoeUser
 
-**File**: `src/lib/cron/pppoe-sync.ts`
+Currently auto-stop calculates 30 days from `expiredAt`, not from actual isolation date.
+Adding `isolatedAt` would allow accurate tracking.
 
-**Remove** (lines 273-277):
-```typescript
-// DON'T block login!
-await prisma.$executeRaw`
-  INSERT INTO radcheck (username, attribute, op, value)
-  VALUES (${user.username}, 'Auth-Type', ':=', 'Reject')
-  ON DUPLICATE KEY UPDATE value = 'Reject'
-`;
-```
+### 2. Multi-tenant isolation settings
 
-**Remove** (lines 279-284):
-```typescript
-// No reject message needed if they can login
-await prisma.$executeRaw`
-  INSERT INTO radreply (username, attribute, op, value)
-  VALUES (${user.username}, 'Reply-Message', ':=', 
-          'Akun Ditangguhkan - Hubungi Admin')
-  ON DUPLICATE KEY UPDATE value = 'Akun Ditangguhkan - Hubungi Admin'
-`;
-```
+Currently isolation settings are global (single company). Per-router or per-tenant
+isolation IP pools would allow better isolation for different networks.
 
-**Keep**:
-```typescript
-// ✅ Password (allow login)
-// ✅ radusergroup = 'isolir' (apply group)
-// ✅ Remove static IP
-// ✅ Disconnect session
-```
+### 3. Webhook retry for MikroTik operations
 
-### 2. Change Status to ISOLATED
-
-```typescript
-// Change this:
-data: { status: 'SUSPENDED' }
-
-// To this:
-data: { status: 'ISOLATED' }
-```
-
-### 3. Implement Grace Period
-
-```typescript
-const expiredUsers = await prisma.$queryRaw`
-  SELECT id, username, password, status, expiredAt, profileId
-  FROM pppoe_users pu
-  INNER JOIN companies c ON 1=1
-  WHERE pu.status = 'ACTIVE'
-    AND pu.expiredAt < DATE_SUB(CURDATE(), INTERVAL c.gracePeriodDays DAY)
-    AND pu.autoIsolationEnabled = true
-`;
-```
-
-### 4. Update UI Status Filter
-
-**File**: `src/app/admin/pppoe/page.tsx`
-
-Add new filter option:
-```typescript
-const statusOptions = [
-  { value: 'all', label: 'Semua' },
-  { value: 'ACTIVE', label: 'Aktif' },
-  { value: 'ISOLATED', label: 'Isolir' },  // ← NEW
-  { value: 'SUSPENDED', label: 'Suspended' },
-  { value: 'BLOCKED', label: 'Blokir' }
-];
-```
+If MikroTik API is unreachable during payment recovery, the PPP secret restore
+fails silently. A retry queue would improve reliability.
 
 ---
 
@@ -1076,6 +837,6 @@ A properly working isolation system should:
 
 **End of Document**
 
-*Last Updated: February 2, 2026*
-*Version: 1.0*
+*Last Updated: August 16, 2026*
+*Version: 2.0*
 *Author: AI Assistant*
