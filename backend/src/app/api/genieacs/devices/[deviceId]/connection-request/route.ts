@@ -1,118 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
 import { requirePermission } from '@/server/middleware/api-auth';
+import {
+  getDevice,
+  createTask,
+  sendDirectConnectionRequest,
+  extractConnectionRequestInfo,
+} from '@/lib/genieacs/api-client';
 
 interface RouteParams {
   params: Promise<{ deviceId: string }>;
 }
 
-// Helper: fetch with AbortController timeout (15s default)
-async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 15000): Promise<Response> {
-  const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), ms);
-  try {
-    return await fetch(url, { ...options, signal: controller.signal });
-  } finally {
-    clearTimeout(id);
-  }
-}
-
-// POST - Trigger connection request to device
+/**
+ * POST /api/genieacs/devices/[deviceId]/connection-request
+ *
+ * Ported from salfanet-radius-go ConnectionRequest (genieacs.go) +
+ * sendDirectConnectionRequest (genieacs_ext.go):
+ *   1. Fetch device to obtain ConnectionRequestURL + CR credentials.
+ *   2. If a direct CR URL is available, send a direct connection request
+ *      to the device (basic auth first, digest auth on 401 challenge).
+ *      This bypasses GenieACS, which may not have a network route to the
+ *      CPE.
+ *   3. Otherwise, fall back to the GenieACS NBI connection-request task
+ *      (`POST /devices/{id}/tasks?connection_request`).
+ */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   const authCheck = await requirePermission('network.view');
   if (!authCheck.authorized) return authCheck.response;
+
   try {
     const { deviceId } = await params;
 
-    // Get GenieACS credentials
-    const credentials = await getGenieACSCredentials();
-
-    if (!credentials) {
+    // 1. Fetch device to get ConnectionRequestURL + credentials
+    const device = await getDevice(deviceId);
+    if (!device) {
       return NextResponse.json(
-        { success: false, error: 'GenieACS belum dikonfigurasi' },
-        { status: 400 }
+        { success: false, error: 'Device tidak ditemukan di GenieACS' },
+        { status: 404 },
+      );
+    }
+    const { crURL, crUser, crPass } = extractConnectionRequestInfo(device);
+
+    // 2. Direct connection request to device (bypass GenieACS)
+    if (crURL) {
+      const result = await sendDirectConnectionRequest(crURL, crUser, crPass, deviceId);
+      if (result.ok) {
+        return NextResponse.json({
+          success: true,
+          message: 'Connection request dikirim langsung ke device',
+          method: result.method,
+          status: result.status,
+        });
+      }
+      // Direct CR failed — fall through to GenieACS CR as a fallback.
+      console.warn(
+        `[GenieACS] direct CR failed (status=${result.status}), falling back to GenieACS CR for device=${deviceId}`,
       );
     }
 
-    const { host, username, password } = credentials;
-
-    if (!host) {
-      return NextResponse.json(
-        { success: false, error: 'GenieACS host tidak dikonfigurasi' },
-        { status: 400 }
-      );
-    }
-
-    const authHeader = Buffer.from(`${username}:${password}`).toString('base64');
-
-    // Create empty task with connection_request to trigger device
-    // This will force the device to connect and execute any pending tasks
-    // timeout=10000 tells GenieACS to wait max 10s for device to come online
-    const taskUrl = `${host}/devices/${encodeURIComponent(deviceId)}/tasks?timeout=10000&connection_request`;
-
-    console.log('Triggering connection request for device:', deviceId);
-
-    // Send a simple getParameterValues task to trigger connection
+    // 3. Fallback: GenieACS connection-request task
     const task = {
       name: 'getParameterValues',
-      parameterNames: ['InternetGatewayDevice.DeviceInfo.SoftwareVersion']
+      parameterNames: ['InternetGatewayDevice.DeviceInfo.SoftwareVersion'],
     };
-
-    const response = await fetchWithTimeout(taskUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Basic ${authHeader}`
-      },
-      body: JSON.stringify(task)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Connection request error:', errorText);
-      
-      if (response.status === 404) {
-        return NextResponse.json(
-          { success: false, error: 'Device tidak ditemukan di GenieACS' },
-          { status: 404 }
-        );
-      }
-
-      // GenieACS 504 = device offline / did not respond within timeout
-      if (response.status === 504) {
-        return NextResponse.json(
-          { success: false, error: 'Device offline atau tidak merespons (timeout)' },
-          { status: 200 }
-        );
-      }
-      
-      return NextResponse.json(
-        { success: false, error: `Gagal mengirim connection request: ${response.status}` },
-        { status: response.status }
-      );
-    }
-
-    const result = await response.json();
-    console.log('Connection request result:', result);
-
+    const created = await createTask(deviceId, task as any);
     return NextResponse.json({
       success: true,
-      message: 'Connection request dikirim ke device',
-      taskId: result._id
+      message: 'Connection request dikirim via GenieACS',
+      taskId: (created as any)?._id,
+      method: 'genieacs',
     });
-
   } catch (error) {
     console.error('Error triggering connection request:', error);
-    // AbortError = Node.js fetch timed out (15s safety net)
-    if (error instanceof Error && error.name === 'AbortError') {
+    const msg = error instanceof Error ? error.message : 'Terjadi kesalahan';
+    // Treat GenieACS 504 (device offline) as a soft error.
+    if (/504|timeout/i.test(msg)) {
       return NextResponse.json(
-        { success: false, error: 'Koneksi ke GenieACS timeout. Periksa apakah server GenieACS berjalan.' },
-        { status: 200 }
+        { success: false, error: 'Device offline atau tidak merespons (timeout)' },
+        { status: 200 },
       );
     }
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Terjadi kesalahan' },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }
 }
