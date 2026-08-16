@@ -17,6 +17,38 @@ import { randomBytes } from 'crypto';
 import type { NextRequest } from 'next/server';
 import type { Session } from 'next-auth';
 
+// ─── MAC address validation ──────────────────────────────────────────────────
+/**
+ * Detect placeholder/fake MAC addresses that should not be stored.
+ * Returns true if the MAC is a placeholder (00:00:00:00:00:00, AA:BB:CC:DD:EE:FF, etc).
+ */
+function isPlaceholderMac(mac: string | null | undefined): boolean {
+  if (!mac) return false;
+  const normalized = mac.trim().toUpperCase();
+  if (normalized === '') return false;
+  const placeholders = [
+    '00:00:00:00:00:00',
+    'FF:FF:FF:FF:FF:FF',
+    'AA:BB:CC:DD:EE:FF',
+    '11:22:33:44:55:66',
+    'DE:AD:BE:EF:DE:AD',
+  ];
+  if (placeholders.includes(normalized)) return true;
+  // All zeros or all same hex pairs
+  const parts = normalized.split(/[:-]/);
+  if (parts.length === 6 && parts.every(p => p === parts[0])) return true;
+  return false;
+}
+
+/**
+ * Clean MAC address — return null if it's a placeholder or empty.
+ */
+function cleanMac(mac: string | null | undefined): string | null {
+  if (!mac || !mac.trim()) return null;
+  if (isPlaceholderMac(mac)) return null;
+  return mac.trim();
+}
+
 // â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export interface CreatePppoeUserInput {
@@ -378,7 +410,7 @@ export async function createPppoeUser(
       latitude: latitude ? parseFloat(String(latitude)) : null,
       longitude: longitude ? parseFloat(String(longitude)) : null,
       ipAddress: ipAddress || null,
-      macAddress: macAddress || null,
+      macAddress: cleanMac(macAddress),
       comment: comment || null,
       expiredAt: finalExpiredAt,
       status: 'active',
@@ -670,7 +702,7 @@ export async function updatePppoeUser(
       ...(data.latitude !== undefined && { latitude: data.latitude ? parseFloat(String(data.latitude)) : null }),
       ...(data.longitude !== undefined && { longitude: data.longitude ? parseFloat(String(data.longitude)) : null }),
       ...(data.ipAddress !== undefined && { ipAddress: data.ipAddress }),
-      ...(data.macAddress !== undefined && { macAddress: data.macAddress }),
+      ...(data.macAddress !== undefined && { macAddress: cleanMac(data.macAddress) }),
       ...(data.comment !== undefined && { comment: data.comment }),
       ...(data.status && { status: data.status }),
       ...(data.subscriptionType && { subscriptionType: data.subscriptionType }),
@@ -831,7 +863,7 @@ export async function updatePppoeUser(
           const mtDisabled = effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled;
           const mtProfile = effectiveStatus === 'isolated' ? 'isolir' : (mtProfileRaw || undefined);
           const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
-          const finalMac = data.macAddress !== undefined ? data.macAddress : currentUser.macAddress;
+          const finalMac = cleanMac(data.macAddress !== undefined ? data.macAddress : currentUser.macAddress);
 
           if (connectionTypeChanged) {
             // Connection type transition — clean up old type's MikroTik entries, create new type's entries

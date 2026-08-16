@@ -110,20 +110,21 @@ export async function manageArpEntry(
       }
       // Check if entry already exists for this IP
       const existing = await safePrint(menu, '/ip/arp/print', [`?address=${params.ipAddress}`])
-      const macVal = params.macAddress || '00:00:00:00:00:00'
+      // Only set MAC if a real MAC is provided — don't use fake 00:00:00:00:00:00
+      // MikroTik accepts ARP entries without MAC (for static IP assignment)
+      const macVal = params.macAddress && params.macAddress.trim() !== '' ? params.macAddress : null
       if (existing.length > 0) {
         // Update existing entry
         const id = existing[0]['.id'] || existing[0].id
-        const upd: string[] = [`=.id=${id}`, `=mac-address=${macVal}`]
+        const upd: string[] = [`=.id=${id}`]
+        if (macVal) upd.push(`=mac-address=${macVal}`)
         if (params.comment !== undefined) upd.push(`=comment=${params.comment}`)
         await menu('/ip/arp/set', upd)
         return { success: true, action, message: `ARP entry for ${params.ipAddress} updated (was existing)` }
       }
       // Create new entry
-      const entry: string[] = [
-        `=address=${params.ipAddress}`,
-        `=mac-address=${macVal}`,
-      ]
+      const entry: string[] = [`=address=${params.ipAddress}`]
+      if (macVal) entry.push(`=mac-address=${macVal}`)
       if (params.comment !== undefined) entry.push(`=comment=${params.comment}`)
       await menu('/ip/arp/add', entry)
       return { success: true, action, message: `ARP entry for ${params.ipAddress} created` }
@@ -141,17 +142,19 @@ export async function manageArpEntry(
           if (id) await menu('/ip/arp/remove', [`=.id=${id}`])
         }
       }
-      // Upsert new entry
-      const macVal = params.macAddress || '00:00:00:00:00:00'
+      // Upsert new entry — only set MAC if a real MAC is provided
+      const macVal = params.macAddress && params.macAddress.trim() !== '' ? params.macAddress : null
       const existing = await safePrint(menu, '/ip/arp/print', [`?address=${newIp}`])
       if (existing.length > 0) {
         const id = existing[0]['.id'] || existing[0].id
-        const upd: string[] = [`=.id=${id}`, `=mac-address=${macVal}`]
+        const upd: string[] = [`=.id=${id}`]
+        if (macVal) upd.push(`=mac-address=${macVal}`)
         if (params.comment !== undefined) upd.push(`=comment=${params.comment}`)
         await menu('/ip/arp/set', upd)
         return { success: true, action, message: `ARP entry for ${newIp} updated` }
       }
-      const entry: string[] = [`=address=${newIp}`, `=mac-address=${macVal}`]
+      const entry: string[] = [`=address=${newIp}`]
+      if (macVal) entry.push(`=mac-address=${macVal}`)
       if (params.comment !== undefined) entry.push(`=comment=${params.comment}`)
       await menu('/ip/arp/add', entry)
       return { success: true, action, message: `ARP entry for ${newIp} created (was missing on update)` }
