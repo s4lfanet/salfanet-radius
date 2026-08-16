@@ -11,7 +11,7 @@
  */
 import { prisma } from '@/server/db/client';
 import { nowWIBAsync } from '@/lib/timezone';
-import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
+import { disconnectPPPoEUser, addToMikrotikAddressList } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
 
 export async function runAutoIsolir(): Promise<{ isolated: number; total: number; errors: string[] }> {
@@ -106,36 +106,57 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
         continue;
       }
 
-      // 2. Update RADIUS: move to isolir group
-      // Remove Auth-Type if exists
-      await prisma.radcheck.deleteMany({
-        where: {
-          username: user.username,
-          attribute: 'Auth-Type',
-          ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
-        },
+      // 2. Update RADIUS: move to isolir group (wrapped in transaction for consistency)
+      await prisma.$transaction(async (tx) => {
+        // Remove Auth-Type if exists
+        await tx.radcheck.deleteMany({
+          where: {
+            username: user.username,
+            attribute: 'Auth-Type',
+            ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}),
+          },
+        });
+
+        // Keep Cleartext-Password (user still needs to login)
+        await tx.$executeRaw`
+          INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+          VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
+          ON DUPLICATE KEY UPDATE value = ${user.password}
+        `;
+
+        // Move to isolir group
+        await tx.$executeRaw`
+          DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+        `;
+        await tx.$executeRaw`
+          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+          VALUES (${user.username}, 'isolir', 1, ${nasIdentifier})
+        `;
+
+        // Remove static IP (user gets IP from pool-isolir)
+        await tx.$executeRaw`
+          DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+        `;
       });
 
-      // Keep Cleartext-Password (user still needs to login)
-      await prisma.$executeRaw`
-        INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
-        VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
-        ON DUPLICATE KEY UPDATE value = ${user.password}
-      `;
-
-      // Move to isolir group
-      await prisma.$executeRaw`
-        DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
-      `;
-      await prisma.$executeRaw`
-        INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-        VALUES (${user.username}, 'isolir', 1, ${nasIdentifier})
-      `;
-
-      // Remove static IP (user gets IP from pool-isolir)
-      await prisma.$executeRaw`
-        DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
-      `;
+      // 2b. Immediately add user's current IP to MikroTik address-list 'isolir'
+      //     so firewall blocks internet even before the user reconnects.
+      try {
+        const activeSession = await prisma.radacct.findFirst({
+          where: { username: user.username, acctstoptime: null },
+          select: { framedipaddress: true, nasipaddress: true },
+        });
+        if (activeSession?.framedipaddress && activeSession.framedipaddress !== '0.0.0.0') {
+          await addToMikrotikAddressList(
+            activeSession.nasipaddress,
+            activeSession.framedipaddress,
+            'isolir'
+          );
+          console.log(`[AUTO_ISOLIR] Added ${activeSession.framedipaddress} to isolir address-list for ${user.username}`);
+        }
+      } catch (e: any) {
+        console.warn(`[AUTO_ISOLIR] addToMikrotikAddressList failed for ${user.username}:`, e?.message || e);
+      }
 
       // 3. MikroTik sync — based on connectionType
       const connType = user.connectionType || 'PPPOE';

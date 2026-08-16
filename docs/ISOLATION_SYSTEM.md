@@ -43,13 +43,14 @@ Setelah user melakukan pembayaran dan invoice terverifikasi, status kembali ke `
 1. CRON JOB (setiap jam)
    └─► Cek pppoe_users WHERE status='active' AND expiredAt < CURDATE()
    
-2. UNTUK SETIAP USER EXPIRED:
+2. UNTUK SETIAP USER EXPIRED (dibungkus prisma.$transaction):
    ├─► Update status: active → isolated (di tabel pppoe_users)
    ├─► Radcheck: Cleartext-Password TETAP ADA (user boleh login!)
    ├─► Radcheck: HAPUS Auth-Type:Reject (kalau ada dari sebelumnya)
    ├─► Radusergroup: Pindah ke group 'isolir'
    ├─► Radreply: HAPUS Framed-IP-Address (IP statis dicopot)
-   ├─► MikroTik API: Disconnect session aktif
+   ├─► MikroTik: Add IP aktif ke address-list 'isolir' (blokir internet segera)
+   ├─► MikroTik API: Disconnect session aktif (CoA + API kick)
    └─► Notifikasi: WhatsApp/Email ke user
 
 3. USER RECONNECT PPPoE:
@@ -68,12 +69,16 @@ Setelah user melakukan pembayaran dan invoice terverifikasi, status kembali ke `
    ├─► Tampilkan invoice belum dibayar + link pembayaran
    └─► Tampilkan kontak support
 
-6. SETELAH PEMBAYARAN:
+6. SETELAH PEMBAYARAN (webhook handler):
    ├─► Invoice status: PENDING → PAID
-   ├─► Status user: isolated → active
+   ├─► Status user: isolated → active (dibungkus prisma.$transaction)
+   ├─► Radcheck: Hapus Auth-Type, restore Cleartext-Password
+   ├─► Radusergroup: Pindah kembali ke group/profile normal (priority: 1)
    ├─► Radreply: Set Framed-IP-Address kembali (jika pakai IP statis)
-   ├─► Radusergroup: Pindah kembali ke group/profile normal
-   └─► User perlu reconnect PPPoE untuk akses penuh
+   ├─► MikroTik: Restore PPP secret ke profile normal (await, bukan fire-and-forget)
+   ├─► MikroTik: Kick active session agar reconnect dengan profile baru
+   ├─► CoA Disconnect: Force re-authentication
+   └─► Notifikasi: WhatsApp/Email/Push ke user
 ```
 
 ---
@@ -82,8 +87,7 @@ Setelah user melakukan pembayaran dan invoice terverifikasi, status kembali ke `
 
 | Komponen | File | Peran |
 |---|---|---|
-| **Cron Job** | `cron-service.js` | Trigger isolasi setiap jam |
-| **Isolir Logic** | `src/lib/cron/pppoe-sync.ts` | Logika isolasi PPPoE users |
+| **Cron Job** | `src/server/cron/auto-isolir.ts` | Logika isolasi PPPoE users (transaction + address-list) |
 | **Cron API** | `src/app/api/cron/route.ts` | Endpoint handler cron job |
 | **Settings API** | `src/app/api/settings/isolation/route.ts` | GET/PUT isolation settings |
 | **Check API** | `src/app/api/pppoe/users/check-isolation/route.ts` | Cek status isolasi by username/IP |
@@ -102,23 +106,24 @@ Setelah user melakukan pembayaran dan invoice terverifikasi, status kembali ke `
 0 * * * *   →   Setiap jam tepat (00 menit)
 ```
 
-### Yang Dilakukan Cron (file: `src/lib/cron/pppoe-sync.ts`)
+### Yang Dilakukan Cron (file: `src/server/cron/auto-isolir.ts`)
 
 ```typescript
-// 1. Enforce blocked/stop users — set Auth-Type:Reject
-// 2. Disconnect active sessions for blocked/stop users
-// 3. Find expired users: status='active' AND expiredAt < CURDATE()
-// 4. Per user:
-//    a. Update status → 'isolated'
-//    b. Pastikan Cleartext-Password ada di radcheck
-//    c. Hapus Auth-Type:Reject dari radcheck (allow login!)
-//    d. Hapus Reply-Message dari radreply
-//    e. Pindah ke radusergroup 'isolir'
-//    f. Hapus Framed-IP-Address dari radreply
-//    g. Disconnect via MikroTik API (port 8728/8729)
-//    h. Fallback: CoA disconnect jika MikroTik API gagal
-//    i. Update radacct: set acctstoptime=NOW()
-//    j. Kirim notifikasi WhatsApp/Email
+// 1. Find expired users: status='active' AND expiredAt < now - graceDays
+//    (PREPAID: expiredAt check, POSTPAID: overdue invoice check)
+// 2. Per user (RADIUS updates dibungkus prisma.$transaction):
+//    a. Update status → 'isolated' (atomic conditional update)
+//    b. Hapus Auth-Type:Reject dari radcheck (allow login!)
+//    c. Pastikan Cleartext-Password ada di radcheck
+//    d. Pindah ke radusergroup 'isolir' (priority: 1)
+//    e. Hapus Framed-IP-Address dari radreply
+//    f. Add IP aktif ke MikroTik address-list 'isolir' (blokir segera)
+//    g. MikroTik API: enable PPP secret + change profile ke 'isolir'
+//    h. MikroTik API: kick active PPPoE session
+//    i. CoA disconnect (force re-auth)
+// 3. Auto-stop: isolated > 30 hari → stop (hapus dari semua RADIUS table)
+//    CATATAN: 30 hari dihitung dari expiredAt, bukan tanggal isolasi
+//    (known limitation — belum ada field isolatedAt)
 ```
 
 ### Cara Manual Trigger
@@ -171,42 +176,55 @@ add name=isolir \
 
 ### Script 3: Firewall Filter (Allow DNS & Billing Server)
 
+> **PENTING**: Firewall rules menggunakan `src-address-list=isolir` (dynamic, di-populate oleh RADIUS `Mikrotik-Address-List` attribute) sebagai primary, dengan `src-address=CIDR` sebagai fallback untuk sesi yang belum mendapat address-list.
+
 ```routeros
 /ip firewall filter
-# Allow DNS untuk user isolir
+# Primary: Allow DNS untuk user isolir (dynamic address-list)
+add chain=forward \
+    src-address-list=isolir \
+    protocol=udp dst-port=53 \
+    action=accept \
+    comment="SALFANET-ISOLIR Allow DNS UDP"
+
+add chain=forward \
+    src-address-list=isolir \
+    protocol=tcp dst-port=53 \
+    action=accept \
+    comment="SALFANET-ISOLIR Allow DNS TCP"
+
+# Allow akses ke billing server
+add chain=forward \
+    src-address-list=isolir \
+    dst-address=BILLING_SERVER_IP \
+    dst-port=80,443 protocol=tcp \
+    action=accept \
+    comment="SALFANET-ISOLIR Allow billing"
+
+# Block semua akses internet lainnya
+add chain=forward \
+    src-address-list=isolir \
+    action=drop \
+    comment="SALFANET-ISOLIR Block internet"
+
+# Fallback: CIDR statis (untuk sesi yang belum dapat address-list)
 add chain=forward \
     src-address=192.168.200.0/24 \
     protocol=udp dst-port=53 \
     action=accept \
-    comment="Allow DNS for isolated users"
+    comment="SALFANET-ISOLIR Allow DNS UDP (CIDR fallback)"
 
-# Allow ICMP (ping)
 add chain=forward \
     src-address=192.168.200.0/24 \
-    protocol=icmp \
+    dst-address=BILLING_SERVER_IP \
+    dst-port=80,443 protocol=tcp \
     action=accept \
-    comment="Allow ping for isolated users"
+    comment="SALFANET-ISOLIR Allow billing (CIDR fallback)"
 
-# Allow akses ke billing server
-# ⚠️  GANTI 103.x.x.x DENGAN IP ADDRESS REAL SERVER ANDA!
-add chain=forward \
-    src-address=192.168.200.0/24 \
-    dst-address=103.x.x.x \
-    action=accept \
-    comment="Allow access to billing server"
-
-# Allow akses ke payment gateway
-add chain=forward \
-    src-address=192.168.200.0/24 \
-    dst-address-list=payment-gateways \
-    action=accept \
-    comment="Allow access to payment gateways"
-
-# Block semua akses internet lainnya
 add chain=forward \
     src-address=192.168.200.0/24 \
     action=drop \
-    comment="Block internet for isolated users"
+    comment="SALFANET-ISOLIR Block internet (CIDR fallback)"
 ```
 
 ### Script 4: Payment Gateway Address List
@@ -305,21 +323,28 @@ INSERT INTO radgroupreply (groupname, attribute, op, value) VALUES
 User Connect PPPoE
         │
         ▼
-FreeRADIUS: Cek radcheck
+Authorize hook (src/app/api/radius/authorize/route.ts)
         │
-        ├─► Auth-Type = Reject? → TOLAK LOGIN (status: blocked/stop)
+        ├─► status = blocked/stop? → REJECT (Auth-Type: Reject)
         │
-        └─► Cleartext-Password ada? → Cek password user
+        ├─► status = isolated? → ALLOW (204) — radusergroup applies isolir profile
+        │
+        ├─► expiredAt < now AND autoIsolationEnabled = true?
+        │    → ALLOW (204) — cron akan isolir, radusergroup applies isolir profile
+        │    (NOTE: tidak lagi REJECT! User boleh login agar isolir profile bisa diterapkan)
+        │
+        ├─► expiredAt < now AND autoIsolationEnabled = false?
+        │    → ALLOW (204) — user tetap terhubung (No Action mode)
+        │
+        └─► Status OK & belum expired? → ALLOW (204)
                         │
                         ▼
-                 Password cocok? → IZINKAN LOGIN
-                        │
-                        ▼
-              Baca radusergroup → group = 'isolir'
+              Baca radusergroup → group = 'isolir' (atau group normal)
                         │
                         ▼
               Baca radgroupreply → Framed-Pool=pool-isolir
                                    Rate-Limit=64k/64k
+                                   Mikrotik-Address-List=isolir
 ```
 
 ---
@@ -518,18 +543,24 @@ Cek MikroTik:
 ### Setelah Bayar, User Masih Terisolasi
 
 ```
-Sistem harus:
+Sistem harus (semua dalam prisma.$transaction):
 1. Invoice → PAID
 2. Status user → active
-3. radreply → Framed-IP-Address dikembalikan
-4. radusergroup → dikembalikan ke group normal
+3. Radcheck → Hapus Auth-Type, restore Cleartext-Password
+4. Radusergroup → dikembalikan ke group normal (priority: 1)
+5. Radreply → Framed-IP-Address dikembalikan
+6. MikroTik: PPP secret di-restore ke profile normal (await)
+7. MikroTik: Active session di-kick (await)
+8. CoA Disconnect: Force re-authentication
 
 User HARUS disconnect dan reconnect PPPoE setelah pembayaran!
+(CoA + MikroTik kick seharusnya otomatis melakukan ini)
 
 Cek:
 SELECT status FROM pppoe_users WHERE username = 'USERNAME';
 SELECT * FROM radusergroup WHERE username = 'USERNAME';
 SELECT * FROM radreply WHERE username = 'USERNAME';
+SELECT * FROM radcheck WHERE username = 'USERNAME';
 ```
 
 ---

@@ -24,7 +24,7 @@ export async function POST(
 
     // Read isolation settings from company config
     const company = await prisma.company.findFirst({
-      select: { isolationIpPool: true, isolationRateLimit: true },
+      select: { isolationIpPool: true, isolationRateLimit: true, isolationServerIp: true },
     });
     const isolationCidr = company?.isolationIpPool || '192.168.200.0/24';
     const rateLimit = company?.isolationRateLimit || '64k/64k';
@@ -33,7 +33,11 @@ export async function POST(
     const poolRange = `${startIp}-${endIp}`;
 
     // Determine billing server IP (RADIUS server = VPS public IP or VPN gateway)
-    let billingServerIp = process.env.VPS_IP || process.env.RADIUS_SERVER_IP || '127.0.0.1';
+    // Priority: env var > company.isolationServerIp > VPN gateway > 127.0.0.1 (last resort)
+    let billingServerIp = process.env.VPS_IP || process.env.RADIUS_SERVER_IP || company?.isolationServerIp || '127.0.0.1';
+    if (billingServerIp === '127.0.0.1') {
+      console.warn('[SETUP-ISOLIR] No billing server IP configured — falling back to 127.0.0.1. Set VPS_IP env or isolationServerIp in company settings.');
+    }
     const nasVpnIp = router.vpnClient?.vpnIp || router.nasname;
     if (router.vpnClientId && router.vpnClient) {
       const vpnType = (router.vpnClient.vpnType || '').toUpperCase();
@@ -87,17 +91,25 @@ export async function POST(
 /ip firewall nat remove [find where comment~"SALFANET-ISOLIR"]
 
 # Allow DNS untuk user isolated (wajib agar redirect bisa resolve hostname)
-/ip firewall filter add chain=forward protocol=udp dst-port=53 src-address=${cidrNetwork} action=accept comment="SALFANET-ISOLIR Allow DNS UDP"
-/ip firewall filter add chain=forward protocol=tcp dst-port=53 src-address=${cidrNetwork} action=accept comment="SALFANET-ISOLIR Allow DNS TCP"
+# Menggunakan src-address-list=isolir (dynamic, di-populate oleh RADIUS Mikrotik-Address-List)
+/ip firewall filter add chain=forward protocol=udp dst-port=53 src-address-list=isolir action=accept comment="SALFANET-ISOLIR Allow DNS UDP"
+/ip firewall filter add chain=forward protocol=tcp dst-port=53 src-address-list=isolir action=accept comment="SALFANET-ISOLIR Allow DNS TCP"
 
 # Allow akses ke billing server (HTTP + HTTPS)
-/ip firewall filter add chain=forward dst-address=${billingServerIp} dst-port=80,443 protocol=tcp src-address=${cidrNetwork} action=accept comment="SALFANET-ISOLIR Allow billing"
+/ip firewall filter add chain=forward dst-address=${billingServerIp} dst-port=80,443 protocol=tcp src-address-list=isolir action=accept comment="SALFANET-ISOLIR Allow billing"
 
 # Blokir semua internet lain untuk user isolated
-/ip firewall filter add chain=forward src-address=${cidrNetwork} action=drop comment="SALFANET-ISOLIR Block internet"
+/ip firewall filter add chain=forward src-address-list=isolir action=drop comment="SALFANET-ISOLIR Block internet"
+
+# Fallback: juga blokir berdasarkan CIDR statis (untuk sesi yang belum dapat address-list)
+/ip firewall filter add chain=forward protocol=udp dst-port=53 src-address=${cidrNetwork} action=accept comment="SALFANET-ISOLIR Allow DNS UDP (CIDR fallback)"
+/ip firewall filter add chain=forward protocol=tcp dst-port=53 src-address=${cidrNetwork} action=accept comment="SALFANET-ISOLIR Allow DNS TCP (CIDR fallback)"
+/ip firewall filter add chain=forward dst-address=${billingServerIp} dst-port=80,443 protocol=tcp src-address=${cidrNetwork} action=accept comment="SALFANET-ISOLIR Allow billing (CIDR fallback)"
+/ip firewall filter add chain=forward src-address=${cidrNetwork} action=drop comment="SALFANET-ISOLIR Block internet (CIDR fallback)"
 
 # NAT: Redirect HTTP dari user isolated ke halaman /isolated di billing server
-/ip firewall nat add action=dst-nat chain=dstnat dst-port=80 protocol=tcp src-address=${cidrNetwork} to-addresses=${billingServerIp} to-ports=80 comment="SALFANET-ISOLIR Redirect HTTP to billing"
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=80 protocol=tcp src-address-list=isolir to-addresses=${billingServerIp} to-ports=80 comment="SALFANET-ISOLIR Redirect HTTP to billing"
+/ip firewall nat add action=dst-nat chain=dstnat dst-port=80 protocol=tcp src-address=${cidrNetwork} to-addresses=${billingServerIp} to-ports=80 comment="SALFANET-ISOLIR Redirect HTTP to billing (CIDR fallback)"
 
 # ============================================
 # 4. Route VPS (jalankan di VPS, bukan MikroTik)
