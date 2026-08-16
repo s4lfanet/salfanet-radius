@@ -824,9 +824,12 @@ export async function updatePppoeUser(
             select: { authMode: true },
           });
           const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
-          const mtProfile = await getMikrotikProfileName(newProfile.id);
+          const mtProfileRaw = await getMikrotikProfileName(newProfile.id);
           const usernameChanged = oldUsername && oldUsername !== newUsername;
-          const mtDisabled = effectiveStatus === 'isolated' || effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled;
+          // Isolated users: keep enabled but use 'isolir' profile (user can still login
+          //   to get isolir profile with rate-limit). Stop/blocked: disable secret entirely.
+          const mtDisabled = effectiveStatus === 'blocked' || effectiveStatus === 'stop' ? true : disabled;
+          const mtProfile = effectiveStatus === 'isolated' ? 'isolir' : (mtProfileRaw || undefined);
           const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
           const finalMac = data.macAddress !== undefined ? data.macAddress : currentUser.macAddress;
 
