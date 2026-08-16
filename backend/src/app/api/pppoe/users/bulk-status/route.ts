@@ -160,19 +160,26 @@ export async function PUT(request: Request) {
       if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
         const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
         const profile = status === 'isolated' ? 'isolir' : (status === 'active' ? (user.profile?.groupName || undefined) : undefined);
-        managePppSecret(user.router.id, action, { username: user.username, password: user.password, profile }).then((r) => {
-          console.log(`[PPP_SECRET] bulk ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`)
-        }).catch((e) => {
-          console.error(`[PPP_SECRET] bulk ${action} failed for "${user.username}":`, e?.message || e)
-        });
+        try {
+          const r = await managePppSecret(user.router.id, action, {
+            username: user.username,
+            password: user.password,
+            profile,
+            comment: `Salfanet-${user.id.slice(0, 8)}`,
+          });
+          console.log(`[PPP_SECRET] bulk ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`);
+        } catch (e: any) {
+          console.error(`[PPP_SECRET] bulk ${action} failed for "${user.username}":`, e?.message || e);
+        }
 
         // Kick active session via MikroTik API
         if (status === 'isolated' || status === 'blocked' || status === 'stop') {
-          kickPppoeSession(user.router.id, user.username).then((kicked) => {
-            console.log(`[PPP_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`)
-          }).catch((e) => {
-            console.error(`[PPP_KICK] bulk failed for "${user.username}":`, e?.message || e)
-          });
+          try {
+            const kicked = await kickPppoeSession(user.router.id, user.username);
+            console.log(`[PPP_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+          } catch (e: any) {
+            console.error(`[PPP_KICK] bulk failed for "${user.username}":`, e?.message || e);
+          }
         }
       }
     }
