@@ -317,7 +317,13 @@ export async function POST(req: NextRequest) {
         try {
           const nginxFile = '/etc/nginx/sites-available/salfanet';
           let content = await readFile(nginxFile, 'utf-8');
-          content = content.replace(/listen\s+\d+;/g, `listen ${port};`);
+          // Replace all HTTP listen directives (80 or 8080) but leave 443 alone
+          // Matches: 'listen 80;', 'listen 80 default_server;', 'listen [::]:80 default_server;'
+          const oldPort = port === '80' ? '8080' : '80';
+          content = content.replace(
+            new RegExp(`listen\\s+(\\[::\\]:)?${oldPort}(\\s|;)`, 'g'),
+            (match, prefix, suffix) => `listen ${prefix || ''}${port}${suffix}`
+          );
           await writeFile(nginxFile, content, 'utf-8');
           await execAsync('nginx -t 2>&1 && systemctl reload nginx 2>&1');
 
