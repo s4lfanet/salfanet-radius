@@ -1000,7 +1000,7 @@ class QrisNotificationListener : NotificationListenerService() {
 
                     val respJson = JSONObject(response)
                     val success = respJson.optBoolean("success", false)
-                    val status = if (success) "success" else "failed: ${respJson.optString("error", "unknown")}"
+                    val status = if (success) "success" else "failed: \${respJson.optString(\"error\", \"unknown\")}"
 
                     addLog(context, amount.toString(), status)
 
@@ -1010,7 +1010,7 @@ class QrisNotificationListener : NotificationListenerService() {
                         vibrator.vibrate(300)
                     }
                 } catch (e: Exception) {
-                    addLog(context, amount.toString(), "error: ${e.message}")
+                    addLog(context, amount.toString(), "error: \${e.message}")
                 }
             }.start()
         }
