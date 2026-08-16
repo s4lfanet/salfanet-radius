@@ -39,7 +39,7 @@ const p = new PrismaClient();
   // 5. Check cron history count
   const cronHistory = await p.cronHistory.count();
   const oldCron = await p.cronHistory.count({
-    where: { createdAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
+    where: { startedAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
   });
   console.log('Cron history records:', cronHistory);
   console.log('Cron history older than 30 days:', oldCron);
