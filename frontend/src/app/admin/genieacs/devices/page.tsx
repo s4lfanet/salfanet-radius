@@ -273,7 +273,8 @@ export default function GenieACSDevicesPage() {
       variant: 'danger',
     })) return;
     try {
-      await apiAdmin(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' });
+      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/settings/genieacs/devices/${encodeURIComponent(deviceId)}`, { method: 'DELETE' });
+      if (!data.success) throw new Error(data.error || t('genieacs.failedDeleteDevice'));
       invalidateDevices();
       addToast({ type: 'success', title: t('common.success'), description: t('genieacs.deviceDeleted'), duration: 2000 });
     } catch (error: unknown) {

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGenieACSCredentials } from '../../route';
+import { invalidateDeviceCache } from '../route';
 import { requirePermission } from '@/server/middleware/api-auth';
 
 // DELETE - Delete a specific device from GenieACS
@@ -62,6 +63,9 @@ export async function DELETE(
         { status: 200 }
       );
     }
+
+    // Invalidate in-memory device cache so next GET fetches fresh data
+    invalidateDeviceCache();
 
     return NextResponse.json({
       success: true,
