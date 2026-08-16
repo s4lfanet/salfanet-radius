@@ -396,6 +396,7 @@
     "files": "Files",
     "config": "Config",
     "autoProvision": "Auto-Provision",
+    "genieacsSettings": "Settings",
     "syncGenieacs": "Sync ke GenieACS",
     "oltManagement": "OLT Management",
     "oltMonitoring": "OLT Monitoring",
