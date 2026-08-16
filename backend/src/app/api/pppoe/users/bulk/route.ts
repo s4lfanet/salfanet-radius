@@ -1,6 +1,4 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { randomUUID } from 'crypto';
@@ -13,10 +11,8 @@ function generateCustomerId(prefix = ''): string {
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');
 

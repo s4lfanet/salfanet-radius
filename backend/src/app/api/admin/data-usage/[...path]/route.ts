@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 
       const usageMap = new Map<string, { input: bigint; output: bigint }>();
       for (const s of sessions) {
-        const existing = usageMap.get(s.username) || { input: 0n, output: 0n };
+        const existing = usageMap.get(s.username) || { input: BigInt(0), output: BigInt(0) };
         usageMap.set(s.username, {
           input: existing.input + BigInt(s.acctinputoctets || 0),
           output: existing.output + BigInt(s.acctoutputoctets || 0),

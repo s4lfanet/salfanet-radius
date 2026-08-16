@@ -1,15 +1,13 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { getDatabaseHealth } from '@/server/services/backup.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('settings.view');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
 
     // Check if user is SUPER_ADMIN
     if (session.user.role !== 'SUPER_ADMIN') {

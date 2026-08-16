@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { requirePermission } from '@/server/middleware/api-auth';
 import {
   getPushBroadcastHistory,
@@ -10,11 +8,8 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('notifications.manage');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');

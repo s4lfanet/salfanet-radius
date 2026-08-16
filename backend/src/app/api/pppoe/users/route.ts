@@ -1,6 +1,4 @@
 ﻿import { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { ok, created, badRequest, unauthorized, notFound, conflict, serverError } from '@/lib/api-response';
 import bcrypt from 'bcryptjs';
@@ -76,8 +74,9 @@ export async function POST(request: NextRequest) {
 
 // PUT - Update PPPoE user
 export async function PUT(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('customers.edit');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const body = await request.json();
@@ -96,8 +95,9 @@ export async function PUT(request: NextRequest) {
 
 // DELETE - Remove PPPoE user (requires SUPER_ADMIN role + password confirmation)
 export async function DELETE(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('customers.delete');
+  if (!authCheck.authorized) return authCheck.response;
+  const session = authCheck.session;
 
   try {
     const { searchParams } = new URL(request.url);

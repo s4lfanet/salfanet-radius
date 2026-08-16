@@ -71,6 +71,20 @@ export async function enqueueFailedSync(
         maxRetries: MAX_RETRIES,
       },
     });
+
+    // Send Telegram alert when sync goes DEAD (best-effort)
+    if (isDead) {
+      const { sendDeadTaskAlert } = await import('../notifications/alert.service');
+      await sendDeadTaskAlert({
+        taskType: 'radius_sync',
+        taskId: existing.id,
+        username,
+        syncType,
+        retryCount: nextRetryCount,
+        maxRetries: MAX_RETRIES,
+        error,
+      }).catch(() => {});
+    }
   } else {
     // Create new entry
     const nextRetryAt = new Date(Date.now() + BACKOFF_SCHEDULE_MS[0]);
@@ -127,6 +141,20 @@ export async function markFailed(queueId: string, error: string): Promise<void> 
       failedAt: isDead ? new Date() : null,
     },
   });
+
+  // Send Telegram alert when sync goes DEAD (best-effort)
+  if (isDead) {
+    const { sendDeadTaskAlert } = await import('../notifications/alert.service');
+    await sendDeadTaskAlert({
+      taskType: 'radius_sync',
+      taskId: entry.id,
+      username: entry.username,
+      syncType: entry.syncType,
+      retryCount: nextRetryCount,
+      maxRetries: entry.maxRetries,
+      error,
+    }).catch(() => {}); // never throw from alert
+  }
 }
 
 /**

@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/server/auth/config";
+import { requirePermission } from "@/server/middleware/api-auth";
 import { getRecentActivities } from "@/server/services/activity-log.service";
 import { nowWIB, startOfDayWIBtoUTC } from "@/lib/timezone";
 
@@ -14,12 +13,8 @@ export const revalidate = 0;
 export async function GET(request: NextRequest) {
   try {
     // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const userRole = (session.user as any).role;
+    const authCheck = await requirePermission('dashboard.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     // Parse optional ?month=YYYY-MM param (defaults to current WIB month)
     const { searchParams } = new URL(request.url);

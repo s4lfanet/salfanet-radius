@@ -190,6 +190,21 @@ export async function markTaskFailed(taskId: string, error: string): Promise<voi
       failedAt: isDead ? new Date() : null,
     },
   });
+
+  // Send Telegram alert when task goes DEAD (best-effort)
+  if (isDead) {
+    const { sendDeadTaskAlert } = await import('./notifications/alert.service');
+    await sendDeadTaskAlert({
+      taskType: 'external_task',
+      taskId: task.id,
+      entityType: task.entityType,
+      entityId: task.entityId,
+      operation: task.operation,
+      retryCount: nextRetryCount,
+      maxRetries: task.maxRetries,
+      error,
+    }).catch(() => {}); // never throw from alert
+  }
 }
 
 /**

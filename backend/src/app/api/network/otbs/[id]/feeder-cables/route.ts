@@ -12,8 +12,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
+import { requirePermission } from '@/server/middleware/api-auth';
 import { nanoid } from 'nanoid';
 
 // ── GET – list feeder cables for an OTB ──────────────────────────────────────
@@ -22,8 +21,8 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authCheck = await requirePermission('network.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { id } = await params;
 
@@ -65,8 +64,8 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authCheck = await requirePermission('network.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { id } = await params;
     const body = await request.json();
@@ -123,8 +122,8 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authCheck = await requirePermission('network.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { id } = await params;
     const { searchParams } = new URL(request.url);

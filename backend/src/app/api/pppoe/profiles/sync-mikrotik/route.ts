@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { RouterOSAPI } from 'node-routeros';
 
@@ -31,10 +29,8 @@ async function apiCmd(api: any, command: string, params: string[] = [], label = 
 // GET - List all active routers (for picker UI)
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const authCheck = await requirePermission('network.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const routers = await prisma.router.findMany({
       where: { isActive: true },
@@ -52,8 +48,8 @@ export async function GET() {
 // PUT - Test connection to a router (diagnostic — tests identity + PPP read/write access)
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authCheck = await requirePermission('network.edit');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { routerId } = await request.json();
     const router = routerId

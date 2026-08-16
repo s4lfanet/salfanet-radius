@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { generateExcelBuffer } from '@/lib/utils/export';
 import ExcelJS from 'exceljs';
@@ -32,10 +30,8 @@ async function resolveCustomerId(provided: string, prefix = ''): Promise<string>
 }
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   const { searchParams } = new URL(request.url);
   const type = searchParams.get('type');

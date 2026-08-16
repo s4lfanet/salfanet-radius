@@ -1,8 +1,6 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { cacheAside, invalidateKey, CACHE_KEYS, CACHE_TTL } from '@/server/cache/redis';
 
@@ -94,7 +92,9 @@ export async function POST(request: NextRequest) {
 // PUT - Update area
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authCheck = await requirePermission('customers.edit');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
     const body = await request.json();
     const { id, name, description, isActive } = body;
 
@@ -157,7 +157,9 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete area
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const authCheck = await requirePermission('customers.delete');
+    if (!authCheck.authorized) return authCheck.response;
+    const session = authCheck.session;
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

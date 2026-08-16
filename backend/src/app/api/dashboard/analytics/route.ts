@@ -1,7 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/server/auth/config";
+import { requirePermission } from "@/server/middleware/api-auth";
 import { nowWIB } from "@/lib/timezone";
 
 export const dynamic = 'force-dynamic';
@@ -12,10 +11,8 @@ const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authCheck = await requirePermission('dashboard.view');
+    if (!authCheck.authorized) return authCheck.response;
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') || 'all';

@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/server/auth/config';
-import { ok, unauthorized, serverError } from '@/lib/api-response';
+import { requirePermission } from '@/server/middleware/api-auth';
+import { ok, serverError } from '@/lib/api-response';
 import { prisma } from '@/server/db/client';
 import { batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 
@@ -18,8 +17,8 @@ import { batchListPppActive } from '@/server/services/mikrotik/ppp-secret.servic
  *   { online: string[], onlineCount: number, total: number, timestamp: string }
  */
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return unauthorized();
+  const authCheck = await requirePermission('customers.view');
+  if (!authCheck.authorized) return authCheck.response;
 
   try {
     const { searchParams } = new URL(request.url);
