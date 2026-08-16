@@ -177,6 +177,15 @@ EOF
 
     chmod 600 ${APP_DIR}/.env
     print_success ".env file created"
+
+    # Create .env symlinks in backend/ and frontend/ so Prisma and Next.js can find it
+    for subdir in backend frontend; do
+        if [ -d "${APP_DIR}/${subdir}" ]; then
+            rm -f "${APP_DIR}/${subdir}/.env" 2>/dev/null || true
+            ln -s "${APP_DIR}/.env" "${APP_DIR}/${subdir}/.env"
+            print_info "Created .env symlink in ${subdir}/"
+        fi
+    done
     
     # Save to install info
     save_install_info "NEXTAUTH_SECRET" "$NEXTAUTH_SECRET"
