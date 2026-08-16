@@ -738,9 +738,9 @@ export async function updatePppoeUser(
   const newConnectionType = data.connectionType || currentUser.connectionType;
 
   // RADIUS re-sync if critical fields changed (including status change)
-  // RADIUS re-sync if critical fields changed (including status change)
   // Also trigger on connectionType change: PPPOE needs radcheck/radusergroup, non-PPPOE needs them removed
-  if (data.username || data.password || data.profileId || data.ipAddress !== undefined || data.routerId !== undefined || (data.status && data.status !== currentUser.status) || connectionTypeChanged) {
+  // Also trigger on forceSyncMikrotik: user explicitly requested PPP secret sync from edit page
+  if (data.username || data.password || data.profileId || data.ipAddress !== undefined || data.routerId !== undefined || (data.status && data.status !== currentUser.status) || connectionTypeChanged || data.forceSyncMikrotik) {
     try {
       const oldUsername = currentUser.username;
       const newUsername = data.username || currentUser.username;

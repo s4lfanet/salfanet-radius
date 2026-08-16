@@ -43,6 +43,7 @@ export const createPppoeUserSchema = z.object({
   pppoeCustomerId: z.string().optional(),
   firstInvoice: z.enum(['none', 'prorate', 'full']).optional(),
   createPppSecret: z.boolean().optional(),
+  forceSyncMikrotik: z.boolean().optional(),
 })
 
 export const updatePppoeUserSchema = createPppoeUserSchema.partial().omit({ username: true })
