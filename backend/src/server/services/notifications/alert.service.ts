@@ -39,7 +39,7 @@ export async function sendDeadTaskAlert(data: DeadTaskAlertData): Promise<void> 
       return;
     }
 
-    const { sendTelegramMessage } = await import('./notifications/telegram.service');
+    const { sendTelegramMessage } = await import('./telegram.service');
 
     const typeLabel = data.taskType === 'external_task' ? 'External Task' : 'RADIUS Sync';
     const entityInfo = data.entityType
