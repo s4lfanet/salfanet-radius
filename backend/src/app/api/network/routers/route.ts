@@ -345,11 +345,12 @@ export async function PUT(request: NextRequest) {
         });
 
         if (authMode === 'local') {
-          // radius → local: enable PPP secrets (MikroTik becomes primary auth)
+          // radius → local: create/enable PPP secrets (MikroTik becomes primary auth)
+          // Use sync_mikrotik_create (idempotent upsert) — works even if secret was never created in radius mode
           for (const u of users) {
             const mtProfile = await getMikrotikProfileName(u.profileId);
             const disabled = u.status === 'isolated';
-            await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_update', {
+            await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_create', {
               routerId: id,
               username: u.username,
               password: u.password,
@@ -357,14 +358,19 @@ export async function PUT(request: NextRequest) {
               disabled,
               comment: `Salfanet-${u.id.slice(0, 8)}`,
             });
+            // CoA disconnect: kick active RADIUS session so user re-auth via MikroTik local
+            await enqueueTask(prisma, 'pppoe_user', u.id + '_coa', 'coa_disconnect', {
+              username: u.username,
+            });
           }
           migrationSummary = { triggered: true, mode: 'radius→local', usersAffected: users.length };
-          console.log(`[ROUTER_UPDATE] authMode radius→local: enqueued ${users.length} sync_mikrotik_update tasks for router ${id}`);
+          console.log(`[ROUTER_UPDATE] authMode radius→local: enqueued ${users.length} sync_mikrotik_create + coa_disconnect tasks for router ${id}`);
         } else if (authMode === 'radius') {
           // local → radius: disable PPP secrets (RADIUS becomes primary, secret = backup)
+          // Use sync_mikrotik_create (idempotent upsert) with disabled=true
           for (const u of users) {
             const mtProfile = await getMikrotikProfileName(u.profileId);
-            await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_update', {
+            await enqueueTask(prisma, 'pppoe_user', u.id, 'sync_mikrotik_create', {
               routerId: id,
               username: u.username,
               password: u.password,
@@ -372,9 +378,13 @@ export async function PUT(request: NextRequest) {
               disabled: true,  // disable secret — RADIUS is now primary
               comment: `Salfanet-${u.id.slice(0, 8)}`,
             });
+            // CoA disconnect: kick active local session so user re-auth via RADIUS
+            await enqueueTask(prisma, 'pppoe_user', u.id + '_coa', 'coa_disconnect', {
+              username: u.username,
+            });
           }
           migrationSummary = { triggered: true, mode: 'local→radius', usersAffected: users.length };
-          console.log(`[ROUTER_UPDATE] authMode local→radius: enqueued ${users.length} sync_mikrotik_update (disabled) tasks for router ${id}`);
+          console.log(`[ROUTER_UPDATE] authMode local→radius: enqueued ${users.length} sync_mikrotik_create (disabled) + coa_disconnect tasks for router ${id}`);
         }
       } catch (migrateError) {
         console.error('[ROUTER_UPDATE] authMode migration sync error:', migrateError);
