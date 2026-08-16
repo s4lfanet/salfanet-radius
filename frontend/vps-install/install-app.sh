@@ -18,22 +18,35 @@ copy_application_files() {
     mkdir -p ${APP_DIR}
 
     # --- Check if already installed via git clone (installer run from cloned repo) ---
+    # Go up two levels from vps-install/ to reach the monorepo root
+    # (vps-install/ is inside frontend/, which is inside the monorepo root)
     local SCRIPT_SOURCE_DIR
-    SCRIPT_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    SCRIPT_SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
     # Priority order of source locations:
-    #   1. Installer was run from inside a cloned repo (detect by package.json ≥ 1 level up)
+    #   1. Installer was run from inside a cloned repo (detect by pnpm-workspace.yaml or package.json at monorepo root)
     #   2. /root/salfanet-radius  (git clone default location)
     #   3. /root/SALFANET-RADIUS-main  (GitHub ZIP extraction)
     #   4. Current working directory
     local SOURCE_DIR=""
 
     for candidate in "$SCRIPT_SOURCE_DIR" "/root/salfanet-radius" "/root/SALFANET-RADIUS-main" "$(pwd)"; do
-        if [ -f "$candidate/package.json" ]; then
+        # Prefer monorepo root (has pnpm-workspace.yaml or backend/ directory)
+        if [ -f "$candidate/pnpm-workspace.yaml" ] || { [ -f "$candidate/package.json" ] && [ -d "$candidate/backend" ]; }; then
             SOURCE_DIR="$candidate"
             break
         fi
     done
+
+    # Fallback: any directory with package.json
+    if [ -z "$SOURCE_DIR" ]; then
+        for candidate in "$SCRIPT_SOURCE_DIR" "/root/salfanet-radius" "/root/SALFANET-RADIUS-main" "$(pwd)"; do
+            if [ -f "$candidate/package.json" ]; then
+                SOURCE_DIR="$candidate"
+                break
+            fi
+        done
+    fi
 
     if [ -z "$SOURCE_DIR" ]; then
         print_error "Source directory not found. Please clone the repo first:"
@@ -74,12 +87,15 @@ verify_critical_files() {
         return 1
     fi
     
-    if [ ! -f "prisma/schema.prisma" ]; then
-        print_error "prisma/schema.prisma not found!"
+    # Check for schema.prisma in backend/ (monorepo) or root (legacy)
+    if [ -f "backend/prisma/schema.prisma" ]; then
+        print_success "Critical files verified (backend/prisma/schema.prisma)"
+    elif [ -f "prisma/schema.prisma" ]; then
+        print_success "Critical files verified (prisma/schema.prisma)"
+    else
+        print_error "prisma/schema.prisma not found in backend/ or root!"
         return 1
     fi
-    
-    print_success "Critical files verified"
 }
 
 create_env_file() {
@@ -340,18 +356,28 @@ seed_database() {
     
     print_info "Creating admin user, permissions, profiles, categories, and templates..."
     
+    # Determine seed directory (backend/prisma/ for monorepo, prisma/ for legacy)
+    local SEED_DIR=""
+    if [ -f "backend/prisma/seeds/seed-all.ts" ]; then
+        SEED_DIR="backend/prisma"
+    elif [ -f "prisma/seeds/seed-all.ts" ]; then
+        SEED_DIR="prisma"
+    elif [ -f "prisma/seed.ts" ]; then
+        SEED_DIR="prisma"
+    fi
+
     # Try comprehensive seed first
-    if [ -f "prisma/seeds/seed-all.ts" ]; then
-        print_info "Running comprehensive seed..."
-        if node_modules/.bin/tsx prisma/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log; then
+    if [ -n "$SEED_DIR" ] && [ -f "${SEED_DIR}/seeds/seed-all.ts" ]; then
+        print_info "Running comprehensive seed from ${SEED_DIR}/seeds/..."
+        if node_modules/.bin/tsx ${SEED_DIR}/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log; then
             print_success "Comprehensive seed completed"
         else
             print_warning "Comprehensive seed had issues, trying individual seeds..."
             run_individual_seeds
         fi
-    elif [ -f "prisma/seed.ts" ]; then
-        print_info "Running default seed..."
-        if node_modules/.bin/tsx prisma/seed.ts 2>&1 | tee /tmp/seed.log; then
+    elif [ -n "$SEED_DIR" ] && [ -f "${SEED_DIR}/seed.ts" ]; then
+        print_info "Running default seed from ${SEED_DIR}/..."
+        if node_modules/.bin/tsx ${SEED_DIR}/seed.ts 2>&1 | tee /tmp/seed.log; then
             print_success "Default seed completed"
         else
             print_warning "Default seed had issues, trying individual seeds..."
@@ -370,48 +396,71 @@ seed_database() {
 }
 
 run_individual_seeds() {
+    # Determine seed directory (backend/prisma/ for monorepo, prisma/ for legacy)
+    local SD=""
+    if [ -d "backend/prisma/seeds" ]; then
+        SD="backend/prisma"
+    elif [ -d "prisma/seeds" ]; then
+        SD="prisma"
+    fi
+
+    if [ -z "$SD" ]; then
+        print_warning "No seeds directory found"
+        return 0
+    fi
+
     # Seed permissions
-    if [ -f "prisma/seeds/permissions.ts" ]; then
+    if [ -f "${SD}/seeds/permissions.ts" ]; then
         print_info "Seeding permissions..."
-        node_modules/.bin/tsx prisma/seeds/permissions.ts || print_warning "Permissions seed failed"
+        node_modules/.bin/tsx ${SD}/seeds/permissions.ts || print_warning "Permissions seed failed"
     fi
     
     # Seed financial categories
-    if [ -f "prisma/seeds/keuangan-categories.ts" ]; then
+    if [ -f "${SD}/seeds/keuangan-categories.ts" ]; then
         print_info "Seeding financial categories..."
-        node_modules/.bin/tsx prisma/seeds/keuangan-categories.ts || print_warning "Categories seed failed"
+        node_modules/.bin/tsx ${SD}/seeds/keuangan-categories.ts || print_warning "Categories seed failed"
     fi
     
     # Seed admin user
-    if [ -f "prisma/seeds/seed-admin.ts" ]; then
+    if [ -f "${SD}/seeds/seed-admin.ts" ]; then
         print_info "Seeding admin user..."
-        node_modules/.bin/tsx prisma/seeds/seed-admin.ts || print_warning "Admin seed failed"
+        node_modules/.bin/tsx ${SD}/seeds/seed-admin.ts || print_warning "Admin seed failed"
     fi
     
     # Seed isolation templates
-    if [ -f "prisma/seeds/isolation-templates.ts" ]; then
+    if [ -f "${SD}/seeds/isolation-templates.ts" ]; then
         print_info "Seeding isolation templates..."
-        node_modules/.bin/tsx prisma/seeds/isolation-templates.ts || print_warning "Isolation templates seed failed"
+        node_modules/.bin/tsx ${SD}/seeds/isolation-templates.ts || print_warning "Isolation templates seed failed"
     fi
 }
 
 seed_additional_templates() {
+    # Determine seed directory (backend/prisma/ for monorepo, prisma/ for legacy)
+    local SD=""
+    if [ -d "backend/prisma/seeds" ]; then
+        SD="backend/prisma"
+    elif [ -d "prisma/seeds" ]; then
+        SD="prisma"
+    fi
+
+    [ -z "$SD" ] && return 0
+
     # Seed notification templates
-    if [ -f "prisma/seeds/seed-templates.js" ]; then
+    if [ -f "${SD}/seeds/seed-templates.js" ]; then
         print_info "Seeding notification templates..."
-        node prisma/seeds/seed-templates.js || true
+        node ${SD}/seeds/seed-templates.js || true
     fi
     
     # Seed voucher templates
-    if [ -f "prisma/seeds/seed-voucher.js" ]; then
+    if [ -f "${SD}/seeds/seed-voucher.js" ]; then
         print_info "Seeding voucher templates..."
-        node prisma/seeds/seed-voucher.js || true
+        node ${SD}/seeds/seed-voucher.js || true
     fi
     
     # Fix emoji encoding
-    if [ -f "prisma/seeds/fix-emoji.js" ]; then
+    if [ -f "${SD}/seeds/fix-emoji.js" ]; then
         print_info "Fixing emoji encoding..."
-        node prisma/seeds/fix-emoji.js || true
+        node ${SD}/seeds/fix-emoji.js || true
     fi
 }
 
@@ -548,15 +597,15 @@ EOF
 install_app() {
     print_step "Step 4: Setting up application and database schema"
     
-    copy_application_files
-    verify_critical_files
-    create_app_user
-    create_env_file
-    install_dependencies
-    generate_vapid_keys
-    setup_prisma
-    seed_database
-    fix_permissions
+    copy_application_files || return 1
+    verify_critical_files || return 1
+    create_app_user || return 1
+    create_env_file || return 1
+    install_dependencies || return 1
+    generate_vapid_keys || true
+    setup_prisma || return 1
+    seed_database || true
+    fix_permissions || true
     
     print_success "Application setup completed"
     print_info "Application owned by user: ${APP_USER}"
