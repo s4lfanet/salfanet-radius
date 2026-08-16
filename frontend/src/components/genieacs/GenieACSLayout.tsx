@@ -8,7 +8,6 @@ import {
   AlertTriangle,
   FileCode2,
   Sliders,
-  FileUp,
   Zap,
 } from 'lucide-react';
 
@@ -22,7 +21,6 @@ const NAV_ITEMS = [
     icon: Sliders,
   },
   { href: '/admin/genieacs/faults', label: 'Faults', icon: AlertTriangle },
-  { href: '/admin/genieacs/files', label: 'Files', icon: FileUp },
   { href: '/admin/genieacs/config', label: 'Config', icon: Settings2 },
   {
     href: '/admin/genieacs/auto-provision',
