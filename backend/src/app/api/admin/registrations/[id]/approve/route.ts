@@ -293,14 +293,31 @@ export async function POST(
     // Calculate invoice amounts based on subscription type
     let baseAmount: number;
     let invoiceType: string;
-    
+    const profilePrice = registration.profile.price;
+
     if (subscriptionType === 'PREPAID') {
-      // PREPAID: installation + first month subscription
-      baseAmount = Math.round(Number(fee)) + registration.profile.price;
+      // PREPAID: installation + full paket price
+      baseAmount = Math.round(Number(fee)) + profilePrice;
       invoiceType = 'INSTALLATION';
     } else {
-      // POSTPAID: installation only
-      baseAmount = Math.round(Number(fee));
+      // POSTPAID: installation + prorate paket price (sesuai billingDay)
+      const regDate = new Date(now);
+      regDate.setHours(0, 0, 0, 0);
+      const y = regDate.getFullYear();
+      const m = regDate.getMonth();
+      const currentDay = regDate.getDate();
+      const bd = Math.min(Math.max(validBillingDay, 1), 28);
+      let nextBilling: Date;
+      if (currentDay < bd) {
+        nextBilling = new Date(y, m, bd);
+      } else {
+        nextBilling = new Date(y, m + 1, bd);
+      }
+      const msPerDay = 1000 * 60 * 60 * 24;
+      const daysActive = Math.max(1, Math.ceil((nextBilling.getTime() - regDate.getTime()) / msPerDay));
+      const daysInMonth = new Date(y, m + 1, 0).getDate();
+      const prorateAmount = Math.ceil((daysActive / daysInMonth) * profilePrice);
+      baseAmount = Math.round(Number(fee)) + prorateAmount;
       invoiceType = 'INSTALLATION';
     }
 
