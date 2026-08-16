@@ -26,7 +26,12 @@ type RoleKey = keyof typeof ROLES;
 const APK_DIR       = '/var/data/salfanet/apk';
 const GRADLE_CACHE  = '/var/data/salfanet/gradle-cache';
 const ANDROID_HOME  = process.env.ANDROID_HOME || '/opt/android';
-const WRAPPER_JAR   = join(process.cwd(), 'public', 'android-template', 'gradle-wrapper.jar');
+const WRAPPER_JAR_CANDIDATES = [
+  join(process.cwd(), 'frontend', 'public', 'android-template', 'gradle-wrapper.jar'),
+  join(process.cwd(), 'public', 'android-template', 'gradle-wrapper.jar'),
+  join(__dirname, '..', '..', '..', '..', '..', 'frontend', 'public', 'android-template', 'gradle-wrapper.jar'),
+];
+const WRAPPER_JAR = WRAPPER_JAR_CANDIDATES.find(p => existsSync(p)) || WRAPPER_JAR_CANDIDATES[0];
 
 // ─── file generators ─────────────────────────────────────────────────────────
 
