@@ -136,6 +136,11 @@ export default function RegistrationsPage() {
   const [billingDay, setBillingDay] = useState('1');
   const [approveAreaId, setApproveAreaId] = useState('');
   const [approveRouterId, setApproveRouterId] = useState('');
+  const [connectionType, setConnectionType] = useState<'PPPOE' | 'STATIC_IP' | 'HOTSPOT'>('PPPOE');
+  const [ipAddress, setIpAddress] = useState('');
+  const [macAddress, setMacAddress] = useState('');
+  const [customUsername, setCustomUsername] = useState('');
+  const [customPassword, setCustomPassword] = useState('');
   const [approving, setApproving] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -150,11 +155,21 @@ export default function RegistrationsPage() {
     setBillingDay('1');
     setApproveAreaId(registration.areaId || '');
     setApproveRouterId('');
+    setConnectionType('PPPOE');
+    setIpAddress('');
+    setMacAddress('');
+    setCustomUsername('');
+    setCustomPassword('');
     setApproveModalOpen(true);
   };
 
   const handleApprove = async () => {
     if (!selectedRegistration) return;
+    // Validate: IP address required for STATIC_IP and HOTSPOT
+    if ((connectionType === 'STATIC_IP' || connectionType === 'HOTSPOT') && !ipAddress.trim()) {
+      await showError('IP Address wajib diisi untuk Static IP / Hotspot');
+      return;
+    }
     setApproving(true);
     try {
       const data = await apiAdmin<ApproveResponse>(`/api/admin/registrations/${selectedRegistration.id}/approve`, {
@@ -165,6 +180,11 @@ export default function RegistrationsPage() {
           billingDay: subscriptionType === 'POSTPAID' ? parseInt(billingDay) : 1,
           areaId: approveAreaId || null,
           routerId: approveRouterId || null,
+          connectionType,
+          ipAddress: ipAddress.trim() || null,
+          macAddress: macAddress.trim() || null,
+          username: customUsername.trim() || null,
+          password: customPassword.trim() || null,
         }),
       });
       await showSuccess(
@@ -565,8 +585,52 @@ export default function RegistrationsPage() {
                   <div className="flex justify-between"><span className="text-muted-foreground">{t('common.name')}:</span><span className="font-medium text-foreground">{selectedRegistration.name}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">{t('common.phone')}:</span><span className="font-medium text-foreground">{selectedRegistration.phone}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.profile')}:</span><span className="font-medium text-foreground">{selectedRegistration.profile.name}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.username')}:</span><span className="font-mono text-[#00f7ff]">{selectedRegistration.name.split(' ')[0].toLowerCase()}-{selectedRegistration.phone}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.username')}:</span><span className="font-mono text-[#00f7ff]">{customUsername || `${selectedRegistration.name.split(' ')[0].toLowerCase()}-${selectedRegistration.phone}`}</span></div>
                 </div>
+
+                {/* Connection Type */}
+                <div>
+                  <ModalLabel required>Tipe Koneksi</ModalLabel>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['PPPOE', 'STATIC_IP', 'HOTSPOT'] as const).map(ct => (
+                      <label key={ct} className={`flex items-center justify-center p-2 border rounded-lg cursor-pointer transition-all text-xs ${connectionType === ct ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_10px_rgba(0,247,255,0.2)]' : 'border-[#bc13fe]/30 hover:border-[#bc13fe]/50'}`}>
+                        <input type="radio" name="connectionType" value={ct} checked={connectionType === ct} onChange={(e) => setConnectionType(e.target.value as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT')} className="sr-only" />
+                        {ct === 'PPPOE' ? 'PPPoE' : ct === 'STATIC_IP' ? 'Static IP' : 'Hotspot'}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Username & Password override (PPPoE only) */}
+                {connectionType === 'PPPOE' && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <ModalLabel>Username (opsional)</ModalLabel>
+                      <ModalInput type="text" placeholder="Auto: nama-nomor" value={customUsername} onChange={(e) => setCustomUsername(e.target.value)} />
+                      <p className="text-[10px] text-muted-foreground mt-1">Kosongkan untuk auto-generate</p>
+                    </div>
+                    <div>
+                      <ModalLabel>Password (opsional)</ModalLabel>
+                      <ModalInput type="text" placeholder="Auto: sama dgn username" value={customPassword} onChange={(e) => setCustomPassword(e.target.value)} />
+                      <p className="text-[10px] text-muted-foreground mt-1">Kosongkan untuk auto-generate</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* IP Address (required for STATIC_IP and HOTSPOT) */}
+                {(connectionType === 'STATIC_IP' || connectionType === 'HOTSPOT') && (
+                  <div>
+                    <ModalLabel required>IP Address</ModalLabel>
+                    <ModalInput type="text" placeholder="e.g. 10.0.0.5" value={ipAddress} onChange={(e) => setIpAddress(e.target.value)} />
+                  </div>
+                )}
+
+                {/* MAC Address (optional, all types) */}
+                <div>
+                  <ModalLabel>MAC Address (opsional)</ModalLabel>
+                  <ModalInput type="text" placeholder="e.g. AA:BB:CC:DD:EE:FF" value={macAddress} onChange={(e) => setMacAddress(e.target.value)} />
+                </div>
+
                 <div>
                   <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
                   <div className="space-y-2">
