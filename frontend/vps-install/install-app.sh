@@ -381,10 +381,23 @@ seed_database() {
         SEED_DIR="prisma"
     fi
 
+    # Determine tsx binary location (pnpm workspace puts it in backend/node_modules)
+    local TSX_BIN=""
+    for candidate in "backend/node_modules/.bin/tsx" "node_modules/.bin/tsx" "node_modules/.pnpm/node_modules/.bin/tsx"; do
+        if [ -f "$candidate" ]; then
+            TSX_BIN="$candidate"
+            break
+        fi
+    done
+    if [ -z "$TSX_BIN" ]; then
+        print_warning "tsx binary not found, skipping seeds"
+        return 0
+    fi
+
     # Try comprehensive seed first
     if [ -n "$SEED_DIR" ] && [ -f "${SEED_DIR}/seeds/seed-all.ts" ]; then
         print_info "Running comprehensive seed from ${SEED_DIR}/seeds/..."
-        if node_modules/.bin/tsx ${SEED_DIR}/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log; then
+        if $TSX_BIN ${SEED_DIR}/seeds/seed-all.ts 2>&1 | tee /tmp/seed.log; then
             print_success "Comprehensive seed completed"
         else
             print_warning "Comprehensive seed had issues, trying individual seeds..."
@@ -392,7 +405,7 @@ seed_database() {
         fi
     elif [ -n "$SEED_DIR" ] && [ -f "${SEED_DIR}/seed.ts" ]; then
         print_info "Running default seed from ${SEED_DIR}/..."
-        if node_modules/.bin/tsx ${SEED_DIR}/seed.ts 2>&1 | tee /tmp/seed.log; then
+        if $TSX_BIN ${SEED_DIR}/seed.ts 2>&1 | tee /tmp/seed.log; then
             print_success "Default seed completed"
         else
             print_warning "Default seed had issues, trying individual seeds..."
@@ -424,28 +437,38 @@ run_individual_seeds() {
         return 0
     fi
 
+    # Determine tsx binary (pnpm workspace puts it in backend/node_modules)
+    local TSX_BIN=""
+    for candidate in "backend/node_modules/.bin/tsx" "node_modules/.bin/tsx" "node_modules/.pnpm/node_modules/.bin/tsx"; do
+        if [ -f "$candidate" ]; then
+            TSX_BIN="$candidate"
+            break
+        fi
+    done
+    [ -z "$TSX_BIN" ] && { print_warning "tsx binary not found"; return 0; }
+
     # Seed permissions
     if [ -f "${SD}/seeds/permissions.ts" ]; then
         print_info "Seeding permissions..."
-        node_modules/.bin/tsx ${SD}/seeds/permissions.ts || print_warning "Permissions seed failed"
+        $TSX_BIN ${SD}/seeds/permissions.ts || print_warning "Permissions seed failed"
     fi
     
     # Seed financial categories
     if [ -f "${SD}/seeds/keuangan-categories.ts" ]; then
         print_info "Seeding financial categories..."
-        node_modules/.bin/tsx ${SD}/seeds/keuangan-categories.ts || print_warning "Categories seed failed"
+        $TSX_BIN ${SD}/seeds/keuangan-categories.ts || print_warning "Categories seed failed"
     fi
     
     # Seed admin user
     if [ -f "${SD}/seeds/seed-admin.ts" ]; then
         print_info "Seeding admin user..."
-        node_modules/.bin/tsx ${SD}/seeds/seed-admin.ts || print_warning "Admin seed failed"
+        $TSX_BIN ${SD}/seeds/seed-admin.ts || print_warning "Admin seed failed"
     fi
     
     # Seed isolation templates
     if [ -f "${SD}/seeds/isolation-templates.ts" ]; then
         print_info "Seeding isolation templates..."
-        node_modules/.bin/tsx ${SD}/seeds/isolation-templates.ts || print_warning "Isolation templates seed failed"
+        $TSX_BIN ${SD}/seeds/isolation-templates.ts || print_warning "Isolation templates seed failed"
     fi
 }
 
@@ -488,7 +511,7 @@ verify_admin_user() {
         print_success "Admin user verified ($ADMIN_CHECK user(s) found)"
     else
         print_warning "Admin user not found in database. You may need to seed manually."
-        print_info "You can seed later with: cd ${APP_DIR} && npx tsx prisma/seeds/seed-all.ts"
+        print_info "You can seed later with: cd ${APP_DIR} && backend/node_modules/.bin/tsx backend/prisma/seeds/seed-all.ts"
     fi
 }
 
@@ -540,19 +563,19 @@ fix_permissions() {
     # Make scripts executable
     chmod +x ${APP_DIR}/*.sh 2>/dev/null || true
     
-    # Make node_modules/.bin executable
-    if [ -d "${APP_DIR}/node_modules/.bin" ]; then
-        chmod +x ${APP_DIR}/node_modules/.bin/* 2>/dev/null || true
-    fi
+    # Make ALL node_modules/.bin directories executable (root, backend, frontend, pnpm)
+    find ${APP_DIR} -path "*/node_modules/.bin" -type d | while read bindir; do
+        chmod +x "$bindir"/* 2>/dev/null || true
+    done
     
     # Fix Prisma engine binaries
-    if [ -d "${APP_DIR}/node_modules/@prisma/engines" ]; then
-        print_info "Fixing Prisma engine permissions..."
-        chmod +x ${APP_DIR}/node_modules/@prisma/engines/* 2>/dev/null || true
-        find ${APP_DIR}/node_modules/@prisma/engines -type f | while read engine; do
+    find ${APP_DIR} -path "*/node_modules/@prisma/engines" -type d | while read enginedir; do
+        print_info "Fixing Prisma engine permissions in ${enginedir}..."
+        chmod +x "$enginedir"/* 2>/dev/null || true
+        find "$enginedir" -type f | while read engine; do
             chmod +x "$engine" 2>/dev/null || true
         done
-    fi
+    done
     
     print_success "File permissions fixed (owner: ${APP_USER})"
 }
