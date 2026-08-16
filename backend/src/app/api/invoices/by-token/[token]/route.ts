@@ -82,6 +82,8 @@ export async function GET(
         address: true,
         phone: true,
         email: true,
+        qrisEnabled: true,
+        qrisMerchantName: true,
       },
     });
 
