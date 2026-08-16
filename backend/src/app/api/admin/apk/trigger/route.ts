@@ -775,7 +775,7 @@ class MainActivity : AppCompatActivity() {
         const val PREF_DEVICE_KEY = "device_key"
         const val PREF_REGEX = "regex"
         const val PREF_LOGS = "logs"
-        const val DEFAULT_REGEX = "Rp\\\\s*([\\\\d.,]+)"
+        const val DEFAULT_REGEX = "Rp\\s*([\\d.,]+)"
     }
 
     private lateinit var tvStatus: TextView
@@ -829,7 +829,7 @@ class MainActivity : AppCompatActivity() {
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             if (!pm.isIgnoringBatteryOptimizations(packageName)) {
                 val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                intent.data = Uri.parse("package:\$packageName")
+                intent.data = Uri.parse("package:$packageName")
                 startActivity(intent)
             } else {
                 Toast.makeText(this, "Optimasi baterai sudah dinonaktifkan", Toast.LENGTH_SHORT).show()
@@ -883,7 +883,7 @@ class MainActivity : AppCompatActivity() {
                 val amount = entry.optString("amount", "")
                 val status = entry.optString("status", "")
                 val emoji = if (status == "success") "✅" else "❌"
-                sb.append("\$emoji [\$time] Rp\$amount - \$status\n")
+                sb.append("$emoji [$time] Rp$amount - $status\n")
             }
             tvLog.text = if (sb.isEmpty()) "Belum ada log." else sb.toString()
         } catch (e: Exception) {
@@ -925,7 +925,7 @@ class QrisNotificationListener : NotificationListenerService() {
         const val PREF_DEVICE_KEY = "device_key"
         const val PREF_REGEX = "regex"
         const val PREF_LOGS = "logs"
-        const val DEFAULT_REGEX = "Rp\\\\s*([\\\\d.,]+)"
+        const val DEFAULT_REGEX = "Rp\\s*([\\d.,]+)"
 
         // E-wallet packages to listen to
         val TARGET_PACKAGES = setOf(
@@ -994,13 +994,13 @@ class QrisNotificationListener : NotificationListenerService() {
                     val response = if (responseCode == 200) {
                         conn.inputStream.bufferedReader().readText()
                     } else {
-                        conn.errorStream?.bufferedReader()?.readText() ?: "HTTP \$responseCode"
+                        conn.errorStream?.bufferedReader()?.readText() ?: "HTTP $responseCode"
                     }
                     conn.disconnect()
 
                     val respJson = JSONObject(response)
                     val success = respJson.optBoolean("success", false)
-                    val status = if (success) "success" else "failed: \${respJson.optString("error", "unknown")}"
+                    val status = if (success) "success" else "failed: ${respJson.optString("error", "unknown")}"
 
                     addLog(context, amount.toString(), status)
 
@@ -1010,7 +1010,7 @@ class QrisNotificationListener : NotificationListenerService() {
                         vibrator.vibrate(300)
                     }
                 } catch (e: Exception) {
-                    addLog(context, amount.toString(), "error: \${e.message}")
+                    addLog(context, amount.toString(), "error: ${e.message}")
                 }
             }.start()
         }
@@ -1075,7 +1075,7 @@ class QrisNotificationListener : NotificationListenerService() {
         val text = extras.getCharSequence("android.text")?.toString() ?: ""
         val bigText = extras.getCharSequence("android.bigText")?.toString() ?: ""
 
-        val fullText = "\$title \$text \$bigText"
+        val fullText = "$title $text $bigText"
 
         // Only process if it looks like a payment notification
         val keywords = listOf("rp", "transfer", "pembayaran", "diterima", "qris", "masuk", "payment")
