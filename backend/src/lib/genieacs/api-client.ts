@@ -24,7 +24,6 @@ import type {
   GenieConfig,
   GenieTask,
   GenieFault,
-  GenieFile,
   ParamUpdate,
 } from './types';
 
@@ -353,28 +352,5 @@ export async function deleteConfig(id: string): Promise<void> {
 }
 
 /* ---------- Files ---------- */
+// Files management removed — use GenieACS UI directly for firmware/file uploads.
 
-export async function getFiles(): Promise<GenieFile[]> {
-  return nbiRequest<GenieFile[]>('/files');
-}
-
-export async function deleteFile(fileName: string): Promise<void> {
-  await nbiRequest(`/files/${encodeURIComponent(fileName)}`, { method: 'DELETE' });
-}
-
-export async function uploadFile(
-  fileName: string,
-  body: Uint8Array | string,
-  metadata?: { fileType?: string; oui?: string; productClass?: string; version?: string },
-): Promise<void> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/octet-stream' };
-  if (metadata?.fileType) headers.fileType = metadata.fileType;
-  if (metadata?.oui) headers.oui = metadata.oui;
-  if (metadata?.productClass) headers.productClass = metadata.productClass;
-  if (metadata?.version) headers.version = metadata.version;
-  await nbiRequest(`/files/${encodeURIComponent(fileName)}`, {
-    method: 'PUT',
-    body,
-    headers,
-  });
-}
