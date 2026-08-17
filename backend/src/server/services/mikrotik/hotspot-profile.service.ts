@@ -174,6 +174,18 @@ export async function manageHotspotProfile(
 
     const menu = api.write.bind(api)
 
+    // Install global uncaughtException handler for node-routeros !empty errors
+    // (these are thrown from event handlers, bypassing try/catch)
+    if (!(process as any)._mtUncaughtInstalled) {
+      (process as any)._mtUncaughtInstalled = true
+      process.on('uncaughtException', (err: any) => {
+        if (err?.errno === 'UNKNOWNREPLY' || String(err?.message || '').includes('!empty') || String(err?.message || '').includes('unknown reply')) {
+          return // Swallow !empty — just means no results matched a filter
+        }
+        throw err
+      })
+    }
+
     /**
      * Safe wrapper for MikroTik API write calls.
      * Handles node-routeros quirks like !empty replies.
@@ -220,30 +232,34 @@ export async function manageHotspotProfile(
         await menu('/ip/hotspot/user/profile/set', [`=.id=${id}`, '=on-login='])
       } catch { /* ignore */ }
 
-      // Remove associated users and schedulers
-      const users = await safeWrite('/ip/hotspot/user/print', [`?profile=${params.name}`])
+      // Remove associated users and schedulers — fetch all and filter in JS
+      const allUsers = await safeWrite('/ip/hotspot/user/print')
+      const users = allUsers.filter((u) => u.profile === params.name)
       for (const user of users) {
         const uid = user['.id'] || user.id
         if (uid) {
-          // Remove active sessions
+          // Remove active sessions — fetch all and filter in JS
           try {
-            const activeSessions = await safeWrite('/ip/hotspot/active/print', [`?user=${user.name}`])
+            const allActive = await safeWrite('/ip/hotspot/active/print')
+            const activeSessions = allActive.filter((s) => s.user === user.name)
             for (const session of activeSessions) {
               await menu('/ip/hotspot/active/remove', [`=.id=${session['.id']}`])
             }
           } catch { /* ignore */ }
-          // Remove cookies
+          // Remove cookies — fetch all and filter in JS
           try {
-            const cookies = await safeWrite('/ip/hotspot/cookie/print', [`?user=${user.name}`])
+            const allCookies = await safeWrite('/ip/hotspot/cookie/print')
+            const cookies = allCookies.filter((c) => c.user === user.name)
             for (const cookie of cookies) {
               await menu('/ip/hotspot/cookie/remove', [`=.id=${cookie['.id']}`])
             }
           } catch { /* ignore */ }
           // Remove user
           await menu('/ip/hotspot/user/remove', [`=.id=${uid}`])
-          // Remove scheduler
+          // Remove scheduler — fetch all and filter in JS
           try {
-            const schedulers = await safeWrite('/system/scheduler/print', [`?name=${user.name}`])
+            const allSchedulers = await safeWrite('/system/scheduler/print')
+            const schedulers = allSchedulers.filter((s) => s.name === user.name)
             for (const sched of schedulers) {
               await menu('/system/scheduler/remove', [`=.id=${sched['.id']}`])
             }
