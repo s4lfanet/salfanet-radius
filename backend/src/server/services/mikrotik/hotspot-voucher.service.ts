@@ -644,3 +644,162 @@ export async function fetchAllVoucherStatusesFromMikrotik(): Promise<{
     results,
   }
 }
+
+/**
+ * Cleanup orphaned MikroTik hotspot users.
+ * Removes users from MikroTik that no longer exist in the DB.
+ * Optionally filter by profile name.
+ */
+export async function cleanupOrphanedMikrotikUsers(
+  routerId: string,
+  options?: { profileName?: string; dryRun?: boolean },
+): Promise<{
+  routerId: string
+  routerName: string
+  totalUsers: number
+  orphanedCount: number
+  removedCount: number
+  errors: string[]
+  dryRun: boolean
+}> {
+  const router = await getLocalRouterConfig(routerId)
+  if (!router) {
+    return {
+      routerId,
+      routerName: 'unknown',
+      totalUsers: 0,
+      orphanedCount: 0,
+      removedCount: 0,
+      errors: ['Router not found or not local mode'],
+      dryRun: options?.dryRun ?? false,
+    }
+  }
+
+  let api: any
+  try {
+    ensureUncaughtHandler()
+    const { api: a, menu } = await connectMikrotik(router)
+    api = a
+
+    const errors: string[] = []
+
+    // 1. Get all hotspot users from MikroTik
+    const mikrotikUsers = await safeWrite(menu, '/ip/hotspot/user/print')
+
+    // Filter by profile if specified
+    let usersToCheck = mikrotikUsers
+    if (options?.profileName) {
+      usersToCheck = mikrotikUsers.filter((u) => u.profile === options.profileName)
+    }
+
+    // Skip default admin users (admin, default, etc.)
+    const systemUsers = new Set(['admin', 'default', 'guest', 'operator'])
+    usersToCheck = usersToCheck.filter((u) => u.name && !systemUsers.has(u.name.toLowerCase()))
+
+    // 2. Get all voucher codes from DB for this router
+    const dbVouchers = await prisma.hotspotVoucher.findMany({
+      where: { routerId },
+      select: { code: true },
+    })
+    const dbCodes = new Set(dbVouchers.map((v) => v.code))
+
+    // 3. Find orphaned users (in MikroTik but not in DB)
+    const orphanedUsers = usersToCheck.filter((u) => !dbCodes.has(u.name))
+
+    if (options?.dryRun) {
+      return {
+        routerId,
+        routerName: router.name,
+        totalUsers: usersToCheck.length,
+        orphanedCount: orphanedUsers.length,
+        removedCount: 0,
+        errors,
+        dryRun: true,
+      }
+    }
+
+    // 4. Remove orphaned users from MikroTik
+    let removedCount = 0
+    for (const user of orphanedUsers) {
+      try {
+        const id = user['.id'] || user.id
+        if (!id) continue
+
+        // Remove active sessions for this user
+        try {
+          const allActive = await safeWrite(menu, '/ip/hotspot/active/print')
+          const activeSessions = allActive.filter((s) => s.user === user.name)
+          for (const session of activeSessions) {
+            await menu('/ip/hotspot/active/remove', [`=.id=${session['.id']}`])
+          }
+        } catch { /* ignore */ }
+
+        // Remove user
+        await menu('/ip/hotspot/user/remove', [`=.id=${id}`])
+        removedCount++
+
+        // Remove scheduler if exists
+        try {
+          const allSchedulers = await safeWrite(menu, '/system/scheduler/print')
+          const schedulers = allSchedulers.filter((s) => s.name === user.name)
+          for (const sched of schedulers) {
+            await menu('/system/scheduler/remove', [`=.id=${sched['.id']}`])
+          }
+        } catch { /* ignore */ }
+      } catch (e: any) {
+        errors.push(`Failed to remove ${user.name}: ${e?.message || String(e)}`)
+      }
+    }
+
+    return {
+      routerId,
+      routerName: router.name,
+      totalUsers: usersToCheck.length,
+      orphanedCount: orphanedUsers.length,
+      removedCount,
+      errors,
+      dryRun: false,
+    }
+  } catch (e: any) {
+    return {
+      routerId,
+      routerName: router.name,
+      totalUsers: 0,
+      orphanedCount: 0,
+      removedCount: 0,
+      errors: [`Cleanup failed: ${e?.message || String(e)}`],
+      dryRun: options?.dryRun ?? false,
+    }
+  } finally {
+    try { if (api) await api.close() } catch { /* ignore */ }
+  }
+}
+
+/**
+ * Cleanup orphaned users from ALL local-only routers.
+ */
+export async function cleanupAllOrphanedMikrotikUsers(
+  options?: { profileName?: string; dryRun?: boolean },
+): Promise<{
+  totalRouters: number
+  results: Array<{
+    routerId: string
+    routerName: string
+    totalUsers: number
+    orphanedCount: number
+    removedCount: number
+    errors: string[]
+    dryRun: boolean
+  }>
+}> {
+  const routers = await getLocalRouters()
+  const results = []
+
+  for (const router of routers) {
+    const result = await cleanupOrphanedMikrotikUsers(router.id, options)
+    results.push(result)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+  }
+
+  return { totalRouters: routers.length, results }
+}
