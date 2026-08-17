@@ -106,6 +106,10 @@ async function connectMikrotik(router: Awaited<ReturnType<typeof getLocalRouterC
  * Safe wrapper for MikroTik API write calls.
  * Handles node-routeros quirks like !empty replies and timeout exceptions.
  * Returns empty array on !empty (no results) instead of throwing.
+ *
+ * NOTE: node-routeros throws !empty as an uncaughtException (not a catchable
+ * promise rejection), so safeWrite alone is not sufficient. We also install
+ * a global uncaughtException filter at module load time (see below).
  */
 async function safeWrite(menu: any, command: string, params?: string[]): Promise<any[]> {
   try {
@@ -118,6 +122,25 @@ async function safeWrite(menu: any, command: string, params?: string[]): Promise
     }
     throw e
   }
+}
+
+/**
+ * Global uncaughtException filter for node-routeros !empty errors.
+ * node-routeros throws these from event handlers, bypassing try/catch.
+ * We must intercept them at the process level to prevent crashes.
+ */
+let _uncaughtHandlerInstalled = false
+function ensureUncaughtHandler() {
+  if (_uncaughtHandlerInstalled) return
+  _uncaughtHandlerInstalled = true
+  process.on('uncaughtException', (err: any) => {
+    if (err?.errno === 'UNKNOWNREPLY' || String(err?.message || '').includes('!empty') || String(err?.message || '').includes('unknown reply')) {
+      // Swallow !empty — it just means no results matched a filter query
+      return
+    }
+    // Re-throw other uncaught exceptions
+    throw err
+  })
 }
 
 /**
@@ -156,6 +179,7 @@ export async function syncVoucherToMikrotik(
 
   let api: any
   try {
+    ensureUncaughtHandler()
     const { api: a, menu } = await connectMikrotik(router)
     api = a
 
@@ -165,9 +189,9 @@ export async function syncVoucherToMikrotik(
       ? `${voucher.agent.phone}-${voucher.agent.name}`
       : 'admin'
 
-    // Check if user already exists
-    const existingUsers = await safeWrite(menu, '/ip/hotspot/user/print', [`?name=${voucher.code}`])
-    const existing = existingUsers.find((u) => u.name === voucher.code)
+    // Fetch all users and filter in JS (avoids !empty exception from filter queries)
+    const allUsers = await safeWrite(menu, '/ip/hotspot/user/print')
+    const existing = allUsers.find((u) => u.name === voucher.code)
 
     if (existing) {
       // Update existing user
@@ -305,12 +329,13 @@ export async function removeVoucherFromMikrotik(
 
   let api: any
   try {
+    ensureUncaughtHandler()
     const { api: a, menu } = await connectMikrotik(router)
     api = a
 
-    // Find and remove the hotspot user
-    const users = await safeWrite(menu, '/ip/hotspot/user/print', [`?name=${voucherCode}`])
-    const existing = users.find((u) => u.name === voucherCode)
+    // Fetch all users and filter in JS (avoids !empty exception from filter queries)
+    const allUsers = await safeWrite(menu, '/ip/hotspot/user/print')
+    const existing = allUsers.find((u) => u.name === voucherCode)
 
     if (!existing) {
       return {
@@ -324,17 +349,19 @@ export async function removeVoucherFromMikrotik(
 
     const id = existing['.id'] || existing.id
 
-    // Remove active sessions
+    // Remove active sessions — fetch all and filter in JS
     try {
-      const activeSessions = await safeWrite(menu, '/ip/hotspot/active/print', [`?user=${voucherCode}`])
+      const allActive = await safeWrite(menu, '/ip/hotspot/active/print')
+      const activeSessions = allActive.filter((s) => s.user === voucherCode)
       for (const session of activeSessions) {
         await menu('/ip/hotspot/active/remove', [`=.id=${session['.id']}`])
       }
     } catch { /* ignore */ }
 
-    // Remove cookies — use safeWrite to handle !empty
+    // Remove cookies — fetch all and filter in JS
     try {
-      const cookies = await safeWrite(menu, '/ip/hotspot/cookie/print', [`?user=${voucherCode}`])
+      const allCookies = await safeWrite(menu, '/ip/hotspot/cookie/print')
+      const cookies = allCookies.filter((c) => c.user === voucherCode)
       for (const cookie of cookies) {
         await menu('/ip/hotspot/cookie/remove', [`=.id=${cookie['.id']}`])
       }
@@ -343,9 +370,10 @@ export async function removeVoucherFromMikrotik(
     // Remove user
     await menu('/ip/hotspot/user/remove', [`=.id=${id}`])
 
-    // Remove scheduler (created by on-login script)
+    // Remove scheduler — fetch all and filter in JS
     try {
-      const schedulers = await safeWrite(menu, '/system/scheduler/print', [`?name=${voucherCode}`])
+      const allSchedulers = await safeWrite(menu, '/system/scheduler/print')
+      const schedulers = allSchedulers.filter((s) => s.name === voucherCode)
       for (const sched of schedulers) {
         await menu('/system/scheduler/remove', [`=.id=${sched['.id']}`])
       }
@@ -418,6 +446,7 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
 
   let api: any
   try {
+    ensureUncaughtHandler()
     const { api: a, menu } = await connectMikrotik(router)
     api = a
 
