@@ -330,6 +330,7 @@ export async function removeVoucherFromMikrotik(
   let api: any
   try {
     ensureUncaughtHandler()
+    console.log(`[MT_REMOVE] Connecting to router ${router.name} (${router.ipAddress}:${router.port}) for voucher ${voucherCode}`)
     const { api: a, menu } = await connectMikrotik(router)
     api = a
 
@@ -338,6 +339,7 @@ export async function removeVoucherFromMikrotik(
     const existing = allUsers.find((u) => u.name === voucherCode)
 
     if (!existing) {
+      console.log(`[MT_REMOVE] Voucher ${voucherCode} not found on ${router.name} — already absent`)
       return {
         success: true,
         routerId,
@@ -379,6 +381,7 @@ export async function removeVoucherFromMikrotik(
       }
     } catch { /* ignore */ }
 
+    console.log(`[MT_REMOVE] Successfully removed ${voucherCode} from ${router.name}`)
     return {
       success: true,
       routerId,
@@ -388,7 +391,7 @@ export async function removeVoucherFromMikrotik(
     }
   } catch (e: any) {
     const msg = e?.message || String(e)
-    console.error(`[HOTSPOT_VOUCHER] remove for "${voucherCode}" on router ${router.name}:`, msg)
+    console.error(`[MT_REMOVE] Failed for "${voucherCode}" on router ${router.name}:`, msg)
     return {
       success: false,
       routerId,
