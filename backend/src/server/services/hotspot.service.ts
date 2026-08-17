@@ -11,6 +11,7 @@ import {
 import {
   syncVoucherToAssignedRouter,
   removeVoucherFromAllMikrotik,
+  removeBatchVouchersFromMikrotik,
 } from '@/server/services/mikrotik/hotspot-voucher.service';
 import { formatInTimeZone } from 'date-fns-tz';
 import { WIB_TIMEZONE } from '@/lib/timezone';
@@ -421,11 +422,27 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
       });
     }
 
-    // MikroTik local cleanup - fire and forget
+    // MikroTik local cleanup - await with single connection per router
+    // Group by routerId to batch-remove in one connection
+    const routerGroups = new Map<string, string[]>();
     for (const v of vouchersToDelete) {
-      removeVoucherFromAllMikrotik(v.code, v.routerId).catch(err => {
-        console.error(`[DELETE] Failed to remove ${v.code} from MikroTik local:`, err);
-      });
+      const rid = v.routerId || 'all';
+      if (!routerGroups.has(rid)) routerGroups.set(rid, []);
+      routerGroups.get(rid)!.push(v.code);
+    }
+    for (const [rid, codes] of routerGroups) {
+      try {
+        if (rid === 'all') {
+          // No routerId — try all local routers
+          for (const code of codes) {
+            await removeVoucherFromAllMikrotik(code);
+          }
+        } else {
+          await removeBatchVouchersFromMikrotik(rid, codes);
+        }
+      } catch (err) {
+        console.error(`[DELETE] MikroTik batch cleanup failed for router ${rid}:`, err);
+      }
     }
 
     return { count: result.count };
@@ -463,10 +480,12 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
       console.error('Failed to remove from RADIUS:', err);
     });
 
-    // MikroTik local cleanup - fire and forget
-    removeVoucherFromAllMikrotik(voucher.code, voucher.routerId).catch(err => {
+    // MikroTik local cleanup - await to ensure completion
+    try {
+      await removeVoucherFromAllMikrotik(voucher.code, voucher.routerId);
+    } catch (err) {
       console.error(`[DELETE] Failed to remove ${voucher.code} from MikroTik local:`, err);
-    });
+    }
 
     return { count: 1 };
   }
