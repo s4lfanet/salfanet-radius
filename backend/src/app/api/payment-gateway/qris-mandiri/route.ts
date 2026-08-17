@@ -16,6 +16,8 @@ export async function GET() {
         qrisStaticCode: true,
         qrisMerchantName: true,
         qrisDeviceKey: true,
+        qrisUniqueMin: true,
+        qrisUniqueMax: true,
       },
     });
 
@@ -25,6 +27,8 @@ export async function GET() {
         qrisStaticCode: '',
         qrisMerchantName: '',
         qrisDeviceKey: '',
+        qrisUniqueMin: 1,
+        qrisUniqueMax: 999,
       });
     }
 
@@ -37,6 +41,8 @@ export async function GET() {
       qrisStaticCode: company.qrisStaticCode || '',
       qrisMerchantName: company.qrisMerchantName || merchantInfo?.merchantName || '',
       qrisDeviceKey: company.qrisDeviceKey || '',
+      qrisUniqueMin: company.qrisUniqueMin ?? 1,
+      qrisUniqueMax: company.qrisUniqueMax ?? 999,
       isValid: hasStaticCode ? validateQris(company.qrisStaticCode!) : false,
       merchantInfo,
     });
@@ -55,7 +61,7 @@ export async function POST(request: Request) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
-    const { qrisEnabled, qrisStaticCode, qrisMerchantName, qrisDeviceKey } = body;
+    const { qrisEnabled, qrisStaticCode, qrisMerchantName, qrisDeviceKey, qrisUniqueMin, qrisUniqueMax } = body;
 
     // Validate QRIS string if provided
     if (qrisStaticCode && qrisStaticCode.trim()) {
@@ -81,6 +87,16 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate unique amount range
+    const minVal = qrisUniqueMin != null ? Math.max(1, Math.min(999, Number(qrisUniqueMin))) : undefined;
+    const maxVal = qrisUniqueMax != null ? Math.max(1, Math.min(999, Number(qrisUniqueMax))) : undefined;
+    if (minVal != null && maxVal != null && minVal > maxVal) {
+      return NextResponse.json(
+        { error: 'Angka unik minimum tidak boleh lebih besar dari maksimum' },
+        { status: 400 }
+      );
+    }
+
     await prisma.company.update({
       where: { id: company.id },
       data: {
@@ -88,6 +104,8 @@ export async function POST(request: Request) {
         qrisStaticCode: qrisStaticCode !== undefined ? (qrisStaticCode?.trim() || null) : undefined,
         qrisMerchantName: qrisMerchantName || null,
         qrisDeviceKey: finalDeviceKey || null,
+        ...(minVal != null && { qrisUniqueMin: minVal }),
+        ...(maxVal != null && { qrisUniqueMax: maxVal }),
       },
     });
 
