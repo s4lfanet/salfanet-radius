@@ -8,6 +8,10 @@ import { logActivity } from '@/server/services/activity-log.service';
 import {
   removeVoucherFromRadius,
 } from '@/server/services/radius/hotspot-sync.service';
+import {
+  syncVoucherToAssignedRouter,
+  removeVoucherFromAllMikrotik,
+} from '@/server/services/mikrotik/hotspot-voucher.service';
 import { formatInTimeZone } from 'date-fns-tz';
 import { WIB_TIMEZONE } from '@/lib/timezone';
 import type { Session } from 'next-auth';
@@ -300,6 +304,18 @@ export async function generateVouchers(data: GenerateVouchersInput, session: Ses
     console.error('RADIUS batch sync error:', syncError);
   }
 
+  // MikroTik local sync — sync vouchers to local-only routers
+  // Only sync if routerId is specified and router is local-only, or if no routerId (sync to all local)
+  try {
+    for (const v of voucherData) {
+      await syncVoucherToAssignedRouter(v.id).catch(err => {
+        console.error(`MikroTik local sync error for ${v.code}:`, err);
+      });
+    }
+  } catch (localSyncError) {
+    console.error('MikroTik local batch sync error:', localSyncError);
+  }
+
   // Activity log
   try {
     await logActivity({
@@ -382,6 +398,13 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
       });
     }
 
+    // MikroTik local cleanup - fire and forget
+    for (const v of vouchersToDelete) {
+      removeVoucherFromAllMikrotik(v.code).catch(err => {
+        console.error(`Failed to remove ${v.code} from MikroTik local:`, err);
+      });
+    }
+
     return { count: result.count };
   }
 
@@ -415,6 +438,11 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
     // RADIUS cleanup - fire and forget so DB delete is not blocked
     removeVoucherFromRadius(voucher.code).catch(err => {
       console.error('Failed to remove from RADIUS:', err);
+    });
+
+    // MikroTik local cleanup - fire and forget
+    removeVoucherFromAllMikrotik(voucher.code, voucher.routerId).catch(err => {
+      console.error('Failed to remove from MikroTik local:', err);
     });
 
     return { count: 1 };

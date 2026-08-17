@@ -21,6 +21,7 @@ import {
   runSessionMonitor,
   runPppoeSessionSync,
 } from '@/server/cron/additional-jobs'
+import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service'
 import { timingSafeEqual } from 'crypto'
 
 /**
@@ -187,6 +188,9 @@ export async function POST(request: NextRequest) {
           break
         case 'financial_reconciliation':
           result = await runFinancialReconciliation()
+          break
+        case 'hotspot_voucher_sync':
+          result = await fetchAllVoucherStatusesFromMikrotik()
           break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }
