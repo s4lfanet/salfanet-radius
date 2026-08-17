@@ -186,8 +186,8 @@ export async function syncVoucherToMikrotik(
     const profileName = voucher.profile.name
     const password = voucher.password || voucher.code
     const comment = voucher.agent
-      ? `${voucher.agent.phone}-${voucher.agent.name}`
-      : 'admin'
+      ? `salfanet:${voucher.agent.phone}-${voucher.agent.name}`
+      : 'salfanet:admin'
 
     // Fetch all users and filter in JS (avoids !empty exception from filter queries)
     const allUsers = await safeWrite(menu, '/ip/hotspot/user/print')
@@ -692,9 +692,13 @@ export async function cleanupOrphanedMikrotikUsers(
       usersToCheck = mikrotikUsers.filter((u) => u.profile === options.profileName)
     }
 
-    // Skip default admin users (admin, default, etc.)
+    // Skip system users and users NOT created by salfanet (no 'salfanet:' comment prefix)
     const systemUsers = new Set(['admin', 'default', 'guest', 'operator'])
-    usersToCheck = usersToCheck.filter((u) => u.name && !systemUsers.has(u.name.toLowerCase()))
+    usersToCheck = usersToCheck.filter((u) =>
+      u.name &&
+      !systemUsers.has(u.name.toLowerCase()) &&
+      String(u.comment || '').startsWith('salfanet:')
+    )
 
     // 2. Get all voucher codes from DB for this router
     const dbVouchers = await prisma.hotspotVoucher.findMany({
