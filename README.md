@@ -991,6 +991,52 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.13.0 — 2026-08-17 — MikroTik Local-Only Voucher Sync & Cleanup
+
+### Summary
+Implementasi sinkronisasi voucher hotspot ke MikroTik router untuk mode `local` (tanpa RADIUS). Voucher yang di-generate dari admin panel otomatis dibuat sebagai hotspot user di MikroTik via RouterOS API. Saat voucher dihapus dari DB, user di MikroTik juga dihapus. Termasuk cron job untuk sync status voucher, cleanup orphaned users, dan comment marker `salfanet:` untuk identifikasi.
+
+### MikroTik Local-Only Voucher Sync
+- **[FEATURE]** `syncVoucherToMikrotik` — create/update hotspot user di MikroTik via RouterOS API (node-routeros)
+- **[FEATURE]** `removeVoucherFromMikrotik` — hapus hotspot user + active session + scheduler dari MikroTik
+- **[FEATURE]** `removeBatchVouchersFromMikrotik` — hapus multiple voucher dalam satu koneksi MikroTik (efficient batch removal)
+- **[FEATURE]** `removeVoucherFromAllMikrotik` — hapus voucher dari semua local-only router
+- **[FEATURE]** `fetchVoucherStatusFromMikrotik` — sync status voucher (WAITING/ACTIVE/EXPIRED) dari MikroTik ke DB
+- **[FEATURE]** `fetchAllVoucherStatusesFromMikrotik` — sync status dari semua local-only router (untuk cron job)
+- **[FEATURE]** `cleanupOrphanedMikrotikUsers` — hapus user orphaned (ada di MikroTik tapi tidak di DB) dengan filter `salfanet:` comment
+- **[FEATURE]** `cleanupAllOrphanedMikrotikUsers` — cleanup semua local-only router
+- **[FEATURE]** Comment marker `salfanet:admin` atau `salfanet:agent-phone-name` pada hotspot user MikroTik untuk identifikasi system-generated vouchers
+- **[FEATURE]** API endpoint `POST /api/hotspot/voucher/cleanup-mikrotik` — trigger cleanup orphaned users (support dryRun + profileName filter)
+- **[FEATURE]** API endpoint `POST /api/hotspot/voucher/sync-status` — trigger status sync manual
+- **[FEATURE]** Cron job `hotspot_voucher_sync` — scheduled sync voucher status dari MikroTik
+
+### Voucher Generate — MikroTik Sync
+- **[FIX]** MikroTik local sync sekarang fire-and-forget (non-blocking) saat generate voucher
+- **[FIX]** Group voucher by `routerId` untuk efisiensi koneksi MikroTik
+- **[FIX]** Voucher tanpa `routerId` di-sync ke semua local-only router
+
+### Voucher Delete — MikroTik Cleanup
+- **[FIX]** `DELETE /api/hotspot/voucher?batchCode=` — MikroTik cleanup di-await dengan `removeBatchVouchersFromMikrotik` (single connection per router)
+- **[FIX]** `POST /api/hotspot/voucher/delete-multiple` — tambah MikroTik cleanup (sebelumnya missing entirely)
+- **[FIX]** `DELETE /api/hotspot/voucher/[id]` — tambah MikroTik cleanup (sebelumnya missing entirely)
+- **[FIX]** `routerId` ditambahkan ke select query di batch delete untuk pass ke MikroTik cleanup
+
+### node-routeros Error Handling
+- **[FIX]** Global `uncaughtException` handler untuk swallow `!empty` errors (node-routeros throws dari event handlers, bypass try/catch)
+- **[FIX]** `safeWrite` helper — wrapper untuk MikroTik API calls, return empty array pada `!empty` reply
+- **[FIX]** Semua filter-based queries diganti dengan fetch-all + JS filter untuk menghindari `!empty` exception
+- **[FIX]** Applied ke `hotspot-voucher.service.ts` dan `hotspot-profile.service.ts`
+
+### Files Changed
+- `backend/src/server/services/mikrotik/hotspot-voucher.service.ts` — core MikroTik voucher sync/remove/cleanup functions
+- `backend/src/server/services/mikrotik/hotspot-profile.service.ts` — safeWrite + uncaughtException handler untuk profile sync
+- `backend/src/server/services/hotspot.service.ts` — integrate MikroTik sync ke generate/delete voucher
+- `backend/src/app/api/hotspot/voucher/cleanup-mikrotik/route.ts` — new API endpoint
+- `backend/src/app/api/hotspot/voucher/sync-status/route.ts` — new API endpoint
+- `backend/src/app/api/hotspot/voucher/delete-multiple/route.ts` — add MikroTik cleanup
+- `backend/src/app/api/hotspot/voucher/[id]/route.ts` — add MikroTik cleanup
+- `backend/src/app/api/cron/route.ts` — add `hotspot_voucher_sync` cron case
+
 ### v5.12.0 — 2026-08-17 — QRIS Mandiri Payment, Auto-Update System, Installer & Cloudflare Tunnel Fixes
 
 ### Summary
@@ -1027,8 +1073,6 @@ Batch fitur dan fix: implementasi QRIS Mandiri payment gateway (static-to-dynami
 - `3b9a4e9c` — fix: installer seed_database pipe-to-tee masks exit code
 - `da73801a` — fix: cloudflare tunnel switch_nginx_port regex
 - `a90bb57a` — chore: remove debug scripts from repo
-
----
 
 ### v5.11.0 — 2026-08-16 — MikroTik Local-Auth Sync, Realtime Status, MAC Cleanup & Installer Fixes
 
@@ -1087,8 +1131,6 @@ Batch fix untuk sinkronisasi MikroTik local-auth (isolir profile, password, acti
 - `6b11f5fa` — feat: support connectionType change & authMode migration with MikroTik sync
 - `75c7fc70` — fix: delete customer — send confirmPassword to backend
 
----
-
 ### v5.7.0 — 2026-08-15 — Fix: Diskon Pelanggan Tidak Diterapkan ke Tagihan
 
 ### Summary
@@ -1121,8 +1163,6 @@ const baseAmount = profile.price;  // BUG: tidak - user.discount
 ### Commits
 - `2b55e056` — fix(billing): apply customer discount to all invoice generation paths
 
----
-
 ### v5.6.0 — 2026-08-15 — Frontend Performance Optimization + Auto-Changelog Fix
 
 ### Summary
@@ -1147,63 +1187,6 @@ Frontend performance optimization pass: remove dead dependency, code-split heavy
 
 ### Commits
 - `9464c61d` — perf: remove dead sweetalert2 dep, move @types/leaflet to devDeps, dynamic import recharts, fix auto-changelog script path
-
----
-
-### v5.5.0 — 2026-08-15 — Active Session Sync Fix + Frontend Audit (Responsive + Accessibility + Nav)
-
-### Summary
-Dua kategori perbaikan: (1) Critical fix untuk sync active session MikroTik → web (mismatch status aktif), dan (2) Frontend audit menyeluruh untuk responsive, accessibility, loading/error state, dan menu navigation consistency across all 4 role layouts.
-
-### Active Session Sync Fix (CRITICAL)
-- **[CRITICAL]** `listPppActive()` sebelumnya menelan error MikroTik API dan return empty Set → cron menganggap semua session stale dan menutupnya. Fix: sekarang throw error pada failure, sehingga cron skip cycle instead of false-closing sessions.
-- **[CRITICAL]** `iconv-lite` tidak tersedia di Next.js standalone deployment → semua MikroTik API calls gagal. Fix: tambah `iconv-lite` ke `serverExternalPackages`, copy ke standalone `node_modules` di postbuild.
-
-### Frontend Audit — Responsive Fixes
-- Fixed `grid-cols-N` tanpa mobile prefixes → `grid-cols-1/2 sm:grid-cols-N` di ~20+ pages:
-  - Referral stats, agent/technician login cards, technician isolated stats
-  - Splitter loss metrics dan ports, port selection dialogs
-  - User installation-photo grids, OLT tabs, GenieACS stats
-  - Hotspot agent/voucher report stats, IP pool, data usage cards
-  - PPPoE installation photos, SMTP settings, WhatsApp summaries
-  - Customer top-up payment methods, VPN status summaries
-  - Invoice generation results, Splitter/ODP/ODC diagrams
-  - Fiber cable presets, VPN client pool summaries
-- Added `overflow-x-auto` wrappers untuk tables yang bisa overflow di small screens:
-  - `admin/genieacs/files/page.tsx`
-  - `admin/genieacs/devices/[deviceId]/page.tsx`
-
-### Frontend Audit — Loading/Error State
-- Created route-level `loading.tsx` dan `error.tsx` untuk `/app/agent/` (sebelumnya missing)
-- Loading: centered `Loader2` spinner + "Memuat..."
-- Error: client component, logs error, generic Indonesian message, "Coba Lagi" + link ke `/agent`, shows error digest
-
-### Frontend Audit — Accessibility & Navigation
-- Added `aria-label` ke icon-only close buttons di semua 4 layout (Admin, Agent, Customer, Technician)
-- Added `aria-label` ke mobile menu/hamburger buttons where missing
-- Added `aria-expanded` ke Admin category dan submenu toggle buttons
-- Added `aria-label="X navigation"` ke semua nav landmarks
-- Increased close-button padding dari `p-1.5` → `p-2.5` untuk touch targets ≥44px
-- Fixed Admin submenu `max-h-96` → `max-h-[500px]` untuk accommodate GenieACS group (11 children)
-- Verified route-change sidebar closing behavior di semua layout
-- Verified semua 4 layout menggunakan single source of truth untuk menu (no desktop/mobile duplication)
-
-### Performance Audit Findings
-- Build: 13s compile + 5.6s TypeScript = ~20s total (Next.js 16 Turbopack)
-- Bundle: 8.8 MB total static (257 files), largest JS chunk 409 KB, largest CSS 539 KB (Tailwind v4)
-- Heavy deps properly code-split: `jspdf`, `xlsx`, `leaflet` menggunakan dynamic `await import()`
-- `sweetalert2` di `package.json` tapi TIDAK di-import (sudah diganti CyberToast) — dead dependency
-- `recharts` statically imported di `components/charts/index.tsx` — bisa di-optimize dengan dynamic import tapi low priority
-
-### Commits
-- `076501c0` — fix(critical): listPppActive must throw on error, not return empty Set
-- `54b45403` — fix: add iconv-lite to serverExternalPackages for standalone build
-- `432e3593` — fix: copy iconv-lite to standalone node_modules in postbuild
-- `fa9ddd1f` — fix: copy iconv-lite from pnpm store to standalone node_modules
-- `0b330fe1` — fix(frontend): responsive, accessibility, and loading/error state improvements
-- `a13c609a` — fix(nav): menu navigation desktop/mobile audit - accessibility and UI fixes
-
----
 
 <!-- AUTO-CHANGELOG:END -->
 
