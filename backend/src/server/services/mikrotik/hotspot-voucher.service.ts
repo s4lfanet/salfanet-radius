@@ -435,6 +435,134 @@ export async function removeVoucherFromAllMikrotik(voucherCode: string, routerId
 }
 
 /**
+ * Remove multiple vouchers from a MikroTik router in a single connection.
+ * Much more efficient than calling removeVoucherFromMikrotik for each voucher.
+ */
+export async function removeBatchVouchersFromMikrotik(
+  routerId: string,
+  voucherCodes: string[],
+): Promise<BatchVoucherSyncResult> {
+  const router = await getLocalRouterConfig(routerId)
+  if (!router) {
+    return {
+      total: voucherCodes.length,
+      success: 0,
+      failed: voucherCodes.length,
+      results: voucherCodes.map(code => ({
+        success: false,
+        routerId,
+        routerName: 'unknown',
+        voucherCode: code,
+        message: 'Router not found or not local mode',
+      })),
+    }
+  }
+
+  let api: any
+  const results: VoucherSyncResult[] = []
+  try {
+    ensureUncaughtHandler()
+    console.log(`[MT_BATCH_REMOVE] Connecting to ${router.name} to remove ${voucherCodes.length} vouchers`)
+    const { api: a, menu } = await connectMikrotik(router)
+    api = a
+
+    // Fetch all users once
+    const allUsers = await safeWrite(menu, '/ip/hotspot/user/print')
+    // Fetch all schedulers once
+    const allSchedulers = await safeWrite(menu, '/system/scheduler/print')
+    // Fetch all active sessions once
+    const allActive = await safeWrite(menu, '/ip/hotspot/active/print')
+
+    const codeSet = new Set(voucherCodes)
+
+    // Find users to remove
+    const usersToRemove = allUsers.filter((u) => codeSet.has(u.name))
+    // Find schedulers to remove
+    const schedulersToRemove = allSchedulers.filter((s) => codeSet.has(s.name))
+    // Find active sessions to remove
+    const activeToRemove = allActive.filter((s) => codeSet.has(s.user))
+
+    console.log(`[MT_BATCH_REMOVE] Found ${usersToRemove.length} users, ${schedulersToRemove.length} schedulers, ${activeToRemove.length} active sessions`)
+
+    // Remove active sessions
+    for (const session of activeToRemove) {
+      try {
+        await menu('/ip/hotspot/active/remove', [`=.id=${session['.id']}`])
+      } catch { /* ignore */ }
+    }
+
+    // Remove schedulers
+    for (const sched of schedulersToRemove) {
+      try {
+        await menu('/system/scheduler/remove', [`=.id=${sched['.id']}`])
+      } catch { /* ignore */ }
+    }
+
+    // Remove users
+    let removedCount = 0
+    for (const user of usersToRemove) {
+      try {
+        const id = user['.id'] || user.id
+        if (!id) continue
+        await menu('/ip/hotspot/user/remove', [`=.id=${id}`])
+        removedCount++
+        results.push({
+          success: true,
+          routerId,
+          routerName: router.name,
+          voucherCode: user.name,
+          message: 'Removed',
+        })
+      } catch (e: any) {
+        results.push({
+          success: false,
+          routerId,
+          routerName: router.name,
+          voucherCode: user.name,
+          message: e?.message || String(e),
+        })
+      }
+    }
+
+    // Mark vouchers not found in MikroTik as success (already absent)
+    const removedCodes = new Set(results.filter(r => r.success).map(r => r.voucherCode))
+    for (const code of voucherCodes) {
+      if (!removedCodes.has(code)) {
+        results.push({
+          success: true,
+          routerId,
+          routerName: router.name,
+          voucherCode: code,
+          message: 'Already absent',
+        })
+      }
+    }
+
+    console.log(`[MT_BATCH_REMOVE] Done: removed ${removedCount} users from ${router.name}`)
+  } catch (e: any) {
+    console.error(`[MT_BATCH_REMOVE] Failed for router ${router.name}:`, e?.message)
+    for (const code of voucherCodes) {
+      results.push({
+        success: false,
+        routerId,
+        routerName: router.name,
+        voucherCode: code,
+        message: e?.message || String(e),
+      })
+    }
+  } finally {
+    try { if (api) await api.close() } catch { /* ignore */ }
+  }
+
+  return {
+    total: results.length,
+    success: results.filter(r => r.success).length,
+    failed: results.filter(r => !r.success).length,
+    results,
+  }
+}
+
+/**
  * Fetch voucher status from a MikroTik local-only router.
  * Reads active users, schedulers, and voucher scripts to determine
  * which vouchers are ACTIVE, EXPIRED, or still WAITING.
