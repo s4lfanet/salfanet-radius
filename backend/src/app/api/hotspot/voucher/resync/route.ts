@@ -2,6 +2,7 @@
 import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service'
+import { syncVoucherToAssignedRouter } from '@/server/services/mikrotik/hotspot-voucher.service'
 
 /**
  * POST /api/hotspot/voucher/resync
@@ -23,6 +24,10 @@ export async function POST() {
     for (const voucher of vouchers) {
       try {
         await syncVoucherToRadius(voucher.id)
+        // Also sync to MikroTik local-only routers
+        await syncVoucherToAssignedRouter(voucher.id).catch(err => {
+          console.error(`MikroTik local resync error for ${voucher.code}:`, err)
+        })
         successCount++
       } catch (error: any) {
         errors.push({
