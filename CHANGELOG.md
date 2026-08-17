@@ -6,6 +6,54 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.13.0] — 2026-08-17 — MikroTik Local-Only Voucher Sync & Cleanup
+
+### Summary
+Implementasi sinkronisasi voucher hotspot ke MikroTik router untuk mode `local` (tanpa RADIUS). Voucher yang di-generate dari admin panel otomatis dibuat sebagai hotspot user di MikroTik via RouterOS API. Saat voucher dihapus dari DB, user di MikroTik juga dihapus. Termasuk cron job untuk sync status voucher, cleanup orphaned users, dan comment marker `salfanet:` untuk identifikasi.
+
+### MikroTik Local-Only Voucher Sync
+- **[FEATURE]** `syncVoucherToMikrotik` — create/update hotspot user di MikroTik via RouterOS API (node-routeros)
+- **[FEATURE]** `removeVoucherFromMikrotik` — hapus hotspot user + active session + scheduler dari MikroTik
+- **[FEATURE]** `removeBatchVouchersFromMikrotik` — hapus multiple voucher dalam satu koneksi MikroTik (efficient batch removal)
+- **[FEATURE]** `removeVoucherFromAllMikrotik` — hapus voucher dari semua local-only router
+- **[FEATURE]** `fetchVoucherStatusFromMikrotik` — sync status voucher (WAITING/ACTIVE/EXPIRED) dari MikroTik ke DB
+- **[FEATURE]** `fetchAllVoucherStatusesFromMikrotik` — sync status dari semua local-only router (untuk cron job)
+- **[FEATURE]** `cleanupOrphanedMikrotikUsers` — hapus user orphaned (ada di MikroTik tapi tidak di DB) dengan filter `salfanet:` comment
+- **[FEATURE]** `cleanupAllOrphanedMikrotikUsers` — cleanup semua local-only router
+- **[FEATURE]** Comment marker `salfanet:admin` atau `salfanet:agent-phone-name` pada hotspot user MikroTik untuk identifikasi system-generated vouchers
+- **[FEATURE]** API endpoint `POST /api/hotspot/voucher/cleanup-mikrotik` — trigger cleanup orphaned users (support dryRun + profileName filter)
+- **[FEATURE]** API endpoint `POST /api/hotspot/voucher/sync-status` — trigger status sync manual
+- **[FEATURE]** Cron job `hotspot_voucher_sync` — scheduled sync voucher status dari MikroTik
+
+### Voucher Generate — MikroTik Sync
+- **[FIX]** MikroTik local sync sekarang fire-and-forget (non-blocking) saat generate voucher
+- **[FIX]** Group voucher by `routerId` untuk efisiensi koneksi MikroTik
+- **[FIX]** Voucher tanpa `routerId` di-sync ke semua local-only router
+
+### Voucher Delete — MikroTik Cleanup
+- **[FIX]** `DELETE /api/hotspot/voucher?batchCode=` — MikroTik cleanup di-await dengan `removeBatchVouchersFromMikrotik` (single connection per router)
+- **[FIX]** `POST /api/hotspot/voucher/delete-multiple` — tambah MikroTik cleanup (sebelumnya missing entirely)
+- **[FIX]** `DELETE /api/hotspot/voucher/[id]` — tambah MikroTik cleanup (sebelumnya missing entirely)
+- **[FIX]** `routerId` ditambahkan ke select query di batch delete untuk pass ke MikroTik cleanup
+
+### node-routeros Error Handling
+- **[FIX]** Global `uncaughtException` handler untuk swallow `!empty` errors (node-routeros throws dari event handlers, bypass try/catch)
+- **[FIX]** `safeWrite` helper — wrapper untuk MikroTik API calls, return empty array pada `!empty` reply
+- **[FIX]** Semua filter-based queries diganti dengan fetch-all + JS filter untuk menghindari `!empty` exception
+- **[FIX]** Applied ke `hotspot-voucher.service.ts` dan `hotspot-profile.service.ts`
+
+### Files Changed
+- `backend/src/server/services/mikrotik/hotspot-voucher.service.ts` — core MikroTik voucher sync/remove/cleanup functions
+- `backend/src/server/services/mikrotik/hotspot-profile.service.ts` — safeWrite + uncaughtException handler untuk profile sync
+- `backend/src/server/services/hotspot.service.ts` — integrate MikroTik sync ke generate/delete voucher
+- `backend/src/app/api/hotspot/voucher/cleanup-mikrotik/route.ts` — new API endpoint
+- `backend/src/app/api/hotspot/voucher/sync-status/route.ts` — new API endpoint
+- `backend/src/app/api/hotspot/voucher/delete-multiple/route.ts` — add MikroTik cleanup
+- `backend/src/app/api/hotspot/voucher/[id]/route.ts` — add MikroTik cleanup
+- `backend/src/app/api/cron/route.ts` — add `hotspot_voucher_sync` cron case
+
+---
+
 ## [5.12.0] — 2026-08-17 — QRIS Mandiri Payment, Auto-Update System, Installer & Cloudflare Tunnel Fixes
 
 ### Summary
