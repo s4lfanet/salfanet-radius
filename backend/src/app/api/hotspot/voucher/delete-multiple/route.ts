@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
+import { removeBatchVouchersFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service';
 
 // POST - Hapus multiple vouchers
 export async function POST(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     // Get voucher codes untuk hapus dari radcheck
     const vouchers = await prisma.hotspotVoucher.findMany({
       where: { id: { in: voucherIds } },
-      select: { id: true, code: true, agentId: true, profile: { select: { name: true } } },
+      select: { id: true, code: true, agentId: true, routerId: true, profile: { select: { name: true } } },
     });
 
     const voucherCodes = vouchers.map(v => v.code);
@@ -57,6 +58,28 @@ export async function POST(request: NextRequest) {
           },
         });
       } catch (_) { /* non-critical */ }
+    }
+
+    // MikroTik local cleanup - batch remove per router
+    const routerGroups = new Map<string, string[]>();
+    for (const v of vouchers) {
+      const rid = v.routerId || 'all';
+      if (!routerGroups.has(rid)) routerGroups.set(rid, []);
+      routerGroups.get(rid)!.push(v.code);
+    }
+    for (const [rid, codes] of routerGroups) {
+      try {
+        if (rid === 'all') {
+          const { removeVoucherFromAllMikrotik } = await import('@/server/services/mikrotik/hotspot-voucher.service');
+          for (const code of codes) {
+            await removeVoucherFromAllMikrotik(code);
+          }
+        } else {
+          await removeBatchVouchersFromMikrotik(rid, codes);
+        }
+      } catch (err) {
+        console.error('[DELETE-MULTIPLE] MikroTik cleanup failed for router', rid, err);
+      }
     }
 
     return NextResponse.json({

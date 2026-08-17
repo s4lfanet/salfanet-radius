@@ -3,6 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service'
 import { removeVoucherFromRadius } from '@/server/services/radius/hotspot-sync.service'
+import { removeVoucherFromAllMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service'
 
 export async function DELETE(
   _request: Request,
@@ -47,6 +48,13 @@ export async function DELETE(
     removeVoucherFromRadius(voucher.code).catch(error => {
       console.error('Failed to remove from RADIUS:', error)
     })
+
+    // MikroTik local cleanup - await to ensure completion
+    try {
+      await removeVoucherFromAllMikrotik(voucher.code, voucher.routerId)
+    } catch (error) {
+      console.error(`[DELETE] Failed to remove ${voucher.code} from MikroTik:`, error)
+    }
 
     return NextResponse.json({ message: 'Voucher deleted successfully' })
   } catch (error) {
