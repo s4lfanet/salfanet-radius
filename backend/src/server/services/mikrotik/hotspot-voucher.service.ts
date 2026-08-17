@@ -103,6 +103,24 @@ async function connectMikrotik(router: Awaited<ReturnType<typeof getLocalRouterC
 }
 
 /**
+ * Safe wrapper for MikroTik API write calls.
+ * Handles node-routeros quirks like !empty replies and timeout exceptions.
+ * Returns empty array on !empty (no results) instead of throwing.
+ */
+async function safeWrite(menu: any, command: string, params?: string[]): Promise<any[]> {
+  try {
+    const result = await menu(command, params || [])
+    return Array.isArray(result) ? result : []
+  } catch (e: any) {
+    // !empty reply means no results matched the filter — not an error
+    if (e?.errno === 'UNKNOWNREPLY' || String(e?.message || '').includes('!empty') || String(e?.message || '').includes('unknown reply')) {
+      return []
+    }
+    throw e
+  }
+}
+
+/**
  * Sync a single voucher to a MikroTik local-only router.
  * Creates or updates the hotspot user in MikroTik.
  */
@@ -148,7 +166,7 @@ export async function syncVoucherToMikrotik(
       : 'admin'
 
     // Check if user already exists
-    const existingUsers = (await menu('/ip/hotspot/user/print', [`?name=${voucher.code}`])) as Array<any>
+    const existingUsers = await safeWrite(menu, '/ip/hotspot/user/print', [`?name=${voucher.code}`])
     const existing = existingUsers.find((u) => u.name === voucher.code)
 
     if (existing) {
@@ -291,7 +309,7 @@ export async function removeVoucherFromMikrotik(
     api = a
 
     // Find and remove the hotspot user
-    const users = (await menu('/ip/hotspot/user/print', [`?name=${voucherCode}`])) as Array<any>
+    const users = await safeWrite(menu, '/ip/hotspot/user/print', [`?name=${voucherCode}`])
     const existing = users.find((u) => u.name === voucherCode)
 
     if (!existing) {
@@ -308,15 +326,18 @@ export async function removeVoucherFromMikrotik(
 
     // Remove active sessions
     try {
-      const activeSessions = (await menu('/ip/hotspot/active/print', [`?user=${voucherCode}`])) as Array<any>
+      const activeSessions = await safeWrite(menu, '/ip/hotspot/active/print', [`?user=${voucherCode}`])
       for (const session of activeSessions) {
         await menu('/ip/hotspot/active/remove', [`=.id=${session['.id']}`])
       }
     } catch { /* ignore */ }
 
-    // Remove cookies
+    // Remove cookies — use safeWrite to handle !empty
     try {
-      await menu('/ip/hotspot/cookie/remove', [`?user=${voucherCode}`])
+      const cookies = await safeWrite(menu, '/ip/hotspot/cookie/print', [`?user=${voucherCode}`])
+      for (const cookie of cookies) {
+        await menu('/ip/hotspot/cookie/remove', [`=.id=${cookie['.id']}`])
+      }
     } catch { /* ignore */ }
 
     // Remove user
@@ -324,7 +345,10 @@ export async function removeVoucherFromMikrotik(
 
     // Remove scheduler (created by on-login script)
     try {
-      await menu('/system/scheduler/remove', [`?name=${voucherCode}`])
+      const schedulers = await safeWrite(menu, '/system/scheduler/print', [`?name=${voucherCode}`])
+      for (const sched of schedulers) {
+        await menu('/system/scheduler/remove', [`=.id=${sched['.id']}`])
+      }
     } catch { /* ignore */ }
 
     return {
@@ -401,11 +425,11 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
     let updatedCount = 0
 
     // 1. Get active hotspot users
-    const activeUsersData = (await menu('/ip/hotspot/active/print')) as Array<any>
+    const activeUsersData = await safeWrite(menu, '/ip/hotspot/active/print')
     const activeUsernames = new Set(activeUsersData.map((u) => u.user).filter(Boolean))
 
     // 2. Get schedulers (created by on-login script for expiry)
-    const schedulers = (await menu('/system/scheduler/print')) as Array<any>
+    const schedulers = await safeWrite(menu, '/system/scheduler/print')
     const schedulerNames = new Set(
       schedulers
         .filter((s) => s.name && !s.disabled)
@@ -413,7 +437,7 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
     )
 
     // 3. Get all hotspot users from MikroTik
-    const mikrotikUsers = (await menu('/ip/hotspot/user/print')) as Array<any>
+    const mikrotikUsers = await safeWrite(menu, '/ip/hotspot/user/print')
     const mikrotikUsernames = new Set(mikrotikUsers.map((u) => u.name).filter(Boolean))
 
     // 4. Get all vouchers for this router from DB
@@ -470,7 +494,7 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
     // Scripts are named by date (YYYY-MM-DD or mon/d/yyyy)
     // Each script source contains lines: user/price/sales/date/time/phone/seller
     try {
-      const scripts = (await menu('/system/script/print')) as Array<any>
+      const scripts = await safeWrite(menu, '/system/script/print')
       const salesTransactions: Array<{
         username: string
         costPrice: number

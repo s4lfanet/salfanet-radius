@@ -304,12 +304,34 @@ export async function generateVouchers(data: GenerateVouchersInput, session: Ses
     console.error('RADIUS batch sync error:', syncError);
   }
 
-  // MikroTik local sync — sync vouchers to local-only routers
-  // Only sync if routerId is specified and router is local-only, or if no routerId (sync to all local)
+  // MikroTik local sync — fire and forget (non-blocking)
+  // Vouchers are already in DB; MikroTik sync can happen asynchronously.
+  // Group by routerId to avoid opening too many connections at once.
   try {
+    const routerGroups = new Map<string, string[]>();
+    const noRouterVoucherIds: string[] = [];
     for (const v of voucherData) {
-      await syncVoucherToAssignedRouter(v.id).catch(err => {
-        console.error(`MikroTik local sync error for ${v.code}:`, err);
+      if (v.routerId) {
+        if (!routerGroups.has(v.routerId)) routerGroups.set(v.routerId, []);
+        routerGroups.get(v.routerId)!.push(v.id);
+      } else {
+        noRouterVoucherIds.push(v.id);
+      }
+    }
+    // Fire-and-forget: sync each router group in background
+    for (const [rid, vids] of routerGroups) {
+      (async () => {
+        for (const vid of vids) {
+          await syncVoucherToAssignedRouter(vid).catch(err => {
+            console.error(`MikroTik local sync error for voucher ${vid}:`, err);
+          });
+        }
+      })();
+    }
+    // Fire-and-forget: sync vouchers without routerId to all local routers
+    for (const vid of noRouterVoucherIds) {
+      syncVoucherToAssignedRouter(vid).catch(err => {
+        console.error(`MikroTik local sync error for voucher ${vid}:`, err);
       });
     }
   } catch (localSyncError) {
