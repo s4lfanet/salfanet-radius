@@ -384,6 +384,7 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
       select: {
         code: true,
         agentId: true,
+        routerId: true,
         profile: { select: { name: true } },
       },
     });
@@ -422,8 +423,8 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
 
     // MikroTik local cleanup - fire and forget
     for (const v of vouchersToDelete) {
-      removeVoucherFromAllMikrotik(v.code).catch(err => {
-        console.error(`Failed to remove ${v.code} from MikroTik local:`, err);
+      removeVoucherFromAllMikrotik(v.code, v.routerId).catch(err => {
+        console.error(`[DELETE] Failed to remove ${v.code} from MikroTik local:`, err);
       });
     }
 
@@ -464,7 +465,7 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
 
     // MikroTik local cleanup - fire and forget
     removeVoucherFromAllMikrotik(voucher.code, voucher.routerId).catch(err => {
-      console.error('Failed to remove from MikroTik local:', err);
+      console.error(`[DELETE] Failed to remove ${voucher.code} from MikroTik local:`, err);
     });
 
     return { count: 1 };
