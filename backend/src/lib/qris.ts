@@ -159,10 +159,23 @@ export function extractMerchantInfo(qrisString: string): {
 
 // --- Generate Unique Amount ---------------------------------------------------
 
-export function generateUniqueAmount(baseAmount: number, invoiceId: string): number {
+export function generateUniqueAmount(
+  baseAmount: number,
+  invoiceId: string,
+  min: number = 1,
+  max: number = 999
+): number {
+  // Clamp min/max to valid range 1-999
+  const clampedMin = Math.max(1, Math.min(999, min));
+  const clampedMax = Math.max(clampedMin, Math.min(999, max));
+  const range = clampedMax - clampedMin + 1;
+
+  // Hash invoiceId for deterministic suffix
   const hash = crypto.createHash('md5').update(invoiceId).digest('hex');
-  const hexStr = hash.substring(0, 8);
-  const n = parseInt(hexStr, 16);
-  const suffix = (n % 999) + 1;
-  return baseAmount + suffix;
+  const n = parseInt(hash.substring(0, 8), 16);
+  const suffix = clampedMin + (n % range);
+
+  // Round base to nearest 1000 so suffix occupies last 3 digits
+  const base = Math.round(baseAmount / 1000) * 1000;
+  return base + suffix;
 }

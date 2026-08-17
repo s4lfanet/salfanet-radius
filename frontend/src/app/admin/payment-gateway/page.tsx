@@ -62,7 +62,7 @@ export default function PaymentGatewayPage() {
   const [xenditForm, setXenditForm] = useState({ apiKey: '', webhookToken: '', environment: 'sandbox', isActive: false });
   const [duitkuForm, setDuitkuForm] = useState({ merchantCode: '', apiKey: '', environment: 'sandbox', isActive: false });
   const [tripayForm, setTripayForm] = useState({ merchantCode: '', apiKey: '', privateKey: '', environment: 'sandbox', isActive: false });
-  const [qrisForm, setQrisForm] = useState({ staticCode: '', merchantName: '', enabled: false, deviceKey: '' });
+  const [qrisForm, setQrisForm] = useState({ staticCode: '', merchantName: '', enabled: false, deviceKey: '', uniqueMin: 1, uniqueMax: 999 });
   const [qrisTest, setQrisTest] = useState({ orderId: '', loading: false, result: null as null | { success: boolean; message: string; invoiceId?: string; baseAmount?: number; uniqueAmount?: number } });
 
   // ─── React Query: Payment gateway configs ────────────────────────────────────
@@ -120,13 +120,15 @@ export default function PaymentGatewayPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await apiAdmin<{ qrisStaticCode?: string; qrisMerchantName?: string; qrisEnabled?: boolean; qrisDeviceKey?: string }>('/api/company');
+        const res = await apiAdmin<{ qrisStaticCode?: string; qrisMerchantName?: string; qrisEnabled?: boolean; qrisDeviceKey?: string; qrisUniqueMin?: number; qrisUniqueMax?: number }>('/api/company');
         if (!cancelled && res) {
           setQrisForm({
             staticCode: res.qrisStaticCode || '',
             merchantName: res.qrisMerchantName || '',
             enabled: res.qrisEnabled || false,
             deviceKey: res.qrisDeviceKey || '',
+            uniqueMin: res.qrisUniqueMin ?? 1,
+            uniqueMax: res.qrisUniqueMax ?? 999,
           });
         }
       } catch (e) {
@@ -181,6 +183,8 @@ export default function PaymentGatewayPage() {
           qrisMerchantName: qrisForm.merchantName,
           qrisEnabled: qrisForm.enabled,
           qrisDeviceKey: qrisForm.deviceKey,
+          qrisUniqueMin: qrisForm.uniqueMin,
+          qrisUniqueMax: qrisForm.uniqueMax,
         }),
       });
       await showSuccess('QRIS Mandiri configuration saved');
@@ -677,6 +681,39 @@ export default function PaymentGatewayPage() {
                   maxLength={100}
                 />
                 <p className="mt-1 text-[9px] text-muted-foreground">Nama yang tampil di halaman pembayaran pelanggan.</p>
+              </div>
+
+              {/* Setting Angka Unik */}
+              <div className="p-2.5 bg-muted rounded-lg space-y-2">
+                <div>
+                  <p className="text-[11px] font-semibold">Angka Unik (Suffix Nominal)</p>
+                  <p className="text-[10px] text-muted-foreground">Sistem menambahkan angka unik ke nominal tagihan agar setiap invoice punya nominal berbeda untuk matching otomatis. Contoh: Rp150.000 + suffix 017 = Rp150.017.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground">Minimum (1-999)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={qrisForm.uniqueMin}
+                      onChange={(e) => setQrisForm({ ...qrisForm, uniqueMin: Math.max(1, Math.min(999, parseInt(e.target.value) || 1)) })}
+                      className="w-full mt-0.5 px-2.5 py-1.5 text-xs border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-medium text-muted-foreground">Maksimum (1-999)</label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={999}
+                      value={qrisForm.uniqueMax}
+                      onChange={(e) => setQrisForm({ ...qrisForm, uniqueMax: Math.max(1, Math.min(999, parseInt(e.target.value) || 999)) })}
+                      className="w-full mt-0.5 px-2.5 py-1.5 text-xs border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
+                    />
+                  </div>
+                </div>
+                <p className="text-[9px] text-muted-foreground">Rentang default 1-999. Persempit rentang jika ingin selisih lebih kecil (mis. 1-100). Nominal dibulatkan ke ribuan terdekat sebelum ditambah suffix.</p>
               </div>
 
               {/* Device Key untuk Android QrisListener */}

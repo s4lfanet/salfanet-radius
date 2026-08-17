@@ -176,7 +176,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const uniqueAmount = generateUniqueAmount(invoice.amount, invoice.id);
+      const uniqueAmount = generateUniqueAmount(
+        invoice.amount,
+        invoice.id,
+        company.qrisUniqueMin ?? 1,
+        company.qrisUniqueMax ?? 999
+      );
       let qrString: string;
       try {
         qrString = staticToDynamic(company.qrisStaticCode, uniqueAmount);
