@@ -39,6 +39,7 @@ export const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'radius_reconciliation', name: 'RADIUS Reconciliation',  description: 'Daily reconciliation between SalfaNet and FreeRADIUS (detect drift, report mismatches)', defaultSchedule: '0 6 * * *',   defaultScheduleLabel: 'Daily at 6 AM' },
   { type: 'external_task_processor', name: 'External Task Processor', description: 'Process external task outbox (MikroTik, WhatsApp, Email, CoA)', defaultSchedule: '* * * * *', defaultScheduleLabel: 'Every minute' },
   { type: 'financial_reconciliation', name: 'Financial Reconciliation', description: 'Reconcile invoice-payment consistency and detect financial anomalies', defaultSchedule: '0 5 * * *', defaultScheduleLabel: 'Daily at 5 AM' },
+  { type: 'hotspot_voucher_sync',    name: 'Hotspot Voucher Sync',    description: 'Sync voucher status dari MikroTik local-only routers', defaultSchedule: '*/5 * * * *',  defaultScheduleLabel: 'Every 5 minutes' },
 ];
 
 export const CRON_JOB_MAP = new Map(CRON_JOB_DEFS.map(j => [j.type, j]));
