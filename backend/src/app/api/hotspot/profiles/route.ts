@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from 'next/server'
 import { prisma } from '@/server/db/client'
 import { syncProfileToRadius } from '@/server/services/radius/hotspot-sync.service'
+import { syncHotspotProfileToAllLocalRouters, deleteHotspotProfileFromAllLocalRouters } from '@/server/services/mikrotik/hotspot-profile.service'
 import { requirePermission } from '@/server/middleware/api-auth'
 
 export async function GET() {
@@ -88,6 +89,13 @@ export async function POST(request: Request) {
       // Don't fail the request if sync fails
     }
 
+    // Auto-sync to MikroTik local-only routers
+    try {
+      await syncHotspotProfileToAllLocalRouters(profile.id, 'create')
+    } catch (syncError) {
+      console.error('MikroTik local sync error:', syncError)
+    }
+
     // Serialize BigInt fields for JSON response
     const serializedProfile = {
       ...profile,
@@ -163,6 +171,13 @@ export async function PUT(request: Request) {
       console.error('RADIUS sync error:', syncError)
     }
 
+    // Auto-sync to MikroTik local-only routers
+    try {
+      await syncHotspotProfileToAllLocalRouters(profile.id, 'update')
+    } catch (syncError) {
+      console.error('MikroTik local sync error:', syncError)
+    }
+
     // Serialize BigInt fields for JSON response
     const serializedProfile = {
       ...profile,
@@ -204,6 +219,13 @@ export async function DELETE(request: Request) {
         { error: `Cannot delete profile with ${voucherCount} associated voucher(s)` },
         { status: 400 }
       )
+    }
+
+    // Remove from MikroTik local-only routers before deleting from DB
+    try {
+      await deleteHotspotProfileFromAllLocalRouters(id)
+    } catch (syncError) {
+      console.error('MikroTik local delete error:', syncError)
     }
 
     await prisma.hotspotProfile.delete({

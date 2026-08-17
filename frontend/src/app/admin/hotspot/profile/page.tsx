@@ -1,7 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
-import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight } from "lucide-react"
+import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight, UploadCloud } from "lucide-react"
 import { useTranslation } from '@/hooks/useTranslation'
 import { showSuccess, showError } from '@/lib/sweetalert'
 import { apiAdmin } from '@/lib/api'
@@ -46,6 +46,8 @@ export default function HotspotProfilePage() {
   const [saving, setSaving] = useState(false)
   const [deleteProfileId, setDeleteProfileId] = useState<string | null>(null)
   const [showBurst, setShowBurst] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncingProfileId, setSyncingProfileId] = useState<string | null>(null)
 
   // ─── React Query: Profiles list ──────────────────────────────────────────────
   const { data: profilesData, isLoading: loading } = useApiQuery<{ profiles?: HotspotProfile[] }>('/api/hotspot/profiles', { staleTime: 30000 })
@@ -261,6 +263,36 @@ export default function HotspotProfilePage() {
     }
   }
 
+  const handleSyncProfile = async (profileId: string) => {
+    setSyncingProfileId(profileId)
+    try {
+      const res = await apiAdmin<{ success: boolean; message: string; total?: number; successCount?: number; failedCount?: number }>('/api/hotspot/profiles/sync', {
+        method: 'POST',
+        body: JSON.stringify({ profileId }),
+      })
+      await showSuccess(res.message || 'Sync berhasil')
+    } catch (error: unknown) {
+      await showError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setSyncingProfileId(null)
+    }
+  }
+
+  const handleSyncAll = async () => {
+    setSyncing(true)
+    try {
+      const res = await apiAdmin<{ success: boolean; message: string; totalProfiles?: number; totalRouters?: number }>('/api/hotspot/profiles/sync', {
+        method: 'POST',
+        body: JSON.stringify({}),
+      })
+      await showSuccess(res.message || 'Sync semua profil berhasil')
+    } catch (error: unknown) {
+      await showError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   const handleDelete = async () => {
     if (!deleteProfileId) return
     try {
@@ -347,6 +379,15 @@ export default function HotspotProfilePage() {
               title="Perbarui Data"
             >
               <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleSyncAll}
+              disabled={syncing || profiles.length === 0}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-card border border-border rounded-md hover:bg-muted disabled:opacity-50"
+              title="Sync semua profil ke router local-only"
+            >
+              {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+              Sync Router
             </button>
             <button
               onClick={() => { resetForm(); setIsDialogOpen(true) }}
@@ -436,6 +477,9 @@ export default function HotspotProfilePage() {
                   </div>
                 </div>
                 <div className="flex justify-end gap-1 border-t border-border pt-2">
+                  <button onClick={() => handleSyncProfile(profile.id)} disabled={syncingProfileId === profile.id} className="p-2 text-info hover:bg-info/10 rounded disabled:opacity-50" title="Sync ke Router Local">
+                    {syncingProfileId === profile.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+                  </button>
                   <button onClick={() => handleEdit(profile)} className="p-2 text-muted-foreground hover:bg-muted rounded" title="Edit Paket">
                     <Edit className="w-4 h-4" />
                   </button>
@@ -497,6 +541,14 @@ export default function HotspotProfilePage() {
                       </td>
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1">
+                          <button
+                            onClick={() => handleSyncProfile(profile.id)}
+                            disabled={syncingProfileId === profile.id}
+                            className="p-1 text-info hover:bg-info/10 rounded disabled:opacity-50"
+                            title="Sync ke Router Local"
+                          >
+                            {syncingProfileId === profile.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+                          </button>
                           <button
                             onClick={() => handleEdit(profile)}
                             className="p-1 text-muted-foreground hover:bg-muted rounded"
