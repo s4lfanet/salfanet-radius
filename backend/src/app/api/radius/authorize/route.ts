@@ -1,5 +1,6 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
+import { nowWIB } from "@/lib/timezone";
 
 /**
  * RADIUS Authorize Hook
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
       // Check if PPPoE user is blocked, stopped, or expired
       // NOTE: isolated users are NOT rejected - they login with restricted access
       if (pppoeUser) {
-        const now = new Date();
+        const now = nowWIB();
 
         if (pppoeUser.status === 'blocked' || pppoeUser.status === 'BLOCKED') {
           const message = 'Akun Diblokir - Hubungi Admin';
@@ -119,7 +120,7 @@ export async function POST(request: NextRequest) {
       }, { status: 200 });
     }
 
-    const now = new Date();
+    const now = nowWIB();
 
     // Check 1: Voucher status is EXPIRED
     if (voucher.status === 'EXPIRED') {
@@ -210,7 +211,7 @@ async function logRejection(username: string, replyMessage: string) {
         username: username,
         pass: replyMessage, // Store rejection reason in pass field
         reply: 'Access-Reject',
-        authdate: new Date(),
+        authdate: nowWIB(),
       },
     });
     

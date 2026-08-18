@@ -1,6 +1,7 @@
 import 'server-only'
 import { RouterOSAPI } from 'node-routeros'
 import { prisma } from '@/server/db/client'
+import { nowWIB } from '@/lib/timezone'
 
 export interface VoucherSyncResult {
   success: boolean
@@ -646,7 +647,8 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
       if (newStatus) {
         const updateData: any = { status: newStatus }
         if (newStatus === 'ACTIVE' && !voucher.firstLoginAt) {
-          updateData.firstLoginAt = new Date()
+          const now = nowWIB()
+          updateData.firstLoginAt = now
           // Calculate expiresAt based on profile validity
           if (!voucher.expiresAt) {
             const { validityValue, validityUnit } = voucher.profile
@@ -658,7 +660,7 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
               case 'MONTHS': intervalMs = validityValue * 30 * 24 * 60 * 60 * 1000; break
             }
             if (intervalMs > 0) {
-              updateData.expiresAt = new Date(Date.now() + intervalMs)
+              updateData.expiresAt = new Date(now.getTime() + intervalMs)
             }
           }
         }
