@@ -176,6 +176,12 @@ const menuGroups: MenuGroup[] = [
         href: '/admin/hotspot/rekap-voucher',
         requiredPermission: 'vouchers.view',
       },
+      {
+        titleKey: 'nav.agentReport',
+        icon: <Users className="w-4 h-4" />,
+        href: '/admin/hotspot/agent-report',
+        requiredPermission: 'reports.view',
+      },
     ],
   },
   {
