@@ -2,6 +2,7 @@
 import { prisma } from "@/server/db/client";
 import { Prisma } from "@prisma/client";
 import { nanoid } from "nanoid";
+import { nowWIB } from "@/lib/timezone";
 
 /**
  * RADIUS Post-Auth Hook
@@ -10,10 +11,10 @@ import { nanoid } from "nanoid";
  * 2. Check if voucher is expired
  * 3. Update voucher status
  *
- * TIMEZONE: Use new Date() (real UTC) for firstLoginAt and expiresAt.
- * This is consistent with createdAt (MySQL CURRENT_TIMESTAMP = UTC).
- * Frontend format(d, ...) converts UTC → browser WIB correctly.
- * authorize/route.ts also uses new Date() for comparison.
+ * TIMEZONE: Use nowWIB() (WIB-as-UTC) for firstLoginAt and expiresAt.
+ * This is consistent with createdAt (MySQL NOW() with time_zone='+07:00')
+ * and hotspot_sync cron which uses nowWIB() for expiry comparison.
+ * formatWIB() displays the UTC values as-is = WIB time.
  */
 
 export async function POST(request: NextRequest) {
@@ -41,8 +42,8 @@ export async function POST(request: NextRequest) {
       return new NextResponse(null, { status: 204 });
     }
 
-    // Get current time as real UTC (consistent with createdAt)
-    const now = new Date();
+    // Get current time in WIB-as-UTC format (consistent with createdAt and hotspot_sync cron)
+    const now = nowWIB();
     
     // Check if voucher is already expired (compare in same timezone)
     if (voucher.expiresAt && now > voucher.expiresAt) {
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
           break;
       }
 
-      // Calculate expiresAt (server local time)
+      // Calculate expiresAt in WIB-as-UTC format
       const expiresAt = new Date(now.getTime() + intervalMs);
 
       // Update using Prisma - store as server local time (WIB)
