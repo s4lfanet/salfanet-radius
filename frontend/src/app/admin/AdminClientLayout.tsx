@@ -115,6 +115,7 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'hotspot.view',
         children: [
           { titleKey: 'nav.agentList', href: '/admin/hotspot/agent', requiredPermission: 'hotspot.view' },
+          { titleKey: 'nav.agentReport', href: '/admin/hotspot/agent-report', requiredPermission: 'hotspot.view' },
           { titleKey: 'nav.topupRequests', href: '/admin/topup-requests', requiredPermission: 'invoices.view' },
         ],
       },
@@ -175,12 +176,6 @@ const menuGroups: MenuGroup[] = [
         icon: <BarChart3 className="w-4 h-4" />,
         href: '/admin/hotspot/rekap-voucher',
         requiredPermission: 'vouchers.view',
-      },
-      {
-        titleKey: 'nav.agentReport',
-        icon: <Users className="w-4 h-4" />,
-        href: '/admin/hotspot/agent-report',
-        requiredPermission: 'reports.view',
       },
     ],
   },
