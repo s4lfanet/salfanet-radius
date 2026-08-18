@@ -47,26 +47,29 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
 // ─── agent_sales ────────────────────────────────────────────────────────────
 /**
  * Catat penjualan voucher agent:
- *   - Cari voucher dengan status SOLD yang belum ada di agent_sales
+ *   - Cari voucher dengan status ACTIVE/EXPIRED yang punya agentId & firstLoginAt
+ *     yang belum tercatat di agent_sales
  *   - Buat record agent_sale untuk tracking komisi/setoran
- *   - Update balance agent jika diperlukan
  */
 export async function runAgentSales(): Promise<{ recorded: number; total: number; errors: string[] }> {
   const errors: string[] = [];
 
   try {
-    // Cari voucher SOLD yang punya agentId dan belum tercatat di agent_sales
+    // Cari voucher ACTIVE/EXPIRED yang punya agentId dan firstLoginAt
+    // yang belum tercatat di agent_sales
     const soldVouchers = await prisma.hotspotVoucher.findMany({
       where: {
-        status: 'SOLD',
+        status: { in: ['ACTIVE', 'EXPIRED'] },
         agentId: { not: null },
+        firstLoginAt: { not: null },
       },
       select: {
         id: true,
         code: true,
         agentId: true,
         profileId: true,
-        profile: { select: { name: true } },
+        firstLoginAt: true,
+        profile: { select: { name: true, sellingPrice: true, resellerFee: true } },
       },
       take: 100,
     });
@@ -82,20 +85,12 @@ export async function runAgentSales(): Promise<{ recorded: number; total: number
     });
     const existingSet = new Set(existingCodes.map(e => e.voucherCode));
 
-    // Ambil harga profile untuk amount
-    const profileIds = [...new Set(soldVouchers.map(v => v.profileId))];
-    const profiles = await prisma.hotspotProfile.findMany({
-      where: { id: { in: profileIds } },
-      select: { id: true, sellingPrice: true },
-    });
-    const profilePriceMap = new Map(profiles.map(p => [p.id, p.sellingPrice || 0]));
-
     let recorded = 0;
     for (const voucher of soldVouchers) {
       if (existingSet.has(voucher.code)) continue;
 
       try {
-        const amount = profilePriceMap.get(voucher.profileId) || 0;
+        const amount = voucher.profile?.resellerFee || 0;
         await prisma.agentSale.create({
           data: {
             id: `sale_${voucher.id}_${Date.now()}`,
@@ -104,6 +99,7 @@ export async function runAgentSales(): Promise<{ recorded: number; total: number
             profileName: voucher.profile?.name || 'Unknown',
             amount,
             paymentStatus: 'UNPAID',
+            createdAt: voucher.firstLoginAt!,
           },
         });
         recorded++;
