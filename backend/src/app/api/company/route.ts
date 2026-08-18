@@ -1,6 +1,7 @@
 ﻿import { NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
+import { setCurrentTimezone } from '@/lib/timezone';
 
 export async function GET() {
   try {
@@ -124,6 +125,9 @@ export async function POST(request: Request) {
     
     // If timezone changed, update configuration files
     if (data.timezone && data.timezone !== existingCompany?.timezone) {
+      // Update in-process timezone cache immediately
+      setCurrentTimezone(data.timezone);
+      
       try {
         const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
         const timezoneUpdateResponse = await fetch(`${baseUrl}/api/settings/timezone`, {
