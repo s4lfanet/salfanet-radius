@@ -606,7 +606,14 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
         routerId,
         status: { in: ['WAITING', 'ACTIVE'] },
       },
-      select: { id: true, code: true, status: true, firstLoginAt: true },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        firstLoginAt: true,
+        expiresAt: true,
+        profile: { select: { validityValue: true, validityUnit: true } },
+      },
     })
 
     // 5. Update voucher statuses
@@ -640,6 +647,20 @@ export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<
         const updateData: any = { status: newStatus }
         if (newStatus === 'ACTIVE' && !voucher.firstLoginAt) {
           updateData.firstLoginAt = new Date()
+          // Calculate expiresAt based on profile validity
+          if (!voucher.expiresAt) {
+            const { validityValue, validityUnit } = voucher.profile
+            let intervalMs = 0
+            switch (validityUnit) {
+              case 'MINUTES': intervalMs = validityValue * 60 * 1000; break
+              case 'HOURS': intervalMs = validityValue * 60 * 60 * 1000; break
+              case 'DAYS': intervalMs = validityValue * 24 * 60 * 60 * 1000; break
+              case 'MONTHS': intervalMs = validityValue * 30 * 24 * 60 * 60 * 1000; break
+            }
+            if (intervalMs > 0) {
+              updateData.expiresAt = new Date(Date.now() + intervalMs)
+            }
+          }
         }
 
         await prisma.hotspotVoucher.update({
