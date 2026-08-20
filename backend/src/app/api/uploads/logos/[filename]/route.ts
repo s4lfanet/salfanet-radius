@@ -3,16 +3,12 @@ import { readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { UPLOAD_DIR } from '@/lib/upload-dir';
-import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ filename: string }> }
 ) {
   try {
-    const authCheck = await requirePermission('settings.view');
-    if (!authCheck.authorized) return authCheck.response;
-
     const { filename } = await params;
     // Reject path traversal and unexpected characters.
     if (!filename || filename.includes('/') || filename.includes('\\') || filename.includes('..')) {

@@ -27,12 +27,12 @@ export const useAppStore = create<AppState>()(
     (set, get) => ({
       locale: 'id',
       company: {
-        name: 'SALFANET RADIUS',
-        email: 'admin@salfanet.com',
-        phone: '+62 812-3456-7890',
-        address: 'Jakarta, Indonesia',
+        name: '',
+        email: '',
+        phone: '',
+        address: '',
         baseUrl: '',
-        adminPhone: '+62 812-3456-7890',
+        adminPhone: '',
         timezone: 'Asia/Jakarta',
       },
       setLocale: () => {},
@@ -46,13 +46,13 @@ export const useAppStore = create<AppState>()(
         }));
       },
       initializeTimezone: async () => {
-        // Initialize timezone from server on app load
-        // Use /api/company/info (public) instead of /api/company (auth required)
+        // Initialize company info (including timezone) from server on app load.
+        // Use /api/company/info (public) — fetches name, logo, timezone, etc.
         // Throttle: only fetch once per 5 minutes (matches server Cache-Control)
         const lastFetch = (typeof window !== 'undefined' && (window as any).__companyInfoLastFetch) || 0;
         const now = Date.now();
         if (now - lastFetch < 5 * 60 * 1000) {
-          // Use stored timezone from persist
+          // Use stored data from persist
           const currentTz = get().company.timezone;
           setCurrentTimezone(currentTz);
           return;
@@ -64,17 +64,29 @@ export const useAppStore = create<AppState>()(
           const response = await fetch('/api/company/info');
           if (response.ok) {
             const data = await response.json();
-            const tz = data?.data?.timezone || data?.timezone;
-            if (tz) {
+            const c = data?.data || data;
+            if (c) {
+              const tz = c.timezone || 'Asia/Jakarta';
               setCurrentTimezone(tz);
               set((state) => ({
-                company: { ...state.company, timezone: tz },
+                company: {
+                  ...state.company,
+                  name: c.name || state.company.name,
+                  email: c.email || state.company.email,
+                  phone: c.phone || state.company.phone,
+                  address: c.address || state.company.address,
+                  baseUrl: c.baseUrl || state.company.baseUrl,
+                  adminPhone: c.adminPhone || c.phone || state.company.adminPhone,
+                  logo: c.logo || state.company.logo,
+                  timezone: tz,
+                  poweredBy: c.poweredBy || state.company.poweredBy,
+                },
               }));
             }
           }
         } catch (error) {
-          console.error('Error initializing timezone:', error);
-          // Use stored timezone from persist
+          console.error('Error initializing company info:', error);
+          // Use stored data from persist
           const currentTz = get().company.timezone;
           setCurrentTimezone(currentTz);
         }

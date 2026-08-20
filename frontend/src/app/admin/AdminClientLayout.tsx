@@ -993,12 +993,12 @@ function AdminLayoutContent({
                 </div>
               ) : (
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
-                  <span className="text-black font-black text-xs sm:text-sm">{company.name.charAt(0)}</span>
+                  <span className="text-black font-black text-xs sm:text-sm">{company.name?.charAt(0) || 'S'}</span>
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <h1 className="text-[11px] sm:text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px] sm:max-w-[110px]">
-                  {company.name}
+                  {company.name || 'Loading...'}
                 </h1>
                 <p className="text-[9px] sm:text-[10px] text-brand-600 dark:text-brand-400/60 tracking-[0.15em] sm:tracking-[0.2em] uppercase font-medium">{t('common.billingSystem')}</p>
               </div>
