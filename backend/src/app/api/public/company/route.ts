@@ -22,10 +22,10 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       company: {
-        name: company?.name || 'SALFANET RADIUS',
+        name: company?.name || '',
         logo: company?.logo || null,
         phone: company?.phone || null,
-        poweredBy: company?.poweredBy || 'SALFANET RADIUS',
+        poweredBy: company?.poweredBy || '',
         footerAdmin: company?.footerAdmin || null,
         footerCustomer: company?.footerCustomer || null,
         footerTechnician: company?.footerTechnician || null,
@@ -37,10 +37,10 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       company: {
-        name: 'SALFANET RADIUS',
+        name: '',
         logo: null,
         phone: null,
-        poweredBy: 'SALFANET RADIUS',
+        poweredBy: '',
         footerAdmin: null,
         footerCustomer: null,
         footerTechnician: null,
