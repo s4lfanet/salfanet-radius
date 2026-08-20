@@ -69,6 +69,10 @@ function parseUptime(uptime: string | null | undefined): number {
 /**
  * Fetch active PPPoE sessions from a MikroTik router (/ppp/active/print).
  * Returns detailed session info (username, IP, MAC, uptime, bytes).
+ *
+ * Note: /ppp/active/print does NOT include byte counters (rx-byte/tx-byte).
+ * We fetch them separately from /interface/print?type=pppoe-in and merge
+ * by interface name (<pppoe-{session.name}>).
  */
 export async function listPppActiveDetailed(routerId: string): Promise<MikrotikActiveSession[]> {
   const router = await getRouterConfig(routerId)
@@ -92,18 +96,41 @@ export async function listPppActiveDetailed(routerId: string): Promise<MikrotikA
       ),
     ])
     const active = await safePrint(api, '/ppp/active/print')
-    return active.map((s: any) => ({
-      username: s.name || s.user || '',
-      ipAddress: s.address || null,
-      macAddress: s['caller-id'] || s['mac-address'] || null,
-      sessionId: s['.id'] || null,
-      uptime: s.uptime || null,
-      rxBytes: Number(s['rx-byte'] || s['input-byte'] || 0),
-      txBytes: Number(s['tx-byte'] || s['output-byte'] || 0),
-      routerId: router.id,
-      routerName: router.name,
-      type: 'pppoe' as const,
-    })).filter((s: MikrotikActiveSession) => s.username)
+
+    // Fetch byte counters from interface level (pppoe-in interfaces)
+    // Interface names are <pppoe-{session.name}>
+    let byteMap = new Map<string, { rx: number; tx: number }>()
+    try {
+      const ifaces = await safePrint(api, '/interface/print', ['?type=pppoe-in', '=.proplist=.id,name,rx-byte,tx-byte'])
+      for (const iface of ifaces) {
+        if (iface.name && iface['rx-byte'] !== undefined) {
+          byteMap.set(iface.name, {
+            rx: Number(iface['rx-byte'] || 0),
+            tx: Number(iface['tx-byte'] || 0),
+          })
+        }
+      }
+    } catch {
+      // Non-fatal: byte counters unavailable, sessions will show 0
+    }
+
+    return active.map((s: any) => {
+      const sessionName = s.name || s.user || ''
+      const ifaceName = `<pppoe-${sessionName}>`
+      const byteCounters = byteMap.get(ifaceName)
+      return {
+        username: sessionName,
+        ipAddress: s.address || null,
+        macAddress: s['caller-id'] || s['mac-address'] || null,
+        sessionId: s['.id'] || null,
+        uptime: s.uptime || null,
+        rxBytes: byteCounters?.rx ?? Number(s['rx-byte'] || s['input-byte'] || 0),
+        txBytes: byteCounters?.tx ?? Number(s['tx-byte'] || s['output-byte'] || 0),
+        routerId: router.id,
+        routerName: router.name,
+        type: 'pppoe' as const,
+      }
+    }).filter((s: MikrotikActiveSession) => s.username)
   } catch (e: any) {
     console.error(`[MIKROTIK_SESSIONS] listPppActiveDetailed for ${router.name}:`, e?.message || e)
     return []
