@@ -174,17 +174,30 @@ export async function rateLimit(
   const redisKey = `ratelimit:${clientId}`;
   const windowSeconds = Math.ceil(config.windowMs / 1000);
 
+  // ─── Skip rate limiting for internal/localhost requests ──────────────────
+  // NextAuth authorize() calls backend verify from localhost (server-to-server).
+  // Rate limiting localhost would block all logins after 10 total attempts.
+  const clientIp = getClientIp(request);
+  if (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === 'localhost') {
+    return false;
+  }
+
   // ─── Try Redis first ──────────────────────────────────────────────────────
   const redis = getRedis();
   if (redis) {
     try {
-      // Atomic INCR + EXPIRE pipeline
-      const pipeline = redis.pipeline();
-      pipeline.incr(redisKey);
-      pipeline.expire(redisKey, windowSeconds, 'NX'); // only set if no TTL
-      const results = await pipeline.exec();
-      const count = results?.[0]?.[1] as number;
-      if (count && count > config.max) {
+      // Atomic INCR + EXPIRE via Lua script (Redis 6 compatible)
+      // Sets TTL only on first INCR (when count == 1), avoiding the need
+      // for EXPIRE ... NX which is Redis 7+ only.
+      const luaScript = `
+        local count = redis.call('INCR', KEYS[1])
+        if count == 1 then
+          redis.call('EXPIRE', KEYS[1], tonumber(ARGV[1]))
+        end
+        return count
+      `;
+      const count = await redis.eval(luaScript, 1, redisKey, windowSeconds);
+      if (count && (count as number) > config.max) {
         return true;
       }
       return false;
