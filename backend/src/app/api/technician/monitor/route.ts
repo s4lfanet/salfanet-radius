@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { batchFetchMikrotikActiveSessions, parseUptime } from '@/server/services/mikrotik/active-sessions.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -34,6 +35,19 @@ export async function GET(req: NextRequest) {
 
   const TZ_OFFSET_MS = getTimezoneOffsetMs(); // Dynamic timezone offset
   const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
+
+  // Format uptime seconds to human-readable string with days support
+  function formatUptime(seconds: number): string {
+    if (!seconds) return '0s';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (days > 0) return `${days}d ${hours}h ${mins}m`;
+    if (hours > 0) return `${hours}h ${mins}m`;
+    if (mins > 0) return `${mins}m ${secs}s`;
+    return `${secs}s`;
+  }
 
   // 1. Customer stats by status
   const [statusCounts, onlineSessions] = await Promise.all([
@@ -88,12 +102,6 @@ export async function GET(req: NextRequest) {
       : now;
     const uptimeSec = Math.max(0, Math.floor((now - startMs) / 1000));
 
-    const hours = Math.floor(uptimeSec / 3600);
-    const mins = Math.floor((uptimeSec % 3600) / 60);
-    const secs = uptimeSec % 60;
-    const uptime =
-      hours > 0 ? `${hours}j ${mins}m` : mins > 0 ? `${mins}m ${secs}d` : `${secs}d`;
-
     const customer = customerByUsername.get(s.username);
 
     const dl = Number(s.acctoutputoctets ?? 0);
@@ -111,7 +119,7 @@ export async function GET(req: NextRequest) {
       framedIp: s.framedipaddress,
       nasIp: s.nasipaddress,
       uptimeSec,
-      uptime,
+      uptime: formatUptime(uptimeSec),
       download: fmtBytes(dl),
       upload: fmtBytes(ul),
       customerName: customer?.name ?? null,
@@ -121,6 +129,66 @@ export async function GET(req: NextRequest) {
       routerName: customer?.router?.name ?? null,
     };
   });
+
+  // ── Fetch sessions from MikroTik local-auth routers ──────────────────────
+  // Routers with authMode='local' don't send RADIUS accounting, so their
+  // sessions won't appear in radacct. Fetch directly from MikroTik API.
+  const routers = await prisma.router.findMany({
+    where: { isActive: true },
+    select: { id: true, name: true, authMode: true },
+  });
+  const existingUsernames = new Set(sessions.map(s => s.username));
+  const mikrotikSessions = await batchFetchMikrotikActiveSessions(routers, null);
+
+  // Look up customer data for MikroTik sessions
+  const mtUsernames = mikrotikSessions
+    .map(s => s.username)
+    .filter(u => !existingUsernames.has(u));
+  const mtCustomers = mtUsernames.length
+    ? await prisma.pppoeUser.findMany({
+        where: { username: { in: mtUsernames } },
+        select: {
+          username: true,
+          name: true,
+          phone: true,
+          profile: { select: { name: true } },
+          area: { select: { name: true } },
+          router: { select: { name: true } },
+        },
+      })
+    : [];
+  const mtCustomerMap = new Map(mtCustomers.map(c => [c.username, c]));
+
+  for (const ms of mikrotikSessions) {
+    if (existingUsernames.has(ms.username)) continue;
+    const customer = mtCustomerMap.get(ms.username);
+    if (!customer) continue; // Only show registered users
+
+    const uptimeSec = parseUptime(ms.uptime);
+    const fmtBytes = (b: number) => {
+      if (b > 1073741824) return `${(b / 1073741824).toFixed(1)} GB`;
+      if (b > 1048576) return `${(b / 1048576).toFixed(1)} MB`;
+      if (b > 1024) return `${(b / 1024).toFixed(1)} KB`;
+      return `${b} B`;
+    };
+
+    sessions.push({
+      uniqueId: `mt-${ms.routerId}-${ms.username}`,
+      username: ms.username,
+      framedIp: ms.ipAddress ?? '-',
+      nasIp: '-',
+      uptimeSec,
+      uptime: formatUptime(uptimeSec),
+      download: fmtBytes(ms.rxBytes),
+      upload: fmtBytes(ms.txBytes),
+      customerName: customer?.name ?? null,
+      customerPhone: customer?.phone ?? null,
+      profileName: customer?.profile?.name ?? null,
+      areaName: customer?.area?.name ?? null,
+      routerName: ms.routerName,
+    });
+    existingUsernames.add(ms.username);
+  }
 
   // Isolated customers
   const isolatedCustomers = await prisma.pppoeUser.findMany({
