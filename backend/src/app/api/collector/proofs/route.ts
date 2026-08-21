@@ -21,13 +21,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ proofs: [] });
     }
 
-    // Get payment proofs for users in this collector's area
+    // Get payment proofs — query by collectorId first (proofs uploaded by this collector)
+    // Also get proofs for users in this collector's area via username matching
+    const areaUsers = await prisma.pppoeUser.findMany({
+      where: { areaId: adminUser.areaId },
+      select: { username: true, name: true, phone: true },
+    });
+    const areaUsernames = areaUsers.map(u => u.username);
+
     const proofs = await prisma.paymentProof.findMany({
       where: {
         status: filter,
-        invoice: {
-          user: { areaId: adminUser.areaId },
-        },
+        OR: [
+          { collectorId: collector.id },
+          { username: { in: areaUsernames } },
+        ],
       },
       select: {
         id: true,
@@ -40,35 +48,43 @@ export async function GET(req: NextRequest) {
         reviewedAt: true,
         collectorId: true,
         createdAt: true,
-        invoice: {
-          select: {
-            invoiceNumber: true,
-            customerName: true,
-            user: {
-              select: { name: true, phone: true },
-            },
-          },
-        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
+    // Get invoice details separately
+    const invoiceIds = proofs.map(p => p.invoiceId);
+    const invoices = await prisma.invoice.findMany({
+      where: { id: { in: invoiceIds } },
+      select: {
+        id: true,
+        invoiceNumber: true,
+        customerName: true,
+      },
+    });
+    const invoiceMap = new Map(invoices.map(i => [i.id, i]));
+    const userMap = new Map(areaUsers.map(u => [u.username, u]));
+
     return NextResponse.json({
-      proofs: proofs.map(p => ({
-        id: p.id,
-        invoice_id: p.invoiceId,
-        invoice_number: p.invoice?.invoiceNumber || '',
-        amount: p.amount,
-        status: p.status,
-        reject_reason: p.rejectReason,
-        reviewed_at: p.reviewedAt,
-        proof_image: p.proofImage,
-        submitted_at: p.createdAt,
-        fullname: p.invoice?.customerName || p.invoice?.user?.name || p.username,
-        username: p.username,
-        phone: p.invoice?.user?.phone || '',
-        is_my_upload: p.collectorId === collector.id,
-      })),
+      proofs: proofs.map(p => {
+        const inv = invoiceMap.get(p.invoiceId);
+        const usr = userMap.get(p.username);
+        return {
+          id: p.id,
+          invoice_id: p.invoiceId,
+          invoice_number: inv?.invoiceNumber || '',
+          amount: p.amount,
+          status: p.status,
+          reject_reason: p.rejectReason,
+          reviewed_at: p.reviewedAt,
+          proof_image: p.proofImage,
+          submitted_at: p.createdAt,
+          fullname: inv?.customerName || usr?.name || p.username,
+          username: p.username,
+          phone: usr?.phone || '',
+          is_my_upload: p.collectorId === collector.id,
+        };
+      }),
     });
   } catch (error) {
     console.error('Collector proofs error:', error);
