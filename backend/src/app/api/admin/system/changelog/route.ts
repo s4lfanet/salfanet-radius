@@ -8,6 +8,7 @@ import path from 'path';
 const execAsync = promisify(exec);
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 600; // 10 minutes — build operations take time
 
 // Ensure PATH includes common binary locations for PM2 standalone processes
 const EXEC_ENV = {
@@ -150,21 +151,21 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Backend install + build
     try {
-      await runCmd('CI=true pnpm install --no-frozen-lockfile 2>&1', `${appDir}/backend`, 120000);
-      await runCmd('CI=true pnpm build 2>&1', `${appDir}/backend`, 180000);
+      await runCmd('CI=true pnpm install --no-frozen-lockfile 2>&1', `${appDir}/backend`, 180000);
+      await runCmd('CI=true pnpm build 2>&1', `${appDir}/backend`, 300000);
       steps.push({ step: 'Backend build', status: 'success' });
     } catch (err: any) {
-      steps.push({ step: 'Backend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 300) });
+      steps.push({ step: 'Backend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 500) });
       return NextResponse.json({ success: false, steps, error: 'Backend build failed' }, { status: 500 });
     }
 
     // Step 4: Frontend install + build
     try {
-      await runCmd('CI=true pnpm install --no-frozen-lockfile 2>&1', `${appDir}/frontend`, 120000);
-      await runCmd('CI=true pnpm build 2>&1', `${appDir}/frontend`, 180000);
+      await runCmd('CI=true pnpm install --no-frozen-lockfile 2>&1', `${appDir}/frontend`, 180000);
+      await runCmd('CI=true pnpm build 2>&1', `${appDir}/frontend`, 300000);
       steps.push({ step: 'Frontend build', status: 'success' });
     } catch (err: any) {
-      steps.push({ step: 'Frontend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 300) });
+      steps.push({ step: 'Frontend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 500) });
       return NextResponse.json({ success: false, steps, error: 'Frontend build failed' }, { status: 500 });
     }
 
