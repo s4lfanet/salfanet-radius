@@ -52,13 +52,27 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    // Get confirmations for this date
+    const confirmations = await prisma.collectorSettlementConfirmation.findMany({
+      where: { date: date || new Date().toISOString().slice(0, 10) },
+      select: { collectorId: true, confirmedBy: true, confirmedAt: true },
+    });
+    const confirmMap: Record<string, { confirmed_by: string; confirmed_at: Date }> = {};
+    for (const c of confirmations) {
+      const admin = await prisma.adminUser.findUnique({
+        where: { id: c.confirmedBy },
+        select: { name: true },
+      });
+      confirmMap[c.collectorId] = { confirmed_by: admin?.name || 'Admin', confirmed_at: c.confirmedAt };
+    }
+
     const result = collectors.map(c => {
       const cInvoices = invoices.filter(i => i.paidById === c.id);
       const totalAmount = cInvoices.reduce((s, i) => s + i.amount, 0);
       const cashAmount = cInvoices.filter(i => !i.paymentMethod || i.paymentMethod === 'cash').reduce((s, i) => s + i.amount, 0);
       const transferAmount = cInvoices.filter(i => i.paymentMethod && i.paymentMethod !== 'cash').reduce((s, i) => s + i.amount, 0);
 
-      // Check if there's a settlement confirmation for this date
+      const conf = confirmMap[c.id];
       return {
         collector_id: c.id,
         collector_name: c.name,
@@ -67,6 +81,8 @@ export async function GET(req: NextRequest) {
         total_amount: totalAmount,
         cash_amount: cashAmount,
         transfer_amount: transferAmount,
+        confirmed_by: conf?.confirmed_by || null,
+        confirmed_at: conf?.confirmed_at || null,
         invoices: cInvoices.map(i => ({
           id: i.id,
           invoiceNumber: i.invoiceNumber,

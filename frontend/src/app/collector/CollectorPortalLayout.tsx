@@ -16,6 +16,8 @@ import {
   Sun,
   Moon,
   Loader2,
+  Inbox,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
@@ -35,6 +37,8 @@ const MENU_ITEMS = [
   { title: 'Dashboard', icon: <LayoutDashboard className="w-4 h-4" />, href: '/collector/dashboard' },
   { title: 'Tagihan', icon: <Users className="w-4 h-4" />, href: '/collector/billing' },
   { title: 'Setoran Saya', icon: <Wallet className="w-4 h-4" />, href: '/collector/settlements' },
+  { title: 'Koleksi Saya', icon: <History className="w-4 h-4" />, href: '/collector/my-collections' },
+  { title: 'Bukti Transfer', icon: <Inbox className="w-4 h-4" />, href: '/collector/proofs' },
   { title: 'Pelanggan Isolir', icon: <UserX className="w-4 h-4" />, href: '/collector/isolir' },
   { title: 'Cabut ONT', icon: <Unplug className="w-4 h-4" />, href: '/collector/ont' },
 ];
