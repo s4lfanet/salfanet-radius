@@ -261,7 +261,7 @@ export default function PPPoESessionsPage() {
         </div>
         <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
           <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide">{t('sessions.router')}</p>
-          <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{routers.filter(r => r.isActive).length || '-'}</p>
+          <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{routers.length || '-'}</p>
         </div>
       </div>
 
