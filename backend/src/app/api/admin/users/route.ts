@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         role: true,
         isActive: true,
         phone: true,
+        areaId: true,
         createdAt: true,
         updatedAt: true,
         lastLogin: true,
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { username, email, password, name, role, phone, isActive, permissions } = body;
+    const { username, email, password, name, role, phone, isActive, permissions, areaId } = body;
 
     // Validate required fields
     if (!username || !password) {
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate role against allowlist
-    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN'];
+    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN', 'VIEWER', 'COLLECTOR'];
     const finalRole = role || 'OPERATOR';
     if (!allowedRoles.includes(finalRole)) {
       return NextResponse.json(
@@ -134,6 +135,7 @@ export async function POST(request: NextRequest) {
         name: name || username,
         role: finalRole,
         phone: formattedPhone || null,
+        areaId: areaId || null,
         isActive: isActive !== undefined ? isActive : true,
       },
       select: {
@@ -144,6 +146,7 @@ export async function POST(request: NextRequest) {
         role: true,
         isActive: true,
         phone: true,
+        areaId: true,
         createdAt: true,
       },
     });

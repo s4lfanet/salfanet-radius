@@ -19,7 +19,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { email, password, name, role, phone, isActive, permissions } = body;
+    const { email, password, name, role, phone, isActive, permissions, areaId } = body;
 
     // Check if user exists
     const existing = await prisma.adminUser.findUnique({
@@ -34,7 +34,7 @@ export async function PUT(
     }
 
     // Validate role against allowlist if provided
-    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN'];
+    const allowedRoles = ['OPERATOR', 'FINANCE', 'CUSTOMER_SERVICE', 'TECHNICIAN', 'MARKETING', 'SUPER_ADMIN', 'VIEWER', 'COLLECTOR'];
     if (role !== undefined && !allowedRoles.includes(role)) {
       return NextResponse.json(
         { success: false, error: 'Invalid role' },
@@ -86,6 +86,7 @@ export async function PUT(
       name,
       phone: formattedPhone || null,
     };
+    if (areaId !== undefined) updateData.area = areaId ? { connect: { id: areaId } } : { disconnect: true };
     if (role !== undefined) updateData.role = role;
     if (isActive !== undefined) updateData.isActive = isActive;
 
