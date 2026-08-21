@@ -175,6 +175,12 @@ const menuGroups: MenuGroup[] = [
         href: '/admin/hotspot/rekap-voucher',
         requiredPermission: 'vouchers.view',
       },
+      {
+        titleKey: 'nav.collectorSettlements',
+        icon: <Wallet className="w-4 h-4" />,
+        href: '/admin/collector-settlements',
+        requiredPermission: 'keuangan.view',
+      },
     ],
   },
   {
