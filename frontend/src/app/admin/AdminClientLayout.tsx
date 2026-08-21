@@ -45,7 +45,6 @@ import {
   Send,
   Smartphone,
   Cloud,
-  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin, onUnauthorized } from '@/lib/api';
@@ -315,12 +314,6 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.inventoryCategories', href: '/admin/inventory/categories', requiredPermission: 'settings.view' },
           { titleKey: 'nav.inventorySuppliers', href: '/admin/inventory/suppliers', requiredPermission: 'settings.view' },
         ],
-      },
-      {
-        titleKey: 'nav.manageTechnicians',
-        icon: <UserCog className="w-4 h-4" />,
-        href: '/admin/technicians',
-        requiredPermission: 'users.view',
       },
       {
         titleKey: 'nav.activityLogs',
