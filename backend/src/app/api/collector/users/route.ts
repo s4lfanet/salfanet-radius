@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
     const users = await prisma.pppoeUser.findMany({
       where: {
         areaId: adminUser.areaId,
-        status: { in: ['active', 'suspended'] },
       },
       select: {
         id: true,
