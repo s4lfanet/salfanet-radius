@@ -1,6 +1,10 @@
 #!/bin/bash
-PID=$(pm2 pid salfanet-backend 2>/dev/null)
-echo "PID: $PID"
-cat /proc/$PID/environ 2>&1 | tr '\0' '\n' | grep PATH
+cd /var/www/salfanet-radius/backend
+echo "PATH=$PATH"
+echo "which pnpm: $(which pnpm)"
+echo "pnpm version:"
+pnpm --version 2>&1
 echo "---"
-which pnpm node npx
+echo "pnpm install test:"
+pnpm install --no-frozen-lockfile 2>&1 | tail -10
+echo "exit code: $?"
