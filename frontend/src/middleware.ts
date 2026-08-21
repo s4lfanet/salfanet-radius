@@ -2,16 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
 /**
- * Route protection + subdomain routing middleware.
- *
- * Subdomain routing:
- *   customer.domain.com/  → /customer/
- *   pelanggan.domain.com/ → /customer/
- *   agent.domain.com/     → /agent/
- *   agen.domain.com/      → /agent/
- *   teknisi.domain.com/   → /technician/
- *   technician.domain.com/→ /technician/
- *   admin.domain.com/     → /admin/
+ * Route protection middleware.
  *
  * Admin routes (/admin/*) require a valid NextAuth JWT session.
  * Agent, customer, and technician portals use client-side token auth
@@ -37,49 +28,17 @@ const PUBLIC_PATHS = [
   '/download-apk',
 ];
 
-const SUBDOMAIN_MAP: Record<string, string> = {
-  'admin': '/admin',
-  'customer': '/customer',
-  'pelanggan': '/customer',
-  'agent': '/agent',
-  'agen': '/agent',
-  'teknisi': '/technician',
-  'technician': '/technician',
-};
-
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
 
 export async function middleware(req: NextRequest) {
-  const { pathname, search } = req.nextUrl;
-  const host = req.headers.get('host') || '';
+  const { pathname } = req.nextUrl;
 
   // Skip non-page requests and API routes entirely
   if (pathname.startsWith('/api/')) return NextResponse.next();
   if (pathname.startsWith('/_next/')) return NextResponse.next();
   if (pathname.includes('.')) return NextResponse.next();
-
-  // ─── Subdomain routing ──────────────────────────────────────────────
-  // Extract subdomain from host (strip port if present)
-  const hostname = host.split(':')[0];
-  const parts = hostname.split('.');
-
-  // Only rewrite if we have a subdomain (parts.length >= 3 for sub.domain.tld)
-  // or if using a custom domain with known subdomain prefix
-  if (parts.length >= 3) {
-    const sub = parts[0].toLowerCase();
-    const targetPath = SUBDOMAIN_MAP[sub];
-
-    if (targetPath) {
-      // Rewrite: sub.domain.com/foo → domain.com/customer/foo
-      const newPath = pathname === '/' ? targetPath : `${targetPath}${pathname}`;
-      const url = req.nextUrl.clone();
-      url.pathname = newPath;
-      // Keep the same host so the browser URL doesn't change
-      return NextResponse.rewrite(url);
-    }
-  }
 
   // ─── Auth for /admin/* routes ───────────────────────────────────────
   if (!pathname.startsWith('/admin')) return NextResponse.next();
