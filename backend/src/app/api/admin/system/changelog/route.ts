@@ -9,6 +9,12 @@ const execAsync = promisify(exec);
 
 export const dynamic = 'force-dynamic';
 
+// Ensure PATH includes common binary locations for PM2 standalone processes
+const EXEC_ENV = {
+  ...process.env,
+  PATH: `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${process.env.PATH || ''}`,
+};
+
 function getAppDir(): string {
   const candidates = [
     process.env.SALFANET_APP_DIR,
@@ -114,7 +120,7 @@ export async function POST(req: NextRequest) {
 
     // Step 1: Git pull
     try {
-      const { stdout } = await execAsync('git pull origin master 2>&1', { cwd: appDir, timeout: 60000 });
+      const { stdout } = await execAsync('git pull origin master 2>&1', { cwd: appDir, timeout: 60000, env: EXEC_ENV });
       steps.push({ step: 'Git pull', status: 'success', output: stdout.trim().substring(0, 200) });
     } catch (err: any) {
       steps.push({ step: 'Git pull', status: 'error', output: err.message?.substring(0, 200) });
@@ -123,7 +129,7 @@ export async function POST(req: NextRequest) {
 
     // Step 2: Prisma db push
     try {
-      const { stdout } = await execAsync('npx prisma db push 2>&1', { cwd: `${appDir}/backend`, timeout: 120000 });
+      const { stdout } = await execAsync('npx prisma db push 2>&1', { cwd: `${appDir}/backend`, timeout: 120000, env: EXEC_ENV });
       steps.push({ step: 'Prisma db push', status: 'success', output: stdout.trim().substring(0, 200) });
     } catch (err: any) {
       steps.push({ step: 'Prisma db push', status: 'error', output: err.message?.substring(0, 200) });
@@ -131,8 +137,8 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Backend install + build
     try {
-      await execAsync('pnpm install --no-frozen-lockfile 2>&1', { cwd: `${appDir}/backend`, timeout: 120000 });
-      await execAsync('pnpm build 2>&1', { cwd: `${appDir}/backend`, timeout: 180000 });
+      await execAsync('pnpm install --no-frozen-lockfile 2>&1', { cwd: `${appDir}/backend`, timeout: 120000, env: EXEC_ENV });
+      await execAsync('pnpm build 2>&1', { cwd: `${appDir}/backend`, timeout: 180000, env: EXEC_ENV });
       steps.push({ step: 'Backend build', status: 'success' });
     } catch (err: any) {
       steps.push({ step: 'Backend build', status: 'error', output: err.message?.substring(0, 200) });
@@ -141,8 +147,8 @@ export async function POST(req: NextRequest) {
 
     // Step 4: Frontend install + build
     try {
-      await execAsync('pnpm install --no-frozen-lockfile 2>&1', { cwd: `${appDir}/frontend`, timeout: 120000 });
-      await execAsync('pnpm build 2>&1', { cwd: `${appDir}/frontend`, timeout: 180000 });
+      await execAsync('pnpm install --no-frozen-lockfile 2>&1', { cwd: `${appDir}/frontend`, timeout: 120000, env: EXEC_ENV });
+      await execAsync('pnpm build 2>&1', { cwd: `${appDir}/frontend`, timeout: 180000, env: EXEC_ENV });
       steps.push({ step: 'Frontend build', status: 'success' });
     } catch (err: any) {
       steps.push({ step: 'Frontend build', status: 'error', output: err.message?.substring(0, 200) });
@@ -151,7 +157,7 @@ export async function POST(req: NextRequest) {
 
     // Step 5: Restart PM2
     try {
-      await execAsync('pm2 restart salfanet-frontend salfanet-backend salfanet-cron 2>&1', { timeout: 30000 });
+      await execAsync('pm2 restart salfanet-frontend salfanet-backend salfanet-cron 2>&1', { timeout: 30000, env: EXEC_ENV });
       steps.push({ step: 'PM2 restart', status: 'success' });
     } catch (err: any) {
       steps.push({ step: 'PM2 restart', status: 'error', output: err.message?.substring(0, 200) });
@@ -161,7 +167,7 @@ export async function POST(req: NextRequest) {
     // Get new commit
     let newCommit = '';
     try {
-      const { stdout } = await execAsync('git rev-parse --short HEAD', { cwd: appDir, timeout: 5000 });
+      const { stdout } = await execAsync('git rev-parse --short HEAD', { cwd: appDir, timeout: 5000, env: EXEC_ENV });
       newCommit = stdout.trim();
     } catch {
       // ignore
