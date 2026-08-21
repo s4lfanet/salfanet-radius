@@ -27,10 +27,10 @@ export async function POST(req: NextRequest) {
     const { services, delay = 3000 } = await req.json();
 
     // Validate services
-    const validServices = ['pm2', 'freeradius', 'all'];
+    const validServices = ['pm2', 'freeradius', 'cron', 'all'];
     if (!services || !validServices.includes(services)) {
       return NextResponse.json({ 
-        error: 'Invalid services parameter. Use: pm2, freeradius, or all' 
+        error: 'Invalid services parameter. Use: pm2, freeradius, cron, or all' 
       }, { status: 400 });
     }
 
@@ -60,6 +60,10 @@ export async function POST(req: NextRequest) {
     
     if (services === 'pm2' || services === 'all') {
       commands.push('pm2 restart all --update-env');
+    }
+    
+    if (services === 'cron') {
+      commands.push('pm2 restart salfanet-cron --update-env');
     }
     
     if (services === 'freeradius' || services === 'all') {

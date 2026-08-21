@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Clock, Play, RefreshCw, CheckCircle, XCircle, Loader2, Activity, Settings2, RotateCcw, Pencil, X } from 'lucide-react';
+import { Clock, Play, RefreshCw, CheckCircle, XCircle, Loader2, Activity, Settings2, RotateCcw, Pencil, X, Zap } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin } from '@/lib/api';
@@ -212,6 +212,7 @@ export default function CronSettingsPage() {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'jobs' | 'schedules' | 'history'>('jobs');
   const [editingSchedule, setEditingSchedule] = useState<ScheduleConfig | null>(null);
+  const [restartingCron, setRestartingCron] = useState(false);
 
   const jobs = useMemo(() => statusData?.jobs || [], [statusData]);
   const schedules = useMemo(() => schedulesData?.schedules || [], [schedulesData]);
@@ -268,6 +269,26 @@ export default function CronSettingsPage() {
       }
     } catch (error: unknown) {
       addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to save schedule' });
+    }
+  };
+
+  const restartCron = async () => {
+    setRestartingCron(true);
+    try {
+      const data = await apiAdmin<{ success: boolean; message?: string; error?: string }>('/api/settings/restart-services', {
+        method: 'POST',
+        body: JSON.stringify({ services: 'cron', delay: 1000 }),
+      });
+      if (data.success) {
+        addToast({ type: 'success', title: 'Cron Restarted', description: 'salfanet-cron berhasil di-restart. Jadwal baru segera diterapkan.', duration: 4000 });
+        setTimeout(() => loadData(), 3000);
+      } else {
+        addToast({ type: 'error', title: t('common.error'), description: data.error || 'Failed to restart cron' });
+      }
+    } catch (error: unknown) {
+      addToast({ type: 'error', title: t('common.error'), description: (error instanceof Error ? error.message : String(error)) || 'Failed to restart cron' });
+    } finally {
+      setRestartingCron(false);
     }
   };
 
@@ -435,11 +456,19 @@ export default function CronSettingsPage() {
               </p>
             </div>
 
-            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400 flex items-center gap-2 px-6 py-2.5">
-              <span className="font-semibold">⚠ Catatan:</span>
-              Perubahan jadwal disimpan ke database. Cron runner membaca jadwal saat startup — jalankan
-              <code className="mx-1 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded font-mono">pm2 restart salfanet-cron</code>
-              di VPS untuk menerapkan jadwal baru.
+            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between gap-2 px-6 py-2.5">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold">⚠ Catatan:</span>
+                Perubahan jadwal disimpan ke database. Cron runner membaca jadwal saat startup.
+              </div>
+              <button
+                onClick={restartCron}
+                disabled={restartingCron}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all disabled:opacity-50"
+              >
+                {restartingCron ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
+                Restart Cron Runner
+              </button>
             </div>
 
             {/* Desktop table */}
