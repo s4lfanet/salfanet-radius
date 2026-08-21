@@ -346,7 +346,6 @@ const menuGroups: MenuGroup[] = [
           { titleKey: 'nav.cronJobs', href: '/admin/settings/cron', requiredPermission: 'settings.cron' },
           { titleKey: 'nav.systemUpdate', href: '/admin/system', requiredPermission: 'settings.view' },
           { titleKey: 'nav.cloudflare_tunnel', href: '/admin/settings/cloudflare-tunnel', requiredPermission: 'settings.view' },
-          { titleKey: 'nav.subdomainRouting', href: '/admin/settings/subdomain', requiredPermission: 'settings.view' },
           { titleKey: 'nav.downloadApk', href: '/admin/download-apk', requiredPermission: 'settings.view' },
         ],
       },
