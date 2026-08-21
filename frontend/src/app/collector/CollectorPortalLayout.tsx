@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
 import { useTheme } from '@/hooks/useTheme';
+import Image from 'next/image';
 
 interface CollectorData {
   id: string;
@@ -45,6 +46,8 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collector, setCollector] = useState<CollectorData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [companyName, setCompanyName] = useState('');
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
   useEffect(() => {
     apiAdmin<{ success: boolean; collector: CollectorData }>('/api/collector/auth/session')
@@ -54,6 +57,14 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
       })
       .catch(() => router.push('/collector/login'))
       .finally(() => setLoading(false));
+
+    fetch('/api/public/company')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.company.name) setCompanyName(data.company.name);
+        if (data.success && data.company.logo) setCompanyLogo(data.company.logo);
+      })
+      .catch(() => {});
   }, [router]);
 
   const handleLogout = async () => {
@@ -81,12 +92,18 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="h-16 flex items-center gap-2 px-4 border-b border-border">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
-            <WalletIcon className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <div className="font-bold text-sm text-foreground">Portal Kolektor</div>
-            <div className="text-xs text-muted-foreground">{collector.areaName || 'Umum'}</div>
+          {companyLogo ? (
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white dark:bg-slate-700 flex items-center justify-center">
+              <Image unoptimized src={companyLogo} alt={companyName} width={32} height={32} className="max-h-full max-w-full w-auto h-auto object-contain" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+              <WalletIcon className="w-4 h-4 text-white" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="font-bold text-sm text-foreground truncate">{companyName || 'Portal Kolektor'}</div>
+            <div className="text-xs text-muted-foreground truncate">{collector.areaName || 'Umum'}</div>
           </div>
         </div>
 
