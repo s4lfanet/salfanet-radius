@@ -10,13 +10,18 @@ const execAsync = promisify(exec);
 export const dynamic = 'force-dynamic';
 export const maxDuration = 600; // 10 minutes — build operations take time
 
-// Ensure PATH includes common binary locations for PM2 standalone processes
-// Remove PM2's restrictive NODE_OPTIONS that break next build
-const EXEC_ENV = {
-  ...process.env,
-  PATH: `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${process.env.PATH || ''}`,
+// Clean env for build commands — avoid PM2 env vars interfering with next build
+const EXEC_ENV: Record<string, string | undefined> = {
+  PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin',
   SHELL: '/bin/bash',
-  NODE_OPTIONS: '',
+  HOME: process.env.HOME || '/root',
+  USER: process.env.USER || 'root',
+  LANG: process.env.LANG || 'C',
+  TERM: 'xterm',
+  NODE_ENV: 'production',
+  TZ: process.env.TZ || 'Asia/Jakarta',
+  DATABASE_URL: process.env.DATABASE_URL,
+  SHADOW_DATABASE_URL: process.env.SHADOW_DATABASE_URL,
 };
 
 // Run a command via bash and capture full stdout+stderr
@@ -24,7 +29,7 @@ async function runCmd(cmd: string, cwd: string, timeout: number): Promise<string
   const { stdout, stderr } = await execAsync(cmd, {
     cwd,
     timeout,
-    env: EXEC_ENV,
+    env: EXEC_ENV as any,
     shell: '/bin/bash',
     maxBuffer: 1024 * 1024 * 10,
   });
