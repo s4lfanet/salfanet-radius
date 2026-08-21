@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Backend install + generate + build
     try {
-      await runCmd('pnpm install --no-frozen-lockfile --config.confirm-modules-purges=false 2>&1', appDir, 180000);
+      await runCmd('pnpm install --no-frozen-lockfile --force --config.confirm-modules-purges=false 2>&1', appDir, 180000);
       await runCmd('PRISMA_BIN=$(find /var/www/salfanet-radius/node_modules/.pnpm -path "*/prisma/build/index.js" -type f | head -1) && node $PRISMA_BIN generate 2>&1', `${appDir}/backend`, 120000);
       await runCmd('pnpm build 2>&1', `${appDir}/backend`, 300000);
       steps.push({ step: 'Backend build', status: 'success' });
