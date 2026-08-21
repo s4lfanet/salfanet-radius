@@ -39,14 +39,10 @@ export async function GET(req: NextRequest) {
 
     const todayAmount = todayInvoices.reduce((s, i) => s + i.amount, 0);
 
-    // Get users in collector's area that are suspended (isolir)
+    // Get users in collector's area
     let isolirCount = 0;
     let unpaidCount = 0;
-    if (collector.areaId) {
-      // We need to get areaId from adminUser
-    }
 
-    // Get collector's area
     const adminUser = await prisma.adminUser.findUnique({
       where: { id: collector.id },
       select: { areaId: true },
@@ -56,14 +52,14 @@ export async function GET(req: NextRequest) {
       const suspendedUsers = await prisma.pppoeUser.count({
         where: {
           areaId: adminUser.areaId,
-          status: 'suspended',
+          status: { in: ['suspended', 'isolated'] },
         },
       });
       isolirCount = suspendedUsers;
 
       const unpaidInvoices = await prisma.invoice.count({
         where: {
-          status: 'PENDING',
+          status: { in: ['PENDING', 'OVERDUE'] },
           user: { areaId: adminUser.areaId },
         },
       });
