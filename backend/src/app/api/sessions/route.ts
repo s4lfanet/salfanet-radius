@@ -2,7 +2,6 @@
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
-import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
 import { batchFetchMikrotikActiveSessions, parseUptime, type MikrotikActiveSession } from '@/server/services/mikrotik/active-sessions.service';
 
 // ─── Formatting helpers ─────────────────────────────────────────────────────
@@ -472,49 +471,9 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ── 4d2. Optional live hotspot fallback from MikroTik API ──────────────
-    // If radacct is delayed/missing for hotspot (common when Accounting-Start
-    // does not arrive), patch hotspot bytes using live API counters.
-    // NOTE: PPPoE live overlay removed for CPU optimization.
-    if (useLiveTraffic && (type === null || type === 'hotspot')) {
-      const hotspotUsernames = new Set(
-        allSessions
-          .filter((s) => s.type === 'hotspot')
-          .map((s) => s.username),
-      );
-
-      if (hotspotUsernames.size > 0) {
-        const liveMap = await fetchLiveHotspotTrafficMap(routers, hotspotUsernames);
-        const mutableSessions = allSessions as Array<any>;
-        for (const s of mutableSessions) {
-          if (s.type !== 'hotspot') continue;
-          const live = liveMap.get(s.username);
-          if (!live) continue;
-
-          const uploadBytes = live.uploadBytes;
-          const downloadBytes = live.downloadBytes;
-          const totalBytes = uploadBytes + downloadBytes;
-
-          s.sessionId = s.sessionId || live.sessionId || '';
-          s.framedIpAddress = s.framedIpAddress || live.ipAddress || null;
-          s.macAddress =
-            s.macAddress && s.macAddress !== '-'
-              ? s.macAddress
-              : (live.macAddress || s.macAddress || '-');
-          s.uploadBytes = uploadBytes;
-          s.downloadBytes = downloadBytes;
-          s.totalBytes = totalBytes;
-          s.uploadFormatted = formatBytes(uploadBytes);
-          s.downloadFormatted = formatBytes(downloadBytes);
-          s.totalFormatted = formatBytes(totalBytes);
-          // For live hotspot overlay, lastUpdate should represent the live
-          // poll moment (not stale acctupdatetime from DB which may differ
-          // by timezone source). Store in WIB-as-UTC space for formatWIB().
-          s.lastUpdate = new Date(Date.now() + TZ_OFFSET_MS).toISOString();
-          s.dataSource = s.dataSource === 'radius' ? 'radius+realtime' : s.dataSource;
-        }
-      }
-    }
+    // ── 4d2. Live traffic overlays removed for CPU optimization ──────────
+    // Hotspot & PPPoE live byte counter overlays from MikroTik API have been
+    // removed. Monitoring now focuses on online/offline status and sync only.
 
     // ── 4e. Fetch active sessions from MikroTik local-auth routers ────────
     // Routers with authMode='local' authenticate PPPoE/Hotspot locally and
