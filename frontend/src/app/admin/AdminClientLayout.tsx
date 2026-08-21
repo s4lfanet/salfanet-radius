@@ -29,7 +29,6 @@ import {
   Timer,
   Server,
   Bell,
-  Package,
   UserCheck,
   Sun,
   Moon,
@@ -302,17 +301,6 @@ const menuGroups: MenuGroup[] = [
         children: [
           { titleKey: 'nav.allTickets', href: '/admin/tickets', requiredPermission: 'dashboard.view' },
           { titleKey: 'nav.ticketCategories', href: '/admin/tickets/categories', requiredPermission: 'settings.view' },
-        ],
-      },
-      {
-        titleKey: 'nav.inventory',
-        icon: <Package className="w-4 h-4" />,
-        requiredPermission: 'settings.view',
-        children: [
-          { titleKey: 'nav.inventoryItems', href: '/admin/inventory/items', requiredPermission: 'settings.view' },
-          { titleKey: 'nav.inventoryMovements', href: '/admin/inventory/movements', requiredPermission: 'settings.view' },
-          { titleKey: 'nav.inventoryCategories', href: '/admin/inventory/categories', requiredPermission: 'settings.view' },
-          { titleKey: 'nav.inventorySuppliers', href: '/admin/inventory/suppliers', requiredPermission: 'settings.view' },
         ],
       },
       {
