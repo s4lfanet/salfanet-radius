@@ -44,6 +44,7 @@ import {
   Send,
   Smartphone,
   Cloud,
+  Inbox,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin, onUnauthorized } from '@/lib/api';
@@ -179,6 +180,12 @@ const menuGroups: MenuGroup[] = [
         titleKey: 'nav.collectorSettlements',
         icon: <Wallet className="w-4 h-4" />,
         href: '/admin/collector-settlements',
+        requiredPermission: 'keuangan.view',
+      },
+      {
+        titleKey: 'nav.paymentProofs',
+        icon: <Inbox className="w-4 h-4" />,
+        href: '/admin/payment-proofs',
         requiredPermission: 'keuangan.view',
       },
     ],

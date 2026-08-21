@@ -1790,6 +1790,25 @@ model collectorSettlementConfirmation {
   @@map("collector_settlement_confirmations")
 }
 
+model paymentProof {
+  id            String   @id @default(cuid())
+  invoiceId     String   @map("invoice_id")
+  username      String   @db.VarChar(64)
+  amount        Int
+  proofImage    String?  @db.MediumText // Base64 image
+  status        String   @default("pending") // pending, approved, rejected
+  rejectReason  String?  @db.VarChar(255)
+  reviewedById  String?  @map("reviewed_by_id") // adminUser.id
+  reviewedAt    DateTime?
+  collectorId   String?  @map("collector_id") // adminUser.id of collector who uploaded
+  createdAt     DateTime @default(now())
+
+  @@index([invoiceId])
+  @@index([username])
+  @@index([status])
+  @@map("payment_proofs")
+}
+
 model backupHistory {
   id        String   @id @default(cuid())
   filename  String

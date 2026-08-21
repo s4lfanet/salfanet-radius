@@ -1,34 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { verifyCollector } from '@/server/auth/collector-auth';
+import { checkAuth } from '@/server/middleware/api-auth';
 
+// GET - list all payment proofs for admin
 export async function GET(req: NextRequest) {
-  const collector = await verifyCollector(req);
-  if (!collector) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const authCheck = await checkAuth();
+  if (!authCheck.authorized) return authCheck.response;
+
+  const role = (authCheck.session.user as any).role;
+  if (role !== 'SUPER_ADMIN' && role !== 'FINANCE') {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const { searchParams } = new URL(req.url);
-  const filter = searchParams.get('filter') || 'pending'; // pending, approved, rejected
+  const filter = searchParams.get('filter') || 'pending';
 
   try {
-    const adminUser = await prisma.adminUser.findUnique({
-      where: { id: collector.id },
-      select: { areaId: true },
-    });
-
-    if (!adminUser?.areaId) {
-      return NextResponse.json({ proofs: [] });
-    }
-
-    // Get payment proofs for users in this collector's area
     const proofs = await prisma.paymentProof.findMany({
-      where: {
-        status: filter,
-        invoice: {
-          user: { areaId: adminUser.areaId },
-        },
-      },
+      where: { status: filter },
       select: {
         id: true,
         invoiceId: true,
@@ -49,6 +38,9 @@ export async function GET(req: NextRequest) {
             },
           },
         },
+        collector: {
+          select: { name: true, username: true },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -67,11 +59,12 @@ export async function GET(req: NextRequest) {
         fullname: p.invoice?.customerName || p.invoice?.user?.name || p.username,
         username: p.username,
         phone: p.invoice?.user?.phone || '',
-        is_my_upload: p.collectorId === collector.id,
+        collector_name: p.collector?.name || '',
+        collector_username: p.collector?.username || '',
       })),
     });
   } catch (error) {
-    console.error('Collector proofs error:', error);
+    console.error('Admin payment proofs error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
