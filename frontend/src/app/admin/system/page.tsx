@@ -271,14 +271,24 @@ export default function SystemPage() {
               Sistem sudah up to date ({info.commit}) — {info.totalCommits || 0} total commits di branch {info.gitBranch || 'master'}
             </p>
           </div>
-          <button
-            onClick={fetchChangelog}
-            disabled={changelogLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-bold transition-all"
-          >
-            {changelogLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <GitCommit className="w-3 h-3" />}
-            Lihat Changelog
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={fetchChangelog}
+              disabled={changelogLoading}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 text-xs font-bold transition-all"
+            >
+              {changelogLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <GitCommit className="w-3 h-3" />}
+              Lihat Changelog
+            </button>
+            <button
+              onClick={runUpdate}
+              disabled={updating}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-all disabled:opacity-50"
+            >
+              {updating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+              Update Sekarang
+            </button>
+          </div>
         </div>
       )}
 
