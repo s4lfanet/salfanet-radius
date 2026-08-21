@@ -10,11 +10,14 @@ interface ProofItem {
   invoice_number: string;
   amount: number;
   status: string;
+  reject_reason: string | null;
+  reviewed_at: string | null;
   proof_image: string;
   submitted_at: string;
   fullname: string;
   username: string;
   phone: string;
+  is_my_upload: boolean;
 }
 
 const STEP = 10;
@@ -126,6 +129,7 @@ export default function CollectorProofsPage() {
                     <th className="text-left p-3 font-semibold text-muted-foreground">Pelanggan</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Invoice</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Jumlah</th>
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Status</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Tgl Kirim</th>
                     <th className="text-center p-3 font-semibold text-muted-foreground">Aksi</th>
                   </tr>
@@ -139,6 +143,22 @@ export default function CollectorProofsPage() {
                       </td>
                       <td className="p-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
                       <td className="p-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>
+                      <td className="p-3">
+                        {proof.status === 'pending' && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">Menunggu</span>
+                        )}
+                        {proof.status === 'approved' && (
+                          <span className="text-xs px-2 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 font-medium">Disetujui</span>
+                        )}
+                        {proof.status === 'rejected' && (
+                          <div>
+                            <span className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 font-medium">Ditolak</span>
+                            {proof.reject_reason && (
+                              <div className="text-xs text-muted-foreground mt-1">{proof.reject_reason}</div>
+                            )}
+                          </div>
+                        )}
+                      </td>
                       <td className="p-3 text-xs text-muted-foreground">{fmtDate(proof.submitted_at)}</td>
                       <td className="p-3 text-center">
                         <button

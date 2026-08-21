@@ -21,49 +21,55 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ proofs: [] });
     }
 
-    // Get invoices with collector proof in this collector's area
-    const invoices = await prisma.invoice.findMany({
+    // Get payment proofs for users in this collector's area
+    const proofs = await prisma.paymentProof.findMany({
       where: {
-        user: { areaId: adminUser.areaId },
-        collectorProof: { not: null },
-        status: filter === 'pending' ? 'PENDING' : filter === 'approved' ? 'PAID' : { in: ['PENDING', 'PAID'] },
+        status: filter,
+        invoice: {
+          user: { areaId: adminUser.areaId },
+        },
       },
       select: {
         id: true,
-        invoiceNumber: true,
+        invoiceId: true,
+        username: true,
         amount: true,
+        proofImage: true,
         status: true,
-        collectorProof: true,
-        dueDate: true,
+        rejectReason: true,
+        reviewedAt: true,
+        collectorId: true,
         createdAt: true,
-        user: {
+        invoice: {
           select: {
-            id: true,
-            username: true,
-            name: true,
-            phone: true,
+            invoiceNumber: true,
+            customerName: true,
+            user: {
+              select: { name: true, phone: true },
+            },
           },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const proofs = invoices
-      .filter(inv => inv.collectorProof)
-      .map(inv => ({
-        id: inv.id,
-        invoice_id: inv.id,
-        invoice_number: inv.invoiceNumber,
-        amount: inv.amount,
-        status: inv.status,
-        proof_image: inv.collectorProof,
-        submitted_at: inv.createdAt,
-        fullname: inv.user?.name || inv.user?.username,
-        username: inv.user?.username,
-        phone: inv.user?.phone,
-      }));
-
-    return NextResponse.json({ proofs });
+    return NextResponse.json({
+      proofs: proofs.map(p => ({
+        id: p.id,
+        invoice_id: p.invoiceId,
+        invoice_number: p.invoice?.invoiceNumber || '',
+        amount: p.amount,
+        status: p.status,
+        reject_reason: p.rejectReason,
+        reviewed_at: p.reviewedAt,
+        proof_image: p.proofImage,
+        submitted_at: p.createdAt,
+        fullname: p.invoice?.customerName || p.invoice?.user?.name || p.username,
+        username: p.username,
+        phone: p.invoice?.user?.phone || '',
+        is_my_upload: p.collectorId === collector.id,
+      })),
+    });
   } catch (error) {
     console.error('Collector proofs error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
