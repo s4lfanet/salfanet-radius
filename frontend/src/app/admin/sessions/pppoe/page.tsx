@@ -79,7 +79,7 @@ export default function PPPoESessionsPage() {
     page: currentPage,
     limit: pageSize,
     type: 'pppoe', // Force PPPoE only
-    live: 'true', // Merge live bytes dari MikroTik API
+    // live traffic disabled — CPU optimization, only need online/offline status
     routerId: routerFilter || undefined,
     search: searchFilter || undefined,
   };
@@ -254,18 +254,14 @@ export default function PPPoESessionsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
         <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
           <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide">{t('sessions.activeSessions')}</p>
           <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.pppoe || 0}</p>
         </div>
         <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
-          <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide">↑ {t('sessions.totalUpload')}</p>
-          <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.totalUploadFormatted || '0 B'}</p>
-        </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
-          <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide">↓ {t('sessions.totalDownload')}</p>
-          <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.totalDownloadFormatted || '0 B'}</p>
+          <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide">{t('sessions.router')}</p>
+          <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{routers.filter(r => r.isActive).length || '-'}</p>
         </div>
       </div>
 
@@ -346,14 +342,6 @@ export default function PPPoESessionsPage() {
                     <span className="font-medium text-info">{formatUptime(liveDuration(session.duration))}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('sessions.upload')}:</span>
-                    <span className="text-info">{session.uploadFormatted}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">{t('sessions.download')}:</span>
-                    <span className="text-success">{session.downloadFormatted}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span className="text-muted-foreground">{t('sessions.router')}:</span>
                     <span className="text-muted-foreground">{session.router?.name || '-'}</span>
                   </div>
@@ -394,8 +382,6 @@ export default function PPPoESessionsPage() {
                 <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.startTime')}</th>
                 <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.lastUpdate')}</th>
                 <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.uptime')}</th>
-                <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">↑ {t('sessions.upload')}</th>
-                <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">↓ {t('sessions.download')}</th>
                 <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.router')}</th>
                 <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.ipAddress')}</th>
                 <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.macAddress')}</th>
@@ -404,13 +390,13 @@ export default function PPPoESessionsPage() {
             <tbody className="divide-y divide-border">
               {loading && sessions.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                     <RefreshCw className="w-4 h-4 animate-spin mx-auto" />
                   </td>
                 </tr>
               ) : sessions.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-3 py-8 text-center text-muted-foreground">
+                  <td colSpan={10} className="px-3 py-8 text-center text-muted-foreground">
                     {t('sessions.noPppoeSessions')}
                   </td>
                 </tr>
@@ -431,8 +417,6 @@ export default function PPPoESessionsPage() {
                     <td className="px-2 py-2 text-[10px] text-muted-foreground whitespace-nowrap">{formatDateTime(session.startTime)}</td>
                     <td className="px-2 py-2 text-[10px] text-muted-foreground whitespace-nowrap">{formatDateTime(session.lastUpdate)}</td>
                     <td className="px-2 py-2 text-[10px] font-medium text-info">{formatUptime(liveDuration(session.duration))}</td>
-                    <td className="px-2 py-2 text-[10px] text-success">{session.uploadFormatted}</td>
-                    <td className="px-2 py-2 text-[10px] text-info">{session.downloadFormatted}</td>
                     <td className="px-2 py-2 text-[10px] text-muted-foreground">{session.router?.name || '-'}</td>
                     <td className="px-2 py-2 font-mono text-[10px] text-muted-foreground">{session.framedIpAddress || '-'}</td>
                     <td className="px-2 py-2 font-mono text-[10px] text-muted-foreground">{session.macAddress || '-'}</td>

@@ -3,7 +3,6 @@ import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { fetchLiveHotspotTrafficMap } from '@/server/services/radius/live-hotspot-traffic';
-import { fetchLivePppoeTrafficMap } from '@/server/services/radius/live-pppoe-traffic';
 import { batchFetchMikrotikActiveSessions, parseUptime, type MikrotikActiveSession } from '@/server/services/mikrotik/active-sessions.service';
 
 // ─── Formatting helpers ─────────────────────────────────────────────────────
@@ -476,7 +475,7 @@ export async function GET(request: NextRequest) {
     // ── 4d2. Optional live hotspot fallback from MikroTik API ──────────────
     // If radacct is delayed/missing for hotspot (common when Accounting-Start
     // does not arrive), patch hotspot bytes using live API counters.
-    // NOTE: PPPoE live overlay is done AFTER MikroTik sessions are merged (below).
+    // NOTE: PPPoE live overlay removed for CPU optimization.
     if (useLiveTraffic && (type === null || type === 'hotspot')) {
       const hotspotUsernames = new Set(
         allSessions
@@ -603,42 +602,6 @@ export async function GET(request: NextRequest) {
         dataSource: 'mikrotik',
       });
       existingUsernames.add(ms.username);
-    }
-
-    // ── 4f. Live PPPoE traffic overlay (AFTER MikroTik sessions are merged) ──
-    // For local-auth routers, batchFetchMikrotikActiveSessions already fetches
-    // byte counters. But for RADIUS-auth routers, radacct counters may be stale.
-    // This overlay refreshes ALL PPPoE sessions with live MikroTik counters.
-    if (useLiveTraffic && (type === null || type === 'pppoe')) {
-      const pppoeUsernames = new Set(
-        allSessions
-          .filter((s) => s.type === 'pppoe')
-          .map((s) => s.username),
-      );
-
-      if (pppoeUsernames.size > 0) {
-        const liveMap = await fetchLivePppoeTrafficMap(routers, pppoeUsernames);
-        const mutableSessions = allSessions as Array<any>;
-        for (const s of mutableSessions) {
-          if (s.type !== 'pppoe') continue;
-          const live = liveMap.get(s.username);
-          if (!live) continue;
-
-          // Only overlay if live counters are higher (monotonic counter guarantee)
-          const liveTotal = live.uploadBytes + live.downloadBytes;
-          const dbTotal = s.uploadBytes + s.downloadBytes;
-          if (liveTotal < dbTotal) continue;
-
-          s.uploadBytes = live.uploadBytes;
-          s.downloadBytes = live.downloadBytes;
-          s.totalBytes = liveTotal;
-          s.uploadFormatted = formatBytes(live.uploadBytes);
-          s.downloadFormatted = formatBytes(live.downloadBytes);
-          s.totalFormatted = formatBytes(liveTotal);
-          s.lastUpdate = new Date(Date.now() + TZ_OFFSET_MS).toISOString();
-          s.dataSource = s.dataSource === 'mikrotik' ? 'mikrotik' : (s.dataSource === 'radius' ? 'radius+realtime' : s.dataSource);
-        }
-      }
     }
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────
