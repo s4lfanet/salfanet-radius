@@ -102,6 +102,7 @@ model company {
   footerCustomer   String? @db.Text // Footer for customer login page
   footerTechnician String? @db.Text // Footer for technician login page
   footerAgent      String? @db.Text // Footer for agent login page
+  footerCollector  String? @db.Text // Footer for collector login page
 
   invoiceGenerateDays Int? @default(7) // Days before expiry to generate invoice
   gracePeriodDays     Int? @default(0) // Grace period days after expiry user can still online
@@ -263,6 +264,13 @@ model invoice {
 
   // Notes / catatan internal admin
   notes String? @db.Text
+
+  // Collector payment tracking
+  paidById       String?  @map("paid_by_id") // adminUser.id of collector who marked invoice as paid
+  paymentMethod  String?  @db.VarChar(20) // cash, transfer, discount
+  collectorProof String?  @db.Text // Base64 or URL of transfer proof image uploaded by collector
+  discountReason String?  @db.VarChar(255) // Reason for discount
+  discountById   String?  @map("discount_by_id") // adminUser.id who applied discount
 
   // NEW: Invoice type and tax fields
   invoiceType    InvoiceType @default(MONTHLY)
@@ -533,6 +541,7 @@ model pppoeArea {
   users         pppoeUser[]
   customers     pppoeCustomer[]
   registrations registrationRequest[]
+  adminUsers    adminUser[]
 
   @@map("pppoe_areas")
 }
@@ -1609,6 +1618,7 @@ model adminUser {
   role              AdminRole               @default(CUSTOMER_SERVICE)
   isActive          Boolean                 @default(true)
   phone             String?
+  areaId            String?                 @map("area_id") // For COLLECTOR role: assigned pppoeArea
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
   lastLogin         DateTime?
@@ -1617,10 +1627,12 @@ model adminUser {
   twoFactorSecret   String?                 @db.VarChar(255) // TOTP secret (base32)
   userPermissions   userPermission[]
   pushSubscriptions adminPushSubscription[]
+  area              pppoeArea?              @relation(fields: [areaId], references: [id], onDelete: SetNull)
 
   @@index([username])
   @@index([email])
   @@index([role])
+  @@index([areaId])
   @@map("admin_users")
 }
 
@@ -1709,6 +1721,7 @@ enum AdminRole {
   TECHNICIAN
   MARKETING
   VIEWER
+  COLLECTOR
 }
 
 enum SubscriptionType {
@@ -1747,6 +1760,34 @@ model manualPayment {
   @@index([status])
   @@index([paymentDate])
   @@map("manual_payments")
+}
+
+model ontRemoval {
+  id          String   @id @default(cuid())
+  username    String   @db.VarChar(64)
+  collectorId String?  @map("collector_id") // adminUser.id of collector
+  notes       String?  @db.Text
+  removedAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([collectorId])
+  @@index([username])
+  @@index([removedAt])
+  @@map("ont_removals")
+}
+
+model collectorSettlementConfirmation {
+  id          String   @id @default(cuid())
+  collectorId String   @map("collector_id")
+  date        String   @db.VarChar(10) // YYYY-MM-DD
+  confirmedBy String   @map("confirmed_by") // adminUser.id of admin
+  confirmedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@unique([collectorId, date])
+  @@index([collectorId])
+  @@index([date])
+  @@map("collector_settlement_confirmations")
 }
 
 model backupHistory {
