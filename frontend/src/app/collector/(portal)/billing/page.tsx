@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiAdmin, ApiError } from '@/lib/api/client';
-import { Users, Search, CheckCircle, Loader2, ChevronDown, X } from 'lucide-react';
+import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Image as ImageIcon } from 'lucide-react';
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -18,6 +18,8 @@ export default function CollectorBillingPage() {
   const [payModal, setPayModal] = useState<{ invoiceId: string; invoiceNumber: string; amount: number; customerName: string } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [payLoading, setPayLoading] = useState(false);
+  const [proofPreview, setProofPreview] = useState<string | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -39,16 +41,62 @@ export default function CollectorBillingPage() {
   });
   const visible = filtered.slice(0, visibleCount);
 
+  const handleProofSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProofFile(file);
+    const reader = new FileReader();
+    reader.onload = (ev) => setProofPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const compressImage = (file: File, maxW: number, quality: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) { reject(new Error('no ctx')); return; }
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = reject;
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handlePay = async () => {
     if (!payModal) return;
+    if (paymentMethod === 'transfer' && !proofPreview) {
+      alert('Harap upload bukti transfer terlebih dahulu');
+      return;
+    }
     setPayLoading(true);
     try {
+      let proofData = proofPreview;
+      if (proofFile && paymentMethod === 'transfer') {
+        try {
+          proofData = await compressImage(proofFile, 1200, 0.8);
+        } catch {
+          // fallback to raw preview
+        }
+      }
       await apiAdmin('/api/collector/mark-paid', {
         method: 'POST',
-        body: JSON.stringify({ invoiceId: payModal.invoiceId, paymentMethod }),
+        body: JSON.stringify({ invoiceId: payModal.invoiceId, paymentMethod, collectorProof: proofData }),
       });
       setPayModal(null);
       setPaymentMethod('cash');
+      setProofPreview(null);
+      setProofFile(null);
       loadData();
     } catch (err) {
       const msg = err instanceof ApiError ? err.message : 'Gagal menandai lunas';
@@ -227,7 +275,7 @@ export default function CollectorBillingPage() {
                 ].map(m => (
                   <button
                     key={m.key}
-                    onClick={() => setPaymentMethod(m.key)}
+                    onClick={() => { setPaymentMethod(m.key); if (m.key === 'cash') { setProofPreview(null); setProofFile(null); } }}
                     className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                       paymentMethod === m.key
                         ? 'bg-emerald-600 text-white'
@@ -239,6 +287,29 @@ export default function CollectorBillingPage() {
                 ))}
               </div>
             </div>
+
+            {paymentMethod === 'transfer' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-foreground mb-2">Bukti Transfer</label>
+                {proofPreview ? (
+                  <div className="relative">
+                    <img src={proofPreview} alt="Bukti Transfer" className="w-full rounded-lg border border-border max-h-48 object-contain" />
+                    <button
+                      onClick={() => { setProofPreview(null); setProofFile(null); }}
+                      className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border rounded-lg p-6 cursor-pointer hover:bg-accent/30 transition-all">
+                    <Upload className="w-8 h-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">Klik untuk upload bukti transfer</span>
+                    <input type="file" accept="image/*" onChange={handleProofSelect} className="hidden" />
+                  </label>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2">
               <button
