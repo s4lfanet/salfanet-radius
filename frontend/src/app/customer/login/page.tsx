@@ -352,14 +352,6 @@ export default function CustomerLoginPage() {
 
           {/* Footer */}
           <p className="text-center text-xs text-muted-foreground mt-6">{footerText}</p>
-          <p className="text-center mt-2">
-            <a
-              href="/admin/login"
-              className="text-xs text-muted-foreground hover:text-primary transition-colors"
-            >
-              Admin? Masuk di sini →
-            </a>
-          </p>
         </div>
       </div>
 
