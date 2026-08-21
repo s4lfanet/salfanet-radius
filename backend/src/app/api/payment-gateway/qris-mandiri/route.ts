@@ -16,6 +16,7 @@ export async function GET() {
         qrisStaticCode: true,
         qrisMerchantName: true,
         qrisDeviceKey: true,
+        qrisDeviceSecret: true,
         qrisUniqueMin: true,
         qrisUniqueMax: true,
       },
@@ -41,6 +42,7 @@ export async function GET() {
       qrisStaticCode: company.qrisStaticCode || '',
       qrisMerchantName: company.qrisMerchantName || merchantInfo?.merchantName || '',
       qrisDeviceKey: company.qrisDeviceKey || '',
+      qrisDeviceSecret: company.qrisDeviceSecret || '',
       qrisUniqueMin: company.qrisUniqueMin ?? 1,
       qrisUniqueMax: company.qrisUniqueMax ?? 999,
       isValid: hasStaticCode ? validateQris(company.qrisStaticCode!) : false,
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
   if (!authCheck.authorized) return authCheck.response;
   try {
     const body = await request.json();
-    const { qrisEnabled, qrisStaticCode, qrisMerchantName, qrisDeviceKey, qrisUniqueMin, qrisUniqueMax } = body;
+    const { qrisEnabled, qrisStaticCode, qrisMerchantName, qrisDeviceKey, qrisUniqueMin, qrisUniqueMax, generateSecret } = body;
 
     // Validate QRIS string if provided
     if (qrisStaticCode && qrisStaticCode.trim()) {
@@ -77,6 +79,14 @@ export async function POST(request: Request) {
     let finalDeviceKey = qrisDeviceKey;
     if (qrisEnabled && !finalDeviceKey) {
       finalDeviceKey = crypto.randomUUID().replace(/-/g, '').substring(0, 32);
+    }
+
+    // Generate V2 signing secret if requested or if enabling and not set
+    let finalDeviceSecret: string | undefined;
+    if (generateSecret || (qrisEnabled && !body.qrisDeviceSecret)) {
+      finalDeviceSecret = crypto.randomUUID().replace(/-/g, '').substring(0, 32);
+    } else if (body.qrisDeviceSecret !== undefined) {
+      finalDeviceSecret = body.qrisDeviceSecret || undefined;
     }
 
     const company = await prisma.company.findFirst();
@@ -104,6 +114,7 @@ export async function POST(request: Request) {
         qrisStaticCode: qrisStaticCode !== undefined ? (qrisStaticCode?.trim() || null) : undefined,
         qrisMerchantName: qrisMerchantName || null,
         qrisDeviceKey: finalDeviceKey || null,
+        ...(finalDeviceSecret !== undefined && { qrisDeviceSecret: finalDeviceSecret || null }),
         ...(minVal != null && { qrisUniqueMin: minVal }),
         ...(maxVal != null && { qrisUniqueMax: maxVal }),
       },
@@ -113,6 +124,7 @@ export async function POST(request: Request) {
       success: true,
       message: 'QRIS Mandiri config saved successfully',
       qrisDeviceKey: finalDeviceKey,
+      qrisDeviceSecret: finalDeviceSecret,
     });
   } catch (error) {
     console.error('Save QRIS Mandiri config error:', error);
