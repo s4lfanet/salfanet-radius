@@ -77,7 +77,7 @@ export default function HotspotSessionsPage() {
     page: currentPage,
     limit: pageSize,
     type: 'hotspot', // Force Hotspot only
-    live: 'true', // Merge live bytes from MikroTik API
+    // live traffic disabled — CPU optimization, only need online/offline status
   };
   if (routerFilter) sessionsParams.routerId = routerFilter;
   if (searchFilter) sessionsParams.search = searchFilter;
@@ -246,18 +246,14 @@ export default function HotspotSessionsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
           <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
             <p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('sessions.activeSessions')}</p>
             <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.hotspot || 0}</p>
           </div>
           <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
-            <p className="text-xs text-[#00f7ff] uppercase tracking-wide">↑ {t('sessions.totalUpload')}</p>
-            <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.totalUploadFormatted || '0 B'}</p>
-          </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
-            <p className="text-xs text-[#00f7ff] uppercase tracking-wide">↓ {t('sessions.totalDownload')}</p>
-            <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats?.totalDownloadFormatted || '0 B'}</p>
+            <p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('sessions.router')}</p>
+            <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{routers.length || '-'}</p>
           </div>
         </div>
 
@@ -362,14 +358,6 @@ export default function HotspotSessionsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">{t('sessions.uploadDownload')}:</span>
-                      <span>
-                        <span className="text-success">↑{session.uploadFormatted}</span>
-                        {' / '}
-                        <span className="text-accent">↓{session.downloadFormatted}</span>
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
                       <span className="text-muted-foreground">{t('sessions.router')}:</span>
                       <span className="text-muted-foreground">{session.router?.name || '-'}</span>
                     </div>
@@ -406,8 +394,6 @@ export default function HotspotSessionsPage() {
                   <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.startTime')}</th>
                   <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.lastUpdate')}</th>
                   <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.duration')}</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">↑ {t('sessions.upload')}</th>
-                  <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">↓ {t('sessions.download')}</th>
                   <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.router')}</th>
                   <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.ipAddress')}</th>
                   <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('sessions.macAddress')}</th>
@@ -417,7 +403,7 @@ export default function HotspotSessionsPage() {
               <tbody className="divide-y divide-border">
                 {sessions.length === 0 ? (
                   <tr>
-                    <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                    <td colSpan={11} className="px-3 py-8 text-center text-muted-foreground text-xs">
                       {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
                     </td>
                   </tr>
@@ -450,8 +436,6 @@ export default function HotspotSessionsPage() {
                           ? formatDuration(liveCountdown(session.voucher.expiresAt)) + ' left'
                           : formatDuration(liveDuration(session.startTime))}
                       </td>
-                      <td className="px-2 py-2 text-[10px] text-success">{session.uploadFormatted}</td>
-                      <td className="px-2 py-2 text-[10px] text-accent">{session.downloadFormatted}</td>
                       <td className="px-2 py-2 text-[10px] text-muted-foreground">
                         {session.router?.name || '-'}
                       </td>
