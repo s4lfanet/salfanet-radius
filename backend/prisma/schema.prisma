@@ -137,6 +137,7 @@ model company {
   qrisMerchantName       String?  @db.VarChar(191) // Nama merchant untuk display
   qrisEnabled            Boolean? @default(false) // Enable/disable QRIS mandiri
   qrisDeviceKey          String?  @db.VarChar(100) // Device key for Android QrisListener app auth
+  qrisDeviceSecret       String?  @db.VarChar(100) // V2 HMAC signing key (never sent over network)
   qrisUniqueMin          Int?     @default(1) // Angka unik minimum (suffix)
   qrisUniqueMax          Int?     @default(999) // Angka unik maksimum (suffix)
 

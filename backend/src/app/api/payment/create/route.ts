@@ -6,7 +6,7 @@ import { createDuitkuClient } from '@/server/services/payment/duitku.service';
 import { createTripayClient } from '@/server/services/payment/tripay.service';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 import { createPaymentAttempt } from '@/server/services/payment/payment-attempt.service';
-import { staticToDynamic, generateUniqueAmount } from '@/lib/qris';
+import { staticToDynamic, generateUniqueAmountSafeAsync } from '@/lib/qris';
 import nodeCrypto from 'crypto';
 import { z } from '@/lib/parse-body';
 
@@ -176,9 +176,16 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const uniqueAmount = generateUniqueAmount(
+      const uniqueAmount = await generateUniqueAmountSafeAsync(
         invoice.amount,
         invoice.id,
+        async (amt) => {
+          const existing = await prisma.qrisPending.findFirst({
+            where: { uniqueAmount: amt, status: 'pending', expiresAt: { gt: new Date() } },
+            select: { id: true },
+          });
+          return !!existing;
+        },
         company.qrisUniqueMin ?? 1,
         company.qrisUniqueMax ?? 999
       );

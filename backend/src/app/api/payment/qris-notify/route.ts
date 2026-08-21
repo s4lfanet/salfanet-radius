@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
+import { verifyQrisSignature, claimNonce } from '@/lib/qris-signature';
 
 export const dynamic = 'force-dynamic';
+
+// Kill-switch for V2 signature verification
+const QRIS_V2_ENABLED = true;
 
 /**
  * Server-side amount extraction from raw notification text.
  * Same patterns as QrisNotificationListener.kt PAYMENT_PATTERNS.
- * Used as fallback when Android app can't parse amount (e.g. new DANA Bisnis format).
  */
 const PAYMENT_PATTERNS: RegExp[] = [
   /(?:menerima|diterima|masuk|received|transfer\s+masuk|pembayaran\s+masuk)[^Rp0-9]*[Rp\s]*(\d{1,3}(?:[.,]\d{3})*)/iu,
@@ -30,10 +33,32 @@ function extractAmountFromText(text: string): number | null {
   return null;
 }
 
+// ─── In-memory dedup: reject same device_key:amount within 5 minutes ────────
+const DEDUP_TTL_MS = 5 * 60 * 1000;
+const dedupCache = new Map<string, number>();
+
+function checkDedup(deviceKey: string, amount: number): boolean {
+  const key = `${deviceKey}:${amount}`;
+  const now = Date.now();
+  // Clean expired
+  for (const [k, t] of dedupCache.entries()) {
+    if (now - t > DEDUP_TTL_MS) dedupCache.delete(k);
+  }
+  if (dedupCache.has(key)) return true; // duplicate
+  dedupCache.set(key, now);
+  return false;
+}
+
+function removeDedup(deviceKey: string, amount: number) {
+  dedupCache.delete(`${deviceKey}:${amount}`);
+}
+
 /**
  * POST /api/payment/qris-notify — Webhook dari Android QrisListener app
- * Public endpoint (no auth) but protected by device_key
- * Body: { device_key, amount, source_app, raw_text, timestamp }
+ * Public endpoint (no auth) but protected by device_key (+ optional V2 HMAC)
+ *
+ * V1: { device_key, amount, source_app, raw_text, timestamp }
+ * V2: above + { nonce, signature } where signature = HMAC-SHA256(device_secret, "device_key|amount|timestamp|nonce")
  */
 export async function POST(request: NextRequest) {
   try {
@@ -46,12 +71,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { device_key, source_app, raw_text, timestamp } = body;
+    const { device_key, source_app, raw_text, nonce, signature } = body;
     let amount = typeof body.amount === 'number' ? body.amount : 0;
+    const timestamp = typeof body.timestamp === 'number' ? body.timestamp : 0;
 
-    // Server-side fallback: if amount not sent or 0, parse from raw_text
-    // (same as PHP qris_notify.php — supports MacroDroid/Tasker and cases
-    //  where Android app regex didn't match the notification format)
+    // Server-side fallback: parse amount from raw_text if not sent
     if ((!amount || amount <= 0) && raw_text) {
       amount = extractAmountFromText(raw_text) ?? 0;
     }
@@ -72,7 +96,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find matching pending QRIS by unique_amount
+    // ─── V2 signature verification (opt-in via `signature` field) ──────────
+    if (signature && signature !== '') {
+      if (!QRIS_V2_ENABLED) {
+        return NextResponse.json(
+          { error: 'QRIS V2 signature verification is temporarily unavailable' },
+          { status: 503 }
+        );
+      }
+
+      const deviceSecret = company.qrisDeviceSecret || '';
+      const verifyResult = verifyQrisSignature(
+        deviceSecret,
+        device_key,
+        amount,
+        timestamp,
+        nonce || '',
+        signature
+      );
+
+      if (!verifyResult.valid) {
+        console.error('[QRIS Notify V2] Signature rejected:', verifyResult.reason, 'deviceKey=', device_key.substring(0, 8));
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        );
+      }
+
+      // Nonce replay protection
+      if (!claimNonce(device_key, nonce || '')) {
+        console.error('[QRIS Notify V2] Nonce replay detected:', device_key.substring(0, 8));
+        return NextResponse.json(
+          { error: 'Invalid signature' },
+          { status: 401 }
+        );
+      }
+    }
+
+    // ─── Server-side dedup ──────────────────────────────────────────────────
+    if (checkDedup(device_key, amount)) {
+      console.log('[QRIS Notify] DEDUP: amount=' + amount + ' deviceKey=' + device_key.substring(0, 8) + ' already processed');
+      return NextResponse.json({
+        success: true,
+        message: 'Already processed (dedup)',
+        dedup: true,
+      });
+    }
+
+    // ─── Find matching pending QRIS by unique_amount ────────────────────────
     const now = new Date();
     const pending = await prisma.qrisPending.findFirst({
       where: {
@@ -83,65 +154,90 @@ export async function POST(request: NextRequest) {
     });
 
     if (!pending) {
+      removeDedup(device_key, amount);
       return NextResponse.json({
         success: false,
-        error: 'Tidak ada invoice pending yang cocok dengan nominal tersebut (mungkin expired)',
+        error: 'Tidak ada invoice pending yang cocok dengan nominal Rp' + amount.toLocaleString('id-ID') + ' (mungkin expired)',
       });
     }
 
-    // Mark as paid
-    await prisma.qrisPending.update({
-      where: { id: pending.id },
-      data: {
-        status: 'paid',
-        sourceApp: source_app || 'unknown',
-        paidAt: now,
-      },
-    });
+    // ─── Atomic settlement via DB transaction ───────────────────────────────
+    // Prevents double-credit from concurrent notifications for the same amount
+    const result = await prisma.$transaction(async (tx) => {
+      // Re-read under transaction lock — concurrent notification may have already settled
+      const freshPending = await tx.qrisPending.findUnique({ where: { id: pending.id } });
+      if (!freshPending || freshPending.status === 'paid') {
+        return { alreadyPaid: true, pending: freshPending };
+      }
 
-    // Update invoice
-    if (pending.invoiceId) {
-      const invoice = await prisma.invoice.findUnique({ where: { id: pending.invoiceId } });
-      if (invoice && invoice.status !== 'PAID') {
-        await prisma.invoice.update({
-          where: { id: invoice.id },
-          data: { status: 'PAID', paidAt: now },
-        });
+      // Mark QRIS pending as paid
+      await tx.qrisPending.update({
+        where: { id: pending.id },
+        data: {
+          status: 'paid',
+          sourceApp: source_app || 'unknown',
+          paidAt: now,
+        },
+      });
 
-        // Extend subscription
-        if (invoice.userId) {
-          const user = await prisma.pppoeUser.findUnique({
-            where: { id: invoice.userId },
-            include: { profile: true },
+      // Update invoice if exists
+      if (pending.invoiceId) {
+        const invoice = await tx.invoice.findUnique({ where: { id: pending.invoiceId } });
+        if (invoice && invoice.status !== 'PAID') {
+          await tx.invoice.update({
+            where: { id: invoice.id },
+            data: { status: 'PAID', paidAt: now },
           });
 
-          if (user && user.profile) {
-            let newExpiry = user.expiredAt || now;
-            const validity = user.profile.validityValue || 1;
-            if (user.profile.validityUnit === 'MONTHS') {
-              newExpiry = new Date(newExpiry.setMonth(newExpiry.getMonth() + validity));
-            } else {
-              newExpiry = new Date(newExpiry.setDate(newExpiry.getDate() + validity));
-            }
-
-            await prisma.pppoeUser.update({
-              where: { id: user.id },
-              data: {
-                expiredAt: newExpiry,
-                lastPaymentDate: now,
-                status: 'active',
-              },
+          // Extend subscription if user exists
+          if (invoice.userId) {
+            const user = await tx.pppoeUser.findUnique({
+              where: { id: invoice.userId },
+              include: { profile: true },
             });
+
+            if (user && user.profile) {
+              let newExpiry = user.expiredAt || now;
+              const validity = user.profile.validityValue || 1;
+              if (user.profile.validityUnit === 'MONTHS') {
+                newExpiry = new Date(newExpiry.setMonth(newExpiry.getMonth() + validity));
+              } else {
+                newExpiry = new Date(newExpiry.setDate(newExpiry.getDate() + validity));
+              }
+
+              await tx.pppoeUser.update({
+                where: { id: user.id },
+                data: {
+                  expiredAt: newExpiry,
+                  lastPaymentDate: now,
+                  status: 'active',
+                },
+              });
+            }
           }
         }
       }
+
+      return { alreadyPaid: false, pending: freshPending };
+    });
+
+    if (result.alreadyPaid) {
+      return NextResponse.json({
+        success: true,
+        message: 'Pembayaran sudah diproses sebelumnya',
+        invoiceId: pending.invoiceId,
+        paid: true,
+      });
     }
+
+    console.log('[QRIS Notify] OK invoiceId=' + pending.invoiceId + ' amount=' + amount);
 
     return NextResponse.json({
       success: true,
       message: 'Pembayaran QRIS berhasil diverifikasi otomatis',
       invoiceId: pending.invoiceId,
       amount: pending.baseAmount,
+      paidAt: now.toISOString(),
     });
   } catch (error) {
     console.error('[QRIS Notify] Error:', error);

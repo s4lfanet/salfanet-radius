@@ -776,6 +776,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
     private lateinit var etServerUrl: EditText
     private lateinit var etDeviceKey: EditText
+    private lateinit var etDeviceSecret: EditText
     private lateinit var swEnabled: Switch
     private lateinit var tvPermStatus: TextView
     private lateinit var tvConnStatus: TextView
@@ -955,6 +956,16 @@ class MainActivity : AppCompatActivity() {
                 }
                 etDeviceKey
             })
+            addView(label("Device Secret (V2 Signing — opsional)"))
+            addView(run {
+                etDeviceSecret = EditText(this@MainActivity).apply {
+                    hint = "Paste device secret dari halaman admin"
+                    inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    textSize = 14f
+                    setText(prefs.getString(QrisNotificationListener.PREF_DEVICE_SECRET, ""))
+                }
+                etDeviceSecret
+            })
             addView(divider())
             addView(run {
                 swEnabled = Switch(this@MainActivity).apply {
@@ -1106,6 +1117,7 @@ class MainActivity : AppCompatActivity() {
     private fun saveSettings() {
         val url = etServerUrl.text.toString().trim()
         val key = etDeviceKey.text.toString().trim()
+        val secret = etDeviceSecret.text.toString().trim()
 
         if (url.isEmpty()) { etServerUrl.error = "URL server wajib diisi"; return }
         if (!url.startsWith("http")) { etServerUrl.error = "URL harus dimulai http/https"; return }
@@ -1114,6 +1126,7 @@ class MainActivity : AppCompatActivity() {
         prefs.edit()
             .putString(QrisNotificationListener.PREF_SERVER_URL, url)
             .putString(QrisNotificationListener.PREF_DEVICE_KEY, key)
+            .putString(QrisNotificationListener.PREF_DEVICE_SECRET, secret)
             .putBoolean(QrisNotificationListener.PREF_ENABLED, swEnabled.isChecked)
             .apply()
 
@@ -1336,6 +1349,7 @@ class QrisNotificationListener : NotificationListenerService() {
         const val PREFS_NAME       = "qris_listener_prefs"
         const val PREF_SERVER_URL  = "server_url"
         const val PREF_DEVICE_KEY  = "device_key"
+        const val PREF_DEVICE_SECRET = "device_secret"
         const val PREF_ENABLED     = "enabled"
 
         const val PREF_DEBUG_CONNECTED       = "debug_connected"
@@ -1474,6 +1488,7 @@ class QrisNotificationListener : NotificationListenerService() {
 
         val serverUrl = prefs.getString(PREF_SERVER_URL, "") ?: ""
         val deviceKey = prefs.getString(PREF_DEVICE_KEY, "") ?: ""
+        val deviceSecret = prefs.getString(PREF_DEVICE_SECRET, "") ?: ""
         if (serverUrl.isEmpty() || deviceKey.isEmpty()) return
 
         val displayLabel = appLabel ?: packageName
@@ -1493,7 +1508,7 @@ class QrisNotificationListener : NotificationListenerService() {
             prefs.edit().putString(PREF_DEBUG_LAST_RESULT,
                 "Pola tidak cocok, kirim ke server:\\n\${rawText.take(150)}").apply()
             scope.launch {
-                sendToServer(serverUrl, deviceKey, 0, packageName, rawText.take(255))
+                sendToServer(serverUrl, deviceKey, deviceSecret, 0, packageName, rawText.take(255))
             }
             return
         }
@@ -1515,7 +1530,7 @@ class QrisNotificationListener : NotificationListenerService() {
         playPaymentAlert(displayLabel, amount)
 
         scope.launch {
-            sendToServer(serverUrl, deviceKey, amount, packageName, rawText.take(255))
+            sendToServer(serverUrl, deviceKey, deviceSecret, amount, packageName, rawText.take(255))
         }
     }
 
@@ -1648,6 +1663,7 @@ class QrisNotificationListener : NotificationListenerService() {
     private fun sendToServer(
         serverUrl: String,
         deviceKey: String,
+        deviceSecret: String,
         amount: Int,
         sourceApp: String,
         rawText: String
@@ -1662,15 +1678,30 @@ class QrisNotificationListener : NotificationListenerService() {
                 doOutput       = true
                 setRequestProperty("Content-Type", "application/json; charset=utf-8")
                 setRequestProperty("Accept", "application/json")
-                setRequestProperty("X-QRIS-Client", "SalfanetAndroid/2.0")
+                setRequestProperty("X-QRIS-Client", "SalfanetAndroid/3.0")
             }
+
+            val ts = System.currentTimeMillis() / 1000
+            val nonce = java.util.UUID.randomUUID().toString().replace("-", "")
 
             val payload = JSONObject().apply {
                 put("device_key", deviceKey)
                 put("amount",     amount)
                 put("source_app", sourceApp)
                 put("raw_text",   rawText)
-                put("timestamp",  System.currentTimeMillis() / 1000)
+                put("timestamp",  ts)
+
+                // V2 signature if device_secret is configured
+                if (deviceSecret.isNotEmpty()) {
+                    val canonical = "$deviceKey|$amount|$ts|$nonce"
+                    val mac = javax.crypto.Mac.getInstance("HmacSHA256")
+                    val secretKey = javax.crypto.spec.SecretKeySpec(deviceSecret.toByteArray(Charsets.UTF_8), "HmacSHA256")
+                    mac.init(secretKey)
+                    val sigBytes = mac.doFinal(canonical.toByteArray(Charsets.UTF_8))
+                    val sig = sigBytes.joinToString("") { "%02x".format(it) }
+                    put("nonce", nonce)
+                    put("signature", sig)
+                }
             }
 
             conn.outputStream.use { os: OutputStream -> os.write(payload.toString().toByteArray(Charsets.UTF_8)) }
@@ -1755,25 +1786,28 @@ class QrisWatchdogWorker(context: Context, params: WorkerParameters) : Coroutine
 
         val hasUrl = !prefs.getString(QrisNotificationListener.PREF_SERVER_URL, "").isNullOrEmpty()
         val hasKey = !prefs.getString(QrisNotificationListener.PREF_DEVICE_KEY, "").isNullOrEmpty()
-        if (!hasUrl || !hasKey) return Result.success()
+        if (!hasUrl || !hasKey) return
+
+        val hasSecret = !prefs.getString(QrisNotificationListener.PREF_DEVICE_SECRET, "").isNullOrEmpty()
 
         if (!isNotificationAccessGranted(ctx)) {
             maybeAlertRevoked(ctx, prefs)
             return Result.success()
         }
 
-        val connected = prefs.getBoolean(QrisNotificationListener.PREF_DEBUG_CONNECTED, false)
-        if (!connected) {
-            val svcIntent = Intent(ctx, QrisNotificationListener::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                ctx.startForegroundService(svcIntent)
-            } else {
-                ctx.startService(svcIntent)
-            }
-            try {
-                NLS.requestRebind(ComponentName(ctx, QrisNotificationListener::class.java))
-            } catch (_: Exception) {}
+        // SELALU coba restart+rebind, jangan gerbang lewat PREF_DEBUG_CONNECTED.
+        // Flag itu cuma di-set false lewat callback graceful (onDestroy/
+        // onListenerDisconnected) — kalau OS membunuh proses secara paksa,
+        // callback itu tidak pernah terpanggil, flag tetap basi bernilai true.
+        val svcIntent = Intent(ctx, QrisNotificationListener::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            ctx.startForegroundService(svcIntent)
+        } else {
+            ctx.startService(svcIntent)
         }
+        try {
+            NLS.requestRebind(ComponentName(ctx, QrisNotificationListener::class.java))
+        } catch (_: Exception) {}
 
         return Result.success()
     }
