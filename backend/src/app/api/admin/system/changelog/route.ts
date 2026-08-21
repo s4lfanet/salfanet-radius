@@ -150,8 +150,8 @@ export async function POST(req: NextRequest) {
 
     // Step 3: Backend install + build
     try {
-      await runCmd('pnpm install --no-frozen-lockfile 2>&1', `${appDir}/backend`, 120000);
-      await runCmd('pnpm build 2>&1', `${appDir}/backend`, 180000);
+      await runCmd('CI=true pnpm install --no-frozen-lockfile 2>&1', `${appDir}/backend`, 120000);
+      await runCmd('CI=true pnpm build 2>&1', `${appDir}/backend`, 180000);
       steps.push({ step: 'Backend build', status: 'success' });
     } catch (err: any) {
       steps.push({ step: 'Backend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 300) });
@@ -160,8 +160,8 @@ export async function POST(req: NextRequest) {
 
     // Step 4: Frontend install + build
     try {
-      await runCmd('pnpm install --no-frozen-lockfile 2>&1', `${appDir}/frontend`, 120000);
-      await runCmd('pnpm build 2>&1', `${appDir}/frontend`, 180000);
+      await runCmd('CI=true pnpm install --no-frozen-lockfile 2>&1', `${appDir}/frontend`, 120000);
+      await runCmd('CI=true pnpm build 2>&1', `${appDir}/frontend`, 180000);
       steps.push({ step: 'Frontend build', status: 'success' });
     } catch (err: any) {
       steps.push({ step: 'Frontend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 300) });
