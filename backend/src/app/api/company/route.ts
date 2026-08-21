@@ -31,6 +31,7 @@ export async function GET() {
         qrisMerchantName: null,
         qrisEnabled: false,
         qrisDeviceKey: null,
+        qrisDeviceSecret: null,
       });
     }
 
@@ -92,6 +93,7 @@ export async function POST(request: Request) {
           qrisMerchantName: data.qrisMerchantName ?? undefined,
           qrisEnabled: data.qrisEnabled ?? undefined,
           qrisDeviceKey: data.qrisDeviceKey ?? undefined,
+          qrisDeviceSecret: data.qrisDeviceSecret ?? undefined,
         },
       });
     } else {
@@ -119,6 +121,7 @@ export async function POST(request: Request) {
           qrisMerchantName: data.qrisMerchantName ?? null,
           qrisEnabled: data.qrisEnabled ?? false,
           qrisDeviceKey: data.qrisDeviceKey ?? null,
+          qrisDeviceSecret: data.qrisDeviceSecret ?? null,
         },
       });
     }

@@ -62,7 +62,7 @@ export default function PaymentGatewayPage() {
   const [xenditForm, setXenditForm] = useState({ apiKey: '', webhookToken: '', environment: 'sandbox', isActive: false });
   const [duitkuForm, setDuitkuForm] = useState({ merchantCode: '', apiKey: '', environment: 'sandbox', isActive: false });
   const [tripayForm, setTripayForm] = useState({ merchantCode: '', apiKey: '', privateKey: '', environment: 'sandbox', isActive: false });
-  const [qrisForm, setQrisForm] = useState({ staticCode: '', merchantName: '', enabled: false, deviceKey: '', uniqueMin: 1, uniqueMax: 999 });
+  const [qrisForm, setQrisForm] = useState({ staticCode: '', merchantName: '', enabled: false, deviceKey: '', deviceSecret: '', uniqueMin: 1, uniqueMax: 999 });
   const [qrisTest, setQrisTest] = useState({ orderId: '', loading: false, result: null as null | { success: boolean; message: string; invoiceId?: string; baseAmount?: number; uniqueAmount?: number } });
 
   // ─── React Query: Payment gateway configs ────────────────────────────────────
@@ -120,13 +120,14 @@ export default function PaymentGatewayPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await apiAdmin<{ qrisStaticCode?: string; qrisMerchantName?: string; qrisEnabled?: boolean; qrisDeviceKey?: string; qrisUniqueMin?: number; qrisUniqueMax?: number }>('/api/company');
+        const res = await apiAdmin<{ qrisStaticCode?: string; qrisMerchantName?: string; qrisEnabled?: boolean; qrisDeviceKey?: string; qrisDeviceSecret?: string; qrisUniqueMin?: number; qrisUniqueMax?: number }>('/api/company');
         if (!cancelled && res) {
           setQrisForm({
             staticCode: res.qrisStaticCode || '',
             merchantName: res.qrisMerchantName || '',
             enabled: res.qrisEnabled || false,
             deviceKey: res.qrisDeviceKey || '',
+            deviceSecret: res.qrisDeviceSecret || '',
             uniqueMin: res.qrisUniqueMin ?? 1,
             uniqueMax: res.qrisUniqueMax ?? 999,
           });
@@ -183,6 +184,7 @@ export default function PaymentGatewayPage() {
           qrisMerchantName: qrisForm.merchantName,
           qrisEnabled: qrisForm.enabled,
           qrisDeviceKey: qrisForm.deviceKey,
+          qrisDeviceSecret: qrisForm.deviceSecret,
           qrisUniqueMin: qrisForm.uniqueMin,
           qrisUniqueMax: qrisForm.uniqueMax,
         }),
@@ -744,6 +746,41 @@ export default function PaymentGatewayPage() {
                     Generate
                   </button>
                 </div>
+              </div>
+
+              {/* Device Secret untuk V2 HMAC Signing */}
+              <div className="p-2.5 bg-muted rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold">Device Secret — V2 Signature (Opsional)</p>
+                    <p className="text-[10px] text-muted-foreground">HMAC-SHA256 signing key untuk verifikasi notifikasi otomatis. Tidak pernah dikirim ke server oleh APK — hanya dipakai untuk menandatangani payload.</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="password"
+                    value={qrisForm.deviceSecret}
+                    onChange={(e) => setQrisForm({ ...qrisForm, deviceSecret: e.target.value })}
+                    className="flex-1 px-2.5 py-1.5 text-xs font-mono border border-border rounded-lg bg-card focus:ring-1 focus:ring-ring"
+                    placeholder="Kosongkan untuk V1 (device_key only)"
+                    maxLength={100}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const secret = crypto.randomUUID().replace(/-/g, '').substring(0, 32);
+                      setQrisForm({ ...qrisForm, deviceSecret: secret });
+                    }}
+                    className="px-2.5 py-1.5 text-xs bg-muted-foreground/20 hover:bg-muted-foreground/30 rounded-lg whitespace-nowrap"
+                  >
+                    Generate
+                  </button>
+                </div>
+                {qrisForm.deviceSecret ? (
+                  <p className="text-[10px] text-success">V2 signature aktif. APK akan menandatangani payload dengan HMAC-SHA256.</p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">Tanpa device secret, APK menggunakan V1 (device_key only). V2 lebih aman terhadap spoofing.</p>
+                )}
               </div>
 
               {qrisForm.deviceKey ? (
