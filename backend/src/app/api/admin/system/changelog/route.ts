@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
       await runCmd('CI=true pnpm build 2>&1', `${appDir}/frontend`, 300000);
       steps.push({ step: 'Frontend build', status: 'success' });
     } catch (err: any) {
-      steps.push({ step: 'Frontend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 500) });
+      steps.push({ step: 'Frontend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 1000) });
       return NextResponse.json({ success: false, steps, error: 'Frontend build failed' }, { status: 500 });
     }
 
