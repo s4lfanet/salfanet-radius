@@ -141,17 +141,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, steps, error: 'Git pull failed' }, { status: 500 });
     }
 
-    // Step 2: Prisma db push
+    // Step 2: Prisma generate + db push
     try {
-      const output = await runCmd('npx prisma db push 2>&1', `${appDir}/backend`, 120000);
+      await runCmd('pnpm exec prisma generate 2>&1', `${appDir}/backend`, 120000);
+      const output = await runCmd('pnpm exec prisma db push 2>&1', `${appDir}/backend`, 120000);
       steps.push({ step: 'Prisma db push', status: 'success', output: output.substring(0, 200) });
     } catch (err: any) {
-      steps.push({ step: 'Prisma db push', status: 'error', output: (err.stdout || err.message || '').substring(0, 200) });
+      steps.push({ step: 'Prisma db push', status: 'error', output: (err.stdout || err.message || '').substring(0, 300) });
     }
 
-    // Step 3: Backend install + build
+    // Step 3: Backend install + generate + build
     try {
       await runCmd('CI=true pnpm install --no-frozen-lockfile 2>&1', `${appDir}/backend`, 180000);
+      await runCmd('pnpm exec prisma generate 2>&1', `${appDir}/backend`, 120000);
       await runCmd('CI=true pnpm build 2>&1', `${appDir}/backend`, 300000);
       steps.push({ step: 'Backend build', status: 'success' });
     } catch (err: any) {
