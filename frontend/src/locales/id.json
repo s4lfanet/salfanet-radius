@@ -331,6 +331,7 @@
     "voucher": "Voucher",
     "rekapVoucher": "Rekap Voucher",
     "collectorSettlements": "Setoran Kolektor",
+    "paymentProofs": "Verifikasi Bukti Transfer",
     "agentReport": "Laporan Reseller",
     "template": "Template Voucher",
     "agent": "Agen",

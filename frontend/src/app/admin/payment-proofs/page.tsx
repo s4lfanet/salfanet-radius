@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Inbox, Search, Eye, ChevronDown, Loader2, X } from 'lucide-react';
+import { Inbox, Search, Eye, ChevronDown, Loader2, X, Check, AlertCircle } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { showError, showSuccess } from '@/lib/sweetalert';
 
 interface ProofItem {
   id: string;
@@ -17,23 +18,27 @@ interface ProofItem {
   fullname: string;
   username: string;
   phone: string;
-  is_my_upload: boolean;
+  collector_name: string;
+  collector_username: string;
 }
 
 const STEP = 10;
 
-export default function CollectorProofsPage() {
+export default function AdminPaymentProofsPage() {
   const [proofs, setProofs] = useState<ProofItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending');
   const [search, setSearch] = useState('');
   const [visibleCount, setVisibleCount] = useState(STEP);
   const [viewImage, setViewImage] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectModal, setRejectModal] = useState<ProofItem | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const fetchProofs = useCallback(async (f: string) => {
     setLoading(true);
     try {
-      const data = await apiAdmin<{ proofs: ProofItem[] }>(`/api/collector/proofs?filter=${f}`);
+      const data = await apiAdmin<{ proofs: ProofItem[] }>(`/api/admin/payment-proofs?filter=${f}`);
       setProofs(data.proofs || []);
     } catch {
       setProofs([]);
@@ -42,16 +47,50 @@ export default function CollectorProofsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchProofs(filter);
-  }, [filter]);
+  useEffect(() => { fetchProofs(filter); }, [filter]);
+
+  const handleApprove = async (proof: ProofItem) => {
+    setActionLoading(proof.id);
+    try {
+      await apiAdmin(`/api/admin/payment-proofs/${proof.id}/verify?id=${proof.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ action: 'approve' }),
+      });
+      showSuccess('Bukti transfer disetujui');
+      fetchProofs(filter);
+    } catch {
+      showError('Gagal menyetujui bukti');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleReject = async () => {
+    if (!rejectModal) return;
+    setActionLoading(rejectModal.id);
+    try {
+      await apiAdmin(`/api/admin/payment-proofs/${rejectModal.id}/verify?id=${rejectModal.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ action: 'reject', rejectReason }),
+      });
+      showSuccess('Bukti transfer ditolak, invoice dikembalikan ke belum lunas');
+      setRejectModal(null);
+      setRejectReason('');
+      fetchProofs(filter);
+    } catch {
+      showError('Gagal menolak bukti');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const filtered = proofs.filter(p => {
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return (p.fullname || '').toLowerCase().includes(q) ||
       (p.username || '').toLowerCase().includes(q) ||
-      (p.phone || '').includes(q);
+      (p.phone || '').includes(q) ||
+      (p.collector_name || '').toLowerCase().includes(q);
   });
   const visible = filtered.slice(0, visibleCount);
 
@@ -65,7 +104,7 @@ export default function CollectorProofsPage() {
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Inbox className="w-5 h-5" /> Verifikasi Bukti Transfer
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">Periksa bukti transfer dari pelanggan di wilayah Anda.</p>
+          <p className="text-sm text-muted-foreground mt-1">Setujui atau tolak bukti transfer yang diupload kolektor.</p>
         </div>
         {filter === 'pending' && proofs.length > 0 && (
           <span className="bg-red-500 text-white rounded-full font-bold px-3 py-1 text-xs">
@@ -96,7 +135,7 @@ export default function CollectorProofsPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Cari nama, telepon..."
+          placeholder="Cari pelanggan, kolektor..."
           value={search}
           onChange={e => { setSearch(e.target.value); setVisibleCount(STEP); }}
           className="w-full pl-10 pr-10 py-2.5 rounded-lg border border-input bg-background text-foreground text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none"
@@ -127,10 +166,11 @@ export default function CollectorProofsPage() {
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
                     <th className="text-left p-3 font-semibold text-muted-foreground">Pelanggan</th>
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Kolektor</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Invoice</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Jumlah</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Status</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Tgl Kirim</th>
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Tgl</th>
                     <th className="text-center p-3 font-semibold text-muted-foreground">Aksi</th>
                   </tr>
                 </thead>
@@ -140,6 +180,10 @@ export default function CollectorProofsPage() {
                       <td className="p-3">
                         <div className="font-medium text-foreground">{proof.fullname || proof.username}</div>
                         <div className="text-xs text-muted-foreground">{proof.phone || '—'}</div>
+                      </td>
+                      <td className="p-3">
+                        <div className="text-sm text-foreground">{proof.collector_name || '—'}</div>
+                        <div className="text-xs text-muted-foreground">@{proof.collector_username}</div>
                       </td>
                       <td className="p-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
                       <td className="p-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>
@@ -161,12 +205,32 @@ export default function CollectorProofsPage() {
                       </td>
                       <td className="p-3 text-xs text-muted-foreground">{fmtDate(proof.submitted_at)}</td>
                       <td className="p-3 text-center">
-                        <button
-                          onClick={() => setViewImage(proof.proof_image)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-border rounded-lg hover:bg-muted transition-all"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Lihat
-                        </button>
+                        <div className="flex gap-1.5 justify-center">
+                          <button
+                            onClick={() => setViewImage(proof.proof_image)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-border rounded-lg hover:bg-muted transition-all"
+                          >
+                            <Eye className="w-3.5 h-3.5" /> Lihat
+                          </button>
+                          {proof.status === 'pending' && (
+                            <>
+                              <button
+                                onClick={() => handleApprove(proof)}
+                                disabled={actionLoading === proof.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 disabled:opacity-50 transition-all"
+                              >
+                                {actionLoading === proof.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                              </button>
+                              <button
+                                onClick={() => { setRejectModal(proof); setRejectReason(''); }}
+                                disabled={actionLoading === proof.id}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 transition-all"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -197,6 +261,44 @@ export default function CollectorProofsPage() {
               <X className="w-6 h-6" />
             </button>
             <img src={viewImage} alt="Bukti Transfer" className="w-full rounded-lg" />
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {rejectModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setRejectModal(null)}>
+          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <h3 className="text-lg font-bold text-foreground mb-1 flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-red-500" /> Tolak Bukti Transfer
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Invoice #{rejectModal.invoice_number} - {rejectModal.fullname}
+            </p>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-foreground mb-2">Alasan Penolakan</label>
+              <textarea
+                value={rejectReason}
+                onChange={e => setRejectReason(e.target.value)}
+                placeholder="Contoh: Bukti tidak jelas, nominal tidak sesuai..."
+                className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground text-sm outline-none focus:ring-2 focus:ring-red-500 min-h-[80px]"
+              />
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRejectModal(null)}
+                className="flex-1 py-2 rounded-lg border border-border text-sm font-medium hover:bg-muted"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleReject}
+                disabled={actionLoading === rejectModal.id}
+                className="flex-1 py-2 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading === rejectModal.id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Tolak & Kembalikan'}
+              </button>
+            </div>
           </div>
         </div>
       )}
