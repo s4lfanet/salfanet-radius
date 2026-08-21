@@ -16,6 +16,7 @@ export async function GET() {
         footerCustomer: true,
         footerTechnician: true,
         footerAgent: true,
+        footerCollector: true,
       }
     });
 
@@ -30,6 +31,7 @@ export async function GET() {
         footerCustomer: company?.footerCustomer || null,
         footerTechnician: company?.footerTechnician || null,
         footerAgent: company?.footerAgent || null,
+        footerCollector: company?.footerCollector || null,
       }
     });
   } catch (error: any) {
@@ -45,6 +47,7 @@ export async function GET() {
         footerCustomer: null,
         footerTechnician: null,
         footerAgent: null,
+        footerCollector: null,
       }
     });
   }
