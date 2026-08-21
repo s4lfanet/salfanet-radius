@@ -86,13 +86,13 @@ const PORTALS = [
 
 export default function SubdomainSettingsPage() {
   const { addToast } = useToast();
-  const { data: companyData, isLoading: loading } = useApiQuery<{ data?: { baseUrl?: string }; baseUrl?: string }>('/api/settings/company', { staleTime: 300000 });
+  const { data: companyData, isLoading: loading } = useApiQuery<{ success?: boolean; company?: { baseUrl?: string }; baseUrl?: string }>('/api/settings/company', { staleTime: 300000 });
   const [settings, setSettings] = useState<CompanySettings>({ baseUrl: '' });
   const [domain, setDomain] = useState('example.com');
 
   useEffect(() => {
     if (companyData) {
-      const url = companyData?.data?.baseUrl || companyData?.baseUrl || '';
+      const url = companyData?.company?.baseUrl || companyData?.baseUrl || '';
       setSettings({ baseUrl: url });
       if (url) {
         try {
