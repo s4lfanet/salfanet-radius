@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
 const p = new PrismaClient();
-p.user.findFirst({ where: { username: 'admin' }, select: { username: true, role: true } })
+p.adminUser.findFirst({ where: { username: 'admin' }, select: { username: true, role: true } })
   .then(u => { console.log(JSON.stringify(u)); process.exit(0); })
   .catch(e => { console.error(e); process.exit(1); });
