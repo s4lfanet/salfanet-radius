@@ -280,14 +280,6 @@ export default function SystemPage() {
               {changelogLoading ? <RefreshCw className="w-3 h-3 animate-spin" /> : <GitCommit className="w-3 h-3" />}
               Lihat Changelog
             </button>
-            <button
-              onClick={runUpdate}
-              disabled={updating}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold transition-all disabled:opacity-50"
-            >
-              {updating ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-              Update Sekarang
-            </button>
           </div>
         </div>
       )}
