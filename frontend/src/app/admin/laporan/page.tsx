@@ -106,7 +106,7 @@ export default function LaporanPage() {
     if (!rows.length) return;
     setExporting('excel');
     try {
-      const XLSX = (await import('xlsx')).default;
+      const XLSX = await import('xlsx');
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, TYPE_LABELS[reportType]);
