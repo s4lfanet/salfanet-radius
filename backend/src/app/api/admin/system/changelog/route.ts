@@ -11,12 +11,12 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 600; // 10 minutes — build operations take time
 
 // Ensure PATH includes common binary locations for PM2 standalone processes
-// Override NODE_OPTIONS to give more memory for build commands
+// Remove PM2's restrictive NODE_OPTIONS that break next build
 const EXEC_ENV = {
   ...process.env,
   PATH: `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${process.env.PATH || ''}`,
   SHELL: '/bin/bash',
-  NODE_OPTIONS: '--max-old-space-size=1024',
+  NODE_OPTIONS: '',
 };
 
 // Run a command via bash and capture full stdout+stderr
