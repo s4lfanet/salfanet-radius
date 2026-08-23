@@ -21,6 +21,24 @@ const WG_IFACE = process.env.WG_IFACE || 'wg0'
 const WG_CONF  = `/etc/wireguard/${WG_IFACE}.conf`
 const WG_INFO  = '/etc/wireguard/wg-server-info.json'
 
+// WireGuard public keys are always 32 raw bytes, base64-encoded (44 chars incl. padding `=`).
+// Validating this before any value reaches a shell string or the wg.conf file blocks both
+// command injection (via `exec`) and config injection (extra `[Peer]`/`[Interface]` lines).
+const WG_PUBKEY_RE = /^[A-Za-z0-9+/]{42,43}=$/
+
+function isValidWgPublicKey(value: unknown): value is string {
+  return typeof value === 'string' && WG_PUBKEY_RE.test(value)
+}
+
+// Strict dotted-decimal CIDR — rejects anything containing shell metacharacters.
+function isValidCidr(value: string): boolean {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/.exec(value)
+  if (!m) return false
+  const octets = [m[1], m[2], m[3], m[4]].map(Number)
+  const prefix = Number(m[5])
+  return octets.every((o) => o >= 0 && o <= 255) && prefix >= 0 && prefix <= 32
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 /**
@@ -104,7 +122,7 @@ async function addPeerToConf(
 
   // Build AllowedIPs: vpnIp/32 + any caller-provided local networks
   const parsedLocalNets = localNetworks
-    ? localNetworks.split(',').map((s) => s.trim()).filter((s) => s && s.includes('/'))
+    ? localNetworks.split(',').map((s) => s.trim()).filter((s) => isValidCidr(s))
     : []
   const allowedIps = [`${vpnIp}/32`, ...parsedLocalNets].join(', ')
 
@@ -340,6 +358,9 @@ export async function POST(req: NextRequest) {
     let clientPublicKey: string
 
     if (suppliedPubKey) {
+      if (!isValidWgPublicKey(suppliedPubKey)) {
+        return NextResponse.json({ error: 'publicKey tidak valid' }, { status: 400 })
+      }
       clientPublicKey = suppliedPubKey
     } else {
       const kp = await genKeypair()
@@ -457,6 +478,9 @@ export async function POST(req: NextRequest) {
 
   if (action === 'remove') {
     if (!suppliedPubKey) return NextResponse.json({ error: 'publicKey wajib untuk remove' }, { status: 400 })
+    if (!isValidWgPublicKey(suppliedPubKey)) {
+      return NextResponse.json({ error: 'publicKey tidak valid' }, { status: 400 })
+    }
     await removePeerFromConf(suppliedPubKey)
     return NextResponse.json({ success: true })
   }

@@ -1,9 +1,17 @@
 ﻿import { NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { exec } from 'child_process';
+import { execFile } from 'child_process';
 import { promisify } from 'util';
+import net from 'net';
 
-const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
+
+// NAS host: IPv4/IPv6 literal or a plain hostname (letters/digits/dot/hyphen only — no shell metacharacters).
+const HOSTNAME_RE = /^[a-zA-Z0-9.-]+$/;
+
+function isValidNasHost(host: string): boolean {
+    return net.isIP(host) !== 0 || HOSTNAME_RE.test(host);
+}
 
 export async function POST(req: Request) {
     const authCheck = await requirePermission('settings.edit');
@@ -11,22 +19,38 @@ export async function POST(req: Request) {
     try {
         const { username, password, nasIP, nasPort, secret } = await req.json();
 
-        if (!username || !password) {
+        if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
             return NextResponse.json(
                 { success: false, error: 'Username and password are required' },
                 { status: 400 }
             );
         }
 
-        const command = `radtest "${username}" "${password}" ${nasIP || '127.0.0.1'} ${nasPort || 1812} "${secret || 'testing123'}"`;
+        const host = nasIP ? String(nasIP) : '127.0.0.1';
+        if (!isValidNasHost(host)) {
+            return NextResponse.json(
+                { success: false, error: 'Invalid nasIP' },
+                { status: 400 }
+            );
+        }
 
-        // Execute radtest command
+        const port = nasPort !== undefined && nasPort !== null ? Number(nasPort) : 1812;
+        if (!Number.isInteger(port) || port < 1 || port > 65535) {
+            return NextResponse.json(
+                { success: false, error: 'Invalid nasPort' },
+                { status: 400 }
+            );
+        }
+
+        const radiusSecret = secret !== undefined && secret !== null ? String(secret) : 'testing123';
+
+        // Execute radtest command — execFile with an argument array, no shell involved.
         const startTime = Date.now();
         let stdout = '';
         let stderr = '';
 
         try {
-            const result = await execAsync(command);
+            const result = await execFileAsync('radtest', [username, password, host, String(port), radiusSecret]);
             stdout = result.stdout;
             stderr = result.stderr;
         } catch (error: any) {

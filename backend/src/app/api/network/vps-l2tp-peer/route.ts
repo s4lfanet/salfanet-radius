@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requirePermission } from '@/server/middleware/api-auth'
-import { exec as execCb } from 'child_process'
+import { exec as execCb, execFile as execFileCb } from 'child_process'
 import { promisify } from 'util'
 import { readFile, writeFile } from 'fs/promises'
 import { prisma } from '@/server/db/client'
@@ -8,7 +8,22 @@ import { prisma } from '@/server/db/client'
 // Fixed DB ID for VPS L2TP virtual server entry
 const VPS_L2TP_SERVER_ID = '__vps_l2tp_server__'
 const exec = promisify(execCb)
+const execFile = promisify(execFileCb)
 const L2TP_INFO_FILE = '/etc/salfanet/l2tp/l2tp-server-info.json'
+
+// VPN peer usernames are always server-generated (see `nas-<slug>-<rand>` below) —
+// this validates any externally-supplied username (e.g. for "remove") matches
+// that safe shape before it's ever used in a shell command or file operation.
+const SAFE_USERNAME_RE = /^[a-zA-Z0-9_-]{1,64}$/
+
+// Strict dotted-decimal CIDR — rejects anything containing shell metacharacters.
+function isValidCidr(value: string): boolean {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/.exec(value)
+  if (!m) return false
+  const octets = [m[1], m[2], m[3], m[4]].map(Number)
+  const prefix = Number(m[5])
+  return octets.every((o) => o >= 0 && o <= 255) && prefix >= 0 && prefix <= 32
+}
 
 function generatePassword(len = 16): string {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
@@ -111,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     const { localNetworks } = body
     const parsedLocalNets: string[] = localNetworks
-      ? String(localNetworks).split(',').map((s: string) => s.trim()).filter((s: string) => s && s.includes('/'))
+      ? String(localNetworks).split(',').map((s: string) => s.trim()).filter((s: string) => isValidCidr(s))
       : []
 
     const username = `nas-${label.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}-${Math.random().toString(36).substring(2, 6)}`
@@ -238,12 +253,25 @@ export async function POST(req: NextRequest) {
 
   if (action === 'remove') {
     if (!suppliedUsername) return NextResponse.json({ error: 'username wajib diisi' }, { status: 400 })
+    if (typeof suppliedUsername !== 'string' || !SAFE_USERNAME_RE.test(suppliedUsername)) {
+      return NextResponse.json({ error: 'username tidak valid' }, { status: 400 })
+    }
     try {
-      await exec(`salfanet-l2tp-peer remove "${suppliedUsername}"`)
+      // execFile — argument passed directly as argv, no shell involved.
+      await execFile('salfanet-l2tp-peer', ['remove', suppliedUsername])
     } catch {
-      const tmp = await exec(`grep -v '^"${suppliedUsername}"' /etc/ppp/chap-secrets || true`)
-      await exec(`echo '${tmp.stdout}' > /etc/ppp/chap-secrets && chmod 600 /etc/ppp/chap-secrets`)
-      try { await exec('systemctl restart xl2tpd') } catch { /* ignore */ }
+      // Fallback: rewrite chap-secrets in-process (no shell, no grep/echo).
+      const CHAP_SECRETS = '/etc/ppp/chap-secrets'
+      try {
+        const content = await readFile(CHAP_SECRETS, 'utf8')
+        const filtered = content
+          .split('\n')
+          .filter((line) => !line.startsWith(`"${suppliedUsername}"`))
+          .join('\n')
+        await writeFile(CHAP_SECRETS, filtered, { mode: 0o600 })
+        await execFile('chmod', ['600', CHAP_SECRETS])
+      } catch { /* ignore — file may not exist yet */ }
+      try { await execFile('systemctl', ['restart', 'xl2tpd']) } catch { /* ignore */ }
     }
     return NextResponse.json({ success: true })
   }

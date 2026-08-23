@@ -18,7 +18,14 @@ export async function POST(req: NextRequest) {
 
     const invoice = await prisma.invoice.findUnique({
       where: { id: invoiceId },
-      select: { id: true, status: true, amount: true, userId: true, customerUsername: true },
+      select: {
+        id: true,
+        status: true,
+        amount: true,
+        userId: true,
+        customerUsername: true,
+        user: { select: { areaId: true } },
+      },
     });
 
     if (!invoice) {
@@ -27,6 +34,22 @@ export async function POST(req: NextRequest) {
 
     if (invoice.status === 'PAID') {
       return NextResponse.json({ error: 'Invoice sudah lunas' }, { status: 400 });
+    }
+
+    // Ownership check: a collector may only settle invoices for customers in
+    // their own assigned area — without this, any collector could mark any
+    // customer's invoice as paid regardless of who they actually collect for.
+    const collectorAccount = await prisma.adminUser.findUnique({
+      where: { id: collector.id },
+      select: { areaId: true },
+    });
+
+    if (
+      !collectorAccount?.areaId ||
+      !invoice.user?.areaId ||
+      invoice.user.areaId !== collectorAccount.areaId
+    ) {
+      return NextResponse.json({ error: 'Invoice bukan di area Anda' }, { status: 403 });
     }
 
     const method = paymentMethod || 'cash';
