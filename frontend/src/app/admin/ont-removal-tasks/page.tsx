@@ -28,6 +28,14 @@ interface Technician {
   _source: string;
 }
 
+interface IsolatedCustomer {
+  id: string;
+  username: string;
+  name: string;
+  areaName: string | null;
+  totalUnpaid: number;
+}
+
 export default function AdminOntRemovalTasksPage() {
   const [tasks, setTasks] = useState<OntTask[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
@@ -37,6 +45,9 @@ export default function AdminOntRemovalTasksPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ username: '', assignedTechnicianId: '', reason: '' });
+  const [isolatedCustomers, setIsolatedCustomers] = useState<IsolatedCustomer[]>([]);
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -61,13 +72,38 @@ export default function AdminOntRemovalTasksPage() {
     }
   }, []);
 
+  // Customers eligible for cabut ONT — sourced from the isolated/suspended
+  // customer list, same source the standalone "Pelanggan Isolir" page uses.
+  const fetchIsolatedCustomers = useCallback(async () => {
+    try {
+      const data = await apiAdmin<{ success?: boolean; data?: IsolatedCustomer[] }>('/api/admin/isolated-users');
+      setIsolatedCustomers(data.data || []);
+    } catch {
+      // best-effort
+    }
+  }, []);
+
   useEffect(() => {
     fetchTasks();
   }, [fetchTasks]);
 
   useEffect(() => {
     fetchTechnicians();
-  }, [fetchTechnicians]);
+    fetchIsolatedCustomers();
+  }, [fetchTechnicians, fetchIsolatedCustomers]);
+
+  const matchingCustomers = customerSearch.trim()
+    ? isolatedCustomers.filter((c) =>
+        c.username.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        c.name.toLowerCase().includes(customerSearch.toLowerCase())
+      ).slice(0, 20)
+    : isolatedCustomers.slice(0, 20);
+
+  const selectCustomer = (c: IsolatedCustomer) => {
+    setForm((f) => ({ ...f, username: c.username }));
+    setCustomerSearch(`${c.name} (${c.username})`);
+    setShowCustomerDropdown(false);
+  };
 
   const filtered = tasks.filter((t) =>
     t.username.toLowerCase().includes(search.toLowerCase()) ||
@@ -93,7 +129,9 @@ export default function AdminOntRemovalTasksPage() {
       showSuccess('Tugas cabut ONT berhasil dibuat');
       setShowCreate(false);
       setForm({ username: '', assignedTechnicianId: '', reason: '' });
+      setCustomerSearch('');
       fetchTasks();
+      fetchIsolatedCustomers();
     } catch (err: any) {
       showError(err?.message || 'Gagal membuat tugas');
     } finally {
@@ -133,7 +171,14 @@ export default function AdminOntRemovalTasksPage() {
           <button onClick={fetchTasks} className="p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">
             <RefreshCw className={`w-4 h-4 text-slate-600 dark:text-slate-300 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button onClick={() => setShowCreate(true)} className="flex items-center gap-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-xl transition">
+          <button
+            onClick={() => {
+              setForm({ username: '', assignedTechnicianId: '', reason: '' });
+              setCustomerSearch('');
+              setShowCreate(true);
+            }}
+            className="flex items-center gap-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-xl transition"
+          >
             <Plus className="w-4 h-4" /> Buat Tugas
           </button>
         </div>
@@ -227,14 +272,44 @@ export default function AdminOntRemovalTasksPage() {
               <button onClick={() => setShowCreate(false)}><X className="w-5 h-5 text-slate-400" /></button>
             </div>
             <div className="space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Username Pelanggan</label>
+              <div className="relative">
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Pelanggan (terisolir)</label>
                 <input
-                  value={form.username}
-                  onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
-                  placeholder="mis. john.doe"
+                  value={customerSearch}
+                  onChange={(e) => {
+                    setCustomerSearch(e.target.value);
+                    setForm((f) => ({ ...f, username: '' }));
+                    setShowCustomerDropdown(true);
+                  }}
+                  onFocus={() => setShowCustomerDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 150)}
+                  placeholder="Cari username / nama pelanggan..."
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white"
                 />
+                {showCustomerDropdown && (
+                  <div className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg">
+                    {matchingCustomers.length === 0 ? (
+                      <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                        {isolatedCustomers.length === 0 ? 'Tidak ada pelanggan terisolir' : 'Tidak ditemukan'}
+                      </p>
+                    ) : (
+                      matchingCustomers.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => selectCustomer(c)}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                        >
+                          <p className="font-medium text-slate-900 dark:text-white">{c.name} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">({c.username})</span></p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{c.areaName || 'Tanpa area'}{c.totalUnpaid ? ` · Tunggakan Rp${c.totalUnpaid.toLocaleString('id-ID')}` : ''}</p>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+                {!form.username && customerSearch && (
+                  <p className="text-[10px] text-red-500 mt-1">Pilih pelanggan dari daftar di atas.</p>
+                )}
               </div>
               <div>
                 <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Tugaskan ke Teknisi</label>
