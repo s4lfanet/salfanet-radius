@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { checkAuth } from '@/server/middleware/api-auth';
+import { requirePermission } from '@/server/middleware/api-auth';
 
 export async function GET(req: NextRequest) {
-  const authCheck = await checkAuth();
+  const authCheck = await requirePermission('users.view');
   if (!authCheck.authorized) return authCheck.response;
 
   try {
