@@ -82,6 +82,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Username is required' }, { status: 400 });
     }
 
+    // Ownership + eligibility check: a collector may only log an ONT removal
+    // for a customer in their own assigned area, and only once that
+    // customer is actually suspended/isolated — otherwise any collector
+    // could fabricate removal records for arbitrary or nonexistent
+    // usernames (same missing-scope class as the mark-paid IDOR fix).
+    const [collectorAccount, customer] = await Promise.all([
+      prisma.adminUser.findUnique({ where: { id: collector.id }, select: { areaId: true } }),
+      prisma.pppoeUser.findUnique({ where: { username }, select: { areaId: true, status: true } }),
+    ]);
+
+    if (!customer) {
+      return NextResponse.json({ error: 'Pelanggan tidak ditemukan' }, { status: 404 });
+    }
+    if (!collectorAccount?.areaId || customer.areaId !== collectorAccount.areaId) {
+      return NextResponse.json({ error: 'Pelanggan bukan di area Anda' }, { status: 403 });
+    }
+    if (!['suspended', 'isolated'].includes(customer.status)) {
+      return NextResponse.json(
+        { error: 'Cabut ONT hanya diperbolehkan untuk pelanggan yang terisolir' },
+        { status: 400 }
+      );
+    }
+
     const removal = await prisma.ontRemoval.create({
       data: {
         username,

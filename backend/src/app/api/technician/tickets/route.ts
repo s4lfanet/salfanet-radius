@@ -134,6 +134,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (action === 'update_status') {
+    if (ticket.assignedToId !== tech.id) {
+      return NextResponse.json({ error: 'Anda tidak ditugaskan pada tiket ini' }, { status: 403 });
+    }
     if (!status) return NextResponse.json({ error: 'status wajib' }, { status: 400 });
     const validStatuses = ['OPEN', 'IN_PROGRESS', 'WAITING_CUSTOMER', 'RESOLVED', 'CLOSED'];
     if (!validStatuses.includes(status)) {
@@ -169,6 +172,9 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (action === 'reply') {
+    if (ticket.assignedToId !== tech.id) {
+      return NextResponse.json({ error: 'Anda tidak ditugaskan pada tiket ini' }, { status: 403 });
+    }
     if (!message?.trim() && (!attachments || attachments.length === 0)) {
       return NextResponse.json({ error: 'Pesan atau lampiran tidak boleh kosong' }, { status: 400 });
     }

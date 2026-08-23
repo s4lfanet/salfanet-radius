@@ -1,0 +1,276 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { Unplug, Search, RefreshCw, Loader2, Plus, X, MapPin } from 'lucide-react';
+import { formatWIB } from '@/lib/timezone';
+import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import { apiAdmin } from '@/lib/api';
+
+interface OntTask {
+  id: string;
+  username: string;
+  customerName: string;
+  customerId: string | null;
+  address: string | null;
+  areaName: string | null;
+  technicianName: string;
+  reason: string | null;
+  status: string;
+  createdAt: string;
+  completedNotes: string | null;
+  cancelReason: string | null;
+}
+
+interface Technician {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  _source: string;
+}
+
+export default function AdminOntRemovalTasksPage() {
+  const [tasks, setTasks] = useState<OntTask[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<'PENDING' | 'COMPLETED' | 'CANCELLED' | ''>('PENDING');
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [form, setForm] = useState({ username: '', assignedTechnicianId: '', reason: '' });
+
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      const qs = status ? `?status=${status}` : '';
+      const data = await apiAdmin<{ tasks?: OntTask[] }>(`/api/admin/ont-removal-tasks${qs}`);
+      setTasks(data.tasks || []);
+    } catch {
+      showError('Gagal memuat data tugas cabut ONT');
+    } finally {
+      setLoading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
+  const fetchTechnicians = useCallback(async () => {
+    try {
+      const data = await apiAdmin<{ technicians?: Technician[] }>('/api/tickets/dispatch-data');
+      setTechnicians(data.technicians || []);
+    } catch {
+      // best-effort
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  useEffect(() => {
+    fetchTechnicians();
+  }, [fetchTechnicians]);
+
+  const filtered = tasks.filter((t) =>
+    t.username.toLowerCase().includes(search.toLowerCase()) ||
+    t.customerName.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const createTask = async () => {
+    if (!form.username.trim() || !form.assignedTechnicianId) {
+      showError('Username pelanggan dan teknisi wajib diisi');
+      return;
+    }
+    setCreating(true);
+    try {
+      await apiAdmin('/api/admin/ont-removal-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: form.username.trim(),
+          assignedTechnicianId: form.assignedTechnicianId,
+          reason: form.reason.trim() || undefined,
+        }),
+      });
+      showSuccess('Tugas cabut ONT berhasil dibuat');
+      setShowCreate(false);
+      setForm({ username: '', assignedTechnicianId: '', reason: '' });
+      fetchTasks();
+    } catch (err: any) {
+      showError(err?.message || 'Gagal membuat tugas');
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const cancelTask = async (id: string) => {
+    const ok = await showConfirm('Batalkan tugas cabut ONT ini?', 'Batalkan Tugas');
+    if (!ok) return;
+    try {
+      await apiAdmin(`/api/admin/ont-removal-tasks/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cancelReason: 'Dibatalkan oleh admin' }),
+      });
+      showSuccess('Tugas dibatalkan');
+      fetchTasks();
+    } catch {
+      showError('Gagal membatalkan tugas');
+    }
+  };
+
+  return (
+    <div className="p-4 lg:p-6 space-y-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-2">
+          <div className="p-2 bg-orange-500/10 rounded-xl flex items-center justify-center">
+            <Unplug className="w-5 h-5 text-orange-500" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900 dark:text-white">Tugas Cabut ONT</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{filtered.length} tugas</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={fetchTasks} className="p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            <RefreshCw className={`w-4 h-4 text-slate-600 dark:text-slate-300 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+          <button onClick={() => setShowCreate(true)} className="flex items-center gap-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-xl transition">
+            <Plus className="w-4 h-4" /> Buat Tugas
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col sm:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari username / nama..." className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400" />
+        </div>
+        <div className="flex gap-1">
+          {([
+            { key: 'PENDING', label: 'Pending' },
+            { key: 'COMPLETED', label: 'Selesai' },
+            { key: 'CANCELLED', label: 'Dibatalkan' },
+            { key: '', label: 'Semua' },
+          ] as const).map((f) => (
+            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-orange-600 text-white' : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && tasks.length === 0 ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-20 text-slate-500 dark:text-slate-400">
+          <Unplug className="w-10 h-10 mx-auto mb-2 opacity-30" />
+          <p className="text-sm">Tidak ada tugas</p>
+        </div>
+      ) : (
+        <div className="overflow-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Pelanggan</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Area</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Teknisi</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Alasan</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Dibuat</th>
+                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((t) => (
+                <tr key={t.id} className="border-b border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-slate-900 dark:text-white">{t.username}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t.customerName}</p>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                    {t.areaName ? (<span className="flex items-center gap-1 text-xs"><MapPin className="w-3 h-3" />{t.areaName}</span>) : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{t.technicianName}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={t.reason || t.completedNotes || t.cancelReason || ''}>
+                    {t.reason || t.completedNotes || t.cancelReason || '-'}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-bold ${
+                      t.status === 'PENDING' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                      t.status === 'COMPLETED' ? 'bg-green-500/10 text-green-600 dark:text-green-400' :
+                      'bg-red-500/10 text-red-600 dark:text-red-400'
+                    }`}>
+                      {t.status === 'PENDING' ? 'Pending' : t.status === 'COMPLETED' ? 'Selesai' : 'Dibatalkan'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{formatWIB(t.createdAt, 'dd MMM yyyy HH:mm')}</td>
+                  <td className="px-4 py-3">
+                    {t.status === 'PENDING' && (
+                      <button onClick={() => cancelTask(t.id)} className="text-xs text-red-600 dark:text-red-400 hover:underline font-medium">
+                        Batalkan
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {showCreate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowCreate(false)}>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Tugas Cabut ONT</h2>
+              <button onClick={() => setShowCreate(false)}><X className="w-5 h-5 text-slate-400" /></button>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Username Pelanggan</label>
+                <input
+                  value={form.username}
+                  onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+                  placeholder="mis. john.doe"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Tugaskan ke Teknisi</label>
+                <select
+                  value={form.assignedTechnicianId}
+                  onChange={(e) => setForm((f) => ({ ...f, assignedTechnicianId: e.target.value }))}
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white"
+                >
+                  <option value="">-- Pilih Teknisi --</option>
+                  {technicians.map((t) => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.phoneNumber})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Alasan (opsional)</label>
+                <textarea
+                  value={form.reason}
+                  onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
+                  rows={3}
+                  placeholder="mis. Menunggak 3 bulan, sudah tidak berlangganan"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white resize-none"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setShowCreate(false)} className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-bold rounded-lg transition">
+                Batal
+              </button>
+              <button disabled={creating} onClick={createTask} className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition">
+                {creating ? 'Menyimpan...' : 'Buat Tugas'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
