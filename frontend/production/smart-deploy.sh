@@ -55,9 +55,11 @@ create_backup() {
     
     local backup_name="backup-$(date '+%Y%m%d-%H%M%S')"
     local backup_path="$BACKUP_DIR/$backup_name"
-    
-    # Backup .next and node_modules hash
-    cp -r "$APP_DIR/.next" "$backup_path.next" 2>/dev/null || true
+
+    # Backup both apps' .next output (2-app monorepo: backend + frontend)
+    mkdir -p "$backup_path.next"
+    cp -r "$APP_DIR/backend/.next" "$backup_path.next/backend" 2>/dev/null || true
+    cp -r "$APP_DIR/frontend/.next" "$backup_path.next/frontend" 2>/dev/null || true
     git -C "$APP_DIR" rev-parse HEAD > "$backup_path.version"
     
     # Keep only last N backups
@@ -113,78 +115,102 @@ detect_changes() {
 }
 
 # Update dependencies
+# This is a pnpm workspace (backend/frontend share dependencies via
+# workspace:* protocol) — npm cannot resolve that protocol at all, so this
+# must use pnpm. Dev dependencies are needed too (prisma, typescript, next)
+# since the build itself happens on this server.
 update_dependencies() {
     log_info "Updating dependencies..."
     cd "$APP_DIR"
-    npm ci --production
+    pnpm install
     log_success "Dependencies updated"
 }
 
 # Generate Prisma client
+# Schema lives at backend/prisma/schema.prisma, not at the repo root.
 generate_prisma() {
     log_info "Generating Prisma client..."
-    cd "$APP_DIR"
-    npx prisma generate
+    cd "$APP_DIR/backend"
+    pnpm exec prisma generate
     log_success "Prisma client generated"
 }
 
-# Run migrations
+# Sync database schema
+# This project uses `prisma db push` as its schema workflow (see
+# backend/prisma/migrations — only a single baseline migration exists),
+# not incremental `prisma migrate deploy`.
 run_migrations() {
-    log_info "Running database migrations..."
-    cd "$APP_DIR"
-    npx prisma migrate deploy
-    log_success "Migrations completed"
+    log_info "Syncing database schema..."
+    cd "$APP_DIR/backend"
+    pnpm exec prisma db push --accept-data-loss
+    log_success "Database schema synced"
 }
 
 # Build application
 build_app() {
     log_info "Building application..."
     cd "$APP_DIR"
-    
+
     # Stop PM2 to free memory for build
     pm2 stop all 2>/dev/null || true
-    sync && echo 3 > /proc/sys/vm/drop_caches 2>/dev/null || true
-    
-    # Clean build cache
-    rm -rf .next .turbo node_modules/.cache 2>/dev/null || true
-    
-    # Use optimized VPS build command (1.5GB heap limit)
-    NEXT_TELEMETRY_DISABLED=1 npm run build:vps
-    
+
+    # Clean build cache (per-app — this is a 2-app monorepo, not a single .next)
+    rm -rf backend/.next frontend/.next .turbo node_modules/.cache 2>/dev/null || true
+
+    # Builds shared-types -> backend -> frontend in dependency order.
+    # Each app's own build script also runs its postbuild.js, which copies
+    # .env/public/static assets into .next/standalone — no manual copy needed here.
+    NEXT_TELEMETRY_DISABLED=1 pnpm run build
+
     log_success "Build completed"
 }
 
 # Restart PM2
 restart_pm2() {
     log_info "Restarting PM2 processes..."
-    
-    # Zero-downtime reload
-    pm2 reload ecosystem.config.js --update-env
-    
+
+    # NOTE: plain `pm2 reload/restart --update-env` is NOT reliable here.
+    # DATABASE_URL/NEXTAUTH_SECRET are loaded by Next.js itself from each
+    # app's .env file at process boot, not from ecosystem.config.js's `env`
+    # block. PM2 caches a full env snapshot from the FIRST time an app was
+    # registered and reinjects it on every later restart — since dotenv
+    # does not override an already-set process.env value, that stale
+    # snapshot silently wins over the current .env file content (verified
+    # 2026-08-23: this caused a real DB-auth outage after a secret rotation
+    # that a plain restart did not pick up). delete+start forces a fresh
+    # registration with no cached snapshot, so the current .env is always
+    # what actually gets used.
+    pm2 delete salfanet-backend salfanet-frontend 2>/dev/null || true
+    pm2 start "$APP_DIR/ecosystem.config.js" --only salfanet-backend,salfanet-frontend
+    pm2 save
+
     # Wait for startup
     sleep 3
-    
+
     log_success "PM2 restarted"
 }
 
 # Health check
+# /api/health is served by the BACKEND app (port 3001) — the frontend app
+# (port 3000) has no such route itself, so hitting :3000 directly here
+# always 404s regardless of whether the deploy actually succeeded.
 health_check() {
     log_info "Running health check..."
-    
+
     local max_attempts=10
     local attempt=1
-    
+
     while [ $attempt -le $max_attempts ]; do
-        if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
+        if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
             log_success "Health check passed"
             return 0
         fi
-        
+
         log_warning "Health check attempt $attempt/$max_attempts failed, retrying..."
         sleep 2
         ((attempt++))
     done
-    
+
     log_error "Health check failed after $max_attempts attempts"
     return 1
 }
@@ -198,11 +224,12 @@ rollback() {
     # Get previous commit
     git reset --hard HEAD~1
     
-    # Restore backup if exists
+    # Restore backup if exists (2-app monorepo: backend + frontend)
     local latest_backup=$(ls -dt "$BACKUP_DIR"/backup-*.next 2>/dev/null | head -1)
     if [ -n "$latest_backup" ]; then
-        rm -rf .next
-        cp -r "$latest_backup" .next
+        rm -rf backend/.next frontend/.next
+        [ -d "$latest_backup/backend" ] && cp -r "$latest_backup/backend" backend/.next
+        [ -d "$latest_backup/frontend" ] && cp -r "$latest_backup/frontend" frontend/.next
         log_info "Restored .next from backup"
     else
         log_warning "No backup found, rebuilding..."
@@ -247,9 +274,9 @@ show_status() {
     echo ""
     
     echo "🏥 Health Check:"
-    if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
+    if curl -sf http://localhost:3001/api/health > /dev/null 2>&1; then
         echo "   ✅ Healthy"
-        curl -s http://localhost:3000/api/health | head -1
+        curl -s http://localhost:3001/api/health | head -1
     else
         echo "   ❌ Unhealthy"
     fi
