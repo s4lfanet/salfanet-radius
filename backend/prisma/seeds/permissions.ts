@@ -170,6 +170,13 @@ export const ROLE_TEMPLATES: Record<AdminRole, string[]> = {
     'sessions.view',
     'notifications.view',
   ],
+
+  // Collectors don't use the main admin dashboard/permission system at all —
+  // they authenticate via a separate collector-token JWT (see
+  // /api/collector/auth/login) and every collector route checks
+  // `role === 'collector'` directly, not this permission table. Empty on
+  // purpose; this entry exists only so Record<AdminRole, string[]> is total.
+  COLLECTOR: [],
 };
 
 /**

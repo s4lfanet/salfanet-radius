@@ -27,9 +27,15 @@ interface User {
   email: string;
   phone: string | null;
   role: string;
+  areaId?: string | null;
   createdAt: string;
   updatedAt: string;
   permissions: string[];
+}
+
+interface Area {
+  id: string;
+  name: string;
 }
 
 interface Permission {
@@ -47,6 +53,7 @@ const ROLES = [
   { value: 'TECHNICIAN', translationKey: 'technician' },
   { value: 'MARKETING', translationKey: 'marketing' },
   { value: 'VIEWER', translationKey: 'viewer' },
+  { value: 'COLLECTOR', translationKey: 'collector' },
 ];
 
 export default function ManagementPage() {
@@ -64,6 +71,7 @@ export default function ManagementPage() {
     phone: '',
     password: '',
     role: 'CUSTOMER_SERVICE',
+    areaId: '',
     permissions: [] as string[],
   });
 
@@ -87,6 +95,10 @@ export default function ManagementPage() {
   // ─── React Query: Role templates (rarely change — 5min stale) ───────────────
   const { data: templatesData } = useApiQuery<{ success: boolean; templates: Record<string, string[]> }>('/api/permissions/role-templates', { staleTime: 5 * 60 * 1000 });
   const roleTemplates: Record<string, string[]> = (templatesData?.success && templatesData.templates) ? templatesData.templates : {};
+
+  // ─── React Query: Areas (for COLLECTOR role assignment) ─────────────────────
+  const { data: areasData } = useApiQuery<{ areas: Area[] } | Area[]>('/api/pppoe/areas', { staleTime: 5 * 60 * 1000 });
+  const areas: Area[] = Array.isArray(areasData) ? areasData : (areasData?.areas || []);
 
   const invalidateUsers = () => {
     queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/admin/users') });
@@ -134,6 +146,7 @@ export default function ManagementPage() {
         phone: user.phone || '',
         password: '',
         role: user.role,
+        areaId: user.areaId || '',
         permissions: userPermissionIds,
       });
     } catch (error) {
@@ -145,6 +158,7 @@ export default function ManagementPage() {
         phone: user.phone || '',
         password: '',
         role: user.role,
+        areaId: user.areaId || '',
         permissions: user.permissions || [],
       });
     }
@@ -181,6 +195,7 @@ export default function ManagementPage() {
       phone: '',
       password: '',
       role: 'CUSTOMER_SERVICE',
+      areaId: '',
       permissions: [],
     });
     setEditingUser(null);
@@ -232,6 +247,8 @@ export default function ManagementPage() {
         return 'bg-warning/10 text-warning';
       case 'VIEWER':
         return 'bg-muted text-muted-foreground';
+      case 'COLLECTOR':
+        return 'bg-orange-500/10 text-orange-600 dark:text-orange-400';
       default:
         return 'bg-muted text-muted-foreground';
     }
@@ -560,6 +577,16 @@ export default function ManagementPage() {
                 </ModalSelect>
                 <p className="text-[10px] text-muted-foreground mt-1">{t('management.roleAutoLoad')}</p>
               </div>
+              {formData.role === 'COLLECTOR' && (
+                <div>
+                  <ModalLabel required>{t('management.assignedArea')}</ModalLabel>
+                  <ModalSelect value={formData.areaId} onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}>
+                    <option value="" className="dark:bg-[#0a0520]">{t('management.selectArea')}</option>
+                    {areas.map((area) => (<option key={area.id} value={area.id} className="dark:bg-[#0a0520]">{area.name}</option>))}
+                  </ModalSelect>
+                  <p className="text-[10px] text-muted-foreground mt-1">{t('management.assignedAreaHint')}</p>
+                </div>
+              )}
               <div>
                 <ModalLabel>{t('management.permissions')}</ModalLabel>
                 <div className="border border-[#bc13fe]/30 rounded-lg p-2 max-h-48 overflow-y-auto space-y-2 bg-muted/50 dark:bg-[#0a0520]/50">

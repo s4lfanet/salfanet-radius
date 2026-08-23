@@ -9,6 +9,7 @@ import Image from 'next/image';
 import {
   LayoutDashboard,
   Users,
+  Wrench,
   Wifi,
   Receipt,
   CreditCard,
@@ -327,6 +328,12 @@ const menuGroups: MenuGroup[] = [
         titleKey: 'nav.management',
         icon: <Shield className="w-4 h-4" />,
         href: '/admin/management',
+        requiredPermission: 'users.view',
+      },
+      {
+        titleKey: 'nav.manageTechnicians',
+        icon: <Wrench className="w-4 h-4" />,
+        href: '/admin/technicians',
         requiredPermission: 'users.view',
       },
       {
