@@ -85,6 +85,13 @@ echo "[>] Generating Prisma Client..."
 echo "[>] Updating database schema..."
 ( cd backend && pnpm exec prisma db push --accept-data-loss )
 
+# Clean build output + Next.js's own incremental cache before rebuilding —
+# an incremental build normally invalidates correctly on its own, but a
+# clean build removes any doubt (and disk is cheap compared to a confusing
+# "why isn't my change showing up" debugging session).
+echo "[>] Cleaning previous build output..."
+rm -rf backend/.next frontend/.next
+
 # Build backend application (API routes + Prisma + services)
 echo "[>] Building backend application..."
 ( cd backend && NODE_OPTIONS="--max-old-space-size=1536" pnpm exec next build )
