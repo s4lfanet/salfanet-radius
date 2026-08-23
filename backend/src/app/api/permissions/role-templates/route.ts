@@ -34,6 +34,7 @@ export async function GET() {
       TECHNICIAN: [],
       MARKETING: [],
       VIEWER: [],
+      COLLECTOR: [],
     };
 
     rolePermissions.forEach((rp) => {
