@@ -20,13 +20,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!skipOtp && !otpCode) {
-      return NextResponse.json(
-        { error: 'OTP code is required' },
-        { status: 400 }
-      );
-    }
-
     // Normalize phone number
     const normalizedPhone = phoneNumber.replace(/\D/g, '');
     const formattedPhone = normalizedPhone.startsWith('62') 
@@ -54,8 +47,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Skip OTP verification if not required
-    if (!skipOtp) {
+    // Skip OTP verification only if the server-side flag allows it.
+    // `skipOtp` from the client is never trusted on its own — otherwise anyone
+    // who knows a technician's phone number could log in with no OTP at all.
+    const canSkipOtp = skipOtp && !technician.requireOtp;
+
+    if (!canSkipOtp) {
+      if (!otpCode || typeof otpCode !== 'string') {
+        return NextResponse.json(
+          { error: 'OTP code is required' },
+          { status: 400 }
+        );
+      }
+
       // Find valid OTP
       const otpToken = await prisma.technicianOtp.findFirst({
         where: {
