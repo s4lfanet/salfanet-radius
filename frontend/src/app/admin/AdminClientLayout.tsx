@@ -337,6 +337,12 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'users.view',
       },
       {
+        titleKey: 'nav.manageCollectors',
+        icon: <Users className="w-4 h-4" />,
+        href: '/admin/collectors',
+        requiredPermission: 'users.view',
+      },
+      {
         titleKey: 'nav.settingsMenu',
         icon: <Settings className="w-4 h-4" />,
         requiredPermission: 'settings.view',
