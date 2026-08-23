@@ -18,7 +18,8 @@ export type ActivityModule =
   | 'genieacs'
   | 'settings'
   | 'user'
-  | 'auth';
+  | 'auth'
+  | 'ont-removal';
 
 export type ActivityStatus = 'success' | 'warning' | 'error';
 

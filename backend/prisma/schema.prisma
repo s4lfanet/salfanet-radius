@@ -1776,6 +1776,38 @@ model ontRemoval {
   @@map("ont_removals")
 }
 
+// Cabut ONT work-order lifecycle: admin/NOC creates a task assigned to a
+// technician for a specific customer; the technician completes or cancels
+// it; a task is also auto-cancelled if the customer pays their bill before
+// the technician gets there. Separate from `ontRemoval` above, which is the
+// collector's own field log of a physical removal — the two are
+// independent records, adopted from a sibling ISP billing project that has
+// this workflow but this project previously didn't.
+model ontRemovalTask {
+  id                   String     @id @default(cuid())
+  username             String     @db.VarChar(64)
+  // Not a Prisma relation: a "technician" in this system can be either a
+  // `technician` row or an `adminUser` with role=TECHNICIAN (same dual-id
+  // space `ticket.assignedToId` already deals with elsewhere), so this is
+  // a plain id string resolved against whichever table it belongs to.
+  assignedTechnicianId String     @map("assigned_technician_id")
+  status               String     @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  reason               String?    @db.Text // why the task was created
+  createdById          String     @map("created_by_id") // adminUser.id
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  completedAt          DateTime?
+  completedNotes       String?    @db.Text
+  cancelReason         String?    @db.Text
+  cancelledBy          String?    @map("cancelled_by") // adminUser.id, technician.id, or 'system'
+  cancelledAt          DateTime?
+
+  @@index([assignedTechnicianId])
+  @@index([status])
+  @@index([username])
+  @@map("ont_removal_tasks")
+}
+
 model collectorSettlementConfirmation {
   id          String   @id @default(cuid())
   collectorId String   @map("collector_id")

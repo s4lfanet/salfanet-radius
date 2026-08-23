@@ -1454,6 +1454,12 @@ async function handleInvoicePayment(
 
     const { userUpdateData, isPackageChange: _isPackageChange, wasDisabled } = txResult;
 
+    const invoiceUsername = invoice.customerUsername || invoice.user?.username;
+    if (invoiceUsername) {
+      const { cancelPendingOntTasksForPaidUser } = await import('@/server/services/ont-removal-task.service');
+      await cancelPendingOntTasksForPaidUser(invoiceUsername).catch(() => {});
+    }
+
     // ─── NOTIFICATIONS & SIDE EFFECTS (best-effort, outside transaction) ──────
 
     // Create notification using NotificationService

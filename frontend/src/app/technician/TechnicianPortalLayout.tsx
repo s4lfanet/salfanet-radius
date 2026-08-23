@@ -25,6 +25,7 @@ import {
   BellOff,
   Cpu,
   Clock,
+  Unplug,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { onUnauthorized, apiAdmin } from '@/lib/api/client';
@@ -80,6 +81,11 @@ const MENU_ITEMS: MenuItem[] = [
     titleKey: 'techPortal.customers',
     icon: <Users className="w-4 h-4" />,
     href: '/technician/customers',
+  },
+  {
+    titleKey: 'techPortal.ontTasks',
+    icon: <Unplug className="w-4 h-4" />,
+    href: '/technician/ont-tasks',
   },
   {
     titleKey: 'techPortal.register',

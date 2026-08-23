@@ -124,6 +124,7 @@ const menuGroups: MenuGroup[] = [
         requiredPermission: 'customers.view',
         children: [
           { titleKey: 'nav.isolatedUsers', href: '/admin/isolated-users', requiredPermission: 'customers.view' },
+          { titleKey: 'nav.ontRemovalTasks', href: '/admin/ont-removal-tasks', requiredPermission: 'customers.view' },
           { titleKey: 'nav.isolationSettings', href: '/admin/settings/isolation', requiredPermission: 'settings.view' },
           { titleKey: 'nav.mikrotikSetup', href: '/admin/settings/isolation/mikrotik', requiredPermission: 'settings.view' },
         ],

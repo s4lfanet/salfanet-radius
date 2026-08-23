@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
+import { cancelPendingOntTasksForPaidUser } from '@/server/services/ont-removal-task.service';
 
 // POST - mark invoice as paid by collector
 export async function POST(req: NextRequest) {
@@ -64,6 +65,10 @@ export async function POST(req: NextRequest) {
         collectorProof: collectorProof || null,
       },
     });
+
+    if (invoice.customerUsername) {
+      await cancelPendingOntTasksForPaidUser(invoice.customerUsername).catch(() => {});
+    }
 
     // For transfer payments with proof: create a pending paymentProof record for admin verification
     if (method === 'transfer' && collectorProof) {
