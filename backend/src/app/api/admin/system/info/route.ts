@@ -36,7 +36,7 @@ export async function GET() {
   const authCheck = await requirePermission('settings.view');
   if (!authCheck.authorized) return authCheck.response;
   const session = authCheck.session;
-  if (session.user.role !== 'SUPER_ADMIN') {
+  if ((session.user as any)?.role !== 'SUPER_ADMIN') {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
