@@ -52,7 +52,7 @@ export default function AdminPaymentProofsPage() {
   const handleApprove = async (proof: ProofItem) => {
     setActionLoading(proof.id);
     try {
-      await apiAdmin(`/api/admin/payment-proofs/${proof.id}/verify?id=${proof.id}`, {
+      await apiAdmin(`/api/admin/payment-proofs/${proof.id}/verify`, {
         method: 'PUT',
         body: JSON.stringify({ action: 'approve' }),
       });
@@ -69,7 +69,7 @@ export default function AdminPaymentProofsPage() {
     if (!rejectModal) return;
     setActionLoading(rejectModal.id);
     try {
-      await apiAdmin(`/api/admin/payment-proofs/${rejectModal.id}/verify?id=${rejectModal.id}`, {
+      await apiAdmin(`/api/admin/payment-proofs/${rejectModal.id}/verify`, {
         method: 'PUT',
         body: JSON.stringify({ action: 'reject', rejectReason }),
       });

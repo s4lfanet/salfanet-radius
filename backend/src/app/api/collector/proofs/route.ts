@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const filter = searchParams.get('filter') || 'pending'; // pending, approved, rejected
+  const rawFilter = searchParams.get('filter') || 'pending';
+  const filter = ['pending', 'approved', 'rejected'].includes(rawFilter) ? rawFilter : 'pending';
 
   try {
     const adminUser = await prisma.adminUser.findUnique({

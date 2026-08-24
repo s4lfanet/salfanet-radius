@@ -171,9 +171,9 @@ export default function CollectorBillingPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-foreground">{u.name}</span>
-                      {u.status === 'suspended' && (
+                      {u.status === 'suspended' || u.status === 'isolated' ? (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium">Isolir</span>
-                      )}
+                      ) : null}
                       {!u.is_paid && (
                         <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 font-medium">
                           {u.unpaid_count} belum bayar

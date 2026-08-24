@@ -56,12 +56,15 @@ export async function GET(req: NextRequest) {
     });
 
     const confirmByDate: Record<string, { confirmed_by: string; confirmed_at: Date }> = {};
+    // Batch fetch admin names to avoid N+1 queries
+    const adminIds = [...new Set(confirmations.map(c => c.confirmedBy))];
+    const admins = await prisma.adminUser.findMany({
+      where: { id: { in: adminIds } },
+      select: { id: true, name: true },
+    });
+    const adminMap = new Map(admins.map(a => [a.id, a.name]));
     for (const c of confirmations) {
-      const admin = await prisma.adminUser.findUnique({
-        where: { id: c.confirmedBy },
-        select: { name: true },
-      });
-      confirmByDate[c.date] = { confirmed_by: admin?.name || 'Admin', confirmed_at: c.confirmedAt };
+      confirmByDate[c.date] = { confirmed_by: adminMap.get(c.confirmedBy) || 'Admin', confirmed_at: c.confirmedAt };
     }
 
     const rows = Object.entries(byDate)

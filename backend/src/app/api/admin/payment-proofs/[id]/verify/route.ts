@@ -3,7 +3,10 @@ import { prisma } from '@/server/db/client';
 import { checkAuth } from '@/server/middleware/api-auth';
 
 // PUT - approve or reject a payment proof
-export async function PUT(req: NextRequest) {
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const authCheck = await checkAuth();
   if (!authCheck.authorized) return authCheck.response;
 
@@ -13,8 +16,7 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
+    const { id } = await params;
     const { action, rejectReason } = await req.json();
 
     if (!id || !action || !['approve', 'reject'].includes(action)) {
@@ -46,27 +48,30 @@ export async function PUT(req: NextRequest) {
 
       return NextResponse.json({ success: true, message: 'Bukti transfer disetujui. Invoice tetap lunas.' });
     } else {
-      // Reject: update proof status, revert invoice to unpaid
-      await prisma.paymentProof.update({
-        where: { id },
-        data: {
-          status: 'rejected',
-          rejectReason: rejectReason || 'Ditolak oleh admin',
-          reviewedById: authCheck.userId,
-          reviewedAt: new Date(),
-        },
-      });
+      // Wrap proof rejection + invoice revert in a transaction so they
+      // either both succeed or both roll back — prevents a proof being
+      // marked rejected while the invoice remains PAID if the revert fails.
+      await prisma.$transaction(async (tx) => {
+        await tx.paymentProof.update({
+          where: { id },
+          data: {
+            status: 'rejected',
+            rejectReason: rejectReason || 'Ditolak oleh admin',
+            reviewedById: authCheck.userId,
+            reviewedAt: new Date(),
+          },
+        });
 
-      // Revert invoice to PENDING
-      await prisma.invoice.update({
-        where: { id: proof.invoiceId },
-        data: {
-          status: 'PENDING',
-          paidAt: null,
-          paidById: null,
-          paymentMethod: null,
-          collectorProof: null,
-        },
+        await tx.invoice.update({
+          where: { id: proof.invoiceId },
+          data: {
+            status: 'PENDING',
+            paidAt: null,
+            paidById: null,
+            paymentMethod: null,
+            collectorProof: null,
+          },
+        });
       });
 
       return NextResponse.json({ success: true, message: 'Bukti transfer ditolak. Invoice dikembalikan ke belum lunas.' });
