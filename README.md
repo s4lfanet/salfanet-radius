@@ -32,7 +32,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
 | **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong** |
 | **Cron Jobs** | 17 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
-| **Roles & Permissions** | 53 permissions, 5 portals (Admin/Customer/Agent/Technician + SuperAdmin) |
+| **Roles & Permissions** | 53 permissions, 6 portals (Admin/Customer/Agent/Technician/Collector + SuperAdmin) |
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
 | **Security** | Session timeout 30 min, idle warning, RBAC, HTTPS/SSL |
 | **Performance** | **Redis cache untuk data non-realtime** (profiles, areas, routers), graceful degradation jika Redis unavailable |
@@ -41,7 +41,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Bahasa** | Bahasa Indonesia (full) |
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
 | **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle, admin broadcast |
-| **System Update** | Update via SSH menggunakan `updater.sh`, tidak ada web-based update |
+| **Collector Portal** | Portal kolektor dengan dashboard, billing (mark-paid + upload bukti transfer), isolir list, ONT removal workflow, my-collections, settlement/setoran harian, admin verification (approve/reject), area-based access control |
 | **Mobile App** | Flutter customer portal (WiFi control, invoice, payment) |
 | **WhatsApp Baileys** | Native WhatsApp gateway built-in VPS via `@whiskeysockets/baileys`, PM2 proses terpisah, scan QR langsung di admin panel, auto-reconnect |
 
@@ -516,6 +516,56 @@ Persistent user tracking across sessions/NAS untuk billing & audit:
 
 ---
 
+## 🏦 Collector Portal (v5.14.0)
+
+Portal khusus untuk kolektor (petugas tagihan) dengan akses berbasis area (PPPoE area assignment).
+
+### Fitur Collector Portal
+
+| Halaman | Fungsi |
+|---------|--------|
+| **Dashboard** | Summary invoice area (unpaid, paid, isolir count), total tagihan belum dibayar |
+| **Billing** | List invoice area, mark-paid dengan pilihan metode pembayaran (cash/transfer), upload bukti transfer (auto-compress ke base64) |
+| **Isolir** | List pelanggan isolir/suspended di area dengan jumlah tagihan unpaid |
+| **ONT Removal** | Workflow cabut-ONT: list task, create removal record, update status |
+| **My Collections** | Riwayat pembayaran yang dikumpulkan kolektor |
+| **Settlements** | Setoran harian: summary cash vs transfer, konfirmasi setoran |
+| **Proofs** | Bukti transfer yang diupload, admin bisa verify (approve/reject) |
+
+### Admin: Kelola Kolektor
+
+- **Admin → Collectors** — CRUD kolektor: username, nama, email, telepon, area assignment, aktif/non-aktif
+- **Admin → Collector Settlements** — Verifikasi setoran harian: breakdown cash vs transfer, approve/reject dengan invoice detail, expand per kolektor
+
+### API Endpoints
+
+| Endpoint | Method | Fungsi |
+|----------|--------|--------|
+| `/api/collector/auth/login` | POST | Login kolektor (Bearer token) |
+| `/api/collector/dashboard` | GET | Summary invoice area |
+| `/api/collector/users` | GET | List pelanggan di area (filter: unpaid/all/paid) |
+| `/api/collector/isolir` | GET | List pelanggan isolir di area |
+| `/api/collector/billing` | GET | List invoice di area untuk mark-paid |
+| `/api/collector/mark-paid` | POST | Mark invoice paid + upload bukti transfer |
+| `/api/collector/ont-removals` | GET/POST | ONT removal records |
+| `/api/collector/proofs` | GET | Bukti transfer kolektor |
+| `/api/collector/my-collections` | GET | Riwayat koleksi kolektor |
+| `/api/collector/my-settlements` | GET/POST | Setoran harian kolektor |
+| `/api/collector/setoran` | GET | Summary setoran harian |
+| `/api/collector/history` | GET | Riwayat aktivitas kolektor |
+| `/api/collector/list` | GET | List semua kolektor (admin) |
+| `/api/collector/confirm-settlement` | POST | Admin konfirmasi setoran |
+
+### Keamanan
+
+- Kolektor hanya bisa akses data di area yang di-assign
+- Bearer token auth (terpisah dari session admin)
+- Validasi `areaId` di setiap query
+- Bukti transfer disimpan sebagai base64 (MediumText) di DB
+- Admin verify bukti transfer sebelum approve setoran
+
+---
+
 ## 🚀 Tech Stack
 
 | Component | Technology |
@@ -541,7 +591,7 @@ Persistent user tracking across sessions/NAS untuk billing & audit:
 salfanet-radius/                  # pnpm monorepo root
 ├── frontend/                     # Next.js — UI + NextAuth (port 3000)
 │   ├── src/
-│   │   ├── app/                  # Admin, agent, customer, technician portals
+│   │   ├── app/                  # Admin, agent, customer, technician, collector portals
 │   │   │   └── api/auth/         # NextAuth routes only
 │   │   ├── components/           # Shared React components
 │   │   ├── features/             # Vertical slices (queries, schemas)
