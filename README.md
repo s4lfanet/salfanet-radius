@@ -1041,10 +1041,28 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
-### v5.14.0 — 2026-08-24 — APK Download Audit (Logo Integration) & Backend Security/Validation Fixes
+### v5.14.0 — 2026-08-24 — Collector Portal, APK Download Audit (Logo Integration) & Backend Security/Validation Fixes
 
 ### Summary
-Audit dan perbaikan proses APK generation: logo perusahaan sekarang digunakan sebagai ikon APK di kedua mode (server build dan ZIP download). Perbaikan konsistensi versi antara package.json, README, dan CHANGELOG. Batch fix untuk validasi input, N+1 query, dan transaction safety di backend API.
+Dokumentasi lengkap fitur Collector Portal (kolektor/tagihan) yang sebelumnya tidak terdokumentasi di README dan CHANGELOG. Audit dan perbaikan proses APK generation: logo perusahaan sekarang digunakan sebagai ikon APK di kedua mode (server build dan ZIP download). Perbaikan konsistensi versi antara package.json, README, dan CHANGELOG. Batch fix untuk validasi input, N+1 query, dan transaction safety di backend API.
+
+### Collector Portal — Documentation & Feature Summary
+- **[FEATURE]** Collector portal dengan login (Bearer token), dashboard, billing, isolir, ONT removal, my-collections, settlements, proofs
+- **[FEATURE]** Admin: Kelola Kolektor (CRUD kolektor dengan area assignment), Collector Settlements (verifikasi setoran harian: approve/reject)
+- **[FEATURE]** Bukti transfer upload di collector billing (auto-compress ke base64 MediumText)
+- **[FEATURE]** Payment proof model + admin proof verification (approve/reject) dengan invoice status rollback
+- **[FEATURE]** ONT removal workflow (cabut-ONT) untuk kolektor dengan task status tracking
+- **[FEATURE]** Area-based access control: kolektor hanya bisa akses data di PPPoE area yang di-assign
+- **[FEATURE]** Settlement/setoran harian: summary cash vs transfer per kolektor, admin konfirmasi
+- **[FIX]** Collector dashboard: include `isolated` status dan `OVERDUE` invoices di counts
+- **[FIX]** Collector isolir API: include `isolated` status, tidak hanya `suspended`
+- **[FIX]** Collector users API: remove status filter untuk show all users in area
+- **[FIX]** Collector proofs API: fix relation query issue
+- **[FIX]** Collector history API: allow collector auth
+- **[FIX]** Collector login layout: consistency, sidebar company name+logo, dark mode init
+- **[FIX]** `collectorProof` column changed to `MediumText` untuk larger base64 images
+- **[FIX]** Collector isolir API: include `OVERDUE` status di unpaid invoice check (konsistensi dengan collector/users)
+- **[FIX]** Collector users API: validate `filter` param hanya allow `unpaid/all/paid`
 
 ### APK Download Audit — Logo Integration
 - **[FIX]** `download-apk/route.ts` — ZIP download sekarang fetch company logo dari DB dan resize ke 5 Android density sizes (48px–192px) menggunakan `sharp`, menggantikan placeholder 1×1 pixel
@@ -1074,7 +1092,7 @@ Audit dan perbaikan proses APK generation: logo perusahaan sekarang digunakan se
 - `backend/src/app/api/admin/system/info/route.ts` — TypeScript fix
 - `frontend/src/app/admin/download-apk/page.tsx` — info note fix, qris_listener filter
 - `package.json` — version bump to 5.14.0
-- `README.md` — version update to 5.14.0
+- `README.md` — version update to 5.14.0, collector portal section + features table
 - `CHANGELOG.md` — this entry
 - `backend/src/app/api/technician/profile/route.ts` — isActive + role verification
 - `backend/src/app/api/technician/tickets/route.ts` — search + mine filter AND fix
@@ -1085,6 +1103,10 @@ Audit dan perbaikan proses APK generation: logo perusahaan sekarang digunakan se
 - `backend/src/app/api/technician/customers/route.ts` — status param validation
 - `backend/src/app/api/admin/ont-removal-tasks/route.ts` — N+1 batch fetch fix
 - `backend/src/app/api/admin/isolate-user/route.ts` — transaction wrapper
+- `backend/src/app/api/collector/` — 13 API routes: auth, dashboard, users, isolir, mark-paid, ont-removals, proofs, my-collections, my-settlements, setoran, history, list, confirm-settlement
+- `frontend/src/app/collector/` — Collector portal: login, dashboard, billing, isolir, ont, proofs, my-collections, settlements
+- `frontend/src/app/admin/collectors/page.tsx` — Admin CRUD kolektor dengan area assignment
+- `frontend/src/app/admin/collector-settlements/page.tsx` — Admin verifikasi setoran harian
 
 ### v5.13.0 — 2026-08-17 — MikroTik Local-Only Voucher Sync & Cleanup
 
