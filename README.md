@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.12.0 — QRIS Mandiri Payment, Auto-Update System, Installer & Cloudflare Tunnel Fixes + Phase 7 (React Query + Performance) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.14.0 — APK Download Audit (Logo Integration) + Backend Security & Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -734,7 +734,7 @@ All jobs can be triggered manually from **Settings → Cron** in the admin panel
 
 ## 📱 Android APK Builder
 
-Buat APK Android (WebView wrapper) untuk 4 portal langsung di server VPS — tanpa GitHub Actions, tanpa Android Studio.
+Buat APK Android (WebView wrapper) untuk 4 portal langsung di server VPS — tanpa GitHub Actions, tanpa Android Studio. Logo perusahaan yang diupload di halaman Download APK otomatis digunakan sebagai ikon APK (server build maupun ZIP project).
 
 ### 1) Setup Android SDK (satu kali via SSH)
 

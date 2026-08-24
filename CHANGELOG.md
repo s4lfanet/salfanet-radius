@@ -6,6 +6,53 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.14.0] — 2026-08-24 — APK Download Audit (Logo Integration) & Backend Security/Validation Fixes
+
+### Summary
+Audit dan perbaikan proses APK generation: logo perusahaan sekarang digunakan sebagai ikon APK di kedua mode (server build dan ZIP download). Perbaikan konsistensi versi antara package.json, README, dan CHANGELOG. Batch fix untuk validasi input, N+1 query, dan transaction safety di backend API.
+
+### APK Download Audit — Logo Integration
+- **[FIX]** `download-apk/route.ts` — ZIP download sekarang fetch company logo dari DB dan resize ke 5 Android density sizes (48px–192px) menggunakan `sharp`, menggantikan placeholder 1×1 pixel
+- **[FIX]** `download-apk/route.ts` — ZIP download sekarang fetch `company.baseUrl` dari DB untuk konsistensi dengan server build (`apk/trigger`)
+- **[FIX]** `download-apk/route.ts` — TypeScript fix: `session.user.role` → `(session.user as any)?.role` (next-auth Session type tidak include `role`)
+- **[FIX]** `frontend/download-apk/page.tsx` — Info note diperbaiki: sebelumnya bilang "ikon placeholder 1×1px" padahal server build sudah pakai logo
+- **[FIX]** `frontend/download-apk/page.tsx` — Filter `qris_listener` dari ZIP download links (API tidak support role ini, klik → 400 error)
+
+### Version Consistency
+- **[FIX]** `package.json` version dibump dari `2.36.0` → `5.14.0` (sebelumnya tidak sinkron dengan CHANGELOG 5.13.0 dan README 5.12.0)
+- **[FIX]** `README.md` version diupdate dari `5.12.0` → `5.14.0`
+- **[FIX]** `system/info/route.ts` — TypeScript fix: `session.user.role` → `(session.user as any)?.role`
+
+### Backend Security & Validation Fixes
+- **[FIX]** `technician/profile/route.ts` — verify `isActive` dan `role` untuk admin_user, verify `isActive` untuk legacy technician
+- **[FIX]** `technician/tickets/route.ts` — search filter tidak lagi menimpa `mine` filter, menggunakan AND untuk combine scope dan search conditions
+- **[FIX]** `collector/isolir/route.ts` — include `OVERDUE` status di unpaid invoice check, konsisten dengan `collector/users` API
+- **[FIX]** `collector/users/route.ts` — validate `filter` param hanya allow `unpaid/all/paid`
+- **[FIX]** `technician/tasks/route.ts` — validate `status` param di PUT against valid work order statuses
+- **[FIX]** `technician/ont-removal-tasks/route.ts` — validate `status` param di GET
+- **[FIX]** `technician/customers/route.ts` — validate `status` param untuk prevent arbitrary filter values
+- **[FIX]** `admin/ont-removal-tasks/route.ts` — fix N+1 query: batch fetch technician dan admin names instead of individual queries
+- **[FIX]** `admin/isolate-user/route.ts` — wrap DB status update + RADIUS changes dalam transaction untuk consistency
+
+### Files Changed
+- `backend/src/app/api/admin/download-apk/route.ts` — logo integration, TypeScript fix, baseUrl from DB
+- `backend/src/app/api/admin/system/info/route.ts` — TypeScript fix
+- `frontend/src/app/admin/download-apk/page.tsx` — info note fix, qris_listener filter
+- `package.json` — version bump to 5.14.0
+- `README.md` — version update to 5.14.0
+- `CHANGELOG.md` — this entry
+- `backend/src/app/api/technician/profile/route.ts` — isActive + role verification
+- `backend/src/app/api/technician/tickets/route.ts` — search + mine filter AND fix
+- `backend/src/app/api/collector/isolir/route.ts` — OVERDUE status inclusion
+- `backend/src/app/api/collector/users/route.ts` — filter param validation
+- `backend/src/app/api/technician/tasks/route.ts` — status param validation
+- `backend/src/app/api/technician/ont-removal-tasks/route.ts` — status param validation
+- `backend/src/app/api/technician/customers/route.ts` — status param validation
+- `backend/src/app/api/admin/ont-removal-tasks/route.ts` — N+1 batch fetch fix
+- `backend/src/app/api/admin/isolate-user/route.ts` — transaction wrapper
+
+---
+
 ## [5.13.0] — 2026-08-17 — MikroTik Local-Only Voucher Sync & Cleanup
 
 ### Summary
