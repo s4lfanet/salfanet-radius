@@ -494,8 +494,8 @@ export default function DownloadApkPage() {
             <span>APK disimpan di <code className="text-slate-300 font-mono">/var/data/salfanet/apk/</code> dan tersedia sampai di-rebuild.</span>
           </div>
           <div className="flex items-start gap-2">
-            <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-amber-500" />
-            <span>Ikon APK masih placeholder 1×1px. Untuk ikon custom, perlu modifikasi project sebelum build.</span>
+            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-emerald-500" />
+            <span>Logo yang diupload di atas otomatis digunakan sebagai ikon APK saat build di server (Build APK) maupun di project ZIP.</span>
           </div>
         </div>
       </div>
@@ -507,7 +507,7 @@ export default function DownloadApkPage() {
           <ChevronDown className="w-3.5 h-3.5 group-open:rotate-180 transition-transform" />
         </summary>
         <div className="px-4 pb-4 grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {ROLES.map(r => (
+          {ROLES.filter(r => r.key !== 'qris_listener').map(r => (
             <a
               key={r.key}
               href={`/api/admin/download-apk?role=${r.key}`}
