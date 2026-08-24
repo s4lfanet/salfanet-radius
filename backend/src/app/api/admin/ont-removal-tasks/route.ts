@@ -3,13 +3,17 @@ import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { logActivity } from '@/server/services/activity-log.service';
 
-// Resolve a display name for the dual technician/adminUser id space used by
+// Resolve display names for the dual technician/adminUser id space used by
 // `assignedTechnicianId` (same pattern as `ticket.assignedToId` elsewhere).
-async function resolveTechnicianName(id: string): Promise<string> {
-  const tech = await prisma.technician.findUnique({ where: { id }, select: { name: true } });
-  if (tech) return tech.name;
-  const admin = await prisma.adminUser.findUnique({ where: { id }, select: { name: true } });
-  return admin?.name || 'Unknown';
+async function resolveTechnicianNames(ids: string[]): Promise<Map<string, string>> {
+  const [techs, admins] = await Promise.all([
+    prisma.technician.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } }),
+    prisma.adminUser.findMany({ where: { id: { in: ids } }, select: { id: true, name: true } }),
+  ]);
+  const map = new Map<string, string>();
+  for (const t of techs) map.set(t.id, t.name);
+  for (const a of admins) map.set(a.id, a.name);
+  return map;
 }
 
 // GET - list ONT removal tasks (admin)
@@ -42,7 +46,7 @@ export async function GET(req: NextRequest) {
     const areaMap = new Map(areas.map((a) => [a.id, a.name]));
 
     const techIds = [...new Set(tasks.map((t) => t.assignedTechnicianId))];
-    const techNames = new Map(await Promise.all(techIds.map(async (id) => [id, await resolveTechnicianName(id)] as const)));
+    const techNames = await resolveTechnicianNames(techIds);
 
     const enriched = tasks.map((t) => {
       const u = userMap.get(t.username);

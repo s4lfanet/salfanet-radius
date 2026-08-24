@@ -43,34 +43,37 @@ export async function POST(request: NextRequest) {
 
     const nasIdentifier = user.router?.id || null;
 
-    // 1. Update DB status
-    await prisma.pppoeUser.update({
-      where: { id: user.id },
-      data: { status: 'isolated', comment: reason || 'Manual isolation' },
+    // 1. Update DB status + RADIUS tables in a transaction so they either
+    //    all succeed or all roll back — prevents a user being isolated in
+    //    DB but still active in RADIUS if one of the writes fails.
+    await prisma.$transaction(async (tx) => {
+      await tx.pppoeUser.update({
+        where: { id: user.id },
+        data: { status: 'isolated', comment: reason || 'Manual isolation' },
+      });
+
+      await tx.radcheck.deleteMany({
+        where: { username: user.username, attribute: 'Auth-Type', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
+      });
+
+      await tx.$executeRaw`
+        INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+        VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
+        ON DUPLICATE KEY UPDATE value = ${user.password}
+      `;
+
+      await tx.$executeRaw`
+        DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+      `;
+      await tx.$executeRaw`
+        INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+        VALUES (${user.username}, 'isolir', 1, ${nasIdentifier})
+      `;
+
+      await tx.$executeRaw`
+        DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+      `;
     });
-
-    // 2. RADIUS: move to isolir group
-    await prisma.radcheck.deleteMany({
-      where: { username: user.username, attribute: 'Auth-Type', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
-    });
-
-    await prisma.$executeRaw`
-      INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
-      VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
-      ON DUPLICATE KEY UPDATE value = ${user.password}
-    `;
-
-    await prisma.$executeRaw`
-      DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
-    `;
-    await prisma.$executeRaw`
-      INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-      VALUES (${user.username}, 'isolir', 1, ${nasIdentifier})
-    `;
-
-    await prisma.$executeRaw`
-      DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
-    `;
 
     // 3. MikroTik: change PPP secret profile to isolir + kick
     if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {

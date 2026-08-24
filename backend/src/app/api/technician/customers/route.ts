@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('search') || undefined;
-  const status = searchParams.get('status') || undefined;
+  const validStatuses = ['active', 'isolated', 'suspended', 'stopped'];
+  const status = (validStatuses.includes(searchParams.get('status') || '') ? searchParams.get('status')! : undefined);
   const routerId = searchParams.get('routerId') || undefined;
   const areaId = searchParams.get('areaId') || undefined;
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));

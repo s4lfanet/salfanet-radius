@@ -9,7 +9,8 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const filter = searchParams.get('filter') || 'unpaid'; // unpaid, all, paid
+  const rawFilter = searchParams.get('filter') || 'unpaid';
+  const filter = ['unpaid', 'all', 'paid'].includes(rawFilter) ? rawFilter : 'unpaid';
 
   try {
     const adminUser = await prisma.adminUser.findUnique({
