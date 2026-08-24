@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { strToU8, zipSync } from 'fflate';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
 export const dynamic = 'force-dynamic';
@@ -394,11 +394,44 @@ function readmeTxt(appName: string, role: string, startUrl: string, pkg: string)
 }
 
 // Minimal icon PNG (1×1 dark blue pixel) as placeholder
-// Real icon should come from company logo
 function minimalIconPng(): Uint8Array {
-  // 1×1 PNG with dark blue color #03131d
   const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADklEQVQI12NgYGD4DwABBAEAwS2OUQAAAABJRU5ErkJggg==';
   return Buffer.from(base64, 'base64');
+}
+
+// Resolve company logo to filesystem path (same logic as apk/trigger)
+function resolveLogoPath(logoUrl: string | null | undefined): string | null {
+  if (!logoUrl) return null;
+  const filename = logoUrl.split('/').pop();
+  if (!filename || !/^[a-zA-Z0-9._-]+$/.test(filename)) return null;
+  const uploadDir = process.env.UPLOAD_DIR ||
+    (process.env.NODE_ENV === 'production' ? '/var/data/salfanet/uploads' : join(process.cwd(), 'data', 'uploads'));
+  const candidate = join(uploadDir, 'logos', filename);
+  if (existsSync(candidate)) return candidate;
+  const legacy = join(process.cwd(), 'public', 'uploads', 'logos', filename);
+  if (existsSync(legacy)) return legacy;
+  return null;
+}
+
+// Resize logo to all Android density sizes using sharp, return map of density → PNG buffer
+async function generateIconPngs(logoPath: string): Promise<Record<string, Buffer> | null> {
+  const densitySizes: Record<string, number> = {
+    mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192,
+  };
+  try {
+    const sharp = (await import('sharp')).default;
+    const logoBuffer = readFileSync(logoPath);
+    const result: Record<string, Buffer> = {};
+    for (const [density, size] of Object.entries(densitySizes)) {
+      result[density] = await sharp(logoBuffer)
+        .resize(size, size, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+        .png()
+        .toBuffer();
+    }
+    return result;
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(req: NextRequest) {
@@ -418,16 +451,21 @@ export async function GET(req: NextRequest) {
 
   const role = ROLES[roleParam];
 
-  // Get app base URL and company name from DB
+  // Get app base URL, company name, and logo from DB
   let baseUrl = process.env.NEXTAUTH_URL || process.env.APP_URL || 'https://your-vps-domain.com';
   baseUrl = baseUrl.replace(/\/$/, '');
 
   let appName: string = role.label;
+  let logoPath: string | null = null;
   try {
-    const company = await prisma.company.findFirst({ select: { name: true } });
+    const company = await prisma.company.findFirst({ select: { name: true, logo: true, baseUrl: true } });
     if (company?.name) {
       appName = `${company.name} ${roleParam.charAt(0).toUpperCase() + roleParam.slice(1)}`;
     }
+    if (company?.baseUrl) {
+      baseUrl = company.baseUrl.replace(/\/$/, '');
+    }
+    logoPath = resolveLogoPath(company?.logo);
   } catch { /* use default */ }
 
   const startUrl = `${baseUrl}${role.pathSuffix}`;
@@ -475,13 +513,16 @@ export async function GET(req: NextRequest) {
   files['app/src/main/res/values/colors.xml'] = s(colorsXml(role.color));
   files['app/src/main/res/values/themes.xml'] = s(themesXml());
 
-  // Placeholder icons (small PNG) for all densities
-  // User should replace with real icons after extracting ZIP
-  const iconPng = minimalIconPng();
+  // Icons per density — use company logo if available, fallback to placeholder
   const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
+  let iconPngs: Record<string, Buffer> | null = null;
+  if (logoPath) {
+    iconPngs = await generateIconPngs(logoPath);
+  }
   for (const density of densities) {
-    files[`app/src/main/res/mipmap-${density}/ic_launcher.png`] = iconPng;
-    files[`app/src/main/res/mipmap-${density}/ic_launcher_round.png`] = iconPng;
+    const icon = iconPngs?.[density] || minimalIconPng();
+    files[`app/src/main/res/mipmap-${density}/ic_launcher.png`] = icon;
+    files[`app/src/main/res/mipmap-${density}/ic_launcher_round.png`] = icon;
   }
 
   // gradlew (standard Android Gradle wrapper script for Linux/macOS)
