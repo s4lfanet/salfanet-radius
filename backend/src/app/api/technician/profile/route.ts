@@ -11,9 +11,19 @@ async function getTechUser(req: NextRequest) {
   try {
     const { payload } = await jwtVerify(token, secret);
     if (payload.type === 'admin_user') {
-      return { id: payload.id as string, type: 'admin_user' as const };
+      const adminUser = await prisma.adminUser.findUnique({
+        where: { id: payload.id as string },
+        select: { id: true, isActive: true, role: true },
+      });
+      if (!adminUser?.isActive || adminUser.role !== 'TECHNICIAN') return null;
+      return { id: adminUser.id, type: 'admin_user' as const };
     }
-    return { id: payload.id as string, type: 'technician' as const };
+    const tech = await prisma.technician.findUnique({
+      where: { id: payload.id as string },
+      select: { id: true, isActive: true },
+    });
+    if (!tech?.isActive) return null;
+    return { id: tech.id, type: 'technician' as const };
   } catch {
     return null;
   }

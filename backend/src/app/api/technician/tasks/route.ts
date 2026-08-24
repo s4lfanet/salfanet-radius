@@ -111,6 +111,13 @@ export async function PUT(req: NextRequest) {
     };
 
     if (status !== undefined) {
+      const validStatuses = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+      if (!validStatuses.includes(status)) {
+        return NextResponse.json(
+          { error: 'Status tidak valid' },
+          { status: 400 }
+        );
+      }
       updateData.status = status;
       if (status === 'COMPLETED' && !existingTask.completedAt) {
         updateData.completedAt = new Date();

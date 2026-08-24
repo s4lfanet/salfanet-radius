@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status') || 'PENDING';
+    const rawStatus = searchParams.get('status') || 'PENDING';
+    const status = ['PENDING', 'COMPLETED', 'CANCELLED'].includes(rawStatus) ? rawStatus : 'PENDING';
 
     const tasks = await prisma.ontRemovalTask.findMany({
       where: { assignedTechnicianId: tech.id, status },
