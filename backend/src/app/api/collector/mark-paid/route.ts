@@ -55,39 +55,44 @@ export async function POST(req: NextRequest) {
 
     const method = paymentMethod || 'cash';
 
-    await prisma.invoice.update({
-      where: { id: invoiceId },
-      data: {
-        status: 'PAID',
-        paidAt: new Date(),
-        paidById: collector.id,
-        paymentMethod: method,
-        collectorProof: collectorProof || null,
-      },
+    // Wrap invoice update + proof creation in a transaction so they
+    // either both succeed or both roll back — prevents orphaned PAID
+    // invoices with no proof record if the second write fails.
+    await prisma.$transaction(async (tx) => {
+      await tx.invoice.update({
+        where: { id: invoiceId },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+          paidById: collector.id,
+          paymentMethod: method,
+          collectorProof: collectorProof || null,
+        },
+      });
+
+      // For transfer payments with proof: create a pending paymentProof record for admin verification
+      if (method === 'transfer' && collectorProof) {
+        const existing = await tx.paymentProof.findFirst({
+          where: { invoiceId, status: 'pending' },
+        });
+
+        if (!existing) {
+          await tx.paymentProof.create({
+            data: {
+              invoiceId,
+              username: invoice.customerUsername || '',
+              amount: invoice.amount,
+              proofImage: collectorProof,
+              status: 'pending',
+              collectorId: collector.id,
+            },
+          });
+        }
+      }
     });
 
     if (invoice.customerUsername) {
       await cancelPendingOntTasksForPaidUser(invoice.customerUsername).catch(() => {});
-    }
-
-    // For transfer payments with proof: create a pending paymentProof record for admin verification
-    if (method === 'transfer' && collectorProof) {
-      const existing = await prisma.paymentProof.findFirst({
-        where: { invoiceId, status: 'pending' },
-      });
-
-      if (!existing) {
-        await prisma.paymentProof.create({
-          data: {
-            invoiceId,
-            username: invoice.customerUsername || '',
-            amount: invoice.amount,
-            proofImage: collectorProof,
-            status: 'pending',
-            collectorId: collector.id,
-          },
-        });
-      }
     }
 
     return NextResponse.json({

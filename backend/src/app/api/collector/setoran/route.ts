@@ -12,7 +12,6 @@ export async function GET(req: NextRequest) {
   }
 
   const { searchParams } = new URL(req.url);
-  const period = searchParams.get('period') || new Date().toISOString().slice(0, 7);
   const date = searchParams.get('date');
 
   try {
@@ -57,13 +56,16 @@ export async function GET(req: NextRequest) {
       where: { date: date || new Date().toISOString().slice(0, 10) },
       select: { collectorId: true, confirmedBy: true, confirmedAt: true },
     });
+    // Batch fetch admin names to avoid N+1 queries
+    const adminIds = [...new Set(confirmations.map(c => c.confirmedBy))];
+    const admins = await prisma.adminUser.findMany({
+      where: { id: { in: adminIds } },
+      select: { id: true, name: true },
+    });
+    const adminMap = new Map(admins.map(a => [a.id, a.name]));
     const confirmMap: Record<string, { confirmed_by: string; confirmed_at: Date }> = {};
     for (const c of confirmations) {
-      const admin = await prisma.adminUser.findUnique({
-        where: { id: c.confirmedBy },
-        select: { name: true },
-      });
-      confirmMap[c.collectorId] = { confirmed_by: admin?.name || 'Admin', confirmed_at: c.confirmedAt };
+      confirmMap[c.collectorId] = { confirmed_by: adminMap.get(c.confirmedBy) || 'Admin', confirmed_at: c.confirmedAt };
     }
 
     const result = collectors.map(c => {

@@ -15,11 +15,16 @@ export async function GET(req: NextRequest) {
     const period = `${year}-${month}`;
     const today = now.toISOString().slice(0, 10);
 
-    // Summary for current period
+    // Summary for current period — filter at DB level to avoid fetching
+    // the collector's entire payment history into memory.
+    const periodStart = new Date(`${period}-01T00:00:00`);
+    const periodEnd = new Date(year, now.getMonth() + 1, 0, 23, 59, 59);
+
     const invoices = await prisma.invoice.findMany({
       where: {
         paidById: collector.id,
         status: 'PAID',
+        paidAt: { gte: periodStart, lte: periodEnd },
       },
       select: {
         id: true,
@@ -29,13 +34,27 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const periodInvoices = invoices.filter(i => i.paidAt && i.paidAt.toISOString().slice(0, 7) === period);
-    const todayInvoices = invoices.filter(i => i.paidAt && i.paidAt.toISOString().slice(0, 10) === today);
+    // Also fetch today's invoices separately for the today summary
+    const todayStart = new Date(today + 'T00:00:00');
+    const todayEnd = new Date(today + 'T23:59:59');
+    const todayInvoices = await prisma.invoice.findMany({
+      where: {
+        paidById: collector.id,
+        status: 'PAID',
+        paidAt: { gte: todayStart, lte: todayEnd },
+      },
+      select: {
+        id: true,
+        amount: true,
+        paymentMethod: true,
+        paidAt: true,
+      },
+    });
 
-    const totalAmount = periodInvoices.reduce((s, i) => s + i.amount, 0);
-    const cashAmount = periodInvoices.filter(i => !i.paymentMethod || i.paymentMethod === 'cash').reduce((s, i) => s + i.amount, 0);
-    const transferAmount = periodInvoices.filter(i => i.paymentMethod && i.paymentMethod !== 'cash' && i.paymentMethod !== 'discount').reduce((s, i) => s + i.amount, 0);
-    const discountAmount = periodInvoices.filter(i => i.paymentMethod === 'discount').reduce((s, i) => s + i.amount, 0);
+    const totalAmount = invoices.reduce((s, i) => s + i.amount, 0);
+    const cashAmount = invoices.filter(i => !i.paymentMethod || i.paymentMethod === 'cash').reduce((s, i) => s + i.amount, 0);
+    const transferAmount = invoices.filter(i => i.paymentMethod && i.paymentMethod !== 'cash' && i.paymentMethod !== 'discount').reduce((s, i) => s + i.amount, 0);
+    const discountAmount = invoices.filter(i => i.paymentMethod === 'discount').reduce((s, i) => s + i.amount, 0);
 
     const todayAmount = todayInvoices.reduce((s, i) => s + i.amount, 0);
 
@@ -69,7 +88,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       summary: {
         period,
-        invoice_count: periodInvoices.length,
+        invoice_count: invoices.length,
         total_amount: totalAmount,
         cash_amount: cashAmount,
         transfer_amount: transferAmount,

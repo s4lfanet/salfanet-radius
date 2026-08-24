@@ -60,6 +60,17 @@ export async function GET(req: NextRequest) {
       confirmedByName = admin?.name || 'Admin';
     }
 
+    // Get payment proof status for transfer invoices
+    const proofInvoiceIds = invoices.filter(i => i.paymentMethod === 'transfer').map(i => i.id);
+    let proofMap = new Map<string, { status: string; rejectReason: string | null }>();
+    if (proofInvoiceIds.length > 0) {
+      const proofs = await prisma.paymentProof.findMany({
+        where: { invoiceId: { in: proofInvoiceIds } },
+        select: { invoiceId: true, status: true, rejectReason: true },
+      });
+      proofMap = new Map(proofs.map(p => [p.invoiceId, { status: p.status, rejectReason: p.rejectReason }]));
+    }
+
     return NextResponse.json({
       date,
       summary: {
@@ -69,16 +80,21 @@ export async function GET(req: NextRequest) {
         transfer_amount: transferAmount,
         discount_amount: discountAmount,
       },
-      invoices: invoices.map(i => ({
-        id: i.id,
-        invoiceNumber: i.invoiceNumber,
-        amount: i.amount,
-        paymentMethod: i.paymentMethod,
-        paidAt: i.paidAt,
-        customerName: i.customerName,
-        customerUsername: i.customerUsername,
-        has_proof: !!i.collectorProof,
-      })),
+      invoices: invoices.map(i => {
+        const proof = proofMap.get(i.id);
+        return {
+          id: i.id,
+          invoiceNumber: i.invoiceNumber,
+          amount: i.amount,
+          paymentMethod: i.paymentMethod,
+          paidAt: i.paidAt,
+          customerName: i.customerName,
+          customerUsername: i.customerUsername,
+          has_proof: !!i.collectorProof,
+          proof_status: proof?.status || null,
+          proof_reject_reason: proof?.rejectReason || null,
+        };
+      }),
       confirmation: confirmation
         ? { confirmed_by: confirmedByName, confirmed_at: confirmation.confirmedAt }
         : null,
