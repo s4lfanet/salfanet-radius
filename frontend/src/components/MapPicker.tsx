@@ -195,8 +195,8 @@ export default function MapPicker({
   if (!isOpen || !isMounted) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" style={{ zIndex: 10001 }}>
-      <div className="bg-gradient-to-br from-slate-900 to-[#1a0f35] rounded-xl sm:rounded-2xl shadow-[0_0_50px_rgba(188,19,254,0.3)] border-2 border-[#bc13fe]/30 w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-0 sm:p-2 md:p-4" style={{ zIndex: 10001 }}>
+      <div className="bg-gradient-to-br from-slate-900 to-[#1a0f35] rounded-none sm:rounded-xl md:rounded-2xl shadow-[0_0_50px_rgba(188,19,254,0.3)] border-0 sm:border-2 border-[#bc13fe]/30 w-full max-w-5xl h-screen sm:h-auto sm:max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-[#bc13fe]/20 bg-gradient-to-r from-[#bc13fe]/10 to-[#00f7ff]/10 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
@@ -218,7 +218,7 @@ export default function MapPicker({
 
         {/* Map Container */}
         <div className="p-3 sm:p-6 flex-1 overflow-auto">
-          <div className="relative h-[350px] sm:h-[400px] md:h-[500px] rounded-lg sm:rounded-xl overflow-hidden border-2 border-[#bc13fe]/30 shadow-[0_0_20px_rgba(188,19,254,0.2)]">
+          <div className="relative h-[50vh] sm:h-[400px] md:h-[500px] rounded-lg sm:rounded-xl overflow-hidden border-2 border-[#bc13fe]/30 shadow-[0_0_20px_rgba(188,19,254,0.2)]">
             {/* Controls Overlay */}
             <div className="absolute top-2 sm:top-4 right-2 sm:right-4 z-[1000] flex flex-col gap-2 sm:gap-3">
               {/* Basemap Toggle */}

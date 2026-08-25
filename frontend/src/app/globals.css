@@ -1698,10 +1698,10 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   }
   
   /* Typography */
-  h1 { @apply text-lg sm:text-xl font-bold tracking-wide; }
-  h2 { @apply text-base sm:text-lg font-bold tracking-wide; }
-  h3 { @apply text-sm sm:text-base font-semibold; }
-  h4 { @apply text-xs sm:text-sm font-semibold; }
+  h1 { @apply text-lg sm:text-xl font-bold tracking-wide; font-size: clamp(1.125rem, 2vw, 1.25rem); }
+  h2 { @apply text-base sm:text-lg font-bold tracking-wide; font-size: clamp(1rem, 1.75vw, 1.125rem); }
+  h3 { @apply text-sm sm:text-base font-semibold; font-size: clamp(0.875rem, 1.5vw, 1rem); }
+  h4 { @apply text-xs sm:text-sm font-semibold; font-size: clamp(0.75rem, 1.25vw, 0.875rem); }
   p { @apply text-xs; }
 }
 
@@ -2091,9 +2091,24 @@ div[style*="z-index: 9999"].fixed.inset-0 {
     @apply shadow-[0_0_20px_rgba(0,255,255,0.1)];
   }
   
+  .table-container > table {
+    @apply min-w-full;
+  }
+  
   .table-compact th,
   .table-compact td {
     @apply px-3 py-2 text-xs;
+  }
+
+  /* Responsive column hiding — hide less-critical columns on small screens */
+  .col-hide-sm { @apply hidden sm:table-cell; }
+  .col-hide-md { @apply hidden md:table-cell; }
+  .col-hide-lg { @apply hidden lg:table-cell; }
+
+  /* Fluid stat value — scales smoothly with viewport */
+  .stat-value {
+    font-size: clamp(1rem, 2.5vw, 1.5rem);
+    @apply font-bold leading-tight;
   }
 
   /* ===========================================
@@ -2132,6 +2147,19 @@ div[style*="z-index: 9999"].fixed.inset-0 {
   
   .stats-grid {
     @apply grid grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+
+  /* Fluid auto-fit grids — columns adapt to container width */
+  .auto-fit-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  }
+  
+  .auto-fit-grid-sm {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  }
+  
+  .auto-fit-grid-lg {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
   }
 
   /* ===========================================

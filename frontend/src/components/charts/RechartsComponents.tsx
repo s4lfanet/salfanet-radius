@@ -1,11 +1,29 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   Area, AreaChart
 } from 'recharts';
 import type { TooltipPayloadEntry, PieLabelRenderProps } from 'recharts';
+
+function useResponsiveHeight(defaultHeight: number): number {
+  const [height, setHeight] = useState(defaultHeight);
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth < 640) {
+        setHeight(Math.round(defaultHeight * 0.75));
+      } else {
+        setHeight(defaultHeight);
+      }
+    };
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, [defaultHeight]);
+  return height;
+}
 
 // Color palettes
 const COLORS = {
@@ -71,11 +89,12 @@ interface RevenueLineChartProps extends BaseChartProps {
 }
 
 export function RevenueLineChart({ data, loading, height = 250, dataKey = 'revenue' }: RevenueLineChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
         <defs>
           <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
@@ -107,11 +126,12 @@ interface CategoryBarChartProps extends BaseChartProps {
 }
 
 export function CategoryBarChart({ data, loading, height = 250, dataKey = 'amount', nameKey = 'category' }: CategoryBarChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <BarChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 30 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#9ca3af" opacity={0.3} vertical={false} />
         <XAxis
@@ -136,13 +156,14 @@ export function CategoryBarChart({ data, loading, height = 250, dataKey = 'amoun
 interface UserStatusPieChartProps extends BaseChartProps {}
 
 export function UserStatusPieChart({ data, loading, height = 200 }: UserStatusPieChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <PieChart>
         <Pie
           data={data}
@@ -170,11 +191,12 @@ export function UserStatusPieChart({ data, loading, height = 200 }: UserStatusPi
 interface UserGrowthChartProps extends BaseChartProps {}
 
 export function UserGrowthChart({ data, loading, height = 200 }: UserGrowthChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <LineChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#9ca3af" opacity={0.3} vertical={false} />
         <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -205,11 +227,12 @@ export function UserGrowthChart({ data, loading, height = 200 }: UserGrowthChart
 interface VoucherSalesChartProps extends BaseChartProps {}
 
 export function VoucherSalesChart({ data, loading, height = 200 }: VoucherSalesChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <BarChart data={data} layout="vertical" margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#9ca3af" opacity={0.3} horizontal={false} />
         <XAxis type="number" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
@@ -225,8 +248,9 @@ export function VoucherSalesChart({ data, loading, height = 200 }: VoucherSalesC
 interface VoucherStatusPieChartProps extends BaseChartProps {}
 
 export function VoucherStatusPieChart({ data, loading, height = 200 }: VoucherStatusPieChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   const statusColors: Record<string, string> = {
     'ACTIVE': COLORS.success,
@@ -236,7 +260,7 @@ export function VoucherStatusPieChart({ data, loading, height = 200 }: VoucherSt
   };
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <PieChart>
         <Pie
           data={data}
@@ -268,11 +292,12 @@ export function VoucherStatusPieChart({ data, loading, height = 200 }: VoucherSt
 interface SessionsChartProps extends BaseChartProps {}
 
 export function SessionsChart({ data, loading, height = 200 }: SessionsChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
         <defs>
           <linearGradient id="pppoeGradient" x1="0" y1="0" x2="0" y2="1">
@@ -300,8 +325,9 @@ export function SessionsChart({ data, loading, height = 200 }: SessionsChartProp
 interface BandwidthChartProps extends BaseChartProps {}
 
 export function BandwidthChart({ data, loading, height = 200 }: BandwidthChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   const formatBandwidth = (value: number) => {
     if (value >= 1024) return `${(value / 1024).toFixed(1)} GB`;
@@ -309,7 +335,7 @@ export function BandwidthChart({ data, loading, height = 200 }: BandwidthChartPr
   };
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
         <defs>
           <linearGradient id="uploadGradient" x1="0" y1="0" x2="0" y2="1">
@@ -337,11 +363,12 @@ export function BandwidthChart({ data, loading, height = 200 }: BandwidthChartPr
 interface IncomeExpenseChartProps extends BaseChartProps {}
 
 export function IncomeExpenseChart({ data, loading, height = 250 }: IncomeExpenseChartProps) {
-  if (loading) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
-  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height }}><span className="text-xs text-muted-foreground">No data available</span></div>;
+  const h = useResponsiveHeight(height);
+  if (loading) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">Memuat...</span></div>;
+  if (!data || data.length === 0) return <div className="flex items-center justify-center" style={{ height: h }}><span className="text-xs text-muted-foreground">No data available</span></div>;
 
   return (
-    <ResponsiveContainer width="100%" height={height}>
+    <ResponsiveContainer width="100%" height={h}>
       <BarChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#9ca3af" opacity={0.3} vertical={false} />
         <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />

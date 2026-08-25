@@ -128,7 +128,7 @@ export function SimpleModal({
             <div
                 ref={contentRef}
                 className={cn(
-                    'relative w-full modal-content',
+                    'relative w-full modal-content max-h-[90vh] flex flex-col',
                     sizeClasses[size],
                     // Animation
                     'animate-in fade-in-0 zoom-in-95 slide-in-from-bottom-4 duration-300',
@@ -204,7 +204,7 @@ export function ModalDescription({ children, className }: { children: React.Reac
 export function ModalBody({ children, className }: ModalBodyProps) {
     return (
         <div className={cn(
-            'px-5 py-4 max-h-[60vh] overflow-y-auto',
+            'px-5 py-4 max-h-[70vh] overflow-y-auto flex-1 min-h-0',
             // Custom scrollbar for cyberpunk theme
             'scrollbar-thin scrollbar-thumb-[#bc13fe]/40 scrollbar-track-transparent',
             className

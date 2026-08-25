@@ -651,7 +651,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile Sidebar */}
-      <div className="lg:hidden">
+      <div className="lg:hidden" aria-hidden={!sidebarOpen}>
         <TechSidebar tech={tech} sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} onLogout={handleLogout} />
       </div>
 
