@@ -19,6 +19,7 @@ const ROLES = {
   customer:      { label: 'Salfanet Customer',  pkg: 'net.salfanet.customer',      color: '#0891b2', pathSuffix: '/customer' },
   technician:    { label: 'Salfanet Teknisi',   pkg: 'net.salfanet.technician',    color: '#059669', pathSuffix: '/technician' },
   agent:         { label: 'Salfanet Agent',     pkg: 'net.salfanet.agent',         color: '#7c3aed', pathSuffix: '/agent' },
+  collector:     { label: 'Salfanet Collector', pkg: 'net.salfanet.collector',     color: '#d97706', pathSuffix: '/collector' },
   qris_listener: { label: 'Salfanet QRIS Listener', pkg: 'net.salfanet.qrislistener', color: '#e11d48', pathSuffix: '' },
 } as const;
 type RoleKey = keyof typeof ROLES;
@@ -46,6 +47,10 @@ import android.app.Activity
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -64,6 +69,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.work.*
 import java.util.concurrent.TimeUnit
+import java.io.IOException
+import java.io.OutputStream
+import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
     private lateinit var webView: WebView
@@ -115,6 +123,121 @@ class MainActivity : AppCompatActivity() {
         fun saveBaseUrl(url: String) {
             getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 .edit().putString(PREF_BASE_URL, url).apply()
+        }
+    }
+
+    inner class BluetoothPrinterBridge {
+        private var bluetoothSocket: BluetoothSocket? = null
+        private var outputStream: OutputStream? = null
+        private val SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34BF")
+
+        @JavascriptInterface
+        fun isSupported(): Boolean {
+            val bm = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+            return bm?.adapter != null
+        }
+
+        @JavascriptInterface
+        fun isConnected(): Boolean {
+            return bluetoothSocket?.isConnected == true
+        }
+
+        @JavascriptInterface
+        fun getBondedDevices(): String {
+            val bm = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+            val adapter = bm?.adapter ?: return "[]"
+            if (Build.VERSION.SDK_INT >= 31 &&
+                ActivityCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                return "[]"
+            }
+            val sb = StringBuilder("[")
+            var first = true
+            for (dev in adapter.bondedDevices) {
+                if (!first) sb.append(",")
+                sb.append("{\\"name\\":\\"").append(dev.name?.replace("\\"", "\\\\"))
+                sb.append("\\",\\"address\\":\\"").append(dev.address).append("\\"}")
+                first = false
+            }
+            sb.append("]")
+            return sb.toString()
+        }
+
+        @JavascriptInterface
+        fun connect(address: String): Boolean {
+            disconnect()
+            val bm = getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
+            val adapter = bm?.adapter ?: return false
+            if (Build.VERSION.SDK_INT >= 31 &&
+                ActivityCompat.checkSelfPermission(this@MainActivity, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                runOnUiThread { requestBluetoothPermission() }
+                return false
+            }
+            val device = adapter.getRemoteDevice(address) ?: return false
+            return try {
+                val socket = device.createRfcommSocketToServiceRecord(SPP_UUID)
+                adapter.cancelDiscovery()
+                socket.connect()
+                bluetoothSocket = socket
+                outputStream = socket.outputStream
+                true
+            } catch (e: IOException) {
+                try { bluetoothSocket?.close() } catch (_: Exception) {}
+                bluetoothSocket = null
+                outputStream = null
+                false
+            }
+        }
+
+        @JavascriptInterface
+        fun disconnect(): Boolean {
+            return try {
+                outputStream?.flush()
+                bluetoothSocket?.close()
+                true
+            } catch (_: Exception) {
+                false
+            } finally {
+                bluetoothSocket = null
+                outputStream = null
+            }
+        }
+
+        @JavascriptInterface
+        fun print(base64Data: String): Boolean {
+            val os = outputStream ?: return false
+            return try {
+                val bytes = android.util.Base64.decode(base64Data, android.util.Base64.DEFAULT)
+                os.write(bytes)
+                os.flush()
+                true
+            } catch (e: IOException) {
+                false
+            }
+        }
+
+        @JavascriptInterface
+        fun printText(text: String): Boolean {
+            val os = outputStream ?: return false
+            return try {
+                os.write(text.toByteArray(Charsets.UTF_8))
+                os.flush()
+                true
+            } catch (e: IOException) {
+                false
+            }
+        }
+    }
+
+    private fun requestBluetoothPermission() {
+        if (Build.VERSION.SDK_INT >= 31) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.BLUETOOTH_CONNECT,
+                    Manifest.permission.BLUETOOTH_SCAN
+                ),
+                100
+            )
         }
     }
 
@@ -205,6 +328,19 @@ class MainActivity : AppCompatActivity() {
                 2
             )
         }
+        // Request Bluetooth permissions on startup (Android 12+)
+        if (Build.VERSION.SDK_INT >= 31) {
+            val btPerms = arrayOf(
+                Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN
+            )
+            val needsBt = btPerms.any {
+                ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+            }
+            if (needsBt) {
+                ActivityCompat.requestPermissions(this, btPerms, 100)
+            }
+        }
         with(webView.settings) {
             javaScriptEnabled    = true
             domStorageEnabled    = true
@@ -224,6 +360,7 @@ class MainActivity : AppCompatActivity() {
         // Disable overscroll glow/bounce effect
         webView.overScrollMode = android.view.View.OVER_SCROLL_NEVER
         webView.addJavascriptInterface(AndroidBridge(), "Android")
+        webView.addJavascriptInterface(BluetoothPrinterBridge(), "AndroidBluetoothPrinter")
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 val url = request?.url?.toString() ?: return false
@@ -463,6 +600,11 @@ const androidManifest = (pkg: string) => `<?xml version="1.0" encoding="utf-8"?>
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
     <application
         android:allowBackup="true"
         android:label="@string/app_name"

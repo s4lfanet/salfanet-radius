@@ -110,7 +110,7 @@ export default function CollectorBillingPage() {
 
   const handleBluetoothConnect = async () => {
     if (!BluetoothPrinter.isSupported()) {
-      alert('Browser tidak mendukung Web Bluetooth.\nGunakan Chrome atau Edge di Android.');
+      alert('Bluetooth printing tidak tersedia.\nGunakan Chrome/Edge di Android atau APK Salfanet Collector.');
       return;
     }
     setActionLoading('bt-connect');
@@ -141,7 +141,7 @@ export default function CollectorBillingPage() {
     if (!btPrinter || !btConnected) {
       // Try to connect first
       if (!BluetoothPrinter.isSupported()) {
-        alert('Browser tidak mendukung Web Bluetooth.\nGunakan Chrome atau Edge di Android.');
+        alert('Bluetooth printing tidak tersedia.\nGunakan Chrome/Edge di Android atau APK Salfanet Collector.');
         return;
       }
       setActionLoading(`bt-${invoiceId}`);
