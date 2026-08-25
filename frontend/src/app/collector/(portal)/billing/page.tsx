@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiAdmin, ApiError } from '@/lib/api/client';
-import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
+import { BluetoothPrinter, type ThermalReceiptData } from '@/lib/bluetooth-printer';
+import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Image as ImageIcon, Printer, Bluetooth, MessageCircle, FileText } from 'lucide-react';
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
@@ -20,6 +22,11 @@ export default function CollectorBillingPage() {
   const [payLoading, setPayLoading] = useState(false);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [btPrinter, setBtPrinter] = useState<BluetoothPrinter | null>(null);
+  const [btConnected, setBtConnected] = useState(false);
+  const [showPrintMenu, setShowPrintMenu] = useState<string | null>(null);
+  const printMenuRef = useRef<HTMLDivElement | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -73,6 +80,164 @@ export default function CollectorBillingPage() {
     });
   };
 
+  const handlePrintA4 = async (invoiceId: string) => {
+    setActionLoading(`a4-${invoiceId}`);
+    setShowPrintMenu(null);
+    try {
+      await printInvoiceStandard(invoiceId, (type, title, desc) => {
+        if (type === 'error') alert(`${title}${desc ? ': ' + desc : ''}`);
+      });
+    } catch (err) {
+      alert('Gagal mencetak invoice');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePrintThermal = async (invoiceId: string) => {
+    setActionLoading(`thermal-${invoiceId}`);
+    setShowPrintMenu(null);
+    try {
+      await printInvoiceThermal(invoiceId, (type, title, desc) => {
+        if (type === 'error') alert(`${title}${desc ? ': ' + desc : ''}`);
+      });
+    } catch (err) {
+      alert('Gagal mencetak struk');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBluetoothConnect = async () => {
+    if (!BluetoothPrinter.isSupported()) {
+      alert('Browser tidak mendukung Web Bluetooth.\nGunakan Chrome atau Edge di Android.');
+      return;
+    }
+    setActionLoading('bt-connect');
+    try {
+      const printer = new BluetoothPrinter();
+      const ok = await printer.connect();
+      if (ok) {
+        setBtPrinter(printer);
+        setBtConnected(true);
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal connect ke printer Bluetooth');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleBluetoothDisconnect = async () => {
+    if (btPrinter) {
+      await btPrinter.disconnect();
+      setBtPrinter(null);
+      setBtConnected(false);
+    }
+  };
+
+  const handlePrintBluetooth = async (invoiceId: string) => {
+    setShowPrintMenu(null);
+    if (!btPrinter || !btConnected) {
+      // Try to connect first
+      if (!BluetoothPrinter.isSupported()) {
+        alert('Browser tidak mendukung Web Bluetooth.\nGunakan Chrome atau Edge di Android.');
+        return;
+      }
+      setActionLoading(`bt-${invoiceId}`);
+      try {
+        const printer = new BluetoothPrinter();
+        const ok = await printer.connect();
+        if (!ok) {
+          alert('Gagal connect ke printer Bluetooth');
+          return;
+        }
+        setBtPrinter(printer);
+        setBtConnected(true);
+
+        // Fetch invoice data and print
+        const res = await fetch(`/api/invoices/${invoiceId}/pdf`, { credentials: 'include' });
+        const data = await res.json();
+        if (!data.success || !data.data) {
+          alert('Gagal mengambil data invoice');
+          return;
+        }
+        const inv = data.data;
+        const receiptData: ThermalReceiptData = {
+          company: inv.company,
+          customer: inv.customer,
+          invoice: inv.invoice,
+          items: inv.items,
+          additionalFees: inv.additionalFees,
+          amountFormatted: inv.amountFormatted,
+        };
+        await printer.printReceipt(receiptData);
+        alert('Struk berhasil dicetak via Bluetooth');
+      } catch (err: any) {
+        alert(err.message || 'Gagal mencetak via Bluetooth');
+      } finally {
+        setActionLoading(null);
+      }
+      return;
+    }
+
+    // Already connected — just print
+    setActionLoading(`bt-${invoiceId}`);
+    try {
+      const res = await fetch(`/api/invoices/${invoiceId}/pdf`, { credentials: 'include' });
+      const data = await res.json();
+      if (!data.success || !data.data) {
+        alert('Gagal mengambil data invoice');
+        return;
+      }
+      const inv = data.data;
+      const receiptData: ThermalReceiptData = {
+        company: inv.company,
+        customer: inv.customer,
+        invoice: inv.invoice,
+        items: inv.items,
+        additionalFees: inv.additionalFees,
+        amountFormatted: inv.amountFormatted,
+      };
+      await btPrinter.printReceipt(receiptData);
+    } catch (err: any) {
+      alert(err.message || 'Gagal mencetak via Bluetooth');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSendWhatsApp = async (invoiceId: string, invoiceNumber: string, customerName: string) => {
+    setActionLoading(`wa-${invoiceId}`);
+    try {
+      const res = await apiAdmin<{ success: boolean; message?: string; error?: string }>('/api/collector/send-invoice', {
+        method: 'POST',
+        body: JSON.stringify({ invoiceId }),
+      });
+      if (res.success) {
+        alert(`Bukti pembayaran lunas terkirim via WhatsApp ke pelanggan ${customerName}`);
+      } else {
+        alert(res.error || 'Gagal mengirim WhatsApp');
+      }
+    } catch (err) {
+      const msg = err instanceof ApiError ? err.message : 'Gagal mengirim WhatsApp';
+      alert(msg);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Close print menu on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (printMenuRef.current && !printMenuRef.current.contains(e.target as Node)) {
+        setShowPrintMenu(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
   const handlePay = async () => {
     if (!payModal) return;
     if (paymentMethod === 'transfer' && !proofPreview) {
@@ -108,9 +273,41 @@ export default function CollectorBillingPage() {
 
   return (
     <div className="animate-fade-in">
-      <div className="mb-6">
-        <h2 className="text-xl font-bold text-foreground">Tagihan Pelanggan</h2>
-        <p className="text-sm text-muted-foreground mt-1">Tandai invoice sebagai lunas saat menerima pembayaran</p>
+      <div className="mb-6 flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Tagihan Pelanggan</h2>
+          <p className="text-sm text-muted-foreground mt-1">Tandai invoice sebagai lunas saat menerima pembayaran</p>
+        </div>
+        {/* Bluetooth printer status */}
+        <div className="flex items-center gap-2">
+          {btConnected ? (
+            <div className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                <Bluetooth className="w-4 h-4" />
+                Printer terhubung
+              </span>
+              <button
+                onClick={handleBluetoothDisconnect}
+                className="text-xs text-red-500 hover:text-red-600"
+              >
+                Putus
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleBluetoothConnect}
+              disabled={actionLoading === 'bt-connect'}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:bg-accent transition-all"
+            >
+              {actionLoading === 'bt-connect' ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Bluetooth className="w-3.5 h-3.5" />
+              )}
+              Hubungkan Printer BT
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Filter */}
@@ -210,23 +407,95 @@ export default function CollectorBillingPage() {
                                 {inv.paymentMethod && ` · ${inv.paymentMethod}`}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-sm font-bold text-foreground">{fmtRp(inv.amount)}</div>
-                              {inv.status !== 'PAID' && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPayModal({
-                                      invoiceId: inv.id,
-                                      invoiceNumber: inv.invoiceNumber,
-                                      amount: inv.amount,
-                                      customerName: u.name,
-                                    });
-                                  }}
-                                  className="mt-1 text-xs px-3 py-1 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all"
-                                >
-                                  Tandai Lunas
-                                </button>
+                            <div className="text-right flex-shrink-0 flex items-center gap-2">
+                              <div>
+                                <div className="text-sm font-bold text-foreground">{fmtRp(inv.amount)}</div>
+                                {inv.status !== 'PAID' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPayModal({
+                                        invoiceId: inv.id,
+                                        invoiceNumber: inv.invoiceNumber,
+                                        amount: inv.amount,
+                                        customerName: u.name,
+                                      });
+                                    }}
+                                    className="mt-1 text-xs px-3 py-1 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all"
+                                  >
+                                    Tandai Lunas
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Action buttons for paid invoices */}
+                              {inv.status === 'PAID' && (
+                                <div className="flex items-center gap-1 relative">
+                                  {/* Print menu */}
+                                  <div className="relative" ref={showPrintMenu === inv.id ? printMenuRef : null}>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id);
+                                      }}
+                                      disabled={actionLoading?.startsWith('a4-') || actionLoading?.startsWith('thermal-') || actionLoading?.startsWith('bt-')}
+                                      className="p-1.5 rounded-lg border border-border text-muted-foreground hover:bg-accent transition-all"
+                                      title="Cetak Invoice"
+                                    >
+                                      {actionLoading?.startsWith('a4-') && actionLoading === `a4-${inv.id}` ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : actionLoading?.startsWith('thermal-') && actionLoading === `thermal-${inv.id}` ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : actionLoading?.startsWith('bt-') && actionLoading === `bt-${inv.id}` ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                      ) : (
+                                        <Printer className="w-4 h-4" />
+                                      )}
+                                    </button>
+                                    {showPrintMenu === inv.id && (
+                                      <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
+                                        >
+                                          <FileText className="w-3.5 h-3.5" />
+                                          Cetak Invoice A4
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
+                                        >
+                                          <Printer className="w-3.5 h-3.5" />
+                                          Cetak Struk 80mm
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
+                                        >
+                                          <Bluetooth className="w-3.5 h-3.5" />
+                                          Cetak via Bluetooth
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* WhatsApp send */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name);
+                                    }}
+                                    disabled={actionLoading === `wa-${inv.id}`}
+                                    className="p-1.5 rounded-lg border border-border text-muted-foreground hover:bg-accent hover:text-green-600 transition-all"
+                                    title="Kirim Bukti Lunas via WhatsApp"
+                                  >
+                                    {actionLoading === `wa-${inv.id}` ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <MessageCircle className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </div>
                               )}
                             </div>
                           </div>
