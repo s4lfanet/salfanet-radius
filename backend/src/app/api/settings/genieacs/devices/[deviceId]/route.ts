@@ -8,7 +8,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ deviceId: string }> }
 ) {
-  const authCheck = await requirePermission('network.edit');
+  const authCheck = await requirePermission('settings.genieacs');
   if (!authCheck.authorized) return authCheck.response;
   try {
     const { deviceId } = await params;
