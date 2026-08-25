@@ -35,7 +35,7 @@ function PaymentFailedContent() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#ff4466]/20 rounded-full blur-3xl animate-pulse"></div>
       </div>
@@ -47,7 +47,7 @@ function PaymentFailedContent() {
   );
 
   return (
-    <div className="min-h-screen bg-[#1a0f35] relative py-6 px-4">
+    <div className="min-h-dvh bg-[#1a0f35] relative py-6 px-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#ff4466]/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-[#ff44cc]/15 rounded-full blur-3xl"></div>
@@ -131,7 +131,7 @@ function PaymentFailedContent() {
 export default function PaymentFailedPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#1a0f35] flex items-center justify-center">
+      <div className="min-h-dvh bg-[#1a0f35] flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-[#ff6b8a] drop-shadow-[0_0_20px_rgba(255,68,102,0.6)]" />
       </div>
     }>

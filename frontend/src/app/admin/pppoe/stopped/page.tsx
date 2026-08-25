@@ -194,8 +194,8 @@ export default function StoppedSubscriptionsPage() {
   // Stats
   const totalStopped = users.length;
 
-  if (permLoading) return <div className="flex items-center justify-center h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
-  if (!hasPermission('customers.view')) return <div className="flex items-center justify-center h-screen text-destructive">{t('pppoe.accessDenied')}</div>;
+  if (permLoading) return <div className="flex items-center justify-center h-dvh"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>;
+  if (!hasPermission('customers.view')) return <div className="flex items-center justify-center h-dvh text-destructive">{t('pppoe.accessDenied')}</div>;
 
   return (
     <div className="bg-background relative">

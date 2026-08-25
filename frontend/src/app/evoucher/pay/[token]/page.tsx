@@ -63,13 +63,13 @@ export default function EVoucherPaymentPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+    <div className="min-h-dvh bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
       <div className="text-center"><Loader2 className="w-8 h-8 animate-spin mx-auto text-teal-600 mb-2" /><p className="text-xs text-gray-600 dark:text-gray-400">Loading...</p></div>
     </div>
   );
 
   if (error || !order) return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 max-w-sm w-full text-center">
         <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
         <h2 className="text-base font-bold text-gray-900 dark:text-white mb-1">Order Tidak Ditemukan</h2>
@@ -79,7 +79,7 @@ export default function EVoucherPaymentPage() {
   );
 
   if (order.status === 'PAID' && order.vouchers.length > 0) return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-dvh bg-gradient-to-br from-green-50 to-teal-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-md mx-auto py-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-5">
           <div className="text-center mb-5">
@@ -110,7 +110,7 @@ export default function EVoucherPaymentPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-6 px-4">
+    <div className="min-h-dvh bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-6 px-4">
       <div className="max-w-md mx-auto space-y-4">
         <div className="text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-teal-600 to-cyan-600 rounded-full mb-2"><Wifi className="w-4 h-4 text-white" /><span className="text-xs font-medium text-white">Pembayaran Voucher</span></div>

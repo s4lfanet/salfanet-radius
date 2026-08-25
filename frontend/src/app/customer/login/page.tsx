@@ -140,11 +140,11 @@ export default function CustomerLoginPage() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-screen bg-background" />;
+    return <div className="min-h-dvh bg-background" />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-background transition-colors duration-300">
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-background transition-colors duration-300">
       {/* ── Mobile Brand Header (mobile only) ── */}
       <div className="lg:hidden bg-gradient-to-br from-cyan-500 to-blue-700 px-6 pt-10 pb-8 relative overflow-hidden flex-shrink-0">
         <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
@@ -165,7 +165,7 @@ export default function CustomerLoginPage() {
         </div>
       </div>
       {/* ── Left Panel: Login Form ── */}
-      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-screen bg-card border-r border-border shadow-xl px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0 relative">
+      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-dvh bg-card border-r border-border shadow-xl px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0 relative">
 
         {/* Theme Toggle */}
         <button

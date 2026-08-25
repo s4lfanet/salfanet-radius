@@ -196,7 +196,7 @@ export default function MapPicker({
 
   return createPortal(
     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-0 sm:p-2 md:p-4" style={{ zIndex: 10001 }}>
-      <div className="bg-gradient-to-br from-slate-900 to-[#1a0f35] rounded-none sm:rounded-xl md:rounded-2xl shadow-[0_0_50px_rgba(188,19,254,0.3)] border-0 sm:border-2 border-[#bc13fe]/30 w-full max-w-5xl h-screen sm:h-auto sm:max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-gradient-to-br from-slate-900 to-[#1a0f35] rounded-none sm:rounded-xl md:rounded-2xl shadow-[0_0_50px_rgba(188,19,254,0.3)] border-0 sm:border-2 border-[#bc13fe]/30 w-full max-w-5xl h-dvh sm:h-auto sm:max-h-[95vh] md:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b border-[#bc13fe]/20 bg-gradient-to-r from-[#bc13fe]/10 to-[#00f7ff]/10 flex-shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">

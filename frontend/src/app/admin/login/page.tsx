@@ -180,11 +180,11 @@ function LoginForm() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-screen bg-gray-50 dark:bg-slate-950" />;
+    return <div className="min-h-dvh bg-gray-50 dark:bg-slate-950" />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-background">
       {/* ── Mobile Brand Header (mobile only) ── */}
       <div className="lg:hidden bg-gradient-to-br from-blue-600 to-indigo-600 px-6 pt-10 pb-8 relative overflow-hidden flex-shrink-0">
         <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
@@ -205,7 +205,7 @@ function LoginForm() {
         </div>
       </div>
       {/* ── Left Panel: Login Form ── */}
-      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-screen bg-card border-r border-border shadow-xl px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0">
+      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-dvh bg-card border-r border-border shadow-xl px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0">
         <div className="w-full max-w-[320px]">
 
           {/* Logo */}
@@ -428,7 +428,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+      <div className="min-h-dvh bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600 dark:text-blue-400" />
       </div>
     }>

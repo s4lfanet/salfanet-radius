@@ -84,7 +84,7 @@ export default function EVoucherPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a0f35] flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-dvh bg-[#1a0f35] flex items-center justify-center relative overflow-hidden">
         {/* Background Effects */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#bc13fe]/35 rounded-full blur-[100px]" />
@@ -97,7 +97,7 @@ export default function EVoucherPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a0f35] flex flex-col p-4 relative overflow-hidden">
+    <div className="min-h-dvh bg-[#1a0f35] flex flex-col p-4 relative overflow-hidden">
       {/* Cyberpunk Background Effects - Neon Purple Theme */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#bc13fe]/35 rounded-full blur-[100px]" />

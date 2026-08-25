@@ -140,7 +140,7 @@ function DaftarPageInner() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
+      <div className="min-h-dvh bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div>
@@ -153,7 +153,7 @@ function DaftarPageInner() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
+      <div className="min-h-dvh bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
@@ -188,7 +188,7 @@ function DaftarPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a0f35] relative py-6 px-4">
+    <div className="min-h-dvh bg-[#1a0f35] relative py-6 px-4">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
