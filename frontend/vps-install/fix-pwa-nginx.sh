@@ -68,10 +68,8 @@ else
         print_success ".next/static/ → .next/standalone/.next/static/"
     fi
 
-    # Verify files are at correct level (not nested public/public/)
-    if [ -f ".next/standalone/public/manifest-admin.json" ]; then
-        print_success "Verified: manifest-admin.json at correct path"
-    elif [ -f ".next/standalone/public/public/manifest-admin.json" ]; then
+    # Verify public/ is not nested (public/public/)
+    if [ -d ".next/standalone/public/public" ]; then
         print_warning "Found nested public/public/ — fixing..."
         cp -r .next/standalone/public/public/. .next/standalone/public/
         rm -rf .next/standalone/public/public
@@ -170,17 +168,11 @@ content = re.sub(
     content
 )
 
-# ---- Fix 3: Inject correct manifest/sw.js/pwa blocks ----
-# Only inject if NOT already present with the correct root approach
+# ---- Fix 3: Inject correct sw.js/pwa blocks ----
+# NOTE: manifest-*.json files are dynamic Next.js routes (not static files),
+# so they must be proxied to Next.js via the catch-all `location /` block.
+# Do NOT add a static manifest location block — it will cause 404s.
 PWA_BLOCK = """
-    # PWA manifest files — serve directly from public/ (no Node.js needed)
-    location ~ ^/manifest(-[a-z]+)?\\.json$ {
-        root /var/www/salfanet-radius/public;
-        expires 1d;
-        add_header Cache-Control "public, max-age=86400";
-        add_header Content-Type "application/manifest+json";
-    }
-
     # Service worker — no cache
     location = /sw.js {
         root /var/www/salfanet-radius/public;
@@ -219,26 +211,26 @@ API_BLOCK = """
     }
 """
 
-has_manifest = 'root /var/www/salfanet-radius/public' in content and 'manifest' in content
+has_pwa = 'root /var/www/salfanet-radius/public' in content and 'sw.js' in content
 has_api = 'location /api/' in content
 
 # Find each "location / {" (the catch-all) and inject before it
 # We need to inject in EACH server block
-if not has_manifest or not has_api:
+if not has_pwa or not has_api:
     parts = []
     last_end = 0
     for m in re.finditer(r'\n([ \t]+)location\s+/\s*\{', content):
         insert_pos = m.start()
         parts.append(content[last_end:insert_pos])
         inject = ""
-        if not has_manifest:
+        if not has_pwa:
             inject += PWA_BLOCK
         if not has_api:
             inject += API_BLOCK
         parts.append(inject)
         last_end = insert_pos
         # Mark as injected for subsequent blocks
-        has_manifest = True
+        has_pwa = True
         has_api = True
     parts.append(content[last_end:])
     content = "".join(parts)
@@ -307,9 +299,9 @@ echo ""
 print_info "What was fixed:"
 echo "  1. public/ copied into .next/standalone/ (fixed nested public/public/ bug)"
 echo "  2. ENCRYPTION_KEY ensured in .env (GenieACS save fix)"
-echo "  3. Nginx: manifest/sw.js/pwa use 'root public/' (was broken 'alias standalone/')"
+echo "  3. Nginx: sw.js/pwa use 'root public/' (manifests are dynamic Next.js routes)"
 echo "  4. Nginx: /api/ no-cache block added (fixes API returning HTML 404)"
 echo ""
 print_info "Test:"
-echo "  curl -I http://\$(hostname -I | awk '{print \$1}')/manifest-admin.json"
+echo "  curl -s -o /dev/null -w '%{http_code}' -H 'Host: radius.salfa.my.id' http://127.0.0.1:8080/manifest-admin.json"
 echo "  curl -s http://\$(hostname -I | awk '{print \$1}')/api/health | head -c 100"
