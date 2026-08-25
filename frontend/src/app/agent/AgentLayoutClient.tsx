@@ -314,7 +314,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile Sidebar */}
-      <div className="lg:hidden">
+      <div className="lg:hidden" aria-hidden={!sidebarOpen}>
         <AgentSidebar 
           agent={agent}
           company={company}
