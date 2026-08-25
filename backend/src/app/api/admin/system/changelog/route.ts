@@ -65,18 +65,16 @@ export async function GET() {
 
     // Fetch remote
     try {
-      await execAsync('git fetch origin master --quiet', { cwd: appDir, timeout: 15000 });
+      await runCmd('git fetch origin master --quiet', appDir, 15000);
     } catch {
       // network issue, continue with local only
     }
 
-    const { stdout: localOut } = await execAsync('git rev-parse --short HEAD', { cwd: appDir, timeout: 5000 });
-    const local = localOut.trim();
+    const local = (await runCmd('git rev-parse --short HEAD', appDir, 5000)).trim();
 
     let remote = local;
     try {
-      const { stdout: remoteOut } = await execAsync('git rev-parse --short origin/master', { cwd: appDir, timeout: 5000 });
-      remote = remoteOut.trim();
+      remote = (await runCmd('git rev-parse --short origin/master', appDir, 5000)).trim();
     } catch {
       // ignore
     }
@@ -91,10 +89,7 @@ export async function GET() {
       logRange = '-20';
     }
 
-    const { stdout: logOut } = await execAsync(
-      `git log ${logRange} --format='%h|%ci|%an|%s'`,
-      { cwd: appDir, timeout: 10000 }
-    );
+    const logOut = await runCmd(`git log ${logRange} --format='%h|%ci|%an|%s'`, appDir, 10000);
 
     const commits = logOut.trim().split('\n').filter(Boolean).map(line => {
       const [hash, date, author, ...subjectParts] = line.split('|');
