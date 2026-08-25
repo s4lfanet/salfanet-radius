@@ -1041,6 +1041,29 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.15.1 — 2026-08-25 — Mobile Scroll Fix (All Portals)
+
+### Summary
+Perbaikan issue scroll mobile yang tidak bisa sampai ke bawah halaman di semua portal (admin, customer, technician, agent, collector). Root cause: `min-h-screen` (100vh) menggunakan "large viewport" height yang tidak akurat saat toolbar browser mobile terlihat. Juga menambahkan `viewportFit: 'cover'` untuk safe area iOS dan class CSS `.safe-area-pb` yang hilang.
+
+### Fixes
+- **[FIX]** `min-h-screen` → `min-h-dvh` (dynamic viewport height) di semua layout: AdminClientLayout, CustomerClientLayout, TechnicianPortalLayout, AgentLayoutClient, CollectorPortalLayout — termasuk loading states dan Suspense fallback
+- **[FIX]** `viewportFit: 'cover'` ditambahkan ke viewport export di root `layout.tsx` untuk enable safe area insets di iOS notched devices
+- **[FIX]** Class CSS `.safe-area-pb` ditambahkan ke `globals.css` — dipakai oleh customer mobile bottom nav tapi belum didefinisikan
+- **[FIX]** Customer portal: bottom padding `pb-20` → `pb-24` untuk spacing yang lebih aman terhadap mobile bottom navigation
+
+### Files Changed
+- `frontend/src/app/layout.tsx` — viewportFit: 'cover'
+- `frontend/src/app/globals.css` — .safe-area-pb class
+- `frontend/src/app/admin/AdminClientLayout.tsx` — min-h-dvh (5 places)
+- `frontend/src/app/customer/CustomerClientLayout.tsx` — min-h-dvh + pb-24
+- `frontend/src/app/technician/TechnicianPortalLayout.tsx` — min-h-dvh (3 places)
+- `frontend/src/app/agent/AgentLayoutClient.tsx` — min-h-dvh (2 places)
+- `frontend/src/app/collector/CollectorPortalLayout.tsx` — min-h-dvh (2 places)
+- `package.json` — version bump to 5.15.1
+- `README.md` — version update
+- `CHANGELOG.md` — this entry
+
 ### v5.15.0 — 2026-08-25 — Semantic Color Token Migration & Responsive Layout Improvements
 
 ### Summary
@@ -1243,63 +1266,6 @@ Batch fitur dan fix: implementasi QRIS Mandiri payment gateway (static-to-dynami
 - `3b9a4e9c` — fix: installer seed_database pipe-to-tee masks exit code
 - `da73801a` — fix: cloudflare tunnel switch_nginx_port regex
 - `a90bb57a` — chore: remove debug scripts from repo
-
-### v5.11.0 — 2026-08-16 — MikroTik Local-Auth Sync, Realtime Status, MAC Cleanup & Installer Fixes
-
-### Summary
-Batch fix untuk sinkronisasi MikroTik local-auth (isolir profile, password, active sessions), realtime status polling di halaman pelanggan, hapus placeholder MAC address, fix 429 rate limit, dan perbaikan kritis path di installer/uninstaller/updater scripts.
-
-### MikroTik Local-Auth Fixes
-- **[CRITICAL]** Isolir profile ditimpa oleh `sync_mikrotik_create` task — task menggunakan profile dari DB (PAKET 100MBPS) alih-alih `isolir`. Fix: cek status user terbaru dari DB sebelum eksekusi task, override profile ke `isolir` jika status=`isolated`.
-- **[CRITICAL]** Isolated user di-disable (`disabled=true`) — SALAH. Isolated user harus tetap enabled agar bisa login dan dapat isolir profile. Fix: hanya `stop`/`blocked` yang di-disable.
-- **[FIX]** Empty password dari form edit menimpa PPP secret MikroTik dengan password kosong. Fix: truthy check sebelum kirim password ke MikroTik.
-- **[FIX]** Isolir pada local-auth router tidak update PPP secret profile — hanya kick session. Fix: `enable`/`disable` action juga update profile saat provided.
-- **[FIX]** MikroTik API calls fire-and-forget causing race condition. Fix: await semua MikroTik operations dalam urutan yang benar (update secret → kick session).
-
-### Active Sessions untuk Local-Auth Routers
-- **[FEATURE]** Dashboard dan halaman sessions sekarang menampilkan active sessions dari MikroTik `/ppp/active` untuk local-auth routers (sebelumnya hanya dari `radacct`).
-- **[FEATURE]** PPPoE online/offline status polling dari MikroTik `/ppp/active` untuk non-RADIUS routers.
-- **[FEATURE]** Hotspot active sessions dari MikroTik untuk local-auth routers.
-- **[FIX]** `listPppActive()` tidak lagi menelan error — throw agar cron skip cycle instead of false-closing sessions.
-- **[FIX]** `iconv-lite` ditambahkan ke `serverExternalPackages` untuk Next.js standalone deployment.
-
-### Realtime Status Polling
-- **[FEATURE]** Halaman data pelanggan sekarang polling status (isolated/active/stop/blocked) setiap 10 detik tanpa reload halaman. Sebelumnya status hanya update saat manual refresh.
-- **[FEATURE]** Endpoint `/api/pppoe/users/online-status` sekarang return `statusMap` (username → status) bersamaan dengan online set.
-
-### MAC Address Cleanup
-- **[FIX]** Placeholder MAC addresses (`00:00:00:00:00:00`, `AA:BB:CC:DD:EE:FF`, dll) tidak lagi disimpan di database. Validasi `isPlaceholderMac()` menolak MAC placeholder saat create/update user.
-- **[FIX]** ARP service tidak lagi default ke `00:00:00:00:00:00` saat MAC kosong — MikroTik menerima ARP entry tanpa MAC.
-- **[FIX]** Cleanup script untuk set placeholder MAC yang sudah ada di DB ke `null`.
-
-### Rate Limit Fix
-- **[FIX]** `/api/company/info` return 429 Too Many Requests setelah navigasi normal. Fix: naikkan rate limit dari `relaxed` (100/min) ke `veryRelaxed` (500/min), tambah Cache-Control header, dan throttle frontend fetch ke 5 menit.
-
-### Auth Mode & Connection Type Migration
-- **[FEATURE]** Support perubahan authMode router (radius → local) dengan auto-create PPP secrets dari existing customer data.
-- **[FEATURE]** Support perubahan connectionType customer (PPPoE → Static IP / Hotspot) dengan cleanup MikroTik entries lama.
-- **[FIX]** CoA disconnect untuk kick session lama saat authMode atau connectionType berubah.
-
-### Customer Delete Fix
-- **[FIX]** Delete customer tidak mengirim password konfirmasi ke backend. Fix: frontend DELETE helper sekarang mengirim `{ confirmPassword }`.
-- **[FIX]** `external_task.id` dan `entity_id` terlalu pendek untuk composite IDs. Fix: widen ke `VARCHAR(191)`.
-
-### Installer/Updater/Uninstaller Fixes
-- **[CRITICAL]** `updater.sh` line 318: `apply_sql_migrations || true ────` punya trailing dashes yang menyebabkan bash syntax error. Fix: hapus trailing dashes.
-- **[CRITICAL]** `updater.sh`: 15 referensi path `$APP_DIR/vps-install/` SALAH — seharusnya `$APP_DIR/frontend/vps-install/`. Post-update steps untuk auth fix, security, VPN, WireGuard, dan L2TP silently skipped karena path tidak ditemukan. Fix: semua path diperbaiki.
-- **[FIX]** `vps-uninstaller.sh`: reinstall instruction menunjuk ke `/root/SALFANET-RADIUS-main/vps-install` (legacy). Fix: `/root/salfanet-radius/frontend/vps-install`.
-
-### Commits
-- `e612ed42` — fix: remove default/placeholder MAC addresses from customer data
-- `f12eccef` — feat: realtime status (isolated/active/stop) polling on customer page
-- `4d5046c5` — fix: sync_mikrotik_create task overwrites isolir profile with original package
-- `c8b42f4c` — fix: resolve 429 Too Many Requests on /api/company/info
-- `c91165de` — fix: isolir on local-auth routers — update PPP secret profile + await MikroTik calls
-- `8306a0b2` — feat: show MikroTik local-auth active sessions on dashboard & sessions page
-- `b5a26caf` — fix: prevent empty password from overwriting MikroTik PPP secret
-- `c111a9d8` — fix: use sync_mikrotik_create (upsert) + CoA disconnect on authMode & connectionType change
-- `6b11f5fa` — feat: support connectionType change & authMode migration with MikroTik sync
-- `75c7fc70` — fix: delete customer — send confirmPassword to backend
 
 <!-- AUTO-CHANGELOG:END -->
 
