@@ -191,7 +191,7 @@ export default function BalanceManagementPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-dvh">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -199,7 +199,7 @@ export default function BalanceManagementPage() {
 
   if (!user) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-dvh">
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
           <p className="text-muted-foreground">{t('pppoe.userNotFound')}</p>
@@ -220,7 +220,7 @@ export default function BalanceManagementPage() {
     .reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6">
+    <div className="min-h-dvh bg-background p-4 md:p-6">
       {/* Header */}
       <div className="mb-6">
         <button

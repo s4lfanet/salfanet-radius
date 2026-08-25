@@ -95,7 +95,7 @@ function PaymentSuccessContent() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#00ff88]/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -108,7 +108,7 @@ function PaymentSuccessContent() {
   );
 
   if (error || (!invoice && !deposit)) return (
-    <div className="min-h-screen bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#ff4466]/20 rounded-full blur-3xl"></div>
       </div>
@@ -127,7 +127,7 @@ function PaymentSuccessContent() {
   if (isAgentDeposit && deposit) {
     const isPaid = deposit.status === 'PAID';
     return (
-      <div className="min-h-screen bg-[#1a0f35] relative py-6 px-4">
+      <div className="min-h-dvh bg-[#1a0f35] relative py-6 px-4">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#00ff88]/20 rounded-full blur-3xl"></div>
           <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/15 rounded-full blur-3xl"></div>
@@ -209,7 +209,7 @@ function PaymentSuccessContent() {
   const expiryDate = invoice?.user?.expiredAt;
 
   return (
-    <div className="min-h-screen bg-[#1a0f35] relative py-6 px-4">
+    <div className="min-h-dvh bg-[#1a0f35] relative py-6 px-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#00ff88]/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/15 rounded-full blur-3xl"></div>
@@ -293,7 +293,7 @@ function PaymentSuccessContent() {
 export default function PaymentSuccessPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#1a0f35] flex items-center justify-center">
+      <div className="min-h-dvh bg-[#1a0f35] flex items-center justify-center">
         <Loader2 className="w-10 h-10 animate-spin text-[#00ff88] drop-shadow-[0_0_20px_rgba(0,255,136,0.6)]" />
       </div>
     }>

@@ -67,11 +67,11 @@ export default function CollectorLoginPage() {
   };
 
   if (!brandLoaded) {
-    return <div className="min-h-screen bg-gray-50 dark:bg-slate-950" />;
+    return <div className="min-h-dvh bg-gray-50 dark:bg-slate-950" />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+    <div className="min-h-dvh flex flex-col lg:flex-row bg-background">
       {/* ── Mobile Brand Header (mobile only) ── */}
       <div className="lg:hidden bg-gradient-to-br from-emerald-600 to-teal-500 px-6 pt-10 pb-8 relative overflow-hidden flex-shrink-0">
         <div className="absolute top-[-50px] right-[-50px] w-40 h-40 bg-white/10 rounded-full pointer-events-none" />
@@ -91,7 +91,7 @@ export default function CollectorLoginPage() {
       </div>
 
       {/* ── Left Panel: Login Form ── */}
-      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-screen bg-card border-r border-border shadow-xl px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0 relative">
+      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-dvh bg-card border-r border-border shadow-xl px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0 relative">
         {/* Theme Toggle */}
         <button
           onClick={toggleTheme}

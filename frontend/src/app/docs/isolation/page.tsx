@@ -13,7 +13,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function IsolationDocsPage() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 py-8 px-4">
+    <div className="min-h-dvh bg-gray-50 dark:bg-gray-950 py-8 px-4">
       <div className="max-w-4xl mx-auto">
 
         {/* Header */}

@@ -69,7 +69,7 @@ export default function WhatsAppHistoryPage() {
 
   if (loading && history.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-muted dark:bg-gray-950">
+      <div className="min-h-dvh flex items-center justify-center bg-muted dark:bg-gray-950">
         <div className="flex flex-col items-center gap-2">
           <div className="w-6 h-6 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-muted-foreground dark:text-muted-foreground">Loading...</span>

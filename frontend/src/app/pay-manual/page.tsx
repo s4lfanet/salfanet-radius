@@ -202,7 +202,7 @@ function PayManualPageContent() {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-dvh flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -220,7 +220,7 @@ function PayManualPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -228,7 +228,7 @@ function PayManualPageContent() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+      <div className="min-h-dvh flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -264,7 +264,7 @@ function PayManualPageContent() {
 
   if (!invoice) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="min-h-dvh flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
             <div className="text-center">
@@ -281,7 +281,7 @@ function PayManualPageContent() {
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+    <div className="min-h-dvh py-12 px-4 bg-gradient-to-br from-blue-50 to-indigo-50">
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Pembayaran Manual</h1>
@@ -532,7 +532,7 @@ function PayManualPageContent() {
 export default function PayManualPage() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-dvh">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     }>

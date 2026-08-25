@@ -182,7 +182,7 @@ function IsolatedContent() {
   /* ─── loading ─────────────────────────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)' }}>
+      <div className="min-h-dvh flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%)' }}>
         <div className="text-center">
           <div style={{ width: 64, height: 64, borderRadius: '50%', border: '3px solid rgba(99,102,241,0.3)', borderTopColor: '#6366f1', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
           <p style={{ color: '#e2e8f0', fontWeight: 600, marginBottom: 4 }}>Memuat data...</p>
@@ -196,7 +196,7 @@ function IsolatedContent() {
   /* ─── isolation lifted ─────────────────────────────────────────────────────── */
   if (alreadyActive) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #0f2818 0%, #064e3b 100%)' }}>
+      <div className="min-h-dvh flex items-center justify-center p-4" style={{ background: 'linear-gradient(135deg, #0f2818 0%, #064e3b 100%)' }}>
         <div className="text-center max-w-sm w-full">
           {company?.logo && (
             <div style={{ background: '#fff', borderRadius: 16, padding: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 80, height: 80, marginBottom: 24, overflow: 'hidden' }}>
