@@ -230,6 +230,20 @@ export async function apiAgent<T = unknown>(
 }
 
 /**
+ * Technician API call — functionally identical to apiAdmin (cookie-based,
+ * credentials: 'include'). Technician auth uses its own httpOnly cookie
+ * ('technician-token'), verified server-side per-route; this alias exists
+ * purely so call sites reading `/api/technician/*` don't look like they're
+ * using admin credentials.
+ */
+export async function apiTechnician<T = unknown>(
+  path: string,
+  options?: RequestInit,
+): Promise<T> {
+  return apiCall<T>(path, options, 'admin');
+}
+
+/**
  * Legacy: Client-side API fetch with auth token.
  * Kept for backward compatibility — prefer apiAdmin/apiCustomer/apiAgent.
  */

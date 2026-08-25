@@ -8,7 +8,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { showConfirm } from '@/lib/sweetalert';
-import { apiAdmin } from '@/lib/api/client';
+import { apiTechnician } from '@/lib/api/client';
 
 interface GenieACSDevice {
   _id: string;
@@ -78,8 +78,8 @@ export default function TechnicianGenieACSPage() {
   const fetchDevices = useCallback(async () => {
     try {
       const [devData, settData] = await Promise.all([
-        apiAdmin<{ devices?: GenieACSDevice[] }>('/api/technician/genieacs/devices').catch(() => null),
-        apiAdmin<{ settings?: { host?: string } }>('/api/technician/genieacs').catch(() => null),
+        apiTechnician<{ devices?: GenieACSDevice[] }>('/api/technician/genieacs/devices').catch(() => null),
+        apiTechnician<{ settings?: { host?: string } }>('/api/technician/genieacs').catch(() => null),
       ]);
       if (settData) {
         setIsConfigured(!!settData?.settings?.host);
@@ -101,7 +101,7 @@ export default function TechnicianGenieACSPage() {
     setLoadingDetail(true);
     setDetailDevice(null);
     try {
-      const data = await apiAdmin<{ device?: DeviceDetail } & Partial<DeviceDetail>>(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`);
+      const data = await apiTechnician<{ device?: DeviceDetail } & Partial<DeviceDetail>>(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`);
       setDetailDevice(data.device ?? (data as DeviceDetail));
     } catch {
       addToast({ type: 'error', title: t('techPortal.failedLoadDetail') });
@@ -114,7 +114,7 @@ export default function TechnicianGenieACSPage() {
     if (!(await showConfirm(t('techPortal.rebootConfirm')))) return;
     setRebootingId(deviceId);
     try {
-      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`, {
+      const data = await apiTechnician<{ success: boolean; error?: string }>(`/api/technician/genieacs/devices/${encodeURIComponent(deviceId)}`, {
         method: 'POST',
         body: JSON.stringify({ action: 'reboot' }),
       });
@@ -134,7 +134,7 @@ export default function TechnicianGenieACSPage() {
     if (!wifiEdit) return;
     setSavingWifi(true);
     try {
-      const data = await apiAdmin<{ success: boolean; error?: string }>(`/api/technician/genieacs/devices/${encodeURIComponent(wifiEdit.deviceId)}`, {
+      const data = await apiTechnician<{ success: boolean; error?: string }>(`/api/technician/genieacs/devices/${encodeURIComponent(wifiEdit.deviceId)}`, {
         method: 'POST',
         body: JSON.stringify({
           action: 'setWifi',
