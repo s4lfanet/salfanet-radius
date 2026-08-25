@@ -894,7 +894,7 @@ function AdminLayoutContent({
   // Show loading while checking session
   if (status === 'loading' || !mounted) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-dvh bg-background flex items-center justify-center relative overflow-hidden">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
@@ -915,7 +915,7 @@ function AdminLayoutContent({
   // Redirect to login if not authenticated (actual redirect handled by useEffect above)
   if (status === 'unauthenticated' && !isLoginPage) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center relative overflow-hidden">
+      <div className="min-h-dvh bg-background flex items-center justify-center relative overflow-hidden">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />
@@ -934,7 +934,7 @@ function AdminLayoutContent({
   }
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-dvh bg-background relative">
       {/* Cyberpunk Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         {/* Primary glow orbs */}
@@ -1096,7 +1096,7 @@ function AdminLayoutContent({
       </aside>
 
       {/* Main */}
-      <div className="lg:pl-64 min-h-screen flex flex-col relative z-10 transition-all duration-300">
+      <div className="lg:pl-64 min-h-dvh flex flex-col relative z-10 transition-all duration-300">
         {/* Header - optimized for mobile */}
         <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-gray-200 dark:border-primary/15 shadow-theme-sm safe-area-inset-top">
           {/* Top neon line — dark mode only */}
@@ -1267,7 +1267,7 @@ export default function AdminLayout({
     <CyberToastProvider>
     <SessionProvider refetchInterval={5 * 60} refetchOnWindowFocus={true}>
       <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+        <div className="min-h-dvh flex items-center justify-center bg-background relative overflow-hidden">
           {/* Background effects */}
           <div className="absolute inset-0 pointer-events-none">
             <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-[70px] animate-pulse" style={{ willChange: 'opacity', transform: 'translateZ(0)' }} />

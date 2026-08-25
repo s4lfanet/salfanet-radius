@@ -293,7 +293,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
 
   // Desktop layout with sidebar
   return (
-    <div data-role="agent" className="min-h-screen bg-background">
+    <div data-role="agent" className="min-h-dvh bg-background">
       {/* Background Effects - dark only */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none hidden dark:block">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl"></div>
@@ -325,7 +325,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main Content Area */}
-      <div className="lg:ml-64 min-h-screen flex flex-col">
+      <div className="lg:ml-64 min-h-dvh flex flex-col">
         {/* Desktop Header */}
         <header className="hidden lg:block sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border shadow-theme-sm">
           <div className="px-6 py-3 flex items-center justify-between">

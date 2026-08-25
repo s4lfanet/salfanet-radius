@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.15.0 — Semantic Color Token Migration & Responsive Layout Improvements + Collector Portal + APK Download Audit + Backend Security/Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.15.1 — Mobile Scroll Fix (All Portals) + Semantic Color Token Migration & Responsive Layout Improvements + Collector Portal + APK Download Audit + Backend Security/Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 

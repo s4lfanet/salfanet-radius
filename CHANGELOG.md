@@ -6,6 +6,31 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.15.1] — 2026-08-25 — Mobile Scroll Fix (All Portals)
+
+### Summary
+Perbaikan issue scroll mobile yang tidak bisa sampai ke bawah halaman di semua portal (admin, customer, technician, agent, collector). Root cause: `min-h-screen` (100vh) menggunakan "large viewport" height yang tidak akurat saat toolbar browser mobile terlihat. Juga menambahkan `viewportFit: 'cover'` untuk safe area iOS dan class CSS `.safe-area-pb` yang hilang.
+
+### Fixes
+- **[FIX]** `min-h-screen` → `min-h-dvh` (dynamic viewport height) di semua layout: AdminClientLayout, CustomerClientLayout, TechnicianPortalLayout, AgentLayoutClient, CollectorPortalLayout — termasuk loading states dan Suspense fallback
+- **[FIX]** `viewportFit: 'cover'` ditambahkan ke viewport export di root `layout.tsx` untuk enable safe area insets di iOS notched devices
+- **[FIX]** Class CSS `.safe-area-pb` ditambahkan ke `globals.css` — dipakai oleh customer mobile bottom nav tapi belum didefinisikan
+- **[FIX]** Customer portal: bottom padding `pb-20` → `pb-24` untuk spacing yang lebih aman terhadap mobile bottom navigation
+
+### Files Changed
+- `frontend/src/app/layout.tsx` — viewportFit: 'cover'
+- `frontend/src/app/globals.css` — .safe-area-pb class
+- `frontend/src/app/admin/AdminClientLayout.tsx` — min-h-dvh (5 places)
+- `frontend/src/app/customer/CustomerClientLayout.tsx` — min-h-dvh + pb-24
+- `frontend/src/app/technician/TechnicianPortalLayout.tsx` — min-h-dvh (3 places)
+- `frontend/src/app/agent/AgentLayoutClient.tsx` — min-h-dvh (2 places)
+- `frontend/src/app/collector/CollectorPortalLayout.tsx` — min-h-dvh (2 places)
+- `package.json` — version bump to 5.15.1
+- `README.md` — version update
+- `CHANGELOG.md` — this entry
+
+---
+
 ## [5.15.0] — 2026-08-25 — Semantic Color Token Migration & Responsive Layout Improvements
 
 ### Summary

@@ -80,7 +80,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-dvh flex items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
       </div>
     );
@@ -89,7 +89,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
   if (!collector) return null;
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-dvh bg-background flex">
       {/* Sidebar - Desktop */}
       <aside className={cn(
         "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 lg:translate-x-0",
