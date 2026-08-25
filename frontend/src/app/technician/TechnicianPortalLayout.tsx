@@ -621,7 +621,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
 
   if (loading) {
     return (
-      <div data-role="technician" className="min-h-screen bg-background flex items-center justify-center">
+      <div data-role="technician" className="min-h-dvh bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="p-3 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center">
             <Wrench className="w-8 h-8 text-white" />
@@ -636,7 +636,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
   const currentMenu = MENU_ITEMS.find((m) => m.href === pathname);
 
   return (
-    <div data-role="technician" className="min-h-screen bg-background">
+    <div data-role="technician" className="min-h-dvh bg-background">
       {/* Background blobs — dark only */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none hidden dark:block">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl" />
@@ -656,7 +656,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Main Content Area */}
-      <div className="lg:ml-64 min-h-screen flex flex-col">
+      <div className="lg:ml-64 min-h-dvh flex flex-col">
         {/* Desktop Header */}
         <header className="hidden lg:block sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border shadow-theme-sm">
           <div className="px-6 py-3 flex items-center justify-between">
