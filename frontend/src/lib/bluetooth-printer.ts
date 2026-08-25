@@ -5,17 +5,49 @@
  * Sends ESC/POS commands for printing receipts without a print dialog.
  *
  * Browser support:
- * - Chrome/Edge Android: ✅ Full support
- * - Chrome/Edge desktop: ✅ Full support
+ * - Chrome/Edge Android: ✅ Full support (Web Bluetooth)
+ * - Chrome/Edge desktop: ✅ Full support (Web Bluetooth)
  * - Safari iOS: ❌ Not supported (fallback to browser print dialog)
  * - Firefox: ❌ Not supported (fallback to browser print dialog)
+ * - Salfanet Android APK (WebView): ✅ Full support via native BluetoothPrinterBridge
+ *
+ * In the Salfanet Android APK, Web Bluetooth is not available in WebView.
+ * Instead, a native Kotlin BluetoothPrinterBridge is injected as `AndroidBluetoothPrinter`
+ * JavaScript interface. This class auto-detects and uses the native bridge when available.
  *
  * Usage:
  *   const printer = new BluetoothPrinter();
- *   await printer.connect();        // Opens Bluetooth device picker
+ *   await printer.connect();        // Opens Bluetooth device picker (Web) or pairs with bonded device (APK)
  *   await printer.printReceipt(data);
  *   await printer.disconnect();
  */
+
+// Detect native Android Bluetooth bridge (injected by Salfanet APK WebView)
+declare global {
+  interface Window {
+    AndroidBluetoothPrinter?: {
+      isSupported(): boolean;
+      isConnected(): boolean;
+      getBondedDevices(): string;
+      connect(address: string): boolean;
+      disconnect(): boolean;
+      print(base64Data: string): boolean;
+      printText(text: string): boolean;
+    };
+  }
+}
+
+function getNativeBridge(): Window['AndroidBluetoothPrinter'] | null {
+  if (typeof window !== 'undefined' && window.AndroidBluetoothPrinter) {
+    return window.AndroidBluetoothPrinter;
+  }
+  return null;
+}
+
+function isAndroidWebView(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /SalfanetApp\//.test(navigator.userAgent);
+}
 
 // ESC/POS command constants
 const ESC = 0x1b;
@@ -79,20 +111,32 @@ export class BluetoothPrinter {
   private device: BluetoothDevice | null = null;
   private characteristic: BluetoothRemoteGATTCharacteristic | null = null;
   private connected = false;
+  private nativeBridge: Window['AndroidBluetoothPrinter'] | null = null;
 
   /**
-   * Check if Web Bluetooth API is available in this browser
+   * Check if Bluetooth printing is available — either Web Bluetooth or native Android bridge
    */
   static isSupported(): boolean {
+    if (typeof window !== 'undefined' && window.AndroidBluetoothPrinter) {
+      return window.AndroidBluetoothPrinter.isSupported();
+    }
     return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
   }
 
   /**
-   * Open Bluetooth device picker and connect to a thermal printer
+   * Connect to a thermal printer.
+   * In Android APK: uses native bridge — shows bonded devices, user selects one.
+   * In browser: uses Web Bluetooth device picker.
    */
   async connect(): Promise<boolean> {
+    // Check for native Android bridge first
+    this.nativeBridge = getNativeBridge();
+    if (this.nativeBridge) {
+      return this.connectNative();
+    }
+
     if (!BluetoothPrinter.isSupported()) {
-      throw new Error('Browser tidak mendukung Web Bluetooth. Gunakan Chrome/Edge di Android.');
+      throw new Error('Browser tidak mendukung Web Bluetooth. Gunakan Chrome/Edge di Android atau APK Salfanet.');
     }
 
     try {
@@ -156,9 +200,68 @@ export class BluetoothPrinter {
   }
 
   /**
+   * Connect via native Android Bluetooth bridge.
+   * Gets list of bonded (paired) Bluetooth devices and lets user select one.
+   */
+  private async connectNative(): Promise<boolean> {
+    if (!this.nativeBridge) throw new Error('Native Bluetooth bridge tidak tersedia');
+
+    const devicesJson = this.nativeBridge.getBondedDevices();
+    let devices: Array<{ name: string; address: string }> = [];
+    try {
+      devices = JSON.parse(devicesJson);
+    } catch {
+      throw new Error('Gagal membaca daftar perangkat Bluetooth yang sudah dipasangkan');
+    }
+
+    if (devices.length === 0) {
+      throw new Error('Tidak ada printer Bluetooth yang dipasangkan. Pasangkan printer di Pengaturan Bluetooth Android terlebih dahulu.');
+    }
+
+    // Filter for likely printer devices (name-based heuristic)
+    const printerDevices = devices.filter(d =>
+      /printer|print|thermal|receipt|58mm|80mm|pos|mpt|esc/i.test(d.name)
+    );
+    const candidates = printerDevices.length > 0 ? printerDevices : devices;
+
+    // If only one candidate, connect directly
+    if (candidates.length === 1) {
+      const ok = this.nativeBridge.connect(candidates[0].address);
+      if (!ok) throw new Error(`Gagal terhubung ke ${candidates[0].name}`);
+      this.connected = true;
+      return true;
+    }
+
+    // Multiple candidates — prompt user to select
+    const deviceList = candidates.map((d, i) => `${i + 1}. ${d.name}`).join('\n');
+    const selection = prompt(`Pilih printer Bluetooth:\n\n${deviceList}`);
+    if (!selection) throw new Error('Tidak ada printer yang dipilih');
+
+    const idx = parseInt(selection, 10) - 1;
+    if (isNaN(idx) || idx < 0 || idx >= candidates.length) {
+      throw new Error('Pilihan tidak valid');
+    }
+
+    const selected = candidates[idx];
+    const ok = this.nativeBridge.connect(selected.address);
+    if (!ok) throw new Error(`Gagal terhubung ke ${selected.name}`);
+    this.connected = true;
+    return true;
+  }
+
+  /**
    * Send raw bytes to the printer
    */
   private async write(data: Uint8Array): Promise<void> {
+    // Native Android bridge path
+    if (this.nativeBridge) {
+      // Convert to base64 for JNI transfer
+      const base64 = btoa(String.fromCharCode(...data));
+      const ok = this.nativeBridge.print(base64);
+      if (!ok) throw new Error('Gagal mengirim data ke printer (native)');
+      return;
+    }
+
     if (!this.characteristic) throw new Error('Printer belum terhubung');
 
     // Split into chunks (BLE has MTU limits, typically 20-512 bytes)
@@ -326,6 +429,12 @@ export class BluetoothPrinter {
    * Disconnect from the printer
    */
   async disconnect(): Promise<void> {
+    if (this.nativeBridge) {
+      this.nativeBridge.disconnect();
+      this.connected = false;
+      this.nativeBridge = null;
+      return;
+    }
     if (this.device?.gatt?.connected) {
       this.device.gatt.disconnect();
     }
