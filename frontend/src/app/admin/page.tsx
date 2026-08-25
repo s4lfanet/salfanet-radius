@@ -845,16 +845,16 @@ export default function AdminDashboard() {
         </div>
 
         {/* System Status */}
-        <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-white/10 p-3 sm:p-4">
+        <div className="bg-card/60 backdrop-blur-xl rounded-xl border border-border p-3 sm:p-4">
           <h2 className="text-sm font-semibold text-foreground mb-3">{t('dashboard.systemStatus')}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
             {/* RADIUS Server */}
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                 radiusStatus?.status === 'running' ? 'bg-green-500/20' : 'bg-red-500/20'
               }`}>
                 <Server className={`w-4 h-4 ${
-                  radiusStatus?.status === 'running' ? 'text-green-400' : 'text-red-400'
+                  radiusStatus?.status === 'running' ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
                 }`} />
               </div>
               <div className="flex-1 min-w-0">
@@ -862,13 +862,13 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-1">
                   {radiusStatus?.status === 'running' ? (
                     <>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-green-400" />
-                      <span className="text-[10px] text-green-400 truncate">{radiusStatus.uptime}</span>
+                      <CheckCircle2 className="w-2.5 h-2.5 text-green-500 dark:text-green-400" />
+                      <span className="text-[10px] text-green-500 dark:text-green-400 truncate">{radiusStatus.uptime}</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-2.5 h-2.5 text-red-400" />
-                      <span className="text-[10px] text-red-400">{t('system.offline')}</span>
+                      <XCircle className="w-2.5 h-2.5 text-red-500 dark:text-red-400" />
+                      <span className="text-[10px] text-red-500 dark:text-red-400">{t('system.offline')}</span>
                     </>
                   )}
                 </div>
@@ -878,7 +878,7 @@ export default function AdminDashboard() {
                 variant="ghost"
                 onClick={handleRestartRadius}
                 disabled={restarting}
-                className="h-7 w-7 p-0 text-white/50 hover:text-white"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
               >
                 {restarting ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -889,12 +889,12 @@ export default function AdminDashboard() {
             </div>
 
             {/* Database */}
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                 systemStatus?.database ? 'bg-green-500/20' : 'bg-red-500/20'
               }`}>
                 <Database className={`w-4 h-4 ${
-                  systemStatus?.database ? 'text-green-400' : 'text-red-400'
+                  systemStatus?.database ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
                 }`} />
               </div>
               <div className="flex-1">
@@ -902,13 +902,13 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-1">
                   {systemStatus?.database ? (
                     <>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-green-400" />
-                      <span className="text-[10px] text-green-400">{t('system.connected')}</span>
+                      <CheckCircle2 className="w-2.5 h-2.5 text-green-500 dark:text-green-400" />
+                      <span className="text-[10px] text-green-500 dark:text-green-400">{t('system.connected')}</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-2.5 h-2.5 text-red-400" />
-                      <span className="text-[10px] text-red-400">{t('system.disconnected')}</span>
+                      <XCircle className="w-2.5 h-2.5 text-red-500 dark:text-red-400" />
+                      <span className="text-[10px] text-red-500 dark:text-red-400">{t('system.disconnected')}</span>
                     </>
                   )}
                 </div>
@@ -916,12 +916,12 @@ export default function AdminDashboard() {
             </div>
 
             {/* API */}
-            <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                 systemStatus?.api ? 'bg-green-500/20' : 'bg-red-500/20'
               }`}>
                 <Zap className={`w-4 h-4 ${
-                  systemStatus?.api ? 'text-green-400' : 'text-red-400'
+                  systemStatus?.api ? 'text-green-500 dark:text-green-400' : 'text-red-500 dark:text-red-400'
                 }`} />
               </div>
               <div className="flex-1">
@@ -929,13 +929,13 @@ export default function AdminDashboard() {
                 <div className="flex items-center gap-1">
                   {systemStatus?.api ? (
                     <>
-                      <CheckCircle2 className="w-2.5 h-2.5 text-green-400" />
-                      <span className="text-[10px] text-green-400">{t('system.running')}</span>
+                      <CheckCircle2 className="w-2.5 h-2.5 text-green-500 dark:text-green-400" />
+                      <span className="text-[10px] text-green-500 dark:text-green-400">{t('system.running')}</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-2.5 h-2.5 text-red-400" />
-                      <span className="text-[10px] text-red-400">{t('system.stopped')}</span>
+                      <XCircle className="w-2.5 h-2.5 text-red-500 dark:text-red-400" />
+                      <span className="text-[10px] text-red-500 dark:text-red-400">{t('system.stopped')}</span>
                     </>
                   )}
                 </div>
