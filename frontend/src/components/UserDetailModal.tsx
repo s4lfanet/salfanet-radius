@@ -353,7 +353,7 @@ export default function UserDetailModal({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-accent rounded"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -931,13 +931,13 @@ export default function UserDetailModal({
                         <div className="text-right text-xs text-gray-500">
                           <div>↓ {session.download}</div>
                           <div>↑ {session.upload}</div>
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-foreground">
                             Total: {session.total}
                           </div>
                         </div>
                       </div>
                       {session.terminateCause && !session.isOnline && (
-                        <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                        <div className="text-xs text-gray-500 mt-2 pt-2 border-t border-border">
                           Terminate: {session.terminateCause}
                         </div>
                       )}
@@ -963,7 +963,7 @@ export default function UserDetailModal({
                   {authLogs.map((log) => (
                     <div
                       key={log.id}
-                      className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg"
+                      className="flex items-center justify-between p-3 border border-border rounded-lg"
                     >
                       <div className="flex items-center gap-3">
                         {log.success ? (

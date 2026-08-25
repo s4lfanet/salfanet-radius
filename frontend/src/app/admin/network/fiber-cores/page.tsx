@@ -275,7 +275,7 @@ export default function FiberCoresPage() {
           <button
             onClick={() => coresQuery.refetch()}
             disabled={loading}
-            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1 disabled:opacity-50"
+            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent flex items-center gap-1 disabled:opacity-50"
           >
             <RefreshCcw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             {t('common.refresh')}
@@ -285,35 +285,35 @@ export default function FiberCoresPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Circle className="h-4 w-4 text-purple-500" />
             <span className="text-xs text-gray-500">{t('fiberCore.totalCores')}</span>
           </div>
           <p className="text-xl font-bold mt-1">{stats.total}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Check className="h-4 w-4 text-green-500" />
             <span className="text-xs text-gray-500">{t('fiberCore.available')}</span>
           </div>
           <p className="text-xl font-bold mt-1 text-green-600">{stats.available}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-blue-500" />
             <span className="text-xs text-gray-500">{t('fiberCore.used')}</span>
           </div>
           <p className="text-xl font-bold mt-1 text-blue-600">{stats.assigned}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Bookmark className="h-4 w-4 text-yellow-500" />
             <span className="text-xs text-gray-500">Reserved</span>
           </div>
           <p className="text-xl font-bold mt-1 text-yellow-600">{stats.reserved}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-red-500" />
             <span className="text-xs text-gray-500">{t('fiberCore.damaged')}</span>
@@ -323,7 +323,7 @@ export default function FiberCoresPage() {
       </div>
 
       {/* Filters & Actions */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+      <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="flex items-center gap-2 flex-1 min-w-[200px]">
@@ -410,7 +410,7 @@ export default function FiberCoresPage() {
             </button>
             <button
               onClick={() => setSelectedCores(new Set())}
-              className="px-2 py-1 text-[10px] border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+              className="px-2 py-1 text-[10px] border dark:border-gray-700 rounded hover:bg-accent"
             >
               {t('common.cancel')}
             </button>
@@ -428,7 +428,7 @@ export default function FiberCoresPage() {
           </div>
         ) : (
           Object.entries(groupedCores).map(([key, group]) => (
-            <div key={key} className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 overflow-hidden">
+            <div key={key} className="bg-card rounded-lg border dark:border-gray-800 overflow-hidden">
               {/* Group Header */}
               <div className="px-4 py-3 bg-purple-50 dark:bg-purple-900/20 border-b dark:border-gray-800 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -502,7 +502,7 @@ export default function FiberCoresPage() {
           <button
             onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
             disabled={pagination.page === 1}
-            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent disabled:opacity-50"
           >
             {t('common.prev')}
           </button>
@@ -512,7 +512,7 @@ export default function FiberCoresPage() {
           <button
             onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
             disabled={pagination.page === pagination.totalPages}
-            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-50"
+            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent disabled:opacity-50"
           >
             {t('common.next')}
           </button>
@@ -520,7 +520,7 @@ export default function FiberCoresPage() {
       )}
 
       {/* Legend */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+      <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
         <h3 className="text-[10px] font-semibold text-gray-500 mb-2">{t('fiberCore.statusLegend')}</h3>
         <div className="flex flex-wrap gap-3">
           <div className="flex items-center gap-1.5">
@@ -553,7 +553,7 @@ export default function FiberCoresPage() {
       {/* Action Dialog */}
       {isActionDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 {actionType === 'assign' && <Tag className="h-4 w-4 text-blue-500" />}
@@ -567,7 +567,7 @@ export default function FiberCoresPage() {
               </h2>
               <button
                 onClick={() => setIsActionDialogOpen(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -623,7 +623,7 @@ export default function FiberCoresPage() {
             <div className="px-4 py-3 border-t dark:border-gray-800 flex justify-end gap-2">
               <button
                 onClick={() => setIsActionDialogOpen(false)}
-                className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-accent"
               >
                 {t('common.cancel')}
               </button>

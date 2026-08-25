@@ -415,7 +415,7 @@ export default function EVoucherManagementPage() {
                   <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('common.actions')}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {filteredOrders.length === 0 ? (
                   <tr>
                     <td colSpan={9} className="px-3 py-8 text-center text-muted-foreground text-xs">{t('evoucher.noOrdersFound')}</td>

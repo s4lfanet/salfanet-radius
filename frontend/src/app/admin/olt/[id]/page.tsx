@@ -195,14 +195,14 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
           <div className={`w-3 h-3 rounded-full ${statusTone.dot}`} />
           <div>
             <div className={`text-sm font-bold ${statusTone.text}`}>{statusTone.label}</div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Admin: {adminStatus} · Port: {linkStatus} · {parsed['Speed'] ?? '—'}</div>
+            <div className="text-xs text-muted-foreground">Admin: {adminStatus} · Port: {linkStatus} · {parsed['Speed'] ?? '—'}</div>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {(['Speed','Duplex','Flow Control','Physical Type','MTU','MAC'] as const).map(k => parsed[k] ? (
-            <div key={k} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{k}</div>
-              <div className="text-xs font-mono text-slate-900 dark:text-white mt-0.5 break-all">{parsed[k]}</div>
+            <div key={k} className="p-2 rounded-lg bg-input border border-border">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{k}</div>
+              <div className="text-xs font-mono text-foreground mt-0.5 break-all">{parsed[k]}</div>
             </div>
           ) : null)}
         </div>
@@ -223,14 +223,14 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
         {/* Info row */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {([['Mode', mode], ['TLS', parsed['TLS'] ?? '—']] as [string,string][]).map(([label, val]) => (
-            <div key={label} className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-center">
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase">{label}</div>
-              <div className="text-sm font-bold text-slate-900 dark:text-white mt-0.5 break-all">{val}</div>
+            <div key={label} className="p-2 rounded-lg bg-input border border-border text-center">
+              <div className="text-[10px] text-muted-foreground uppercase">{label}</div>
+              <div className="text-sm font-bold text-foreground mt-0.5 break-all">{val}</div>
             </div>
           ))}
           {/* PVID with inline edit/remove */}
-          <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase mb-1">PVID (Access)</div>
+          <div className="p-2 rounded-lg bg-input border border-border">
+            <div className="text-[10px] text-muted-foreground uppercase mb-1">PVID (Access)</div>
             {pvid && pvid !== '—' ? (
               <div className="flex items-center gap-1.5">
                 <span className="text-sm font-bold font-mono text-amber-400">{pvid}</span>
@@ -245,7 +245,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
         </div>
         {/* Tagged VLANs */}
         <div>
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">Tagged VLANs</div>
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Tagged VLANs</div>
           <div className="flex flex-wrap gap-1.5 min-h-8">
             {taggedVlans.length > 0 ? taggedVlans.map(v => (
               <div key={v} className="flex items-center gap-1 px-2 py-0.5 rounded bg-blue-950 border border-blue-700 text-xs font-mono text-blue-300">
@@ -260,9 +260,9 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
         {/* Add VLAN / Set PVID */}
         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center pt-3 border-t border-slate-200 dark:border-slate-800">
           <input value={newVlanId} onChange={e => setNewVlanId(e.target.value.replace(/\D/g, ''))} placeholder="VLAN ID" maxLength={4}
-            className="w-full sm:w-20 px-2 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white" />
+            className="w-full sm:w-20 px-2 py-1 text-xs rounded bg-card border border-border text-foreground" />
           <select value={vlanMode} onChange={e => setVlanMode(e.target.value as 'tag' | 'access')}
-            className="w-full sm:w-auto px-2 py-1 text-xs rounded bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-white">
+            className="w-full sm:w-auto px-2 py-1 text-xs rounded bg-card border border-border text-foreground">
             <option value="tag">Tagged (Trunk)</option>
             <option value="access">Set as PVID</option>
           </select>
@@ -307,14 +307,14 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
       <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           {metrics.map(([label, val, accent]) => (
-            <div key={label} className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700" style={{ borderLeft: `3px solid ${accent}` }}>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">{label}</div>
-              <div className="text-base font-bold font-mono text-slate-900 dark:text-white mt-0.5 break-all">{val}</div>
+            <div key={label} className="p-2.5 rounded-lg bg-input border border-border" style={{ borderLeft: `3px solid ${accent}` }}>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{label}</div>
+              <div className="text-base font-bold font-mono text-foreground mt-0.5 break-all">{val}</div>
             </div>
           ))}
         </div>
         <div className="border-t border-slate-200 dark:border-slate-800 pt-3">
-          <div className="text-xs text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">Module Specifications</div>
+          <div className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Module Specifications</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {specs.map(([label, val]) => (
               <div key={label} className="p-1.5 rounded bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
@@ -335,7 +335,7 @@ function UplinkPortModal({ oltId, port, onClose }: { oltId: string; port: string
         <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 border-b border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-            <span className="text-sm font-bold text-slate-900 dark:text-white font-mono break-all">{port}</span>
+            <span className="text-sm font-bold text-foreground font-mono break-all">{port}</span>
             <span className="text-xs text-slate-500">Uplink Port</span>
           </div>
           <button onClick={onClose} className="text-slate-500 hover:text-slate-900 dark:hover:text-white text-xl leading-none">×</button>
@@ -622,7 +622,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
             <div>
               <div className="flex items-center gap-2">
                 <Server className="h-4 w-4 text-green-400" />
-                <span className="font-semibold text-sm text-slate-900 dark:text-white">ZTE C320 Rack Diagram</span>
+                <span className="font-semibold text-sm text-foreground">ZTE C320 Rack Diagram</span>
               </div>
               <div className="text-[11px] text-slate-500 mt-1">Updated: {olt.lastPollAt ? formatWIB(olt.lastPollAt, 'HH:mm') : '—'}</div>
             </div>
@@ -630,7 +630,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
               <span className="text-xs text-slate-500 font-mono">{olt.ipAddress}</span>
               <button
                 onClick={fetchChassis}
-                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs rounded border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs rounded border border-border text-muted-foreground hover:bg-accent"
                 disabled={loadingChassis}
               >
                 <RefreshCw className={`h-3 w-3 ${loadingChassis ? 'animate-spin' : ''}`} />
@@ -699,7 +699,7 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
 
         {/* ── Per-port detail table ── */}
         {Object.keys(portStats).length > 0 && (
-          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+          <div className="bg-card rounded-lg border border-border p-4">
             <h3 className="text-sm font-semibold mb-3 text-gray-800 dark:text-gray-200">Detail Per Port PON</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2">
               {Object.entries(portStats)
@@ -708,14 +708,14 @@ function ZTEChassisView({ olt }: { olt: OLTDetail }) {
                   const pct = s.total > 0 ? (s.online / s.total) * 100 : 0;
                   const avgRx = s.rxPowers.length > 0 ? (s.rxPowers.reduce((a, b) => a + b, 0) / s.rxPowers.length).toFixed(1) : null;
                   return (
-                    <div key={portKey} className="border border-gray-100 dark:border-gray-800 rounded-lg p-2.5">
+                    <div key={portKey} className="border border-border rounded-lg p-2.5">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-mono text-xs font-semibold text-gray-700 dark:text-gray-300">0/{portKey}</span>
+                        <span className="font-mono text-xs font-semibold text-muted-foreground">0/{portKey}</span>
                         <span className={`text-[10px] font-bold ${pct === 100 ? 'text-green-600' : pct === 0 ? 'text-red-600' : 'text-orange-500'}`}>
                           {s.online}/{s.total}
                         </span>
                       </div>
-                      <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5 mb-1">
+                      <div className="w-full bg-muted rounded-full h-1.5 mb-1">
                         <div
                           className={`h-1.5 rounded-full ${pct === 100 ? 'bg-green-500' : pct === 0 ? 'bg-red-500' : 'bg-orange-400'}`}
                           style={{ width: `${Math.max(pct, s.total > 0 ? 5 : 0)}%` }}
@@ -1018,11 +1018,11 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] flex flex-col">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800 bg-green-50 dark:bg-green-950 flex-shrink-0">
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
               <Plus className="h-4 w-4 text-green-600" /> Register ONU
               <span className="text-xs font-normal text-gray-500 uppercase ml-1">{v}</span>
             </h2>
@@ -1040,7 +1040,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
           {/* Serial number (read-only) */}
           <div>
             <Label className="text-xs text-gray-500">Serial Number (OLT detected)</Label>
-            <div className="mt-1 px-3 py-2 bg-gray-100 dark:bg-gray-800 rounded-md font-mono text-sm text-gray-700 dark:text-gray-300">
+            <div className="mt-1 px-3 py-2 bg-muted rounded-md font-mono text-sm text-muted-foreground">
               {onu.serialNumber ?? <span className="text-yellow-600">Unknown — no serial via SNMP (enter manually)</span>}
             </div>
           </div>
@@ -1131,7 +1131,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             )}
 
             {serviceTemplate === 'zte_full' && (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+              <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">ZTE Full Template</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1257,7 +1257,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             )}
 
             {serviceTemplate === 'huawei_full' && (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+              <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Huawei Full Template</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1281,7 +1281,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
             )}
 
             {serviceTemplate === 'fiberhome_veip' && (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 space-y-4">
+              <div className="rounded-lg border border-border p-4 space-y-4">
                 <div className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Fiberhome VEIP Template</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1378,7 +1378,7 @@ function ONURegisterModal({ oltId, onu, vendor, onClose, onSuccess }: RegisterMo
               className="mt-1" />
           </div>
 
-          <div className="rounded-md border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950 p-3 text-xs text-gray-500 space-y-1">
+          <div className="rounded-md border border-border bg-gray-50 dark:bg-gray-950 p-3 text-xs text-gray-500 space-y-1">
             <div>Detected ONU type: <span className="font-mono text-gray-900 dark:text-gray-200">{metadata.detectedOnuType ?? onu.onuType ?? '-'}</span></div>
             {isZTE && <div>Template: <span className="font-mono text-gray-900 dark:text-gray-200">{serviceTemplate}</span></div>}
             <div>Metadata source: <span className="font-mono text-gray-900 dark:text-gray-200">{metadataLoading ? 'Loading from OLT...' : 'Live OLT query'}</span></div>
@@ -1512,10 +1512,10 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800">
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            <h2 className="font-semibold text-foreground flex items-center gap-2">
               <Eye className="h-4 w-4 text-blue-500" /> Detail ONU
             </h2>
             <p className="text-xs text-gray-500 font-mono mt-0.5">{detail?.telnet?.interface ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`}</p>
@@ -1529,36 +1529,36 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {detailItems.map(([label, value]) => (
-                  <div key={label} className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+                  <div key={label} className="p-3 rounded-lg border border-border bg-gray-50 dark:bg-gray-950">
                     <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white mt-1 break-words">{value}</div>
+                    <div className="text-sm font-medium text-foreground mt-1 break-words">{value}</div>
                   </div>
                 ))}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 {technicalItems.map(([label, value]) => (
-                  <div key={label} className="p-3 rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-950">
+                  <div key={label} className="p-3 rounded-lg border border-border bg-gray-50 dark:bg-gray-950">
                     <div className="text-[10px] uppercase tracking-wide text-gray-500">{label}</div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white mt-1 break-words">{value}</div>
+                    <div className="text-sm font-medium text-foreground mt-1 break-words">{value}</div>
                   </div>
                 ))}
               </div>
 
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3 space-y-3">
+              <div className="rounded-lg border border-border p-3 space-y-3">
                 <div className="text-xs font-semibold text-gray-500 uppercase">ONT Service Summary</div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-border p-3">
                     <div className="text-[10px] uppercase tracking-wide text-gray-500">Service VLANs</div>
-                    <div className="mt-1 font-medium text-gray-900 dark:text-white break-words">{serviceVlans}</div>
+                    <div className="mt-1 font-medium text-foreground break-words">{serviceVlans}</div>
                   </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-border p-3">
                     <div className="text-[10px] uppercase tracking-wide text-gray-500">TCONT Profiles</div>
-                    <div className="mt-1 font-medium text-gray-900 dark:text-white break-words">{tcontProfiles}</div>
+                    <div className="mt-1 font-medium text-foreground break-words">{tcontProfiles}</div>
                   </div>
-                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-800 p-3">
+                  <div className="rounded-lg bg-gray-50 dark:bg-gray-950 border border-border p-3">
                     <div className="text-[10px] uppercase tracking-wide text-gray-500">Downstream Profiles</div>
-                    <div className="mt-1 font-medium text-gray-900 dark:text-white break-words">{downstreamProfiles}</div>
+                    <div className="mt-1 font-medium text-foreground break-words">{downstreamProfiles}</div>
                   </div>
                 </div>
                 {Array.isArray(configSummary.servicePorts) && configSummary.servicePorts.length > 0 && (
@@ -1575,10 +1575,10 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
                       <tbody>
                         {configSummary.servicePorts.map((servicePort: ServicePort) => (
                           <tr key={`${servicePort.servicePort}-${servicePort.vport}`} className="bg-gray-50 dark:bg-gray-950">
-                            <td className="px-2 py-2 rounded-l border-y border-l border-gray-200 dark:border-gray-800 font-mono">{servicePort.servicePort}</td>
-                            <td className="px-2 py-2 border-y border-gray-200 dark:border-gray-800 font-mono">{servicePort.vport}</td>
-                            <td className="px-2 py-2 border-y border-gray-200 dark:border-gray-800 font-mono">{servicePort.userVlan}</td>
-                            <td className="px-2 py-2 rounded-r border-y border-r border-gray-200 dark:border-gray-800 font-mono">{servicePort.vlan}</td>
+                            <td className="px-2 py-2 rounded-l border-y border-l border-border font-mono">{servicePort.servicePort}</td>
+                            <td className="px-2 py-2 border-y border-border font-mono">{servicePort.vport}</td>
+                            <td className="px-2 py-2 border-y border-border font-mono">{servicePort.userVlan}</td>
+                            <td className="px-2 py-2 rounded-r border-y border-r border-border font-mono">{servicePort.vlan}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -1587,7 +1587,7 @@ function ONUDetailModal({ oltId, onu, onClose }: { oltId: string; onu: ONU; onCl
                 )}
               </div>
 
-              <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+              <div className="rounded-lg border border-border p-3">
                 <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Customer Assignment</div>
                 {customer ? (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
@@ -1660,10 +1660,10 @@ function ONUAssignModal({ oltId, onu, onClose, onSuccess }: { oltId: string; onu
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-lg overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b dark:border-gray-800">
           <div>
-            <h2 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><UserPlus className="h-4 w-4 text-indigo-500" /> Assign Customer</h2>
+            <h2 className="font-semibold text-foreground flex items-center gap-2"><UserPlus className="h-4 w-4 text-indigo-500" /> Assign Customer</h2>
             <p className="text-xs text-gray-500 font-mono mt-0.5">{onu.serialNumber ?? `${onu.frame}/${onu.slot}/${onu.port}:${onu.onuId}`}</p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="h-5 w-5" /></button>
@@ -2039,12 +2039,12 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                 : <WifiOff className="h-5 w-5 text-red-500" />}
               {olt.name}
               {olt.vendor && (
-                <span className="text-xs font-normal bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full uppercase">
+                <span className="text-xs font-normal bg-muted text-muted-foreground px-2 py-0.5 rounded-full uppercase">
                   {olt.vendor}
                 </span>
               )}
             </h1>
-            <p className="text-gray-500 dark:text-gray-400 font-mono text-xs mt-0.5">
+            <p className="text-muted-foreground font-mono text-xs mt-0.5">
               {olt.ipAddress}
               {olt.model && <span className="ml-2 text-gray-400">· {olt.model}</span>}
               {olt.firmwareVersion && <span className="ml-2 text-gray-400">· {olt.firmwareVersion}</span>}
@@ -2067,7 +2067,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         <Card className={`border-l-4 ${olt.isOnline ? 'border-l-green-500' : 'border-l-red-500'}`}>
           <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Wifi className="h-3 w-3" /> Status
             </div>
             <div className={`font-bold text-xl ${olt.isOnline ? 'text-green-600' : 'text-red-600'}`}>
@@ -2081,10 +2081,10 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
 
         <Card className="border-l-4 border-l-blue-500">
           <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Clock className="h-3 w-3" /> Uptime
             </div>
-            <div className="font-bold text-xl text-gray-900 dark:text-white">{formatUptime(olt.uptime)}</div>
+            <div className="font-bold text-xl text-foreground">{formatUptime(olt.uptime)}</div>
             <div className="text-xs text-gray-400 mt-0.5">
               {olt.vendor ?? 'OLT'} {olt.model ?? ''}
             </div>
@@ -2092,7 +2092,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
         </Card>
         <Card className="border-l-4 border-l-teal-500">
           <CardContent className="pt-4 pb-4">
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 mb-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">
               <Activity className="h-3 w-3" /> ONUs
             </div>
             <div className="font-bold text-xl">
@@ -2178,10 +2178,10 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
+          <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b dark:border-gray-700 text-left text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/60">
+                <tr className="border-b dark:border-gray-700 text-left text-muted-foreground bg-gray-50 dark:bg-gray-900/60">
                   <th className="py-2.5 pl-3 pr-2">
                     <input
                       type="checkbox"
@@ -2215,7 +2215,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                           className="w-4 h-4 text-blue-600 rounded"
                         />
                       </td>
-                      <td className="py-2.5 pr-4 font-mono text-xs text-gray-700 dark:text-gray-300">
+                      <td className="py-2.5 pr-4 font-mono text-xs text-muted-foreground">
                         {onu.frame}/{onu.slot}/{onu.port}:{onu.onuId}
                       </td>
                       <td className="py-2.5 pr-4">
@@ -2224,7 +2224,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                         </div>
                       </td>
                       <td className="py-2.5 pr-4">
-                        <div className="text-xs text-gray-700 dark:text-gray-300">{onu.description ?? <span className="text-gray-400">—</span>}</div>
+                        <div className="text-xs text-muted-foreground">{onu.description ?? <span className="text-gray-400">—</span>}</div>
                       </td>
                       <td className="py-2.5 pr-4">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -2252,20 +2252,20 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                       </td>
                       <td className="py-2.5 pr-4 text-xs">
                         {onu.distance !== null ? (
-                          <span className="font-mono text-gray-700 dark:text-gray-300">{onu.distance} m</span>
+                          <span className="font-mono text-muted-foreground">{onu.distance} m</span>
                         ) : <span className="text-gray-400">—</span>}
                       </td>
                       <td className="py-2.5 pr-4">
                         {onu.customer ? (
                           <div>
-                            <div className="text-xs font-medium text-gray-900 dark:text-white">{onu.customer.name}</div>
-                            <div className="text-gray-500 dark:text-gray-400 text-xs">{onu.customer.username}</div>
+                            <div className="text-xs font-medium text-foreground">{onu.customer.name}</div>
+                            <div className="text-muted-foreground text-xs">{onu.customer.username}</div>
                           </div>
                         ) : (
                           <span className="text-gray-400 text-xs">Unassigned</span>
                         )}
                       </td>
-                      <td className="py-2.5 pr-4 text-xs text-gray-500 dark:text-gray-400">
+                      <td className="py-2.5 pr-4 text-xs text-muted-foreground">
                         {onu.lastSeenAt ? new Date(onu.lastSeenAt).toLocaleString('id-ID') : '—'}
                       </td>
                       <td className="py-2.5 pr-3">
@@ -2298,7 +2298,7 @@ export default function OLTDetailPage({ params }: { params: Promise<{ id: string
                             </button>
                             <button
                               onClick={() => setConfirmReboot(null)}
-                              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-muted-foreground rounded hover:bg-gray-300 dark:hover:bg-gray-600"
                             >
                               Cancel
                             </button>

@@ -117,7 +117,7 @@ export default function GenieACSFaultsPage() {
           />
           <button
             onClick={() => refetch()}
-            className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-accent"
           >
             <RefreshCw className="w-4 h-4" /> Refresh
           </button>
@@ -140,7 +140,7 @@ export default function GenieACSFaultsPage() {
 
       <div className="border rounded-md overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-slate-100 dark:bg-slate-800">
+          <thead className="bg-muted">
             <tr>
               <th className="text-left px-3 py-2 w-8">
                 <input

@@ -105,7 +105,7 @@ export default function CollectorLoginPage() {
           {/* Logo */}
           <div className="flex justify-center mb-5">
             {companyLogo ? (
-              <div className="w-24 h-24 p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-700 shadow-sm flex items-center justify-center overflow-hidden">
+              <div className="w-24 h-24 p-2 rounded-xl border border-border bg-card shadow-sm flex items-center justify-center overflow-hidden">
                 <Image unoptimized src={companyLogo} alt={companyName} width={220} height={110} className="max-h-full max-w-full w-auto h-auto object-contain" />
               </div>
             ) : (
@@ -190,31 +190,31 @@ export default function CollectorLoginPage() {
             {companyName}
           </h1>
           <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500" />
-          <p className="text-base text-gray-500 dark:text-slate-400 mb-8 leading-relaxed">
+          <p className="text-base text-muted-foreground mb-8 leading-relaxed">
             Portal khusus kolektor untuk mengelola tagihan pelanggan, mencatat setoran harian, dan melakukan pencabutan ONT di wilayah Anda.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Kelola Tagihan</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Tandai invoice lunas</p>
+              <p className="text-sm font-bold text-foreground mb-1">Kelola Tagihan</p>
+              <p className="text-xs text-muted-foreground leading-snug">Tandai invoice lunas</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-teal-100 dark:bg-teal-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-teal-600 dark:text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Setoran Harian</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Rekap pembayaran tunai</p>
+              <p className="text-sm font-bold text-foreground mb-1">Setoran Harian</p>
+              <p className="text-xs text-muted-foreground leading-snug">Rekap pembayaran tunai</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Cabut ONT</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Catat pencabutan perangkat</p>
+              <p className="text-sm font-bold text-foreground mb-1">Cabut ONT</p>
+              <p className="text-xs text-muted-foreground leading-snug">Catat pencabutan perangkat</p>
             </div>
           </div>
 

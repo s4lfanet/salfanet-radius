@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -192,7 +192,7 @@ export default function TicketDetailPage() {
   return (
     <div className="p-3 lg:p-5 space-y-3 w-full">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+      <div className="bg-card rounded-lg border border-border p-3">
         <div className="flex items-center gap-3 mb-3">
           <Link
             href="/customer/tickets"
@@ -202,7 +202,7 @@ export default function TicketDetailPage() {
           </Link>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="text-sm font-mono text-gray-500 dark:text-gray-400">
+              <span className="text-sm font-mono text-muted-foreground">
                 #{ticket.ticketNumber}
               </span>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(ticket.status)}`}>
@@ -220,7 +220,7 @@ export default function TicketDetailPage() {
                   </span>
                 )}
             </div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            <h2 className="text-lg font-bold text-foreground mb-1">
               {ticket.subject}
             </h2>
             <p className="text-xs text-gray-600 dark:text-gray-400">
@@ -231,8 +231,8 @@ export default function TicketDetailPage() {
       </div>
 
       {/* Initial Description */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-        <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-2">
+      <div className="bg-card rounded-lg border border-border p-4">
+        <h3 className="font-semibold text-foreground text-sm mb-2">
           {t('ticket.description')}
         </h3>
         <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">
@@ -245,10 +245,10 @@ export default function TicketDetailPage() {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`bg-white dark:bg-gray-900 rounded-lg border p-3 ${
+            className={`bg-card rounded-lg border p-3 ${
               msg.senderType === 'SYSTEM' 
-                ? 'border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800' 
-                : 'border-gray-200 dark:border-gray-800'
+                ? 'border-border bg-muted' 
+                : 'border-border'
             }`}
           >
             <div className="flex items-start gap-2">
@@ -259,13 +259,13 @@ export default function TicketDetailPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="font-semibold text-gray-900 dark:text-white text-sm">
+                  <span className="font-semibold text-foreground text-sm">
                     {msg.senderName}
                   </span>
                   <span className={`px-2 py-0.5 rounded text-xs font-medium ${getSenderBadgeColor(msg.senderType)}`}>
                     {t(`ticket.senderType_${msg.senderType}`)}
                   </span>
-                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock size={12} />
                       {formatWIB(msg.createdAt, 'd MMM HH:mm')}
                     </div>
@@ -281,8 +281,8 @@ export default function TicketDetailPage() {
 
       {/* Reply Form */}
       {!isClosed && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-          <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-3">
+        <div className="bg-card rounded-lg border border-border p-4">
+          <h3 className="font-semibold text-foreground text-sm mb-3">
             {t('ticket.addReply')}
           </h3>
           <form onSubmit={handleReply}>

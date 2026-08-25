@@ -104,7 +104,7 @@ export default function AgentLoginPage() {
           {/* Logo */}
           <div className="flex justify-center mb-5">
             {companyLogo ? (
-              <div className="w-24 h-24 p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-700 shadow-sm flex items-center justify-center overflow-hidden">
+              <div className="w-24 h-24 p-2 rounded-xl border border-border bg-card shadow-sm flex items-center justify-center overflow-hidden">
                 <Image unoptimized src={companyLogo} alt={companyName} width={220} height={110} className="max-h-full max-w-full w-auto h-auto object-contain" />
               </div>
             ) : (
@@ -158,8 +158,8 @@ export default function AgentLoginPage() {
 
           {/* WhatsApp contact */}
           {companyPhone && (
-            <div className="mt-5 pt-4 border-t border-gray-100 dark:border-slate-700 text-center">
-              <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">{t('agent.portal.notRegistered')}</p>
+            <div className="mt-5 pt-4 border-t border-border text-center">
+              <p className="text-xs text-muted-foreground mb-2">{t('agent.portal.notRegistered')}</p>
               <a
                 href={`https://wa.me/${companyPhone}`}
                 target="_blank"
@@ -173,7 +173,7 @@ export default function AgentLoginPage() {
           )}
 
           {/* Footer */}
-          <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-8">{poweredBy}</p>
+          <p className="text-center text-xs text-muted-foreground/70 mt-8">{poweredBy}</p>
         </div>
       </div>
 
@@ -190,31 +190,31 @@ export default function AgentLoginPage() {
             {companyName}
           </h1>
           <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-indigo-600 to-violet-500" />
-          <p className="text-base text-gray-500 dark:text-slate-400 mb-8 leading-relaxed">
+          <p className="text-base text-muted-foreground mb-8 leading-relaxed">
             Portal agen resmi untuk mengelola penjualan voucher, memantau komisi, dan mendaftarkan pelanggan baru di wilayah Anda.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Komisi Realtime</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Pantau komisi secara langsung</p>
+              <p className="text-sm font-bold text-foreground mb-1">Komisi Realtime</p>
+              <p className="text-xs text-muted-foreground leading-snug">Pantau komisi secara langsung</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-violet-100 dark:bg-violet-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Voucher Hotspot</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Jual voucher harga agen</p>
+              <p className="text-sm font-bold text-foreground mb-1">Voucher Hotspot</p>
+              <p className="text-xs text-muted-foreground leading-snug">Jual voucher harga agen</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Rekap Penjualan</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Laporan harian &amp; bulanan</p>
+              <p className="text-sm font-bold text-foreground mb-1">Rekap Penjualan</p>
+              <p className="text-xs text-muted-foreground leading-snug">Laporan harian &amp; bulanan</p>
             </div>
           </div>
 
@@ -224,9 +224,9 @@ export default function AgentLoginPage() {
               { color: 'bg-violet-500', text: 'Kelola Voucher — Cetak dan distribusikan voucher ke pelanggan' },
               { color: 'bg-purple-500', text: 'Monitor Pelanggan — Pantau pelanggan yang didaftarkan lewat akun Anda' },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-700/50">
+              <div key={i} className="flex items-center gap-3 bg-card/70 rounded-xl px-4 py-3 border border-border">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />
-                <p className="text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: item.text }} />
+                <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: item.text }} />
               </div>
             ))}
           </div>

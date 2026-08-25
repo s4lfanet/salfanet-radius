@@ -47,7 +47,7 @@ export function GenieACSLayout({ children, title }: Props) {
     <div className="flex gap-6">
       {/* Side nav */}
       <aside className="hidden lg:block w-48 flex-shrink-0">
-        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+        <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           GenieACS
         </p>
         <nav className="space-y-0.5">
@@ -74,7 +74,7 @@ export function GenieACSLayout({ children, title }: Props) {
       {/* Main content */}
       <div className="min-w-0 flex-1">
         {title && (
-          <h1 className="mb-4 text-xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="mb-4 text-xl font-semibold text-foreground">
             {title}
           </h1>
         )}

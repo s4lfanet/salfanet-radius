@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Plus, Loader2, Pencil, Trash2, ToggleLeft, ToggleRight, Code2, Cpu, X, Lightbulb, Palette } from "lucide-react";
@@ -335,7 +335,7 @@ export default function VirtualParametersPage() {
             </div>
 
             {/* Desktop List View */}
-            <div className="divide-y divide-gray-200 dark:divide-gray-800 hidden md:block">
+            <div className="divide-y divide-border hidden md:block">
               {items.map((vp) => (
                 <div key={vp.id} className="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">

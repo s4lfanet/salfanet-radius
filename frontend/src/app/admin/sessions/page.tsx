@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -511,7 +511,7 @@ export default function SessionsPage() {
         </div>
 
         {/* Mobile Card View */}
-        <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+        <div className="block md:hidden divide-y divide-border">
           {sessions.length === 0 ? (
             <div className="px-3 py-8 text-center text-muted-foreground text-xs">
               {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mx-auto" /> : t('common.noData')}
@@ -615,7 +615,7 @@ export default function SessionsPage() {
                 <th className="px-2 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-border">
               {sessions.length === 0 ? (
                 <tr>
                   <td colSpan={13} className="px-3 py-8 text-center text-muted-foreground text-xs">

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -234,7 +234,7 @@ export default function SendMessagePage() {
           <button
             onClick={() => setActiveTab('single')}
             className={`px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-              activeTab === 'single' ? 'bg-teal-600 text-white' : 'text-muted-foreground dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'
+              activeTab === 'single' ? 'bg-teal-600 text-white' : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
             }`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -245,7 +245,7 @@ export default function SendMessagePage() {
           <button
             onClick={() => setActiveTab('broadcast')}
             className={`px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center gap-1.5 ${
-              activeTab === 'broadcast' ? 'bg-teal-600 text-white' : 'text-muted-foreground dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'
+              activeTab === 'broadcast' ? 'bg-teal-600 text-white' : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
             }`}
           >
             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -531,7 +531,7 @@ export default function SendMessagePage() {
                             <th className="px-2 py-1.5 text-left text-[9px] font-semibold text-muted-foreground dark:text-muted-foreground uppercase">{t('common.status')}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                        <tbody className="divide-y divide-border">
                           {users.length === 0 ? (
                             <tr>
                               <td colSpan={7} className="px-2 py-6 text-center text-[10px] text-muted-foreground">{t('whatsapp.noUsersFound')}</td>

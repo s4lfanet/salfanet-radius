@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
@@ -489,7 +489,7 @@ export default function WhatsAppProvidersPage() {
                   </div>
                   <button
                     onClick={() => toggleActive(provider.id, provider.isActive)}
-                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
+                    className="p-1 hover:bg-accent rounded transition-colors"
                     title={provider.isActive ? t('whatsapp.deactivate') : t('whatsapp.activate')}
                   >
                     {provider.isActive ? (

@@ -64,7 +64,7 @@ const TAB_COLOR: Record<TabType, string> = {
   ODC: 'border-cyan-500 text-cyan-600 dark:text-cyan-400',
   ODP: 'border-emerald-500 text-emerald-600 dark:text-emerald-400',
 };
-const TAB_INACTIVE = 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600';
+const TAB_INACTIVE = 'border-transparent text-muted-foreground hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600';
 
 function StatusBadge({ status }: { status: string }) {
   return (
@@ -76,7 +76,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function CoordCell({ lat, lng }: { lat: number; lng: number }) {
   return (
-    <span className="font-mono text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+    <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
       {Number(lat).toFixed(5)}, {Number(lng).toFixed(5)}
     </span>
   );
@@ -118,7 +118,7 @@ function OTBTable({ search }: { search: string }) {
   return (
     <TableWrapper total={total} page={page} limit={20} onPage={setPage}>
       <thead>
-        <tr className="bg-gray-50 dark:bg-gray-800/50">
+        <tr className="bg-muted/50">
           <Th>{t('infrastruktur.colNameCode')}</Th><Th>{t('common.status')}</Th><Th>{t('infrastruktur.colPort')}</Th><Th>OLT</Th><Th>{t('common.address')}</Th><Th>{t('common.coordinates')}</Th><Th></Th><Th></Th>
         </tr>
       </thead>
@@ -126,17 +126,17 @@ function OTBTable({ search }: { search: string }) {
         {items.length === 0 ? <EmptyRow cols={8} /> : items.map(r => (
           <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
             <td className="px-4 py-3">
-              <p className="font-medium text-sm text-gray-900 dark:text-white">{r.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{r.code}</p>
+              <p className="font-medium text-sm text-foreground">{r.name}</p>
+              <p className="text-xs text-muted-foreground font-mono">{r.code}</p>
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
               {r.usedPorts}/{r.portCount}
             </td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+            <td className="px-4 py-3 text-sm text-muted-foreground">
               {r.network_olts?.name ?? <span className="text-gray-400">—</span>}
             </td>
-            <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 max-w-[180px] truncate">
+            <td className="px-4 py-3 text-sm text-muted-foreground max-w-[180px] truncate">
               {r.address || <span className="text-gray-400">—</span>}
             </td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
@@ -185,7 +185,7 @@ function JCTable({ search }: { search: string }) {
   return (
     <TableWrapper total={total} page={1} limit={total || 1} onPage={() => {}}>
       <thead>
-        <tr className="bg-gray-50 dark:bg-gray-800/50">
+        <tr className="bg-muted/50">
           <Th>{t('infrastruktur.colNameCode')}</Th><Th>{t('common.status')}</Th><Th>{t('common.type')}</Th><Th>{t('infrastruktur.colClosureType')}</Th><Th>{t('infrastruktur.colFiberCount')}</Th><Th>{t('common.coordinates')}</Th><Th></Th><Th></Th>
         </tr>
       </thead>
@@ -193,13 +193,13 @@ function JCTable({ search }: { search: string }) {
         {items.length === 0 ? <EmptyRow cols={8} /> : items.map(r => (
           <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
             <td className="px-4 py-3">
-              <p className="font-medium text-sm text-gray-900 dark:text-white">{r.name}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{r.code}</p>
+              <p className="font-medium text-sm text-foreground">{r.name}</p>
+              <p className="text-xs text-muted-foreground font-mono">{r.code}</p>
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{r.type?.replace(/_/g, ' ') ?? '—'}</td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{r.closureType ?? '—'}</td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">{r.fiberCount ?? '—'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.type?.replace(/_/g, ' ') ?? '—'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.closureType ?? '—'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{r.fiberCount ?? '—'}</td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3"><MapPinLink lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">
@@ -245,7 +245,7 @@ function ODCTable({ search }: { search: string }) {
   return (
     <TableWrapper total={total} page={1} limit={total || 1} onPage={() => {}}>
       <thead>
-        <tr className="bg-gray-50 dark:bg-gray-800/50">
+        <tr className="bg-muted/50">
           <Th>{t('common.name')}</Th><Th>{t('common.status')}</Th><Th>OLT</Th><Th>{t('infrastruktur.colPonPort')}</Th><Th>{t('infrastruktur.colPort')}</Th><Th>{t('infrastruktur.colConnectedOdps')}</Th><Th>{t('common.coordinates')}</Th><Th></Th><Th></Th>
         </tr>
       </thead>
@@ -253,15 +253,15 @@ function ODCTable({ search }: { search: string }) {
         {items.length === 0 ? <EmptyRow cols={9} /> : items.map(r => (
           <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
             <td className="px-4 py-3">
-              <p className="font-medium text-sm text-gray-900 dark:text-white">{r.name}</p>
+              <p className="font-medium text-sm text-foreground">{r.name}</p>
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+            <td className="px-4 py-3 text-sm text-muted-foreground">
               {r.network_olts?.name ?? <span className="text-gray-400">—</span>}
             </td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{r.ponPort}</td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{r.portCount}</td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{r._count?.network_odps ?? 0}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.ponPort}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.portCount}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r._count?.network_odps ?? 0}</td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3"><MapPinLink lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">
@@ -309,7 +309,7 @@ function ODPTable({ search }: { search: string }) {
   return (
     <TableWrapper total={total} page={1} limit={total || 1} onPage={() => {}}>
       <thead>
-        <tr className="bg-gray-50 dark:bg-gray-800/50">
+        <tr className="bg-muted/50">
           <Th>{t('common.name')}</Th><Th>{t('common.status')}</Th><Th>OLT</Th><Th>ODC</Th><Th>{t('infrastruktur.colPort')}</Th><Th>{t('infrastruktur.colSplitter')}</Th><Th>{t('common.coordinates')}</Th><Th></Th><Th></Th>
         </tr>
       </thead>
@@ -317,17 +317,17 @@ function ODPTable({ search }: { search: string }) {
         {items.length === 0 ? <EmptyRow cols={9} /> : items.map(r => (
           <tr key={r.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
             <td className="px-4 py-3">
-              <p className="font-medium text-sm text-gray-900 dark:text-white">{r.name}</p>
+              <p className="font-medium text-sm text-foreground">{r.name}</p>
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+            <td className="px-4 py-3 text-sm text-muted-foreground">
               {r.network_olts?.name ?? <span className="text-gray-400">—</span>}
             </td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">
+            <td className="px-4 py-3 text-sm text-muted-foreground">
               {r.network_odcs?.name ?? <span className="text-gray-400">—</span>}
             </td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{r.portCount}</td>
-            <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{r.splitterRatio ?? '—'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.portCount}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground">{r.splitterRatio ?? '—'}</td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3"><MapPinLink lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">
@@ -359,7 +359,7 @@ function DeleteButton({ onClick, loading, label = 'Delete' }: { onClick: () => v
 
 function Th({ children }: { children?: React.ReactNode }) {
   return (
-    <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+    <th className="px-4 py-2.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
       {children}
     </th>
   );
@@ -369,7 +369,7 @@ function EmptyRow({ cols }: { cols: number }) {
   const { t } = useTranslation();
   return (
     <tr>
-      <td colSpan={cols} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+      <td colSpan={cols} className="px-4 py-10 text-center text-sm text-muted-foreground/70">
         {t('common.noData')}
       </td>
     </tr>
@@ -380,7 +380,7 @@ function TableSkeleton({ cols }: { cols: number }) {
   return (
     <div className="p-4 space-y-2">
       {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="h-10 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" style={{ opacity: 1 - i * 0.15 }} />
+        <div key={i} className="h-10 bg-muted rounded animate-pulse" style={{ opacity: 1 - i * 0.15 }} />
       ))}
     </div>
   );
@@ -400,19 +400,19 @@ function TableWrapper({
       </div>
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-700">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
+          <span className="text-xs text-muted-foreground">
             {t('infrastruktur.totalItems', { count: total })}
           </span>
           <div className="flex gap-1">
             <button disabled={page <= 1} onClick={() => onPage(page - 1)}
-              className="px-3 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
+              className="px-3 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 text-muted-foreground">
               ‹ {t('common.prev')}
             </button>
-            <span className="px-3 py-1 text-xs text-gray-600 dark:text-gray-400">
+            <span className="px-3 py-1 text-xs text-muted-foreground">
               {page} / {totalPages}
             </span>
             <button disabled={page >= totalPages} onClick={() => onPage(page + 1)}
-              className="px-3 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300">
+              className="px-3 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 text-muted-foreground">
               {t('common.next')} ›
             </button>
           </div>
@@ -466,8 +466,8 @@ export default function InfrastrukturPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">{t('infrastruktur.title')}</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+          <h1 className="text-xl font-bold text-foreground">{t('infrastruktur.title')}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
             {t('infrastruktur.subtitle')}
           </p>
         </div>
@@ -481,7 +481,7 @@ export default function InfrastrukturPage() {
           </button>
           <a
             href="/admin/network/unified-map"
-            className="flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm transition-colors"
+            className="flex items-center gap-2 px-3 py-2 border border-gray-200 dark:border-gray-600 bg-card hover:bg-gray-50 dark:hover:bg-gray-700 text-muted-foreground rounded-lg text-sm transition-colors"
           >
             <ExternalLink className="w-4 h-4" />
             {t('common.openMap')}
@@ -490,9 +490,9 @@ export default function InfrastrukturPage() {
       </div>
 
       {/* Card */}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="bg-card rounded-xl border border-border shadow-sm">
         {/* Tabs + search bar */}
-        <div className="flex items-center justify-between gap-4 px-4 border-b border-gray-200 dark:border-gray-700 flex-wrap">
+        <div className="flex items-center justify-between gap-4 px-4 border-b border-border flex-wrap">
           {/* Tabs */}
           <nav className="flex gap-0 -mb-px">
             {TABS.map(tab => (
@@ -513,7 +513,7 @@ export default function InfrastrukturPage() {
               value={searchInput}
               onChange={e => setSearchInput(e.target.value)}
               placeholder={t('infrastruktur.searchPlaceholder', { type: activeTab === 'JC' ? 'Joint Closure' : activeTab })}
-              className="pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-56 transition-colors"
+              className="pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-card text-foreground placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none w-56 transition-colors"
             />
           </div>
         </div>

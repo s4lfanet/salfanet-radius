@@ -308,7 +308,7 @@ export default function SplicePointsSection({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 ${className}`}>
+    <div className={`bg-card rounded-lg border dark:border-gray-800 ${className}`}>
       {/* Header */}
       <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -322,7 +322,7 @@ export default function SplicePointsSection({
           <button
             onClick={loadSplicePoints}
             disabled={loading}
-            className="p-1.5 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+            className="p-1.5 text-gray-500 hover:bg-accent rounded"
           >
             <RefreshCcw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -337,8 +337,8 @@ export default function SplicePointsSection({
       </div>
 
       {/* Stats Row */}
-      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b dark:border-gray-800 flex items-center gap-4 text-[10px]">
-        <span className="text-gray-500">Total: <b className="text-gray-700 dark:text-gray-300">{stats.total}</b></span>
+      <div className="px-4 py-2 bg-muted/50 border-b dark:border-gray-800 flex items-center gap-4 text-[10px]">
+        <span className="text-gray-500">Total: <b className="text-muted-foreground">{stats.total}</b></span>
         <span className="text-gray-500">Avg Loss: <b className={stats.avgLoss !== '-' ? 'text-blue-600' : 'text-gray-400'}>{stats.avgLoss} dB</b></span>
         {stats.damaged > 0 && (
           <span className="text-red-600 flex items-center gap-1">
@@ -367,7 +367,7 @@ export default function SplicePointsSection({
               const traySplices = splicesByTray[trayNum] || [];
               return (
                 <div key={trayNum} className="border dark:border-gray-700 rounded-lg overflow-hidden">
-                  <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border-b dark:border-gray-700 flex items-center justify-between">
+                  <div className="px-3 py-2 bg-muted border-b dark:border-gray-700 flex items-center justify-between">
                     <span className="text-xs font-medium">Tray {trayNum}</span>
                     <span className="text-[10px] text-gray-500">{traySplices.length} splice</span>
                   </div>
@@ -454,8 +454,8 @@ export default function SplicePointsSection({
       {/* Create Splice Dialog */}
       {isCreateDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900">
+          <div className="bg-card rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-card">
               <div>
                 <h2 className="text-sm font-semibold flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-blue-500" />
@@ -465,7 +465,7 @@ export default function SplicePointsSection({
               </div>
               <button
                 onClick={() => { setIsCreateDialogOpen(false); resetForm(); }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -500,7 +500,7 @@ export default function SplicePointsSection({
                           className={`flex-1 p-2 rounded-lg border-2 transition-all text-center ${
                             isActive 
                               ? `border-${type.color}-500 bg-${type.color}-50 dark:bg-${type.color}-900/20`
-                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                              : 'border-border hover:border-gray-300'
                           }`}
                         >
                           <Icon className={`h-4 w-4 mx-auto mb-0.5 ${isActive ? `text-${type.color}-600` : 'text-gray-400'}`} />
@@ -651,7 +651,7 @@ export default function SplicePointsSection({
                 <button
                   type="button"
                   onClick={() => { setIsCreateDialogOpen(false); resetForm(); }}
-                  className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-accent"
                 >
                   Batal
                 </button>

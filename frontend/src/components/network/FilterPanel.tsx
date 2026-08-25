@@ -76,10 +76,10 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
     filters.search.length > 0;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 space-y-4">
+    <div className="bg-card rounded-lg shadow-lg p-4 space-y-4">
       {/* Statistics Panel */}
       <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-        <h3 className="text-gray-900 dark:text-white font-bold mb-3 flex items-center">
+        <h3 className="text-foreground font-bold mb-3 flex items-center">
           <Filter className="w-5 h-5 mr-2" />
           {t('network.unifiedMap.statisticsTitle')}
         </h3>
@@ -87,37 +87,37 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
           <div className="flex items-center space-x-2">
             <span className="text-purple-500">⬟</span>
             <span className="text-gray-500 dark:text-gray-300">OLT:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{statistics.olt}</span>
+            <span className="text-foreground font-bold">{statistics.olt}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-blue-500">◇</span>
             <span className="text-gray-500 dark:text-gray-300">OTB:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{statistics.otb}</span>
+            <span className="text-foreground font-bold">{statistics.otb}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-purple-400">◆</span>
             <span className="text-gray-500 dark:text-gray-300">JC:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{statistics.jc}</span>
+            <span className="text-foreground font-bold">{statistics.jc}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-cyan-500">■</span>
             <span className="text-gray-500 dark:text-gray-300">ODC:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{statistics.odc}</span>
+            <span className="text-foreground font-bold">{statistics.odc}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-green-500">▲</span>
             <span className="text-gray-500 dark:text-gray-300">ODP:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{statistics.odp}</span>
+            <span className="text-foreground font-bold">{statistics.odp}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-blue-500">👤</span>
             <span className="text-gray-500 dark:text-gray-300">Customers:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{statistics.customers}</span>
+            <span className="text-foreground font-bold">{statistics.customers}</span>
           </div>
           <div className="flex items-center space-x-2">
             <span className="text-green-500">✓</span>
             <span className="text-gray-500 dark:text-gray-300">Active:</span>
-            <span className="text-gray-900 dark:text-white font-bold">{statistics.active}</span>
+            <span className="text-foreground font-bold">{statistics.active}</span>
           </div>
         </div>
       </div>
@@ -130,13 +130,13 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
           placeholder={t('network.unifiedMap.searchPlaceholder')}
           value={filters.search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white rounded-lg border border-gray-200 dark:border-gray-700 focus:border-blue-500 focus:outline-none"
+          className="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-900 text-foreground rounded-lg border border-border focus:border-blue-500 focus:outline-none"
         />
       </div>
 
       {/* Entity Types Filter */}
       <div>
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-2 text-sm">
+        <h4 className="text-foreground font-semibold mb-2 text-sm">
           {t('network.unifiedMap.filterByType')}
         </h4>
         <div className="space-y-1">
@@ -162,7 +162,7 @@ export default function FilterPanel({ filters, onFilterChange, statistics }: Fil
 
       {/* Status Filter */}
       <div>
-        <h4 className="text-gray-900 dark:text-white font-semibold mb-2 text-sm">
+        <h4 className="text-foreground font-semibold mb-2 text-sm">
           {t('network.unifiedMap.filterByStatus')}
         </h4>
         <div className="space-y-1">

@@ -114,7 +114,7 @@ export default function OLTAlertsPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <Link href="/admin/olt/monitoring">
-            <button className="inline-flex items-center px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-300">
+            <button className="inline-flex items-center px-2 py-1.5 text-xs border border-border bg-card hover:bg-accent rounded text-muted-foreground">
               <ArrowLeft className="h-3 w-3 mr-1" />
               Monitoring
             </button>
@@ -124,7 +124,7 @@ export default function OLTAlertsPage() {
               <AlertCircle className="h-5 w-5 text-red-500" />
               OLT Alerts
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-muted-foreground">
               {unresolvedCount > 0
                 ? <>{unresolvedCount} alert aktif{criticalCount > 0 && <span className="text-red-600 font-semibold"> — {criticalCount} critical</span>}</>
                 : 'Semua alert sudah diselesaikan'}
@@ -144,7 +144,7 @@ export default function OLTAlertsPage() {
           )}
           <button
             onClick={() => refetchAlerts()}
-            className="inline-flex items-center px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300"
+            className="inline-flex items-center px-3 py-1.5 text-xs border border-border bg-card hover:bg-accent rounded text-muted-foreground"
           >
             <RefreshCw className="h-3 w-3 mr-1" />
             Refresh
@@ -155,25 +155,25 @@ export default function OLTAlertsPage() {
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className={`rounded-lg border p-3 ${
-          criticalCount > 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+          criticalCount > 0 ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800' : 'bg-card border-slate-200 dark:border-slate-800'
         }`}>
           <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Critical</p>
-          <p className={`text-2xl font-bold ${criticalCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-slate-700 dark:text-slate-200'}`}>{criticalCount}</p>
+          <p className={`text-2xl font-bold ${criticalCount > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>{criticalCount}</p>
           <p className="text-[10px] text-slate-400">Aktif</p>
         </div>
         <div className={`rounded-lg border p-3 ${
-          warningCount > 0 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+          warningCount > 0 ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800' : 'bg-card border-slate-200 dark:border-slate-800'
         }`}>
           <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Warning</p>
-          <p className={`text-2xl font-bold ${warningCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-700 dark:text-slate-200'}`}>{warningCount}</p>
+          <p className={`text-2xl font-bold ${warningCount > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-foreground'}`}>{warningCount}</p>
           <p className="text-[10px] text-slate-400">Aktif</p>
         </div>
-        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+        <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Total</p>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{alerts.length}</p>
           <p className="text-[10px] text-slate-400">Semua waktu</p>
         </div>
-        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+        <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Resolved</p>
           <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{resolvedCount}</p>
           <p className="text-[10px] text-slate-400">Selesai</p>
@@ -181,12 +181,12 @@ export default function OLTAlertsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+      <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
         <div className="flex flex-wrap gap-2">
           <select
             value={resolvedFilter}
             onChange={(e) => setResolvedFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="all">Semua Alert</option>
             <option value="false">Belum Selesai</option>
@@ -195,7 +195,7 @@ export default function OLTAlertsPage() {
           <select
             value={severityFilter}
             onChange={(e) => setSeverityFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="all">Semua Severity</option>
             <option value="critical">Critical</option>
@@ -205,7 +205,7 @@ export default function OLTAlertsPage() {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
-            className="px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
           >
             <option value="all">Semua Tipe</option>
             <option value="olt_offline">OLT Offline</option>
@@ -221,10 +221,10 @@ export default function OLTAlertsPage() {
       {/* Alert List */}
       <div className="space-y-2">
         {alerts.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-12 text-center">
+          <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-12 text-center">
             <CheckCircle className="h-12 w-12 text-emerald-400 mx-auto mb-3" />
-            <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Tidak ada alert</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">Semua sistem berjalan normal</p>
+            <p className="text-sm text-muted-foreground font-medium">Tidak ada alert</p>
+            <p className="text-xs text-muted-foreground/70">Semua sistem berjalan normal</p>
           </div>
         ) : (
           alerts.map((alert) => {
@@ -239,7 +239,7 @@ export default function OLTAlertsPage() {
             return (
               <div
                 key={alert.id}
-                className={`bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 border-l-4 ${borderAccent} p-3 ${alert.isResolved ? 'opacity-60' : ''}`}
+                className={`bg-card rounded-lg border border-slate-200 dark:border-slate-800 border-l-4 ${borderAccent} p-3 ${alert.isResolved ? 'opacity-60' : ''}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
@@ -270,8 +270,8 @@ export default function OLTAlertsPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300">{alert.message}</p>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                      <p className="text-xs text-muted-foreground">{alert.message}</p>
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-[10px] text-muted-foreground">
                         {alert.olt && (
                           <span className="flex items-center gap-0.5">
                             <Wifi className="h-2.5 w-2.5" />
@@ -298,7 +298,7 @@ export default function OLTAlertsPage() {
                     <button
                       onClick={() => handleResolve(alert.id)}
                       disabled={resolving === alert.id || resolvingAll}
-                      className="inline-flex items-center px-2 py-1 text-[10px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 rounded text-slate-700 dark:text-slate-300 hover:text-emerald-700 dark:hover:text-emerald-400 disabled:opacity-50 flex-shrink-0 transition-colors"
+                      className="inline-flex items-center px-2 py-1 text-[10px] border border-border bg-card hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-300 dark:hover:border-emerald-700 rounded text-muted-foreground hover:text-emerald-700 dark:hover:text-emerald-400 disabled:opacity-50 flex-shrink-0 transition-colors"
                     >
                       {resolving === alert.id
                         ? <RefreshCw className="h-3 w-3 animate-spin" />

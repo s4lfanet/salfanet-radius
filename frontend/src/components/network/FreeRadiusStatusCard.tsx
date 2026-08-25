@@ -39,7 +39,7 @@ export default function FreeRadiusStatusCard({ className = '' }: Props) {
 
   return (
     <div
-      className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl p-3 ${className}`}
+      className={`bg-card border border-border rounded-xl p-3 ${className}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
@@ -47,7 +47,7 @@ export default function FreeRadiusStatusCard({ className = '' }: Props) {
           <span className="text-teal-600 dark:text-teal-400">
             <Radio size={14} />
           </span>
-          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             FreeRADIUS
           </span>
         </div>
@@ -55,7 +55,7 @@ export default function FreeRadiusStatusCard({ className = '' }: Props) {
           onClick={() => fetchStatus(true)}
           disabled={refreshing || loading}
           title="Refresh status"
-          className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+          className="p-1 rounded hover:bg-accent transition-colors disabled:opacity-50"
         >
           <RefreshCw
             size={12}
@@ -66,7 +66,7 @@ export default function FreeRadiusStatusCard({ className = '' }: Props) {
 
       {/* Body */}
       {loading ? (
-        <div className="h-5 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+        <div className="h-5 bg-muted rounded animate-pulse" />
       ) : !data ? (
         <p className="text-xs text-gray-400">Tidak dapat mengambil status</p>
       ) : (

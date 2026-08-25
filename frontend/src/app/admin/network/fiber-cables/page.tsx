@@ -239,7 +239,7 @@ export default function FiberCablesPage() {
         <div className="flex gap-2">
           <button
             onClick={() => cablesQuery.refetch()}
-            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1"
+            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent flex items-center gap-1"
           >
             <RefreshCcw className="h-3 w-3" />
             {t('common.refresh')}
@@ -256,28 +256,28 @@ export default function FiberCablesPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Cable className="h-4 w-4 text-blue-500" />
             <span className="text-xs text-gray-500">{t('fiberCable.totalCables')}</span>
           </div>
           <p className="text-xl font-bold mt-1">{stats.total}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Circle className="h-4 w-4 text-purple-500" />
             <span className="text-xs text-gray-500">{t('fiberCable.totalCores')}</span>
           </div>
           <p className="text-xl font-bold mt-1 text-purple-600">{stats.totalCores}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-green-500" />
             <span className="text-xs text-gray-500">{t('common.active')}</span>
           </div>
           <p className="text-xl font-bold mt-1 text-green-600">{stats.active}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Layers className="h-4 w-4 text-orange-500" />
             <span className="text-xs text-gray-500">{t('fiberCable.cableTypes')}</span>
@@ -287,7 +287,7 @@ export default function FiberCablesPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+      <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-[200px]">
             <input
@@ -329,7 +329,7 @@ export default function FiberCablesPage() {
           filteredCables.map((cable) => (
             <div
               key={cable.id}
-              className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 overflow-hidden hover:shadow-lg transition-shadow"
+              className="bg-card rounded-lg border dark:border-gray-800 overflow-hidden hover:shadow-lg transition-shadow"
             >
               {/* Card Header */}
               <div className="p-3 border-b dark:border-gray-800 flex items-start justify-between">
@@ -398,7 +398,7 @@ export default function FiberCablesPage() {
                 </button>
                 <button
                   onClick={() => handleEdit(cable)}
-                  className="p-1.5 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                  className="p-1.5 text-gray-600 hover:bg-accent rounded"
                   title={t('common.edit')}
                 >
                   <Pencil className="h-4 w-4" />
@@ -419,8 +419,8 @@ export default function FiberCablesPage() {
       {/* Add/Edit Dialog */}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900">
+          <div className="bg-card rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-card">
               <div>
                 <h2 className="text-sm font-semibold flex items-center gap-2">
                   <Cable className="h-4 w-4 text-blue-500" />
@@ -430,7 +430,7 @@ export default function FiberCablesPage() {
               </div>
               <button
                 onClick={() => { setIsDialogOpen(false); resetForm(); }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -439,7 +439,7 @@ export default function FiberCablesPage() {
             <form onSubmit={handleSubmit} className="p-4 space-y-4">
               {/* Basic Info */}
               <div className="space-y-3">
-                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <h3 className="text-xs font-semibold text-muted-foreground flex items-center gap-2">
                   <Cable className="h-3.5 w-3.5" />
                   {t('fiberCable.basicInfo')}
                 </h3>
@@ -484,7 +484,7 @@ export default function FiberCablesPage() {
 
               {/* Cable Preset */}
               <div className="space-y-3">
-                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('fiberCable.presets')}</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground">{t('fiberCable.presets')}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {CABLE_PRESETS.map(preset => {
                     const isActive = parseInt(formData.tubeCount) === preset.tubeCount && 
@@ -497,7 +497,7 @@ export default function FiberCablesPage() {
                         className={`p-2 rounded-lg border-2 text-center transition-all ${
                           isActive 
                             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                            : 'border-border hover:border-gray-300'
                         }`}
                       >
                         <span className="text-[10px] font-medium">{preset.label}</span>
@@ -562,7 +562,7 @@ export default function FiberCablesPage() {
                 <button
                   type="button"
                   onClick={() => { setIsDialogOpen(false); resetForm(); }}
-                  className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-accent"
                 >
                   {t('common.cancel')}
                 </button>
@@ -581,8 +581,8 @@ export default function FiberCablesPage() {
       {/* Detail Dialog */}
       {isDetailDialogOpen && selectedCable && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900">
+          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-card">
               <div>
                 <h2 className="text-sm font-semibold flex items-center gap-2">
                   <Cable className="h-4 w-4 text-blue-500" />
@@ -592,7 +592,7 @@ export default function FiberCablesPage() {
               </div>
               <button
                 onClick={() => setIsDetailDialogOpen(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -621,7 +621,7 @@ export default function FiberCablesPage() {
 
               {/* Tubes List */}
               <div className="space-y-2">
-                <h3 className="text-xs font-semibold text-gray-700 dark:text-gray-300">{t('fiberCable.tubeList')}</h3>
+                <h3 className="text-xs font-semibold text-muted-foreground">{t('fiberCable.tubeList')}</h3>
                 {selectedCable.tubes?.map((tube) => (
                   <div key={tube.id} className="border dark:border-gray-700 rounded-lg overflow-hidden">
                     <button
@@ -656,7 +656,7 @@ export default function FiberCablesPage() {
                                   ? 'bg-green-50 dark:bg-green-900/20 border-green-200' 
                                   : core.status === 'used'
                                     ? 'bg-red-50 dark:bg-red-900/20 border-red-200'
-                                    : 'bg-gray-50 dark:bg-gray-800 border-gray-200'
+                                    : 'bg-muted border-gray-200'
                               }`}
                               title={`Core ${core.coreNumber} - ${core.colorCode} (${core.status})`}
                             >

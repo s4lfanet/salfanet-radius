@@ -68,7 +68,7 @@ export default function GenieACSConfigPage() {
         </div>
         <button
           onClick={() => refetch()}
-          className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800"
+          className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-accent"
         >
           <RefreshCw className="w-4 h-4" /> Refresh
         </button>
@@ -80,7 +80,7 @@ export default function GenieACSConfigPage() {
 
       <div className="border rounded-md overflow-hidden">
         <table className="w-full text-sm">
-          <thead className="bg-slate-100 dark:bg-slate-800">
+          <thead className="bg-muted">
             <tr>
               <th className="text-left px-3 py-2">Key</th>
               <th className="text-left px-3 py-2">Value</th>
@@ -114,7 +114,7 @@ export default function GenieACSConfigPage() {
                   <td className="px-3 py-2 text-right whitespace-nowrap">
                     <button
                       onClick={() => saveOne(c._id, draft[c._id] ?? '')}
-                      className="px-2 py-1 text-xs border rounded hover:bg-slate-50 dark:hover:bg-slate-800"
+                      className="px-2 py-1 text-xs border rounded hover:bg-accent"
                     >
                       <Save className="w-3 h-3 inline" />
                     </button>

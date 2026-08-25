@@ -310,7 +310,7 @@ export default function SplicePointsPage() {
           <button
             onClick={() => splicesQuery.refetch()}
             disabled={loading}
-            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-1 disabled:opacity-50"
+            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent flex items-center gap-1 disabled:opacity-50"
           >
             <RefreshCcw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
             {t('common.refresh')}
@@ -327,35 +327,35 @@ export default function SplicePointsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Link2 className="h-4 w-4 text-blue-500" />
             <span className="text-xs text-gray-500">{t('splicePoint.totalSplice')}</span>
           </div>
           <p className="text-xl font-bold mt-1">{stats.total}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-blue-500" />
             <span className="text-xs text-gray-500">Fusion</span>
           </div>
           <p className="text-xl font-bold mt-1 text-blue-600">{stats.fusion}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-orange-500" />
             <span className="text-xs text-gray-500">Mechanical</span>
           </div>
           <p className="text-xl font-bold mt-1 text-orange-600">{stats.mechanical}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Link2 className="h-4 w-4 text-purple-500" />
             <span className="text-xs text-gray-500">Pigtail</span>
           </div>
           <p className="text-xl font-bold mt-1 text-purple-600">{stats.pigtail}</p>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+        <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-green-500" />
             <span className="text-xs text-gray-500">{t('splicePoint.avgLoss')}</span>
@@ -365,7 +365,7 @@ export default function SplicePointsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+      <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="flex items-center gap-2 flex-1 min-w-[200px]">
@@ -412,7 +412,7 @@ export default function SplicePointsPage() {
             return (
               <div
                 key={splice.id}
-                className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 overflow-hidden hover:shadow-lg transition-shadow"
+                className="bg-card rounded-lg border dark:border-gray-800 overflow-hidden hover:shadow-lg transition-shadow"
               >
                 {/* Card Header */}
                 <div className="p-3 border-b dark:border-gray-800 flex items-center justify-between">
@@ -421,7 +421,7 @@ export default function SplicePointsPage() {
                       {splice.spliceType}
                     </span>
                     {splice.locationDescription && (
-                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[150px]">
+                      <span className="text-xs text-muted-foreground truncate max-w-[150px]">
                         {splice.locationDescription}
                       </span>
                     )}
@@ -444,7 +444,7 @@ export default function SplicePointsPage() {
                   
                   <div className="flex items-center justify-between gap-2">
                     {/* Incoming Core */}
-                    <div className="flex-1 text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <div className="flex-1 text-center p-2 bg-card rounded-lg">
                       <p className="text-[9px] text-gray-500 mb-1">Incoming</p>
                       {splice.incomingCore ? (
                         <>
@@ -470,7 +470,7 @@ export default function SplicePointsPage() {
                     </div>
 
                     {/* Outgoing Core */}
-                    <div className="flex-1 text-center p-2 bg-white dark:bg-gray-800 rounded-lg">
+                    <div className="flex-1 text-center p-2 bg-card rounded-lg">
                       <p className="text-[9px] text-gray-500 mb-1">Outgoing</p>
                       {splice.outgoingCore ? (
                         <>
@@ -541,7 +541,7 @@ export default function SplicePointsPage() {
       </div>
 
       {/* Loss Quality Guide */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 p-3">
+      <div className="bg-card rounded-lg border dark:border-gray-800 p-3">
         <h3 className="text-[10px] font-semibold text-gray-500 mb-2">{t('splicePoint.qualityGuide')}</h3>
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center gap-2">
@@ -566,8 +566,8 @@ export default function SplicePointsPage() {
       {/* Create Splice Dialog */}
       {isCreateDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900">
+          <div className="bg-card rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between sticky top-0 bg-card">
               <div>
                 <h2 className="text-sm font-semibold flex items-center gap-2">
                   <Link2 className="h-4 w-4 text-blue-500" />
@@ -577,7 +577,7 @@ export default function SplicePointsPage() {
               </div>
               <button
                 onClick={() => { setIsCreateDialogOpen(false); resetForm(); }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -599,7 +599,7 @@ export default function SplicePointsPage() {
                         className={`p-3 rounded-lg border-2 transition-all ${
                           isActive 
                             ? `border-${type.color}-500 bg-${type.color}-50 dark:bg-${type.color}-900/20`
-                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                            : 'border-border hover:border-gray-300'
                         }`}
                       >
                         <Icon className={`h-5 w-5 mx-auto mb-1 ${isActive ? `text-${type.color}-600` : 'text-gray-400'}`} />
@@ -751,7 +751,7 @@ export default function SplicePointsPage() {
                 <button
                   type="button"
                   onClick={() => { setIsCreateDialogOpen(false); resetForm(); }}
-                  className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-accent"
                 >
                   {t('common.cancel')}
                 </button>
@@ -771,7 +771,7 @@ export default function SplicePointsPage() {
       {/* Detail Dialog */}
       {isDetailDialogOpen && selectedSplice && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-lg w-full">
+          <div className="bg-card rounded-lg shadow-xl max-w-lg w-full">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Link2 className="h-4 w-4 text-blue-500" />
@@ -779,7 +779,7 @@ export default function SplicePointsPage() {
               </h2>
               <button
                 onClick={() => setIsDetailDialogOpen(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -801,7 +801,7 @@ export default function SplicePointsPage() {
               </div>
 
               {/* Connection Visual */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="p-4 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
                   <div className="text-center">
                     <p className="text-[10px] text-gray-500 mb-1">Incoming</p>
@@ -820,7 +820,7 @@ export default function SplicePointsPage() {
                   
                   <div className="flex-1 px-4">
                     <div className="border-t-2 border-dashed border-gray-300 dark:border-gray-600 relative">
-                      <Link2 className="h-5 w-5 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-gray-50 dark:bg-gray-800 text-gray-400" />
+                      <Link2 className="h-5 w-5 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-muted text-gray-400" />
                     </div>
                   </div>
                   
@@ -875,7 +875,7 @@ export default function SplicePointsPage() {
                 {selectedSplice.notes && (
                   <div className="py-2">
                     <span className="text-xs text-gray-500 block mb-1">{t('common.notes')}</span>
-                    <p className="text-sm bg-gray-50 dark:bg-gray-800 p-2 rounded">{selectedSplice.notes}</p>
+                    <p className="text-sm bg-muted p-2 rounded">{selectedSplice.notes}</p>
                   </div>
                 )}
               </div>
@@ -884,7 +884,7 @@ export default function SplicePointsPage() {
             <div className="px-4 py-3 border-t dark:border-gray-800 flex justify-end">
               <button
                 onClick={() => setIsDetailDialogOpen(false)}
-                className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="px-4 py-2 text-sm border dark:border-gray-700 rounded-lg hover:bg-accent"
               >
                 {t('common.close')}
               </button>

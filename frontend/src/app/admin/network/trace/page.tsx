@@ -110,7 +110,7 @@ function LogicalTraceTab() {
           {traceResult ? (
             <TraceResultDisplay path={traceResult.path} summary={traceResult.summary} onNodeClick={() => {}} />
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-12 text-center border border-gray-200 dark:border-gray-700">
+            <div className="bg-card rounded-lg shadow p-12 text-center border border-border">
               <GitBranch className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-2">{t('network.tracing.selectNodeToStart')}</h3>
               <p className="text-sm text-gray-500">{t('network.tracing.selectNodeDescription')}</p>
@@ -286,7 +286,7 @@ function PhysicalTraceTab() {
         <Card className="bg-gray-50 dark:bg-gray-900 border-dashed">
           <CardContent className="p-6 sm:p-8 text-center">
             <Route className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">How to Trace Fiber Paths</h3>
+            <h3 className="text-lg font-medium text-muted-foreground mb-2">How to Trace Fiber Paths</h3>
             <p className="text-gray-500 max-w-md mx-auto">Select a search type, enter the core ID or device details, and click Trace to visualize the complete fiber path.</p>
             <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
               {([
@@ -294,7 +294,7 @@ function PhysicalTraceTab() {
                 ['By Device', 'Trace from ODP, OTB, or customer', Box, 'text-green-500'],
                 ['View Splices', 'See all splice points in path', Link2, 'text-yellow-500'],
               ] as Array<[string, string, LucideIcon, string]>).map(([title, desc, Icon, cls]) => (
-                <div key={title} className="p-4 bg-white dark:bg-gray-800 rounded-lg border">
+                <div key={title} className="p-4 bg-card rounded-lg border">
                   {React.createElement(Icon, { className: `h-8 w-8 ${cls} mx-auto mb-2` })}
                   <p className="text-sm font-medium">{title}</p>
                   <p className="text-xs text-gray-500">{desc}</p>
@@ -318,22 +318,22 @@ export default function TracePage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Network Trace</h1>
-          <p className="text-gray-500 dark:text-gray-400">Logical path tracing and physical fiber tracing</p>
+          <h1 className="text-3xl font-bold text-foreground mb-1">Network Trace</h1>
+          <p className="text-muted-foreground">Logical path tracing and physical fiber tracing</p>
         </div>
 
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-200 dark:bg-gray-800 rounded-lg p-1 mb-6 w-fit">
           <button
             onClick={() => setActiveTab('logical')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'logical' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'}`}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'logical' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-gray-900'}`}
           >
             <GitBranch className="h-4 w-4" />
             Logical Path
           </button>
           <button
             onClick={() => setActiveTab('physical')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'physical' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'}`}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-md text-sm font-medium transition-colors ${activeTab === 'physical' ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-muted-foreground hover:text-gray-900'}`}
           >
             <Zap className="h-4 w-4" />
             Physical Fiber

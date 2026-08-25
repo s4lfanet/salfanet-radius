@@ -176,7 +176,7 @@ export default function SplitterSection({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-900 rounded-lg border dark:border-gray-800 ${className}`}>
+    <div className={`bg-card rounded-lg border dark:border-gray-800 ${className}`}>
       {/* Header */}
       <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function SplitterSection({
             <>
               <button
                 onClick={() => setIsEditMode(false)}
-                className="px-2 py-1 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="px-2 py-1 text-xs border dark:border-gray-700 rounded hover:bg-accent"
               >
                 Batal
               </button>
@@ -216,7 +216,7 @@ export default function SplitterSection({
       </div>
 
       {/* Stats Row */}
-      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b dark:border-gray-800 flex items-center gap-4 text-[10px]">
+      <div className="px-4 py-2 bg-muted/50 border-b dark:border-gray-800 flex items-center gap-4 text-[10px]">
         <span className="text-gray-500">
           Type: <b className="text-orange-600">{config.splitterType}</b>
         </span>
@@ -250,7 +250,7 @@ export default function SplitterSection({
                       className={`w-full p-2 rounded-lg border-2 text-left transition-all ${
                         config.splitterType === type.value
                           ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                          : 'border-border hover:border-gray-300'
                       }`}
                     >
                       <span className="text-xs font-semibold">{type.value}</span>
@@ -270,7 +270,7 @@ export default function SplitterSection({
                       className={`p-2 rounded-lg border-2 text-center transition-all ${
                         config.ratio === ratio.value
                           ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
+                          : 'border-border hover:border-gray-300'
                       }`}
                     >
                       <span className="text-xs font-bold">{ratio.value}</span>
@@ -290,15 +290,15 @@ export default function SplitterSection({
                 </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                <div className="p-2 bg-white dark:bg-gray-800 rounded">
+                <div className="p-2 bg-card rounded">
                   <p className="text-[9px] text-gray-500">Input Loss</p>
                   <p className="text-sm font-bold text-orange-600">{config.inputLoss} dB</p>
                 </div>
-                <div className="p-2 bg-white dark:bg-gray-800 rounded">
+                <div className="p-2 bg-card rounded">
                   <p className="text-[9px] text-gray-500">Output Loss</p>
                   <p className="text-sm font-bold text-orange-600">{config.outputLoss} dB</p>
                 </div>
-                <div className="p-2 bg-white dark:bg-gray-800 rounded">
+                <div className="p-2 bg-card rounded">
                   <p className="text-[9px] text-gray-500">Total Loss/Port</p>
                   <p className="text-sm font-bold text-red-600">
                     {(config.inputLoss + config.outputLoss).toFixed(1)} dB

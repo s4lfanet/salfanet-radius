@@ -55,10 +55,10 @@ export function JointClosureDiagram({
     const fiberCount = node.fiberCount || 0;
     if (fiberCount === 0) {
       return (
-        <div className="jc-diagram-container border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
+        <div className="jc-diagram-container border rounded-lg p-4 bg-card shadow-sm">
           <div className="text-center py-8">
-            <p className="text-gray-500 dark:text-gray-400">{t('network.diagram.noPortData')}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">{t('network.diagram.configureFiberCountFirst')}</p>
+            <p className="text-muted-foreground">{t('network.diagram.noPortData')}</p>
+            <p className="text-xs text-muted-foreground/70 mt-2">{t('network.diagram.configureFiberCountFirst')}</p>
           </div>
         </div>
       );
@@ -88,20 +88,20 @@ export function JointClosureDiagram({
   const downstreamY = centerY + boxHeight / 2 + 40;
 
   return (
-    <div className="jc-diagram-container border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
+    <div className="jc-diagram-container border border-border rounded-lg p-4 bg-card shadow-sm">
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{node.code}</h3>
+              <h3 className="text-lg font-semibold text-foreground">{node.code}</h3>
               <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full font-medium">
                 JOINT CLOSURE
               </span>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{node.name}</p>
             {node.address && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">📍 {node.address}</p>
+              <p className="text-xs text-muted-foreground mt-1">📍 {node.address}</p>
             )}
           </div>
           <div className="text-right">
@@ -112,8 +112,8 @@ export function JointClosureDiagram({
             }`}>
               {node.status}
             </span>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Type: {node.type}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground mt-1">Type: {node.type}</p>
+            <p className="text-xs text-muted-foreground">
               {upstreamPorts.length} IN / {downstreamPorts.length} OUT
             </p>
           </div>
@@ -324,24 +324,24 @@ export function JointClosureDiagram({
         <div className="mt-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-md border border-purple-200 dark:border-purple-700">
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">{t('network.common.port')}:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">
+              <span className="font-medium text-muted-foreground">{t('network.common.port')}:</span>
+              <span className="ml-2 text-foreground">
                 {hoveredPort.number <= node.inputPorts ? 'IN' : 'OUT'}-{hoveredPort.number}
               </span>
             </div>
             <div>
-              <span className="font-medium text-gray-700 dark:text-gray-300">{t('network.common.status')}:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">{hoveredPort.status}</span>
+              <span className="font-medium text-muted-foreground">{t('network.common.status')}:</span>
+              <span className="ml-2 text-foreground">{hoveredPort.status}</span>
             </div>
             {hoveredPort.assignedTo && (
               <div className="col-span-2">
-                <span className="font-medium text-gray-700 dark:text-gray-300">{t('network.common.connectedTo')}:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">{hoveredPort.assignedTo}</span>
+                <span className="font-medium text-muted-foreground">{t('network.common.connectedTo')}:</span>
+                <span className="ml-2 text-foreground">{hoveredPort.assignedTo}</span>
               </div>
             )}
             {hoveredPort.notes && (
               <div className="col-span-2">
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{hoveredPort.notes}</p>
+                <p className="text-xs text-muted-foreground mt-1">{hoveredPort.notes}</p>
               </div>
             )}
           </div>
@@ -351,23 +351,23 @@ export function JointClosureDiagram({
       {/* Connection Details */}
       {node.connections.length > 0 && (
         <div className="mt-4">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">{t('network.common.fiberConnections')}</h4>
+          <h4 className="text-sm font-semibold text-foreground mb-2">{t('network.common.fiberConnections')}</h4>
           <div className="max-h-32 overflow-y-auto space-y-1">
             {node.connections.slice(0, 5).map((conn, idx) => (
               <div
                 key={idx}
                 className="flex items-center justify-between text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600"
               >
-                <span className="text-gray-700 dark:text-gray-300">
+                <span className="text-muted-foreground">
                   {t('network.common.port')} {conn.from} → {conn.to}
                 </span>
-                <span className="text-gray-500 dark:text-gray-400">
+                <span className="text-muted-foreground">
                   {conn.type} {conn.length ? `(${conn.length}m)` : ''}
                 </span>
               </div>
             ))}
             {node.connections.length > 5 && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+              <p className="text-xs text-muted-foreground text-center">
                 +{node.connections.length - 5} {t('network.common.moreConnections')}
               </p>
             )}

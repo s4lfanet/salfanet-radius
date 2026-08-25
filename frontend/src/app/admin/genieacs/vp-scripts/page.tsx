@@ -224,10 +224,10 @@ export default function VpScriptsPage() {
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">
             VP Scripts (GenieACS)
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-muted-foreground">
             Kelola Virtual Parameter scripts — disimpan di Prisma, otomatis sync ke GenieACS NBI
           </p>
         </div>
@@ -235,7 +235,7 @@ export default function VpScriptsPage() {
           <button
             onClick={() => refetch()}
             disabled={loading}
-            className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800 dark:border-slate-700"
+            className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-accent dark:border-slate-700"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
@@ -304,7 +304,7 @@ export default function VpScriptsPage() {
       {/* Table */}
       <div className="border rounded-lg overflow-hidden dark:border-slate-700">
         <table className="w-full text-sm">
-          <thead className="bg-slate-100 dark:bg-slate-800">
+          <thead className="bg-muted">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium">Nama VP</th>
               <th className="text-left px-4 py-2.5 font-medium hidden md:table-cell">Deskripsi</th>
@@ -331,17 +331,17 @@ export default function VpScriptsPage() {
               </tr>
             ) : (
               items.map((vp) => (
-                <tr key={vp._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <tr key={vp._id} className="hover:bg-accent/50">
                   <td className="px-4 py-3">
                     <span className="font-mono font-medium text-purple-700 dark:text-purple-400">
                       {vp._id}
                     </span>
                   </td>
-                  <td className="px-4 py-3 hidden md:table-cell text-slate-500 dark:text-slate-400 text-xs">
+                  <td className="px-4 py-3 hidden md:table-cell text-muted-foreground text-xs">
                     {vp.description || <span className="italic">—</span>}
                   </td>
                   <td className="px-4 py-3 hidden lg:table-cell">
-                    <code className="text-xs text-slate-600 dark:text-slate-400 font-mono">
+                    <code className="text-xs text-muted-foreground font-mono">
                       {(vp.script || '').split('\n').find((l) => l.trim() && !l.startsWith('/'))?.slice(0, 70) || '—'}
                     </code>
                   </td>
@@ -369,7 +369,7 @@ export default function VpScriptsPage() {
                       )}
                       <button
                         onClick={() => setEditing({ ...vp })}
-                        className="px-2.5 py-1 text-xs border rounded hover:bg-slate-50 dark:hover:bg-slate-800 dark:border-slate-600"
+                        className="px-2.5 py-1 text-xs border rounded hover:bg-accent dark:border-slate-600"
                       >
                         Edit
                       </button>
@@ -390,7 +390,7 @@ export default function VpScriptsPage() {
 
       {/* Sync status summary */}
       {!loading && items.length > 0 && (
-        <div className="text-xs text-slate-500 dark:text-slate-400">
+        <div className="text-xs text-muted-foreground">
           Total: {items.length} VP script ·{' '}
           <span className="text-green-600 dark:text-green-400">
             {items.filter((x) => x.syncedAt && !x.syncError).length} synced
@@ -407,10 +407,10 @@ export default function VpScriptsPage() {
       {/* Edit Modal */}
       {editing && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+          <div className="bg-card rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
             <div className="p-4 border-b dark:border-slate-700 flex items-center justify-between">
               <div>
-                <h2 className="font-semibold text-gray-900 dark:text-white">
+                <h2 className="font-semibold text-foreground">
                   {items.find((x) => x._id === editing._id) ? `Edit VP: ${editing._id}` : 'Buat VP Script Baru'}
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -425,7 +425,7 @@ export default function VpScriptsPage() {
             <div className="p-4 space-y-3 overflow-y-auto flex-1">
               {/* Name */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   ID / Nama VP <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -442,7 +442,7 @@ export default function VpScriptsPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Deskripsi (opsional)
                 </label>
                 <input
@@ -455,7 +455,7 @@ export default function VpScriptsPage() {
 
               {/* Script */}
               <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-medium text-muted-foreground mb-1">
                   Script JavaScript <span className="text-red-500">*</span>
                 </label>
                 <textarea
@@ -463,7 +463,7 @@ export default function VpScriptsPage() {
                   onChange={(e) => setEditing({ ...editing, script: e.target.value })}
                   rows={18}
                   spellCheck={false}
-                  className="w-full font-mono text-xs border rounded-md p-3 bg-slate-50 dark:bg-slate-800/80 dark:border-slate-600 dark:text-green-300 resize-none"
+                  className="w-full font-mono text-xs border rounded-md p-3 bg-input/80 dark:border-slate-600 dark:text-green-300 resize-none"
                   placeholder={SAMPLE_SCRIPT}
                 />
                 <p className="text-xs text-slate-400 mt-1">
@@ -493,7 +493,7 @@ export default function VpScriptsPage() {
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditing(null)}
-                  className="px-3 py-2 text-sm border rounded-md hover:bg-slate-50 dark:hover:bg-slate-800 dark:border-slate-600"
+                  className="px-3 py-2 text-sm border rounded-md hover:bg-accent dark:border-slate-600"
                 >
                   Batal
                 </button>

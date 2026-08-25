@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -513,7 +513,7 @@ export default function WhatsAppTemplatesPage() {
                 className={`px-2 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-xs font-medium rounded transition-colors ${
                   activeTab === type
                     ? 'bg-teal-600 text-white'
-                    : 'text-muted-foreground dark:text-muted-foreground hover:bg-gray-100 dark:hover:bg-gray-800'
+                    : 'text-muted-foreground dark:text-muted-foreground hover:bg-accent'
                 }`}
               >
                 {templateConfig[type].title}

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useState } from 'react';
@@ -1830,7 +1830,7 @@ export default function GenieACSDevicesPage() {
                   onChange={e => setGenScript(e.target.value)}
                   rows={14}
                   spellCheck={false}
-                  className="w-full font-mono text-[11px] border border-border rounded-md p-3 bg-slate-50 dark:bg-slate-800/80 dark:text-green-300 resize-none focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full font-mono text-[11px] border border-border rounded-md p-3 bg-input/80 dark:text-green-300 resize-none focus:outline-none focus:ring-1 focus:ring-purple-500"
                 />
               </div>
             </div>

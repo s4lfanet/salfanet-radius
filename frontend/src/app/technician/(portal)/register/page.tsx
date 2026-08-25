@@ -164,13 +164,13 @@ export default function TechnicianRegisterPage() {
     return (
       <div className="p-4 lg:p-6">
         <div className="max-w-lg mx-auto mt-4">
-          <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-green-200 dark:border-green-500/30 p-8 text-center">
+          <div className="bg-card/60 rounded-2xl border border-green-200 dark:border-green-500/30 p-8 text-center">
             <div className="w-16 h-16 rounded-full bg-green-100 dark:bg-green-500/20 flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-1">Pelanggan Berhasil Dibuat</h2>
-            <p className="text-sm text-slate-500 dark:text-[#e0d0ff]/60 mb-2">
-              <span className="font-semibold text-slate-700 dark:text-white">{success.name}</span> telah berhasil didaftarkan ke sistem
+            <h2 className="text-lg font-bold text-foreground mb-1">Pelanggan Berhasil Dibuat</h2>
+            <p className="text-sm text-muted-foreground mb-2">
+              <span className="font-semibold text-foreground">{success.name}</span> telah berhasil didaftarkan ke sistem
             </p>
             <div className="flex flex-col gap-1 mb-4">
               <p className="text-xs font-mono text-[#bc13fe] bg-[#bc13fe]/10 px-3 py-1.5 rounded-lg inline-block">
@@ -195,8 +195,8 @@ export default function TechnicianRegisterPage() {
     );
   }
 
-  const inputClass = 'w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#bc13fe]/60 focus:ring-1 focus:ring-[#bc13fe]/30';
-  const selectClass = 'w-full pl-9 pr-9 py-2.5 text-sm bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#00f7ff]/60 focus:ring-1 focus:ring-[#00f7ff]/30 appearance-none';
+  const inputClass = 'w-full pl-9 pr-3 py-2.5 text-sm bg-input/80 border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-[#bc13fe]/60 focus:ring-1 focus:ring-[#bc13fe]/30';
+  const selectClass = 'w-full pl-9 pr-9 py-2.5 text-sm bg-input/80 border border-border rounded-xl text-foreground focus:outline-none focus:border-[#00f7ff]/60 focus:ring-1 focus:ring-[#00f7ff]/30 appearance-none';
   const labelClass = 'block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5';
 
   return (
@@ -204,24 +204,24 @@ export default function TechnicianRegisterPage() {
       <div className="w-full">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <UserPlus className="w-5 h-5 text-[#bc13fe]" />
             {t('techPortal.register')}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Tambah pelanggan baru langsung ke sistem PPPoE
           </p>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-4 bg-slate-100 dark:bg-slate-800/60 rounded-xl p-1">
+        <div className="flex gap-1 mb-4 bg-muted rounded-xl p-1">
           <button
             type="button"
             onClick={() => setActiveTab('basic')}
             className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all ${
               activeTab === 'basic'
-                ? 'bg-white dark:bg-[#bc13fe]/20 text-slate-900 dark:text-white shadow-sm dark:shadow-[0_0_10px_rgba(188,19,254,0.3)] border border-slate-200 dark:border-[#bc13fe]/40'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white'
+                ? 'bg-card text-foreground shadow-sm border border-border'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <span className="flex items-center justify-center gap-1.5">
@@ -234,8 +234,8 @@ export default function TechnicianRegisterPage() {
             onClick={() => setActiveTab('network')}
             className={`flex-1 py-2 px-3 text-sm font-semibold rounded-lg transition-all ${
               activeTab === 'network'
-                ? 'bg-white dark:bg-[#00f7ff]/20 text-slate-900 dark:text-white shadow-sm dark:shadow-[0_0_10px_rgba(0,247,255,0.3)] border border-slate-200 dark:border-[#00f7ff]/40'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-white'
+                ? 'bg-card text-foreground shadow-sm border border-border'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <span className="flex items-center justify-center gap-1.5">
@@ -258,8 +258,8 @@ export default function TechnicianRegisterPage() {
           {activeTab === 'basic' && (
             <div className="space-y-4">
               {/* Section: Account */}
-              <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-5">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-[#e0d0ff] mb-4 flex items-center gap-2">
+              <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
+                <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <Key className="w-4 h-4 text-[#bc13fe]" />
                   Akun PPPoE
                 </h2>
@@ -282,8 +282,8 @@ export default function TechnicianRegisterPage() {
               </div>
 
               {/* Section: Personal Info */}
-              <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-5">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-[#e0d0ff] mb-4 flex items-center gap-2">
+              <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
+                <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <User className="w-4 h-4 text-[#bc13fe]" />
                   Informasi Pelanggan
                 </h2>
@@ -380,7 +380,7 @@ export default function TechnicianRegisterPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab('network')}
-                className="w-full py-3 px-4 bg-slate-100 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white font-semibold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 bg-muted/50 border border-border text-foreground font-semibold text-sm rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
               >
                 Selanjutnya: Paket &amp; Dokumen
                 <ChevronDown className="w-4 h-4 -rotate-90" />
@@ -392,8 +392,8 @@ export default function TechnicianRegisterPage() {
           {activeTab === 'network' && (
             <div className="space-y-4">
               {/* Section: Package & Network */}
-              <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-5">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-[#e0d0ff] mb-4 flex items-center gap-2">
+              <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
+                <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <Wifi className="w-4 h-4 text-[#00f7ff]" />
                   Paket & Jaringan
                 </h2>
@@ -425,7 +425,7 @@ export default function TechnicianRegisterPage() {
                           <div className="mt-2 px-4 py-3 bg-[#00f7ff]/5 dark:bg-[#00f7ff]/10 border border-[#00f7ff]/20 rounded-xl">
                             <div className="flex items-center justify-between mb-1">
                               <span className="text-sm font-bold text-[#00f7ff]">{selected.name}</span>
-                              <span className="text-sm font-bold text-slate-700 dark:text-white">{formatIDR(selected.price)}/bln</span>
+                              <span className="text-sm font-bold text-foreground">{formatIDR(selected.price)}/bln</span>
                             </div>
                           </div>
                         );
@@ -458,8 +458,8 @@ export default function TechnicianRegisterPage() {
               </div>
 
               {/* Section: Billing */}
-              <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-5">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-[#e0d0ff] mb-4 flex items-center gap-2">
+              <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
+                <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-[#bc13fe]" />
                   Pengaturan Billing
                 </h2>
@@ -475,9 +475,9 @@ export default function TechnicianRegisterPage() {
                             value={type}
                             checked={form.subscriptionType === type}
                             onChange={(e) => setValue('subscriptionType', e.target.value)}
-                            className="w-4 h-4 text-[#bc13fe] focus:ring-[#bc13fe]/50 border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900"
+                            className="w-4 h-4 text-[#bc13fe] focus:ring-[#bc13fe]/50 border-border bg-input"
                           />
-                          <span className="text-sm text-slate-700 dark:text-white">{type === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
+                          <span className="text-sm text-foreground">{type === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
                         </label>
                       ))}
                     </div>
@@ -495,8 +495,8 @@ export default function TechnicianRegisterPage() {
               </div>
 
               {/* Section: KTP Document */}
-              <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-5">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-[#e0d0ff] mb-4 flex items-center gap-2">
+              <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
+                <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-[#bc13fe]" />
                   Dokumen Identitas (KTP) <span className="text-slate-400 text-[10px] font-normal">(opsional)</span>
                 </h2>
@@ -541,7 +541,7 @@ export default function TechnicianRegisterPage() {
                           {form.installationPhotos.map((photo, index) => (
                             <div key={index} className="relative">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded-lg border border-slate-200 dark:border-slate-600" loading="lazy" />
+                              <img src={photo} alt={`Instalasi ${index + 1}`} className="w-full h-20 object-cover rounded-lg border border-border" loading="lazy" />
                               <button
                                 type="button"
                                 onClick={() => setForm((f) => ({ ...f, installationPhotos: f.installationPhotos.filter((_, i) => i !== index) }))}
@@ -584,8 +584,8 @@ export default function TechnicianRegisterPage() {
               </div>
 
               {/* Section: Advanced (Optional) */}
-              <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-5">
-                <h2 className="text-sm font-bold text-slate-700 dark:text-[#e0d0ff] mb-4 flex items-center gap-2">
+              <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
+                <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <Hash className="w-4 h-4 text-[#00f7ff]" />
                   Pengaturan Lanjutan <span className="text-slate-400 text-[10px] font-normal">(opsional)</span>
                 </h2>

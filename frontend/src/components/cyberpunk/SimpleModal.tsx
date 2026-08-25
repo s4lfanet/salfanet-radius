@@ -195,7 +195,7 @@ export function ModalTitle({ children, className }: { children: React.ReactNode;
 
 export function ModalDescription({ children, className }: { children: React.ReactNode; className?: string }) {
     return (
-        <p className={cn('text-xs text-gray-600 dark:text-gray-400 mt-1', className)}>
+        <p className={cn('text-xs text-muted-foreground mt-1', className)}>
             {children}
         </p>
     );

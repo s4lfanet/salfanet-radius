@@ -135,16 +135,16 @@ export function JointClosureDiagramV2({
   return (
     <div className="joint-closure-diagram-v2">
       {/* Info Panel */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-lg p-4 mb-4 border border-border">
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{node.code}</h3>
+              <h3 className="text-lg font-bold text-foreground">{node.code}</h3>
               <span className="px-2 py-0.5 text-xs font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full">
                 {getClosureTypeLabel(closureType)}
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{node.name}</p>
+            <p className="text-sm text-muted-foreground">{node.name}</p>
             {node.address && (
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">📍 {node.address}</p>
             )}
@@ -163,28 +163,28 @@ export function JointClosureDiagramV2({
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Cables</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">Cables</p>
+            <p className="font-medium text-foreground">
               {upstreamCables.length} ↓ / {downstreamCables.length} ↑
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Upstream Cores</p>
-            <p className="font-medium text-gray-900 dark:text-white">{totalUpstreamCores}</p>
+            <p className="text-xs text-muted-foreground">Upstream Cores</p>
+            <p className="font-medium text-foreground">{totalUpstreamCores}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Downstream Cores</p>
-            <p className="font-medium text-gray-900 dark:text-white">{totalDownstreamCores}</p>
+            <p className="text-xs text-muted-foreground">Downstream Cores</p>
+            <p className="font-medium text-foreground">{totalDownstreamCores}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Splices</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">Splices</p>
+            <p className="font-medium text-foreground">
               {activeSplices} / {totalSplices}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Trays</p>
-            <p className="font-medium text-gray-900 dark:text-white">{node.spliceTrayCount || 1}</p>
+            <p className="text-xs text-muted-foreground">Trays</p>
+            <p className="font-medium text-foreground">{node.spliceTrayCount || 1}</p>
           </div>
         </div>
       </div>
@@ -193,12 +193,12 @@ export function JointClosureDiagramV2({
       {showSpliceDetail && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
           {/* Upstream Cables */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <div className="bg-card rounded-lg p-4 border border-border">
+            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <span className="text-blue-500">↓</span> Upstream Cables (Input)
             </h4>
             {upstreamCables.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No upstream cables configured</p>
+              <p className="text-sm text-muted-foreground">No upstream cables configured</p>
             ) : (
               <div className="space-y-3">
                 {upstreamCables.map((cable) => (
@@ -208,17 +208,17 @@ export function JointClosureDiagramV2({
                       'p-3 rounded-lg border-2 cursor-pointer transition-all',
                       selectedCable === cable.id
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        : 'border-border hover:border-gray-300 dark:hover:border-gray-600'
                     )}
                     onClick={() => onCableClick?.(cable)}
                     onMouseEnter={() => setHoveredCable(cable)}
                     onMouseLeave={() => setHoveredCable(null)}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="font-medium text-foreground">
                         {cable.cableCode}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {cable.tubeCount}T × {cable.coresPerTube}C = {cable.tubeCount * cable.coresPerTube} cores
                       </span>
                     </div>
@@ -241,12 +241,12 @@ export function JointClosureDiagramV2({
           </div>
 
           {/* Downstream Cables */}
-          <div className="bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+          <div className="bg-card rounded-lg p-4 border border-border">
+            <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
               <span className="text-green-500">↑</span> Downstream Cables (Output)
             </h4>
             {downstreamCables.length === 0 ? (
-              <p className="text-sm text-gray-500 dark:text-gray-400">No downstream cables configured</p>
+              <p className="text-sm text-muted-foreground">No downstream cables configured</p>
             ) : (
               <div className="space-y-3">
                 {downstreamCables.map((cable) => (
@@ -256,17 +256,17 @@ export function JointClosureDiagramV2({
                       'p-3 rounded-lg border-2 cursor-pointer transition-all',
                       selectedCable === cable.id
                         ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        : 'border-border hover:border-gray-300 dark:hover:border-gray-600'
                     )}
                     onClick={() => onCableClick?.(cable)}
                     onMouseEnter={() => setHoveredCable(cable)}
                     onMouseLeave={() => setHoveredCable(null)}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-gray-900 dark:text-white">
+                      <span className="font-medium text-foreground">
                         {cable.cableCode}
                       </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         {cable.tubeCount}T × {cable.coresPerTube}C = {cable.tubeCount * cable.coresPerTube} cores
                       </span>
                     </div>
@@ -292,19 +292,19 @@ export function JointClosureDiagramV2({
 
       {/* Splice Tray Visualization */}
       {showSpliceDetail && splices.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+        <div className="bg-card rounded-lg p-4 mb-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-3">
             Splice Connections ({activeSplices} active)
           </h4>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-800">
-                  <th className="px-2 py-1 text-left text-gray-600 dark:text-gray-400">From</th>
-                  <th className="px-2 py-1 text-left text-gray-600 dark:text-gray-400">To</th>
-                  <th className="px-2 py-1 text-center text-gray-600 dark:text-gray-400">Type</th>
-                  <th className="px-2 py-1 text-center text-gray-600 dark:text-gray-400">Loss (dB)</th>
-                  <th className="px-2 py-1 text-center text-gray-600 dark:text-gray-400">Status</th>
+                <tr className="bg-muted">
+                  <th className="px-2 py-1 text-left text-muted-foreground">From</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">To</th>
+                  <th className="px-2 py-1 text-center text-muted-foreground">Type</th>
+                  <th className="px-2 py-1 text-center text-muted-foreground">Loss (dB)</th>
+                  <th className="px-2 py-1 text-center text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -312,7 +312,7 @@ export function JointClosureDiagramV2({
                   <tr
                     key={splice.id}
                     className={cn(
-                      'border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800',
+                      'border-b border-border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800',
                       selectedSplice === splice.id && 'bg-purple-50 dark:bg-purple-900/20',
                       highlightPath.includes(splice.id) && 'bg-yellow-50 dark:bg-yellow-900/20'
                     )}
@@ -335,12 +335,12 @@ export function JointClosureDiagramV2({
                         'px-1.5 py-0.5 rounded text-xs',
                         splice.spliceType === 'FUSION'
                           ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300'
-                          : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                          : 'bg-muted text-muted-foreground'
                       )}>
                         {splice.spliceType}
                       </span>
                     </td>
-                    <td className="px-2 py-1.5 text-center text-gray-700 dark:text-gray-300">
+                    <td className="px-2 py-1.5 text-center text-muted-foreground">
                       {splice.insertionLoss?.toFixed(2) || '0.05'}
                     </td>
                     <td className="px-2 py-1.5 text-center">
@@ -355,7 +355,7 @@ export function JointClosureDiagramV2({
               </tbody>
             </table>
             {splices.length > 20 && (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+              <p className="mt-2 text-xs text-muted-foreground text-center">
                 Showing 20 of {splices.length} splices
               </p>
             )}
@@ -368,7 +368,7 @@ export function JointClosureDiagramV2({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="bg-card rounded-lg border border-border"
       >
         <defs>
           <marker id="arrowhead-jc" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -557,13 +557,13 @@ export function JointClosureDiagramV2({
 
       {/* Hovered Cable Info */}
       {hoveredCable && (
-        <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="mt-4 bg-card rounded-lg p-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
             Cable: {hoveredCable.cableCode}
           </h4>
           <div className="grid grid-cols-3 gap-4 text-xs">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Direction:</span>
+              <span className="text-muted-foreground">Direction:</span>
               <span className={cn(
                 'ml-2 font-medium',
                 hoveredCable.direction === 'UPSTREAM' ? 'text-blue-600' : 'text-green-600'
@@ -572,14 +572,14 @@ export function JointClosureDiagramV2({
               </span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Configuration:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">
+              <span className="text-muted-foreground">Configuration:</span>
+              <span className="ml-2 text-foreground">
                 {hoveredCable.tubeCount} tubes × {hoveredCable.coresPerTube} cores
               </span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Total Cores:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">
+              <span className="text-muted-foreground">Total Cores:</span>
+              <span className="ml-2 text-foreground">
                 {hoveredCable.tubeCount * hoveredCable.coresPerTube}
               </span>
             </div>
@@ -589,30 +589,30 @@ export function JointClosureDiagramV2({
 
       {/* Hovered Splice Info */}
       {hoveredSplice && (
-        <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="mt-4 bg-card rounded-lg p-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
             Splice Connection
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">From:</span>
+              <span className="text-muted-foreground">From:</span>
               <span className="ml-2 font-mono text-blue-600">
                 {hoveredSplice.fromCable} T{hoveredSplice.fromTube}-C{hoveredSplice.fromCore}
               </span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">To:</span>
+              <span className="text-muted-foreground">To:</span>
               <span className="ml-2 font-mono text-green-600">
                 {hoveredSplice.toCable} T{hoveredSplice.toTube}-C{hoveredSplice.toCore}
               </span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Type:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">{hoveredSplice.spliceType}</span>
+              <span className="text-muted-foreground">Type:</span>
+              <span className="ml-2 text-foreground">{hoveredSplice.spliceType}</span>
             </div>
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Insertion Loss:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">
+              <span className="text-muted-foreground">Insertion Loss:</span>
+              <span className="ml-2 text-foreground">
                 {hoveredSplice.insertionLoss?.toFixed(3) || '0.05'} dB
               </span>
             </div>

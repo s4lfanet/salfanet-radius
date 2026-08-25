@@ -87,11 +87,11 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
   const quality = getQualityInfo(summary.estimatedLoss);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+    <div className="bg-card rounded-lg shadow-md p-6 border border-border">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+          <h3 className="text-xl font-bold text-foreground">
             {t('network.tracing.pathFound')}
           </h3>
           <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
@@ -177,7 +177,7 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
               {/* Connection Arrow */}
               {index < path.length - 1 && (
                 <div className="flex items-center justify-center py-1">
-                  <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 text-muted-foreground/70" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a1 1 0 01-1-1V6.414l-2.293 2.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 6.414V17a1 1 0 01-1 1z" clipRule="evenodd" transform="rotate(180 10 10)" />
                   </svg>
                 </div>
@@ -191,11 +191,11 @@ export function TraceResultDisplay({ path, summary, onNodeClick }: TraceResultDi
       <div className="mt-6 p-4 bg-gray-100 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
-            <span className="text-gray-600 dark:text-gray-400">{t('network.tracing.routeQuality')}:</span>
+            <span className="text-muted-foreground">{t('network.tracing.routeQuality')}:</span>
             <span className={`ml-2 font-semibold ${quality.color}`}>{quality.label}</span>
           </div>
           <div>
-            <span className="text-gray-600 dark:text-gray-400">{t('network.tracing.redundancy')}:</span>
+            <span className="text-muted-foreground">{t('network.tracing.redundancy')}:</span>
             <span className="ml-2 font-semibold text-gray-900 dark:text-gray-200">
               {getRedundancyLabel(summary.redundancy)}
             </span>

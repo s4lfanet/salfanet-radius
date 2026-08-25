@@ -241,16 +241,16 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link href="/admin/genieacs/devices" className="hover:text-gray-700 dark:hover:text-gray-200">Devices</Link>
             <ChevronRight className="h-3.5 w-3.5" />
             <Link href={`/admin/genieacs/devices/${encodeURIComponent(deviceId)}`} className="hover:text-gray-700 dark:hover:text-gray-200 font-mono text-xs">{deviceId.slice(0, 30)}{deviceId.length > 30 ? '…' : ''}</Link>
             <ChevronRight className="h-3.5 w-3.5" />
-            <span className="text-gray-900 dark:text-white">Parameters</span>
+            <span className="text-foreground">Parameters</span>
           </div>
-          <h1 className="mt-1 text-xl font-semibold text-gray-900 dark:text-white">Parameter Browser</h1>
+          <h1 className="mt-1 text-xl font-semibold text-foreground">Parameter Browser</h1>
           {!loading && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted-foreground">
               {totalParams} parameters cached · {filtered.length} shown · {selected.size} selected
             </p>
           )}
@@ -301,11 +301,11 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
             </button>
           )}
         </div>
-        <label className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none">
           <input type="checkbox" checked={writableOnly} onChange={(e) => setWritableOnly(e.target.checked)} className="rounded" />
           Writable only
         </label>
-        <label className="flex items-center gap-1.5 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+        <label className="flex items-center gap-1.5 text-sm text-muted-foreground cursor-pointer select-none">
           <input type="checkbox" checked={hideObjects} onChange={(e) => setHideObjects(e.target.checked)} className="rounded" />
           Hide objects
         </label>
@@ -340,7 +340,7 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
 
       {/* Parameter table grouped by top-level object */}
       {!loading && !error && (
-        <div className="flex-1 overflow-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="flex-1 overflow-auto rounded-lg border border-border bg-card">
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-500">
               <Filter className="h-8 w-8 mb-2" />
@@ -348,17 +348,17 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
             </div>
           ) : (
             <table className="min-w-full text-sm">
-              <thead className="sticky top-0 bg-gray-50 dark:bg-gray-800 z-10">
+              <thead className="sticky top-0 bg-muted z-10">
                 <tr>
                   <th className="w-8 px-3 py-2" />
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Path</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 w-48">Value</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 w-32">Type</th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 w-20">RW</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Path</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-48">Value</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground w-32">Type</th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground w-20">RW</th>
                   <th className="w-8 px-3 py-2" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {Array.from(groups.entries()).map(([group, groupParams]) => {
                   const isOpen = expandedGroups.has(group) || !!search;
                   const groupSelected = groupParams.filter((p) => selected.has(p.path)).length;
@@ -389,15 +389,15 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
       {modal.open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-2xl rounded-xl border border-gray-200 bg-white shadow-xl dark:border-gray-700 dark:bg-gray-900 flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-5 py-4">
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">{modal.title}</h2>
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <h2 className="text-base font-semibold text-foreground">{modal.title}</h2>
               <button onClick={() => setModal((m) => ({ ...m, open: false }))} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
                 <X className="h-5 w-5" />
               </button>
             </div>
             <div className="flex-1 overflow-auto p-5 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-muted-foreground mb-1">
                   {modal.target === 'vp' ? 'Virtual Parameter Name' : 'Provision Name'} (ID)
                 </label>
                 <input
@@ -410,7 +410,7 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
               </div>
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Generated Script</label>
+                  <label className="text-sm font-medium text-muted-foreground">Generated Script</label>
                   <button onClick={copyScript} className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400">
                     <Copy className="h-3.5 w-3.5" />
                     Copy
@@ -423,13 +423,13 @@ export default function DeviceParametersPage({ params }: { params: Promise<{ dev
                   className="block w-full rounded-md border border-gray-300 px-3 py-2 text-xs font-mono dark:border-gray-600 dark:bg-gray-800 dark:text-white resize-none"
                 />
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 {modal.target === 'vp'
                   ? 'This will create a Virtual Parameter in GenieACS NBI (/virtual-parameters). Edit the script above if needed.'
                   : 'This will create a Provision script in GenieACS NBI (/provisions). Edit the script above if needed, then assign it to a Preset.'}
               </p>
             </div>
-            <div className="flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700 px-5 py-4">
+            <div className="flex justify-end gap-3 border-t border-border px-5 py-4">
               <button
                 onClick={() => setModal((m) => ({ ...m, open: false }))}
                 className="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -479,7 +479,7 @@ function GroupRows({
     <>
       {/* Group header row */}
       <tr
-        className="cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/60 dark:hover:bg-gray-800"
+        className="cursor-pointer bg-gray-50 hover:bg-muted/60 dark:hover:bg-gray-800"
         onClick={onToggle}
       >
         <td className="px-3 py-2" onClick={(e) => { e.stopPropagation(); onToggleGroup(); }}>
@@ -544,7 +544,7 @@ function ParameterRow({ param, isSelected, onToggle, isCopied, onCopy }: Paramet
       </td>
       <td className="px-3 py-1.5">
         <span
-          className="font-mono text-xs text-gray-700 dark:text-gray-300"
+          className="font-mono text-xs text-muted-foreground"
           style={{ paddingLeft: `${Math.min(depth - 1, 6) * 12}px` }}
           title={param.path}
         >
@@ -556,7 +556,7 @@ function ParameterRow({ param, isSelected, onToggle, isCopied, onCopy }: Paramet
       </td>
       <td className="px-3 py-1.5">
         {param.type && (
-          <span className="inline-flex rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs font-mono text-gray-600 dark:text-gray-400">
+          <span className="inline-flex rounded bg-muted px-1.5 py-0.5 text-xs font-mono text-muted-foreground">
             {param.type.replace('xsd:', '')}
           </span>
         )}

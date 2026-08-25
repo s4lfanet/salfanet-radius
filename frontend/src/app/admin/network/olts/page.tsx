@@ -491,7 +491,7 @@ export default function OLTsPage() {
             <Server className="h-5 w-5 text-teal-600" />
             {t('olt.title')}
           </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             {t('olt.subtitle')}
           </p>
         </div>
@@ -515,7 +515,7 @@ export default function OLTsPage() {
 
       {/* Overall Network Stats Card */}{/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        <div className="bg-card rounded-lg border border-border p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase">{t('common.total')} {t('nav.olt')}</p>
@@ -524,7 +524,7 @@ export default function OLTsPage() {
             <Server className="h-6 w-6 text-teal-600" />
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        <div className="bg-card rounded-lg border border-border p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase">{t('common.active')}</p>
@@ -535,7 +535,7 @@ export default function OLTsPage() {
             <Activity className="h-6 w-6 text-green-600" />
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4">
+        <div className="bg-card rounded-lg border border-border p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs text-gray-500 uppercase">{t('common.total')} {t('nav.odp')}</p>
@@ -549,13 +549,13 @@ export default function OLTsPage() {
       </div>
 
       {/* Table - Desktop View */}
-      <div className="hidden md:block bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div className="hidden md:block bg-card rounded-lg border border-border overflow-hidden">
         <div className="px-3 py-2 border-b dark:border-gray-800">
           <span className="text-xs font-medium">{t('nav.olt')} {t('common.list')}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <thead className="bg-muted/50">
               <tr>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">{t('common.name')}</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-gray-500 uppercase">{t('network.ipAddress')}</th>
@@ -574,7 +574,7 @@ export default function OLTsPage() {
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-gray-500 uppercase"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-border">
               {olts.length === 0 ? (
                 <tr>
                   <td colSpan={15} className="px-3 py-8 text-center text-gray-500 text-xs">
@@ -592,16 +592,16 @@ export default function OLTsPage() {
                         <span className="text-xs font-medium">{olt.name}</span>
                       </div>
                     </td>
-                    <td className="px-3 py-2 text-xs font-mono text-gray-600 dark:text-gray-400">
+                    <td className="px-3 py-2 text-xs font-mono text-muted-foreground">
                       {olt.ipAddress}
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell">
-                      <span className="text-xs text-gray-700 dark:text-gray-300">
+                      <span className="text-xs text-muted-foreground">
                         {olt.username || '-'}
                       </span>
                     </td>
                     <td className="px-3 py-2 hidden lg:table-cell">
-                      <span className="text-xs text-gray-700 dark:text-gray-300 font-mono">
+                      <span className="text-xs text-muted-foreground font-mono">
                         {olt.password ? '••••••••' : '-'}
                       </span>
                     </td>
@@ -691,10 +691,10 @@ export default function OLTsPage() {
                     <td className="px-3 py-2">
                       {(olt.vendor || olt.model) ? (
                         <div className="flex flex-col gap-0.5">
-                          <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                          <span className="text-[10px] font-medium text-muted-foreground">
                             {olt.vendor?.toUpperCase()}
                           </span>
-                          <span className="text-[9px] text-gray-500 dark:text-gray-400">
+                          <span className="text-[9px] text-muted-foreground">
                             {olt.model}
                           </span>
                         </div>
@@ -809,18 +809,18 @@ export default function OLTsPage() {
       {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {olts.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-8 text-center">
+          <div className="bg-card rounded-lg border border-border p-8 text-center">
             <p className="text-gray-500 text-xs">{t('common.noData')}. {t('common.clickAdd')} "{t('olt.add')}".</p>
           </div>
         ) : (
           olts.map((olt) => (
-            <div key={olt.id} className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-3">
+            <div key={olt.id} className="bg-card rounded-lg border border-border p-3">
               {/* Header */}
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-center gap-2 flex-1">
                   <Server className="h-4 w-4 text-teal-600 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm text-gray-900 dark:text-white truncate">{olt.name}</h3>
+                    <h3 className="font-medium text-sm text-foreground truncate">{olt.name}</h3>
                     <p className="text-[10px] font-mono text-gray-500 truncate">{olt.ipAddress}</p>
                   </div>
                 </div>
@@ -847,7 +847,7 @@ export default function OLTsPage() {
               </div>
 
               {/* Info Grid */}
-              <div className="grid grid-cols-2 gap-2 mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <div className="grid grid-cols-2 gap-2 mb-2 pb-2 border-b border-border">
                 <div>
                   <div className="text-[9px] text-gray-400 uppercase mb-0.5">{t('common.location')}</div>
                   <a
@@ -882,25 +882,25 @@ export default function OLTsPage() {
 
               {/* Credentials */}
               {(olt.username || olt.password || olt.snmpCommunity || olt.snmp_community) && (
-                <div className="mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="mb-2 pb-2 border-b border-border">
                   <div className="text-[9px] text-gray-400 uppercase mb-1">Credentials</div>
                   <div className="grid grid-cols-2 gap-2 text-[10px]">
                     {olt.username && (
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Username:</span>
-                        <span className="ml-1 font-mono text-gray-700 dark:text-gray-300">{olt.username}</span>
+                        <span className="text-muted-foreground">Username:</span>
+                        <span className="ml-1 font-mono text-muted-foreground">{olt.username}</span>
                       </div>
                     )}
                     {olt.password && (
                       <div>
-                        <span className="text-gray-500 dark:text-gray-400">Password:</span>
-                        <span className="ml-1 font-mono text-gray-700 dark:text-gray-300">••••••</span>
+                        <span className="text-muted-foreground">Password:</span>
+                        <span className="ml-1 font-mono text-muted-foreground">••••••</span>
                       </div>
                     )}
                     {(olt.snmpCommunity || olt.snmp_community) && (
                       <div className="col-span-2">
-                        <span className="text-gray-500 dark:text-gray-400">SNMP:</span>
-                        <span className="ml-1 font-mono text-gray-700 dark:text-gray-300">{olt.snmpCommunity || olt.snmp_community}</span>
+                        <span className="text-muted-foreground">SNMP:</span>
+                        <span className="ml-1 font-mono text-muted-foreground">{olt.snmpCommunity || olt.snmp_community}</span>
                       </div>
                     )}
                   </div>
@@ -909,13 +909,13 @@ export default function OLTsPage() {
 
               {/* Model / Vendor */}
               {(olt.vendor || olt.model) && (
-              <div className="mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+              <div className="mb-2 pb-2 border-b border-border">
                 <div className="text-[9px] text-gray-400 uppercase mb-1">Vendor / Model</div>
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[10px] font-medium text-gray-700 dark:text-gray-300">
+                    <span className="text-[10px] font-medium text-muted-foreground">
                       {olt.vendor?.toUpperCase()}
                     </span>
-                    <span className="text-[9px] text-gray-500 dark:text-gray-400">
+                    <span className="text-[9px] text-muted-foreground">
                       {olt.model}
                     </span>
                   </div>
@@ -924,7 +924,7 @@ export default function OLTsPage() {
 
               {/* ONU Status - Clickable badges */}
               {olt.onu_stats && (olt.onu_stats.online > 0 || olt.onu_stats.dying_gasp > 0 || olt.onu_stats.los > 0 || olt.onu_stats.unconfig > 0 || olt.onu_stats.offline > 0) && (
-                <div className="mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="mb-2 pb-2 border-b border-border">
                   <div className="text-[9px] text-gray-400 uppercase mb-1">ONU Status</div>
                   <div className="flex flex-wrap gap-1">
                     {olt.onu_stats.online > 0 && (
@@ -978,7 +978,7 @@ export default function OLTsPage() {
 
               {/* Routers */}
               {olt.routers && olt.routers.length > 0 && (
-                <div className="mb-2 pb-2 border-b border-gray-100 dark:border-gray-800">
+                <div className="mb-2 pb-2 border-b border-border">
                   <div className="text-[9px] text-gray-400 uppercase mb-1">{t('nav.routers')}</div>
                   <div className="flex flex-wrap gap-1">
                     {olt.routers.map((r, idx) => (
@@ -1029,7 +1029,7 @@ export default function OLTsPage() {
       {/* Add/Edit Dialog */}
       {isDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="px-4 py-3 border-b dark:border-gray-800 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold">{editingOlt ? t('olt.edit') : t('olt.add')}</h2>
@@ -1037,7 +1037,7 @@ export default function OLTsPage() {
               </div>
               <button
                 onClick={() => { setIsDialogOpen(false); setEditingOlt(null); resetForm(); }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"
+                className="p-1 hover:bg-accent rounded"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1384,7 +1384,7 @@ export default function OLTsPage() {
                 <button
                   type="button"
                   onClick={() => { setIsDialogOpen(false); setEditingOlt(null); resetForm(); }}
-                  className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+                  className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent"
                 >
                   Cancel
                 </button>
@@ -1418,7 +1418,7 @@ export default function OLTsPage() {
       {/* Import Dialog */}
       {isImportDialogOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-lg w-full max-w-md border border-gray-200 dark:border-gray-800">
+          <div className="bg-card rounded-lg w-full max-w-md border border-border">
             <div className="p-4 border-b dark:border-gray-800 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Import OLT from Excel</h2>
               <button
@@ -1430,7 +1430,7 @@ export default function OLTsPage() {
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                <p className="text-xs text-muted-foreground mb-3">
                   Download template Excel terlebih dahulu, lalu isi data OLT sesuai format yang sudah ditentukan.
                 </p>
                 <button

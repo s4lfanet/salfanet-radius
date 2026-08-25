@@ -77,7 +77,7 @@ const PRIORITY_STYLE: Record<string, string> = {
   URGENT: 'bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border-red-300 dark:border-red-500/40',
   HIGH: 'bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border-orange-300 dark:border-orange-500/40',
   MEDIUM: 'bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-500/40',
-  LOW: 'bg-slate-100 dark:bg-slate-500/20 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-500/40',
+  LOW: 'bg-slate-100 dark:bg-slate-500/20 text-muted-foreground border-slate-300 dark:border-slate-500/40',
 };
 
 const PRIORITY_LEFT: Record<string, string> = {
@@ -92,7 +92,7 @@ const STATUS_STYLE: Record<string, string> = {
   IN_PROGRESS: 'bg-cyan-100 dark:bg-cyan-500/20 text-cyan-600 dark:text-[#00f7ff] border-cyan-300 dark:border-[#00f7ff]/40',
   WAITING_CUSTOMER: 'bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-300 dark:border-purple-500/40',
   RESOLVED: 'bg-green-100 dark:bg-green-500/20 text-green-600 dark:text-green-400 border-green-300 dark:border-green-500/40',
-  CLOSED: 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border-slate-300 dark:border-slate-600/40',
+  CLOSED: 'bg-muted/50 text-muted-foreground border-border/40',
 };
 
 function formatDate(d: string) {
@@ -303,18 +303,18 @@ export default function TechnicianTicketsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
             <Ticket className="w-5 h-5 text-[#bc13fe]" />
             {t('techPortal.tickets')}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {t('techPortal.ticketsSubtitle')}
           </p>
         </div>
         <button
           onClick={loadTickets}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-[#bc13fe]/10 hover:bg-slate-200 dark:hover:bg-[#bc13fe]/20 text-slate-700 dark:text-[#e0d0ff] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl transition-all"
+          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-[#bc13fe]/10 hover:bg-slate-200 dark:hover:bg-[#bc13fe]/20 text-foreground border border-border rounded-xl transition-all"
         >
           <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           {t('techPortal.refresh')}
@@ -329,11 +329,11 @@ export default function TechnicianTicketsPage() {
           { label: t('techPortal.statusInProgress'), value: stats.inProgress, icon: <Play className="w-4 h-4" />, color: 'text-[#00f7ff] bg-[#00f7ff]/10 border-[#00f7ff]/30' },
           { label: t('techPortal.statusResolved'), value: stats.resolved, icon: <CheckCircle2 className="w-4 h-4" />, color: 'text-green-500 bg-green-500/10 border-green-500/30' },
         ].map((s) => (
-          <div key={s.label} className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4">
+          <div key={s.label} className="bg-card/60 rounded-2xl border border-border/50 p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{s.label}</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{s.value}</p>
+                <p className="text-xs text-muted-foreground">{s.label}</p>
+                <p className="text-2xl font-bold text-foreground">{s.value}</p>
               </div>
               <div className={`p-2.5 rounded-xl border flex items-center justify-center ${s.color}`}>{s.icon}</div>
             </div>
@@ -342,7 +342,7 @@ export default function TechnicianTicketsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 p-4">
+      <div className="bg-card/60 rounded-2xl border border-border/50 p-4">
         <div className="flex flex-wrap gap-3 items-center">
           <Filter className="w-4 h-4 text-[#00f7ff] flex-shrink-0" />
           <div className="flex-1 min-w-40 relative">
@@ -351,13 +351,13 @@ export default function TechnicianTicketsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={t('techPortal.searchTicket')}
-              className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#00f7ff]/60 focus:ring-1 focus:ring-[#00f7ff]/30"
+              className="w-full pl-9 pr-3 py-2 text-xs bg-input/80 border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-[#00f7ff]/60 focus:ring-1 focus:ring-[#00f7ff]/30"
             />
           </div>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#00f7ff]/60"
+            className="px-3 py-2 text-xs bg-input/80 border border-border rounded-xl text-foreground focus:outline-none focus:border-[#00f7ff]/60"
           >
             <option value="">{t('techPortal.allStatus')}</option>
             <option value="OPEN">{t('techPortal.statusOpen')}</option>
@@ -369,7 +369,7 @@ export default function TechnicianTicketsPage() {
           <select
             value={filterPriority}
             onChange={(e) => setFilterPriority(e.target.value)}
-            className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:border-[#00f7ff]/60"
+            className="px-3 py-2 text-xs bg-input/80 border border-border rounded-xl text-foreground focus:outline-none focus:border-[#00f7ff]/60"
           >
             <option value="">{t('techPortal.allPriority')}</option>
             <option value="URGENT">{t('techPortal.priorityUrgent')}</option>
@@ -384,7 +384,7 @@ export default function TechnicianTicketsPage() {
               onChange={(e) => setShowMine(e.target.checked)}
               className="rounded accent-[#bc13fe]"
             />
-            <span className="text-xs text-slate-600 dark:text-[#e0d0ff]/70 whitespace-nowrap">{t('techPortal.myTickets')}</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{t('techPortal.myTickets')}</span>
           </label>
         </div>
       </div>
@@ -397,7 +397,7 @@ export default function TechnicianTicketsPage() {
       ) : tickets.length === 0 ? (
         <div className="text-center py-16">
           <Ticket className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-          <p className="text-sm text-slate-500 dark:text-[#e0d0ff]/50">{t('techPortal.noTickets')}</p>
+          <p className="text-sm text-muted-foreground/70">{t('techPortal.noTickets')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -406,7 +406,7 @@ export default function TechnicianTicketsPage() {
             return (
               <div
                 key={ticket.id}
-                className={`bg-white dark:bg-slate-800/60 rounded-2xl border border-slate-200 dark:border-slate-700/50 border-l-4 ${PRIORITY_LEFT[ticket.priority] ?? 'border-l-slate-400'} overflow-hidden transition-shadow hover:shadow-md dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]`}
+                className={`bg-card/60 rounded-2xl border border-border/50 border-l-4 ${PRIORITY_LEFT[ticket.priority] ?? 'border-l-slate-400'} overflow-hidden transition-shadow hover:shadow-md dark:hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]`}
               >
                 <div className="p-4">
                   <div className="flex items-start gap-3">
@@ -422,15 +422,15 @@ export default function TechnicianTicketsPage() {
                           {STATUS_LABEL[ticket.status] ?? ticket.status}
                         </span>
                         {ticket.category && (
-                          <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                          <span className="flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-full bg-muted text-muted-foreground border border-border">
                             <Tag className="w-2.5 h-2.5" />{ticket.category.name}
                           </span>
                         )}
                       </div>
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate mb-1">
+                      <h3 className="text-sm font-semibold text-foreground truncate mb-1">
                         {ticket.subject}
                       </h3>
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-[#e0d0ff]/60">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                         <span className="flex items-center gap-1"><User className="w-3 h-3" />{ticket.customerName}</span>
                         <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{ticket.customerPhone}</span>
                         <span className="flex items-center gap-1"><MessageSquare className="w-3 h-3" />{ticket._count.messages} pesan</span>
@@ -490,7 +490,7 @@ export default function TechnicianTicketsPage() {
                     {ticket.status !== 'CLOSED' && (
                       <button
                         onClick={() => openDetail(ticket)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl transition-all"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold bg-muted/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border rounded-xl transition-all"
                       >
                         <MessageSquare className="w-3 h-3" />{t('techPortal.replyTicket')}
                       </button>
@@ -506,10 +506,10 @@ export default function TechnicianTicketsPage() {
       {/* ===== DETAIL MODAL ===== */}
       {detailTicket && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-stretch sm:items-center justify-center sm:p-4">
-          <div className="w-full sm:max-w-4xl bg-white dark:bg-[#080e1c] rounded-none sm:rounded-3xl border-0 sm:border border-slate-200 dark:border-[#1e2d4a] shadow-2xl flex flex-col" style={{ maxHeight: '100dvh' }}>
+          <div className="w-full sm:max-w-4xl bg-card rounded-none sm:rounded-3xl border-0 sm:border border-border shadow-2xl flex flex-col" style={{ maxHeight: '100dvh' }}>
 
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-[#1a2640] flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 <div className={`w-1 h-8 rounded-full flex-shrink-0 ${
                   detailTicket.priority === 'URGENT' ? 'bg-red-500' :
@@ -526,11 +526,11 @@ export default function TechnicianTicketsPage() {
                       {PRIORITY_LABEL[detailTicket.priority] ?? detailTicket.priority}
                     </span>
                   </div>
-                  <h2 className="text-sm font-bold text-slate-900 dark:text-white truncate">{detailTicket.subject}</h2>
+                  <h2 className="text-sm font-bold text-foreground truncate">{detailTicket.subject}</h2>
                 </div>
               </div>
               <button onClick={closeDetail} className="flex-shrink-0 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <X className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                <X className="w-4 h-4 text-muted-foreground" />
               </button>
             </div>
 
@@ -538,16 +538,16 @@ export default function TechnicianTicketsPage() {
             <div className="flex flex-col lg:flex-row flex-1 min-h-0 overflow-hidden">
 
               {/* LEFT: Ticket Info Panel */}
-              <div className="lg:w-72 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-slate-100 dark:border-[#1a2640] overflow-y-auto p-4 space-y-4">
+              <div className="lg:w-72 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-border overflow-y-auto p-4 space-y-4">
                 {/* Customer info */}
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Info Pelanggan</h4>
+                  <h4 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Info Pelanggan</h4>
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-[#e0d0ff]/80">
+                    <div className="flex items-center gap-2 text-xs text-foreground/80">
                       <User className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                       <span className="font-medium">{detailTicket.customerName}</span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-[#e0d0ff]/80">
+                    <div className="flex items-center gap-2 text-xs text-foreground/80">
                       <Phone className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
                       <a href={`tel:${detailTicket.customerPhone}`} className="font-medium hover:text-[#00f7ff] transition-colors">{detailTicket.customerPhone}</a>
                     </div>
@@ -562,8 +562,8 @@ export default function TechnicianTicketsPage() {
 
                 {/* Ticket meta */}
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Detail Tiket</h4>
-                  <div className="space-y-2 text-xs text-slate-600 dark:text-[#e0d0ff]/70">
+                  <h4 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Detail Tiket</h4>
+                  <div className="space-y-2 text-xs text-muted-foreground">
                     {detailTicket.category && (
                       <div className="flex items-center gap-2">
                         <Tag className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" /><span>{detailTicket.category.name}</span>
@@ -582,8 +582,8 @@ export default function TechnicianTicketsPage() {
 
                 {/* Description */}
                 <div>
-                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Deskripsi</h4>
-                  <p className="text-xs text-slate-700 dark:text-[#e0d0ff]/80 whitespace-pre-wrap leading-relaxed bg-slate-50 dark:bg-slate-900/40 rounded-xl p-3 border border-slate-100 dark:border-slate-700/40">
+                  <h4 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Deskripsi</h4>
+                  <p className="text-xs text-foreground/80 whitespace-pre-wrap leading-relaxed bg-input/40 rounded-xl p-3 border border-slate-100 dark:border-slate-700/40">
                     {detailTicket.description ? renderWithLinks(detailTicket.description) : <span className="italic text-slate-400">Tidak ada deskripsi</span>}
                   </p>
                 </div>
@@ -591,7 +591,7 @@ export default function TechnicianTicketsPage() {
                 {/* Status actions */}
                 {detailTicket.status !== 'CLOSED' && detailTicket.status !== 'RESOLVED' && (
                   <div>
-                    <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">Ubah Status</h4>
+                    <h4 className="text-[10px] font-bold text-muted-foreground/70 uppercase tracking-wider mb-2">Ubah Status</h4>
                     <div className="space-y-2">
                       {!detailTicket.assignedToId && (
                         <button
@@ -634,7 +634,7 @@ export default function TechnicianTicketsPage() {
                         <button
                           onClick={() => doAction(detailTicket.id, 'update_status', { status: 'CLOSED' })}
                           disabled={!!actionLoading}
-                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-xl transition-all disabled:opacity-50"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-muted/50 text-muted-foreground border border-border rounded-xl transition-all disabled:opacity-50"
                         >
                           <X className="w-3 h-3" />Tutup Tiket
                         </button>
@@ -666,7 +666,7 @@ export default function TechnicianTicketsPage() {
                       if (isSystem) {
                         return (
                           <div key={msg.id} className="flex justify-center">
-                            <div className="max-w-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-slate-500 dark:text-slate-400 italic text-center">
+                            <div className="max-w-xs px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] text-muted-foreground italic text-center">
                               {msg.message}
                             </div>
                           </div>
@@ -676,7 +676,7 @@ export default function TechnicianTicketsPage() {
                       return (
                         <div key={msg.id} className={`flex ${isTech ? 'justify-end' : 'justify-start'}`}>
                           <div className="max-w-[80%] space-y-1">
-                            <div className={`text-[10px] font-medium mb-1 ${isTech ? 'text-right text-[#00f7ff]' : 'text-left text-slate-500 dark:text-slate-400'}`}>
+                            <div className={`text-[10px] font-medium mb-1 ${isTech ? 'text-right text-[#00f7ff]' : 'text-left text-muted-foreground'}`}>
                               {msg.senderName}
                             </div>
                             {/* Photo attachments */}
@@ -686,7 +686,7 @@ export default function TechnicianTicketsPage() {
                                   <button
                                     key={i}
                                     onClick={() => setLightboxUrl(url)}
-                                    className="block rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 hover:opacity-90 transition-opacity"
+                                    className="block rounded-xl overflow-hidden border border-border hover:opacity-90 transition-opacity"
                                   >
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={url} alt="Foto lampiran" className="max-w-[200px] max-h-[200px] object-cover" loading="lazy" />
@@ -699,12 +699,12 @@ export default function TechnicianTicketsPage() {
                               <div className={`px-3 py-2 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${
                                 isTech
                                   ? 'bg-[#bc13fe]/15 dark:bg-[#bc13fe]/20 text-slate-800 dark:text-[#f0e0ff] rounded-tr-sm border border-[#bc13fe]/20'
-                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-[#e0d0ff]/90 rounded-tl-sm border border-slate-200 dark:border-slate-700'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-[#e0d0ff]/90 rounded-tl-sm border border-border'
                               }`}>
                                 {renderWithLinks(msg.message)}
                               </div>
                             )}
-                            <div className={`text-[9px] text-slate-400 dark:text-slate-500 ${isTech ? 'text-right' : 'text-left'}`}>
+                            <div className={`text-[9px] text-muted-foreground/70 ${isTech ? 'text-right' : 'text-left'}`}>
                               {formatDate(msg.createdAt)}
                             </div>
                           </div>
@@ -717,12 +717,12 @@ export default function TechnicianTicketsPage() {
 
                 {/* Reply form */}
                 {detailTicket.status !== 'CLOSED' && (
-                  <div className="border-t border-slate-100 dark:border-[#1a2640] p-4 flex-shrink-0">
+                  <div className="border-t border-border p-4 flex-shrink-0">
                     {/* Photo preview */}
                     {photoPreview && (
                       <div className="relative inline-block mb-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={photoPreview} alt="Preview" className="h-20 w-auto rounded-xl border border-slate-200 dark:border-slate-700 object-cover" loading="lazy" />
+                        <img src={photoPreview} alt="Preview" className="h-20 w-auto rounded-xl border border-border object-cover" loading="lazy" />
                         <button
                           onClick={() => { setPhotoFile(null); setPhotoPreview(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
                           className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center"
@@ -742,11 +742,11 @@ export default function TechnicianTicketsPage() {
                         }}
                         rows={2}
                         placeholder="Tulis balasan... (Ctrl+Enter untuk kirim)"
-                        className="flex-1 px-3 py-2.5 text-xs bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#00f7ff]/60 focus:ring-1 focus:ring-[#00f7ff]/30 resize-none"
+                        className="flex-1 px-3 py-2.5 text-xs bg-input/80 border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-[#00f7ff]/60 focus:ring-1 focus:ring-[#00f7ff]/30 resize-none"
                       />
                       <div className="flex flex-col gap-1.5">
                         {/* Camera / file pick */}
-                        <label className="cursor-pointer flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-600 transition-colors" title="Upload foto">
+                        <label className="cursor-pointer flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border transition-colors" title="Upload foto">
                           <Camera className="w-4 h-4" />
                           <input
                             ref={fileInputRef}
@@ -777,7 +777,7 @@ export default function TechnicianTicketsPage() {
                         </button>
                       </div>
                     </div>
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 flex items-center gap-3">
+                    <p className="text-[10px] text-muted-foreground/70 mt-1.5 flex items-center gap-3">
                       <span className="flex items-center gap-1"><Camera className="w-3 h-3" />Foto saat pengerjaan</span>
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />Tag koordinat lokasi</span>
                     </p>

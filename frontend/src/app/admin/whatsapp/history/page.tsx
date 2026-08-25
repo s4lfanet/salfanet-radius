@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -308,7 +308,7 @@ export default function WhatsAppHistoryPage() {
                         <th className="px-3 py-2 text-center text-[10px] font-semibold text-muted-foreground dark:text-muted-foreground uppercase tracking-wider">{t('common.action')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <tbody className="divide-y divide-border">
                       {history.map((item) => (
                         <tr key={item.id} className="hover:bg-muted/50/50 transition-colors">
                           <td className="px-3 py-1.5">

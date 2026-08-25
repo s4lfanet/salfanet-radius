@@ -330,7 +330,7 @@ export default function FreeRADIUSStatusPage() {
                 </p>
                 <button
                     onClick={() => setShowDebugInfo(!showDebugInfo)}                    
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-foreground rounded-lg transition-colors">
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium bg-muted hover:bg-gray-200 dark:hover:bg-gray-700 text-foreground rounded-lg transition-colors">
                     <Terminal className="w-4 h-4" />
                     {t('radius.runDebug')}
                 </button>
