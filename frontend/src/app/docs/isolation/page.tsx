@@ -1,9 +1,15 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+import { getCompanyInfo } from '@/lib/api/server';
 
-export const metadata = {
-  title: 'Isolation System — SALFANET RADIUS Documentation',
-  description: 'Dokumentasi lengkap sistem isolasi otomatis untuk PPPoE users yang masa berlangganannya habis.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const company = await getCompanyInfo();
+  const name = company?.name || 'SALFANET RADIUS';
+  return {
+    title: `Isolation System — ${name} Documentation`,
+    description: 'Dokumentasi lengkap sistem isolasi otomatis untuk PPPoE users yang masa berlangganannya habis.',
+  };
+}
 
 export default function IsolationDocsPage() {
   return (
