@@ -1054,7 +1054,7 @@ Migrasi massif hardcoded color values (`bg-white`, `bg-slate-*`, `text-slate-*`,
 - **[FIX]** Collector portal (1 file): `login/page.tsx` — logo container + feature cards
 - **[FIX]** Shared components (27 files): Network components (AddNodePanel, NetworkNodePanel, SplitterDiagram variants, FiberTracing, FilterPanel, SplicePointsSection, SplitterSection, AssignCustomerDialog, EditAssignmentDialog, FreeRadiusStatusCard), UI primitives (alert-dialog, checkbox, textarea, label), cyberpunk components (SimpleModal, CyberButton), agent NotificationDropdown, genieacs (GenieACSLayout, ParameterTree), UserDetailModal
 
-### Responsive Layout Improvements
+### Responsive Layout Improvements (from previous commit, documented here)
 - **[FEATURE]** Fluid typography dengan `clamp()` untuk headings dan paragraphs di `globals.css`
 - **[FEATURE]** Responsive chart heights via `useResponsiveHeight` hook — 25% height reduction on mobile
 - **[FEATURE]** MapPicker fullscreen on mobile dengan `50vh` map height
@@ -1300,38 +1300,6 @@ Batch fix untuk sinkronisasi MikroTik local-auth (isolir profile, password, acti
 - `c111a9d8` — fix: use sync_mikrotik_create (upsert) + CoA disconnect on authMode & connectionType change
 - `6b11f5fa` — feat: support connectionType change & authMode migration with MikroTik sync
 - `75c7fc70` — fix: delete customer — send confirmPassword to backend
-
-### v5.7.0 — 2026-08-15 — Fix: Diskon Pelanggan Tidak Diterapkan ke Tagihan
-
-### Summary
-Bug kritis: diskon pelanggan (field `discount` di `PppoeUser`) hanya diterapkan pada cron monthly invoice generation (postpaid) dan first invoice saat create customer. 5 path lain tidak mengurangi diskon dari base price, menyebabkan tagihan tidak sesuai dengan diskon yang sudah di-set di form tambah/edit pelanggan.
-
-### Root Cause
-Pattern yang benar (sudah ada di cron monthly + first invoice):
-```ts
-const baseAmount = Math.max(0, profile.price - (user.discount || 0));
-```
-
-Pattern yang salah (5 path lain, tidak mengurangi diskon):
-```ts
-const baseAmount = profile.price;  // BUG: tidak - user.discount
-```
-
-### Fixed Paths (5 bug)
-1. **Customer renewal API** (`/api/customer/renewal`) — perpanjangan dari customer portal
-2. **Admin renewal API** (`/api/admin/users/[id]/renewal`) — perpanjangan dari admin panel
-3. **PREPAID auto-renewal cron** (`invoice-jobs.ts`) — auto-renewal dari balance prepaid
-4. **Admin extend route** (`/api/pppoe/users/[id]/extend`) — perpanjangan langsung dari admin
-5. **Admin invoices/generate** (`/api/invoices/generate`) — generate invoice manual dari admin
-
-### Already Working (tidak diubah)
-- Cron monthly invoice generation (postpaid) — sudah apply diskon
-- First invoice saat create customer — sudah apply diskon
-- Save diskon di form tambah pelanggan — sudah berfungsi
-- Save diskon di form edit pelanggan (UserDetailModal) — sudah berfungsi
-
-### Commits
-- `2b55e056` — fix(billing): apply customer discount to all invoice generation paths
 
 <!-- AUTO-CHANGELOG:END -->
 
