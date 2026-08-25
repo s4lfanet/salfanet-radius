@@ -2,31 +2,39 @@
 import { prisma } from '@/server/db/client';
 import { formatCurrencyExport, formatDateExport } from '@/lib/utils/export';
 import { requirePermission } from '@/server/middleware/api-auth';
+import { verifyCollector } from '@/server/auth/collector-auth';
 
 // Get single invoice PDF data
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  // Accept both admin (NextAuth session) and customer (Bearer token) auth
+  // Accept admin (NextAuth), customer (Bearer token), or collector (cookie) auth
   const authCheck = await requirePermission('invoices.view');
   let customerId: string | null = null;
+  let collectorId: string | null = null;
 
   if (!authCheck.authorized) {
-    // Try customer Bearer token as fallback
-    const bearerToken = req.headers.get('authorization')?.replace('Bearer ', '');
-    if (bearerToken) {
-      const { prisma: db } = await import('@/server/db/client');
-      const customerSession = await db.customerSession.findFirst({
-        where: { token: bearerToken, verified: true, expiresAt: { gte: new Date() } },
-        select: { userId: true },
-      });
-      if (!customerSession) {
-        return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-      }
-      customerId = customerSession.userId;
+    // Try collector cookie auth
+    const collector = await verifyCollector(req);
+    if (collector) {
+      collectorId = collector.id;
     } else {
-      return authCheck.response;
+      // Try customer Bearer token as fallback
+      const bearerToken = req.headers.get('authorization')?.replace('Bearer ', '');
+      if (bearerToken) {
+        const { prisma: db } = await import('@/server/db/client');
+        const customerSession = await db.customerSession.findFirst({
+          where: { token: bearerToken, verified: true, expiresAt: { gte: new Date() } },
+          select: { userId: true },
+        });
+        if (!customerSession) {
+          return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+        }
+        customerId = customerSession.userId;
+      } else {
+        return authCheck.response;
+      }
     }
   }
 
@@ -62,6 +70,17 @@ export async function GET(
     // If authenticated as a customer, verify the invoice belongs to them
     if (customerId && invoice.userId !== customerId) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
+    // If authenticated as a collector, verify the invoice is in their area
+    if (collectorId) {
+      const collectorAccount = await prisma.adminUser.findUnique({
+        where: { id: collectorId },
+        select: { areaId: true },
+      });
+      if (!collectorAccount?.areaId || invoice.user?.areaId !== collectorAccount.areaId) {
+        return NextResponse.json({ success: false, error: 'Invoice bukan di area Anda' }, { status: 403 });
+      }
     }
 
     // Get company info
