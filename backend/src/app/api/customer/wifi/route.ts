@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
+import { rateLimit, RateLimitPresets } from '@/server/middleware/rate-limit';
 
 // Helper to verify customer token using CustomerSession
 async function verifyCustomerToken(request: NextRequest) {
@@ -251,14 +252,11 @@ function extractDeviceInfo(device: any) {
   const connectedHosts: any[] = [];
   
   // First, get WLAN AssociatedDevice data (these are actually connected to WiFi)
-  console.log('[Customer WiFi] Extracting connected devices from AssociatedDevice...');
   for (const wlan of wlanConfigs) {
     const assocDevices = getNestedValue(
       lanDevice,
       `WLANConfiguration.${wlan.index}.AssociatedDevice`
     );
-    
-    console.log(`[Customer WiFi] WLAN[${wlan.index}] AssociatedDevice:`, assocDevices ? Object.keys(assocDevices) : 'null');
     
     if (assocDevices && typeof assocDevices === 'object') {
       for (const [key, assocDev] of Object.entries(assocDevices)) {
@@ -271,8 +269,6 @@ function extractDeviceInfo(device: any) {
           // Try multiple MAC address field names (same as admin API)
           let macAddress = safeString(dev.AssociatedDeviceMACAddress);
           if (macAddress === '-') macAddress = safeString(dev.MACAddress);
-          
-          console.log(`[Customer WiFi] AssocDev[${key}] MAC: ${macAddress}, raw:`, dev.AssociatedDeviceMACAddress);
           
           if (macAddress && macAddress !== '-' && macAddress !== '') {
             // Get signal strength - try multiple paths
@@ -329,7 +325,7 @@ function extractDeviceInfo(device: any) {
     }
   }
   
-  console.log('[Customer WiFi] Total connected devices found:', connectedHosts.length, connectedHosts);
+  console.log('[Customer WiFi] Total connected devices found:', connectedHosts.length);
 
   // Dynamic extraction of ALL Virtual Parameters
   const vp = device.VirtualParameters || {};
@@ -478,6 +474,14 @@ function extractDeviceInfo(device: any) {
 
 // POST - Update WiFi configuration
 export async function POST(request: NextRequest) {
+  const limited = await rateLimit(request, RateLimitPresets.moderate);
+  if (limited) {
+    return NextResponse.json(
+      { success: false, error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   try {
     const user = await verifyCustomerToken(request);
 
@@ -492,11 +496,8 @@ export async function POST(request: NextRequest) {
     const { deviceId, wlanIndex, ssid, password, securityMode = 'WPA2-PSK', enabled = true } = body;
 
     console.log('[Customer WiFi] Update request:', {
-      userId: user.id,
-      username: user.username,
-      deviceId,
       wlanIndex,
-      ssid: ssid?.substring(0, 10) + '...',
+      hasSsid: !!ssid,
       hasPassword: !!password
     });
 
@@ -539,13 +540,9 @@ export async function POST(request: NextRequest) {
     const authHeader = Buffer.from(`${gusername}:${gpassword}`).toString('base64');
 
     // STEP 1: Verify device exists and belongs to this customer
-    console.log('[Customer WiFi] Verifying device ownership for deviceId:', deviceId);
-    
     // Fetch device by _id to get full device object
     const deviceQuery = encodeURIComponent(JSON.stringify({ _id: deviceId }));
     const deviceUrl = `${host}/devices?query=${deviceQuery}`;
-    
-    console.log('[Customer WiFi] Fetching device from:', deviceUrl);
     
     const ctrl2 = new AbortController();
     const t2 = setTimeout(() => ctrl2.abort(), 5000);
@@ -569,8 +566,7 @@ export async function POST(request: NextRequest) {
     }
     
     const devices = await deviceResponse.json();
-    console.log('[Customer WiFi] Devices found:', devices.length);
-    
+
     if (!devices || devices.length === 0) {
       console.error('[Customer WiFi] Device not found in GenieACS:', deviceId);
       return NextResponse.json(
@@ -580,9 +576,7 @@ export async function POST(request: NextRequest) {
     }
 
     const device = devices[0];
-    
-    console.log('[Customer WiFi] Device found, using deviceId for task:', deviceId);
-    
+
     // Verify device belongs to this customer by checking PPPoE username
     const getParamValue = (dev: any, paths: string[]): string => {
       for (const path of paths) {
@@ -616,23 +610,17 @@ export async function POST(request: NextRequest) {
     ];
 
     const devicePppUsername = getParamValue(device, pppUsernamePaths);
-    
-    console.log('[Customer WiFi] Device PPPoE username:', devicePppUsername, 'Customer username:', user.username);
-    
+
     if (devicePppUsername !== user.username && devicePppUsername.toLowerCase() !== user.username.toLowerCase()) {
-      console.error('[Customer WiFi] Device does not belong to customer:', { devicePppUsername, customerUsername: user.username });
+      console.error('[Customer WiFi] Device ownership mismatch for deviceId:', deviceId);
       return NextResponse.json(
         { success: false, error: 'Device not found' },
         { status: 404 }
       );
     }
 
-    console.log('[Customer WiFi] Device ownership verified ✅');
-
     // Build parameter path
     const basePath = `InternetGatewayDevice.LANDevice.1.WLANConfiguration.${wlanIndex}`;
-    
-    console.log('[Customer WiFi] Update request:', { ssid, hasPassword: !!password });
 
     // Like gembok-bill: Send SEPARATE tasks for SSID and password
     const tasks = [];

@@ -328,9 +328,9 @@ export async function GET(req: NextRequest) {
     if (allowedUsernames) {
       devices = devices.filter((d: any) => {
         // Match by username (DeviceID or _tags) or IP address
-        const deviceId = String(d.id || '');
+        const deviceId = String(d._id || '');
         const tags = Array.isArray(d.tags) ? d.tags : [];
-        const ip = String(d.ipAddress || d.ip || '');
+        const ip = String(d.pppoeIP || '');
         return allowedUsernames.has(deviceId) ||
                tags.some((t: string) => allowedUsernames.has(t)) ||
                (ip !== '-' && allowedUsernames.has(ip));
