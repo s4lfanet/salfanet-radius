@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
@@ -140,7 +140,7 @@ function TwoFactorForm() {
               className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 rounded-xl transition-all duration-300 shadow-md dark:bg-gradient-to-r dark:from-[#bc13fe] dark:to-[#00f7ff] dark:hover:from-[#d020ff] dark:hover:to-[#00d4dc] dark:text-white dark:shadow-[0_0_30px_rgba(188,19,254,0.4)] dark:hover:shadow-[0_0_50px_rgba(188,19,254,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
-                <><Loader2 className="w-5 h-5 animate-spin" /> Verifying�</>
+                <><Loader2 className="w-5 h-5 animate-spin" /> Verifying…</>
               ) : (
                 <><Shield className="w-5 h-5" /> Verify &amp; Sign In</>
               )}
