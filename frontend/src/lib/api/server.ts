@@ -59,12 +59,20 @@ export async function apiFetch<T = unknown>(
 
 /**
  * Get public company info (no auth required).
- * Used by layout files for generateMetadata().
+ * Uses /api/company/info (public, rate-limited, cached 5min on backend).
+ * Used by layout files for generateMetadata() and manifest route handlers.
+ *
+ * Caches with Next.js fetch revalidate (5 minutes) since company info rarely changes.
  */
-export async function getCompanyInfo(): Promise<{ name?: string } | null> {
+export async function getCompanyInfo(): Promise<{ name?: string; [key: string]: unknown } | null> {
   try {
-    const data = await apiFetch<{ name?: string }>('/api/company');
-    return data || null;
+    const url = buildServerUrl('/api/company/info');
+    const res = await fetch(url, {
+      next: { revalidate: 300 }, // cache 5 minutes
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data || json || null;
   } catch {
     return null;
   }
