@@ -3,6 +3,14 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { getGenieACSCredentials } from '@/app/api/settings/genieacs/route';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import {
+  safeString,
+  getParameterValue,
+  extractIPFromURL,
+  normalizeRxPower,
+  getDeviceStatus,
+  TR069_PARAMETER_PATHS,
+} from '@/lib/genieacs/tr069-parser';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -28,177 +36,7 @@ async function verifyTechnician(req: NextRequest) {
   }
 }
 
-function safeString(val: any): string {
-  if (val === null || val === undefined) return '-';
-  if (typeof val === 'string') return val || '-';
-  if (typeof val === 'number') return String(val);
-  if (typeof val === 'boolean') return String(val);
-  if (Array.isArray(val)) {
-    if (val.length > 0) return safeString(val[0]);
-    return '-';
-  }
-  if (typeof val === 'object') {
-    if ('_value' in val) return safeString(val._value);
-    if ('value' in val) {
-      if (Array.isArray(val.value) && val.value.length > 0) return safeString(val.value[0]);
-      return safeString(val.value);
-    }
-    return '-';
-  }
-  return String(val) || '-';
-}
-
-function getParameterValue(device: any, paths: string[]): string {
-  for (const path of paths) {
-    const parts = path.split('.');
-    let value = device;
-    for (const part of parts) {
-      if (value && typeof value === 'object' && part in value) {
-        value = value[part];
-      } else {
-        value = undefined;
-        break;
-      }
-    }
-    if (value !== undefined && value !== null) {
-      const result = safeString(value);
-      if (result !== '-' && result !== '') return result;
-    }
-  }
-  return '-';
-}
-
-function extractIPFromURL(url: string): string {
-  if (!url || url === '-') return '-';
-  try {
-    const match = url.match(/https?:\/\/([^:\/]+)/);
-    if (match?.[1]) return match[1];
-  } catch {}
-  return '-';
-}
-
-function normalizeRxPower(raw: string): string {
-  if (raw === '-' || raw === 'N/A') return raw;
-  const num = parseFloat(raw);
-  if (isNaN(num)) return raw;
-  // Already in valid dBm range (-100 to 0 typical for optical)
-  if (num < 0 && num >= -100) return `${num.toFixed(2)} dBm`;
-  // Large negative: millidBm format (e.g., -18000 means -18 dBm)
-  if (num < -100) return `${(num / 1000).toFixed(2)} dBm`;
-  // Small positive: 0.1 nW units — apply optical power formula used in GenieACS VPs
-  if (num > 0 && num < 10000) {
-    const db = 30 + Math.log10(num * Math.pow(10, -7)) * 10;
-    return `${(Math.ceil(db * 100) / 100).toFixed(2)} dBm`;
-  }
-  return raw;
-}
-
-const parameterPaths = {
-  pppUsername: [
-    'VirtualParameters.pppUsername',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.Username',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.Username',
-    'Device.PPP.Interface.1.Username',
-  ],
-  rxPower: [
-    'VirtualParameters.redaman',
-    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_FH_GponInterfaceConfig.RXPower',
-    'InternetGatewayDevice.X_ALU_OntOpticalParam.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_CT-COM_EponInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_CMCC_GponInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_CMCC_EponInterfaceConfig.RXPower',
-    'InternetGatewayDevice.WANDevice.1.X_CU_WANEPONInterfaceConfig.OpticalTransceiver.RXPower',
-    'InternetGatewayDevice.WANDevice.1.WANEponInterfaceConfig.RXPower',
-  ],
-  serialNumber: [
-    'InternetGatewayDevice.DeviceInfo.SerialNumber',
-    'Device.DeviceInfo.SerialNumber',
-  ],
-  model: [
-    'InternetGatewayDevice.DeviceInfo.ProductClass',
-    'InternetGatewayDevice.DeviceInfo.ModelName',
-    'Device.DeviceInfo.ModelName',
-  ],
-  manufacturer: [
-    'InternetGatewayDevice.DeviceInfo.Manufacturer',
-    'Device.DeviceInfo.Manufacturer',
-  ],
-  ponMode: [
-    'VirtualParameters.getponmode',
-    'VirtualParameters.PonMode',
-    'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.WANAccessType',
-    'InternetGatewayDevice.DeviceInfo.AccessType',
-    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.PONMode',
-  ],
-  pppoeIP: [
-    'VirtualParameters.pppIP',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.ExternalIPAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.WANPPPConnection.1.ExternalIPAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.ExternalIPAddress',
-    'Device.PPP.Interface.1.IPCP.LocalIPAddress',
-  ],
-  tr069IP: [
-    'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
-    'Device.ManagementServer.ConnectionRequestURL',
-  ],
-  uptime: [
-    'VirtualParameters.uptimeDevice',
-    'VirtualParameters.uptime',
-    'InternetGatewayDevice.DeviceInfo.UpTime',
-    'Device.DeviceInfo.UpTime',
-  ],
-  macAddress: [
-    'VirtualParameters.MacAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.MACAddress',
-    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.MACAddress',
-    'Device.PPP.Interface.1.MACAddress',
-  ],
-  softwareVersion: [
-    'VirtualParameters.softwareVersion',
-    'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
-    'Device.DeviceInfo.SoftwareVersion',
-  ],
-  ssid: [
-    'VirtualParameters.getWlanPass24G-1',
-    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
-    'Device.WiFi.SSID.1.SSID',
-  ],
-  temp: [
-    'VirtualParameters.temp',
-    'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TransceiverTemperature',
-    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TransceiverTemperature',
-  ],
-  userConnected: [
-    'VirtualParameters.userconnected',
-    'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.TotalAssociations',
-  ],
-  txPower: [
-    'VirtualParameters.txPower',
-    'InternetGatewayDevice.WANDevice.1.X_ZTE-COM_WANPONInterfaceConfig.TXPower',
-    'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower',
-  ],
-  lanIP: [
-    'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress',
-    'Device.IP.Interface.1.IPv4Address.1.IPAddress',
-  ],
-  hardwareVersion: [
-    'InternetGatewayDevice.DeviceInfo.HardwareVersion',
-    'Device.DeviceInfo.HardwareVersion',
-  ],
-};
-
-function getDeviceStatus(lastInform: string | null): string {
-  if (!lastInform) return 'unknown';
-  try {
-    const diffHours = (Date.now() - new Date(lastInform).getTime()) / (1000 * 60 * 60);
-    return diffHours < 1 ? 'online' : 'offline';
-  } catch {
-    return 'unknown';
-  }
-}
+const parameterPaths = TR069_PARAMETER_PATHS;
 
 function processDevice(device: any) {
   const deviceIdObj = device._deviceId || {};

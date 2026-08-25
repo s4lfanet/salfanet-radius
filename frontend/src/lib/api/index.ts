@@ -9,7 +9,7 @@
  */
 
 // Client-side API functions (safe for browser)
-export { apiCall, apiAdmin, apiCustomer, apiAgent, apiFetchAuth, ApiError, buildUrl, onUnauthorized } from './client';
+export { apiCall, apiAdmin, apiCustomer, apiAgent, apiTechnician, apiFetchAuth, ApiError, buildUrl, onUnauthorized } from './client';
 export type { AuthMode } from './client';
 
 // Domain-specific API modules (all client-side safe)
