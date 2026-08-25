@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PERMISSIONS } from '@/lib/permissions';
@@ -1565,7 +1565,7 @@ export default function PppoeUsersPage() {
                   <th className="px-2 py-2 text-center w-10 text-[10px] font-medium text-muted-foreground uppercase sticky right-0 bg-muted/50 z-20">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              <tbody className="divide-y divide-border">
                 {filteredUsers.length === 0 ? (
                   <tr><td colSpan={12} className="px-3 py-8 text-center text-muted-foreground text-xs">{users.length === 0 ? t('pppoe.noUsers') : t('pppoe.noMatch')}</td></tr>
                 ) : (

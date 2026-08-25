@@ -153,7 +153,7 @@ export default function OLTMonitoringPage() {
             <Activity className="h-5 w-5 text-teal-600" />
             OLT Monitoring
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-muted-foreground">
             {onlineCount}/{olts.length} online — auto refresh dalam{' '}
             <span className={countdown <= 5 ? 'text-amber-500 font-semibold' : ''}>{countdown}d</span>
           </p>
@@ -162,7 +162,7 @@ export default function OLTMonitoringPage() {
           <button
             onClick={() => { countdownRef.current = REFRESH_INTERVAL; setCountdown(REFRESH_INTERVAL); refetchOLTs(); }}
             disabled={refreshing && !loading}
-            className="inline-flex items-center px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-700 dark:text-slate-300 disabled:opacity-60"
+            className="inline-flex items-center px-3 py-1.5 text-xs border border-border bg-card hover:bg-accent rounded text-muted-foreground disabled:opacity-60"
           >
             <RefreshCw className={`h-3 w-3 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -181,7 +181,7 @@ export default function OLTMonitoringPage() {
             <button className={`inline-flex items-center px-3 py-1.5 text-xs rounded ${
               totalAlerts > 0
                 ? 'bg-red-600 hover:bg-red-700 text-white'
-                : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                : 'border border-border bg-card hover:bg-accent text-muted-foreground'
             }`}>
               <AlertCircle className="h-3 w-3 mr-1" />
               Alerts {totalAlerts > 0 && `(${totalAlerts})`}
@@ -193,7 +193,7 @@ export default function OLTMonitoringPage() {
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {/* OLT Status */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+        <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <div className="flex items-center justify-between mb-1">
             <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">OLT</p>
             <Server className="h-4 w-4 text-teal-500" />
@@ -215,7 +215,7 @@ export default function OLTMonitoringPage() {
         <div className={`rounded-lg border p-3 ${
           totalAlerts > 0
             ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800'
-            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+            : 'bg-card border-slate-200 dark:border-slate-800'
         }`}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Alert Aktif</p>
@@ -228,13 +228,13 @@ export default function OLTMonitoringPage() {
         </div>
 
         {/* ONU Total */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+        <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
           <div className="flex items-center justify-between mb-1">
             <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">Total ONU</p>
             <Users className="h-4 w-4 text-blue-500" />
           </div>
           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100">{totalOnu}</p>
-          <div className="mt-1.5 h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+          <div className="mt-1.5 h-1.5 w-full rounded-full bg-muted overflow-hidden">
             <div
               className="h-full rounded-full bg-emerald-500"
               style={{ width: totalOnu ? `${Math.round((totalOnuOnline / totalOnu) * 100)}%` : '0%' }}
@@ -249,7 +249,7 @@ export default function OLTMonitoringPage() {
         <div className={`rounded-lg border p-3 ${
           totalOnuOffline > 0
             ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
-            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800'
+            : 'bg-card border-slate-200 dark:border-slate-800'
         }`}>
           <div className="flex items-center justify-between mb-1">
             <p className="text-[10px] text-slate-500 uppercase font-medium tracking-wide">ONU Offline</p>
@@ -263,7 +263,7 @@ export default function OLTMonitoringPage() {
       </div>
 
       {/* Filters + Sort */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-3">
+      <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-3">
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="flex-1 relative">
             <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-slate-400" />
@@ -272,14 +272,14 @@ export default function OLTMonitoringPage() {
               placeholder="Cari nama atau IP..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="w-full pl-8 pr-3 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
             />
           </div>
           <div className="flex gap-2">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
+              className="px-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500"
             >
               <option value="all">Semua Status</option>
               <option value="online">Online Only</option>
@@ -289,7 +289,7 @@ export default function OLTMonitoringPage() {
               <select
                 value={sortKey}
                 onChange={(e) => setSortKey(e.target.value as SortKey)}
-                className="pl-7 pr-2 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none"
+                className="pl-7 pr-2 py-1.5 text-xs border border-border rounded bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-teal-500 appearance-none"
               >
                 <option value="status">Urutkan: Status</option>
                 <option value="name">Urutkan: Nama</option>
@@ -305,10 +305,10 @@ export default function OLTMonitoringPage() {
 
       {/* OLT Grid */}
       {sortedOlts.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 p-12 text-center">
+        <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-12 text-center">
           <Server className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Belum ada OLT</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+          <p className="text-sm text-muted-foreground font-medium">Belum ada OLT</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">
             {searchTerm || statusFilter !== 'all'
               ? 'Coba ubah filter pencarian'
               : 'Tambah OLT dari menu Network → OLT, lalu aktifkan monitoring'}
@@ -328,7 +328,7 @@ export default function OLTMonitoringPage() {
             return (
               <div
                 key={olt.id}
-                className={`bg-white dark:bg-slate-900 rounded-lg border transition-shadow hover:shadow-md ${
+                className={`bg-card rounded-lg border transition-shadow hover:shadow-md ${
                   isOffline
                     ? 'border-red-300 dark:border-red-800'
                     : olt.unresolvedAlerts > 0
@@ -365,7 +365,7 @@ export default function OLTMonitoringPage() {
                       </Link>
                     )}
                     {!olt.monitoringEnabled && (
-                      <span className="px-1.5 py-0.5 text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 rounded">
+                      <span className="px-1.5 py-0.5 text-[9px] bg-muted text-slate-500 rounded">
                         Mon off
                       </span>
                     )}
@@ -376,14 +376,14 @@ export default function OLTMonitoringPage() {
                 <div className="px-3 py-2.5 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-[9px] text-slate-400 uppercase tracking-wide">ONU</span>
-                    <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                    <span className="text-[10px] font-medium text-muted-foreground">
                       {olt.onlineOnu}/{olt.totalOnu}
                       <span className={`ml-1 ${onlinePct < 80 && olt.totalOnu > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                         ({onlinePct}%)
                       </span>
                     </span>
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
                         onlinePct >= 90 ? 'bg-emerald-500' : onlinePct >= 70 ? 'bg-amber-400' : 'bg-red-500'
@@ -400,7 +400,7 @@ export default function OLTMonitoringPage() {
                 <div className="px-3 py-2 grid grid-cols-1 sm:grid-cols-3 gap-x-2 border-b border-slate-100 dark:border-slate-800 text-center">
                   <div>
                     <div className="text-[9px] text-slate-400 uppercase">Model</div>
-                    <div className="text-[10px] font-medium text-slate-700 dark:text-slate-300 truncate">{olt.model ?? '-'}</div>
+                    <div className="text-[10px] font-medium text-muted-foreground truncate">{olt.model ?? '-'}</div>
                   </div>
                   <div>
                     <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
@@ -414,7 +414,7 @@ export default function OLTMonitoringPage() {
                     <div className="flex items-center justify-center gap-0.5 text-[9px] text-slate-400 uppercase">
                       <Clock className="h-2.5 w-2.5" />Uptime
                     </div>
-                    <div className="text-[10px] font-medium text-slate-700 dark:text-slate-300">{uptimeStr(olt.uptime)}</div>
+                    <div className="text-[10px] font-medium text-muted-foreground">{uptimeStr(olt.uptime)}</div>
                   </div>
                 </div>
 
@@ -426,7 +426,7 @@ export default function OLTMonitoringPage() {
                     </button>
                   </Link>
                   <Link href="/admin/network/olts">
-                    <button className="inline-flex items-center px-2 py-1 text-[10px] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400" title="Pengaturan OLT">
+                    <button className="inline-flex items-center px-2 py-1 text-[10px] border border-border hover:bg-accent rounded text-muted-foreground" title="Pengaturan OLT">
                       <Settings className="h-3 w-3" />
                     </button>
                   </Link>
@@ -434,7 +434,7 @@ export default function OLTMonitoringPage() {
                     <button
                       onClick={() => handleManualPoll(olt.id)}
                       disabled={isPollActive || pollingAll}
-                      className="inline-flex items-center px-2 py-1 text-[10px] border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded text-slate-600 dark:text-slate-400 disabled:opacity-50"
+                      className="inline-flex items-center px-2 py-1 text-[10px] border border-border hover:bg-accent rounded text-muted-foreground disabled:opacity-50"
                       title="Poll Manual"
                     >
                       <RefreshCw className={`h-3 w-3 ${isPollActive ? 'animate-spin' : ''}`} />

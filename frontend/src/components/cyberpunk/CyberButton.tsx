@@ -84,9 +84,9 @@ const cyberButtonVariants = cva(
 
         // Ghost — minimal
         ghost: [
-          'bg-transparent text-slate-700 dark:text-slate-300',
+          'bg-transparent text-muted-foreground',
           'border border-transparent',
-          'hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100',
+          'hover:bg-accent hover:text-slate-900 dark:hover:text-slate-100',
           'active:scale-[0.98]',
         ].join(' '),
 
@@ -100,7 +100,7 @@ const cyberButtonVariants = cva(
         // Glass — subtle overlay
         glass: [
           'bg-white/10 dark:bg-white/5 backdrop-blur-xl text-slate-800 dark:text-slate-200',
-          'border border-slate-200 dark:border-slate-700',
+          'border border-border',
           'shadow-sm',
           'hover:bg-blue-50/80 dark:hover:bg-blue-950/30 hover:border-blue-300 dark:hover:border-blue-700',
           'active:scale-[0.98]',

@@ -242,12 +242,12 @@ export default function UnifiedMapPage() {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-[44px] lg:left-64 flex flex-col bg-white dark:bg-gray-900 z-10">
+    <div className="fixed inset-x-0 bottom-0 top-[44px] lg:left-64 flex flex-col bg-card z-10">
       {/* Page Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 shrink-0 flex items-center gap-3">
+      <div className="bg-card border-b border-border px-4 py-3 shrink-0 flex items-center gap-3">
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{t('network.unifiedMap.title')}</h1>
-          <p className="hidden sm:block text-gray-500 dark:text-gray-400 mt-0.5 text-sm">{t('network.unifiedMap.subtitle')}</p>
+          <h1 className="text-lg sm:text-2xl font-bold text-foreground truncate">{t('network.unifiedMap.title')}</h1>
+          <p className="hidden sm:block text-muted-foreground mt-0.5 text-sm">{t('network.unifiedMap.subtitle')}</p>
         </div>
       </div>
 
@@ -264,13 +264,13 @@ export default function UnifiedMapPage() {
 
         {/* Filter Sidebar — desktop always visible, mobile slide-in drawer */}
         <div className={cn(
-          'bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 overflow-y-auto p-4',
+          'bg-gray-50 dark:bg-gray-900 border-r border-border overflow-y-auto p-4',
           'lg:w-72 lg:shrink-0 lg:relative lg:z-auto lg:translate-x-0',
           'absolute inset-y-0 left-0 w-72 z-[550] transition-transform duration-300',
           showPanel ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0',
         )}>
-          <div className="flex items-center justify-between lg:hidden mb-3 pb-3 border-b border-gray-200 dark:border-gray-700">
-            <span className="font-semibold text-gray-900 dark:text-white text-sm">
+          <div className="flex items-center justify-between lg:hidden mb-3 pb-3 border-b border-border">
+            <span className="font-semibold text-foreground text-sm">
               {t('network.unifiedMap.statisticsTitle')} & Filter
             </span>
             <button onClick={() => setShowPanel(false)} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-500">
@@ -307,7 +307,7 @@ export default function UnifiedMapPage() {
                 'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 shadow-lg text-xs font-medium border transition-colors',
                 showPanel
                   ? 'bg-blue-600 text-white border-blue-700'
-                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700',
+                  : 'bg-card text-muted-foreground border-border',
               )}
             >
               <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -322,7 +322,7 @@ export default function UnifiedMapPage() {
               onClick={detectUserLocation}
               disabled={locatingUser}
               title="My Location"
-              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all border bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
+              className="flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all border bg-card text-muted-foreground border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-60"
             >
               {locatingUser ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
             </button>
@@ -333,8 +333,8 @@ export default function UnifiedMapPage() {
               className={cn(
                 'flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-sm font-medium shadow-lg transition-all border',
                 showConnections
-                  ? 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-                  : 'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 border-gray-300 dark:border-gray-600',
+                  ? 'bg-card text-muted-foreground border-gray-200 dark:border-gray-600'
+                  : 'bg-gray-200 dark:bg-gray-700 text-muted-foreground/70 border-gray-300 dark:border-gray-600',
               )}
             >
               {showConnections ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
@@ -397,9 +397,9 @@ export default function UnifiedMapPage() {
           {/* ── Connect confirmation drawer (bottom sheet) ────────────── */}
           {connectMode && connectTarget && connectSource && (
             <div className="absolute bottom-0 inset-x-0 z-[700] animate-in slide-in-from-bottom duration-300">
-              <div className="bg-white dark:bg-gray-800 rounded-t-2xl shadow-2xl border-t border-gray-200 dark:border-gray-700 p-4 sm:p-6 max-w-lg mx-auto">
+              <div className="bg-card rounded-t-2xl shadow-2xl border-t border-border p-4 sm:p-6 max-w-lg mx-auto">
                 <div className="w-12 h-1 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-4" />
-                <h3 className="font-bold text-gray-900 dark:text-white text-center mb-4">Hubungkan Device?</h3>
+                <h3 className="font-bold text-foreground text-center mb-4">Hubungkan Device?</h3>
 
                 {/* Source → Target visual */}
                 <div className="flex items-center justify-center gap-3 mb-4">
@@ -408,7 +408,7 @@ export default function UnifiedMapPage() {
                     <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-bold mb-1', TYPE_COLOR[connectSource.type] || 'bg-gray-100 text-gray-700')}>
                       {TYPE_LABEL[connectSource.type]}
                     </span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px]">{connectSource.name}</p>
+                    <p className="text-sm font-medium text-foreground truncate max-w-[120px]">{connectSource.name}</p>
                     <p className="text-[10px] text-gray-400">{connectSource.code}</p>
                   </div>
 
@@ -423,13 +423,13 @@ export default function UnifiedMapPage() {
                     <span className={cn('inline-block px-2 py-0.5 rounded text-xs font-bold mb-1', TYPE_COLOR[connectTarget.type] || 'bg-gray-100 text-gray-700')}>
                       {TYPE_LABEL[connectTarget.type]}
                     </span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px]">{connectTarget.name}</p>
+                    <p className="text-sm font-medium text-foreground truncate max-w-[120px]">{connectTarget.name}</p>
                     <p className="text-[10px] text-gray-400">{connectTarget.code}</p>
                   </div>
                 </div>
 
                 {/* Info */}
-                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mb-4 text-xs text-gray-500 dark:text-gray-400">
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 mb-4 text-xs text-muted-foreground">
                   {connectSource.type === 'OTB' && connectTarget.type === 'JOINT_CLOSURE' && (
                     <p>Semua tube dari kabel feeder OTB akan otomatis diteruskan ke JC ini (patch-through). Core assignment otomatis.</p>
                   )}
@@ -458,7 +458,7 @@ export default function UnifiedMapPage() {
                 <div className="flex gap-3">
                   <button
                     onClick={() => setConnectTarget(null)}
-                    className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-muted-foreground text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                   >
                     Batal
                   </button>
@@ -481,7 +481,7 @@ export default function UnifiedMapPage() {
               onClick={() => setShowLegend(v => !v)}
               className="flex items-center justify-between w-full px-3 py-2 gap-2"
             >
-              <span className="text-gray-900 dark:text-white font-bold">{t('network.unifiedMap.legend')}</span>
+              <span className="text-foreground font-bold">{t('network.unifiedMap.legend')}</span>
               <ChevronDown className={cn(
                 'w-3.5 h-3.5 text-gray-400 transition-transform lg:hidden',
                 showLegend ? 'rotate-180' : ''
@@ -508,7 +508,7 @@ export default function UnifiedMapPage() {
                 ))}
                 {/* Connection line legend */}
                 <div className="border-t border-gray-200/60 dark:border-gray-700/60 mt-1.5 pt-1.5">
-                  <span className="text-gray-400 dark:text-gray-500 font-semibold text-[10px] uppercase tracking-wider">Koneksi</span>
+                  <span className="text-muted-foreground/70 font-semibold text-[10px] uppercase tracking-wider">Koneksi</span>
                   {[
                     ['#a855f7', 'OTB → JC (Feeder)'],
                     ['#8b5cf6', 'JC → JC (Branch)'],

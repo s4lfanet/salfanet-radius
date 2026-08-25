@@ -88,31 +88,31 @@ export function OLTDiagram({
   return (
     <div className="olt-diagram">
       {/* Info Panel */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-lg p-4 mb-4 border border-border">
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.olt.name')}</p>
-            <p className="font-semibold text-gray-900 dark:text-white">{node.name}</p>
+            <p className="text-xs text-muted-foreground">{t('network.olt.name')}</p>
+            <p className="font-semibold text-foreground">{node.name}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.olt.code')}</p>
-            <p className="font-mono text-gray-900 dark:text-white">{node.code}</p>
+            <p className="text-xs text-muted-foreground">{t('network.olt.code')}</p>
+            <p className="font-mono text-foreground">{node.code}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.olt.vendor')}</p>
-            <p className="text-gray-900 dark:text-white">{node.metadata?.vendor || 'Huawei'}</p>
+            <p className="text-xs text-muted-foreground">{t('network.olt.vendor')}</p>
+            <p className="text-foreground">{node.metadata?.vendor || 'Huawei'}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.olt.model')}</p>
-            <p className="text-gray-900 dark:text-white">{node.metadata?.model || 'MA5800-X15'}</p>
+            <p className="text-xs text-muted-foreground">{t('network.olt.model')}</p>
+            <p className="text-foreground">{node.metadata?.model || 'MA5800-X15'}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.olt.ponPorts')}</p>
-            <p className="text-gray-900 dark:text-white">{ponPorts.length} ports</p>
+            <p className="text-xs text-muted-foreground">{t('network.olt.ponPorts')}</p>
+            <p className="text-foreground">{ponPorts.length} ports</p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.olt.utilization')}</p>
-            <p className="text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">{t('network.olt.utilization')}</p>
+            <p className="text-foreground">
               {ponPorts.filter((p) => p.status === 'ASSIGNED').length} / {ponPorts.length} (
               {((ponPorts.filter((p) => p.status === 'ASSIGNED').length / ponPorts.length) * 100).toFixed(1)}
               %)
@@ -126,7 +126,7 @@ export function OLTDiagram({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="bg-card rounded-lg border border-border"
       >
         <defs>
           <marker
@@ -322,20 +322,20 @@ export function OLTDiagram({
 
       {/* Hovered Port Info */}
       {hoveredPort && (
-        <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="mt-4 bg-card rounded-lg p-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
             {t('network.olt.ponPort')} {hoveredPort.number - node.inputPorts}
           </h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-gray-600 dark:text-gray-400">{t('common.status')}:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">
+              <span className="text-muted-foreground">{t('common.status')}:</span>
+              <span className="ml-2 text-foreground">
                 {t(`network.diagram.status.${hoveredPort.status.toLowerCase()}`)}
               </span>
             </div>
             {hoveredPort.metadata?.downstreamNode && (
               <div>
-                <span className="text-gray-600 dark:text-gray-400">{t('network.olt.connectedTo')}:</span>
+                <span className="text-muted-foreground">{t('network.olt.connectedTo')}:</span>
                 <span className="ml-2 text-cyan-600 dark:text-cyan-400 font-semibold">
                   {hoveredPort.metadata.downstreamNode}
                 </span>
@@ -343,19 +343,19 @@ export function OLTDiagram({
             )}
             {hoveredPort.signalStrength && (
               <div>
-                <span className="text-gray-600 dark:text-gray-400">{t('network.olt.signalStrength')}:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">{hoveredPort.signalStrength} dBm</span>
+                <span className="text-muted-foreground">{t('network.olt.signalStrength')}:</span>
+                <span className="ml-2 text-foreground">{hoveredPort.signalStrength} dBm</span>
               </div>
             )}
             {hoveredPort.assignedTo && (
               <div>
-                <span className="text-gray-600 dark:text-gray-400">{t('network.diagram.assignedTo')}:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">{hoveredPort.assignedTo}</span>
+                <span className="text-muted-foreground">{t('network.diagram.assignedTo')}:</span>
+                <span className="ml-2 text-foreground">{hoveredPort.assignedTo}</span>
               </div>
             )}
           </div>
           {hoveredPort.notes && (
-            <p className="mt-2 text-xs text-gray-600 dark:text-gray-400 italic">{hoveredPort.notes}</p>
+            <p className="mt-2 text-xs text-muted-foreground italic">{hoveredPort.notes}</p>
           )}
         </div>
       )}

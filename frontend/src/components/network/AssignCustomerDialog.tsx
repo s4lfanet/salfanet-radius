@@ -169,16 +169,16 @@ export default function AssignCustomerDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
             <Users className="w-6 h-6 text-blue-600" />
             <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-bold text-foreground">
                 Assign Customer to ODP
               </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 Connect customer to available ODP port
               </p>
             </div>
@@ -203,8 +203,8 @@ export default function AssignCustomerDialog({
             {/* Left: Customer Selection */}
             <div className="transition-opacity">
               <div className="flex items-center gap-2 mb-4">
-                <Users className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <h3 className="font-semibold text-foreground">
                   Select Customer ({filteredCustomers.length})
                 </h3>
               </div>
@@ -230,7 +230,7 @@ export default function AssignCustomerDialog({
                 ) : filteredCustomers.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                    <p className="text-gray-600 dark:text-gray-400">
+                    <p className="text-muted-foreground">
                       No unassigned customers found
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-500">
@@ -245,13 +245,13 @@ export default function AssignCustomerDialog({
                       className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
                         selectedCustomer?.id === customer.id
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          : 'border-border hover:border-blue-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
-                      <div className="font-medium text-gray-900 dark:text-white">
+                      <div className="font-medium text-foreground">
                         {customer.name}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-sm text-muted-foreground">
                         {customer.username} {customer.customerId && (
                           <span className="ml-2 text-xs text-gray-400">ID: {customer.customerId}</span>
                         )}
@@ -270,7 +270,7 @@ export default function AssignCustomerDialog({
                           className={`text-xs px-2 py-1 rounded ${
                             customer.status === 'active'
                               ? 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                              : 'bg-gray-100 dark:bg-gray-700 text-muted-foreground'
                           }`}
                         >
                           {customer.status}
@@ -289,8 +289,8 @@ export default function AssignCustomerDialog({
               } transition-opacity`}
             >
               <div className="flex items-center gap-2 mb-4">
-                <Wifi className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <Wifi className="w-5 h-5 text-muted-foreground" />
+                <h3 className="font-semibold text-foreground">
                   Select ODP ({nearestODPs.length > 0 ? nearestODPs.length : 0})
                 </h3>
               </div>
@@ -306,7 +306,7 @@ export default function AssignCustomerDialog({
               ) : nearestODPs.length === 0 ? (
                 <div className="text-center py-12">
                   <Wifi className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                  <p className="text-gray-600 dark:text-gray-400">
+                  <p className="text-muted-foreground">
                     No ODPs available
                   </p>
                 </div>
@@ -324,19 +324,19 @@ export default function AssignCustomerDialog({
                         selectedODP?.id === odp.id
                           ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                           : odp.availablePorts.length === 0
-                          ? 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-green-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          ? 'border-border opacity-50 cursor-not-allowed'
+                          : 'border-border hover:border-green-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <div className="font-medium text-gray-900 dark:text-white">
+                        <div className="font-medium text-foreground">
                           {odp.name}
                         </div>
                         <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                           {odp.distance} km
                         </div>
                       </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                      <div className="text-xs text-muted-foreground space-y-1">
                         <div>OLT: {odp.olt.name} - PON {odp.ponPort}</div>
                         {odp.odc && <div>ODC: {odp.odc.name}</div>}
                         <div className="flex items-center gap-2 mt-2">
@@ -359,7 +359,7 @@ export default function AssignCustomerDialog({
               {/* Port Selection */}
               {selectedODP && selectedODP.availablePorts.length > 0 && (
                 <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Select Port
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -383,7 +383,7 @@ export default function AssignCustomerDialog({
               {/* Notes */}
               {selectedODP && selectedPort && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">
                     Notes (Optional)
                   </label>
                   <textarea
@@ -400,10 +400,10 @@ export default function AssignCustomerDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <div className="flex items-center justify-between p-6 border-t border-border bg-gray-50 dark:bg-gray-900/50">
           <button
             onClick={handleClose}
-            className="px-6 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-6 py-2 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             Cancel
           </button>

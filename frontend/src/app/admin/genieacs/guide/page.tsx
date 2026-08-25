@@ -103,12 +103,12 @@ function Section({ id }: { id: SectionId }) {
   switch (id) {
     case 'overview':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>
             GenieACS adalah server TR-069 (CWMP) untuk manajemen perangkat CPE/ONT secara remote. Integrasi ini
             memungkinkan monitoring dan konfigurasi perangkat pelanggan langsung dari Salfanet Radius.
           </p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Menu yang Tersedia</h4>
+          <h4 className="font-semibold text-foreground">Menu yang Tersedia</h4>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="border-b text-gray-500">
@@ -136,8 +136,8 @@ function Section({ id }: { id: SectionId }) {
 
     case 'setup':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-          <h4 className="font-semibold text-gray-900 dark:text-white">1. Install GenieACS</h4>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <h4 className="font-semibold text-foreground">1. Install GenieACS</h4>
           <p>Install GenieACS di server terpisah atau VPS yang sama:</p>
           <CodeBlock lang="bash">{`# Install MongoDB
 sudo apt install -y mongodb
@@ -145,7 +145,7 @@ sudo apt install -y mongodb
 # Install GenieACS
 sudo npm install -g genieacs`}</CodeBlock>
 
-          <h4 className="font-semibold text-gray-900 dark:text-white">2. Buat Config File</h4>
+          <h4 className="font-semibold text-foreground">2. Buat Config File</h4>
           <p>Buat file <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">/opt/genieacs/config.json</code>:</p>
           <CodeBlock lang="json">{`{
   "MONGODB_CONNECTION_URL": "mongodb://127.0.0.1:27017/genieacs",
@@ -160,7 +160,7 @@ sudo npm install -g genieacs`}</CodeBlock>
   "LOG_LEVEL": "info"
 }`}</CodeBlock>
 
-          <h4 className="font-semibold text-gray-900 dark:text-white">3. Buat Systemd Services</h4>
+          <h4 className="font-semibold text-foreground">3. Buat Systemd Services</h4>
           <p>Buat 4 service files: <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">genieacs-cwmp</code>, <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">genieacs-nbi</code>, <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">genieacs-fs</code>, <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">genieacs-ui</code></p>
           <CodeBlock lang="bash">{`sudo systemctl daemon-reload
 sudo systemctl enable genieacs-cwmp genieacs-nbi genieacs-fs genieacs-ui
@@ -169,7 +169,7 @@ sudo systemctl start genieacs-cwmp genieacs-nbi genieacs-fs genieacs-ui
 # Check status
 sudo systemctl status genieacs-*`}</CodeBlock>
 
-          <h4 className="font-semibold text-gray-900 dark:text-white">4. Konfigurasi di Salfanet Radius</h4>
+          <h4 className="font-semibold text-foreground">4. Konfigurasi di Salfanet Radius</h4>
           <p>Buka <strong>Admin → Settings → GenieACS</strong> dan isi:</p>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong>GenieACS URL</strong>: <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">http://IP_GENIEACS:7557</code> (port NBI)</li>
@@ -181,8 +181,8 @@ sudo systemctl status genieacs-*`}</CodeBlock>
 
     case 'ont-config':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-          <h4 className="font-semibold text-gray-900 dark:text-white">Konfigurasi TR-069 di ONT (Huawei HG8145V5)</h4>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <h4 className="font-semibold text-foreground">Konfigurasi TR-069 di ONT (Huawei HG8145V5)</h4>
           <ol className="ml-4 list-decimal space-y-2">
             <li>Login ke web interface ONT (biasanya <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">192.168.100.1</code>)</li>
             <li>Buka <strong>Management → TR-069 Configuration</strong></li>
@@ -205,15 +205,15 @@ sudo systemctl status genieacs-*`}</CodeBlock>
 
     case 'devices':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Devices</strong></p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Fitur</h4>
+          <h4 className="font-semibold text-foreground">Fitur</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li>Lihat semua perangkat terdaftar</li>
             <li>Status real-time (Online/Offline)</li>
             <li>Detail perangkat: serial number, model, PPPoE, RX power, WiFi</li>
           </ul>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Aksi</h4>
+          <h4 className="font-semibold text-foreground">Aksi</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong>Force Sync</strong> - Trigger connection request langsung</li>
             <li><strong>Refresh Parameters</strong> - Ambil data terbaru</li>
@@ -225,16 +225,16 @@ sudo systemctl status genieacs-*`}</CodeBlock>
 
     case 'wifi':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Klik device → <strong>Edit WiFi</strong></p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Parameter yang Didukung</h4>
+          <h4 className="font-semibold text-foreground">Parameter yang Didukung</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong>SSID</strong> - Nama jaringan (1-32 karakter)</li>
             <li><strong>Security Mode</strong>: None, WPA-PSK, WPA2-PSK (rekomendasi), WPA/WPA2-PSK</li>
             <li><strong>Password</strong> - 8-63 karakter</li>
             <li><strong>Enable/Disable</strong> - ON/OFF WiFi</li>
           </ul>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Cara Kerja</h4>
+          <h4 className="font-semibold text-foreground">Cara Kerja</h4>
           <ol className="ml-4 list-decimal space-y-1">
             <li>User klik "Update WiFi"</li>
             <li>API membuat task <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">setParameterValues</code></li>
@@ -250,21 +250,21 @@ sudo systemctl status genieacs-*`}</CodeBlock>
 
     case 'tasks':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Tasks</strong></p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Fitur</h4>
+          <h4 className="font-semibold text-foreground">Fitur</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li>Real-time task list dengan status</li>
             <li>Auto-refresh setiap 10 detik (toggle on/off)</li>
             <li>Filter status: All / Pending / Fault / Done</li>
           </ul>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Status Task</h4>
+          <h4 className="font-semibold text-foreground">Status Task</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong className="text-yellow-600">Pending</strong> - Menunggu device connect</li>
             <li><strong className="text-green-600">Done</strong> - Berhasil dieksekusi</li>
             <li><strong className="text-red-600">Fault</strong> - Error, cek detail</li>
           </ul>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Aksi</h4>
+          <h4 className="font-semibold text-foreground">Aksi</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong>Retry</strong> - Eksekusi ulang task yang gagal</li>
             <li><strong>Delete</strong> - Hapus task dari antrian</li>
@@ -274,18 +274,18 @@ sudo systemctl status genieacs-*`}</CodeBlock>
 
     case 'virtual-parameters':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Virtual Parameters</strong></p>
           <p>
             Virtual parameter adalah script GenieACS yang menghitung atau mengekspos data perangkat
             (mis. PPPoE IP, RX Power, WiFi password). Disimpan langsung di GenieACS via NBI API.
           </p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Format Data</h4>
+          <h4 className="font-semibold text-foreground">Format Data</h4>
           <CodeBlock lang="json">{`{
   "_id": "pppoeIP",
   "script": "// JavaScript code that returns {writable, value}"
 }`}</CodeBlock>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Contoh VP Script (RX Power)</h4>
+          <h4 className="font-semibold text-foreground">Contoh VP Script (RX Power)</h4>
           <CodeBlock lang="javascript">{`let huawei = declare("InternetGatewayDevice.WANDevice.*.X_GponInterafceConfig.RXPower", {value: Date.now()});
 let m = "N/A";
 for (let p of huawei) {
@@ -297,10 +297,10 @@ return {writable: false, value: [m, "xsd:string"]};`}</CodeBlock>
 
     case 'parameter-config':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Parameter Config</strong></p>
           <p>Konfigurasi parameter yang muncul di <strong>Device List</strong> dan <strong>Device Detail</strong>.</p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Fitur</h4>
+          <h4 className="font-semibold text-foreground">Fitur</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li>Dua tab: <strong>DEVICE_LIST</strong> (kolom tabel) & <strong>DEVICE_DETAIL</strong> (section detail)</li>
             <li>Add/edit/remove parameter display</li>
@@ -314,12 +314,12 @@ return {writable: false, value: [m, "xsd:string"]};`}</CodeBlock>
 
     case 'presets':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Presets</strong></p>
           <p>
             Preset adalah aturan konfigurasi yang otomatis diterapkan ke perangkat yang memenuhi kriteria tertentu.
           </p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Struktur Preset</h4>
+          <h4 className="font-semibold text-foreground">Struktur Preset</h4>
           <CodeBlock lang="json">{`{
   "_id": "preset-name",
   "weight": 0,
@@ -328,7 +328,7 @@ return {writable: false, value: [m, "xsd:string"]};`}</CodeBlock>
   "configurations": [],
   "events": {}
 }`}</CodeBlock>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Field</h4>
+          <h4 className="font-semibold text-foreground">Field</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong>_id</strong> - Nama preset unik</li>
             <li><strong>weight</strong> - Prioritas (lebih rendah = lebih tinggi)</li>
@@ -342,13 +342,13 @@ return {writable: false, value: [m, "xsd:string"]};`}</CodeBlock>
 
     case 'vp-scripts':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → VP Scripts</strong></p>
           <p>
             VP Scripts adalah interface enhanced untuk virtual parameters dengan sync tracking, backup/restore,
             dan integrasi GenieACS. Script disimpan lokal di database dan di-sync ke GenieACS.
           </p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Fitur</h4>
+          <h4 className="font-semibold text-foreground">Fitur</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li>List VP scripts dengan sync status badge</li>
             <li>Create/edit/delete VP script</li>
@@ -356,7 +356,7 @@ return {writable: false, value: [m, "xsd:string"]};`}</CodeBlock>
             <li>Backup & restore VP scripts</li>
             <li>Auto-generate VP dari device parameters</li>
           </ul>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Sync Status</h4>
+          <h4 className="font-semibold text-foreground">Sync Status</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong className="text-green-600">Synced</strong> - Berhasil di-sync ke GenieACS</li>
             <li><strong className="text-yellow-600">Pending</strong> - Belum di-sync</li>
@@ -370,13 +370,13 @@ return {writable: false, value: [m, "xsd:string"]};`}</CodeBlock>
 
     case 'provisions':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Provisions</strong></p>
           <p>
             Provision adalah JavaScript script yang dieksekusi GenieACS saat provisioning. Bisa set parameter,
             declare dependencies, dan run custom logic.
           </p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Contoh Provision Script</h4>
+          <h4 className="font-semibold text-foreground">Contoh Provision Script</h4>
           <CodeBlock lang="javascript">{`// Set WiFi SSID for 2.4GHz
 declare("InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
   {value: Date.now()},
@@ -386,10 +386,10 @@ declare("InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
 
     case 'faults':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Faults</strong></p>
           <p>Lihat fault yang terjadi saat komunikasi dengan perangkat.</p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Field Fault</h4>
+          <h4 className="font-semibold text-foreground">Field Fault</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong>device</strong> - Device ID yang trigger fault</li>
             <li><strong>code</strong> - TR-069 error code (mis. <code className="rounded bg-gray-200 px-1 dark:bg-gray-700">cwmp.9002</code>)</li>
@@ -402,10 +402,10 @@ declare("InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
 
     case 'config':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <p>Buka <strong>Admin → GenieACS → Config</strong></p>
           <p>View dan edit konfigurasi runtime GenieACS via NBI API.</p>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Common Config Keys</h4>
+          <h4 className="font-semibold text-foreground">Common Config Keys</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><code className="rounded bg-gray-200 px-1 dark:bg-gray-700">cwmp.queue_threshold</code> - Max CWMP queue size</li>
             <li><code className="rounded bg-gray-200 px-1 dark:bg-gray-700">cwmp.connection_request_timeout</code> - Timeout (ms)</li>
@@ -419,7 +419,7 @@ declare("InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
 
     case 'troubleshooting':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+        <div className="space-y-3 text-sm text-muted-foreground">
           <Collapsible title="Device Tidak Muncul di GenieACS">
             <ul className="ml-4 list-disc space-y-1">
               <li>Cek konfigurasi TR-069 di ONT</li>
@@ -484,8 +484,8 @@ journalctl -u genieacs-ui -f`}</CodeBlock>
 
     case 'security':
       return (
-        <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
-          <h4 className="font-semibold text-gray-900 dark:text-white">Best Practices</h4>
+        <div className="space-y-3 text-sm text-muted-foreground">
+          <h4 className="font-semibold text-foreground">Best Practices</h4>
           <ul className="ml-4 list-disc space-y-1">
             <li><strong>HTTPS</strong> - Setup reverse proxy dengan SSL</li>
             <li><strong>Authentication</strong> - Konfigurasi username/password di GenieACS</li>
@@ -493,7 +493,7 @@ journalctl -u genieacs-ui -f`}</CodeBlock>
             <li><strong>VPN</strong> - Untuk akses GenieACS yang aman</li>
             <li><strong>Regular Updates</strong> - Update GenieACS secara berkala</li>
           </ul>
-          <h4 className="font-semibold text-gray-900 dark:text-white">Nginx Reverse Proxy (HTTPS)</h4>
+          <h4 className="font-semibold text-foreground">Nginx Reverse Proxy (HTTPS)</h4>
           <CodeBlock lang="nginx">{`server {
     listen 443 ssl http2;
     server_name genieacs.yourdomain.com;
@@ -529,7 +529,7 @@ export default function GenieACSGuidePage() {
       <div className="flex gap-6">
         {/* Section nav */}
         <aside className="hidden lg:block w-56 flex-shrink-0">
-          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          <p className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Panduan
           </p>
           <nav className="space-y-0.5">
@@ -579,7 +579,7 @@ export default function GenieACSGuidePage() {
                 return (
                   <>
                     <Icon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{section.label}</h2>
+                    <h2 className="text-lg font-semibold text-foreground">{section.label}</h2>
                   </>
                 );
               })()}

@@ -57,19 +57,19 @@ export default function TechnicianOfflinePage() {
             <WifiOff className="w-5 h-5 text-red-500" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t('techPortal.offlineUsers')}</h1>
-            <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{filtered.length} pelanggan offline</p>
+            <h1 className="text-lg font-bold text-foreground">{t('techPortal.offlineUsers')}</h1>
+            <p className="text-xs text-muted-foreground">{filtered.length} pelanggan offline</p>
           </div>
         </div>
-        <button onClick={loadData} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
-          <RefreshCw className={`w-4 h-4 text-slate-600 dark:text-[#e0d0ff] ${loading ? 'animate-spin' : ''}`} />
+        <button onClick={loadData} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+          <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
       </div>
 
       {/* Content */}
@@ -78,35 +78,35 @@ export default function TechnicianOfflinePage() {
           <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-slate-500 dark:text-[#e0d0ff]/50">
+        <div className="text-center py-20 text-muted-foreground/70">
           <WifiOff className="w-10 h-10 mx-auto mb-2 opacity-30" />
           <p className="text-sm">{t('techPortal.noData')}</p>
         </div>
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden lg:block overflow-auto bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-2xl">
+          <div className="hidden lg:block overflow-auto bg-card border border-border rounded-2xl">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-[#bc13fe]/20 text-left">
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">Username</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">{t('techPortal.name')}</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">{t('techPortal.phone')}</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">Profile</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">Router</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">Area</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">Status</th>
+                <tr className="border-b border-border text-left">
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Username</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">{t('techPortal.name')}</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">{t('techPortal.phone')}</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Profile</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Router</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Area</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((u) => (
                   <tr key={u.id} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition">
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">{u.username}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{u.name}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{u.phone}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{u.profile?.name || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{u.router?.name || '-'}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{u.area?.name || '-'}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{u.name}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{u.phone}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{u.profile?.name || '-'}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{u.router?.name || '-'}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{u.area?.name || '-'}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 text-xs font-bold rounded-lg ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400'}`}>{u.status}</span>
                     </td>
@@ -119,27 +119,27 @@ export default function TechnicianOfflinePage() {
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-3">
             {filtered.map((u) => (
-              <div key={u.id} className="bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-2xl p-4 space-y-2">
+              <div key={u.id} className="bg-card border border-border rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{u.username}</p>
-                    <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{u.name}</p>
+                    <p className="text-sm font-bold text-foreground">{u.username}</p>
+                    <p className="text-xs text-muted-foreground">{u.name}</p>
                   </div>
                   <span className={`px-2 py-1 text-xs font-bold rounded-lg ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>Offline</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-slate-500 dark:text-[#e0d0ff]/50">{t('techPortal.phone')}: </span>
-                    <span className="text-slate-700 dark:text-[#e0d0ff]/80">{u.phone}</span>
+                    <span className="text-muted-foreground/70">{t('techPortal.phone')}: </span>
+                    <span className="text-foreground/80">{u.phone}</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 dark:text-[#e0d0ff]/50">Profile: </span>
-                    <span className="text-slate-700 dark:text-[#e0d0ff]/80">{u.profile?.name || '-'}</span>
+                    <span className="text-muted-foreground/70">Profile: </span>
+                    <span className="text-foreground/80">{u.profile?.name || '-'}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10 text-xs">
-                  <span className="text-slate-500 dark:text-[#e0d0ff]/60">{u.router?.name || '-'} {u.area ? `• ${u.area.name}` : ''}</span>
-                  <span className={`px-2 py-0.5 rounded-lg font-medium ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-500' : 'text-slate-500 dark:text-[#e0d0ff]/60'}`}>{u.status}</span>
+                  <span className="text-muted-foreground">{u.router?.name || '-'} {u.area ? `• ${u.area.name}` : ''}</span>
+                  <span className={`px-2 py-0.5 rounded-lg font-medium ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-500' : 'text-muted-foreground'}`}>{u.status}</span>
                 </div>
               </div>
             ))}

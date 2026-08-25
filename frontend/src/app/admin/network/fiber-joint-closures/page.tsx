@@ -208,11 +208,11 @@ export default function FiberJointClosuresPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
             <Link2 className="h-6 w-6 text-purple-500" />
             {t('network.jointClosure.title') || 'Joint Closure Management'}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <p className="text-muted-foreground text-sm mt-1">
             {t('network.jointClosure.subtitle') || 'Manage Joint Closures (JC)'}
           </p>
         </div>
@@ -232,12 +232,12 @@ export default function FiberJointClosuresPage() {
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           placeholder={t('common.search') || 'Search...'}
-          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500"
+          className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-foreground focus:ring-2 focus:ring-purple-500"
         />
         <select
           value={filterType}
           onChange={e => setFilterType(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-foreground"
         >
           <option value="">{t('common.all') || 'All Types'}</option>
           {JC_TYPES.map(type => (
@@ -247,7 +247,7 @@ export default function FiberJointClosuresPage() {
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
-          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+          className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-foreground"
         >
           <option value="">{t('common.allStatus') || 'All Status'}</option>
           {STATUS_OPTIONS.map(s => (
@@ -270,15 +270,15 @@ export default function FiberJointClosuresPage() {
           { label: t('network.tracing.maintenance') || 'Maintenance', value: jointClosures.filter(j => j.status === 'maintenance').length, color: 'text-yellow-600' },
           { label: t('network.tracing.damaged') || 'Damaged', value: jointClosures.filter(j => j.status === 'damaged').length, color: 'text-red-600' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div key={label} className="bg-card rounded-lg border border-border p-4">
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+            <p className="text-sm text-muted-foreground">{label}</p>
           </div>
         ))}
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-card rounded-lg border border-border overflow-hidden">
         {loading ? (
           <div className="text-center py-12">
             <RefreshCcw className="h-8 w-8 animate-spin text-purple-500 mx-auto mb-2" />
@@ -287,7 +287,7 @@ export default function FiberJointClosuresPage() {
         ) : filteredJCs.length === 0 ? (
           <div className="text-center py-12">
             <Link2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-muted-foreground">
               {jointClosures.length === 0
                 ? t('network.diagram.noJointClosures') || 'No Joint Closures yet'
                 : t('common.noResults') || 'No results'}
@@ -304,21 +304,21 @@ export default function FiberJointClosuresPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-900/50 border-b border-border">
                 <tr>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {t('network.jointClosure.code') || 'Code'} / {t('network.jointClosure.name') || 'Name'}
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">
                     {t('network.jointClosure.type') || 'Type'}
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                     {t('network.jointClosure.fiberCount') || 'Fibers'}
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {t('common.status') || 'Status'}
                   </th>
-                  <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">
+                  <th className="text-left py-3 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden md:table-cell">
                     {t('network.jointClosure.location') || 'Location'}
                   </th>
                   <th className="py-3 px-4" />
@@ -329,18 +329,18 @@ export default function FiberJointClosuresPage() {
                   <tr key={jc.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                     <td className="py-3 px-4">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{jc.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{jc.code}</p>
+                        <p className="font-medium text-foreground">{jc.name}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{jc.code}</p>
                       </div>
                     </td>
                     <td className="py-3 px-4 hidden sm:table-cell">
-                      <span className="text-sm text-gray-700 dark:text-gray-300">{getTypeLabel(jc.type)}</span>
+                      <span className="text-sm text-muted-foreground">{getTypeLabel(jc.type)}</span>
                       <p className="text-xs text-gray-400">{jc.cableType}</p>
                     </td>
                     <td className="py-3 px-4 hidden md:table-cell">
                       <div className="flex items-center gap-1">
                         <Cable className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{jc.fiberCount}</span>
+                        <span className="text-sm text-muted-foreground">{jc.fiberCount}</span>
                       </div>
                       <p className="text-xs text-gray-400">{jc.spliceTrayCount} trays</p>
                     </td>
@@ -352,7 +352,7 @@ export default function FiberJointClosuresPage() {
                     </td>
                     <td className="py-3 px-4 hidden md:table-cell">
                       {jc.address ? (
-                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 max-w-[200px]">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground max-w-[200px]">
                           <MapPin className="h-3 w-3 shrink-0" />
                           <span className="truncate">{jc.address}</span>
                         </div>

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -652,7 +652,7 @@ function ScriptCard({ title, description, script, icon, copied, onCopy, onDownlo
           <div className="flex gap-2">
             <button
               onClick={onCopy}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
               title="Copy to clipboard"
             >
               {copied ? (
@@ -663,7 +663,7 @@ function ScriptCard({ title, description, script, icon, copied, onCopy, onDownlo
             </button>
             <button
               onClick={onDownload}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              className="p-2 hover:bg-accent rounded-lg transition-colors"
               title="Download script"
             >
               <Download className="w-4 h-4 text-muted-foreground dark:text-muted-foreground" />

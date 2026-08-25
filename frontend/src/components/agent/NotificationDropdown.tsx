@@ -242,9 +242,9 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-white dark:bg-[#0a0520] border-2 border-purple-200 dark:border-[#00f7ff]/50 rounded-2xl shadow-[0_0_50px_rgba(0,247,255,0.2)] z-[9999] overflow-hidden backdrop-blur-xl">
+        <div className="absolute right-0 top-full mt-2 w-80 md:w-96 bg-card border-2 border-purple-200 dark:border-[#00f7ff]/50 rounded-2xl shadow-[0_0_50px_rgba(0,247,255,0.2)] z-[9999] overflow-hidden backdrop-blur-xl">
           <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-[#bc13fe]/20 dark:to-[#00f7ff]/20 border-b border-purple-200 dark:border-[#00f7ff]/30 flex items-center justify-between">
-            <h3 className="text-base font-bold text-slate-900 dark:text-white">Notifikasi</h3>
+            <h3 className="text-base font-bold text-foreground">Notifikasi</h3>
             {notifications.length > 0 && (
               <button
                 onClick={markAllAsRead}
@@ -259,7 +259,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
                 <Bell className="h-12 w-12 text-purple-300 dark:text-[#00f7ff]/40 mx-auto mb-3" />
-                <p className="text-sm font-medium text-slate-900 dark:text-white">Belum ada notifikasi</p>
+                <p className="text-sm font-medium text-foreground">Belum ada notifikasi</p>
                 <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60 mt-1">Notifikasi akan muncul di sini</p>
               </div>
             ) : (
@@ -268,7 +268,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
                   <div
                     key={notification.id}
                     className={`p-4 hover:bg-purple-50 dark:hover:bg-[#bc13fe]/10 transition ${
-                      !notification.isRead ? 'bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-[#bc13fe]/15 dark:to-[#00f7ff]/15 border-l-4 border-purple-400 dark:border-[#00f7ff]' : 'bg-white dark:bg-[#0a0520]'
+                      !notification.isRead ? 'bg-gradient-to-r from-purple-50 to-cyan-50 dark:from-[#bc13fe]/15 dark:to-[#00f7ff]/15 border-l-4 border-purple-400 dark:border-[#00f7ff]' : 'bg-card'
                     }`}
                   >
                     <div className="flex gap-3">
@@ -277,7 +277,7 @@ export default function AgentNotificationDropdown({ agentId, enableToasts = true
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1.5">
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                          <h4 className="text-sm font-bold text-foreground truncate">
                             {notification.title}
                           </h4>
                           <button

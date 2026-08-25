@@ -443,7 +443,7 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
         className="w-full flex items-center gap-1.5 px-2 py-1 group"
         aria-expanded={isOpen}
       >
-        <span className="text-[9px] text-gray-500 tracking-[0.25em] uppercase font-bold group-hover:text-gray-600 dark:text-gray-400 dark:group-hover:text-gray-300 transition-colors flex-shrink-0">
+        <span className="text-[9px] text-gray-500 tracking-[0.25em] uppercase font-bold group-hover:text-muted-foreground dark:group-hover:text-gray-300 transition-colors flex-shrink-0">
           {t(titleKey)}
         </span>
         <div className="flex-1 h-px bg-gradient-to-r from-gray-300 via-gray-200 to-transparent dark:from-brand-400/35 dark:via-brand-400/20" />

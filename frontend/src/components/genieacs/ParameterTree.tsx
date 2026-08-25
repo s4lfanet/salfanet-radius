@@ -25,7 +25,7 @@ function TreeNode({ node, depth = 0 }: TreeNodeProps) {
   return (
     <div className="text-sm font-mono">
       <div
-        className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-default"
+        className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-accent cursor-default"
         style={{ paddingLeft: `${depth * 1.25 + 0.25}rem` }}
         onClick={() => hasChildren && setOpen((o) => !o)}
       >
@@ -38,7 +38,7 @@ function TreeNode({ node, depth = 0 }: TreeNodeProps) {
         ) : (
           <span className="h-3.5 w-3.5 flex-shrink-0" />
         )}
-        <span className="text-gray-700 dark:text-gray-300">{label}</span>
+        <span className="text-muted-foreground">{label}</span>
         {!hasChildren && node.value !== undefined && (
           <>
             <span className="mx-1 text-gray-400">=</span>
@@ -76,7 +76,7 @@ export function ParameterTree({ nodes }: Props) {
   }
 
   return (
-    <div className="divide-y divide-gray-100 dark:divide-gray-800 overflow-auto max-h-[60vh]">
+    <div className="divide-y divide-border overflow-auto max-h-[60vh]">
       {nodes.map((n) => (
         <TreeNode key={n.path} node={n} />
       ))}

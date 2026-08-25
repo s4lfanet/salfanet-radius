@@ -176,11 +176,11 @@ export function ODPDiagramV2({
   return (
     <div className="odp-diagram-v2">
       {/* Info Panel */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-lg p-4 mb-4 border border-border">
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{node.code}</h3>
+              <h3 className="text-lg font-bold text-foreground">{node.code}</h3>
               <span 
                 className="px-2 py-0.5 text-xs font-medium rounded-full"
                 style={{ 
@@ -201,7 +201,7 @@ export function ODPDiagramV2({
                 </span>
               )}
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{node.name}</p>
+            <p className="text-sm text-muted-foreground">{node.name}</p>
             {node.address && (
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">📍 {node.address}</p>
             )}
@@ -220,25 +220,25 @@ export function ODPDiagramV2({
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('network.odp.splitterRatio')}</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">{t('network.odp.splitterRatio')}</p>
+            <p className="font-medium text-foreground">
               {splitterConfig?.ratio || node.splittingRatio}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Splitter Loss</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">Splitter Loss</p>
+            <p className="font-medium text-foreground">
               {getSplitterLossDisplay()}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('network.odp.portsUsed')}</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">{t('network.odp.portsUsed')}</p>
+            <p className="font-medium text-foreground">
               {assignedPorts} / {outputPorts.length}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{t('network.odp.utilization')}</p>
+            <p className="text-xs text-muted-foreground">{t('network.odp.utilization')}</p>
             <div className="flex items-center gap-2">
               <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div 
@@ -250,15 +250,15 @@ export function ODPDiagramV2({
                   style={{ width: `${utilizationPercent}%` }}
                 />
               </div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              <span className="text-xs font-medium text-muted-foreground">
                 {utilizationPercent}%
               </span>
             </div>
           </div>
           {node.incomingCore && (
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Incoming Core</p>
-              <p className="font-medium text-gray-900 dark:text-white">
+              <p className="text-xs text-muted-foreground">Incoming Core</p>
+              <p className="font-medium text-foreground">
                 <span 
                   className="inline-block w-3 h-3 rounded-sm mr-1"
                   style={{ backgroundColor: node.incomingCore.colorHex }}
@@ -272,8 +272,8 @@ export function ODPDiagramV2({
 
       {/* Hierarchy View */}
       {showHierarchy && (hierarchyLevel === 'PARENT' || hierarchyLevel === 'SUB_PARENT') && childODPs.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+        <div className="bg-card rounded-lg p-4 mb-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-3">
             Child ODPs ({childODPs.length})
           </h4>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -284,14 +284,14 @@ export function ODPDiagramV2({
                   'p-3 rounded-lg border-2 cursor-pointer transition-all',
                   hoveredChild === child.id
                     ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    : 'border-border hover:border-gray-300 dark:hover:border-gray-600'
                 )}
                 onClick={() => onChildODPClick?.(child.id)}
                 onMouseEnter={() => setHoveredChild(child.id)}
                 onMouseLeave={() => setHoveredChild(null)}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-gray-900 dark:text-white text-sm">
+                  <span className="font-medium text-foreground text-sm">
                     {child.code}
                   </span>
                   <span className={cn(
@@ -299,7 +299,7 @@ export function ODPDiagramV2({
                     child.status === 'ACTIVE' ? 'bg-green-500' : 'bg-gray-400'
                   )} />
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {child.name}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
@@ -313,8 +313,8 @@ export function ODPDiagramV2({
 
       {/* Parent ODP Info */}
       {showHierarchy && hierarchy?.parentODP && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="bg-card rounded-lg p-4 mb-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
             Parent ODP
           </h4>
           <div className="flex items-center gap-3">
@@ -325,10 +325,10 @@ export function ODPDiagramV2({
               <span style={{ color: getHierarchyColor('PARENT') }}>⬆</span>
             </div>
             <div>
-              <p className="font-medium text-gray-900 dark:text-white">
+              <p className="font-medium text-foreground">
                 {hierarchy.parentODP.code}
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-muted-foreground">
                 {hierarchy.parentODP.name}
               </p>
             </div>
@@ -341,7 +341,7 @@ export function ODPDiagramV2({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="bg-card rounded-lg border border-border"
       >
         <defs>
           <marker id="arrowhead-odp" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -605,19 +605,19 @@ export function ODPDiagramV2({
 
       {/* Customer List */}
       {showCustomerList && customers.length > 0 && (
-        <div className="mt-4 bg-white dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+        <div className="mt-4 bg-card rounded-lg p-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-3">
             Connected Customers ({customers.length})
           </h4>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="bg-gray-50 dark:bg-gray-800">
-                  <th className="px-2 py-1 text-left text-gray-600 dark:text-gray-400">Port</th>
-                  <th className="px-2 py-1 text-left text-gray-600 dark:text-gray-400">Customer</th>
-                  <th className="px-2 py-1 text-left text-gray-600 dark:text-gray-400">Address</th>
-                  <th className="px-2 py-1 text-center text-gray-600 dark:text-gray-400">Signal</th>
-                  <th className="px-2 py-1 text-center text-gray-600 dark:text-gray-400">Status</th>
+                <tr className="bg-muted">
+                  <th className="px-2 py-1 text-left text-muted-foreground">Port</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Customer</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Address</th>
+                  <th className="px-2 py-1 text-center text-muted-foreground">Signal</th>
+                  <th className="px-2 py-1 text-center text-muted-foreground">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -625,16 +625,16 @@ export function ODPDiagramV2({
                   <tr
                     key={customer.id}
                     className={cn(
-                      'border-b border-gray-100 dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800',
+                      'border-b border-border cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800',
                       selectedCustomer === customer.id && 'bg-purple-50 dark:bg-purple-900/20'
                     )}
                     onClick={() => onCustomerClick?.(customer.id)}
                   >
                     <td className="px-2 py-1.5 font-mono">P{customer.portNumber}</td>
-                    <td className="px-2 py-1.5 font-medium text-gray-900 dark:text-white">
+                    <td className="px-2 py-1.5 font-medium text-foreground">
                       {customer.name}
                     </td>
-                    <td className="px-2 py-1.5 text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                    <td className="px-2 py-1.5 text-muted-foreground max-w-xs truncate">
                       {customer.address || '-'}
                     </td>
                     <td className="px-2 py-1.5 text-center">
@@ -660,7 +660,7 @@ export function ODPDiagramV2({
               </tbody>
             </table>
             {customers.length > 16 && (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-center">
+              <p className="mt-2 text-xs text-muted-foreground text-center">
                 Showing 16 of {customers.length} customers
               </p>
             )}
@@ -670,18 +670,18 @@ export function ODPDiagramV2({
 
       {/* Hovered Port Info */}
       {hoveredPort && (
-        <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="mt-4 bg-card rounded-lg p-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
             Port {hoveredPort.number - node.inputPorts}
           </h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Status:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">{PORT_STATUS_LABELS[hoveredPort.status]}</span>
+              <span className="text-muted-foreground">Status:</span>
+              <span className="ml-2 text-foreground">{PORT_STATUS_LABELS[hoveredPort.status]}</span>
             </div>
             {hoveredPort.metadata?.customerName && (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Customer:</span>
+                <span className="text-muted-foreground">Customer:</span>
                 <span className="ml-2 text-cyan-600 dark:text-cyan-400 font-medium">
                   {hoveredPort.metadata.customerName}
                 </span>
@@ -689,7 +689,7 @@ export function ODPDiagramV2({
             )}
             {hoveredPort.signalStrength && (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Signal:</span>
+                <span className="text-muted-foreground">Signal:</span>
                 <span className={cn(
                   'ml-2 font-mono',
                   hoveredPort.signalStrength > -20 ? 'text-green-600' :

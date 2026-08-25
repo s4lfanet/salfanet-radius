@@ -163,13 +163,13 @@ export default function AdminOntRemovalTasksPage() {
             <Unplug className="w-5 h-5 text-orange-500" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">Tugas Cabut ONT</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{filtered.length} tugas</p>
+            <h1 className="text-lg font-bold text-foreground">Tugas Cabut ONT</h1>
+            <p className="text-xs text-muted-foreground">{filtered.length} tugas</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <button onClick={fetchTasks} className="p-2 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">
-            <RefreshCw className={`w-4 h-4 text-slate-600 dark:text-slate-300 ${loading ? 'animate-spin' : ''}`} />
+          <button onClick={fetchTasks} className="p-2 bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+            <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
           </button>
           <button
             onClick={() => {
@@ -187,7 +187,7 @@ export default function AdminOntRemovalTasksPage() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari username / nama..." className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari username / nama..." className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400" />
         </div>
         <div className="flex gap-1">
           {([
@@ -196,7 +196,7 @@ export default function AdminOntRemovalTasksPage() {
             { key: 'CANCELLED', label: 'Dibatalkan' },
             { key: '', label: 'Semua' },
           ] as const).map((f) => (
-            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-orange-600 text-white' : 'bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
+            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-orange-600 text-white' : 'bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-slate-700'}`}>
               {f.label}
             </button>
           ))}
@@ -208,36 +208,36 @@ export default function AdminOntRemovalTasksPage() {
           <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-slate-500 dark:text-slate-400">
+        <div className="text-center py-20 text-muted-foreground">
           <Unplug className="w-10 h-10 mx-auto mb-2 opacity-30" />
           <p className="text-sm">Tidak ada tugas</p>
         </div>
       ) : (
-        <div className="overflow-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl">
+        <div className="overflow-auto bg-card border border-border rounded-2xl">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-700 text-left">
-                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Pelanggan</th>
-                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Area</th>
-                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Teknisi</th>
-                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Alasan</th>
-                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Status</th>
-                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300">Dibuat</th>
-                <th className="px-4 py-3 font-semibold text-slate-600 dark:text-slate-300"></th>
+              <tr className="border-b border-border text-left">
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Pelanggan</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Area</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Teknisi</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Alasan</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground">Dibuat</th>
+                <th className="px-4 py-3 font-semibold text-muted-foreground"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((t) => (
                 <tr key={t.id} className="border-b border-slate-100 dark:border-slate-800">
                   <td className="px-4 py-3">
-                    <p className="font-medium text-slate-900 dark:text-white">{t.username}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{t.customerName}</p>
+                    <p className="font-medium text-foreground">{t.username}</p>
+                    <p className="text-xs text-muted-foreground">{t.customerName}</p>
                   </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                  <td className="px-4 py-3 text-muted-foreground">
                     {t.areaName ? (<span className="flex items-center gap-1 text-xs"><MapPin className="w-3 h-3" />{t.areaName}</span>) : '-'}
                   </td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{t.technicianName}</td>
-                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300 text-xs max-w-xs truncate" title={t.reason || t.completedNotes || t.cancelReason || ''}>
+                  <td className="px-4 py-3 text-muted-foreground">{t.technicianName}</td>
+                  <td className="px-4 py-3 text-muted-foreground text-xs max-w-xs truncate" title={t.reason || t.completedNotes || t.cancelReason || ''}>
                     {t.reason || t.completedNotes || t.cancelReason || '-'}
                   </td>
                   <td className="px-4 py-3">
@@ -249,7 +249,7 @@ export default function AdminOntRemovalTasksPage() {
                       {t.status === 'PENDING' ? 'Pending' : t.status === 'COMPLETED' ? 'Selesai' : 'Dibatalkan'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">{formatWIB(t.createdAt, 'dd MMM yyyy HH:mm')}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{formatWIB(t.createdAt, 'dd MMM yyyy HH:mm')}</td>
                   <td className="px-4 py-3">
                     {t.status === 'PENDING' && (
                       <button onClick={() => cancelTask(t.id)} className="text-xs text-red-600 dark:text-red-400 hover:underline font-medium">
@@ -266,14 +266,14 @@ export default function AdminOntRemovalTasksPage() {
 
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowCreate(false)}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-card rounded-2xl p-6 w-full max-w-md space-y-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">Buat Tugas Cabut ONT</h2>
+              <h2 className="text-lg font-bold text-foreground">Buat Tugas Cabut ONT</h2>
               <button onClick={() => setShowCreate(false)}><X className="w-5 h-5 text-slate-400" /></button>
             </div>
             <div className="space-y-3">
               <div className="relative">
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Pelanggan (terisolir)</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Pelanggan (terisolir)</label>
                 <input
                   value={customerSearch}
                   onChange={(e) => {
@@ -284,12 +284,12 @@ export default function AdminOntRemovalTasksPage() {
                   onFocus={() => setShowCustomerDropdown(true)}
                   onBlur={() => setTimeout(() => setShowCustomerDropdown(false), 150)}
                   placeholder="Cari username / nama pelanggan..."
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-foreground"
                 />
                 {showCustomerDropdown && (
-                  <div className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg">
+                  <div className="absolute z-10 mt-1 w-full max-h-56 overflow-y-auto bg-card border border-border rounded-lg shadow-lg">
                     {matchingCustomers.length === 0 ? (
-                      <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">
+                      <p className="px-3 py-2 text-xs text-muted-foreground">
                         {isolatedCustomers.length === 0 ? 'Tidak ada pelanggan terisolir' : 'Tidak ditemukan'}
                       </p>
                     ) : (
@@ -298,10 +298,10 @@ export default function AdminOntRemovalTasksPage() {
                           key={c.id}
                           type="button"
                           onClick={() => selectCustomer(c)}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition"
                         >
-                          <p className="font-medium text-slate-900 dark:text-white">{c.name} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">({c.username})</span></p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{c.areaName || 'Tanpa area'}{c.totalUnpaid ? ` · Tunggakan Rp${c.totalUnpaid.toLocaleString('id-ID')}` : ''}</p>
+                          <p className="font-medium text-foreground">{c.name} <span className="text-xs font-normal text-muted-foreground">({c.username})</span></p>
+                          <p className="text-xs text-muted-foreground">{c.areaName || 'Tanpa area'}{c.totalUnpaid ? ` · Tunggakan Rp${c.totalUnpaid.toLocaleString('id-ID')}` : ''}</p>
                         </button>
                       ))
                     )}
@@ -312,11 +312,11 @@ export default function AdminOntRemovalTasksPage() {
                 )}
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Tugaskan ke Teknisi</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Tugaskan ke Teknisi</label>
                 <select
                   value={form.assignedTechnicianId}
                   onChange={(e) => setForm((f) => ({ ...f, assignedTechnicianId: e.target.value }))}
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-foreground"
                 >
                   <option value="">-- Pilih Teknisi --</option>
                   {technicians.map((t) => (
@@ -325,18 +325,18 @@ export default function AdminOntRemovalTasksPage() {
                 </select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">Alasan (opsional)</label>
+                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Alasan (opsional)</label>
                 <textarea
                   value={form.reason}
                   onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
                   rows={3}
                   placeholder="mis. Menunggak 3 bulan, sudah tidak berlangganan"
-                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white resize-none"
+                  className="w-full px-3 py-2 bg-input border border-border rounded-lg text-sm text-foreground resize-none"
                 />
               </div>
             </div>
             <div className="flex gap-2 pt-2">
-              <button onClick={() => setShowCreate(false)} className="flex-1 px-3 py-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-sm font-bold rounded-lg transition">
+              <button onClick={() => setShowCreate(false)} className="flex-1 px-3 py-2 bg-muted text-muted-foreground text-sm font-bold rounded-lg transition">
                 Batal
               </button>
               <button disabled={creating} onClick={createTask} className="flex-1 px-3 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white text-sm font-bold rounded-lg transition">

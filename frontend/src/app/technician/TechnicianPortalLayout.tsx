@@ -363,10 +363,10 @@ function NotificationBell() {
     <div className="relative">
       <button
         onClick={handleOpen}
-        className="relative p-2 rounded-xl bg-slate-100 dark:bg-brand-500/10 hover:bg-slate-200 dark:hover:bg-brand-500/20 border border-slate-200 dark:border-brand-500/30 transition-all"
+        className="relative p-2 rounded-xl bg-muted hover:bg-accent border border-border transition-all"
         aria-label="Notifications"
       >
-        <Bell className="w-4 h-4 text-slate-600 dark:text-slate-200" />
+        <Bell className="w-4 h-4 text-muted-foreground" />
         {count > 0 && (
           <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)] animate-bounce">
             {count > 9 ? '9+' : count}
@@ -376,33 +376,33 @@ function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40 touch-none" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-12 w-80 bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-brand-500/30 rounded-xl shadow-xl z-50 overflow-hidden">
-            <div className="px-3 py-2 border-b border-slate-200 dark:border-brand-500/20 flex items-center justify-between">
-              <p className="text-xs font-bold text-slate-900 dark:text-white">Notifikasi</p>
+          <div className="absolute right-0 top-12 w-80 bg-card border border-border rounded-xl shadow-xl z-50 overflow-hidden">
+            <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+              <p className="text-xs font-bold text-foreground">Notifikasi</p>
               {notifications.length > 0 && (
-                <button onClick={() => { setNotifications([]); setCount(0); }} className="text-[10px] text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition">
+                <button onClick={() => { setNotifications([]); setCount(0); }} className="text-[10px] text-muted-foreground hover:text-foreground transition">
                   Bersihkan
                 </button>
               )}
             </div>
-            <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-brand-500/10">
+            <div className="max-h-72 overflow-y-auto divide-y divide-border">
               {notifications.length === 0 ? (
-                <p className="text-xs text-slate-400 dark:text-slate-400 text-center py-6">Tidak ada notifikasi</p>
+                <p className="text-xs text-muted-foreground text-center py-6">Tidak ada notifikasi</p>
               ) : (
                 notifications.map((n) => (
-                  <Link key={n.id} href="/technician/tickets" onClick={() => setOpen(false)} className="block px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-brand-500/10 transition">
+                  <Link key={n.id} href="/technician/tickets" onClick={() => setOpen(false)} className="block px-3 py-2.5 hover:bg-accent transition">
                     <div className="flex items-start gap-2">
                       {!n.isRead && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />}
                       <div className="min-w-0 flex-1">
-                        <p className={cn('text-xs font-semibold truncate', n.isRead ? 'text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-white')}>{n.title}</p>
-                        {n.message && <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{n.message}</p>}
+                        <p className={cn('text-xs font-semibold truncate', n.isRead ? 'text-muted-foreground' : 'text-foreground')}>{n.title}</p>
+                        {n.message && <p className="text-[10px] text-muted-foreground/70 truncate">{n.message}</p>}
                       </div>
                     </div>
                   </Link>
                 ))
               )}
             </div>
-            <div className="px-3 py-2 border-t border-slate-100 dark:border-brand-500/10">
+            <div className="px-3 py-2 border-t border-border">
               <Link href="/technician/tickets" onClick={() => setOpen(false)} className="text-[10px] text-brand-500 hover:underline font-medium">
                 Lihat semua tiket →
               </Link>

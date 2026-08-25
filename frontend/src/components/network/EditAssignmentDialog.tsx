@@ -134,14 +134,14 @@ export default function EditAssignmentDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div className="bg-card rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-border">
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-bold text-foreground">
               Edit Assignment
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               {assignment.customer.name} ({assignment.customer.username})
             </p>
           </div>
@@ -163,8 +163,8 @@ export default function EditAssignmentDialog({
 
           <div className="space-y-4">
             <div className="flex items-center gap-2 mb-4">
-              <Wifi className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+              <Wifi className="w-5 h-5 text-muted-foreground" />
+              <h3 className="font-semibold text-foreground">
                 Select ODP ({nearestODPs.length > 0 ? nearestODPs.length : 0})
               </h3>
             </div>
@@ -176,7 +176,7 @@ export default function EditAssignmentDialog({
             ) : nearestODPs.length === 0 ? (
               <div className="text-center py-12">
                 <Wifi className="w-12 h-12 mx-auto text-gray-400 mb-2" />
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-muted-foreground">
                   No ODPs available
                 </p>
               </div>
@@ -206,14 +206,14 @@ export default function EditAssignmentDialog({
                         selectedODP?.id === odp.id
                           ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
                           : availablePorts.length === 0
-                          ? 'border-gray-200 dark:border-gray-700 opacity-50 cursor-not-allowed'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-green-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                          ? 'border-border opacity-50 cursor-not-allowed'
+                          : 'border-border hover:border-green-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
-                            <span className="font-medium text-gray-900 dark:text-white">
+                            <span className="font-medium text-foreground">
                               {odp.name}
                             </span>
                             {isCurrentOdp && (
@@ -227,7 +227,7 @@ export default function EditAssignmentDialog({
                           {odp.distance} km
                         </div>
                       </div>
-                      <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                      <div className="text-xs text-muted-foreground space-y-1">
                         <div>OLT: {odp.olt.name} - PON {odp.ponPort}</div>
                         {odp.odc && <div>ODC: {odp.odc.name}</div>}
                         <div className="flex items-center gap-2 mt-2">
@@ -251,7 +251,7 @@ export default function EditAssignmentDialog({
             {/* Port Selection */}
             {selectedODP && (
               <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Select Port
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -282,7 +282,7 @@ export default function EditAssignmentDialog({
             {/* Notes */}
             {selectedODP && selectedPort && (
               <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
                   Notes (Optional)
                 </label>
                 <textarea
@@ -298,10 +298,10 @@ export default function EditAssignmentDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+        <div className="flex items-center justify-between p-6 border-t border-border bg-gray-50 dark:bg-gray-900/50">
           <button
             onClick={handleClose}
-            className="px-6 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-6 py-2 text-muted-foreground hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
             Cancel
           </button>

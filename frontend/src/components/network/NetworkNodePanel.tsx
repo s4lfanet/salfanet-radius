@@ -72,7 +72,7 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: stri
   if (value == null || value === '') return null;
   return (
     <div className="flex justify-between items-start py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
-      <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0 w-32">{label}</span>
+      <span className="text-xs text-muted-foreground shrink-0 w-32">{label}</span>
       <span className={`text-xs font-medium text-gray-800 dark:text-white text-right ml-2 ${mono ? 'font-mono' : ''}`}>{String(value)}</span>
     </div>
   );
@@ -85,10 +85,10 @@ function FieldInput({ label, name, value, onChange, type = 'text', required = fa
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}{required && <span className="text-red-500 ml-0.5">*</span>}</label>
       {children || (
         <input type={type} value={value} onChange={e => onChange(name, e.target.value)} required={required}
-          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
       )}
     </div>
   );
@@ -100,9 +100,9 @@ function FieldSelect({ label, name, value, onChange, options }: {
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
       <select value={value} onChange={e => onChange(name, e.target.value)}
-        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-card text-foreground focus:ring-2 focus:ring-blue-500">
         {options.map(o => <option key={o} value={o}>{o.replace(/_/g, ' ')}</option>)}
       </select>
     </div>
@@ -194,9 +194,9 @@ function ODCEditForm({ data, onChange, olts }: { data: EntityFormData; onChange:
     <div className="space-y-3">
       <FieldInput label="Name" name="name" value={data.name || ''} onChange={onChange} required />
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">OLT</label>
+        <label className="block text-xs font-medium text-muted-foreground mb-1">OLT</label>
         <select value={data.oltId || ''} onChange={e => onChange('oltId', e.target.value)}
-          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-card text-foreground focus:ring-2 focus:ring-blue-500">
           <option value="">— Select OLT —</option>
           {olts.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
@@ -217,9 +217,9 @@ function ODPEditForm({ data, onChange, odcs }: { data: EntityFormData; onChange:
     <div className="space-y-3">
       <FieldInput label="Name" name="name" value={data.name || ''} onChange={onChange} required />
       <div>
-        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">ODC</label>
+        <label className="block text-xs font-medium text-muted-foreground mb-1">ODC</label>
         <select value={data.odcId || ''} onChange={e => onChange('odcId', e.target.value)}
-          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500">
+          className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-card text-foreground focus:ring-2 focus:ring-blue-500">
           <option value="">— Select ODC —</option>
           {odcs.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
         </select>
@@ -416,9 +416,9 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
   const isReadOnly = entity.type === 'CUSTOMER';
 
   return (
-    <div className="absolute top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 shadow-2xl flex flex-col z-[1000] border-l border-gray-200 dark:border-gray-700">
+    <div className="absolute top-0 right-0 h-full w-96 bg-card shadow-2xl flex flex-col z-[1000] border-l border-border">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-muted border-b border-border shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md border text-xs font-semibold ${typeColor}`}>
             <TypeIcon type={entity.type} />
@@ -428,7 +428,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
         <div className="flex items-center gap-1">
           {!isReadOnly && mode === 'view' && (
             <>
-              <button onClick={() => setMode('edit')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-gray-600 dark:text-gray-400" title="Edit">
+              <button onClick={() => setMode('edit')} className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-700 rounded text-muted-foreground" title="Edit">
                 <Edit2 className="w-4 h-4" />
               </button>
               <button onClick={handleDelete} className="p-1.5 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-500" title="Delete">
@@ -444,7 +444,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
 
       {/* Entity name + code */}
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 shrink-0">
-        <h2 className="font-bold text-gray-900 dark:text-white text-base leading-tight">{entity.name}</h2>
+        <h2 className="font-bold text-foreground text-base leading-tight">{entity.name}</h2>
         {entity.code && <p className="text-xs text-gray-400 font-mono mt-0.5">{entity.code}</p>}
         <div className="mt-1.5"><StatusBadge status={entity.status} /></div>
       </div>
@@ -459,7 +459,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
           <div className="space-y-1">
             <NodeDetails detail={(detail || entity) as EntityFormData} type={entity.type} />
             {entity.type === 'CUSTOMER' && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="mt-4 pt-4 border-t border-border">
                 <a href={`/admin/customers?search=${entity.code}`} target="_blank" rel="noreferrer"
                   className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300">
                   View Customer Details <ExternalLink className="w-3 h-3" />
@@ -467,19 +467,19 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
               </div>
             )}
             {!isReadOnly && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+              <div className="mt-4 pt-4 border-t border-border space-y-2">
                 {/* Quick navigation links */}
                 {(entity.type === 'ODP' || entity.type === 'ODC') && (
                   <a href={`/admin/network/diagrams`} target="_blank" rel="noreferrer"
-                    className="flex items-center justify-between text-sm px-3 py-2 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                    <span className="text-gray-700 dark:text-gray-300">View Splitter Diagram</span>
-                    <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                    className="flex items-center justify-between text-sm px-3 py-2 bg-gray-50 hover:bg-muted dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <span className="text-muted-foreground">View Splitter Diagram</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
                   </a>
                 )}
                 <a href={`/admin/network/trace`} target="_blank" rel="noreferrer"
-                  className="flex items-center justify-between text-sm px-3 py-2 bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <span className="text-gray-700 dark:text-gray-300">Trace Fiber Path</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                  className="flex items-center justify-between text-sm px-3 py-2 bg-gray-50 hover:bg-muted dark:hover:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <span className="text-muted-foreground">Trace Fiber Path</span>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/70" />
                 </a>
               </div>
             )}
@@ -487,7 +487,7 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
         ) : (
           /* Edit form */
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Editing: <strong className="dark:text-gray-200">{entity.name}</strong></p>
+            <p className="text-xs text-muted-foreground mb-4">Editing: <strong className="dark:text-gray-200">{entity.name}</strong></p>
             {entity.type === 'OLT' && <OLTEditForm data={formData} onChange={handleChange} />}
             {entity.type === 'OTB' && <OTBEditForm data={formData} onChange={handleChange} />}
             {entity.type === 'JOINT_CLOSURE' && <JCEditForm data={formData} onChange={handleChange} />}
@@ -499,14 +499,14 @@ export default function NetworkNodePanel({ entity, onClose, onDeleted, onUpdated
 
       {/* Footer */}
       {mode === 'edit' && (
-        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex gap-2 shrink-0">
+        <div className="px-4 py-3 border-t border-border flex gap-2 shrink-0">
           <button onClick={handleSave} disabled={saving}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Changes
           </button>
           <button onClick={() => { setMode('view'); setFormData(detail ?? {}); }}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium transition-colors">
+            className="px-4 py-2 border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-muted-foreground rounded-lg text-sm font-medium transition-colors">
             <XCircle className="w-4 h-4" />
           </button>
         </div>

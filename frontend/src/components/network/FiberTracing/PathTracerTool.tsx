@@ -64,12 +64,12 @@ export function PathTracerTool({ nodes, onTrace, isLoading = false, onClear }: P
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+    <div className="bg-card rounded-lg shadow-md p-6 border border-border">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           {t('network.tracing.title')}
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 text-sm">
+        <p className="text-muted-foreground text-sm">
           {t('network.tracing.description')}
         </p>
       </div>
@@ -84,7 +84,7 @@ export function PathTracerTool({ nodes, onTrace, isLoading = false, onClear }: P
             id="source"
             value={sourceId}
             onChange={(e) => setSourceId(e.target.value)}
-            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-foreground rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isLoading}
           >
             <option value="">{t('network.tracing.selectSource')}</option>
@@ -122,7 +122,7 @@ export function PathTracerTool({ nodes, onTrace, isLoading = false, onClear }: P
             id="destination"
             value={destinationId}
             onChange={(e) => setDestinationId(e.target.value)}
-            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-foreground rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             disabled={isLoading}
           >
             <option value="">{t('network.tracing.selectDestination')}</option>

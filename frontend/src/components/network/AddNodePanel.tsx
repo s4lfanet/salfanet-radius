@@ -241,7 +241,7 @@ function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; l
             {feederRows.map((row, idx) => {
               const detail = feederDetails[idx];
               return (
-                <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 space-y-1.5">
+                <div key={idx} className="bg-card border border-border rounded-lg p-2 space-y-1.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-semibold text-green-600 dark:text-green-400">
                       Feeder {idx + 1}
@@ -252,7 +252,7 @@ function OTBForm({ lat, lng, olts, cables, onSubmit, loading }: { lat: number; l
                     </button>
                   </div>
                   <select value={row.cableId} onChange={e => updateFeeder(idx, e.target.value)}
-                    className="w-full text-[11px] px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                    className="w-full text-[11px] px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-foreground">
                     <option value="">— Pilih Kabel —</option>
                     {cables.map((c: CableOption) => (
                       <option key={c.id} value={c.id} disabled={usedCableIds.has(c.id) && c.id !== row.cableId}>
@@ -415,14 +415,14 @@ function ODPForm({ lat, lng, olts, odcs, onSubmit, loading }: { lat: number; lng
 // ─── Shared helpers ────────────────────────────────────────────────────────────
 const INPUT =
   'w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-md ' +
-  'bg-white dark:bg-gray-800 text-gray-900 dark:text-white ' +
+  'bg-card text-foreground ' +
   'placeholder:text-gray-400 dark:placeholder:text-gray-500 ' +
   'focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-colors';
 
 function FRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
       {children}
     </div>
   );
@@ -465,20 +465,20 @@ function OLTForm({
   return (
     <div className="space-y-3">
       {/* Mode toggle */}
-      <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden text-xs font-medium">
+      <div className="flex rounded-lg border border-border overflow-hidden text-xs font-medium">
         <button type="button" onClick={() => setMode('place')}
-          className={`flex-1 py-2 transition-colors ${mode === 'place' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          className={`flex-1 py-2 transition-colors ${mode === 'place' ? 'bg-purple-600 text-white' : 'bg-card text-muted-foreground hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
           Tempatkan OLT Ada
         </button>
         <button type="button" onClick={() => setMode('create')}
-          className={`flex-1 py-2 transition-colors ${mode === 'create' ? 'bg-purple-600 text-white' : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
+          className={`flex-1 py-2 transition-colors ${mode === 'create' ? 'bg-purple-600 text-white' : 'bg-card text-muted-foreground hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
           Buat OLT Baru
         </button>
       </div>
 
       {mode === 'place' ? (
         <>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Pilih OLT dari database untuk ditempatkan pada koordinat ini.
           </p>
           <div className="relative">
@@ -488,13 +488,13 @@ function OLTForm({
           </div>
           <div className="space-y-1.5 max-h-72 overflow-y-auto pr-0.5">
             {filtered.length === 0 ? (
-              <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-6">
+              <p className="text-xs text-muted-foreground/70 text-center py-6">
                 {olts.length === 0 ? 'Belum ada OLT di database' : 'OLT tidak ditemukan'}
               </p>
             ) : (
               filtered.map(olt => (
                 <button key={olt.id} type="button" disabled={loading} onClick={() => onPlace(olt)}
-                  className="w-full text-left p-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group disabled:opacity-50">
+                  className="w-full text-left p-2.5 rounded-lg border border-border bg-card hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors group disabled:opacity-50">
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-md bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center shrink-0">
                       <Server className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
@@ -503,7 +503,7 @@ function OLTForm({
                       <p className="text-sm font-medium text-gray-800 dark:text-white truncate group-hover:text-purple-700 dark:group-hover:text-purple-300">
                         {olt.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 font-mono">{olt.ipAddress}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{olt.ipAddress}</p>
                     </div>
                     {olt.latitude && olt.longitude ? (
                       <span className="text-xs text-amber-600 dark:text-amber-400 shrink-0">sudah ada posisi</span>
@@ -621,7 +621,7 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
     finally { setSaving(null); }
   };
 
-  if (loadingDetail) return <div className="py-8 text-center text-sm text-gray-400 dark:text-gray-500">Memuat data tabung...</div>;
+  if (loadingDetail) return <div className="py-8 text-center text-sm text-muted-foreground/70">Memuat data tabung...</div>;
 
   return (
     <div className="space-y-3">
@@ -637,8 +637,8 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
       ) : (
         <div className="space-y-3">
           {feederGroups.map((group, gIdx) => (
-            <div key={gIdx} className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+            <div key={gIdx} className="border border-border rounded-lg overflow-hidden">
+              <div className="bg-green-50 dark:bg-green-900/20 px-3 py-2 border-b border-border">
                 <p className="text-[11px] font-semibold text-green-700 dark:text-green-300">{group.cableName}</p>
                 <p className="text-[10px] text-green-500 dark:text-green-400">Port {group.portFrom} – {group.portTo} · {group.tubes.length} tabung</p>
               </div>
@@ -649,7 +649,7 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
                   const jcName = assignedJCName(tube.tubeNumber);
                   const isSaving = saving === tubeKey;
                   return (
-                    <div key={tube.id} className="border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-2 bg-white dark:bg-gray-800">
+                    <div key={tube.id} className="border border-border rounded-lg px-2.5 py-2 bg-card">
                       <div className="flex items-center gap-2 mb-1.5">
                         <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: getTubeColor(tube.tubeNumber) }} />
                         <span className="text-xs font-semibold text-gray-800 dark:text-white">T{tube.tubeNumber} · {tube.colorCode}</span>
@@ -665,7 +665,7 @@ function OTBSetupPanel({ otbId, jcs, onDone }: {
                           <select
                             value={pendingJC[tubeKey] ?? ''}
                             onChange={e => setPendingJC(prev => ({ ...prev, [tubeKey]: e.target.value }))}
-                            className="flex-1 text-[10px] px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="flex-1 text-[10px] px-1.5 py-1 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-foreground"
                           >
                             <option value="">— Pilih JC —</option>
                             {jcs.map(j => <option key={j.id} value={j.id}>{j.name}</option>)}
@@ -799,7 +799,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
   const headerBg = activeType?.headerBg ?? 'bg-blue-600';
 
   return (
-    <div className="absolute top-0 right-0 h-full w-96 bg-white dark:bg-gray-900 shadow-2xl flex flex-col z-[1000] border-l border-gray-200 dark:border-gray-700">
+    <div className="absolute top-0 right-0 h-full w-96 bg-card shadow-2xl flex flex-col z-[1000] border-l border-border">
       {/* Header */}
       <div className={`flex items-center justify-between px-4 py-3 ${headerBg} shrink-0 transition-colors duration-200`}>
         <div className="flex items-center gap-2">
@@ -830,21 +830,21 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
       </div>
 
       {/* Coordinate info — updates live as user drags the map pin */}
-      <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/60 border-b border-gray-200 dark:border-gray-700 shrink-0">
+      <div className="px-4 py-2 bg-muted/60 border-b border-border shrink-0">
         <div className="flex items-center gap-2">
-          <MapPin className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400 shrink-0" />
+          <MapPin className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
           <span className="text-xs text-gray-600 dark:text-gray-300">
             Koordinat: <span className="font-mono text-gray-800 dark:text-white">{lat.toFixed(6)}, {lng.toFixed(6)}</span>
           </span>
         </div>
-        <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 ml-5">Seret pin di peta untuk menyesuaikan posisi</p>
+        <p className="text-[10px] text-muted-foreground/70 mt-0.5 ml-5">Seret pin di peta untuk menyesuaikan posisi</p>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {step === 'type' ? (
           <div>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Pilih tipe node yang akan ditambahkan di lokasi ini:</p>
+            <p className="text-sm text-muted-foreground mb-4">Pilih tipe node yang akan ditambahkan di lokasi ini:</p>
             <div className="space-y-2">
               {NODE_TYPES.map(nt => (
                 <button key={nt.type} onClick={() => { setSelectedType(nt.type); setStep('form'); onTypeChange?.(nt.type); }}
@@ -855,7 +855,7 @@ export default function AddNodePanel({ lat, lng, onClose, onCreated, initialNode
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-gray-800 dark:text-white">{nt.label}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{nt.description}</p>
+                      <p className="text-xs text-muted-foreground leading-snug">{nt.description}</p>
                     </div>
                     <ChevronLeft className="w-4 h-4 text-gray-400 rotate-180 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </div>

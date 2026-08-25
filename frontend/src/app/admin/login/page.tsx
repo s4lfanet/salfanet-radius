@@ -211,7 +211,7 @@ function LoginForm() {
           {/* Logo */}
           <div className="flex justify-center mb-5">
             {companyLogo ? (
-              <div className="w-24 h-24 p-2 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-700 shadow-sm flex items-center justify-center overflow-hidden">
+              <div className="w-24 h-24 p-2 rounded-xl border border-border bg-card shadow-sm flex items-center justify-center overflow-hidden">
                 <Image unoptimized src={companyLogo} alt={companyName} width={220} height={110} className="max-h-full max-w-full w-auto h-auto object-contain" />
               </div>
             ) : (
@@ -308,7 +308,7 @@ function LoginForm() {
                   <Smartphone className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">Kode Autentikator Diperlukan</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Buka aplikasi autentikator dan masukkan kode 6 digit.</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Buka aplikasi autentikator dan masukkan kode 6 digit.</p>
                   </div>
                 </div>
               </div>
@@ -331,7 +331,7 @@ function LoginForm() {
                   maxLength={7}
                 />
               </div>
-              <p className="text-xs text-center text-gray-400 dark:text-slate-500">Sesi ini berakhir dalam 10 menit</p>
+              <p className="text-xs text-center text-muted-foreground/70">Sesi ini berakhir dalam 10 menit</p>
 
               <button
                 type="submit"
@@ -348,7 +348,7 @@ function LoginForm() {
                 type="button"
                 onClick={handleBackToCredentials}
                 disabled={loading}
-                className="w-full text-xs text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5"
+                className="w-full text-xs text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Kembali ke Login
@@ -357,7 +357,7 @@ function LoginForm() {
           )}
 
           {/* Footer */}
-          <p className="text-center text-xs text-gray-400 dark:text-slate-500 mt-8">{footerText}</p>
+          <p className="text-center text-xs text-muted-foreground/70 mt-8">{footerText}</p>
         </div>
       </div>
 
@@ -377,32 +377,32 @@ function LoginForm() {
             {companyName}
           </h1>
           <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500" />
-          <p className="text-base text-gray-500 dark:text-slate-400 mb-6 leading-relaxed">
+          <p className="text-base text-muted-foreground mb-6 leading-relaxed">
             Solusi manajemen Billing ISP terlengkap. Kelola ribuan pelanggan MikroTik secara otomatis, aman, dan efisien dalam satu dashboard.
           </p>
 
           {/* Feature cards */}
           <div className="grid grid-cols-3 gap-4 mb-6">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">User Friendly</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Mudah digunakan oleh semua tim</p>
+              <p className="text-sm font-bold text-foreground mb-1">User Friendly</p>
+              <p className="text-xs text-muted-foreground leading-snug">Mudah digunakan oleh semua tim</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-indigo-600 dark:text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Data Terpusat</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Satu dashboard semua router</p>
+              <p className="text-sm font-bold text-foreground mb-1">Data Terpusat</p>
+              <p className="text-xs text-muted-foreground leading-snug">Satu dashboard semua router</p>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-gray-100 dark:border-slate-700 text-center">
+            <div className="bg-card rounded-2xl p-4 shadow-sm border border-border text-center">
               <div className="w-10 h-10 bg-green-100 dark:bg-green-900/40 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
               </div>
-              <p className="text-sm font-bold text-slate-700 dark:text-slate-200 mb-1">Secure</p>
-              <p className="text-xs text-gray-400 dark:text-slate-500 leading-snug">Data aman &amp; terenkripsi</p>
+              <p className="text-sm font-bold text-foreground mb-1">Secure</p>
+              <p className="text-xs text-muted-foreground leading-snug">Data aman &amp; terenkripsi</p>
             </div>
           </div>
 
@@ -413,9 +413,9 @@ function LoginForm() {
               { color: 'bg-indigo-500', text: 'Multi-Router — Kelola banyak MikroTik dalam satu server' },
               { color: 'bg-violet-500', text: 'Payment Gateway — QRIS, Virtual Account, dan Retail' },
             ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-gray-100 dark:border-slate-700/50">
+              <div key={i} className="flex items-center gap-3 bg-white/70 dark:bg-slate-800/60 rounded-xl px-4 py-3 border border-border/50">
                 <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.color}`} />
-                <p className="text-sm text-slate-700 dark:text-slate-300" dangerouslySetInnerHTML={{ __html: item.text }} />
+                <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: item.text }} />
               </div>
             ))}
           </div>

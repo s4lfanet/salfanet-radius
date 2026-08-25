@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 export const dynamic = 'force-dynamic';
 
@@ -188,7 +188,7 @@ export default function TechnicianGenieACSPage() {
 
   if (!isConfigured && !loading) {
     return (
-      <div className="p-4 lg:p-6 text-center py-20 text-slate-500 dark:text-[#e0d0ff]/50">
+      <div className="p-4 lg:p-6 text-center py-20 text-muted-foreground/70">
         <Server className="w-12 h-12 mx-auto mb-3 opacity-30" />
         <p className="text-sm font-medium">{t('techPortal.genieacsNotConfigured')}</p>
       </div>
@@ -204,29 +204,29 @@ export default function TechnicianGenieACSPage() {
             <Server className="w-5 h-5 text-blue-500" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t('techPortal.genieacs')}</h1>
-            <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{filtered.length} / {devices.length} {t('techPortal.devices')}</p>
+            <h1 className="text-lg font-bold text-foreground">{t('techPortal.genieacs')}</h1>
+            <p className="text-xs text-muted-foreground">{filtered.length} / {devices.length} {t('techPortal.devices')}</p>
           </div>
         </div>
-        <button onClick={fetchDevices} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
-          <RefreshCw className={`w-4 h-4 text-slate-600 dark:text-[#e0d0ff] ${loading ? 'animate-spin' : ''}`} />
+        <button onClick={fetchDevices} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+          <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} placeholder={t('techPortal.searchDevice')} className="w-full pl-10 pr-3 py-2.5 bg-white dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+        <input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} placeholder={t('techPortal.searchDevice')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1 bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl p-1">
+        <div className="flex items-center gap-1 bg-card border border-border rounded-xl p-1">
           {(['all', 'online', 'offline'] as const).map(s => (
             <button
               key={s}
               onClick={() => handleFilterChange(s)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-slate-500 dark:text-[#e0d0ff]/60 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
             >
               {s === 'all' ? 'Semua' : s === 'online' ? 'Online' : 'Offline'}
               {s !== 'all' && (
@@ -239,7 +239,7 @@ export default function TechnicianGenieACSPage() {
           <select
             value={filterManufacturer}
             onChange={e => handleFilterChange('all', e.target.value)}
-            className="px-3 py-1.5 bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl text-xs text-slate-700 dark:text-[#e0d0ff]/80 focus:outline-none focus:ring-2 focus:ring-[#00f7ff]/30"
+            className="px-3 py-1.5 bg-card border border-border rounded-xl text-xs text-foreground/80 focus:outline-none focus:ring-2 focus:ring-[#00f7ff]/30"
           >
             <option value="all">Semua Merk</option>
             {manufacturers.map(m => (
@@ -255,35 +255,35 @@ export default function TechnicianGenieACSPage() {
           <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-slate-500 dark:text-[#e0d0ff]/50">
+        <div className="text-center py-20 text-muted-foreground/70">
           <Server className="w-10 h-10 mx-auto mb-2 opacity-30" />
           <p className="text-sm">{t('techPortal.noData')}</p>
         </div>
       ) : (
         <>
           {/* Desktop Table */}
-          <div className="hidden lg:block overflow-auto bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-2xl">
+          <div className="hidden lg:block overflow-auto bg-card border border-border rounded-2xl">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-[#bc13fe]/20 text-left">
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">S/N</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">{t('techPortal.manufacturer')}</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">{t('techPortal.model')}</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">PPPoE User</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">IP</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">RX Power</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70">{t('techPortal.status')}</th>
-                  <th className="px-4 py-3 font-semibold text-slate-600 dark:text-[#e0d0ff]/70"></th>
+                <tr className="border-b border-border text-left">
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">S/N</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">{t('techPortal.manufacturer')}</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">{t('techPortal.model')}</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">PPPoE User</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">IP</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">RX Power</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">{t('techPortal.status')}</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground"></th>
                 </tr>
               </thead>
               <tbody>
                 {paginated.map((d) => (
                   <tr key={d._id} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition">
-                    <td className="px-4 py-3 font-mono text-xs text-slate-900 dark:text-white">{d.serialNumber}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{d.manufacturer}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{d.model}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-[#e0d0ff]/80">{d.pppoeUsername || '-'}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-600 dark:text-[#e0d0ff]/80">{d.pppoeIP || d.tr069IP || '-'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-foreground">{d.serialNumber}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{d.manufacturer}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{d.model}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{d.pppoeUsername || '-'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground/80">{d.pppoeIP || d.tr069IP || '-'}</td>
                     <td className="px-4 py-3 text-xs">
                       <span className={`font-mono ${parseFloat(d.rxPower) > -25 ? 'text-green-600 dark:text-green-400' : parseFloat(d.rxPower) > -28 ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
                         {d.rxPower || '-'}
@@ -301,7 +301,7 @@ export default function TechnicianGenieACSPage() {
                         title={t('techPortal.details')}
                         className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 rounded-lg transition"
                       >
-                        <Eye className="w-4 h-4 text-slate-500 dark:text-[#e0d0ff]/60" />
+                        <Eye className="w-4 h-4 text-muted-foreground" />
                       </button>
                       <button
                         onClick={() => handleReboot(d._id)}
@@ -324,11 +324,11 @@ export default function TechnicianGenieACSPage() {
           {/* Mobile Cards */}
           <div className="lg:hidden space-y-3">
             {paginated.map((d) => (
-              <div key={d._id} className="bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-2xl p-4 space-y-2">
+              <div key={d._id} className="bg-card border border-border rounded-2xl p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="cursor-pointer" onClick={() => handleViewDetail(d._id)}>
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{d.model || d.serialNumber}</p>
-                    <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{d.manufacturer}</p>
+                    <p className="text-sm font-bold text-foreground">{d.model || d.serialNumber}</p>
+                    <p className="text-xs text-muted-foreground">{d.manufacturer}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold ${d.status === 'online' ? 'bg-green-500/10 text-green-600 dark:text-green-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>
@@ -339,16 +339,16 @@ export default function TechnicianGenieACSPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
-                    <span className="text-slate-500 dark:text-[#e0d0ff]/50">PPPoE: </span>
-                    <span className="text-slate-700 dark:text-[#e0d0ff]/80">{d.pppoeUsername || '-'}</span>
+                    <span className="text-muted-foreground/70">PPPoE: </span>
+                    <span className="text-foreground/80">{d.pppoeUsername || '-'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-500 dark:text-[#e0d0ff]/50">S/N: </span>
-                    <span className="font-mono text-slate-700 dark:text-[#e0d0ff]/80">{d.serialNumber?.slice(0, 12)}</span>
+                    <span className="text-muted-foreground/70">S/N: </span>
+                    <span className="font-mono text-foreground/80">{d.serialNumber?.slice(0, 12)}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10">
-                  <span className="text-slate-500 dark:text-[#e0d0ff]/60">{d.pppoeIP || d.tr069IP || '-'}</span>
+                  <span className="text-muted-foreground">{d.pppoeIP || d.tr069IP || '-'}</span>
                   <span className={`font-mono ${parseFloat(d.rxPower) > -25 ? 'text-green-500' : parseFloat(d.rxPower) > -28 ? 'text-yellow-500' : 'text-red-500'}`}>
                     {d.rxPower ? `RX: ${d.rxPower}` : ''}
                   </span>
@@ -356,7 +356,7 @@ export default function TechnicianGenieACSPage() {
                 <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10">
                   <button
                     onClick={() => handleViewDetail(d._id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-[#bc13fe]/10 text-slate-700 dark:text-[#e0d0ff] border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/20 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-[#bc13fe]/10 text-foreground border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/20 transition"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     {t('techPortal.details')}
@@ -379,16 +379,16 @@ export default function TechnicianGenieACSPage() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/50">
+              <p className="text-xs text-muted-foreground/70">
                 Halaman {safeCurrentPage} dari {totalPages} &bull; {filtered.length} perangkat
               </p>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={safeCurrentPage <= 1}
-                  className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
+                  className="px-3 py-1.5 text-xs font-semibold bg-card border border-border rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
                 >
-                  ← Prev
+                  ? Prev
                 </button>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let page = i + 1;
@@ -400,7 +400,7 @@ export default function TechnicianGenieACSPage() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 text-xs font-bold rounded-xl transition ${page === safeCurrentPage ? 'bg-blue-500 text-white shadow' : 'bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 text-slate-600 dark:text-[#e0d0ff]/70 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
+                      className={`w-8 h-8 text-xs font-bold rounded-xl transition ${page === safeCurrentPage ? 'bg-blue-500 text-white shadow' : 'bg-card border border-border text-muted-foreground hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
                     >
                       {page}
                     </button>
@@ -409,9 +409,9 @@ export default function TechnicianGenieACSPage() {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={safeCurrentPage >= totalPages}
-                  className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
+                  className="px-3 py-1.5 text-xs font-semibold bg-card border border-border rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
                 >
-                  Next →
+                  Next ?
                 </button>
               </div>
             </div>
@@ -422,17 +422,17 @@ export default function TechnicianGenieACSPage() {
       {/* Detail Modal */}
       {(detailDevice || loadingDetail) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => { setDetailDevice(null); setLoadingDetail(false); setWifiEdit(null); }}>
-          <div className="bg-white dark:bg-[#1a0f35] border border-slate-200 dark:border-[#bc13fe]/30 rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             {loadingDetail ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
               </div>
             ) : detailDevice ? (
               <>
-                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-[#bc13fe]/20">
+                <div className="flex items-center justify-between p-4 border-b border-border">
                   <div>
-                    <h2 className="text-base font-bold text-slate-900 dark:text-white">{detailDevice.model}</h2>
-                    <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">{detailDevice.serialNumber}</p>
+                    <h2 className="text-base font-bold text-foreground">{detailDevice.model}</h2>
+                    <p className="text-xs text-muted-foreground">{detailDevice.serialNumber}</p>
                   </div>
                   <button onClick={() => { setDetailDevice(null); setWifiEdit(null); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 rounded-lg transition">
                     <X className="w-5 h-5 text-slate-500" />
@@ -441,7 +441,7 @@ export default function TechnicianGenieACSPage() {
                 <div className="p-4 space-y-4">
                   {/* Device Actions */}
                   <div>
-                    <p className="text-xs font-bold text-slate-700 dark:text-[#e0d0ff]/80 mb-2">{t('techPortal.deviceActions')}</p>
+                    <p className="text-xs font-bold text-foreground/80 mb-2">{t('techPortal.deviceActions')}</p>
                     <button
                       onClick={() => handleReboot(detailDevice._id)}
                       disabled={rebootingId === detailDevice._id}
@@ -457,11 +457,11 @@ export default function TechnicianGenieACSPage() {
 
                   {/* Device Info */}
                   <div>
-                    <p className="text-xs font-bold text-slate-700 dark:text-[#e0d0ff]/80 mb-2">{t('techPortal.deviceInfo')}</p>
+                    <p className="text-xs font-bold text-foreground/80 mb-2">{t('techPortal.deviceInfo')}</p>
                     {/* PPPoE Section */}
-                    <div className="bg-slate-50 dark:bg-[#0a0520]/50 rounded-xl p-3 mb-3">
+                    <div className="bg-input/50 rounded-xl p-3 mb-3">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-bold text-slate-700 dark:text-[#e0d0ff]/80">{t('techPortal.pppoeInfo')}</p>
+                        <p className="text-xs font-bold text-foreground/80">{t('techPortal.pppoeInfo')}</p>
                         {detailDevice.pppoeStatus !== '-' && (
                           <span className={`flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             detailDevice.pppoeStatus.toLowerCase().includes('connected') && !detailDevice.pppoeStatus.toLowerCase().includes('disconnected')
@@ -479,23 +479,23 @@ export default function TechnicianGenieACSPage() {
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <p className="text-slate-500 dark:text-[#e0d0ff]/50">{t('techPortal.username')}</p>
-                          <p className="font-medium text-slate-900 dark:text-white break-all">{detailDevice.pppoeUsername || '-'}</p>
+                          <p className="text-muted-foreground/70">{t('techPortal.username')}</p>
+                          <p className="font-medium text-foreground break-all">{detailDevice.pppoeUsername || '-'}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500 dark:text-[#e0d0ff]/50">{t('techPortal.pppoeIp')}</p>
-                          <p className="font-medium text-slate-900 dark:text-white break-all">{detailDevice.pppoeIP || '-'}</p>
+                          <p className="text-muted-foreground/70">{t('techPortal.pppoeIp')}</p>
+                          <p className="font-medium text-foreground break-all">{detailDevice.pppoeIP || '-'}</p>
                         </div>
                         {detailDevice.pppoeGateway !== '-' && (
                           <div>
-                            <p className="text-slate-500 dark:text-[#e0d0ff]/50">{t('techPortal.pppoeGateway')}</p>
-                            <p className="font-medium text-slate-900 dark:text-white break-all">{detailDevice.pppoeGateway}</p>
+                            <p className="text-muted-foreground/70">{t('techPortal.pppoeGateway')}</p>
+                            <p className="font-medium text-foreground break-all">{detailDevice.pppoeGateway}</p>
                           </div>
                         )}
                         {detailDevice.pppoeDNS !== '-' && (
                           <div className="col-span-2">
-                            <p className="text-slate-500 dark:text-[#e0d0ff]/50">{t('techPortal.pppoeDns')}</p>
-                            <p className="font-medium text-slate-900 dark:text-white break-all">{detailDevice.pppoeDNS}</p>
+                            <p className="text-muted-foreground/70">{t('techPortal.pppoeDns')}</p>
+                            <p className="font-medium text-foreground break-all">{detailDevice.pppoeDNS}</p>
                           </div>
                         )}
                       </div>
@@ -516,8 +516,8 @@ export default function TechnicianGenieACSPage() {
                         [t('techPortal.lastInform'), formatDate(detailDevice.lastInform)],
                       ].map(([label, value]) => (
                         <div key={label}>
-                          <p className="text-slate-500 dark:text-[#e0d0ff]/50">{label}</p>
-                          <p className="font-medium text-slate-900 dark:text-white break-all">{value || '-'}</p>
+                          <p className="text-muted-foreground/70">{label}</p>
+                          <p className="font-medium text-foreground break-all">{value || '-'}</p>
                         </div>
                       ))}
                     </div>
@@ -525,15 +525,15 @@ export default function TechnicianGenieACSPage() {
 
                   {/* WiFi */}
                   {detailDevice.wlanConfigs?.length > 0 && (
-                    <div className="border-t border-slate-200 dark:border-[#bc13fe]/20 pt-3">
-                      <p className="text-xs font-bold text-slate-700 dark:text-[#e0d0ff]/80 mb-2">WiFi</p>
+                    <div className="border-t border-border pt-3">
+                      <p className="text-xs font-bold text-foreground/80 mb-2">WiFi</p>
                       <div className="space-y-3">
                         {detailDevice.wlanConfigs.map(w => (
-                          <div key={w.index} className="bg-slate-50 dark:bg-[#0a0520]/50 rounded-xl px-3 py-2 text-xs space-y-2">
+                          <div key={w.index} className="bg-input/50 rounded-xl px-3 py-2 text-xs space-y-2">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium text-slate-900 dark:text-white">{w.ssid}</p>
-                                <p className="text-slate-500 dark:text-[#e0d0ff]/50">{w.band} - {w.totalAssociations} {t('techPortal.online').toLowerCase()}</p>
+                                <p className="font-medium text-foreground">{w.ssid}</p>
+                                <p className="text-muted-foreground/70">{w.band} - {w.totalAssociations} {t('techPortal.online').toLowerCase()}</p>
                               </div>
                               <div className="flex items-center gap-1.5">
                                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${w.enabled ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'}`}>
@@ -555,30 +555,30 @@ export default function TechnicianGenieACSPage() {
 
                             {/* WiFi Edit Form */}
                             {wifiEdit?.deviceId === detailDevice._id && wifiEdit?.index === w.index && (
-                              <div className="border-t border-slate-200 dark:border-[#bc13fe]/20 pt-2 space-y-2">
+                              <div className="border-t border-border pt-2 space-y-2">
                                 <div>
-                                  <label className="text-[10px] font-semibold text-slate-500 dark:text-[#e0d0ff]/60">{t('techPortal.wifiSsid')}</label>
+                                  <label className="text-[10px] font-semibold text-muted-foreground">{t('techPortal.wifiSsid')}</label>
                                   <input
                                     value={wifiEdit.ssid}
                                     onChange={e => setWifiEdit({ ...wifiEdit, ssid: e.target.value })}
-                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-white dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-lg text-slate-900 dark:text-white focus:ring-1 focus:ring-[#00f7ff]/40 outline-none"
+                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-card border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#00f7ff]/40 outline-none"
                                     placeholder="SSID"
                                   />
                                 </div>
                                 <div>
-                                  <label className="text-[10px] font-semibold text-slate-500 dark:text-[#e0d0ff]/60">{t('techPortal.wifiPassword')}</label>
+                                  <label className="text-[10px] font-semibold text-muted-foreground">{t('techPortal.wifiPassword')}</label>
                                   <input
                                     type="password"
                                     value={wifiEdit.wifiPassword}
                                     onChange={e => setWifiEdit({ ...wifiEdit, wifiPassword: e.target.value })}
-                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-white dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-lg text-slate-900 dark:text-white focus:ring-1 focus:ring-[#00f7ff]/40 outline-none"
+                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-card border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#00f7ff]/40 outline-none"
                                     placeholder="password"
                                   />
                                 </div>
                                 <div className="flex gap-2 pt-1">
                                   <button
                                     onClick={() => setWifiEdit(null)}
-                                    className="flex-1 py-1.5 text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-200 transition"
+                                    className="flex-1 py-1.5 text-[11px] font-semibold bg-muted text-muted-foreground border border-border rounded-lg hover:bg-slate-200 transition"
                                   >
                                     {t('techPortal.cancel')}
                                   </button>
@@ -601,14 +601,14 @@ export default function TechnicianGenieACSPage() {
 
                   {/* Connected Devices */}
                   {detailDevice.connectedDevices?.length > 0 && (
-                    <div className="border-t border-slate-200 dark:border-[#bc13fe]/20 pt-3">
-                      <p className="text-xs font-bold text-slate-700 dark:text-[#e0d0ff]/80 mb-2">{t('techPortal.connectedDevices')} ({detailDevice.totalConnected})</p>
+                    <div className="border-t border-border pt-3">
+                      <p className="text-xs font-bold text-foreground/80 mb-2">{t('techPortal.connectedDevices')} ({detailDevice.totalConnected})</p>
                       <div className="space-y-1.5 max-h-40 overflow-y-auto">
                         {detailDevice.connectedDevices.map((h, i) => (
-                          <div key={i} className="flex items-center justify-between bg-slate-50 dark:bg-[#0a0520]/50 rounded-lg px-3 py-1.5 text-xs">
+                          <div key={i} className="flex items-center justify-between bg-input/50 rounded-lg px-3 py-1.5 text-xs">
                             <div className="min-w-0 flex-1">
-                              <p className="font-medium text-slate-900 dark:text-white truncate">{h.hostName || 'Unknown'}</p>
-                              <p className="text-slate-500 dark:text-[#e0d0ff]/50">{h.ipAddress !== '-' ? h.ipAddress + ' · ' : ''}{h.macAddress}</p>
+                              <p className="font-medium text-foreground truncate">{h.hostName || 'Unknown'}</p>
+                              <p className="text-muted-foreground/70">{h.ipAddress !== '-' ? h.ipAddress + '  ' : ''}{h.macAddress}</p>
                             </div>
                             <div className="text-right ml-2">
                               <p className="text-[10px] text-slate-400">{h.interfaceType}</p>

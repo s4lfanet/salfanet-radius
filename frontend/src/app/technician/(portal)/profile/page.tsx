@@ -91,44 +91,44 @@ export default function TechnicianProfilePage() {
 
   return (
     <div className="p-4 lg:p-6 w-full space-y-6">
-      <h1 className="text-lg font-bold text-slate-900 dark:text-white">{t('techPortal.profile')}</h1>
+      <h1 className="text-lg font-bold text-foreground">{t('techPortal.profile')}</h1>
 
       {/* Profile Card */}
-      <div className="bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-2xl p-5 space-y-4">
-        <div className="flex items-center gap-4 pb-4 border-b border-slate-200 dark:border-[#bc13fe]/20">
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        <div className="flex items-center gap-4 pb-4 border-b border-border">
           <div className="w-14 h-14 bg-gradient-to-br from-[#bc13fe] to-[#00f7ff] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(188,19,254,0.4)]">
             <User className="w-7 h-7 text-white" />
           </div>
           <div>
-            <p className="text-base font-bold text-slate-900 dark:text-white">{profile?.name}</p>
-            <p className="text-xs text-slate-500 dark:text-[#e0d0ff]/60">@{profile?.username}</p>
+            <p className="text-base font-bold text-foreground">{profile?.name}</p>
+            <p className="text-xs text-muted-foreground">@{profile?.username}</p>
           </div>
         </div>
 
         {/* Name */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 dark:text-[#e0d0ff]/70 mb-1 block">{t('techPortal.name')}</label>
+          <label className="text-xs font-semibold text-muted-foreground mb-1 block">{t('techPortal.name')}</label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+            <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-input border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
           </div>
         </div>
 
         {/* Email */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 dark:text-[#e0d0ff]/70 mb-1 block">Email</label>
+          <label className="text-xs font-semibold text-muted-foreground mb-1 block">Email</label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+            <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-input border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
           </div>
         </div>
 
         {/* Phone */}
         <div>
-          <label className="text-xs font-semibold text-slate-600 dark:text-[#e0d0ff]/70 mb-1 block">{t('techPortal.phone')}</label>
+          <label className="text-xs font-semibold text-muted-foreground mb-1 block">{t('techPortal.phone')}</label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+            <input type="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-input border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
           </div>
         </div>
 
@@ -139,8 +139,8 @@ export default function TechnicianProfilePage() {
       </div>
 
       {/* Change Password */}
-      <div className="bg-white dark:bg-[#1a0f35]/80 border border-slate-200 dark:border-[#bc13fe]/20 rounded-2xl p-5 space-y-4">
-        <button onClick={() => setShowPwForm(!showPwForm)} className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-white">
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        <button onClick={() => setShowPwForm(!showPwForm)} className="flex items-center gap-2 text-sm font-bold text-foreground">
           <Key className="w-4 h-4 text-[#bc13fe]" />
           {t('techPortal.changePassword')}
         </button>
@@ -148,28 +148,28 @@ export default function TechnicianProfilePage() {
         {showPwForm && (
           <div className="space-y-3 pt-2">
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-[#e0d0ff]/70 mb-1 block">{t('techPortal.currentPassword')}</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1 block">{t('techPortal.currentPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="password" value={pwForm.currentPassword} onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-[#00f7ff]/30 transition" autoComplete="current-password" />
+                <input type="password" value={pwForm.currentPassword} onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-input border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-[#00f7ff]/30 transition" autoComplete="current-password" />
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-[#e0d0ff]/70 mb-1 block">{t('techPortal.newPassword')}</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1 block">{t('techPortal.newPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="password" value={pwForm.newPassword} onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-[#00f7ff]/30 transition" autoComplete="new-password" />
+                <input type="password" value={pwForm.newPassword} onChange={(e) => setPwForm({ ...pwForm, newPassword: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-input border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-[#00f7ff]/30 transition" autoComplete="new-password" />
               </div>
             </div>
             <div>
-              <label className="text-xs font-semibold text-slate-600 dark:text-[#e0d0ff]/70 mb-1 block">{t('techPortal.confirmPassword')}</label>
+              <label className="text-xs font-semibold text-muted-foreground mb-1 block">{t('techPortal.confirmPassword')}</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input type="password" value={pwForm.confirmPassword} onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-slate-50 dark:bg-[#0a0520] border border-slate-200 dark:border-[#bc13fe]/30 rounded-xl text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-[#00f7ff]/30 transition" autoComplete="new-password" />
+                <input type="password" value={pwForm.confirmPassword} onChange={(e) => setPwForm({ ...pwForm, confirmPassword: e.target.value })} className="w-full pl-10 pr-3 py-2.5 bg-input border border-border rounded-xl text-sm text-foreground focus:ring-2 focus:ring-[#00f7ff]/30 transition" autoComplete="new-password" />
               </div>
             </div>
             <div className="flex gap-2">
-              <button onClick={() => { setShowPwForm(false); setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); }} className="flex-1 py-2.5 border border-slate-200 dark:border-[#bc13fe]/30 text-slate-700 dark:text-[#e0d0ff] text-sm font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-[#bc13fe]/10 transition">
+              <button onClick={() => { setShowPwForm(false); setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' }); }} className="flex-1 py-2.5 border border-border text-foreground text-sm font-bold rounded-xl hover:bg-accent transition">
                 {t('techPortal.cancel')}
               </button>
               <button onClick={handleChangePassword} disabled={changingPw} className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-[#bc13fe] to-[#ff44cc] hover:shadow-[0_0_20px_rgba(188,19,254,0.5)] disabled:opacity-50 text-white text-sm font-bold rounded-xl transition-all">

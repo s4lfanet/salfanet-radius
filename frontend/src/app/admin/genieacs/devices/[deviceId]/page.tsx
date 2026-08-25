@@ -206,7 +206,7 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
             Devices
           </Link>
           <span className="text-gray-300 dark:text-gray-600">/</span>
-          <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-xs">
+          <span className="text-sm font-medium text-foreground truncate max-w-xs">
             {serialNumber !== '-' ? serialNumber : deviceId}
           </span>
           {lastInform && <DeviceStatusBadge lastInform={lastInform} />}
@@ -280,8 +280,8 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
             { label: 'Device ID', value: deviceId, mono: true },
           ].map(({ label, value, mono }) => (
             <div key={label} className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-900">
-              <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
-              <p className={`mt-1 text-sm font-medium text-gray-900 dark:text-white break-all ${mono ? 'font-mono' : ''}`}>
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className={`mt-1 text-sm font-medium text-foreground break-all ${mono ? 'font-mono' : ''}`}>
                 {value}
               </p>
             </div>
@@ -295,29 +295,29 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
           className="flex w-full items-center justify-between px-4 py-3"
           onClick={() => setShowTasks((v) => !v)}
         >
-          <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+          <span className="flex items-center gap-2 text-sm font-medium text-foreground">
             <ListTodo className="h-4 w-4" />
             Tasks ({tasks.length})
           </span>
           {showTasks ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
         </button>
         {showTasks && (
-          <div className="border-t border-gray-200 dark:border-gray-700">
+          <div className="border-t border-border">
             {tasks.length === 0 ? (
               <p className="px-4 py-3 text-sm text-gray-500">No tasks pending.</p>
             ) : (
               <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-800">
+                <thead className="bg-muted">
                   <tr>
                     {['Task', 'Status', 'Created'].map((h) => (
-                      <th key={h} className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                      <th key={h} className="px-4 py-2 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                         {h}
                       </th>
                     ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                <tbody className="divide-y divide-border">
                   {tasks.map((task) => (
                     <tr key={task._id}>
                       <td className="px-4 py-2 font-mono text-xs">{task.name}</td>
@@ -344,7 +344,7 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
             className="flex w-full items-center justify-between px-4 py-3"
             onClick={() => setShowRaw((v) => !v)}
           >
-            <span className="flex items-center gap-2 text-sm font-medium text-gray-900 dark:text-white">
+            <span className="flex items-center gap-2 text-sm font-medium text-foreground">
               <Server className="h-4 w-4" />
               Raw NBI Data
             </span>
@@ -352,7 +352,7 @@ export default function DeviceDetailPage({ params }: { params: Promise<{ deviceI
           </button>
           {showRaw && (
             <div className="border-t border-gray-200 p-4 dark:border-gray-700">
-              <pre className="overflow-auto max-h-96 text-xs text-gray-700 dark:text-gray-300">
+              <pre className="overflow-auto max-h-96 text-xs text-muted-foreground">
                 {JSON.stringify(device, null, 2)}
               </pre>
             </div>

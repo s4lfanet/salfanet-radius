@@ -107,18 +107,18 @@ export function OTBDiagram({
   return (
     <div className="otb-diagram">
       {/* Info Panel */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-lg p-4 mb-4 border border-border">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.otb.name')}</p>
-            <p className="font-semibold text-gray-900 dark:text-white">{node.name}</p>
+            <p className="text-xs text-muted-foreground">{t('network.otb.name')}</p>
+            <p className="font-semibold text-foreground">{node.name}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.otb.code')}</p>
-            <p className="font-mono text-gray-900 dark:text-white">{node.code}</p>
+            <p className="text-xs text-muted-foreground">{t('network.otb.code')}</p>
+            <p className="font-mono text-foreground">{node.code}</p>
           </div>
           <div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">{t('network.otb.feederCable')}</p>
+            <p className="text-xs text-muted-foreground">{t('network.otb.feederCable')}</p>
             <p className="text-white">{node.metadata?.feederCable || 'SM-96C'}</p>
           </div>
           <div>
@@ -149,7 +149,7 @@ export function OTBDiagram({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="bg-card rounded-lg border border-border"
       >
         <defs>
           <marker
@@ -361,20 +361,20 @@ export function OTBDiagram({
 
       {/* Hovered Port Info */}
       {hoveredPort && (
-        <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="mt-4 bg-card rounded-lg p-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
             {t('network.otb.port')} {hoveredPort.number - node.inputPorts}
           </h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-gray-600 dark:text-gray-400">{t('common.status')}:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">
+              <span className="text-muted-foreground">{t('common.status')}:</span>
+              <span className="ml-2 text-foreground">
                 {t(`network.diagram.status.${hoveredPort.status.toLowerCase()}`)}
               </span>
             </div>
             {hoveredPort.metadata?.downstreamNode && (
               <div>
-                <span className="text-gray-600 dark:text-gray-400">{t('network.otb.connectedTo')}:</span>
+                <span className="text-muted-foreground">{t('network.otb.connectedTo')}:</span>
                 <span className="ml-2 text-cyan-600 dark:text-cyan-400 font-semibold">
                   {hoveredPort.metadata.downstreamNode}
                 </span>

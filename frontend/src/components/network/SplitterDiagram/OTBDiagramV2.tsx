@@ -125,16 +125,16 @@ export function OTBDiagramV2({
   return (
     <div className="otb-diagram-v2">
       {/* Info Panel */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-lg p-4 mb-4 border border-border">
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{node.code}</h3>
+              <h3 className="text-lg font-bold text-foreground">{node.code}</h3>
               <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
                 OTB
               </span>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{node.name}</p>
+            <p className="text-sm text-muted-foreground">{node.name}</p>
             {node.address && (
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">📍 {node.address}</p>
             )}
@@ -153,26 +153,26 @@ export function OTBDiagramV2({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Kabel Feeder</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">Kabel Feeder</p>
+            <p className="font-medium text-foreground">
               {incomingCable?.code || node.metadata?.feederCable || '-'}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Tipe Koneksi</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">Tipe Koneksi</p>
+            <p className="font-medium text-foreground">
               Patch-through (Lurus)
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Tubes / Cores</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">Tubes / Cores</p>
+            <p className="font-medium text-foreground">
               {tubes.length} / {totalCores || (incomingCable?.tubeCount ?? 0) * (incomingCable?.coresPerTube ?? 0)}
             </p>
           </div>
           <div>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Utilisasi</p>
-            <p className="font-medium text-gray-900 dark:text-white">
+            <p className="text-xs text-muted-foreground">Utilisasi</p>
+            <p className="font-medium text-foreground">
               {usedCores} / {totalCores || (incomingCable?.tubeCount ?? 0) * (incomingCable?.coresPerTube ?? 0)} ({utilizationPercent}%)
             </p>
           </div>
@@ -181,8 +181,8 @@ export function OTBDiagramV2({
 
       {/* Tube-Core Grid Visualization */}
       {showTubeDetail && tubes.length > 0 && (
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 mb-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+        <div className="bg-card rounded-lg p-4 mb-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-3">
             Feeder Cable: {incomingCable?.code}
             <span className="ml-2 text-xs font-normal text-gray-500">
               ({incomingCable?.cableType || 'SM-G.652'})
@@ -213,10 +213,10 @@ export function OTBDiagramV2({
                     className="w-3 h-3 rounded-full border border-gray-400"
                     style={{ backgroundColor: tube.colorHex }}
                   />
-                  <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                  <span className="text-xs font-medium text-muted-foreground">
                     T{tube.tubeNumber}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
+                  <span className="text-xs text-muted-foreground ml-auto">
                     {tube.usedCores}/{tube.totalCores}
                   </span>
                 </div>
@@ -251,7 +251,7 @@ export function OTBDiagramV2({
 
           {/* Hovered Tube/Core Info */}
           {(hoveredTube || hoveredCore) && (
-            <div className="mt-3 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg text-xs">
+            <div className="mt-3 p-2 bg-muted rounded-lg text-xs">
               {hoveredCore && (
                 <div className="flex items-center gap-4">
                   <span className="font-medium">
@@ -268,7 +268,7 @@ export function OTBDiagramV2({
                     {hoveredCore.status}
                   </span>
                   {hoveredCore.assignedTo && (
-                    <span className="text-gray-600 dark:text-gray-400">
+                    <span className="text-muted-foreground">
                       → {hoveredCore.assignedTo}
                     </span>
                   )}
@@ -293,7 +293,7 @@ export function OTBDiagramV2({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700"
+        className="bg-card rounded-lg border border-border"
       >
         <defs>
           <marker id="arrowhead-v2" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -479,26 +479,26 @@ export function OTBDiagramV2({
 
       {/* Hovered Port Info Panel */}
       {hoveredPort && (
-        <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+        <div className="mt-4 bg-card rounded-lg p-4 border border-border">
+          <h4 className="text-sm font-semibold text-foreground mb-2">
             Port {hoveredPort.number - node.inputPorts}
           </h4>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-gray-500 dark:text-gray-400">Status:</span>
-              <span className="ml-2 text-gray-900 dark:text-white">{PORT_STATUS_LABELS[hoveredPort.status]}</span>
+              <span className="text-muted-foreground">Status:</span>
+              <span className="ml-2 text-foreground">{PORT_STATUS_LABELS[hoveredPort.status]}</span>
             </div>
             {hoveredPort.tubeNumber && (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Tube/Core:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">
+                <span className="text-muted-foreground">Tube/Core:</span>
+                <span className="ml-2 text-foreground">
                   T{hoveredPort.tubeNumber}-C{hoveredPort.coreNumber}
                 </span>
               </div>
             )}
             {hoveredPort.metadata?.downstreamNode && (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Connected To:</span>
+                <span className="text-muted-foreground">Connected To:</span>
                 <span className="ml-2 text-cyan-600 dark:text-cyan-400 font-medium">
                   {hoveredPort.metadata.downstreamNode}
                 </span>
@@ -506,13 +506,13 @@ export function OTBDiagramV2({
             )}
             {hoveredPort.signalStrength && (
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Signal:</span>
-                <span className="ml-2 text-gray-900 dark:text-white">{hoveredPort.signalStrength} dBm</span>
+                <span className="text-muted-foreground">Signal:</span>
+                <span className="ml-2 text-foreground">{hoveredPort.signalStrength} dBm</span>
               </div>
             )}
           </div>
           {hoveredPort.notes && (
-            <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">{hoveredPort.notes}</p>
+            <p className="mt-2 text-xs text-muted-foreground italic">{hoveredPort.notes}</p>
           )}
         </div>
       )}

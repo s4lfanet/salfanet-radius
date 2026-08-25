@@ -116,7 +116,7 @@ export default function GenieACSProvisionsPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <button onClick={() => refetch()} disabled={loading}
-            className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800">
+            className="px-3 py-2 text-sm border rounded-md flex items-center gap-2 hover:bg-accent">
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /> Refresh
           </button>
           <button onClick={backup}
@@ -140,7 +140,7 @@ export default function GenieACSProvisionsPage() {
 
       <div className="border rounded-md overflow-hidden dark:border-slate-700">
         <table className="w-full text-sm">
-          <thead className="bg-slate-100 dark:bg-slate-800">
+          <thead className="bg-muted">
             <tr>
               <th className="text-left px-3 py-2">ID</th>
               <th className="text-left px-3 py-2 hidden md:table-cell">Deskripsi</th>
@@ -154,15 +154,15 @@ export default function GenieACSProvisionsPage() {
             ) : items.length === 0 ? (
               <tr><td colSpan={4} className="text-center py-8 text-slate-500">Belum ada provision</td></tr>
             ) : items.map((p) => (
-              <tr key={p._id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+              <tr key={p._id} className="hover:bg-accent/50">
                 <td className="px-3 py-2 font-mono text-blue-700 dark:text-blue-400 font-medium">{p._id}</td>
                 <td className="px-3 py-2 hidden md:table-cell text-xs text-slate-500">{p.description || <span className="italic">—</span>}</td>
-                <td className="px-3 py-2 truncate max-w-[300px] font-mono text-xs text-slate-600 dark:text-slate-400">
+                <td className="px-3 py-2 truncate max-w-[300px] font-mono text-xs text-muted-foreground">
                   {(p.script || '').split('\n').find(l => l.trim() && !l.startsWith('/'))?.slice(0, 80) || '—'}
                 </td>
                 <td className="px-3 py-2 text-right">
                   <button onClick={() => setEditing(p)}
-                    className="px-2 py-1 text-xs border rounded hover:bg-slate-50 dark:hover:bg-slate-800 dark:border-slate-600">Edit</button>
+                    className="px-2 py-1 text-xs border rounded hover:bg-accent dark:border-slate-600">Edit</button>
                   <button onClick={() => remove(p._id)}
                     className="ml-2 p-1.5 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -176,7 +176,7 @@ export default function GenieACSProvisionsPage() {
 
       {editing && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+          <div className="bg-card rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
             <div className="p-4 border-b dark:border-slate-700 flex items-center justify-between">
               <h2 className="font-semibold">{items.find(x => x._id === editing._id) ? `Edit: ${editing._id}` : 'Provision Baru'}</h2>
               <button onClick={() => setEditing(null)} className="text-slate-500 hover:text-slate-700">✕</button>
@@ -199,12 +199,12 @@ export default function GenieACSProvisionsPage() {
                 <label className="text-xs text-slate-500">Script <span className="text-red-500">*</span></label>
                 <textarea value={editing.script} onChange={(e) => setEditing({ ...editing, script: e.target.value })}
                   rows={18} spellCheck={false}
-                  className="w-full font-mono text-xs border rounded-md p-2 bg-slate-50 dark:bg-slate-800 dark:border-slate-600 dark:text-green-300 resize-none" />
+                  className="w-full font-mono text-xs border rounded-md p-2 bg-input dark:border-slate-600 dark:text-green-300 resize-none" />
               </div>
             </div>
             <div className="p-4 border-t dark:border-slate-700 flex justify-end gap-2">
               <button onClick={() => setEditing(null)}
-                className="px-3 py-2 text-sm border rounded-md hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+                className="px-3 py-2 text-sm border rounded-md hover:bg-accent">Cancel</button>
               <button onClick={save} disabled={saving}
                 className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-md flex items-center gap-2 disabled:opacity-60">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

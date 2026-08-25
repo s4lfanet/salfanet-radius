@@ -105,10 +105,10 @@ export default function AutoProvisionPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-xl font-semibold text-foreground">
             Auto-Provision
           </h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             Configure a preset + provision script that runs on every device inform.
           </p>
         </div>
@@ -138,10 +138,10 @@ export default function AutoProvisionPage() {
       {/* Current script preview */}
       {currentScript && (
         <div className="rounded-md border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Current provision script (read-only preview)
           </p>
-          <pre className="overflow-auto text-xs text-gray-700 dark:text-gray-300 max-h-48">
+          <pre className="overflow-auto text-xs text-muted-foreground max-h-48">
             {currentScript}
           </pre>
         </div>
@@ -152,7 +152,7 @@ export default function AutoProvisionPage() {
         {/* Channel + precondition */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-muted-foreground">
               Channel
             </label>
             <input
@@ -164,7 +164,7 @@ export default function AutoProvisionPage() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-muted-foreground">
               Precondition (JavaScript expression)
             </label>
             <input
@@ -178,7 +178,7 @@ export default function AutoProvisionPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-muted-foreground">
             Weight
           </label>
           <input
@@ -192,7 +192,7 @@ export default function AutoProvisionPage() {
         {/* Parameters */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-sm font-medium text-muted-foreground">
               Parameters to set
             </label>
             <button
@@ -247,7 +247,7 @@ export default function AutoProvisionPage() {
 
         {/* Additional script */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium text-muted-foreground">
             Additional provision script (optional)
           </label>
           <textarea

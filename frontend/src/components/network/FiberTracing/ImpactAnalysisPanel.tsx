@@ -73,13 +73,13 @@ export function ImpactAnalysisPanel({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
+    <div className="bg-card rounded-lg shadow-md p-6 border border-border">
       {/* Header */}
       <div className="mb-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h3 className="text-xl font-bold text-foreground mb-2">
           {t('network.tracing.impactAnalysis')}
         </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Analisis dampak jika jalur ini terputus
         </p>
       </div>
@@ -128,13 +128,13 @@ export function ImpactAnalysisPanel({
                 <div className={`w-2 h-2 rounded-full ${getNodeTypeColor(node.type)}`} />
                 <div>
                   <div className="font-medium text-sm text-gray-900 dark:text-gray-200">{node.code}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{node.name}</div>
+                  <div className="text-xs text-muted-foreground">{node.name}</div>
                 </div>
               </div>
               {node.customersCount !== undefined && node.customersCount > 0 && (
                 <div className="text-right">
                   <div className="text-sm font-semibold text-gray-900 dark:text-gray-200">{node.customersCount}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{t('network.odp.customer')}</div>
+                  <div className="text-xs text-muted-foreground">{t('network.odp.customer')}</div>
                 </div>
               )}
             </div>

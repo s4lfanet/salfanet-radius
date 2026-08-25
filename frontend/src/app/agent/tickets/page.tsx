@@ -254,17 +254,17 @@ export default function AgentTicketsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-black tracking-wide text-slate-900 dark:text-white">
+          <h1 className="text-xl font-black tracking-wide text-foreground">
             Tiket Keluhan / Gangguan
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Laporkan gangguan atau keluhan Anda kepada tim support
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button
             onClick={() => loadTickets()}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-muted/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border transition-all"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
@@ -281,7 +281,7 @@ export default function AgentTicketsPage() {
 
       {/* Create Ticket Form */}
       {showForm && (
-        <div className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 shadow-sm p-5 space-y-4">
+        <div className="rounded-2xl bg-card border border-border shadow-sm p-5 space-y-4">
           <h2 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
             <TicketPlus className="w-4 h-4 text-violet-600 dark:text-violet-400" />
             Buat Tiket Baru
@@ -289,35 +289,35 @@ export default function AgentTicketsPage() {
 
           {/* Subject */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Subjek <span className="text-red-400">*</span></label>
+            <label className="text-xs font-semibold text-muted-foreground">Subjek <span className="text-red-400">*</span></label>
             <input
               value={form.subject}
               onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
               placeholder="Contoh: Internet mati sejak pagi"
-              className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition"
+              className="w-full px-3 py-2 text-sm rounded-xl bg-input border border-border text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition"
             />
           </div>
 
           {/* Description */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Deskripsi <span className="text-red-400">*</span></label>
+            <label className="text-xs font-semibold text-muted-foreground">Deskripsi <span className="text-red-400">*</span></label>
             <textarea
               value={form.description}
               onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               placeholder="Jelaskan masalah secara detail..."
               rows={4}
-              className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition resize-none"
+              className="w-full px-3 py-2 text-sm rounded-xl bg-input border border-border text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             {/* Priority */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Prioritas</label>
+              <label className="text-xs font-semibold text-muted-foreground">Prioritas</label>
               <select
                 value={form.priority}
                 onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
-                className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition appearance-none cursor-pointer"
+                className="w-full px-3 py-2 text-sm rounded-xl bg-input border border-border text-slate-800 dark:text-white focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition appearance-none cursor-pointer"
               >
                 {Object.entries(priorityLabel).map(([val, label]) => (
                   <option key={val} value={val}>{label}</option>
@@ -327,11 +327,11 @@ export default function AgentTicketsPage() {
 
             {/* Category */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Kategori</label>
+              <label className="text-xs font-semibold text-muted-foreground">Kategori</label>
               <select
                 value={form.categoryId}
                 onChange={e => setForm(f => ({ ...f, categoryId: e.target.value }))}
-                className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-800 dark:text-white focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition appearance-none cursor-pointer"
+                className="w-full px-3 py-2 text-sm rounded-xl bg-input border border-border text-slate-800 dark:text-white focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition appearance-none cursor-pointer"
               >
                 <option value="">-- Pilih Kategori --</option>
                 {categories.map(c => (
@@ -343,7 +343,7 @@ export default function AgentTicketsPage() {
 
           {/* Location Tag */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+            <label className="text-xs font-semibold text-muted-foreground">
               <MapPin className="w-3.5 h-3.5 inline mr-1 text-rose-500" />
               Tag Lokasi <span className="font-normal text-slate-400">(opsional)</span>
             </label>
@@ -351,15 +351,15 @@ export default function AgentTicketsPage() {
               value={locationTag}
               onChange={e => setLocationTag(e.target.value)}
               placeholder="Contoh: RT 05/RW 02, Desa Sukamaju"
-              className="w-full px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition"
+              className="w-full px-3 py-2 text-sm rounded-xl bg-input border border-border text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition"
             />
           </div>
 
           {/* GPS Coordinates */}
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-300">Koordinat GPS</label>
+            <label className="text-xs font-semibold text-muted-foreground">Koordinat GPS</label>
             <div className="flex gap-2">
-              <div className="flex-1 px-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400">
+              <div className="flex-1 px-3 py-2 text-sm rounded-xl bg-input border border-border text-muted-foreground">
                 {latitude && longitude ? `${latitude}, ${longitude}` : 'Belum ada koordinat'}
               </div>
               <button
@@ -388,7 +388,7 @@ export default function AgentTicketsPage() {
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => { setShowForm(false); setForm({ subject: '', description: '', priority: 'MEDIUM', categoryId: '' }); setLocationTag(''); setLatitude(''); setLongitude(''); }}
-              className="flex-1 py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 transition"
+              className="flex-1 py-2 text-xs font-bold rounded-xl bg-muted/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-muted-foreground border border-border transition"
             >
               Batal
             </button>
@@ -413,7 +413,7 @@ export default function AgentTicketsPage() {
             className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
               filterStatus === val
                 ? 'bg-violet-100 text-violet-700 border-violet-300 dark:bg-violet-500/20 dark:text-violet-400 dark:border-violet-500/40'
-                : 'bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700'
+                : 'bg-muted/50 text-muted-foreground border-border hover:bg-slate-200 dark:hover:bg-slate-700'
             }`}
           >
             {label}
@@ -431,15 +431,15 @@ export default function AgentTicketsPage() {
           <div className="p-5 rounded-2xl bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20">
             <MessageSquare className="w-10 h-10 text-violet-400 dark:text-violet-500" />
           </div>
-          <p className="text-sm font-bold text-slate-600 dark:text-slate-300">Belum ada tiket</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500">Buat tiket baru untuk melaporkan gangguan</p>
+          <p className="text-sm font-bold text-muted-foreground">Belum ada tiket</p>
+          <p className="text-xs text-muted-foreground/70">Buat tiket baru untuk melaporkan gangguan</p>
         </div>
       ) : (
         <div className="space-y-3">
           {tickets.map(ticket => (
             <div
               key={ticket.id}
-              className="rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-all"
+              className="rounded-2xl bg-card border border-border shadow-sm overflow-hidden transition-all"
             >
               {/* Ticket Header */}
               <button
@@ -459,14 +459,14 @@ export default function AgentTicketsPage() {
                       {priorityLabel[ticket.priority] || ticket.priority}
                     </span>
                     {ticket.category && (
-                      <span className="flex items-center gap-1 text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md">
+                      <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md">
                         <Tag className="w-3 h-3" />
                         {ticket.category.name}
                       </span>
                     )}
                   </div>
                   <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{ticket.subject}</p>
-                  <div className="flex items-center gap-3 text-[10px] text-slate-400 dark:text-slate-500">
+                  <div className="flex items-center gap-3 text-[10px] text-muted-foreground/70">
                     <span className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {fmtDate(ticket.createdAt)}
@@ -502,11 +502,11 @@ export default function AgentTicketsPage() {
                             <div className={`px-3 py-2 rounded-xl text-xs leading-relaxed ${
                               isAgent
                                 ? 'bg-violet-50 dark:bg-violet-900/30 text-slate-800 dark:text-white border border-violet-200 dark:border-violet-700/30'
-                                : 'bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600'
+                                : 'bg-muted/50 text-foreground border border-border'
                             }`}>
                               {msg.message}
                             </div>
-                            <div className={`text-[9px] text-slate-400 dark:text-slate-500 px-1 ${isAgent ? 'text-right' : 'text-left'}`}>
+                            <div className={`text-[9px] text-muted-foreground/70 px-1 ${isAgent ? 'text-right' : 'text-left'}`}>
                               {msg.senderType === 'ADMIN' ? '\uD83D\uDC64 Admin' : msg.senderType === 'TECHNICIAN' ? '\uD83D\uDD27 Teknisi' : msg.senderName} · {fmtDate(msg.createdAt)}
                             </div>
                           </div>
@@ -523,7 +523,7 @@ export default function AgentTicketsPage() {
                         onChange={e => setReplyText(prev => ({ ...prev, [ticket.id]: e.target.value }))}
                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleReply(ticket.id); } }}
                         placeholder="Tulis balasan..."
-                        className="flex-1 px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition"
+                        className="flex-1 px-3 py-2 text-xs rounded-xl bg-input border border-border text-slate-800 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:border-violet-500 dark:focus:border-violet-400 transition"
                       />
                       <button
                         onClick={() => handleReply(ticket.id)}

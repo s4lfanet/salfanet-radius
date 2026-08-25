@@ -86,7 +86,7 @@ export default function ActivityLogsPage() {
   if (hasPermission && !hasPermission('settings.view')) {
     return (
       <div className="p-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center text-gray-500 dark:text-gray-400">
+        <div className="bg-card rounded-lg p-6 text-center text-muted-foreground">
           Anda tidak memiliki izin untuk mengakses halaman ini
         </div>
       </div>
@@ -99,14 +99,14 @@ export default function ActivityLogsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-brand-500" />
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h1 className="text-lg font-semibold text-foreground">
             {t('nav.activityLogs') || 'Log Aktivitas'}
           </h1>
         </div>
         <button
           onClick={handleRefresh}
           disabled={loading}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300 transition-colors disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md bg-gray-100 hover:bg-gray-200 dark:bg-white/5 dark:hover:bg-white/10 text-muted-foreground transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -118,7 +118,7 @@ export default function ActivityLogsPage() {
         <select
           value={moduleFilter}
           onChange={(e) => handleModuleChange(e.target.value)}
-          className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="px-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-white/10 bg-card text-muted-foreground focus:outline-none focus:ring-1 focus:ring-brand-500"
         >
           {MODULES.map((m) => (
             <option key={m.value} value={m.value}>
@@ -135,7 +135,7 @@ export default function ActivityLogsPage() {
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               placeholder="Cari username, aksi, deskripsi, IP..."
-              className="pl-7 pr-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500 w-64"
+              className="pl-7 pr-3 py-1.5 text-xs rounded-md border border-gray-200 dark:border-white/10 bg-card text-muted-foreground placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500 w-64"
             />
           </div>
           <button
@@ -145,7 +145,7 @@ export default function ActivityLogsPage() {
             Cari
           </button>
         </div>
-        <div className="ml-auto text-xs text-gray-500 dark:text-gray-400">
+        <div className="ml-auto text-xs text-muted-foreground">
           {loading ? 'Memuat...' : `${total} total`}
         </div>
       </div>
@@ -158,10 +158,10 @@ export default function ActivityLogsPage() {
       )}
 
       {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div className="bg-card rounded-lg border border-gray-200 dark:border-white/10 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50 dark:bg-white/5 text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            <thead className="bg-gray-50 dark:bg-white/5 text-muted-foreground uppercase tracking-wide">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">Waktu</th>
                 <th className="px-3 py-2 text-left font-medium">Pengguna</th>
@@ -188,11 +188,11 @@ export default function ActivityLogsPage() {
               ) : (
                 logs.map((log) => (
                   <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-white/5">
-                    <td className="px-3 py-2 whitespace-nowrap text-gray-600 dark:text-gray-400">
+                    <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">
                       {formatWIB(log.createdAt, 'dd MMM yyyy, HH:mm:ss')}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
-                      <div className="font-medium text-gray-900 dark:text-white">
+                      <div className="font-medium text-foreground">
                         {log.username}
                       </div>
                       {log.userRole && (
@@ -204,10 +204,10 @@ export default function ActivityLogsPage() {
                         {log.module}
                       </span>
                     </td>
-                    <td className="px-3 py-2 whitespace-nowrap font-mono text-gray-700 dark:text-gray-300">
+                    <td className="px-3 py-2 whitespace-nowrap font-mono text-muted-foreground">
                       {log.action}
                     </td>
-                    <td className="px-3 py-2 text-gray-600 dark:text-gray-400 max-w-md truncate">
+                    <td className="px-3 py-2 text-muted-foreground max-w-md truncate">
                       {log.description}
                     </td>
                     <td className="px-3 py-2 whitespace-nowrap">
@@ -232,7 +232,7 @@ export default function ActivityLogsPage() {
         {/* Pagination */}
         {total > PAGE_SIZE && (
           <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-white/5 text-xs">
-            <div className="text-gray-500 dark:text-gray-400">
+            <div className="text-muted-foreground">
               Menampilkan {offset + 1}-{Math.min(offset + PAGE_SIZE, total)} dari {total}
             </div>
             <div className="flex items-center gap-1">
