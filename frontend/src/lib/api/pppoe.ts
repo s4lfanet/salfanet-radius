@@ -180,7 +180,7 @@ export const pppoeApi = {
   },
 
   /** Bulk operation (template upload, etc.) */
-  async bulkUpload(formData: FormData): Promise<{ success: boolean; imported?: number; errors?: string[]; message?: string }> {
+  async bulkUpload(formData: FormData): Promise<{ success: boolean; results: { success: number; updated: number; failed: number; errors: Array<{ line: number; username?: string; error: string }> } }> {
     const res = await fetch('/api/pppoe/users/bulk', {
       method: 'POST',
       body: formData,

@@ -190,9 +190,9 @@ export async function POST(
           managePppSecret(userRecord.router.id, 'enable', {
             username: userRecord.username,
             password: userRecord.password,
-            profile: userRecord.profile.groupName,
+            profile: userRecord.profile?.groupName || '',
           }).then((r) => {
-            console.log(`[MarkPaid] PPP secret restored to "${userRecord.profile.groupName}" for ${userRecord.username}: ${r.message}`);
+            console.log(`[MarkPaid] PPP secret restored to "${userRecord.profile?.groupName || ''}" for ${userRecord.username}: ${r.message}`);
           }).catch((e) => {
             console.error(`[MarkPaid] PPP secret restore failed for ${userRecord.username}:`, e?.message || e);
           });

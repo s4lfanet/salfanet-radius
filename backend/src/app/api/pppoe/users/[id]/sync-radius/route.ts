@@ -42,9 +42,11 @@ export async function POST(
     await prisma.$executeRaw`
       DELETE FROM radusergroup WHERE username = ${username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
     `;
-    await prisma.radusergroup.create({
-      data: { username, groupname: user.profile.groupName, priority: 0, nas_identifier: nasIdentifier },
-    });
+    if (user.profile) {
+      await prisma.radusergroup.create({
+        data: { username, groupname: user.profile.groupName, priority: 0, nas_identifier: nasIdentifier },
+      });
+    }
 
     // Re-create radreply (static IP if set) — with nas_identifier
     // Delete entries scoped by nas_identifier to avoid wiping other NAS entries

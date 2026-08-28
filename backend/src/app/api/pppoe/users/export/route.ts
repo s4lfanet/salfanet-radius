@@ -88,7 +88,7 @@ export async function GET(req: NextRequest) {
         includePassword ? (u.password || '') : '••••••',
         u.name,
         u.phone,
-        u.profile.name,
+        u.profile?.name || 'Tanpa Paket',
         u.status === 'active' ? 'Aktif' : u.status === 'isolated' ? 'Isolir' : u.status === 'blocked' ? 'Block' : 'Stop',
         u.expiredAt ? formatDateExport(u.expiredAt) : '-',
         u.router?.name || 'Global'
@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
       email: u.email || '',
       address: u.address || '',
       area: (u as any).area?.name || '',
-      profile: u.profile.name,
+      profile: u.profile?.name || 'Tanpa Paket',
       subscriptionType: u.subscriptionType || 'POSTPAID',
       status: u.status === 'active' ? 'Aktif' : u.status === 'isolated' ? 'Isolir' : u.status === 'blocked' ? 'Block' : 'Stop',
       ipAddress: u.ipAddress || '',

@@ -105,10 +105,12 @@ export async function PUT(request: Request) {
         await tx.$executeRaw`
           DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
-        await tx.$executeRaw`
-          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-          VALUES (${user.username}, ${user.profile.groupName}, 1, ${nasIdentifier})
-        `;
+        if (user.profile) {
+          await tx.$executeRaw`
+            INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+            VALUES (${user.username}, ${user.profile.groupName}, 1, ${nasIdentifier})
+          `;
+        }
 
         // 4. Restore static IP if exists
         if (user.ipAddress) {
