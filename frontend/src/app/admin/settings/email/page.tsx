@@ -481,8 +481,8 @@ export default function EmailSettingsPage() {
                             Di halaman Security, pilih <strong>"App passwords"</strong>
                           </p>
                           <div className="bg-background p-2 rounded border border-border">
-                            <p className="text-foreground mb-1">• App name: <code className="bg-gray-200 dark:bg-inputpx-1 rounded">RADIUS System</code></p>
-                            <p className="text-foreground">• Device: <code className="bg-gray-200 dark:bg-inputpx-1 rounded">Web Server</code></p>
+                            <p className="text-foreground mb-1">• App name: <code className="bg-gray-200 dark:bg-input px-1 rounded">RADIUS System</code></p>
+                            <p className="text-foreground">• Device: <code className="bg-gray-200 dark:bg-input px-1 rounded">Web Server</code></p>
                           </div>
                         </div>
                       </div>
