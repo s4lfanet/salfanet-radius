@@ -813,7 +813,7 @@ export async function updatePppoeUser(
             data: { username: newUsername, attribute: 'Cleartext-Password', op: ':=', value: data.password || currentUser.password, nas_identifier: nasIdentifier },
           });
           await tx.radusergroup.create({
-            data: { username: newUsername, groupname: newProfile.groupName, priority: 0, nas_identifier: nasIdentifier },
+            data: { username: newUsername, groupname: newProfile?.groupName || 'isolir', priority: 0, nas_identifier: nasIdentifier },
           });
           const finalIp = data.ipAddress !== undefined ? data.ipAddress : currentUser.ipAddress;
           if (finalIp) {
@@ -856,7 +856,7 @@ export async function updatePppoeUser(
             select: { authMode: true },
           });
           const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
-          const mtProfileRaw = await getMikrotikProfileName(newProfile.id);
+          const mtProfileRaw = newProfile ? await getMikrotikProfileName(newProfile.id) : null;
           const usernameChanged = oldUsername && oldUsername !== newUsername;
           // Isolated users: keep enabled but use 'isolir' profile (user can still login
           //   to get isolir profile with rate-limit). Stop/blocked: disable secret entirely.

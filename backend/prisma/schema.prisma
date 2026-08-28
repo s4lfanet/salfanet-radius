@@ -553,7 +553,7 @@ model pppoeUser {
   pppoeCustomerId  String?          @map("pppoe_customer_id")
   pppoeCustomer    pppoeCustomer?   @relation(fields: [pppoeCustomerId], references: [id], onDelete: SetNull)
   password         String
-  profileId        String
+  profileId        String?
   areaId           String?
   status           String           @default("active")
   ipAddress        String?
@@ -604,7 +604,7 @@ model pppoeUser {
   invoices                invoice[]
   manualPayments          manualPayment[]
   tickets                 ticket[]
-  profile                 pppoeProfile           @relation(fields: [profileId], references: [id])
+  profile                 pppoeProfile?          @relation(fields: [profileId], references: [id])
   area                    pppoeArea?             @relation(fields: [areaId], references: [id])
   router                  router?                @relation(fields: [routerId], references: [id])
   sessions                sessions[]

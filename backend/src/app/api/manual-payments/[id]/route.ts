@@ -142,8 +142,8 @@ export async function PATCH(
 
       // Compute expiry before transaction (reads)
       const currentExpiry = manualPayment.user.expiredAt || new Date();
-      const validityValue = manualPayment.user.profile.validityValue;
-      const validityUnit = manualPayment.user.profile.validityUnit;
+      const validityValue = manualPayment.user.profile?.validityValue ?? 1;
+      const validityUnit = manualPayment.user.profile?.validityUnit ?? 'MONTHS';
 
       let newExpiry = new Date(currentExpiry);
 

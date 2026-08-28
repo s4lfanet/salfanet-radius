@@ -6,6 +6,56 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.16.0] — 2026-08-28 — Import Audit Fixes & Optional Profile
+
+### Summary
+Audit menyeluruh pada fitur import pelanggan PPPoE. Memperbaiki bug kritis di mana template tidak memiliki kolom Profile (menyebabkan semua import user baru gagal), menambahkan transaction untuk atomicity, membuat profile menjadi opsional (bisa assign manual setelah import), dan beberapa perbaikan lainnya.
+
+### Fixes
+- **[CRITICAL]** Template Excel/CSV tidak memiliki kolom Profile — semua import user baru selalu gagal dengan error "Profile tidak ditemukan". Ditambahkan kolom `Profile` dan `Router` ke template dengan sample data
+- **[CRITICAL]** Import loop tidak dibungkus transaction — jika server crash di tengah import, sebagian data masuk dan sebagian tidak. Sekarang seluruh loop dibungkus `prisma.$transaction()` dengan timeout 120 detik
+- **[FEATURE]** Profile sekarang opsional saat import — pelanggan tetap diimpor meskipun profile tidak ditemukan di file. Admin bisa assign profile manual setelah import melalui halaman edit pelanggan. Schema `profileId` diubah menjadi nullable
+- **[FIX]** CSV header parser tidak handle quoted values dengan koma — sekarang menggunakan regex yang sama dengan value parser
+- **[FIX]** Dead variables `profileId` dan `routerId` dari formData dibaca tapi tidak pernah dipakai — dihapus
+- **[FIX]** Return type `pppoeApi.bulkUpload` di frontend tidak match dengan response backend — diperbaiki
+- **[FIX]** Tidak ada limit jumlah baris import — ditambahkan batas maksimal 1000 baris per import
+- **[FIX]** RADIUS sync (radusergroup) sekarang hanya di-insert jika profile ada — mencegah crash saat profile null
+- **[FIX]** First invoice hanya dibuat jika profile ada (butuh `profile.price`)
+- **[FIX]** Null-safe fixes di 7 file backend: payment route, manual-payments, mark-paid, sync-radius, bulk-status, export, status route, pppoe.service.ts
+
+### Schema Changes
+- `pppoeUser.profileId`: `String` (required) → `String?` (nullable)
+- `pppoeUser.profile` relation: `pppoeProfile` (required) → `pppoeProfile?` (optional)
+- Migration: `20260828_make_profile_optional` — `ALTER TABLE pppoe_users MODIFY COLUMN profileId VARCHAR(255) NULL`
+
+### Files Changed
+- `backend/prisma/schema.prisma` — profileId nullable + relation optional
+- `backend/prisma/migrations/20260828_make_profile_optional/migration.sql` — new migration
+- `backend/src/app/api/pppoe/users/bulk/route.ts` — template, transaction, optional profile, CSV parser, row limit, dead variables
+- `frontend/src/lib/api/pppoe.ts` — bulkUpload return type fix
+- `frontend/src/app/admin/pppoe/users/page.tsx` — import modal info text update
+- `backend/src/app/api/customer/invoices/payment/route.ts` — null-safe profile access
+- `backend/src/app/api/manual-payments/[id]/route.ts` — null-safe profile access
+- `backend/src/app/api/pppoe/users/[id]/mark-paid/route.ts` — null-safe profile access
+- `backend/src/app/api/pppoe/users/[id]/sync-radius/route.ts` — guard radusergroup if no profile
+- `backend/src/app/api/pppoe/users/bulk-status/route.ts` — guard radusergroup if no profile
+- `backend/src/app/api/pppoe/users/export/route.ts` — null-safe profile access
+- `backend/src/app/api/pppoe/users/status/route.ts` — guard radusergroup if no profile
+- `backend/src/server/services/pppoe.service.ts` — null-safe newProfile access
+- `package.json` — version bump to 5.16.0
+- `README.md` — version update
+- `CHANGELOG.md` — this entry
+
+### Deployment
+```bash
+cd /var/www/salfanet-radius/backend
+npx prisma migrate deploy
+npx prisma generate
+pm2 restart salfanet-backend salfanet-frontend
+```
+
+---
+
 ## [5.15.1] — 2026-08-25 — Mobile Scroll Fix (All Portals)
 
 ### Summary

@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
           id: invoice.id,
           price: invoice.amount,
           quantity: 1,
-          name: `Internet Package - ${user.profile.name}`
+          name: `Internet Package - ${user.profile?.name || 'Tanpa Paket'}`
         }]
       };
 
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
         external_id: invoice.invoiceNumber,
         amount: invoice.amount,
         payer_email: user.email || `${user.phone}@customer.com`,
-        description: `Internet Package - ${user.profile.name}`,
+        description: `Internet Package - ${user.profile?.name || 'Tanpa Paket'}`,
         customer: {
           given_names: user.name,
           mobile_number: user.phone

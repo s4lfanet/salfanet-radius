@@ -81,10 +81,12 @@ export async function PUT(request: Request) {
         await prisma.$executeRaw`
           DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
         `;
-        await prisma.$executeRaw`
-          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-          VALUES (${user.username}, ${user.profile.groupName}, 1, ${nasIdentifier})
-        `;
+        if (user.profile) {
+          await prisma.$executeRaw`
+            INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+            VALUES (${user.username}, ${user.profile.groupName}, 1, ${nasIdentifier})
+          `;
+        }
         if (user.ipAddress) {
           await prisma.$executeRaw`
             INSERT INTO radreply (username, attribute, op, value, nas_identifier)

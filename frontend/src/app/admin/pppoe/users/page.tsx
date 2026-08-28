@@ -1792,7 +1792,7 @@ export default function PppoeUsersPage() {
           </ModalHeader>
           <ModalBody className="space-y-4">
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-lg text-xs text-blue-700 dark:text-blue-300">
-              Profile dan NAS/Router akan diambil otomatis dari kolom <strong>Profile</strong> dan <strong>Router</strong> dalam file. Gunakan file hasil Export untuk memastikan format yang benar.
+              Profile dan NAS/Router akan diambil otomatis dari kolom <strong>Profile</strong> dan <strong>Router</strong> dalam file. Jika profile tidak ditemukan, pelanggan tetap diimpor dan bisa di-assign manual setelahnya. Gunakan file hasil Export untuk memastikan format yang benar.
             </div>
             <div>
               <ModalLabel required>{t('pppoe.selectFile')}</ModalLabel>

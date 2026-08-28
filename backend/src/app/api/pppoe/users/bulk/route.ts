@@ -31,6 +31,8 @@ export async function GET(request: NextRequest) {
           email: 'budi@example.com',
           address: 'Jl. Merdeka No. 10',
           area: 'Cluster A',
+          profile: 'Paket 10Mbps',
+          router: 'Router Utama',
           ipAddress: '10.10.10.2',
           subscriptionType: 'POSTPAID',
           expiredAt: '',
@@ -49,6 +51,8 @@ export async function GET(request: NextRequest) {
           email: 'siti@example.com',
           address: 'Jl. Sudirman No. 5',
           area: '',
+          profile: 'Paket 20Mbps',
+          router: '',
           ipAddress: '',
           subscriptionType: 'PREPAID',
           expiredAt: '2026-12-31',
@@ -76,6 +80,8 @@ export async function GET(request: NextRequest) {
           { key: 'billingDay', header: 'Hari Tagihan (1-31)', width: 20 },
           { key: 'latitude', header: 'Latitude', width: 14 },
           { key: 'longitude', header: 'Longitude', width: 14 },
+          { key: 'profile', header: 'Profile (opsional, assign manual setelah import)', width: 36 },
+          { key: 'router', header: 'Router (kosong = global)', width: 22 },
           { key: 'autoIsolationEnabled', header: 'Auto Isolasi (true/false)', width: 22 },
           { key: 'firstInvoice', header: 'Tagihan Pertama (none/prorate/full)', width: 30 },
           { key: 'registeredAt', header: 'Tanggal Register (YYYY-MM-DD)', width: 26 },
@@ -90,9 +96,9 @@ export async function GET(request: NextRequest) {
       }
 
       // CSV fallback
-      const template = `ID Pelanggan (kosongkan = auto),Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,Area/Wilayah,IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude,Auto Isolasi (true/false),Tagihan Pertama (none/prorate/full),Tanggal Register (YYYY-MM-DD)
-,user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,Cluster A,10.10.10.2,POSTPAID,,1,-6.200000,106.816666,true,prorate,
-,user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,, PREPAID,2026-12-31,,,,true,full,`;
+      const template = `ID Pelanggan (kosongkan = auto),Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,Area/Wilayah,Profile (opsional),Router (kosong = global),IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude,Auto Isolasi (true/false),Tagihan Pertama (none/prorate/full),Tanggal Register (YYYY-MM-DD)
+,user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,Cluster A,Paket 10Mbps,Router Utama,10.10.10.2,POSTPAID,,1,-6.200000,106.816666,true,prorate,
+,user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,,Paket 20Mbps,,,PREPAID,2026-12-31,,,,true,full,`;
 
       return new NextResponse(template, {
         headers: {
@@ -193,8 +199,6 @@ export async function POST(request: NextRequest) {
     if (!authCheck.authorized) return authCheck.response;
     const formData = await request.formData();
     const file = formData.get('file') as File;
-    const profileId = formData.get('pppoeProfileId') as string;
-    const routerId = formData.get('routerId') as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -266,8 +270,10 @@ export async function POST(request: NextRequest) {
       'id pelanggan (kosongkan = auto)': 'customerid',
       'customer id': 'customerid',
       'profile': 'profilename',
+      'profile (opsional)': 'profilename',
       'status': '_status',
       'router': 'routername',
+      'router (kosong = global)': 'routername',
       'created': '_created',
       'createdat': 'createdat',
       // Tanggal Register / registeredAt (maps to createdAt in DB)
@@ -356,7 +362,10 @@ export async function POST(request: NextRequest) {
       }
 
       // Get headers from first line and normalize immediately
-      headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      // Use same regex as value parser to handle quoted headers with commas
+      headers = (lines[0].match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || []).map(h =>
+        h.replace(/^"|"$/g, '').trim().toLowerCase()
+      );
       headers = headers.map(h => headerNormalizeMap[h] ?? h);
 
       for (let i = 1; i < lines.length; i++) {
@@ -377,6 +386,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No data rows found in file' }, { status: 400 });
     }
 
+    // Limit max rows to prevent timeout/memory issues
+    const MAX_IMPORT_ROWS = 1000;
+    if (rows.length > MAX_IMPORT_ROWS) {
+      return NextResponse.json(
+        { error: `Maksimal ${MAX_IMPORT_ROWS} baris per import. File memiliki ${rows.length} baris. Bagi menjadi beberapa file.` },
+        { status: 400 }
+      );
+    }
+
     // Required columns check — password is optional (auto-generated if missing)
     const requiredColumns = ['username', 'name', 'phone'];
     const missingColumns = requiredColumns.filter(col => !headers.includes(col));
@@ -391,306 +409,323 @@ export async function POST(request: NextRequest) {
     const co = await prisma.company.findFirst({ select: { customerIdPrefix: true } });
     const idPrefix = (co as any)?.customerIdPrefix?.trim() || '';
 
-    // Process data rows
-    const results = {
-      success: 0,
-      updated: 0,
-      failed: 0,
-      errors: [] as any[],
-    };
+    // Process data rows inside a transaction for atomicity
+    const results = await prisma.$transaction(async (tx) => {
+      const results = {
+        success: 0,
+        updated: 0,
+        failed: 0,
+        errors: [] as any[],
+      };
 
-    for (let i = 0; i < rows.length; i++) {
-      const rowData = rows[i];
+      for (let i = 0; i < rows.length; i++) {
+        const rowData = rows[i];
 
-      try {
-        // Validate required fields
-        if (!rowData.username || !rowData.name || !rowData.phone) {
+        try {
+          // Validate required fields
+          if (!rowData.username || !rowData.name || !rowData.phone) {
+            results.failed++;
+            results.errors.push({
+              line: i + 2,
+              username: rowData.username || 'unknown',
+              error: 'Missing required fields (username, name, phone)',
+            });
+            continue;
+          }
+
+          // Auto-generate password if not in file
+          const password = rowData.password && rowData.password.trim() !== ''
+            ? rowData.password
+            : rowData.username + Math.random().toString(36).substring(2, 6);
+
+          // Resolve subscriptionType (POSTPAID default)
+          const rawSubType = (rowData.subscriptiontype || '').toUpperCase();
+          const subscriptionType = rawSubType === 'PREPAID' ? 'PREPAID' : 'POSTPAID';
+
+          // Resolve profile for this row from 'profilename' column (set by export's "Profile" header)
+          const rowProfileName = rowData.profilename?.trim() || '';
+          const rowProfile = rowProfileName ? (profileByNameMap.get(rowProfileName.toLowerCase()) || null) : null;
+
+          // Resolve router for this row from 'routername' column (set by export's "Router" header)
+          let rowRouterId: string | null = null;
+          const rowRouterName = rowData.routername?.trim() || '';
+          if (rowRouterName && rowRouterName.toLowerCase() !== 'global') {
+            const foundRouter = routerByNameMap.get(rowRouterName.toLowerCase());
+            if (foundRouter) rowRouterId = foundRouter.id;
+          }
+
+          // Check if username already exists → upsert (update existing user for backup/restore workflow)
+          const existingUser = await tx.pppoeUser.findUnique({
+            where: { username: rowData.username },
+            include: { profile: true },
+          });
+
+          if (existingUser) {
+            // Use resolved profile from file, or fall back to existing user's profile
+            // If neither is available, set profileId to null (admin can assign later)
+            const upsertProfile = rowProfile || existingUser.profile;
+            if (!upsertProfile && rowProfileName) {
+              results.errors.push({
+                line: i + 2,
+                username: rowData.username,
+                error: `Profile "${rowProfileName}" tidak ditemukan — profile dihapus, assign manual setelah import`,
+              });
+            }
+
+            const updateData: any = {
+              password: password,
+              name: rowData.name,
+              phone: rowData.phone,
+              email: rowData.email || existingUser.email,
+              address: rowData.address || existingUser.address,
+              profileId: upsertProfile ? upsertProfile.id : null,
+              routerId: rowRouterId !== null ? rowRouterId : existingUser.routerId,
+            };
+
+            if (rawSubType) updateData.subscriptionType = subscriptionType;
+            if (rowData.ipaddress && rowData.ipaddress.trim()) updateData.ipAddress = rowData.ipaddress.trim();
+            if (rowData.billingday && rowData.billingday !== '') {
+              const bd = parseInt(rowData.billingday, 10);
+              if (!isNaN(bd) && bd >= 1 && bd <= 31) updateData.billingDay = bd;
+            }
+            if (rowData.expiredat && rowData.expiredat !== '') {
+              const d = new Date(rowData.expiredat);
+              if (!isNaN(d.getTime())) updateData.expiredAt = d;
+            }
+            if (rowData.latitude && rowData.longitude) {
+              const lat = parseFloat(rowData.latitude); const lng = parseFloat(rowData.longitude);
+              if (!isNaN(lat) && !isNaN(lng)) { updateData.latitude = lat; updateData.longitude = lng; }
+            }
+            if (rowData.area && rowData.area.trim()) {
+              const areaRec = await tx.pppoeArea.findFirst({ where: { name: { contains: rowData.area.trim() } } });
+              if (areaRec) updateData.areaId = areaRec.id;
+            }
+            if (rowData.autoisolation !== undefined && rowData.autoisolation !== '') {
+              updateData.autoIsolationEnabled = rowData.autoisolation.toLowerCase() !== 'false' && rowData.autoisolation !== '0';
+            }
+            if (rowData.comment && rowData.comment.trim()) updateData.comment = rowData.comment.trim();
+            if (rowData.macaddress && rowData.macaddress.trim()) updateData.macAddress = rowData.macaddress.trim();
+
+            await tx.pppoeUser.update({ where: { username: rowData.username }, data: updateData });
+
+            // Sync RADIUS: update password and profile — with nas_identifier for multi-tenant isolation
+            const upsertNasId = rowRouterId !== null ? rowRouterId : (existingUser.routerId || null);
+            await tx.$executeRaw`DELETE FROM radcheck WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
+            await tx.$executeRaw`
+              INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+              VALUES (${existingUser.username}, 'Cleartext-Password', ':=', ${password}, ${upsertNasId})
+            `;
+            await tx.$executeRaw`DELETE FROM radusergroup WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
+            if (upsertProfile) {
+              await tx.$executeRaw`
+                INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+                VALUES (${existingUser.username}, ${upsertProfile.groupName}, 1, ${upsertNasId})
+              `;
+            }
+            if (updateData.ipAddress) {
+              await tx.$executeRaw`DELETE FROM radreply WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
+              await tx.$executeRaw`
+                INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+                VALUES (${existingUser.username}, 'Framed-IP-Address', ':=', ${updateData.ipAddress}, ${upsertNasId})
+              `;
+            }
+
+            results.updated++;
+            continue;
+          }
+
+          // New user: profile is optional — import without profile if not found
+          if (!rowProfile) {
+            results.errors.push({
+              line: i + 2,
+              username: rowData.username,
+              error: `Profile "${rowProfileName || 'kolom Profile tidak ada dalam file'}" tidak ditemukan — diimpor tanpa paket, assign manual setelah import`,
+            });
+          }
+
+          // Create user
+          const userData: any = {
+            id: randomUUID(),
+            username: rowData.username,
+            password: password,
+            name: rowData.name,
+            phone: rowData.phone,
+            email: rowData.email || null,
+            address: rowData.address || null,
+            ipAddress: rowData.ipaddress || null,
+            profileId: rowProfile ? rowProfile.id : null,
+            routerId: rowRouterId,
+            status: 'active',
+            subscriptionType,
+          };
+
+          // billingDay — only meaningful for POSTPAID
+          if (rowData.billingday && rowData.billingday !== '') {
+            const bd = parseInt(rowData.billingday, 10);
+            if (!isNaN(bd) && bd >= 1 && bd <= 31) {
+              userData.billingDay = bd;
+            }
+          }
+
+          // expiredAt — provided for PREPAID users
+          if (rowData.expiredat && rowData.expiredat !== '') {
+            const d = new Date(rowData.expiredat);
+            if (!isNaN(d.getTime())) {
+              userData.expiredAt = d;
+            }
+          }
+
+          // Coordinates
+          if (rowData.latitude && rowData.longitude && rowData.latitude !== '' && rowData.longitude !== '') {
+            const lat = parseFloat(rowData.latitude);
+            const lng = parseFloat(rowData.longitude);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              userData.latitude = lat;
+              userData.longitude = lng;
+            }
+          }
+
+          // Area lookup by name
+          if (rowData.area && rowData.area.trim() !== '') {
+            const areaRec = await tx.pppoeArea.findFirst({
+              where: { name: { contains: rowData.area.trim() } }
+            });
+            if (areaRec) userData.areaId = areaRec.id;
+          }
+
+          // Optional fields
+          if (rowData.comment && rowData.comment.trim()) {
+            userData.comment = rowData.comment.trim();
+          }
+          if (rowData.macaddress && rowData.macaddress.trim()) {
+            userData.macAddress = rowData.macaddress.trim();
+          }
+          if (rowData.autoisolation !== undefined && rowData.autoisolation !== '') {
+            userData.autoIsolationEnabled = rowData.autoisolation.toLowerCase() !== 'false' && rowData.autoisolation !== '0';
+          }
+
+          // Tanggal Register / registeredAt — maps to createdAt in DB
+          if (rowData.createdat && rowData.createdat !== '') {
+            const d = new Date(rowData.createdat);
+            if (!isNaN(d.getTime())) userData.createdAt = d;
+          }
+
+          // Generate unique referral code for new user
+          userData.referralCode = await generateUniqueReferralCode();
+
+          // Resolve customerId: use from file if provided, otherwise auto-generate unique ID (with prefix)
+          const fileCustomerId = rowData.customerid?.trim() || '';
+          if (fileCustomerId) {
+            // Verify uniqueness of the provided customerId
+            const custIdConflict = await tx.pppoeUser.findUnique({ where: { customerId: fileCustomerId } });
+            userData.customerId = custIdConflict ? generateCustomerId(idPrefix) : fileCustomerId;
+          } else {
+            userData.customerId = generateCustomerId(idPrefix);
+          }
+          // Ensure uniqueness (re-generate on collision)
+          while (await tx.pppoeUser.findUnique({ where: { customerId: userData.customerId } })) {
+            userData.customerId = generateCustomerId(idPrefix);
+          }
+
+          const newUser = await tx.pppoeUser.create({
+            data: userData,
+          });
+
+          // Sync to RADIUS — with nas_identifier for multi-tenant isolation
+          // radcheck (password) always inserted; radusergroup only if profile exists
+          const newNasId = rowRouterId || null;
+          await tx.$executeRaw`DELETE FROM radcheck WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))`;
+          await tx.$executeRaw`
+            INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+            VALUES (${newUser.username}, 'Cleartext-Password', ':=', ${newUser.password}, ${newNasId})
+          `;
+
+          if (rowProfile) {
+            await tx.$executeRaw`
+              DELETE FROM radusergroup WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))
+            `;
+
+            await tx.$executeRaw`
+              INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+              VALUES (${newUser.username}, ${rowProfile.groupName}, 1, ${newNasId})
+            `;
+          };
+
+          // Add static IP if provided
+          if (newUser.ipAddress) {
+            await tx.$executeRaw`DELETE FROM radreply WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))`;
+            await tx.$executeRaw`
+              INSERT INTO radreply (username, attribute, op, value, nas_identifier)
+              VALUES (${newUser.username}, 'Framed-IP-Address', ':=', ${newUser.ipAddress}, ${newNasId})
+            `;
+          }
+
+          // Mark as synced
+          await tx.pppoeUser.update({
+            where: { id: newUser.id },
+            data: { syncedToRadius: true },
+          });
+
+          // Create first invoice if requested (none/prorate/full) — only if profile exists
+          const rawFirstInvoice = (rowData.firstinvoice || '').toLowerCase().trim();
+          const doFirstInvoice = rawFirstInvoice === 'prorate' || rawFirstInvoice === 'full';
+          if (doFirstInvoice && newUser.expiredAt && rowProfile) {
+            try {
+              let invoiceAmount = rowProfile.price;
+              if (rawFirstInvoice === 'prorate' && subscriptionType !== 'PREPAID') {
+                const regDate = userData.createdAt ? new Date(userData.createdAt) : new Date();
+                regDate.setHours(0, 0, 0, 0);
+                const year = regDate.getFullYear(); const month = regDate.getMonth(); const currentDay = regDate.getDate();
+                const bd = userData.billingDay ? Math.min(Math.max(Number(userData.billingDay), 1), 28) : 1;
+                let nextBilling: Date;
+                if (currentDay < bd) { nextBilling = new Date(year, month, bd); }
+                else { nextBilling = new Date(year, month + 1, bd); }
+                const msPerDay = 1000 * 60 * 60 * 24;
+                const daysActive = Math.max(1, Math.ceil((nextBilling.getTime() - regDate.getTime()) / msPerDay));
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                invoiceAmount = Math.ceil((daysActive / daysInMonth) * rowProfile.price);
+              }
+              const invYear = new Date().getFullYear();
+              const invMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+              const invId = randomUUID();
+              const invNumber = `INV-${invYear}${invMonth}-${invId.slice(0, 8).toUpperCase()}`;
+              await tx.invoice.create({
+                data: {
+                  id: invId,
+                  invoiceNumber: invNumber,
+                  userId: newUser.id,
+                  amount: invoiceAmount,
+                  baseAmount: invoiceAmount,
+                  dueDate: newUser.expiredAt,
+                  status: 'PENDING',
+                  invoiceType: 'MONTHLY',
+                  customerName: newUser.name,
+                  customerPhone: newUser.phone,
+                  customerUsername: newUser.username,
+                  createdAt: new Date(),
+                },
+              });
+            } catch (invoiceErr) {
+              console.error(`Invoice creation failed for row ${i + 2}:`, invoiceErr);
+            }
+          }
+
+          results.success++;
+        } catch (error: any) {
+          console.error(`Error processing row ${i + 2}:`, error);
           results.failed++;
           results.errors.push({
             line: i + 2,
             username: rowData.username || 'unknown',
-            error: 'Missing required fields (username, name, phone)',
+            error: error.message || 'Unknown error',
           });
-          continue;
         }
-
-        // Auto-generate password if not in file
-        const password = rowData.password && rowData.password.trim() !== ''
-          ? rowData.password
-          : rowData.username + Math.random().toString(36).substring(2, 6);
-
-        // Resolve subscriptionType (POSTPAID default)
-        const rawSubType = (rowData.subscriptiontype || '').toUpperCase();
-        const subscriptionType = rawSubType === 'PREPAID' ? 'PREPAID' : 'POSTPAID';
-
-        // Resolve profile for this row from 'profilename' column (set by export's "Profile" header)
-        const rowProfileName = rowData.profilename?.trim() || '';
-        const rowProfile = rowProfileName ? (profileByNameMap.get(rowProfileName.toLowerCase()) || null) : null;
-
-        // Resolve router for this row from 'routername' column (set by export's "Router" header)
-        let rowRouterId: string | null = null;
-        const rowRouterName = rowData.routername?.trim() || '';
-        if (rowRouterName && rowRouterName.toLowerCase() !== 'global') {
-          const foundRouter = routerByNameMap.get(rowRouterName.toLowerCase());
-          if (foundRouter) rowRouterId = foundRouter.id;
-        }
-
-        // Check if username already exists → upsert (update existing user for backup/restore workflow)
-        const existingUser = await prisma.pppoeUser.findUnique({
-          where: { username: rowData.username },
-          include: { profile: true },
-        });
-
-        if (existingUser) {
-          // Use resolved profile from file, or fall back to existing user's profile
-          const upsertProfile = rowProfile || existingUser.profile;
-
-          const updateData: any = {
-            password: password,
-            name: rowData.name,
-            phone: rowData.phone,
-            email: rowData.email || existingUser.email,
-            address: rowData.address || existingUser.address,
-            profileId: upsertProfile.id,
-            routerId: rowRouterId !== null ? rowRouterId : existingUser.routerId,
-          };
-
-          if (rawSubType) updateData.subscriptionType = subscriptionType;
-          if (rowData.ipaddress && rowData.ipaddress.trim()) updateData.ipAddress = rowData.ipaddress.trim();
-          if (rowData.billingday && rowData.billingday !== '') {
-            const bd = parseInt(rowData.billingday, 10);
-            if (!isNaN(bd) && bd >= 1 && bd <= 31) updateData.billingDay = bd;
-          }
-          if (rowData.expiredat && rowData.expiredat !== '') {
-            const d = new Date(rowData.expiredat);
-            if (!isNaN(d.getTime())) updateData.expiredAt = d;
-          }
-          if (rowData.latitude && rowData.longitude) {
-            const lat = parseFloat(rowData.latitude); const lng = parseFloat(rowData.longitude);
-            if (!isNaN(lat) && !isNaN(lng)) { updateData.latitude = lat; updateData.longitude = lng; }
-          }
-          if (rowData.area && rowData.area.trim()) {
-            const areaRec = await prisma.pppoeArea.findFirst({ where: { name: { contains: rowData.area.trim() } } });
-            if (areaRec) updateData.areaId = areaRec.id;
-          }
-          if (rowData.autoisolation !== undefined && rowData.autoisolation !== '') {
-            updateData.autoIsolationEnabled = rowData.autoisolation.toLowerCase() !== 'false' && rowData.autoisolation !== '0';
-          }
-          if (rowData.comment && rowData.comment.trim()) updateData.comment = rowData.comment.trim();
-          if (rowData.macaddress && rowData.macaddress.trim()) updateData.macAddress = rowData.macaddress.trim();
-
-          await prisma.pppoeUser.update({ where: { username: rowData.username }, data: updateData });
-
-          // Sync RADIUS: update password and profile — with nas_identifier for multi-tenant isolation
-          const upsertNasId = rowRouterId !== null ? rowRouterId : (existingUser.routerId || null);
-          await prisma.$executeRaw`DELETE FROM radcheck WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
-          await prisma.$executeRaw`
-            INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
-            VALUES (${existingUser.username}, 'Cleartext-Password', ':=', ${password}, ${upsertNasId})
-          `;
-          await prisma.$executeRaw`DELETE FROM radusergroup WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
-          await prisma.$executeRaw`
-            INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-            VALUES (${existingUser.username}, ${upsertProfile.groupName}, 1, ${upsertNasId})
-          `;
-          if (updateData.ipAddress) {
-            await prisma.$executeRaw`DELETE FROM radreply WHERE username = ${existingUser.username} AND (nas_identifier = ${upsertNasId} OR (nas_identifier IS NULL AND ${upsertNasId} IS NULL))`;
-            await prisma.$executeRaw`
-              INSERT INTO radreply (username, attribute, op, value, nas_identifier)
-              VALUES (${existingUser.username}, 'Framed-IP-Address', ':=', ${updateData.ipAddress}, ${upsertNasId})
-            `;
-          }
-
-          results.updated++;
-          continue;
-        }
-
-        // New user: profile column is required
-        if (!rowProfile) {
-          results.failed++;
-          results.errors.push({
-            line: i + 2,
-            username: rowData.username,
-            error: `Profile tidak ditemukan: "${rowProfileName || 'kolom Profile tidak ada dalam file'}"`,
-          });
-          continue;
-        }
-
-        // Create user
-        const userData: any = {
-          id: randomUUID(),
-          username: rowData.username,
-          password: password,
-          name: rowData.name,
-          phone: rowData.phone,
-          email: rowData.email || null,
-          address: rowData.address || null,
-          ipAddress: rowData.ipaddress || null,
-          profileId: rowProfile.id,
-          routerId: rowRouterId,
-          status: 'active',
-          subscriptionType,
-        };
-
-        // billingDay — only meaningful for POSTPAID
-        if (rowData.billingday && rowData.billingday !== '') {
-          const bd = parseInt(rowData.billingday, 10);
-          if (!isNaN(bd) && bd >= 1 && bd <= 31) {
-            userData.billingDay = bd;
-          }
-        }
-
-        // expiredAt — provided for PREPAID users
-        if (rowData.expiredat && rowData.expiredat !== '') {
-          const d = new Date(rowData.expiredat);
-          if (!isNaN(d.getTime())) {
-            userData.expiredAt = d;
-          }
-        }
-
-        // Coordinates
-        if (rowData.latitude && rowData.longitude && rowData.latitude !== '' && rowData.longitude !== '') {
-          const lat = parseFloat(rowData.latitude);
-          const lng = parseFloat(rowData.longitude);
-          if (!isNaN(lat) && !isNaN(lng)) {
-            userData.latitude = lat;
-            userData.longitude = lng;
-          }
-        }
-
-        // Area lookup by name
-        if (rowData.area && rowData.area.trim() !== '') {
-          const areaRec = await prisma.pppoeArea.findFirst({
-            where: { name: { contains: rowData.area.trim() } }
-          });
-          if (areaRec) userData.areaId = areaRec.id;
-        }
-
-        // Optional fields
-        if (rowData.comment && rowData.comment.trim() !== '') {
-          userData.comment = rowData.comment.trim();
-        }
-        if (rowData.macaddress && rowData.macaddress.trim() !== '') {
-          userData.macAddress = rowData.macaddress.trim();
-        }
-        if (rowData.autoisolation !== undefined && rowData.autoisolation !== '') {
-          userData.autoIsolationEnabled = rowData.autoisolation.toLowerCase() !== 'false' && rowData.autoisolation !== '0';
-        }
-
-        // Tanggal Register / registeredAt — maps to createdAt in DB
-        if (rowData.createdat && rowData.createdat !== '') {
-          const d = new Date(rowData.createdat);
-          if (!isNaN(d.getTime())) userData.createdAt = d;
-        }
-
-        // Generate unique referral code for new user
-        userData.referralCode = await generateUniqueReferralCode();
-
-        // Resolve customerId: use from file if provided, otherwise auto-generate unique ID (with prefix)
-        const fileCustomerId = rowData.customerid?.trim() || '';
-        if (fileCustomerId) {
-          // Verify uniqueness of the provided customerId
-          const custIdConflict = await prisma.pppoeUser.findUnique({ where: { customerId: fileCustomerId } });
-          userData.customerId = custIdConflict ? generateCustomerId(idPrefix) : fileCustomerId;
-        } else {
-          userData.customerId = generateCustomerId(idPrefix);
-        }
-        // Ensure uniqueness (re-generate on collision)
-        while (await prisma.pppoeUser.findUnique({ where: { customerId: userData.customerId } })) {
-          userData.customerId = generateCustomerId(idPrefix);
-        }
-
-        const newUser = await prisma.pppoeUser.create({
-          data: userData,
-        });
-
-        // Sync to RADIUS — with nas_identifier for multi-tenant isolation
-        const newNasId = rowRouterId || null;
-        await prisma.$executeRaw`DELETE FROM radcheck WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))`;
-        await prisma.$executeRaw`
-          INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
-          VALUES (${newUser.username}, 'Cleartext-Password', ':=', ${newUser.password}, ${newNasId})
-        `;
-
-        await prisma.$executeRaw`
-          DELETE FROM radusergroup WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))
-        `;
-
-        await prisma.$executeRaw`
-          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-          VALUES (${newUser.username}, ${rowProfile.groupName}, 1, ${newNasId})
-        `;
-
-        // Add static IP if provided
-        if (newUser.ipAddress) {
-          await prisma.$executeRaw`DELETE FROM radreply WHERE username = ${newUser.username} AND (nas_identifier = ${newNasId} OR (nas_identifier IS NULL AND ${newNasId} IS NULL))`;
-          await prisma.$executeRaw`
-            INSERT INTO radreply (username, attribute, op, value, nas_identifier)
-            VALUES (${newUser.username}, 'Framed-IP-Address', ':=', ${newUser.ipAddress}, ${newNasId})
-          `;
-        }
-
-        // Mark as synced
-        await prisma.pppoeUser.update({
-          where: { id: newUser.id },
-          data: { syncedToRadius: true },
-        });
-
-        // Create first invoice if requested (none/prorate/full)
-        const rawFirstInvoice = (rowData.firstinvoice || '').toLowerCase().trim();
-        const doFirstInvoice = rawFirstInvoice === 'prorate' || rawFirstInvoice === 'full';
-        if (doFirstInvoice && newUser.expiredAt) {
-          try {
-            let invoiceAmount = rowProfile.price;
-            if (rawFirstInvoice === 'prorate' && subscriptionType !== 'PREPAID') {
-              const regDate = userData.createdAt ? new Date(userData.createdAt) : new Date();
-              regDate.setHours(0, 0, 0, 0);
-              const year = regDate.getFullYear(); const month = regDate.getMonth(); const currentDay = regDate.getDate();
-              const bd = userData.billingDay ? Math.min(Math.max(Number(userData.billingDay), 1), 28) : 1;
-              let nextBilling: Date;
-              if (currentDay < bd) { nextBilling = new Date(year, month, bd); }
-              else { nextBilling = new Date(year, month + 1, bd); }
-              const msPerDay = 1000 * 60 * 60 * 24;
-              const daysActive = Math.max(1, Math.ceil((nextBilling.getTime() - regDate.getTime()) / msPerDay));
-              const daysInMonth = new Date(year, month + 1, 0).getDate();
-              invoiceAmount = Math.ceil((daysActive / daysInMonth) * rowProfile.price);
-            }
-            const invYear = new Date().getFullYear();
-            const invMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-            const invId = randomUUID();
-            const invNumber = `INV-${invYear}${invMonth}-${invId.slice(0, 8).toUpperCase()}`;
-            await prisma.invoice.create({
-              data: {
-                id: invId,
-                invoiceNumber: invNumber,
-                userId: newUser.id,
-                amount: invoiceAmount,
-                baseAmount: invoiceAmount,
-                dueDate: newUser.expiredAt,
-                status: 'PENDING',
-                invoiceType: 'MONTHLY',
-                customerName: newUser.name,
-                customerPhone: newUser.phone,
-                customerUsername: newUser.username,
-                createdAt: new Date(),
-              },
-            });
-          } catch (invoiceErr) {
-            console.error(`Invoice creation failed for row ${i + 2}:`, invoiceErr);
-          }
-        }
-
-        results.success++;
-      } catch (error: any) {
-        console.error(`Error processing row ${i + 2}:`, error);
-        results.failed++;
-        results.errors.push({
-          line: i + 2,
-          username: rowData.username || 'unknown',
-          error: error.message || 'Unknown error',
-        });
       }
-    }
+
+      return results;
+    }, {
+      timeout: 120000, // 2 minutes for large imports
+    });
 
     return NextResponse.json({
       success: true,
