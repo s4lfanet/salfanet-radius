@@ -1041,6 +1041,54 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.16.0 — 2026-08-28 — Import Audit Fixes & Optional Profile
+
+### Summary
+Audit menyeluruh pada fitur import pelanggan PPPoE. Memperbaiki bug kritis di mana template tidak memiliki kolom Profile (menyebabkan semua import user baru gagal), menambahkan transaction untuk atomicity, membuat profile menjadi opsional (bisa assign manual setelah import), dan beberapa perbaikan lainnya.
+
+### Fixes
+- **[CRITICAL]** Template Excel/CSV tidak memiliki kolom Profile — semua import user baru selalu gagal dengan error "Profile tidak ditemukan". Ditambahkan kolom `Profile` dan `Router` ke template dengan sample data
+- **[CRITICAL]** Import loop tidak dibungkus transaction — jika server crash di tengah import, sebagian data masuk dan sebagian tidak. Sekarang seluruh loop dibungkus `prisma.$transaction()` dengan timeout 120 detik
+- **[FEATURE]** Profile sekarang opsional saat import — pelanggan tetap diimpor meskipun profile tidak ditemukan di file. Admin bisa assign profile manual setelah import melalui halaman edit pelanggan. Schema `profileId` diubah menjadi nullable
+- **[FIX]** CSV header parser tidak handle quoted values dengan koma — sekarang menggunakan regex yang sama dengan value parser
+- **[FIX]** Dead variables `profileId` dan `routerId` dari formData dibaca tapi tidak pernah dipakai — dihapus
+- **[FIX]** Return type `pppoeApi.bulkUpload` di frontend tidak match dengan response backend — diperbaiki
+- **[FIX]** Tidak ada limit jumlah baris import — ditambahkan batas maksimal 1000 baris per import
+- **[FIX]** RADIUS sync (radusergroup) sekarang hanya di-insert jika profile ada — mencegah crash saat profile null
+- **[FIX]** First invoice hanya dibuat jika profile ada (butuh `profile.price`)
+- **[FIX]** Null-safe fixes di 7 file backend: payment route, manual-payments, mark-paid, sync-radius, bulk-status, export, status route, pppoe.service.ts
+
+### Schema Changes
+- `pppoeUser.profileId`: `String` (required) → `String?` (nullable)
+- `pppoeUser.profile` relation: `pppoeProfile` (required) → `pppoeProfile?` (optional)
+- Migration: `20260828_make_profile_optional` — `ALTER TABLE pppoe_users MODIFY COLUMN profileId VARCHAR(255) NULL`
+
+### Files Changed
+- `backend/prisma/schema.prisma` — profileId nullable + relation optional
+- `backend/prisma/migrations/20260828_make_profile_optional/migration.sql` — new migration
+- `backend/src/app/api/pppoe/users/bulk/route.ts` — template, transaction, optional profile, CSV parser, row limit, dead variables
+- `frontend/src/lib/api/pppoe.ts` — bulkUpload return type fix
+- `frontend/src/app/admin/pppoe/users/page.tsx` — import modal info text update
+- `backend/src/app/api/customer/invoices/payment/route.ts` — null-safe profile access
+- `backend/src/app/api/manual-payments/[id]/route.ts` — null-safe profile access
+- `backend/src/app/api/pppoe/users/[id]/mark-paid/route.ts` — null-safe profile access
+- `backend/src/app/api/pppoe/users/[id]/sync-radius/route.ts` — guard radusergroup if no profile
+- `backend/src/app/api/pppoe/users/bulk-status/route.ts` — guard radusergroup if no profile
+- `backend/src/app/api/pppoe/users/export/route.ts` — null-safe profile access
+- `backend/src/app/api/pppoe/users/status/route.ts` — guard radusergroup if no profile
+- `backend/src/server/services/pppoe.service.ts` — null-safe newProfile access
+- `package.json` — version bump to 5.16.0
+- `README.md` — version update
+- `CHANGELOG.md` — this entry
+
+### Deployment
+```bash
+cd /var/www/salfanet-radius/backend
+npx prisma migrate deploy
+npx prisma generate
+pm2 restart salfanet-backend salfanet-frontend
+```
+
 ### v5.15.1 — 2026-08-25 — Mobile Scroll Fix (All Portals)
 
 ### Summary
@@ -1229,43 +1277,6 @@ Implementasi sinkronisasi voucher hotspot ke MikroTik router untuk mode `local` 
 - `backend/src/app/api/hotspot/voucher/delete-multiple/route.ts` — add MikroTik cleanup
 - `backend/src/app/api/hotspot/voucher/[id]/route.ts` — add MikroTik cleanup
 - `backend/src/app/api/cron/route.ts` — add `hotspot_voucher_sync` cron case
-
-### v5.12.0 — 2026-08-17 — QRIS Mandiri Payment, Auto-Update System, Installer & Cloudflare Tunnel Fixes
-
-### Summary
-Batch fitur dan fix: implementasi QRIS Mandiri payment gateway (static-to-dynamic QRIS + Android listener), sistem auto-update dari admin panel (changelog + git pull + build + PM2 restart), auto-version dari git commit count, fix port 8080 UFW di semua installer scripts, fix cloudflare tunnel nginx port switching, dan fix installer seed exit code masking.
-
-### QRIS Mandiri Payment Gateway
-- **[FEATURE]** Implementasi QRIS Mandiri (qris_own) — konversi static QRIS ke dynamic QRIS dengan amount unik per invoice (TLV parser, CRC16 EMVCo standard)
-- **[FEATURE]** Android QrisListener app support — webhook `/api/payment/qris-notify` menerima notifikasi pembayaran dari Android listener
-- **[FEATURE]** QRIS test simulation endpoint `/api/payment/qris-test` untuk testing tanpa Android app
-- **[FEATURE]** QRIS status polling endpoint `/api/payment/qris-status` untuk cek status pembayaran
-- **[FEATURE]** QRIS Mandiri tab di admin payment-gateway page — konfigurasi static code, merchant name, device key, test simulation
-- **[FEATURE]** `qris.ts` utility library — validateQris, staticToDynamic, generateUniqueAmount (deterministic suffix 1-999 dari MD5 hash invoice ID)
-- **[FEATURE]** QrisPending model di Prisma schema untuk tracking pending QRIS payments
-- **[FEATURE]** QRIS fields di company model: qrisStaticCode, qrisMerchantName, qrisEnabled, qrisDeviceKey
-
-### Auto-Update System
-- **[FEATURE]** Backend API `/api/admin/system/changelog` (GET) — fetch git log antara local vs remote commit sebagai changelog
-- **[FEATURE]** Backend API `/api/admin/system/changelog` (POST) — execute update: git pull, prisma db push, pnpm install + build (backend & frontend), PM2 restart semua service, dengan step-by-step progress reporting
-- **[FEATURE]** Frontend admin/system page — tombol "Lihat Changelog" dan "Update Sekarang" dengan konfirmasi dan progress display
-- **[FEATURE]** Auto-version dari git commit count — version format `2.35.0+1398` (base version + total commits), tidak perlu manual update package.json
-- **[FEATURE]** System info API sekarang return gitBranch, totalCommits, behindCount, baseVersion
-
-### Installer Fixes
-- **[FIX]** Port 8080 ditambahkan ke UFW rules di semua installer scripts (install-nginx.sh, common.sh, install-security.sh, install-wizard.html, README.md) — Cloudflare tunnel menggunakan port 8080
-- **[FIX]** `seed_database` pipe-to-tee masks exit code — gunakan PIPESTATUS untuk real exit code detection
-- **[FIX]** Cloudflare tunnel `switch_nginx_port` regex tidak handle `[::]:80` dan `default_server` format — fix regex pattern
-
-### Commits
-- `6f46dcf2` — feat: implement QRIS Mandiri payment gateway
-- `597e3790` — fix: add port 8080 to UFW firewall rules in all installer scripts
-- `01147df8` — feat: add auto-changelog and manual update from admin/system page
-- `788ee001` — fix: showConfirm signature and regex flag for TS compatibility
-- `fde04827` — feat: auto-version from git commit count + show branch, total commits, behind count
-- `3b9a4e9c` — fix: installer seed_database pipe-to-tee masks exit code
-- `da73801a` — fix: cloudflare tunnel switch_nginx_port regex
-- `a90bb57a` — chore: remove debug scripts from repo
 
 <!-- AUTO-CHANGELOG:END -->
 
