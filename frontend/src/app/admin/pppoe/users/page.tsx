@@ -18,7 +18,7 @@ import {
   Shield, ShieldOff, Ban, Download, Upload, Search, Filter, X, Eye, EyeOff, RefreshCcw, DollarSign, Loader2, Zap,
   UserPlus, RefreshCw, Clock, Bell, Send, Mail, ArrowUpDown, Printer, FileText,
   Calendar, CreditCard, Camera, ImageIcon, Info, AlertTriangle, Wrench, CheckCircle, XCircle, Hand,
-  GitCompareArrows, AlertCircle, CheckCheck,
+  GitCompareArrows, AlertCircle, CheckCheck, ChevronDown, ChevronRight, BookOpen,
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
@@ -443,6 +443,7 @@ export default function PppoeUsersPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [showImportGuide, setShowImportGuide] = useState(false);
 
   // Sync from MikroTik states
   const [isSyncDialogOpen, setIsSyncDialogOpen] = useState(false);
@@ -1868,15 +1869,97 @@ export default function PppoeUsersPage() {
         <MapPicker isOpen={showMapPicker} onClose={() => setShowMapPicker(false)} onSelect={(lat, lng) => { const latStr = lat.toFixed(6); const lonStr = lng.toFixed(6); setMapPickerLat(latStr); setMapPickerLon(lonStr); setModalLatLng({ lat: latStr, lng: lonStr }); }} initialLat={mapPickerLat ? parseFloat(mapPickerLat) : undefined} initialLng={mapPickerLon ? parseFloat(mapPickerLon) : undefined} />
 
         {/* Import Dialog */}
-        <SimpleModal isOpen={isImportDialogOpen} onClose={() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }} size="md">
+        <SimpleModal isOpen={isImportDialogOpen} onClose={() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }} size="xl">
           <ModalHeader>
-            <ModalTitle>{t('pppoe.importCsv')}</ModalTitle>
+            <ModalTitle className="flex items-center gap-2"><Upload className="h-4 w-4 text-primary" />{t('pppoe.importCsv')}</ModalTitle>
             <ModalDescription>{t('pppoe.uploadCsvOrExcel')}</ModalDescription>
           </ModalHeader>
-          <ModalBody className="space-y-4">
+          <ModalBody className="space-y-4 max-h-[65vh] overflow-y-auto">
+            {/* Info banner */}
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-lg text-xs text-blue-700 dark:text-blue-300">
               Profile dan NAS/Router akan diambil otomatis dari kolom <strong>Profile</strong> dan <strong>Router</strong> dalam file. Jika profile tidak ditemukan, pelanggan tetap diimpor dan bisa di-assign manual setelahnya. Gunakan file hasil Export untuk memastikan format yang benar.
             </div>
+
+            {/* Collapsible Column Guide */}
+            <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg overflow-hidden">
+              <button
+                onClick={() => setShowImportGuide(!showImportGuide)}
+                className="w-full flex items-center justify-between px-3 py-2.5 bg-muted/50 dark:bg-[#0a0520]/50 hover:bg-muted transition-colors text-xs font-medium text-foreground"
+              >
+                <span className="flex items-center gap-2"><BookOpen className="h-3.5 w-3.5 text-primary" />Panduan Kolom Template & Referensi</span>
+                {showImportGuide ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              </button>
+              {showImportGuide && (
+                <div className="p-3 space-y-3 bg-card/50 dark:bg-[#0a0520]/30">
+                  {/* Required columns */}
+                  <div>
+                    <h5 className="text-[11px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wide mb-1.5 flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full" />Wajib (Required)</h5>
+                    <div className="space-y-1">
+                      {[
+                        { col: 'Username', desc: 'Username PPPoE untuk login', ex: 'user001' },
+                        { col: 'Password', desc: 'Password PPPoE untuk login', ex: 'pass123' },
+                        { col: 'Nama Lengkap', desc: 'Nama lengkap pelanggan', ex: 'Budi Santoso' },
+                        { col: 'No. Telepon', desc: 'Nomor telepon/HP pelanggan', ex: '08123456789' },
+                      ].map(item => (
+                        <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
+                          <code className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-foreground">{item.desc}</span>
+                            <span className="text-muted-foreground ml-1.5">— contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Optional columns */}
+                  <div>
+                    <h5 className="text-[11px] font-bold text-blue-500 dark:text-blue-400 uppercase tracking-wide mb-1.5 flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full" />Opsional</h5>
+                    <div className="space-y-1">
+                      {[
+                        { col: 'ID Pelanggan', desc: 'Kosongkan untuk auto-generate. Isi jika ingin ID custom', ex: '(kosong)' },
+                        { col: 'Email', desc: 'Email pelanggan untuk notifikasi invoice', ex: 'budi@email.com' },
+                        { col: 'Alamat', desc: 'Alamat lengkap pelanggan', ex: 'Jl. Merdeka No. 10' },
+                        { col: 'Area/Wilayah', desc: 'Nama area yang sudah terdaftar di sistem', ex: 'Cluster A' },
+                        { col: 'Profile', desc: 'Nama paket/profile PPPoE. Jika tidak ditemukan, user tetap diimpor tanpa profile', ex: 'Paket 10Mbps' },
+                        { col: 'Router', desc: 'Nama router/NAS. Kosongkan untuk global (tidak terikat router tertentu)', ex: 'Router Utama' },
+                        { col: 'IP Address', desc: 'IP static untuk pelanggan. Kosongkan untuk DHCP', ex: '10.10.10.2' },
+                        { col: 'Tipe Langganan', desc: 'POSTPAID (tagihan bulanan) atau PREPAID (bayar dulu)', ex: 'POSTPAID' },
+                        { col: 'Tanggal Expired', desc: 'Format YYYY-MM-DD. Khusus PREPAID', ex: '2026-12-31' },
+                        { col: 'Hari Tagihan', desc: 'Tanggal tagihan bulanan (1-31). Khusus POSTPAID', ex: '1' },
+                        { col: 'Latitude', desc: 'Koordinat GPS lintang', ex: '-6.200000' },
+                        { col: 'Longitude', desc: 'Koordinat GPS bujur', ex: '106.816666' },
+                        { col: 'Auto Isolasi', desc: 'true = auto isolir saat expired, false = tidak', ex: 'true' },
+                        { col: 'Tagihan Pertama', desc: 'none = tidak buat invoice, prorate = prorata, full = full amount', ex: 'prorate' },
+                        { col: 'Tanggal Register', desc: 'Format YYYY-MM-DD. Tanggal pendaftaran pelanggan', ex: '2026-01-15' },
+                      ].map(item => (
+                        <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
+                          <code className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-foreground">{item.desc}</span>
+                            <span className="text-muted-foreground ml-1.5">— contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tips */}
+                  <div className="p-2.5 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-500/25 rounded text-[11px] text-amber-700 dark:text-amber-300">
+                    <p className="font-medium flex items-center gap-1 mb-1"><Info className="h-3 w-3" />Tips Import</p>
+                    <ul className="space-y-0.5 ml-4 list-disc">
+                      <li>Download template Excel/CSV terlebih dahulu untuk format yang sudah benar</li>
+                      <li>Kolom <strong>Profile</strong> dan <strong>Router</strong> cocokkan dengan nama yang terdaftar di sistem</li>
+                      <li>Untuk PREPAID, isi <strong>Tanggal Expired</strong>. Untuk POSTPAID, isi <strong>Hari Tagihan</strong></li>
+                      <li>Jika username sudah ada di database, data akan di-update (upsert)</li>
+                      <li>Maksimal 500 baris per import</li>
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* File input */}
             <div>
               <ModalLabel required>{t('pppoe.selectFile')}</ModalLabel>
               <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setImportFile(e.target.files?.[0] || null)} className="w-full px-3 py-2 text-xs bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/40 rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-[#bc13fe]/30 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-[#bc13fe]/50 focus:border-primary dark:focus:border-[#00f7ff] focus:ring-1 focus:ring-primary/30 dark:focus:ring-[#00f7ff]/30 transition-all" />
