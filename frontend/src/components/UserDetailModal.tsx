@@ -19,7 +19,7 @@ interface User {
   email: string | null;
   address: string | null;
   status: string;
-  profile: { id: string; name: string };
+  profile: { id: string; name: string } | null;
   router?: { id: string; name: string } | null;
   area?: { id: string; name: string } | null;
   ipAddress: string | null;
@@ -148,7 +148,7 @@ export default function UserDetailModal({
         username: user.username,
         password: '',
         areaId: user.area?.id || '',
-        profileId: user.profile.id,
+        profileId: user.profile?.id || '',
         routerId: user.router?.id || '',
         name: user.name,
         phone: user.phone,
