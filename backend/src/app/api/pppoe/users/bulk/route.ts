@@ -306,6 +306,7 @@ export async function POST(request: NextRequest) {
     if (isExcel) {
       // Parse XLSX using ExcelJS
       const arrayBuffer = await file.arrayBuffer();
+      console.error('Bulk import: Excel file:', file.name, 'size:', file.size, 'bytes, arrayBuffer:', arrayBuffer.byteLength);
       const workbook = new ExcelJS.Workbook();
       await workbook.xlsx.load(arrayBuffer as any);
       const worksheet = workbook.worksheets[0];
@@ -313,6 +314,8 @@ export async function POST(request: NextRequest) {
       if (!worksheet) {
         return NextResponse.json({ error: 'Excel file has no worksheets' }, { status: 400 });
       }
+
+      console.error('Bulk import: Excel worksheet:', worksheet.name, 'rowCount:', worksheet.rowCount, 'actualRowCount:', worksheet.actualRowCount);
 
       // Get headers from row 1 and normalize immediately
       const headerRow = worksheet.getRow(1);
@@ -356,6 +359,8 @@ export async function POST(request: NextRequest) {
         });
         if (hasData) rows.push(rowData);
       });
+
+      console.error('Bulk import: Excel parsed rows:', rows.length, rows.length > 0 ? 'First row:' : '', rows.length > 0 ? JSON.stringify(rows[0]) : '');
     } else {
       // Parse CSV
       const text = await file.text();
