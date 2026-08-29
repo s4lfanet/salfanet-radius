@@ -598,8 +598,8 @@ export default function PppoeUsersPage() {
 
   // Helper to invalidate all user-related queries (replaces loadData)
   const invalidateUserData = () => {
-    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users'), refetchType: 'active' });
-    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/invoices/counts'), refetchType: 'active' });
+    queryClient.refetchQueries({ queryKey: buildQueryKey('/api/pppoe/users') });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/invoices/counts') });
   };
 
   const handleSaveUser = async (data: Record<string, unknown>) => {
