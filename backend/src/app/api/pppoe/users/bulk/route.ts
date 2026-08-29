@@ -207,6 +207,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
 
     if (!file) {
+      console.error('Bulk import: No file in formData. Keys:', Array.from(formData.keys()));
       return NextResponse.json(
         { error: 'File is required' },
         { status: 400 }
@@ -361,6 +362,7 @@ export async function POST(request: NextRequest) {
       const lines = text.split('\n').filter(line => line.trim());
 
       if (lines.length < 2) {
+        console.error('Bulk import: CSV has', lines.length, 'lines. Content preview:', text.substring(0, 200));
         return NextResponse.json(
           { error: 'CSV file is empty or invalid' },
           { status: 400 }
@@ -389,12 +391,14 @@ export async function POST(request: NextRequest) {
     }
 
     if (rows.length === 0) {
+      console.error('Bulk import: No data rows found. Headers:', headers);
       return NextResponse.json({ error: 'No data rows found in file' }, { status: 400 });
     }
 
     // Limit max rows to prevent timeout/memory issues
     const MAX_IMPORT_ROWS = 1000;
     if (rows.length > MAX_IMPORT_ROWS) {
+      console.error('Bulk import: Too many rows:', rows.length);
       return NextResponse.json(
         { error: `Maksimal ${MAX_IMPORT_ROWS} baris per import. File memiliki ${rows.length} baris. Bagi menjadi beberapa file.` },
         { status: 400 }
@@ -405,8 +409,9 @@ export async function POST(request: NextRequest) {
     const requiredColumns = ['username', 'name', 'phone'];
     const missingColumns = requiredColumns.filter(col => !headers.includes(col));
     if (missingColumns.length > 0) {
+      console.error('Bulk import: Missing required columns:', missingColumns, 'Headers found:', headers);
       return NextResponse.json(
-        { error: `Kolom wajib tidak ditemukan: ${missingColumns.join(', ')}` },
+        { error: `Kolom wajib tidak ditemukan: ${missingColumns.join(', ')}. Kolom di file: ${headers.join(', ')}` },
         { status: 400 }
       );
     }

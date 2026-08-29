@@ -201,7 +201,10 @@ export const pppoeApi = {
       body: formData,
       credentials: 'include',
     });
-    if (!res.ok) throw new Error(`Bulk upload failed: ${res.status}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `Bulk upload failed: ${res.status}` }));
+      throw new Error(err.error || err.message || `Bulk upload failed: ${res.status}`);
+    }
     return res.json();
   },
 
