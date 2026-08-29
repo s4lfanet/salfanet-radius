@@ -964,7 +964,7 @@ export default function PppoeUsersPage() {
 
   const handleManualExtend = (user: PppoeUser) => {
     setSelectedUserForExtend(user);
-    setSelectedProfileForExtend(user.profile.id);
+    setSelectedProfileForExtend(user.profile?.id || '');
     setIsExtendModalOpen(true);
   };
 
@@ -1111,7 +1111,7 @@ export default function PppoeUsersPage() {
         catch { return { ...u, password: '' }; }
       }));
       const csvContent = [['Username', 'Password', 'Name', 'Phone', 'Email', 'Address', 'IP', 'Profile', 'Router', 'Status', 'Expired'].join(','),
-      ...usersWithPasswords.map(u => [u.username, u.password, u.name, u.phone, u.email || '', u.address || '', u.ipAddress || '', u.profile.name, u.router?.name || 'Global', u.status, u.expiredAt ? formatWIB(u.expiredAt) : ''].join(','))].join('\n');
+      ...usersWithPasswords.map(u => [u.username, u.password, u.name, u.phone, u.email || '', u.address || '', u.ipAddress || '', u.profile?.name || '-', u.router?.name || 'Global', u.status, u.expiredAt ? formatWIB(u.expiredAt) : ''].join(','))].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv' }); const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a'); a.href = url; a.download = `pppoe-users-${new Date().toISOString().split('T')[0]}.csv`;
       document.body.appendChild(a); a.click(); document.body.removeChild(a); window.URL.revokeObjectURL(url);
@@ -1628,7 +1628,7 @@ export default function PppoeUsersPage() {
                     </div>
                     <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">{t('pppoe.profile')}:</span>
-                      <span className="font-medium truncate">{user.profile.name}</span>
+                      <span className="font-medium truncate">{user.profile?.name || '-'}</span>
                     </div>
                     <div className="flex justify-between gap-1">
                       <span className="text-muted-foreground">{t('common.area')}:</span>
@@ -1757,8 +1757,8 @@ export default function PppoeUsersPage() {
                       </td>
                       {/* Paket */}
                       <td className="px-3 py-2 hidden lg:table-cell">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">{user.profile.name}</span>
-                        <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{user.profile.groupName}</p>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">{user.profile?.name || '-'}</span>
+                        <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{user.profile?.groupName || ''}</p>
                       </td>
                       {/* Network */}
                       <td className="px-3 py-2 hidden lg:table-cell">
