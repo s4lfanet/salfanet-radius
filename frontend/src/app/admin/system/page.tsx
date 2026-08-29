@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   RefreshCw, GitBranch, Package, Server, Cpu, Clock,
   AlertCircle, Terminal, Info, Download, CheckCircle2, XCircle,
@@ -59,12 +59,28 @@ interface UpdateResponse {
   error?: string;
   newCommit?: string;
   steps?: UpdateStep[];
+  status?: UpdateStatus;
+}
+
+interface UpdateStatus {
+  phase: 'idle' | 'running' | 'done' | 'error';
+  step?: string;
+  newCommit?: string;
+  error?: string;
+  startedAt?: number;
+  finishedAt?: number;
 }
 
 function formatUptime(seconds: number): string {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor((seconds % 3600) / 60);
   return `${h}j ${m}m`;
+}
+
+const STEP_ORDER = ['Git pull', 'Prisma db push', 'Backend build', 'Frontend build', 'PM2 restart', 'Complete', 'Starting...'];
+function stepOrder(step: string): number {
+  const idx = STEP_ORDER.indexOf(step);
+  return idx === -1 ? 99 : idx;
 }
 
 function formatDate(dateStr: string): string {
@@ -118,8 +134,9 @@ export default function SystemPage() {
   const [changelog, setChangelog] = useState<ChangelogResponse | null>(null);
   const [changelogLoading, setChangelogLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [updateSteps, setUpdateSteps] = useState<UpdateStep[]>([]);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
   const [showChangelog, setShowChangelog] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchChangelog = useCallback(async () => {
     setChangelogLoading(true);
@@ -134,6 +151,34 @@ export default function SystemPage() {
     }
   }, []);
 
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, []);
+
+  const pollUpdateStatus = useCallback(async () => {
+    try {
+      const res = await apiAdmin<{ success: boolean; status: UpdateStatus }>('/api/admin/system/changelog?action=status');
+      if (res.status) {
+        setUpdateStatus(res.status);
+        if (res.status.phase === 'done') {
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+          setUpdating(false);
+          await showSuccess(`Update berhasil! Commit: ${res.status.newCommit || 'OK'}`);
+          queryClient.invalidateQueries({ queryKey: ['/api/admin/system/info'] });
+          await refetchInfo();
+          await fetchChangelog();
+        } else if (res.status.phase === 'error') {
+          if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+          setUpdating(false);
+          await showError(`Update gagal: ${res.status.error || 'unknown error'} (step: ${res.status.step || '?'})`);
+        }
+      }
+    } catch (err) {
+      console.error('Poll status error:', err);
+    }
+  }, [queryClient, refetchInfo, fetchChangelog]);
+
   const runUpdate = useCallback(async () => {
     const confirmed = await showConfirm(
       'Sistem akan melakukan git pull, build, dan restart semua service. Pastikan tidak ada user yang sedang aktif. Lanjutkan?',
@@ -144,7 +189,7 @@ export default function SystemPage() {
     if (!confirmed) return;
 
     setUpdating(true);
-    setUpdateSteps([]);
+    setUpdateStatus({ phase: 'running', step: 'Starting...' });
 
     try {
       const res = await apiAdmin<UpdateResponse>('/api/admin/system/changelog', {
@@ -153,15 +198,16 @@ export default function SystemPage() {
         body: JSON.stringify({ action: 'update' }),
       });
 
-      if (res.steps) setUpdateSteps(res.steps);
-
-      if (res.success) {
-        await showSuccess(res.message || 'Update berhasil!');
-        queryClient.invalidateQueries({ queryKey: ['/api/admin/system/info'] });
-        await refetchInfo();
-        await fetchChangelog();
+      if (res.status?.phase === 'running' || res.success) {
+        // Start polling every 3 seconds
+        if (pollRef.current) clearInterval(pollRef.current);
+        pollRef.current = setInterval(pollUpdateStatus, 3000);
+        // Immediate first poll
+        setTimeout(pollUpdateStatus, 500);
       } else {
         await showError(res.error || 'Update gagal. Cek log langkah-langkah di bawah.');
+        setUpdating(false);
+        setUpdateStatus({ phase: 'error', error: res.error });
       }
     } catch (err: any) {
       let parsedError = err.message;
@@ -169,15 +215,14 @@ export default function SystemPage() {
         const match = err.message?.match(/\{[\s\S]*\}/);
         if (match) {
           const parsed = JSON.parse(match[0]);
-          if (parsed.steps) setUpdateSteps(parsed.steps);
           parsedError = parsed.error || parsed.detail || err.message;
         }
       } catch { /* keep original */ }
       await showError('Update gagal: ' + parsedError);
-    } finally {
       setUpdating(false);
+      setUpdateStatus({ phase: 'error', error: parsedError });
     }
-  }, [queryClient, refetchInfo, fetchChangelog]);
+  }, [pollUpdateStatus]);
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -324,34 +369,74 @@ export default function SystemPage() {
         </div>
       )}
 
-      {/* Update progress steps */}
-      {updateSteps.length > 0 && (
+      {/* Update progress — live status from background process */}
+      {updateStatus && updateStatus.phase !== 'idle' && (
         <div className="rounded-xl border border-border/50 bg-card/30 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 bg-white/5 border-b border-border/40">
             <Terminal className="w-4 h-4 text-cyan-400" />
             <span className="text-sm font-bold text-foreground">Update Progress</span>
+            {updateStatus.phase === 'running' && (
+              <span className="ml-auto flex items-center gap-1.5 text-[10px] text-cyan-400 font-medium">
+                <RefreshCw className="w-3 h-3 animate-spin" /> Running...
+              </span>
+            )}
           </div>
-          <div className="p-4 space-y-2">
-            {updateSteps.map((step, idx) => (
-              <div key={idx} className="flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  {step.status === 'success' && <CheckCircle2 className="w-4 h-4 text-green-400" />}
-                  {step.status === 'error' && <XCircle className="w-4 h-4 text-red-400" />}
-                  {step.status === 'skipped' && <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />}
+          <div className="p-4 space-y-3">
+            {/* Current step indicator */}
+            {updateStatus.phase === 'running' && (
+              <div className="flex items-center gap-3">
+                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-cyan-400">{updateStatus.step || 'Processing...'}</p>
+                  <p className="text-[10px] text-muted-foreground">Update berjalan di background. Halaman ini bisa ditutup.</p>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className={cn('text-xs font-medium', step.status === 'success' && 'text-green-400', step.status === 'error' && 'text-red-400', step.status === 'skipped' && 'text-muted-foreground')}>{step.step}</p>
-                  {step.output && <p className="text-[10px] font-mono text-muted-foreground mt-0.5 truncate">{step.output}</p>}
-                </div>
-                {updating && idx === updateSteps.length - 1 && step.status === 'success' && (<RefreshCw className="w-3 h-3 animate-spin text-cyan-400 flex-shrink-0" />)}
-              </div>
-            ))}
-            {updating && (
-              <div className="flex items-center gap-3 pt-2">
-                <RefreshCw className="w-4 h-4 animate-spin text-cyan-400" />
-                <p className="text-xs text-cyan-400 font-medium">Sedang mengupdate... mohon tunggu</p>
               </div>
             )}
+
+            {/* Done state */}
+            {updateStatus.phase === 'done' && (
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-green-400">Update selesai!</p>
+                  {updateStatus.newCommit && <p className="text-[10px] font-mono text-muted-foreground">Commit: {updateStatus.newCommit}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Error state */}
+            {updateStatus.phase === 'error' && (
+              <div className="flex items-start gap-3">
+                <XCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-medium text-red-400">Update gagal: {updateStatus.step || 'unknown step'}</p>
+                  {updateStatus.error && <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{updateStatus.error}</p>}
+                </div>
+              </div>
+            )}
+
+            {/* Step timeline */}
+            <div className="space-y-1.5 pt-2 border-t border-border/30">
+              {['Git pull', 'Prisma db push', 'Backend build', 'Frontend build', 'PM2 restart'].map((stepName) => {
+                const isCurrent = updateStatus.step === stepName && updateStatus.phase === 'running';
+                const isPast = updateStatus.phase === 'done' || (updateStatus.phase === 'running' && updateStatus.step !== stepName && stepOrder(stepName) < stepOrder(updateStatus.step || ''));
+                const isError = updateStatus.phase === 'error' && updateStatus.step === stepName;
+                return (
+                  <div key={stepName} className="flex items-center gap-2 text-[11px]">
+                    {isError ? <XCircle className="w-3 h-3 text-red-400" /> :
+                     isCurrent ? <RefreshCw className="w-3 h-3 animate-spin text-cyan-400" /> :
+                     isPast ? <CheckCircle2 className="w-3 h-3 text-green-400" /> :
+                     <div className="w-3 h-3 rounded-full border border-muted-foreground/30" />}
+                    <span className={cn(
+                      isCurrent && 'text-cyan-400 font-medium',
+                      isPast && 'text-green-400/70',
+                      isError && 'text-red-400 font-medium',
+                      !isCurrent && !isPast && !isError && 'text-muted-foreground',
+                    )}>{stepName}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

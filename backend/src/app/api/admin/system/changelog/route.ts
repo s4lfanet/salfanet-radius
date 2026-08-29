@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from 'fs';
 import path from 'path';
 
 const execAsync = promisify(exec);
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 600; // 10 minutes — build operations take time
+export const maxDuration = 30; // POST returns immediately; background script runs independently
+
+// Status file for background update process
+const STATUS_DIR = '/tmp/salfanet-update';
+const STATUS_FILE = `${STATUS_DIR}/status.json`;
+const LOG_FILE = `${STATUS_DIR}/update.log`;
 
 // Clean env for build commands — avoid PM2 env vars interfering with next build
 const EXEC_ENV: Record<string, string | undefined> = {
@@ -52,14 +57,51 @@ function getAppDir(): string {
   return '/var/www/salfanet-radius';
 }
 
+// Write status JSON for polling
+function writeStatus(status: {
+  phase: 'idle' | 'running' | 'done' | 'error';
+  step?: string;
+  steps?: { step: string; status: 'success' | 'error' | 'skipped'; output?: string }[];
+  newCommit?: string;
+  error?: string;
+  startedAt?: number;
+  finishedAt?: number;
+}) {
+  try {
+    if (!existsSync(STATUS_DIR)) mkdirSync(STATUS_DIR, { recursive: true });
+    writeFileSync(STATUS_FILE, JSON.stringify(status));
+  } catch (e) {
+    console.error('[UPDATE] Failed to write status:', e);
+  }
+}
+
+// Read status JSON for polling
+function readStatus(): { phase: string; step?: string; steps?: any[]; newCommit?: string; error?: string; startedAt?: number; finishedAt?: number } | null {
+  try {
+    if (!existsSync(STATUS_FILE)) return null;
+    const raw = readFileSync(STATUS_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * GET /api/admin/system/changelog
- * Returns git log of commits between local HEAD and remote, or last 20 if up to date
+ * - Without ?action=status: Returns git log of commits between local HEAD and remote
+ * - With ?action=status: Returns current background update status for polling
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const authCheck = await requirePermission('settings.view');
     if (!authCheck.authorized) return authCheck.response;
+
+    // Poll update status if requested
+    const action = new URL(req.url).searchParams.get('action');
+    if (action === 'status') {
+      const status = readStatus();
+      return NextResponse.json({ success: true, status: status || { phase: 'idle' } });
+    }
 
     const appDir = getAppDir();
 
@@ -117,7 +159,9 @@ export async function GET() {
 /**
  * POST /api/admin/system/changelog
  * Body: { action: 'update' }
- * Runs git pull + prisma db push + build backend + build frontend + restart PM2
+ * Spawns a detached background shell script that runs:
+ *   git pull + prisma db push + build backend + build frontend + restart PM2
+ * Returns immediately with { phase: 'running' } so the frontend can poll GET ?action=status
  */
 export async function POST(req: NextRequest) {
   try {
@@ -131,85 +175,132 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
     }
 
+    // Check if update is already running
+    const current = readStatus();
+    if (current?.phase === 'running') {
+      return NextResponse.json({
+        success: false,
+        error: 'Update sedang berjalan. Tunggu hingga selesai.',
+        status: current,
+      }, { status: 409 });
+    }
+
     const appDir = getAppDir();
-    const steps: { step: string; status: 'success' | 'error' | 'skipped'; output?: string }[] = [];
 
-    // Step 1: Git pull
-    try {
-      const output = await runCmd('git pull origin master 2>&1', appDir, 60000);
-      steps.push({ step: 'Git pull', status: 'success', output: output.substring(0, 200) });
-    } catch (err: any) {
-      steps.push({ step: 'Git pull', status: 'error', output: (err.stdout || err.message || '').substring(0, 200) });
-      return NextResponse.json({ success: false, steps, error: 'Git pull failed' }, { status: 500 });
-    }
+    // Write the background update script
+    if (!existsSync(STATUS_DIR)) mkdirSync(STATUS_DIR, { recursive: true });
 
-    // Step 2: Prisma generate + db push
-    try {
-      const findPrisma = 'PRISMA_BIN=$(find /var/www/salfanet-radius/node_modules/.pnpm -path "*/prisma/build/index.js" -type f | head -1) && node $PRISMA_BIN generate 2>&1 && node $PRISMA_BIN db push 2>&1';
-      const output = await runCmd(findPrisma, `${appDir}/backend`, 120000);
-      steps.push({ step: 'Prisma db push', status: 'success', output: output.substring(0, 200) });
-    } catch (err: any) {
-      steps.push({ step: 'Prisma db push', status: 'error', output: (err.stdout || err.message || '').substring(0, 300) });
-    }
+    const scriptPath = `${STATUS_DIR}/run-update.sh`;
+    const script = `#!/bin/bash
+source /etc/profile 2>/dev/null
+export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
+export HOME=/root
+cd "${appDir}"
 
-    // Step 3: Backend install + generate + build
-    try {
-      await runCmd('pnpm install --no-frozen-lockfile --force --config.confirm-modules-purges=false 2>&1', appDir, 180000);
-      await runCmd('PRISMA_BIN=$(find /var/www/salfanet-radius/node_modules/.pnpm -path "*/prisma/build/index.js" -type f | head -1) && node $PRISMA_BIN generate 2>&1', `${appDir}/backend`, 120000);
-      await runCmd('pnpm build 2>&1', `${appDir}/backend`, 300000);
-      steps.push({ step: 'Backend build', status: 'success' });
-    } catch (err: any) {
-      steps.push({ step: 'Backend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 500) });
-      return NextResponse.json({ success: false, steps, error: 'Backend build failed' }, { status: 500 });
-    }
+STATUS_FILE="${STATUS_FILE}"
+LOG_FILE="${LOG_FILE}"
 
-    // Step 4: Frontend build (install already done from root in step 3)
-    try {
-      await runCmd('pnpm build 2>&1', `${appDir}/frontend`, 300000);
-      steps.push({ step: 'Frontend build', status: 'success' });
-    } catch (err: any) {
-      steps.push({ step: 'Frontend build', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 1000) });
-      return NextResponse.json({ success: false, steps, error: 'Frontend build failed' }, { status: 500 });
-    }
+write_status() {
+  echo "$1" > "$STATUS_FILE"
+}
 
-    // Step 5: Restart PM2 — delete and re-start from ecosystem config to pick up .env changes
-    // Using `pm2 restart --update-env` alone does NOT reload env from .env files;
-    // it only merges the current process env. We must delete + start to get clean env from ecosystem.config.js
-    try {
-      // Load DATABASE_URL from backend/.env so it's available to PM2 subprocess
-      const restartCmd = [
-        'export DATABASE_URL=$(awk -F= \'/^DATABASE_URL=/{gsub(/"/,"");print $2}\' backend/.env)',
-        'export SHADOW_DATABASE_URL=$(awk -F= \'/^SHADOW_DATABASE_URL=/{gsub(/"/,"");print $2}\' backend/.env 2>/dev/null || true)',
-        'export NEXTAUTH_SECRET=$(awk -F= \'/^NEXTAUTH_SECRET=/{gsub(/"/,"");print $2}\' frontend/.env 2>/dev/null || true)',
-        'export NEXTAUTH_URL=$(awk -F= \'/^NEXTAUTH_URL=/{gsub(/"/,"");print $2}\' frontend/.env 2>/dev/null || true)',
-        'pm2 delete salfanet-frontend salfanet-backend salfanet-cron 2>/dev/null || true',
-        'pm2 start ecosystem.config.js --only salfanet-frontend,salfanet-backend,salfanet-cron 2>&1',
-        'pm2 save 2>&1',
-      ].join(' && ');
-      const output = await runCmd(restartCmd, appDir, 30000);
-      steps.push({ step: 'PM2 restart', status: 'success', output: output.substring(0, 200) });
-    } catch (err: any) {
-      steps.push({ step: 'PM2 restart', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 300) });
-      // Don't return error — PM2 restart often writes to stderr but succeeds
-    }
+log() {
+  echo "[$(date '+%H:%M:%S')] $1" >> "$LOG_FILE"
+}
 
-    // Get new commit
-    let newCommit = '';
-    try {
-      const output = await runCmd('git rev-parse --short HEAD', appDir, 5000);
-      newCommit = output.trim();
-    } catch {
-      // ignore
-    }
+log "=== UPDATE STARTED ==="
+
+# Step 1: Git pull
+write_status '{"phase":"running","step":"Git pull","startedAt":'$(date +%s)'}'
+log "Step 1: Git pull"
+git pull origin master >> "$LOG_FILE" 2>&1
+if [ $? -ne 0 ]; then
+  write_status '{"phase":"error","step":"Git pull","error":"git pull failed","finishedAt":'$(date +%s)'}'
+  log "ERROR: Git pull failed"
+  exit 1
+fi
+log "Git pull OK"
+
+# Step 2: Prisma generate + db push
+write_status '{"phase":"running","step":"Prisma db push"}'
+log "Step 2: Prisma generate + db push"
+cd "${appDir}/backend"
+PRISMA_BIN=$(find /var/www/salfanet-radius/node_modules/.pnpm -path "*/prisma/build/index.js" -type f | head -1)
+node $PRISMA_BIN generate >> "$LOG_FILE" 2>&1
+node $PRISMA_BIN db push >> "$LOG_FILE" 2>&1
+log "Prisma OK (warnings ignored)"
+
+# Step 3: Backend build
+write_status '{"phase":"running","step":"Backend build"}'
+log "Step 3: Backend install + build"
+cd "${appDir}"
+pnpm install --no-frozen-lockfile --force --config.confirm-modules-purges=false >> "$LOG_FILE" 2>&1
+cd "${appDir}/backend"
+node $PRISMA_BIN generate >> "$LOG_FILE" 2>&1
+pnpm build >> "$LOG_FILE" 2>&1
+if [ $? -ne 0 ]; then
+  write_status '{"phase":"error","step":"Backend build","error":"backend build failed","finishedAt":'$(date +%s)'}'
+  log "ERROR: Backend build failed"
+  exit 1
+fi
+log "Backend build OK"
+
+# Step 4: Frontend build
+write_status '{"phase":"running","step":"Frontend build"}'
+log "Step 4: Frontend build"
+cd "${appDir}/frontend"
+pnpm build >> "$LOG_FILE" 2>&1
+if [ $? -ne 0 ]; then
+  write_status '{"phase":"error","step":"Frontend build","error":"frontend build failed","finishedAt":'$(date +%s)'}'
+  log "ERROR: Frontend build failed"
+  exit 1
+fi
+log "Frontend build OK"
+
+# Step 5: Restart PM2
+write_status '{"phase":"running","step":"PM2 restart"}'
+log "Step 5: PM2 restart"
+cd "${appDir}"
+export DATABASE_URL=$(awk -F= '/^DATABASE_URL=/{gsub(/"/,"");print $2}' backend/.env)
+export SHADOW_DATABASE_URL=$(awk -F= '/^SHADOW_DATABASE_URL=/{gsub(/"/,"");print $2}' backend/.env 2>/dev/null || true)
+export NEXTAUTH_SECRET=$(awk -F= '/^NEXTAUTH_SECRET=/{gsub(/"/,"");print $2}' frontend/.env 2>/dev/null || true)
+export NEXTAUTH_URL=$(awk -F= '/^NEXTAUTH_URL=/{gsub(/"/,"");print $2}' frontend/.env 2>/dev/null || true)
+pm2 delete salfanet-frontend salfanet-backend salfanet-cron 2>/dev/null
+pm2 start ecosystem.config.js --only salfanet-frontend,salfanet-backend,salfanet-cron >> "$LOG_FILE" 2>&1
+pm2 save >> "$LOG_FILE" 2>&1
+log "PM2 restart OK"
+
+# Done
+NEW_COMMIT=$(git rev-parse --short HEAD)
+write_status '{"phase":"done","step":"Complete","newCommit":"'"$NEW_COMMIT"'","finishedAt":'$(date +%s)'}'
+log "=== UPDATE COMPLETE: $NEW_COMMIT ==="
+`;
+
+    writeFileSync(scriptPath, script);
+    // Make executable
+    await execAsync(`chmod +x ${scriptPath}`);
+
+    // Clear old log
+    try { unlinkSync(LOG_FILE); } catch {}
+
+    // Write initial status
+    writeStatus({ phase: 'running', step: 'Starting...', startedAt: Date.now() / 1000 | 0 });
+
+    // Spawn detached background process
+    const child = spawn('bash', [scriptPath], {
+      detached: true,
+      stdio: 'ignore',
+      env: EXEC_ENV as any,
+    });
+    child.unref();
 
     return NextResponse.json({
       success: true,
-      message: 'Update berhasil! Semua service sudah direstart.',
-      newCommit,
-      steps,
+      message: 'Update dimulai di background. Polling status untuk melihat progress.',
+      status: { phase: 'running', step: 'Starting...' },
     });
   } catch (error: any) {
     console.error('System update error:', error);
-    return NextResponse.json({ error: 'Failed to process update', detail: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to start update', detail: error.message }, { status: 500 });
   }
 }
