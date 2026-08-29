@@ -23,6 +23,8 @@ import type {
   PppoeOnlineStatusResponse,
   SyncPreviewResponse,
   SyncMikrotikImportResponse,
+  SyncAuditResponse,
+  SyncAuditFixResponse,
   UpdateUserStatusResponse,
   BulkUpdateStatusResponse,
   Router,
@@ -169,6 +171,19 @@ export const pppoeApi = {
       return apiAdmin<SyncPreviewResponse>(`/api/pppoe/users/sync-mikrotik?routerId=${routerId}`);
     }
     return apiAdmin<SyncMikrotikImportResponse>('/api/pppoe/users/sync-mikrotik', { method: 'POST' });
+  },
+
+  /** Sync audit: compare DB vs MikroTik PPP secrets */
+  syncAudit(routerId: string): Promise<SyncAuditResponse> {
+    return apiAdmin<SyncAuditResponse>(`/api/pppoe/users/sync-audit?routerId=${encodeURIComponent(routerId)}`);
+  },
+
+  /** Sync audit fix: apply fixes to MikroTik */
+  syncAuditFix(routerId: string, fixes: Array<{ username: string; action: string }>): Promise<SyncAuditFixResponse> {
+    return apiAdmin<SyncAuditFixResponse>('/api/pppoe/users/sync-audit', {
+      method: 'POST',
+      body: JSON.stringify({ routerId, fixes }),
+    });
   },
 
   /** Export users (returns blob) */

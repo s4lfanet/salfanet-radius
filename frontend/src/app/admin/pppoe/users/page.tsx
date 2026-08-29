@@ -3,7 +3,7 @@ import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useTranslation } from '@/hooks/useTranslation';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import type {
@@ -18,6 +18,7 @@ import {
   Shield, ShieldOff, Ban, Download, Upload, Search, Filter, X, Eye, EyeOff, RefreshCcw, DollarSign, Loader2, Zap,
   UserPlus, RefreshCw, Clock, Bell, Send, Mail, ArrowUpDown, Printer, FileText,
   Calendar, CreditCard, Camera, ImageIcon, Info, AlertTriangle, Wrench, CheckCircle, XCircle, Hand,
+  GitCompareArrows, AlertCircle, CheckCheck,
 } from 'lucide-react';
 import MapPicker from '@/components/MapPicker';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
@@ -133,6 +134,28 @@ interface ImportResult {
   updated: number;
   failed: number;
   errors: Array<{ line: number; username?: string; error: string }>;
+}
+interface SyncAuditDiff {
+  username: string;
+  routerId: string;
+  routerName: string;
+  type: 'missing_in_mikrotik' | 'missing_in_db' | 'password_mismatch' | 'profile_mismatch' | 'status_mismatch';
+  db: { password?: string; profile?: string; status?: string };
+  mikrotik: { password?: string; profile?: string; disabled?: string };
+  message: string;
+}
+interface SyncAuditResult {
+  success: boolean;
+  router: { id: string; name: string; ipAddress: string; authMode: string };
+  stats: { dbCount: number; mtCount: number; matched: number; missingInMikrotik: number; missingInDb: number; passwordMismatch: number; profileMismatch: number; statusMismatch: number };
+  differences: SyncAuditDiff[];
+  error?: string;
+}
+interface SyncAuditFixResult {
+  success: boolean;
+  message: string;
+  results: Array<{ username: string; action: string; success: boolean; message: string }>;
+  stats: { success: number; failed: number; total: number };
 }
 interface BulkUploadResponse {
   success: boolean;
@@ -430,6 +453,15 @@ export default function PppoeUsersPage() {
   const [syncSelectedUsers, setSyncSelectedUsers] = useState<Set<string>>(new Set());
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncImportResult | null>(null);
+  // Sync Audit states
+  const [isSyncAuditOpen, setIsSyncAuditOpen] = useState(false);
+  const [auditRouterId, setAuditRouterId] = useState('');
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditData, setAuditData] = useState<SyncAuditResult | null>(null);
+  const [auditFixing, setAuditFixing] = useState(false);
+  const [auditFixResult, setAuditFixResult] = useState<SyncAuditFixResult | null>(null);
+  const [auditSelectedFixes, setAuditSelectedFixes] = useState<Set<string>>(new Set());
+
   const [markingPaid, setMarkingPaid] = useState<string | null>(null);
   const [extending, setExtending] = useState<string | null>(null);
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
@@ -1145,6 +1177,56 @@ export default function PppoeUsersPage() {
     } catch (error) { console.error('PDF error:', error); await showError(t('pppoe.pdfExportFailed')); }
   };
 
+  // Sync Audit functions
+  const handleSyncAudit = async () => {
+    if (!auditRouterId) { await showError('Pilih router terlebih dahulu'); return; }
+    setAuditLoading(true); setAuditData(null); setAuditFixResult(null); setAuditSelectedFixes(new Set());
+    try {
+      const data = await pppoeApi.syncAudit(auditRouterId) as SyncAuditResult;
+      if (data.success) {
+        setAuditData(data);
+        // Auto-select all fixes
+        const allKeys = new Set<string>();
+        data.differences.forEach((d, i) => allKeys.add(`${d.username}::${d.type}::${i}`));
+        setAuditSelectedFixes(allKeys);
+      } else {
+        await showError(data.error || 'Gagal audit sync');
+      }
+    } catch (error: unknown) { console.error('Sync audit error:', error); await showError(error instanceof Error ? error.message : 'Gagal koneksi audit sync'); }
+    finally { setAuditLoading(false); }
+  };
+
+  const getFixAction = (type: string): string => {
+    switch (type) {
+      case 'missing_in_mikrotik': return 'create_secret';
+      case 'missing_in_db': return 'delete_secret';
+      case 'password_mismatch': return 'update_password';
+      case 'profile_mismatch': return 'update_profile';
+      case 'status_mismatch': return 'update_status';
+      default: return 'full_sync';
+    }
+  };
+
+  const handleSyncAuditFix = async () => {
+    if (!auditRouterId || auditSelectedFixes.size === 0) return;
+    setAuditFixing(true); setAuditFixResult(null);
+    try {
+      const fixes = Array.from(auditSelectedFixes).map(key => {
+        const [username] = key.split('::');
+        const diffEntry = auditData?.differences.find((d, i) => `${d.username}::${d.type}::${i}` === key);
+        return { username, action: getFixAction(diffEntry?.type || '') };
+      });
+      const data = await pppoeApi.syncAuditFix(auditRouterId, fixes) as SyncAuditFixResult;
+      setAuditFixResult(data);
+      if (data.success) {
+        await showSuccess(data.message);
+        // Re-run audit to see remaining issues
+        setTimeout(() => handleSyncAudit(), 500);
+      }
+    } catch (error: unknown) { console.error('Sync audit fix error:', error); await showError(error instanceof Error ? error.message : 'Gagal apply fixes'); }
+    finally { setAuditFixing(false); }
+  };
+
   // Sync from MikroTik functions
   const handleSyncPreview = async () => {
     if (!syncRouterId) { await showError(t('pppoe.selectRouterFirst')); return; }
@@ -1327,6 +1409,7 @@ export default function PppoeUsersPage() {
             <button onClick={() => handleDownloadTemplate('xlsx')} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted"><Download className="h-3 w-3 mr-1" />{t('pppoe.templateExcel')}</button>
             <button onClick={handleExportExcel} className="inline-flex items-center px-2 py-1.5 text-xs border border-success text-success rounded hover:bg-success/10"><Download className="h-3 w-3 mr-1" />Export</button>
             <button onClick={() => setIsImportDialogOpen(true)} className="inline-flex items-center px-2 py-1.5 text-xs border border-border rounded hover:bg-muted"><Upload className="h-3 w-3 mr-1" />{t('common.import')}</button>
+            <button onClick={() => { setIsSyncAuditOpen(true); setAuditData(null); setAuditFixResult(null); setAuditSelectedFixes(new Set()); }} className="inline-flex items-center px-2 py-1.5 text-xs border border-blue-400 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-50 dark:hover:bg-blue-900/20"><GitCompareArrows className="h-3 w-3 mr-1" />Sync Audit</button>
             {canCreate && (<button onClick={() => router.push('/admin/pppoe/users/new')} className="inline-flex items-center px-3 py-1.5 text-xs bg-primary hover:bg-primary/90 text-white rounded"><Plus className="h-3 w-3 mr-1" />{t('pppoe.addUser')}</button>)}
           </div>
         </div>
@@ -1893,6 +1976,166 @@ export default function PppoeUsersPage() {
             <ModalButton variant="secondary" onClick={() => { setBulkDeleteModalOpen(false); setBulkDeletePassword(''); }}>{t('common.cancel')}</ModalButton>
             <ModalButton variant="danger" onClick={confirmBulkDelete} disabled={bulkDeleting || !bulkDeletePassword.trim()}>
               {bulkDeleting ? 'Menghapus...' : t('common.delete')}
+            </ModalButton>
+          </ModalFooter>
+        </SimpleModal>
+
+        {/* Sync Audit Dialog */}
+        <SimpleModal isOpen={isSyncAuditOpen} onClose={() => { setIsSyncAuditOpen(false); setAuditData(null); setAuditFixResult(null); setAuditSelectedFixes(new Set()); }} size="xl">
+          <ModalHeader>
+            <ModalTitle className="flex items-center gap-2"><GitCompareArrows className="h-4 w-4 text-blue-500" />Sync Audit: DB vs MikroTik</ModalTitle>
+            <ModalDescription>Bandingkan data PPPoE di database dengan PPP secret di MikroTik. Deteksi perbedaan password, profile, status, dan missing users.</ModalDescription>
+          </ModalHeader>
+          <ModalBody className="space-y-4">
+            {/* Router selector */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <ModalLabel>Pilih Router/NAS</ModalLabel>
+                <ModalSelect value={auditRouterId} onChange={(e) => setAuditRouterId(e.target.value)}>
+                  <option value="">— Pilih Router —</option>
+                  {routers.map(r => (
+                    <option key={r.id} value={r.id} className="dark:bg-gray-800">{r.name} ({r.ipAddress || r.nasname})</option>
+                  ))}
+                </ModalSelect>
+              </div>
+              <div className="flex items-end">
+                <button onClick={handleSyncAudit} disabled={!auditRouterId || auditLoading} className="w-full px-3 py-2 text-xs bg-blue-600 text-white hover:bg-blue-700 rounded-lg shadow-md disabled:opacity-50 flex items-center justify-center gap-2 transition-all">
+                  {auditLoading ? (<><RefreshCcw className="h-3 w-3 animate-spin" />Memeriksa...</>) : (<><Search className="h-3 w-3" />Mulai Audit</>)}
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {auditData?.error && (
+              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-lg text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium">Gagal koneksi ke MikroTik</p>
+                  <p className="mt-0.5">{auditData.error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Stats */}
+            {auditData && (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="bg-card border border-border rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{auditData.stats.dbCount}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">DB Users</p>
+                </div>
+                <div className="bg-card border border-border rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-foreground">{auditData.stats.mtCount}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">MikroTik Secrets</p>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-500/30 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{auditData.stats.matched}</p>
+                  <p className="text-[10px] text-green-700 dark:text-green-300 mt-1">Matched</p>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/30 rounded-lg p-3 text-center">
+                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{auditData.differences.length}</p>
+                  <p className="text-[10px] text-orange-700 dark:text-orange-300 mt-1">Differences</p>
+                </div>
+              </div>
+            )}
+
+            {/* Differences list */}
+            {auditData && auditData.differences.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                    Perbedaan Ditemukan ({auditData.differences.length})
+                  </h4>
+                  <div className="flex gap-2">
+                    <button onClick={() => { const all = new Set<string>(); auditData.differences.forEach((d, i) => all.add(`${d.username}::${d.type}::${i}`)); setAuditSelectedFixes(all); }} className="text-[10px] px-2 py-1 border border-border rounded hover:bg-muted">Select All</button>
+                    <button onClick={() => setAuditSelectedFixes(new Set())} className="text-[10px] px-2 py-1 border border-border rounded hover:bg-muted">Clear</button>
+                  </div>
+                </div>
+                <div className="max-h-80 overflow-y-auto space-y-1.5">
+                  {auditData.differences.map((diff, i) => {
+                    const fixKey = `${diff.username}::${diff.type}::${i}`;
+                    const isSelected = auditSelectedFixes.has(fixKey);
+                    const typeColors: Record<string, string> = {
+                      missing_in_mikrotik: 'border-l-red-500 bg-red-50 dark:bg-red-900/10',
+                      missing_in_db: 'border-l-blue-500 bg-blue-50 dark:bg-blue-900/10',
+                      password_mismatch: 'border-l-orange-500 bg-orange-50 dark:bg-orange-900/10',
+                      profile_mismatch: 'border-l-yellow-500 bg-yellow-50 dark:bg-yellow-900/10',
+                      status_mismatch: 'border-l-purple-500 bg-purple-50 dark:bg-purple-900/10',
+                    };
+                    const typeIcons: Record<string, ReactNode> = {
+                      missing_in_mikrotik: <XCircle className="h-3.5 w-3.5 text-red-500" />,
+                      missing_in_db: <AlertCircle className="h-3.5 w-3.5 text-blue-500" />,
+                      password_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />,
+                      profile_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" />,
+                      status_mismatch: <AlertTriangle className="h-3.5 w-3.5 text-purple-500" />,
+                    };
+                    return (
+                      <label key={fixKey} className={`flex items-start gap-2 p-2.5 border-l-4 rounded-r-lg cursor-pointer transition-all ${typeColors[diff.type] || 'border-l-gray-500'} ${isSelected ? 'ring-1 ring-primary' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={(e) => {
+                            const next = new Set(auditSelectedFixes);
+                            if (e.target.checked) next.add(fixKey); else next.delete(fixKey);
+                            setAuditSelectedFixes(next);
+                          }}
+                          className="mt-0.5 rounded border-gray-300"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {typeIcons[diff.type]}
+                            <span className="text-xs font-mono font-medium text-foreground">{diff.username}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 bg-muted text-muted-foreground rounded">{diff.type.replace(/_/g, ' ')}</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-1">{diff.message}</p>
+                          {(diff.db.password || diff.mikrotik.password) && diff.type === 'password_mismatch' && (
+                            <div className="text-[10px] mt-1 flex gap-3">
+                              <span className="text-foreground">DB: <code className="bg-muted px-1 rounded">{diff.db.password}</code></span>
+                              <span className="text-foreground">MT: <code className="bg-muted px-1 rounded">{diff.mikrotik.password}</code></span>
+                            </div>
+                          )}
+                          {(diff.db.profile || diff.mikrotik.profile) && diff.type === 'profile_mismatch' && (
+                            <div className="text-[10px] mt-1 flex gap-3">
+                              <span className="text-foreground">DB: <code className="bg-muted px-1 rounded">{diff.db.profile || '(kosong)'}</code></span>
+                              <span className="text-foreground">MT: <code className="bg-muted px-1 rounded">{diff.mikrotik.profile || '(kosong)'}</code></span>
+                            </div>
+                          )}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* No differences */}
+            {auditData && auditData.differences.length === 0 && !auditData.error && (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <CheckCheck className="h-12 w-12 text-green-500 mb-2" />
+                <p className="text-sm font-medium text-foreground">Semua data sinkron!</p>
+                <p className="text-xs text-muted-foreground mt-1">Tidak ada perbedaan antara database dan MikroTik</p>
+              </div>
+            )}
+
+            {/* Fix result */}
+            {auditFixResult && (
+              <div className={`p-3 rounded-lg border text-xs ${auditFixResult.stats.failed > 0 ? 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-500/30 text-orange-700 dark:text-orange-300' : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-500/30 text-green-700 dark:text-green-300'}`}>
+                <p className="font-medium">{auditFixResult.message}</p>
+                {auditFixResult.results.some(r => !r.success) && (
+                  <div className="mt-2 space-y-1">
+                    <p className="font-medium">Detail kegagalan:</p>
+                    {auditFixResult.results.filter(r => !r.success).map((r, i) => (
+                      <p key={i} className="text-[10px]">• {r.username}: {r.message}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <ModalButton variant="secondary" onClick={() => { setIsSyncAuditOpen(false); setAuditData(null); setAuditFixResult(null); setAuditSelectedFixes(new Set()); }}>Tutup</ModalButton>
+            <ModalButton variant="primary" onClick={handleSyncAuditFix} disabled={auditSelectedFixes.size === 0 || auditFixing}>
+              {auditFixing ? (<><RefreshCcw className="h-3 w-3 animate-spin mr-1" />Memperbaiki...</>) : (<><CheckCheck className="h-3 w-3 mr-1" />Fix Selected ({auditSelectedFixes.size})</>)}
             </ModalButton>
           </ModalFooter>
         </SimpleModal>
