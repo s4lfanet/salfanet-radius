@@ -1893,16 +1893,37 @@ export default function PppoeUsersPage() {
                 <div className="p-3 space-y-3 bg-card/50 dark:bg-[#0a0520]/30">
                   {/* Required columns */}
                   <div>
-                    <h5 className="text-[11px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wide mb-1.5 flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full" />Wajib (Required)</h5>
+                    <h5 className="text-[11px] font-bold text-red-500 dark:text-red-400 uppercase tracking-wide mb-1.5 flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 bg-red-500 rounded-full" />Wajib</h5>
                     <div className="space-y-1">
                       {[
-                        { col: 'Username', desc: 'Username PPPoE untuk login', ex: 'user001' },
-                        { col: 'Password', desc: 'Password PPPoE untuk login', ex: 'pass123' },
+                        { col: 'Username', desc: 'Username unik PPPoE untuk login, tanpa spasi', ex: 'user001' },
+                        { col: 'Password', desc: 'Password PPPoE. Kosong = auto-generate dari sistem', ex: 'pass123' },
                         { col: 'Nama Lengkap', desc: 'Nama lengkap pelanggan', ex: 'Budi Santoso' },
-                        { col: 'No. Telepon', desc: 'Nomor telepon/HP pelanggan', ex: '08123456789' },
+                        { col: 'No. Telepon', desc: 'Nomor HP/telepon pelanggan', ex: '08123456789' },
                       ].map(item => (
                         <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
                           <code className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-foreground">{item.desc}</span>
+                            <span className="text-muted-foreground ml-1.5">— contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Recommended columns */}
+                  <div>
+                    <h5 className="text-[11px] font-bold text-amber-500 dark:text-amber-400 uppercase tracking-wide mb-1.5 flex items-center gap-1"><span className="inline-block w-1.5 h-1.5 bg-amber-500 rounded-full" />Disarankan</h5>
+                    <div className="space-y-1">
+                      {[
+                        { col: 'Profile', desc: 'Nama paket/profile PPPoE. Harus sama persis dengan nama di sistem. Jika tidak ditemukan, user tetap diimpor tanpa profile', ex: 'Paket 10Mbps' },
+                        { col: 'Tipe Langganan', desc: 'POSTPAID (tagihan bulanan) atau PREPAID (bayar dulu). Kosong = POSTPAID', ex: 'POSTPAID' },
+                        { col: 'Router', desc: 'Nama router/NAS yang terdaftar di sistem. Kosong = global (tidak terikat router)', ex: 'Router Utama' },
+                        { col: 'Tagihan Pertama', desc: 'none = tidak buat invoice, prorate = prorata sesuai tanggal daftar, full = full amount. Hanya untuk PREPAID dengan profile', ex: 'prorate' },
+                      ].map(item => (
+                        <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
+                          <code className="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
                           <div className="flex-1 min-w-0">
                             <span className="text-foreground">{item.desc}</span>
                             <span className="text-muted-foreground ml-1.5">— contoh: <code className="bg-muted px-1 rounded text-[10px]">{item.ex}</code></span>
@@ -1920,18 +1941,16 @@ export default function PppoeUsersPage() {
                         { col: 'ID Pelanggan', desc: 'Kosongkan untuk auto-generate. Isi jika ingin ID custom', ex: '(kosong)' },
                         { col: 'Email', desc: 'Email pelanggan untuk notifikasi invoice', ex: 'budi@email.com' },
                         { col: 'Alamat', desc: 'Alamat lengkap pelanggan', ex: 'Jl. Merdeka No. 10' },
-                        { col: 'Area/Wilayah', desc: 'Nama area yang sudah terdaftar di sistem', ex: 'Cluster A' },
-                        { col: 'Profile', desc: 'Nama paket/profile PPPoE. Jika tidak ditemukan, user tetap diimpor tanpa profile', ex: 'Paket 10Mbps' },
-                        { col: 'Router', desc: 'Nama router/NAS. Kosongkan untuk global (tidak terikat router tertentu)', ex: 'Router Utama' },
-                        { col: 'IP Address', desc: 'IP static untuk pelanggan. Kosongkan untuk DHCP', ex: '10.10.10.2' },
-                        { col: 'Tipe Langganan', desc: 'POSTPAID (tagihan bulanan) atau PREPAID (bayar dulu)', ex: 'POSTPAID' },
-                        { col: 'Tanggal Expired', desc: 'Format YYYY-MM-DD. Khusus PREPAID', ex: '2026-12-31' },
+                        { col: 'Area/Wilayah', desc: 'Nama area yang sudah terdaftar di sistem (auto-resolved by name)', ex: 'Cluster A' },
+                        { col: 'IP Address', desc: 'IP static untuk pelanggan (Framed-IP-Address). Kosongkan untuk DHCP', ex: '10.10.10.2' },
+                        { col: 'MAC Address', desc: 'MAC address perangkat pelanggan. Format AA:BB:CC:DD:EE:FF', ex: 'AA:BB:CC:DD:EE:FF' },
+                        { col: 'Tanggal Expired', desc: 'Format YYYY-MM-DD. Khusus PREPAID — tanggal berakhir layanan', ex: '2026-12-31' },
                         { col: 'Hari Tagihan', desc: 'Tanggal tagihan bulanan (1-31). Khusus POSTPAID', ex: '1' },
                         { col: 'Latitude', desc: 'Koordinat GPS lintang', ex: '-6.200000' },
                         { col: 'Longitude', desc: 'Koordinat GPS bujur', ex: '106.816666' },
-                        { col: 'Auto Isolasi', desc: 'true = auto isolir saat expired, false = tidak', ex: 'true' },
-                        { col: 'Tagihan Pertama', desc: 'none = tidak buat invoice, prorate = prorata, full = full amount', ex: 'prorate' },
-                        { col: 'Tanggal Register', desc: 'Format YYYY-MM-DD. Tanggal pendaftaran pelanggan', ex: '2026-01-15' },
+                        { col: 'Auto Isolasi', desc: 'true = auto isolir saat expired, false = tidak. Default true', ex: 'true' },
+                        { col: 'Komentar', desc: 'Catatan/keterangan internal untuk pelanggan', ex: 'Pelanggan VIP' },
+                        { col: 'Tanggal Register', desc: 'Format YYYY-MM-DD. Tanggal pendaftaran pelanggan. Kosong = hari ini', ex: '2026-01-15' },
                       ].map(item => (
                         <div key={item.col} className="flex items-start gap-2 text-[11px] py-1 border-b border-border/50 last:border-0">
                           <code className="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 px-1.5 py-0.5 rounded font-mono whitespace-nowrap flex-shrink-0 min-w-[110px]">{item.col}</code>
@@ -1944,15 +1963,24 @@ export default function PppoeUsersPage() {
                     </div>
                   </div>
 
+                  {/* Legend */}
+                  <div className="flex items-center gap-3 px-2 py-1.5 bg-muted/30 dark:bg-[#0a0520]/40 rounded text-[10px] border border-border/50">
+                    <span className="text-red-500 font-semibold">● Wajib</span>
+                    <span className="text-amber-500 font-semibold">● Disarankan</span>
+                    <span className="text-muted-foreground">● Opsional</span>
+                  </div>
+
                   {/* Tips */}
                   <div className="p-2.5 bg-amber-50 dark:bg-amber-900/15 border border-amber-200 dark:border-amber-500/25 rounded text-[11px] text-amber-700 dark:text-amber-300">
                     <p className="font-medium flex items-center gap-1 mb-1"><Info className="h-3 w-3" />Tips Import</p>
                     <ul className="space-y-0.5 ml-4 list-disc">
                       <li>Download template Excel/CSV terlebih dahulu untuk format yang sudah benar</li>
-                      <li>Kolom <strong>Profile</strong> dan <strong>Router</strong> cocokkan dengan nama yang terdaftar di sistem</li>
-                      <li>Untuk PREPAID, isi <strong>Tanggal Expired</strong>. Untuk POSTPAID, isi <strong>Hari Tagihan</strong></li>
+                      <li>Kolom <strong>Profile</strong> dan <strong>Router</strong> harus sama persis dengan nama yang terdaftar di sistem</li>
+                      <li>Untuk <strong>PREPAID</strong>, isi Tanggal Expired. Untuk <strong>POSTPAID</strong>, isi Hari Tagihan</li>
                       <li>Jika username sudah ada di database, data akan di-update (upsert)</li>
-                      <li>Maksimal 500 baris per import</li>
+                      <li>Password kosong akan auto-generate. Username + password wajib untuk PPPoE</li>
+                      <li>Jika Profile tidak ditemukan, pelanggan tetap diimpor — assign paket manual setelah import</li>
+                      <li>Maksimal 1000 baris per import</li>
                     </ul>
                   </div>
                 </div>
