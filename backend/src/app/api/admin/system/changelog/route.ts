@@ -172,12 +172,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, steps, error: 'Frontend build failed' }, { status: 500 });
     }
 
-    // Step 5: Restart PM2
+    // Step 5: Restart PM2 — delete and re-start from ecosystem config to pick up .env changes
+    // Using `pm2 restart --update-env` alone does NOT reload env from .env files;
+    // it only merges the current process env. We must delete + start to get clean env from ecosystem.config.js
     try {
-      const output = await runCmd('pm2 restart salfanet-frontend salfanet-backend salfanet-cron --update-env 2>&1', appDir, 30000);
+      // Load DATABASE_URL from backend/.env so it's available to PM2 subprocess
+      const restartCmd = [
+        'export DATABASE_URL=$(awk -F= \'/^DATABASE_URL=/{gsub(/"/,"");print $2}\' backend/.env)',
+        'export SHADOW_DATABASE_URL=$(awk -F= \'/^SHADOW_DATABASE_URL=/{gsub(/"/,"");print $2}\' backend/.env 2>/dev/null || true)',
+        'export NEXTAUTH_SECRET=$(awk -F= \'/^NEXTAUTH_SECRET=/{gsub(/"/,"");print $2}\' frontend/.env 2>/dev/null || true)',
+        'export NEXTAUTH_URL=$(awk -F= \'/^NEXTAUTH_URL=/{gsub(/"/,"");print $2}\' frontend/.env 2>/dev/null || true)',
+        'pm2 delete salfanet-frontend salfanet-backend salfanet-cron 2>/dev/null || true',
+        'pm2 start ecosystem.config.js --only salfanet-frontend,salfanet-backend,salfanet-cron 2>&1',
+        'pm2 save 2>&1',
+      ].join(' && ');
+      const output = await runCmd(restartCmd, appDir, 30000);
       steps.push({ step: 'PM2 restart', status: 'success', output: output.substring(0, 200) });
     } catch (err: any) {
-      steps.push({ step: 'PM2 restart', status: 'error', output: (err.stdout || err.message || '').substring(0, 200) });
+      steps.push({ step: 'PM2 restart', status: 'error', output: (err.stdout || err.stderr || err.message || '').substring(0, 300) });
       // Don't return error — PM2 restart often writes to stderr but succeeds
     }
 
