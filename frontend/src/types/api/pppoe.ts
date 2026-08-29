@@ -214,6 +214,51 @@ export interface BulkUpdateStatusResponse {
   coa?: unknown;
 }
 
+// === Sync Audit ===
+// GET /api/pppoe/users/sync-audit?routerId=xxx
+export interface SyncAuditDiffEntry {
+  username: string;
+  routerId: string;
+  routerName: string;
+  type: 'missing_in_mikrotik' | 'missing_in_db' | 'password_mismatch' | 'profile_mismatch' | 'status_mismatch';
+  db: {
+    password?: string;
+    profile?: string;
+    status?: string;
+  };
+  mikrotik: {
+    password?: string;
+    profile?: string;
+    disabled?: string;
+  };
+  message: string;
+}
+
+export interface SyncAuditResponse {
+  success: boolean;
+  router: { id: string; name: string; ipAddress: string; authMode: string };
+  stats: {
+    dbCount: number;
+    mtCount: number;
+    matched: number;
+    missingInMikrotik: number;
+    missingInDb: number;
+    passwordMismatch: number;
+    profileMismatch: number;
+    statusMismatch: number;
+  };
+  differences: SyncAuditDiffEntry[];
+  error?: string;
+}
+
+// POST /api/pppoe/users/sync-audit returns { success, message, results, stats }
+export interface SyncAuditFixResponse {
+  success: boolean;
+  message: string;
+  results: Array<{ username: string; action: string; success: boolean; message: string }>;
+  stats: { success: number; failed: number; total: number };
+}
+
 // === Router (NAS) — referenced by PPPoE ===
 
 export interface Router {
