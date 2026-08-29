@@ -2526,15 +2526,15 @@ export default function PppoeUsersPage() {
           {selectedUserForExtend && (
             <ModalBody className="space-y-4">
               <div className="bg-muted/30 dark:bg-[#0a0520]/50 rounded-lg p-3 space-y-2 text-xs border border-border dark:border-[#bc13fe]/30">
-                <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.currentPackage')}:</span><span className="font-medium text-foreground">{selectedUserForExtend.profile.name}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.currentPackage')}:</span><span className="font-medium text-foreground">{selectedUserForExtend.profile?.name || '-'}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.activeUntil')}:</span><span className={selectedUserForExtend.expiredAt && isExpired(selectedUserForExtend.expiredAt) ? 'text-red-500 dark:text-[#ff4466] font-medium' : 'text-foreground'}>{selectedUserForExtend.expiredAt ? formatWIB(selectedUserForExtend.expiredAt, 'dd/MM/yyyy HH:mm') : '-'}</span></div>
               </div>
               <div>
                 <ModalLabel required>{t('pppoe.selectPackage')}</ModalLabel>
                 <ModalSelect value={selectedProfileForExtend} onChange={(e) => setSelectedProfileForExtend(e.target.value)}>
-                  {profiles.map((p) => (<option key={p.id} value={p.id} className="dark:bg-[#0a0520]">{p.name} - Rp {p.price.toLocaleString('id-ID')}{p.id === selectedUserForExtend.profile.id ? ` ${t('pppoe.currentPackageLabel')}` : ''}</option>))}
+                  {profiles.map((p) => (<option key={p.id} value={p.id} className="dark:bg-[#0a0520]">{p.name} - Rp {p.price.toLocaleString('id-ID')}{p.id === selectedUserForExtend.profile?.id ? ` ${t('pppoe.currentPackageLabel')}` : ''}</option>))}
                 </ModalSelect>
-                <p className="text-[10px] text-muted-foreground mt-1">{selectedProfileForExtend !== selectedUserForExtend.profile.id ? `⚠️ ${t('pppoe.packageWillChange')}` : t('pppoe.extendSamePackage')}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">{selectedProfileForExtend !== selectedUserForExtend.profile?.id ? `⚠️ ${t('pppoe.packageWillChange')}` : t('pppoe.extendSamePackage')}</p>
               </div>
               <div className="bg-primary/10 dark:bg-[#00f7ff]/10 border border-primary/30 dark:border-[#00f7ff]/30 rounded-lg p-3 text-xs"><p className="text-primary dark:text-[#00f7ff]">ℹ️ {t('pppoe.extendPaymentInfo')}</p></div>
             </ModalBody>
