@@ -598,8 +598,8 @@ export default function PppoeUsersPage() {
 
   // Helper to invalidate all user-related queries (replaces loadData)
   const invalidateUserData = () => {
-    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users') });
-    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/invoices/counts') });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/pppoe/users'), refetchType: 'active' });
+    queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/invoices/counts'), refetchType: 'active' });
   };
 
   const handleSaveUser = async (data: Record<string, unknown>) => {
@@ -1299,7 +1299,16 @@ export default function PppoeUsersPage() {
     try {
       const formData = new FormData(); formData.append('file', importFile);
       const data = await pppoeApi.bulkUpload(formData) as BulkUploadResponse;
-      setImportResult(data.results); invalidateUserData(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); setImportPreview([]); }, 3000);
+      setImportResult(data.results);
+      invalidateUserData();
+      if (data.results.failed === 0) {
+        setTimeout(() => {
+          setIsImportDialogOpen(false);
+          setImportFile(null);
+          setImportResult(null);
+          setImportPreview([]);
+        }, 3000);
+      }
     } catch (error: unknown) { console.error('Import error:', error); await showError(t('pppoe.importFailed') + ': ' + (error instanceof Error ? error.message : '')); }
     finally { setImporting(false); }
   };
