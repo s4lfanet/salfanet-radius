@@ -41,6 +41,8 @@ export async function GET(request: NextRequest) {
           longitude: '106.816666',
           autoIsolationEnabled: 'true',
           firstInvoice: 'prorate',
+          macAddress: '',
+          comment: 'Pelanggan baru',
         },
         {
           customerId: '',
@@ -61,6 +63,8 @@ export async function GET(request: NextRequest) {
           longitude: '',
           autoIsolationEnabled: 'true',
           firstInvoice: 'full',
+          macAddress: 'AA:BB:CC:DD:EE:FF',
+          comment: '',
         },
       ];
 
@@ -84,6 +88,8 @@ export async function GET(request: NextRequest) {
           { key: 'router', header: 'Router (kosong = global)', width: 22 },
           { key: 'autoIsolationEnabled', header: 'Auto Isolasi (true/false)', width: 22 },
           { key: 'firstInvoice', header: 'Tagihan Pertama (none/prorate/full)', width: 30 },
+          { key: 'macAddress', header: 'MAC Address', width: 20 },
+          { key: 'comment', header: 'Komentar', width: 24 },
           { key: 'registeredAt', header: 'Tanggal Register (YYYY-MM-DD)', width: 26 },
         ];
         const buffer = await generateExcelBuffer(sampleData as any, columns, 'PPPoE Template');
@@ -96,9 +102,9 @@ export async function GET(request: NextRequest) {
       }
 
       // CSV fallback
-      const template = `ID Pelanggan (kosongkan = auto),Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,Area/Wilayah,Profile (opsional),Router (kosong = global),IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude,Auto Isolasi (true/false),Tagihan Pertama (none/prorate/full),Tanggal Register (YYYY-MM-DD)
-,user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,Cluster A,Paket 10Mbps,Router Utama,10.10.10.2,POSTPAID,,1,-6.200000,106.816666,true,prorate,
-,user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,,Paket 20Mbps,,,PREPAID,2026-12-31,,,,true,full,`;
+      const template = `ID Pelanggan (kosongkan = auto),Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,Area/Wilayah,Profile (opsional),Router (kosong = global),IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude,Auto Isolasi (true/false),Tagihan Pertama (none/prorate/full),MAC Address,Komentar,Tanggal Register (YYYY-MM-DD)
+,user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,Cluster A,Paket 10Mbps,Router Utama,10.10.10.2,POSTPAID,,1,-6.200000,106.816666,true,prorate,,Pelanggan baru,
+,user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,,Paket 20Mbps,,,PREPAID,2026-12-31,,,,true,full,AA:BB:CC:DD:EE:FF,`;
 
       return new NextResponse(template, {
         headers: {
