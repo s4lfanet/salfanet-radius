@@ -1,5 +1,6 @@
 'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
+import * as XLSX from 'xlsx';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -443,6 +444,8 @@ export default function PppoeUsersPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [importPreview, setImportPreview] = useState<Record<string, string>[]>([]);
+  const [importPreviewLoading, setImportPreviewLoading] = useState(false);
   const [showImportGuide, setShowImportGuide] = useState(false);
 
   // Sync from MikroTik states
@@ -1296,9 +1299,75 @@ export default function PppoeUsersPage() {
     try {
       const formData = new FormData(); formData.append('file', importFile);
       const data = await pppoeApi.bulkUpload(formData) as BulkUploadResponse;
-      setImportResult(data.results); invalidateUserData(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }, 3000);
+      setImportResult(data.results); invalidateUserData(); if (data.results.failed === 0) setTimeout(() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); setImportPreview([]); }, 3000);
     } catch (error: unknown) { console.error('Import error:', error); await showError(t('pppoe.importFailed') + ': ' + (error instanceof Error ? error.message : '')); }
     finally { setImporting(false); }
+  };
+
+  const handleImportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) { setImportFile(null); setImportPreview([]); return; }
+    setImportFile(file);
+    setImportResult(null);
+    setImportPreview([]);
+    setImportPreviewLoading(true);
+
+    const isXlsx = /\.(xlsx|xls)$/i.test(file.name);
+    if (isXlsx) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const wb = XLSX.read(new Uint8Array(event.target!.result as ArrayBuffer), { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: '', raw: false });
+          const normalized = rows.map(row => {
+            const obj: Record<string, string> = {};
+            Object.keys(row).forEach(k => {
+              const cleanKey = k.replace(/\*/g, '').toLowerCase().trim().replace(/\s+/g, '');
+              const val = String(row[k] || '').trim();
+              if (val) obj[cleanKey] = val;
+            });
+            return obj;
+          });
+          setImportPreview(normalized);
+        } catch (err) {
+          console.error('Excel parse error:', err);
+        } finally {
+          setImportPreviewLoading(false);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const text = event.target!.result as string;
+          const lines = text.split('\n').filter(l => l.trim());
+          if (lines.length < 2) { setImportPreviewLoading(false); return; }
+          const parseCsvLine = (line: string): string[] => {
+            const matches = line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g) || [];
+            return matches.map(v => v.replace(/^"|"$/g, '').trim());
+          };
+          const rawHeaders = parseCsvLine(lines[0]).map(h => h.replace(/\*/g, '').toLowerCase().trim().replace(/\s+/g, ''));
+          const data: Record<string, string>[] = [];
+          for (let i = 1; i < lines.length; i++) {
+            const values = parseCsvLine(lines[i]);
+            const obj: Record<string, string> = {};
+            rawHeaders.forEach((header, idx) => {
+              const val = values[idx] || '';
+              if (val) obj[header] = val;
+            });
+            if (Object.keys(obj).length > 0) data.push(obj);
+          }
+          setImportPreview(data);
+        } catch (err) {
+          console.error('CSV parse error:', err);
+        } finally {
+          setImportPreviewLoading(false);
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
   };
 
   const handleSort = (column: string) => {
@@ -1869,7 +1938,7 @@ export default function PppoeUsersPage() {
         <MapPicker isOpen={showMapPicker} onClose={() => setShowMapPicker(false)} onSelect={(lat, lng) => { const latStr = lat.toFixed(6); const lonStr = lng.toFixed(6); setMapPickerLat(latStr); setMapPickerLon(lonStr); setModalLatLng({ lat: latStr, lng: lonStr }); }} initialLat={mapPickerLat ? parseFloat(mapPickerLat) : undefined} initialLng={mapPickerLon ? parseFloat(mapPickerLon) : undefined} />
 
         {/* Import Dialog */}
-        <SimpleModal isOpen={isImportDialogOpen} onClose={() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }} size="xl">
+        <SimpleModal isOpen={isImportDialogOpen} onClose={() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); setImportPreview([]); }} size="xl">
           <ModalHeader>
             <ModalTitle className="flex items-center gap-2"><Upload className="h-4 w-4 text-primary" />{t('pppoe.importCsv')}</ModalTitle>
             <ModalDescription>{t('pppoe.uploadCsvOrExcel')}</ModalDescription>
@@ -1990,9 +2059,104 @@ export default function PppoeUsersPage() {
             {/* File input */}
             <div>
               <ModalLabel required>{t('pppoe.selectFile')}</ModalLabel>
-              <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setImportFile(e.target.files?.[0] || null)} className="w-full px-3 py-2 text-xs bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/40 rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-[#bc13fe]/30 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-[#bc13fe]/50 focus:border-primary dark:focus:border-[#00f7ff] focus:ring-1 focus:ring-primary/30 dark:focus:ring-[#00f7ff]/30 transition-all" />
+              <input type="file" accept=".csv,.xlsx,.xls" onChange={handleImportFileChange} className="w-full px-3 py-2 text-xs bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/40 rounded-lg text-foreground file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-primary/20 dark:file:bg-[#bc13fe]/30 file:text-foreground hover:file:bg-primary/30 dark:hover:file:bg-[#bc13fe]/50 focus:border-primary dark:focus:border-[#00f7ff] focus:ring-1 focus:ring-primary/30 dark:focus:ring-[#00f7ff]/30 transition-all" />
               <p className="text-[9px] text-muted-foreground mt-1">{t('pppoe.csvExcelFormat')}</p>
             </div>
+
+            {/* File selected + Preview */}
+            {importFile && (
+              <div className="p-3 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/50 text-xs space-y-3">
+                {/* File info */}
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                  <span className="font-medium text-foreground truncate">{importFile.name}</span>
+                  <span className="text-muted-foreground flex-shrink-0">({(importFile.size / 1024).toFixed(1)} KB)</span>
+                </div>
+
+                {/* Loading state */}
+                {importPreviewLoading && (
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <RefreshCcw className="h-3 w-3 animate-spin" />
+                    <span>Memuat preview...</span>
+                  </div>
+                )}
+
+                {/* Preview summary + table */}
+                {!importPreviewLoading && importPreview.length > 0 && (() => {
+                  const validRows = importPreview.filter(r => r.username && r.name && r.phone);
+                  const skipRows = importPreview.filter(r => !r.username || !r.name || !r.phone);
+                  const noProfileRows = importPreview.filter(r => r.username && r.name && r.phone && !r.profile);
+                  return (
+                    <div className="space-y-2">
+                      {/* Summary badges */}
+                      <div className="flex gap-2 flex-wrap items-center">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded text-[10px] font-semibold">
+                          <CheckCircle2 className="h-3 w-3" />{validRows.length} akan diimpor
+                        </span>
+                        {noProfileRows.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded text-[10px] font-semibold">
+                            <AlertTriangle className="h-3 w-3" />{noProfileRows.length} tanpa paket
+                          </span>
+                        )}
+                        {skipRows.length > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded text-[10px] font-semibold">
+                            <XCircle className="h-3 w-3" />{skipRows.length} dilewati (data tidak lengkap)
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Preview table */}
+                      <div className="overflow-x-auto rounded border border-border/50">
+                        <table className="w-full border-collapse text-[10px]">
+                          <thead>
+                            <tr className="bg-muted/50 dark:bg-[#0a0520]/60 text-left">
+                              <th className="px-2 py-1 font-medium text-muted-foreground">#</th>
+                              <th className="px-2 py-1 font-medium text-muted-foreground">Username</th>
+                              <th className="px-2 py-1 font-medium text-muted-foreground">Nama</th>
+                              <th className="px-2 py-1 font-medium text-muted-foreground">Telepon</th>
+                              <th className="px-2 py-1 font-medium text-muted-foreground">Profile</th>
+                              <th className="px-2 py-1 font-medium text-muted-foreground">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {importPreview.slice(0, 8).map((row, i) => {
+                              const isValid = row.username && row.name && row.phone;
+                              const hasProfile = !!row.profile;
+                              return (
+                                <tr key={i} className={`border-t border-border/40 ${!isValid ? 'opacity-50' : ''}`}>
+                                  <td className="px-2 py-1 text-muted-foreground">{i + 1}</td>
+                                  <td className="px-2 py-1 font-medium text-foreground">{row.username || <span className="text-red-500 italic">kosong</span>}</td>
+                                  <td className="px-2 py-1 text-foreground">{row.name || <span className="text-muted-foreground">—</span>}</td>
+                                  <td className="px-2 py-1 text-foreground">{row.phone || <span className="text-muted-foreground">—</span>}</td>
+                                  <td className="px-2 py-1 text-foreground">{row.profile || <span className="text-amber-500 italic">tanpa paket</span>}</td>
+                                  <td className="px-2 py-1">
+                                    {!isValid ? (
+                                      <span className="text-red-500 font-semibold">✗ Dilewati</span>
+                                    ) : !hasProfile ? (
+                                      <span className="text-amber-500 font-semibold">⚠ Tanpa paket</span>
+                                    ) : (
+                                      <span className="text-green-600 dark:text-green-400">✓ OK</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                      {importPreview.length > 8 && (
+                        <p className="text-[10px] text-muted-foreground italic text-center">... dan {importPreview.length - 8} baris lainnya</p>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Empty preview (parsed but no valid rows) */}
+                {!importPreviewLoading && importPreview.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground">File dipilih. Klik tombol Import untuk mulai mengunggah.</p>
+                )}
+              </div>
+            )}
             {importResult && (
               <div className="p-3 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/50 text-xs max-h-60 overflow-y-auto">
                 <div className="flex items-center gap-1 text-green-600 dark:text-[#00ff88] mb-2"><CheckCircle2 className="h-3 w-3" />{importResult.success} {t('common.create')}{importResult.updated > 0 && <span className="ml-2 text-blue-500 dark:text-[#00f7ff]">· {importResult.updated} Diperbarui</span>}</div>
@@ -2015,7 +2179,7 @@ export default function PppoeUsersPage() {
             )}
           </ModalBody>
           <ModalFooter>
-            <ModalButton variant="secondary" onClick={() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); }}>{t('common.cancel')}</ModalButton>
+            <ModalButton variant="secondary" onClick={() => { setIsImportDialogOpen(false); setImportFile(null); setImportResult(null); setImportPreview([]); }}>{t('common.cancel')}</ModalButton>
             <ModalButton variant="primary" onClick={handleImport} disabled={!importFile || importing}>{importing ? t('notifications.processing') : t('common.import')}</ModalButton>
           </ModalFooter>
         </SimpleModal>
