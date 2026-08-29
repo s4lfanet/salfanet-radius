@@ -261,10 +261,10 @@ log "Frontend build OK"
 write_status '{"phase":"running","step":"PM2 restart"}'
 log "Step 5: PM2 restart"
 cd "${appDir}"
-export DATABASE_URL=$(awk -F= '/^DATABASE_URL=/{gsub(/"/,"");print $2}' backend/.env)
-export SHADOW_DATABASE_URL=$(awk -F= '/^SHADOW_DATABASE_URL=/{gsub(/"/,"");print $2}' backend/.env 2>/dev/null || true)
-export NEXTAUTH_SECRET=$(awk -F= '/^NEXTAUTH_SECRET=/{gsub(/"/,"");print $2}' frontend/.env 2>/dev/null || true)
-export NEXTAUTH_URL=$(awk -F= '/^NEXTAUTH_URL=/{gsub(/"/,"");print $2}' frontend/.env 2>/dev/null || true)
+export DATABASE_URL=$(sed -n 's/^DATABASE_URL=//p' backend/.env | tr -d '"' | tr -d "'")
+export SHADOW_DATABASE_URL=$(sed -n 's/^SHADOW_DATABASE_URL=//p' backend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
+export NEXTAUTH_SECRET=$(sed -n 's/^NEXTAUTH_SECRET=//p' frontend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
+export NEXTAUTH_URL=$(sed -n 's/^NEXTAUTH_URL=//p' frontend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
 pm2 delete salfanet-frontend salfanet-backend salfanet-cron 2>/dev/null
 pm2 start ecosystem.config.js --only salfanet-frontend,salfanet-backend,salfanet-cron >> "$LOG_FILE" 2>&1
 pm2 save >> "$LOG_FILE" 2>&1
