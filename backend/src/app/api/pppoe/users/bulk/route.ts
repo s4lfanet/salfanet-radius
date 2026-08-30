@@ -43,6 +43,7 @@ export async function GET(request: NextRequest) {
           firstInvoice: 'prorate',
           macAddress: '',
           comment: 'Pelanggan baru',
+          registeredAt: '',
         },
         {
           customerId: '',
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
           firstInvoice: 'full',
           macAddress: 'AA:BB:CC:DD:EE:FF',
           comment: '',
+          registeredAt: '',
         },
       ];
 
@@ -101,10 +103,10 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // CSV fallback
-      const template = `ID Pelanggan (kosongkan = auto),Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,Area/Wilayah,Profile (opsional),Router (kosong = global),IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude,Auto Isolasi (true/false),Tagihan Pertama (none/prorate/full),MAC Address,Komentar,Tanggal Register (YYYY-MM-DD)
-,user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,Cluster A,Paket 10Mbps,Router Utama,10.10.10.2,POSTPAID,,1,-6.200000,106.816666,true,prorate,,Pelanggan baru,
-,user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,,Paket 20Mbps,,,PREPAID,2026-12-31,,,,true,full,AA:BB:CC:DD:EE:FF,`;
+      // CSV fallback — column order must match XLSX template exactly
+      const template = `ID Pelanggan (kosongkan = auto),Username *,Password *,Nama Lengkap *,No. Telepon *,Email,Alamat,Area/Wilayah,IP Address,Tipe Langganan (POSTPAID/PREPAID),Tanggal Expired (YYYY-MM-DD),Hari Tagihan (1-31),Latitude,Longitude,Profile (opsional, assign manual setelah import),Router (kosong = global),Auto Isolasi (true/false),Tagihan Pertama (none/prorate/full),MAC Address,Komentar,Tanggal Register (YYYY-MM-DD)
+,user001,pass123,Budi Santoso,08123456789,budi@example.com,Jl. Merdeka No. 10,Cluster A,10.10.10.2,POSTPAID,,1,-6.200000,106.816666,Paket 10Mbps,Router Utama,true,prorate,,Pelanggan baru,
+,user002,pass456,Siti Rahayu,08987654321,siti@example.com,Jl. Sudirman No. 5,,,,PREPAID,2026-12-31,,,,Paket 20Mbps,,true,full,AA:BB:CC:DD:EE:FF,`;
 
       return new NextResponse(template, {
         headers: {
@@ -278,6 +280,7 @@ export async function POST(request: NextRequest) {
       'customer id': 'customerid',
       'profile': 'profilename',
       'profile (opsional)': 'profilename',
+      'profile (opsional, assign manual setelah import)': 'profilename',
       'status': '_status',
       'router': 'routername',
       'router (kosong = global)': 'routername',
