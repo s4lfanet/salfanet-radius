@@ -257,16 +257,23 @@ if [ $? -ne 0 ]; then
 fi
 log "Frontend build OK"
 
-# Step 5: Restart PM2
+# Step 5: Restart PM2 (use reload, NOT delete+start — delete kills the backend
+# which is the parent of this script, killing the script before pm2 start runs)
 write_status '{"phase":"running","step":"PM2 restart"}'
-log "Step 5: PM2 restart"
+log "Step 5: PM2 restart (reload mode)"
 cd "${appDir}"
 export DATABASE_URL=$(sed -n 's/^DATABASE_URL=//p' backend/.env | tr -d '"' | tr -d "'")
 export SHADOW_DATABASE_URL=$(sed -n 's/^SHADOW_DATABASE_URL=//p' backend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
 export NEXTAUTH_SECRET=$(sed -n 's/^NEXTAUTH_SECRET=//p' frontend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
 export NEXTAUTH_URL=$(sed -n 's/^NEXTAUTH_URL=//p' frontend/.env | tr -d '"' | tr -d "'" 2>/dev/null || true)
-pm2 delete salfanet-frontend salfanet-backend salfanet-cron 2>/dev/null
-pm2 start ecosystem.config.js --only salfanet-frontend,salfanet-backend,salfanet-cron >> "$LOG_FILE" 2>&1
+# Reload frontend first (it doesn't kill this script's parent)
+pm2 reload salfanet-frontend --update-env >> "$LOG_FILE" 2>&1 || pm2 restart salfanet-frontend --update-env >> "$LOG_FILE" 2>&1 || true
+log "Frontend reloaded"
+# Reload backend last — this will restart the backend process.
+# The script survives because it's fully detached via setsid.
+pm2 reload salfanet-backend --update-env >> "$LOG_FILE" 2>&1 || pm2 restart salfanet-backend --update-env >> "$LOG_FILE" 2>&1 || true
+log "Backend reloaded"
+pm2 restart salfanet-cron --update-env >> "$LOG_FILE" 2>&1 || true
 pm2 save >> "$LOG_FILE" 2>&1
 log "PM2 restart OK"
 
@@ -286,8 +293,9 @@ log "=== UPDATE COMPLETE: $NEW_COMMIT ==="
     // Write initial status
     writeStatus({ phase: 'running', step: 'Starting...', startedAt: Date.now() / 1000 | 0 });
 
-    // Spawn detached background process
-    const child = spawn('bash', [scriptPath], {
+    // Spawn detached background process using setsid for full detachment.
+    // This ensures the script survives even if the parent backend process is restarted/killed.
+    const child = spawn('setsid', ['bash', scriptPath], {
       detached: true,
       stdio: 'ignore',
       env: EXEC_ENV as any,
