@@ -6,6 +6,56 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.17.0] — 2026-08-30 — Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh
+
+### Summary
+Perbaikan komprehensif untuk fitur import pelanggan PPPoE: error 400 saat import, crash frontend saat menampilkan/mengedit user tanpa profile, data tidak auto-refresh setelah import, serta cleanup project dari file temporary.
+
+### Fixes
+- **[CRITICAL]** `TypeError: Cannot read properties of null (reading 'name')` — frontend crash saat menampilkan user tanpa profile di card view, table view, dan CSV export. Ditambahkan optional chaining (`?.`) dan fallback values
+- **[CRITICAL]** `TypeError: Cannot read properties of null (reading 'id')` — frontend crash saat membuka modal edit pelanggan (`UserDetailModal`) dan extend modal untuk user tanpa profile. `user.profile.id` diubah ke `user.profile?.id || ''`
+- **[FIX]** Bulk import 400 Bad Request — ditambahkan detailed error logging di setiap validation point di backend route, frontend error parsing diperbaiki untuk menampilkan pesan spesifik dari backend
+- **[FIX]** Data tidak auto-refresh setelah import — `invalidateQueries` dengan `staleTime: 30000` tidak memaksa refetch. Diubah ke `refetchQueries` yang memaksa immediate refetch regardless of staleTime
+- **[FIX]** Backend env variables truncated saat PM2 restart — `awk` memotong `DATABASE_URL` dan `NEXTAUTH_SECRET` di karakter `&`. Diganti dengan `sed` untuk extraction yang reliable
+- **[FIX]** Excel parsing debug logs — ditambahkan logging untuk file name, size, row count, dan sample data untuk diagnosing import issues
+- **[FIX]** PM2 frontend NEXTAUTH_SECRET kosong setelah restart — fix dengan script bash yang extract env dari `.env` file menggunakan `sed` dan restart PM2 dengan `delete` + `start` (bukan `restart --update-env`)
+
+### Features
+- **[FEATURE]** Import dialog file preview — parse CSV/Excel client-side, tampilkan file name, row count summary (valid/without profile/skipped), dan preview table dengan status indicators
+- **[FEATURE]** Collapsible import column guide dengan 3-tier status (Wajib/Disarankan/Opsional), MAC Address & Komentar columns, legend, descriptions dan tips
+- **[FEATURE]** PPPoE sync audit — compare DB vs MikroTik PPP secrets (username, password, profile, status) dengan fix actions
+- **[FEATURE]** Cloudflare 524 timeout fix — web update berjalan sebagai detached background process dengan status polling
+
+### Cleanup
+- Removed `check-encoding.ps1` — temporary PowerShell script untuk check BOM/encoding
+- Removed `fix-encoding.ps1` — temporary PowerShell script untuk fix BOM/encoding
+- Removed `AUTOCHANGELOG.md` — auto-generated changelog, redundant dengan CHANGELOG.md
+- Updated `.gitignore` — pattern `deploy-*.sh`, `restart-*.sh`, `fix-fe-env.sh`, `check-encoding.ps1`, `fix-encoding.ps1`, `AUTOCHANGELOG.md`
+
+### Files Changed
+- `frontend/src/app/admin/pppoe/users/page.tsx` — null-safe `profile?.name`, `profile?.id`, `profile?.groupName` di card/table/extend/CSV; `refetchQueries` menggantikan `invalidateQueries`
+- `frontend/src/components/UserDetailModal.tsx` — `profile` type nullable, `profile?.id` di form init
+- `frontend/src/lib/api/pppoe.ts` — improved error parsing untuk bulk upload
+- `backend/src/app/api/pppoe/users/bulk/route.ts` — detailed error logging di semua 400 responses, Excel parsing debug logs
+- `.gitignore` — temp script patterns
+- `package.json` — version bump to 5.17.0
+- `README.md` — version update
+- `CHANGELOG.md` — this entry
+
+### Deployment
+```bash
+cd /var/www/salfanet-radius
+git pull origin master
+cd frontend && pnpm install --no-frozen-lockfile && pnpm build
+# Restart frontend dengan env yang benar (delete + start, bukan restart)
+export NEXTAUTH_SECRET=$(sed -n 's/^NEXTAUTH_SECRET=//p' frontend/.env | tr -d '"' | tr -d "'")
+export NEXTAUTH_URL=$(sed -n 's/^NEXTAUTH_URL=//p' frontend/.env | tr -d '"' | tr -d "'")
+pm2 delete salfanet-frontend && pm2 start ecosystem.config.js --only salfanet-frontend
+pm2 save
+```
+
+---
+
 ## [5.16.0] — 2026-08-28 — Import Audit Fixes & Optional Profile
 
 ### Summary
