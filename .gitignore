@@ -122,11 +122,17 @@ test3-result.txt
 audit_routing.sh
 check_admin.py
 check_config.py
+check-encoding.ps1
+fix-encoding.ps1
 deploy-restart.sh
+deploy-*.sh
+restart-*.sh
+fix-fe-env.sh
 test_login.sh
 test_otp.py
 verify_session.py
 vps_audit.py
+AUTOCHANGELOG.md
 
 # Vercel
 .vercel
