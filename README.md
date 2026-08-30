@@ -1041,6 +1041,54 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.17.0 — 2026-08-30 — Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh
+
+### Summary
+Perbaikan komprehensif untuk fitur import pelanggan PPPoE: error 400 saat import, crash frontend saat menampilkan/mengedit user tanpa profile, data tidak auto-refresh setelah import, serta cleanup project dari file temporary.
+
+### Fixes
+- **[CRITICAL]** `TypeError: Cannot read properties of null (reading 'name')` — frontend crash saat menampilkan user tanpa profile di card view, table view, dan CSV export. Ditambahkan optional chaining (`?.`) dan fallback values
+- **[CRITICAL]** `TypeError: Cannot read properties of null (reading 'id')` — frontend crash saat membuka modal edit pelanggan (`UserDetailModal`) dan extend modal untuk user tanpa profile. `user.profile.id` diubah ke `user.profile?.id || ''`
+- **[FIX]** Bulk import 400 Bad Request — ditambahkan detailed error logging di setiap validation point di backend route, frontend error parsing diperbaiki untuk menampilkan pesan spesifik dari backend
+- **[FIX]** Data tidak auto-refresh setelah import — `invalidateQueries` dengan `staleTime: 30000` tidak memaksa refetch. Diubah ke `refetchQueries` yang memaksa immediate refetch regardless of staleTime
+- **[FIX]** Backend env variables truncated saat PM2 restart — `awk` memotong `DATABASE_URL` dan `NEXTAUTH_SECRET` di karakter `&`. Diganti dengan `sed` untuk extraction yang reliable
+- **[FIX]** Excel parsing debug logs — ditambahkan logging untuk file name, size, row count, dan sample data untuk diagnosing import issues
+- **[FIX]** PM2 frontend NEXTAUTH_SECRET kosong setelah restart — fix dengan script bash yang extract env dari `.env` file menggunakan `sed` dan restart PM2 dengan `delete` + `start` (bukan `restart --update-env`)
+
+### Features
+- **[FEATURE]** Import dialog file preview — parse CSV/Excel client-side, tampilkan file name, row count summary (valid/without profile/skipped), dan preview table dengan status indicators
+- **[FEATURE]** Collapsible import column guide dengan 3-tier status (Wajib/Disarankan/Opsional), MAC Address & Komentar columns, legend, descriptions dan tips
+- **[FEATURE]** PPPoE sync audit — compare DB vs MikroTik PPP secrets (username, password, profile, status) dengan fix actions
+- **[FEATURE]** Cloudflare 524 timeout fix — web update berjalan sebagai detached background process dengan status polling
+
+### Cleanup
+- Removed `check-encoding.ps1` — temporary PowerShell script untuk check BOM/encoding
+- Removed `fix-encoding.ps1` — temporary PowerShell script untuk fix BOM/encoding
+- Removed `AUTOCHANGELOG.md` — auto-generated changelog, redundant dengan CHANGELOG.md
+- Updated `.gitignore` — pattern `deploy-*.sh`, `restart-*.sh`, `fix-fe-env.sh`, `check-encoding.ps1`, `fix-encoding.ps1`, `AUTOCHANGELOG.md`
+
+### Files Changed
+- `frontend/src/app/admin/pppoe/users/page.tsx` — null-safe `profile?.name`, `profile?.id`, `profile?.groupName` di card/table/extend/CSV; `refetchQueries` menggantikan `invalidateQueries`
+- `frontend/src/components/UserDetailModal.tsx` — `profile` type nullable, `profile?.id` di form init
+- `frontend/src/lib/api/pppoe.ts` — improved error parsing untuk bulk upload
+- `backend/src/app/api/pppoe/users/bulk/route.ts` — detailed error logging di semua 400 responses, Excel parsing debug logs
+- `.gitignore` — temp script patterns
+- `package.json` — version bump to 5.17.0
+- `README.md` — version update
+- `CHANGELOG.md` — this entry
+
+### Deployment
+```bash
+cd /var/www/salfanet-radius
+git pull origin master
+cd frontend && pnpm install --no-frozen-lockfile && pnpm build
+# Restart frontend dengan env yang benar (delete + start, bukan restart)
+export NEXTAUTH_SECRET=$(sed -n 's/^NEXTAUTH_SECRET=//p' frontend/.env | tr -d '"' | tr -d "'")
+export NEXTAUTH_URL=$(sed -n 's/^NEXTAUTH_URL=//p' frontend/.env | tr -d '"' | tr -d "'")
+pm2 delete salfanet-frontend && pm2 start ecosystem.config.js --only salfanet-frontend
+pm2 save
+```
+
 ### v5.16.0 — 2026-08-28 — Import Audit Fixes & Optional Profile
 
 ### Summary
@@ -1231,52 +1279,6 @@ Dokumentasi lengkap fitur Collector Portal (kolektor/tagihan) yang sebelumnya ti
 - `frontend/src/app/collector/` — Collector portal: login, dashboard, billing, isolir, ont, proofs, my-collections, settlements
 - `frontend/src/app/admin/collectors/page.tsx` — Admin CRUD kolektor dengan area assignment
 - `frontend/src/app/admin/collector-settlements/page.tsx` — Admin verifikasi setoran harian
-
-### v5.13.0 — 2026-08-17 — MikroTik Local-Only Voucher Sync & Cleanup
-
-### Summary
-Implementasi sinkronisasi voucher hotspot ke MikroTik router untuk mode `local` (tanpa RADIUS). Voucher yang di-generate dari admin panel otomatis dibuat sebagai hotspot user di MikroTik via RouterOS API. Saat voucher dihapus dari DB, user di MikroTik juga dihapus. Termasuk cron job untuk sync status voucher, cleanup orphaned users, dan comment marker `salfanet:` untuk identifikasi.
-
-### MikroTik Local-Only Voucher Sync
-- **[FEATURE]** `syncVoucherToMikrotik` — create/update hotspot user di MikroTik via RouterOS API (node-routeros)
-- **[FEATURE]** `removeVoucherFromMikrotik` — hapus hotspot user + active session + scheduler dari MikroTik
-- **[FEATURE]** `removeBatchVouchersFromMikrotik` — hapus multiple voucher dalam satu koneksi MikroTik (efficient batch removal)
-- **[FEATURE]** `removeVoucherFromAllMikrotik` — hapus voucher dari semua local-only router
-- **[FEATURE]** `fetchVoucherStatusFromMikrotik` — sync status voucher (WAITING/ACTIVE/EXPIRED) dari MikroTik ke DB
-- **[FEATURE]** `fetchAllVoucherStatusesFromMikrotik` — sync status dari semua local-only router (untuk cron job)
-- **[FEATURE]** `cleanupOrphanedMikrotikUsers` — hapus user orphaned (ada di MikroTik tapi tidak di DB) dengan filter `salfanet:` comment
-- **[FEATURE]** `cleanupAllOrphanedMikrotikUsers` — cleanup semua local-only router
-- **[FEATURE]** Comment marker `salfanet:admin` atau `salfanet:agent-phone-name` pada hotspot user MikroTik untuk identifikasi system-generated vouchers
-- **[FEATURE]** API endpoint `POST /api/hotspot/voucher/cleanup-mikrotik` — trigger cleanup orphaned users (support dryRun + profileName filter)
-- **[FEATURE]** API endpoint `POST /api/hotspot/voucher/sync-status` — trigger status sync manual
-- **[FEATURE]** Cron job `hotspot_voucher_sync` — scheduled sync voucher status dari MikroTik
-
-### Voucher Generate — MikroTik Sync
-- **[FIX]** MikroTik local sync sekarang fire-and-forget (non-blocking) saat generate voucher
-- **[FIX]** Group voucher by `routerId` untuk efisiensi koneksi MikroTik
-- **[FIX]** Voucher tanpa `routerId` di-sync ke semua local-only router
-
-### Voucher Delete — MikroTik Cleanup
-- **[FIX]** `DELETE /api/hotspot/voucher?batchCode=` — MikroTik cleanup di-await dengan `removeBatchVouchersFromMikrotik` (single connection per router)
-- **[FIX]** `POST /api/hotspot/voucher/delete-multiple` — tambah MikroTik cleanup (sebelumnya missing entirely)
-- **[FIX]** `DELETE /api/hotspot/voucher/[id]` — tambah MikroTik cleanup (sebelumnya missing entirely)
-- **[FIX]** `routerId` ditambahkan ke select query di batch delete untuk pass ke MikroTik cleanup
-
-### node-routeros Error Handling
-- **[FIX]** Global `uncaughtException` handler untuk swallow `!empty` errors (node-routeros throws dari event handlers, bypass try/catch)
-- **[FIX]** `safeWrite` helper — wrapper untuk MikroTik API calls, return empty array pada `!empty` reply
-- **[FIX]** Semua filter-based queries diganti dengan fetch-all + JS filter untuk menghindari `!empty` exception
-- **[FIX]** Applied ke `hotspot-voucher.service.ts` dan `hotspot-profile.service.ts`
-
-### Files Changed
-- `backend/src/server/services/mikrotik/hotspot-voucher.service.ts` — core MikroTik voucher sync/remove/cleanup functions
-- `backend/src/server/services/mikrotik/hotspot-profile.service.ts` — safeWrite + uncaughtException handler untuk profile sync
-- `backend/src/server/services/hotspot.service.ts` — integrate MikroTik sync ke generate/delete voucher
-- `backend/src/app/api/hotspot/voucher/cleanup-mikrotik/route.ts` — new API endpoint
-- `backend/src/app/api/hotspot/voucher/sync-status/route.ts` — new API endpoint
-- `backend/src/app/api/hotspot/voucher/delete-multiple/route.ts` — add MikroTik cleanup
-- `backend/src/app/api/hotspot/voucher/[id]/route.ts` — add MikroTik cleanup
-- `backend/src/app/api/cron/route.ts` — add `hotspot_voucher_sync` cron case
 
 <!-- AUTO-CHANGELOG:END -->
 
