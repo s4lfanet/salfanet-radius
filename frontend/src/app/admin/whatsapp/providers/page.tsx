@@ -261,7 +261,7 @@ export default function WhatsAppProvidersPage() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'mpwa': return 'bg-primary/20 text-primary dark:text-primary';
+      case 'mpwa': return 'bg-primary/20 text-primary dark:bg-primary/20 dark:text-primary';
       case 'waha': return 'bg-accent/20 text-accent dark:bg-purple-900/30 dark:text-purple-400';
       case 'fonnte': return 'bg-success/20 text-success dark:bg-green-900/30 dark:text-success';
       case 'wablas': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
@@ -269,7 +269,7 @@ export default function WhatsAppProvidersPage() {
       case 'wablast': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
       case 'kirimi': return 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400';
       case 'baileys': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400';
-      default: return 'bg-gray-100 text-foreground dark:bg-inputdark:text-muted-foreground';
+      default: return 'bg-gray-100 text-foreground dark:bg-gray-800 dark:text-muted-foreground';
     }
   };
 
