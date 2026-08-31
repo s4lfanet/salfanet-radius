@@ -33,76 +33,106 @@ let sock = null;
 let qrCodeImage = null;
 let connectionStatus = 'initializing';
 let myNumber = null;
+let isConnecting = false; // Guard against duplicate connections
+let reconnectTimer = null;
 
 // Silent logger — no noise in PM2 logs except our console.log calls
 const logger = pino({ level: 'silent' });
 
 async function connectToWhatsApp() {
+  // Prevent duplicate connections — only one Baileys instance at a time
+  if (isConnecting) {
+    console.log('[WA Service] connectToWhatsApp already in progress — skipping');
+    return;
+  }
+  isConnecting = true;
+
+  // Clear any pending reconnect timer
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+
+  // Close existing socket if any
+  if (sock) {
+    try { await sock.end(undefined); } catch { }
+    sock = null;
+  }
+
   connectionStatus = 'initializing';
   qrCodeImage = null;
 
-  const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
-  const { version, isLatest } = await fetchLatestBaileysVersion();
-  console.log(`[WA Service] Baileys v${version.join('.')}, isLatest: ${isLatest}`);
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    const { version, isLatest } = await fetchLatestBaileysVersion();
+    console.log(`[WA Service] Baileys v${version.join('.')}, isLatest: ${isLatest}`);
 
-  sock = makeWASocket({
-    version,
-    auth: state,
-    printQRInTerminal: false,
-    logger,
-    browser: Browsers.ubuntu('Chrome'),
-    syncFullHistory: false,
-    markOnlineOnConnect: false,
-    generateHighQualityLinkPreview: false,
-    connectTimeoutMs: 60000,
-    defaultQueryTimeoutMs: 30000,
-  });
+    sock = makeWASocket({
+      version,
+      auth: state,
+      printQRInTerminal: false,
+      logger,
+      browser: Browsers.ubuntu('Chrome'),
+      syncFullHistory: false,
+      markOnlineOnConnect: false,
+      generateHighQualityLinkPreview: false,
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 30000,
+    });
 
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update;
+    sock.ev.on('connection.update', async (update) => {
+      const { connection, lastDisconnect, qr } = update;
 
-    if (qr) {
-      console.log('[WA Service] QR Code generated — awaiting scan...');
-      qrCodeImage = await QRCode.toDataURL(qr);
-      connectionStatus = 'qr';
-    }
+      if (qr) {
+        console.log('[WA Service] QR Code generated — awaiting scan...');
+        qrCodeImage = await QRCode.toDataURL(qr);
+        connectionStatus = 'qr';
+      }
 
-    if (connection === 'close') {
-      const shouldReconnect =
-        lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-      console.log(
-        '[WA Service] Connection closed:',
-        lastDisconnect?.error?.message || 'unknown',
-        '| reconnect:',
-        shouldReconnect,
-      );
+      if (connection === 'close') {
+        const shouldReconnect =
+          lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+        console.log(
+          '[WA Service] Connection closed:',
+          lastDisconnect?.error?.message || 'unknown',
+          '| reconnect:',
+          shouldReconnect,
+        );
 
-      if (shouldReconnect) {
-        connectionStatus = 'reconnecting';
-        setTimeout(connectToWhatsApp, 5000);
-      } else {
-        console.log('[WA Service] Logged out — deleting session...');
-        connectionStatus = 'logged_out';
-        try { fs.rmSync(AUTH_DIR, { recursive: true, force: true }); } catch { }
         sock = null;
-      }
-    } else if (connection === 'open') {
-      console.log('[WA Service] ✅ Connected to WhatsApp!');
-      connectionStatus = 'connected';
-      qrCodeImage = null;
-      if (sock?.user?.id) {
-        myNumber = sock.user.id.split(':')[0].split('@')[0];
-        console.log('[WA Service] Phone:', myNumber);
-      }
-    }
-  });
+        isConnecting = false;
 
-  sock.ev.on('creds.update', saveCreds);
+        if (shouldReconnect) {
+          connectionStatus = 'reconnecting';
+          reconnectTimer = setTimeout(connectToWhatsApp, 5000);
+        } else {
+          console.log('[WA Service] Logged out — deleting session...');
+          connectionStatus = 'logged_out';
+          try { fs.rmSync(AUTH_DIR, { recursive: true, force: true }); } catch { }
+        }
+      } else if (connection === 'open') {
+        console.log('[WA Service] ✅ Connected to WhatsApp!');
+        connectionStatus = 'connected';
+        qrCodeImage = null;
+        if (sock?.user?.id) {
+          myNumber = sock.user.id.split(':')[0].split('@')[0];
+          console.log('[WA Service] Phone:', myNumber);
+        }
+      }
+    });
+
+    sock.ev.on('creds.update', saveCreds);
+  } catch (err) {
+    console.error('[WA Service] Connection error:', err);
+    isConnecting = false;
+    connectionStatus = 'error';
+  }
 }
 
 // Start on launch
 connectToWhatsApp().catch(err => {
   console.error('[WA Service] Startup error:', err);
+  isConnecting = false;
   connectionStatus = 'error';
 });
 
@@ -128,10 +158,8 @@ app.get('/qr', (_req, res) => {
   }
 
   // Auto-restart if session was logged out or errored — so user just needs to click QR
-  if (connectionStatus === 'logged_out' || connectionStatus === 'error') {
+  if ((connectionStatus === 'logged_out' || connectionStatus === 'error') && !isConnecting) {
     console.log(`[WA Service] Auto-restarting from state '${connectionStatus}' on QR request...`);
-    connectionStatus = 'initializing';
-    qrCodeImage = null;
     connectToWhatsApp().catch(err => console.error('[WA Service] Auto-restart error:', err));
   }
 
@@ -188,6 +216,13 @@ app.post('/send', async (req, res) => {
 // Restart / logout session — triggers new QR
 app.post('/restart', async (req, res) => {
   console.log('[WA Service] Restart requested...');
+
+  // Clear any pending reconnect
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+
   try {
     if (sock) {
       try { await sock.logout('Restart requested'); } catch { }
@@ -197,9 +232,10 @@ app.post('/restart', async (req, res) => {
     console.error('[WA Service] Restart cleanup error:', e);
   }
 
+  sock = null;
+  isConnecting = false;
   connectionStatus = 'initializing';
   qrCodeImage = null;
-  sock = null;
 
   setTimeout(() => {
     connectToWhatsApp().catch(err => console.error('[WA Service] Reconnect error:', err));
