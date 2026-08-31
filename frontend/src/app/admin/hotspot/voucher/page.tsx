@@ -772,8 +772,11 @@ export default function HotspotVoucherPage() {
                         <SelectContent>
                           <SelectItem value="alpha-upper">{t('hotspot.uppercase')}</SelectItem>
                           <SelectItem value="alpha-lower">{t('hotspot.lowercase')}</SelectItem>
+                          <SelectItem value="alpha-mixed">Huruf Besar + Kecil</SelectItem>
                           <SelectItem value="numeric">{t('hotspot.numeric')}</SelectItem>
                           <SelectItem value="alphanumeric-upper">{t('hotspot.alphaNum')}</SelectItem>
+                          <SelectItem value="alphanumeric-lower">Huruf Kecil + Angka</SelectItem>
+                          <SelectItem value="alphanumeric-mixed">Besar + Kecil + Angka</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -783,7 +786,7 @@ export default function HotspotVoucherPage() {
                       <Label className="text-xs text-muted-foreground">{t('hotspot.prefixOptional')}</Label>
                       <Input 
                         value={formData.prefix} 
-                        onChange={(e) => setFormData({ ...formData, prefix: e.target.value.toUpperCase() })} 
+                        onChange={(e) => setFormData({ ...formData, prefix: e.target.value })} 
                         maxLength={5} 
                         className="h-9 text-sm mt-1" 
                         placeholder="e.g., HS-" 
@@ -794,12 +797,13 @@ export default function HotspotVoucherPage() {
                       <Input 
                         type="number" 
                         min="4" 
-                        max="10" 
+                        max="12" 
                         value={formData.codeLength} 
                         onChange={(e) => setFormData({ ...formData, codeLength: e.target.value })} 
                         className="h-9 text-sm mt-1" 
                         required 
                       />
+                      <p className="text-[10px] text-muted-foreground mt-0.5">Termasuk prefix. Misal: prefix "HS-" + length 7 = "HS-" + 4 karakter acak</p>
                     </div>
                   </div>
                 </div>
