@@ -992,19 +992,19 @@ function AdminLayoutContent({
           <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-sidebar-border bg-sidebar-accent/50">
             <div className="flex items-center gap-3">
               {company.logo ? (
-                <div className="w-9 h-9 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                <div className="w-12 h-12 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
                   <Image
                     unoptimized
                     src={company.logo}
                     alt={company.name || 'Company Logo'}
-                    width={36}
-                    height={36}
+                    width={48}
+                    height={48}
                     className="max-w-full max-h-full w-auto h-auto object-contain"
                   />
                 </div>
               ) : (
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
-                  <span className="text-white font-black text-sm">{company.name?.charAt(0) || 'S'}</span>
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
+                  <span className="text-white font-black text-base">{company.name?.charAt(0) || 'S'}</span>
                 </div>
               )}
               <div className="min-w-0 flex-1">

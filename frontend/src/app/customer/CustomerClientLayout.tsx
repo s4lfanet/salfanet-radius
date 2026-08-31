@@ -284,12 +284,12 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {companyLogo ? (
-                <div className="w-9 h-9 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
-                  <Image unoptimized src={companyLogo} alt={companyName} width={36} height={36} className="max-w-full max-h-full w-auto h-auto object-contain" decoding="async" />
+                <div className="w-12 h-12 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                  <Image unoptimized src={companyLogo} alt={companyName} width={48} height={48} className="max-w-full max-h-full w-auto h-auto object-contain" decoding="async" />
                 </div>
               ) : (
-                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
-                  <Shield className="w-5 h-5 text-white" />
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
+                  <Shield className="w-6 h-6 text-white" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
