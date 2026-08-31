@@ -1,6 +1,7 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { 
@@ -32,7 +33,21 @@ const HistoryPageContent = dynamic(() => import('@/app/admin/whatsapp/history/pa
 
 export default function WhatsAppSettingsPage() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<'providers' | 'templates' | 'notifications' | 'send' | 'history'>('providers');
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const tabParam = searchParams.get('tab') as 'providers' | 'templates' | 'notifications' | 'send' | 'history' | null;
+  const [activeTab, setActiveTab] = useState<'providers' | 'templates' | 'notifications' | 'send' | 'history'>(tabParam || 'providers');
+
+  useEffect(() => {
+    if (tabParam && ['providers', 'templates', 'notifications', 'send', 'history'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
+
+  const handleTabChange = (tab: 'providers' | 'templates' | 'notifications' | 'send' | 'history') => {
+    setActiveTab(tab);
+    router.push(`/admin/settings/whatsapp?tab=${tab}`, { scroll: false });
+  };
 
   return (
     <div className="bg-background relative">
@@ -61,7 +76,7 @@ export default function WhatsAppSettingsPage() {
       <div className="border-b border-border">
         <div className="flex flex-wrap gap-1 sm:gap-2">
           <button
-            onClick={() => setActiveTab('providers')}
+            onClick={() => handleTabChange('providers')}
             className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'providers'
                 ? 'border-primary text-primary'
@@ -72,7 +87,7 @@ export default function WhatsAppSettingsPage() {
             {t('whatsapp.providers')}
           </button>
           <button
-            onClick={() => setActiveTab('templates')}
+            onClick={() => handleTabChange('templates')}
             className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'templates'
                 ? 'border-primary text-primary'
@@ -83,7 +98,7 @@ export default function WhatsAppSettingsPage() {
             {t('whatsapp.templates')}
           </button>
           <button
-            onClick={() => setActiveTab('notifications')}
+            onClick={() => handleTabChange('notifications')}
             className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'notifications'
                 ? 'border-primary text-primary'
@@ -94,7 +109,7 @@ export default function WhatsAppSettingsPage() {
             {t('whatsapp.reminderSettings')}
           </button>
           <button
-            onClick={() => setActiveTab('send')}
+            onClick={() => handleTabChange('send')}
             className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'send'
                 ? 'border-primary text-primary'
@@ -105,7 +120,7 @@ export default function WhatsAppSettingsPage() {
             {t('whatsapp.sendMessage')}
           </button>
           <button
-            onClick={() => setActiveTab('history')}
+            onClick={() => handleTabChange('history')}
             className={`pb-2 px-2 sm:px-3 text-xs sm:text-sm font-medium border-b-2 transition-colors ${
               activeTab === 'history'
                 ? 'border-primary text-primary'

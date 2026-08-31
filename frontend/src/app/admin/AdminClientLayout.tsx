@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, Suspense, useRef, TouchEvent } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signOut, SessionProvider } from 'next-auth/react';
 import { useQueryClient } from '@tanstack/react-query';
 import Image from 'next/image';
@@ -378,14 +378,14 @@ const menuGroups: MenuGroup[] = [
       {
         titleKey: 'nav.whatsapp',
         icon: <MessageCircle className="w-4 h-4" />,
+        href: '/admin/settings/whatsapp',
         requiredPermission: 'whatsapp.view',
         children: [
-          { titleKey: 'nav.settings', href: '/admin/settings/whatsapp', requiredPermission: 'whatsapp.view' },
-          { titleKey: 'nav.history', href: '/admin/whatsapp/history', requiredPermission: 'whatsapp.view' },
-          { titleKey: 'nav.templates', href: '/admin/whatsapp/templates', requiredPermission: 'whatsapp.view' },
-          { titleKey: 'nav.send', href: '/admin/whatsapp/send', requiredPermission: 'whatsapp.view' },
-          { titleKey: 'nav.notifications', href: '/admin/whatsapp/notifications', requiredPermission: 'whatsapp.view' },
-          { titleKey: 'nav.providers', href: '/admin/whatsapp/providers', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.providers', href: '/admin/settings/whatsapp?tab=providers', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.templates', href: '/admin/settings/whatsapp?tab=templates', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.notifications', href: '/admin/settings/whatsapp?tab=notifications', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.send', href: '/admin/settings/whatsapp?tab=send', requiredPermission: 'whatsapp.view' },
+          { titleKey: 'nav.history', href: '/admin/settings/whatsapp?tab=history', requiredPermission: 'whatsapp.view' },
         ],
       },
       {
@@ -421,8 +421,10 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const fullPath = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
   const hasActiveItem = items.some(item =>
-    item.href === pathname || item.children?.some(c => c.href === pathname)
+    item.href === pathname || item.href === fullPath || item.children?.some(c => c.href === pathname || c.href === fullPath)
   );
   const [isOpen, setIsOpen] = useState(hasActiveItem);
 
@@ -478,7 +480,9 @@ function CategoryItem({ titleKey, items, pendingCount, manualPaymentsCount, unre
 
 function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications, collapsed, t, onNavigate }: { item: MenuItem; pendingCount: number; manualPaymentsCount: number; unreadNotifications: number; collapsed?: boolean; t: (key: string, params?: Record<string, string | number>) => string; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const isActive = item.href === pathname || item.children?.some(c => c.href === pathname);
+  const searchParams = useSearchParams();
+  const fullPath = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
+  const isActive = item.href === pathname || item.href === fullPath || item.children?.some(c => c.href === pathname || c.href === fullPath);
   const [isOpen, setIsOpen] = useState(isActive);
 
   if (item.children) {
@@ -520,9 +524,9 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
                   onClick={onNavigate}
                   className={cn(
                     'flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition-all duration-200 group/item',
-                    pathname === child.href
+                    (pathname === child.href || fullPath === child.href)
                       ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12]'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white/5'
                   )}
                 >
                   <span className="tracking-wide">{t(child.titleKey)}</span>
