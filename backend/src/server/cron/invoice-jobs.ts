@@ -4,6 +4,7 @@ import { generateInvoiceNumber } from '@/server/services/billing/invoice.service
 import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
 import { shouldManagePppSecretForSuspend } from '@/server/services/mikrotik/ppp-secret.service';
+import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 
 /**
  * Invoice Generate — generate monthly invoices for active/isolated users.
@@ -233,7 +234,7 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
     select: {
       id: true, invoiceNumber: true, amount: true, dueDate: true, status: true,
       customerName: true, customerPhone: true, customerUsername: true,
-      paymentLink: true, sentReminders: true,
+      paymentLink: true, sentReminders: true, userId: true,
     },
   });
 
@@ -310,6 +311,21 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
         isOverdue: inv.status === 'OVERDUE' || inv.dueDate < now,
         daysOverdue: inv.dueDate < now ? Math.ceil((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000)) : 0,
       });
+
+      // Send web push notification alongside WhatsApp
+      if (inv.userId) {
+        const isOverdue = inv.status === 'OVERDUE' || inv.dueDate < now;
+        await sendPushToUser(inv.userId, isOverdue ? 'invoice-overdue' : 'invoice-reminder', {
+          customerName: inv.customerName || inv.customerUsername || 'Pelanggan',
+          invoiceNumber: inv.invoiceNumber,
+          amount: inv.amount,
+          dueDate: inv.dueDate,
+          companyName: company?.name || '',
+          companyPhone: company?.phone || '',
+          isOverdue,
+          daysOverdue: isOverdue ? Math.ceil((now.getTime() - inv.dueDate.getTime()) / (24 * 60 * 60 * 1000)) : 0,
+        }).catch((e) => console.error(`[INVOICE_REMINDER] Push failed for ${inv.invoiceNumber}:`, e?.message || e));
+      }
 
       sent++;
     } catch (err: any) {
@@ -492,6 +508,19 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
 
       renewed++;
       console.log(`[AUTO_RENEWAL] Renewed ${user.username} until ${newExpiredAt.toISOString()}`);
+
+      // Send push notification about successful auto-renewal
+      const renewalCompany = await prisma.company.findFirst({ select: { name: true, phone: true } });
+      await sendPushToUser(user.id, 'auto-renewal-success', {
+        customerName: user.name || user.username,
+        username: user.username,
+        amount,
+        profileName: (user.profile as any).name || '',
+        newBalance: user.balance - amount,
+        expiredDate: newExpiredAt,
+        companyName: renewalCompany?.name || '',
+        companyPhone: renewalCompany?.phone || '',
+      }).catch((e) => console.error(`[AUTO_RENEWAL] Push failed for ${user.username}:`, e?.message || e));
     } catch (err: any) {
       errors.push(`${user.username}: ${err?.message || err}`);
     }

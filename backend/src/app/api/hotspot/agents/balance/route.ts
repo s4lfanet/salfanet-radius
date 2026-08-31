@@ -2,6 +2,7 @@
 import { requirePermission } from '@/server/middleware/api-auth';
 import { nowWIB } from '@/lib/timezone';
 import { prisma } from '@/server/db/client';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 
 /**
  * POST /api/hotspot/agents/balance
@@ -104,15 +105,10 @@ export async function POST(request: NextRequest) {
     
     const notificationTitle = type === 'add' ? 'Saldo Ditambahkan' : 'Saldo Dikurangi';
 
-    await prisma.agentNotification.create({
-      data: {
-        id: Math.random().toString(36).substring(2, 15),
-        agentId: agentId,
-        type: type === 'add' ? 'balance_added' : 'balance_deducted',
-        title: notificationTitle,
-        message: note ? `${notificationMessage}\n\nCatatan: ${note}` : notificationMessage,
-        link: null,
-      },
+    await createAgentNotificationAndPush(agentId, {
+      type: type === 'add' ? 'balance_added' : 'balance_deducted',
+      title: notificationTitle,
+      message: note ? `${notificationMessage}\n\nCatatan: ${note}` : notificationMessage,
     });
 
     // Create notification for admin

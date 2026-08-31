@@ -1,4 +1,4 @@
-const CACHE_NAME = 'salfanet-pwa-v16';
+const CACHE_NAME = 'salfanet-pwa-v17';
 const OFFLINE_URL = '/offline';
 const STATIC_ASSETS = [
   OFFLINE_URL,
@@ -127,7 +127,7 @@ self.addEventListener('push', (event) => {
     requireInteraction: Boolean(payload.requireInteraction),
     silent: false,
     vibrate: [200, 100, 200],
-    data: payload.data || { url: payload.url || '/customer' },
+    data: payload.data || { url: payload.url || '/' },
   };
 
   event.waitUntil(
@@ -153,7 +153,7 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const data = event.notification.data || {};
-  const targetPath = data.url || data.link || '/customer';
+  const targetPath = data.url || data.link || '/';
   const targetUrl = new URL(targetPath, self.location.origin).href;
   const targetPathname = new URL(targetPath, self.location.origin).pathname;
 

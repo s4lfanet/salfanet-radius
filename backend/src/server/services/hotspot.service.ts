@@ -8,6 +8,7 @@ import { logActivity } from '@/server/services/activity-log.service';
 import {
   removeVoucherFromRadius,
 } from '@/server/services/radius/hotspot-sync.service';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 import {
   syncVoucherToAssignedRouter,
   removeVoucherFromAllMikrotik,
@@ -360,13 +361,10 @@ export async function generateVouchers(data: GenerateVouchersInput, session: Ses
   // Notify agent if vouchers were assigned to one
   if (agentId && result.count > 0) {
     try {
-      await prisma.agentNotification.create({
-        data: {
-          agentId,
-          type: 'voucher_generated',
-          title: 'Voucher Ditambahkan Admin',
-          message: `Admin menambahkan ${result.count} voucher ${profile.name} ke akun Anda (batch: ${batchCode}).`,
-        },
+      await createAgentNotificationAndPush(agentId, {
+        type: 'voucher_generated',
+        title: 'Voucher Ditambahkan Admin',
+        message: `Admin menambahkan ${result.count} voucher ${profile.name} ke akun Anda (batch: ${batchCode}).`,
       });
     } catch (notifError) {
       console.error('Failed to notify agent about voucher generation:', notifError);
@@ -401,15 +399,10 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
         const count = vouchersToDelete.filter((v) => v.agentId === agentIdValue).length;
         const profileName = vouchersToDelete.find((v) => v.agentId === agentIdValue)?.profile.name ?? 'Unknown';
         try {
-          await prisma.agentNotification.create({
-            data: {
-              id: Math.random().toString(36).substring(2, 15),
-              agentId: agentIdValue,
-              type: 'voucher_deleted',
-              title: 'Voucher Dihapus',
-              message: `Admin telah menghapus ${count} voucher ${profileName} dari batch ${batchCode}.`,
-              link: null,
-            },
+          await createAgentNotificationAndPush(agentIdValue, {
+            type: 'voucher_deleted',
+            title: 'Voucher Dihapus',
+            message: `Admin telah menghapus ${count} voucher ${profileName} dari batch ${batchCode}.`,
           });
         } catch (err) {
           console.error('Failed to create agent notification:', err);
@@ -462,15 +455,10 @@ export async function deleteVouchers(params: { id?: string; batchCode?: string }
         const withProfile = await prisma.hotspotVoucher
           .findFirst({ where: { code: voucher.code }, include: { profile: { select: { name: true } } } })
           .catch(() => null);
-        await prisma.agentNotification.create({
-          data: {
-            id: Math.random().toString(36).substring(2, 15),
-            agentId: voucher.agentId,
-            type: 'voucher_deleted',
-            title: 'Voucher Dihapus',
-            message: `Admin telah menghapus voucher ${voucher.code} (${withProfile?.profile.name ?? 'Unknown'}).`,
-            link: null,
-          },
+        await createAgentNotificationAndPush(voucher.agentId, {
+          type: 'voucher_deleted',
+          title: 'Voucher Dihapus',
+          message: `Admin telah menghapus voucher ${voucher.code} (${withProfile?.profile.name ?? 'Unknown'}).`,
         });
       } catch (err) {
         console.error('Failed to create agent notification:', err);
@@ -546,13 +534,10 @@ export async function patchVouchers(
         select: { profile: { select: { name: true } } },
       });
       const profileName = sampleVoucher?.profile?.name || 'Voucher';
-      await prisma.agentNotification.create({
-        data: {
-          agentId: fields.agentId,
-          type: 'voucher_generated',
-          title: 'Voucher Ditambahkan Admin',
-          message: `Admin menambahkan ${result.count} voucher ${profileName} ke akun Anda.`,
-        },
+      await createAgentNotificationAndPush(fields.agentId, {
+        type: 'voucher_generated',
+        title: 'Voucher Ditambahkan Admin',
+        message: `Admin menambahkan ${result.count} voucher ${profileName} ke akun Anda.`,
       });
     } catch (notifError) {
       console.error('Failed to notify agent about voucher assignment:', notifError);

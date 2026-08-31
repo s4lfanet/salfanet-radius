@@ -33,7 +33,7 @@ export interface PushBroadcastInput {
   title: string;
   body: string;
   type?: string;
-  recipientRole?: 'customer' | 'agent' | 'technician' | 'all';
+  recipientRole?: 'customer' | 'agent' | 'technician' | 'admin' | 'all';
   targetType?: 'all' | 'active' | 'expired' | 'area' | 'selected';
   targetIds?: string[];
   sentBy?: string | null;
@@ -651,7 +651,9 @@ export async function sendWebPushBroadcast(input: PushBroadcastInput) {
       totalFailed += r.failed;
       totalCount += r.total;
     }
-    // Also send to admin_users who subscribed via technician portal
+  }
+
+  if (recipientRole === 'admin' || recipientRole === 'all') {
     const adminSubs = await getAdminSubscriptions();
     if (adminSubs.length > 0) {
       const r = await sendToStoredSubscriptions(adminSubs, notificationPayload, 'admin');

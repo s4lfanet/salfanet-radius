@@ -6,6 +6,7 @@ import { nowWIB } from '@/lib/timezone';
 import { parseBody } from '@/lib/parse-body';
 import { generateVoucherSchema } from '@/features/agents/schemas';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 
 // Code type definitions (same as admin)
 const CODE_TYPES: Record<string, { chars: string }> = {
@@ -212,16 +213,11 @@ export async function POST(request: NextRequest) {
       select: { balance: true },
     });
 
-    // Create notification for agent
-    await prisma.agentNotification.create({
-      data: {
-        id: Math.random().toString(36).substring(2, 15),
-        agentId: agentId,
-        type: 'voucher_generated',
-        title: 'Voucher Berhasil Dibuat',
-        message: `${quantity} voucher ${profile.name} berhasil dibuat. Biaya: Rp ${totalCost.toLocaleString('id-ID')}. Saldo: Rp ${(updatedAgent?.balance || 0).toLocaleString('id-ID')}`,
-        link: null,
-      },
+    // Create notification + push for agent
+    await createAgentNotificationAndPush(agentId, {
+      type: 'voucher_generated',
+      title: 'Voucher Berhasil Dibuat',
+      message: `${quantity} voucher ${profile.name} berhasil dibuat. Biaya: Rp ${totalCost.toLocaleString('id-ID')}. Saldo: Rp ${(updatedAgent?.balance || 0).toLocaleString('id-ID')}`,
     });
 
     // Create notification for admin about agent voucher generation
@@ -239,15 +235,10 @@ export async function POST(request: NextRequest) {
     // Check if balance is low (below minimum + 20%)
     const lowBalanceThreshold = agent.minBalance * 1.2;
     if ((updatedAgent?.balance || 0) < lowBalanceThreshold) {
-      await prisma.agentNotification.create({
-        data: {
-          id: Math.random().toString(36).substring(2, 15),
-          agentId: agentId,
-          type: 'low_balance',
-          title: 'Saldo Menipis',
-          message: `Saldo Anda: Rp ${(updatedAgent?.balance || 0).toLocaleString('id-ID')}. Segera top up untuk terus generate voucher.`,
-          link: null,
-        },
+      await createAgentNotificationAndPush(agentId, {
+        type: 'low_balance',
+        title: 'Saldo Menipis',
+        message: `Saldo Anda: Rp ${(updatedAgent?.balance || 0).toLocaleString('id-ID')}. Segera top up untuk terus generate voucher.`,
       });
     }
 

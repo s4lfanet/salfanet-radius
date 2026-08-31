@@ -1,27 +1,18 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/server/db/client';
+import { requireAgentAuth } from '@/server/middleware/agent-auth';
 import { removeAgentPushSubscription } from '@/server/services/push-notification.service';
 
 export async function POST(request: Request) {
   try {
+    const auth = await requireAgentAuth(request);
+    if (!auth.authorized) return auth.response;
+    const { agentId } = auth;
+
     const body = await request.json().catch(() => ({}));
-    const { agentId, endpoint, subscription } = body;
-
-    if (!agentId) {
-      return NextResponse.json({ success: false, error: 'agentId is required' }, { status: 400 });
-    }
-
-    const agent = await prisma.agent.findUnique({
-      where: { id: String(agentId) },
-      select: { id: true },
-    });
-
-    if (!agent) {
-      return NextResponse.json({ success: false, error: 'Agent not found' }, { status: 404 });
-    }
+    const { endpoint, subscription } = body;
 
     const endpointUrl = endpoint || subscription?.endpoint;
-    const deleted = await removeAgentPushSubscription(agent.id, endpointUrl);
+    const deleted = await removeAgentPushSubscription(agentId, endpointUrl);
 
     return NextResponse.json({ success: true, deleted });
   } catch (error: any) {

@@ -48,6 +48,7 @@ import {
   AlertTriangle,
   Gift,
   Zap,
+  Shield,
 } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -104,7 +105,7 @@ interface PushSendResponse {
   error?: string;
 }
 
-type RecipientRole = 'customer' | 'agent' | 'technician' | 'all';
+type RecipientRole = 'customer' | 'agent' | 'technician' | 'admin' | 'all';
 
 const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string }>> = {
   customer: [
@@ -129,6 +130,12 @@ const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; l
     { value: 'registrasi_baru', label: 'Registrasi Baru', icon: Users, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
     { value: 'target', label: 'Target', icon: Zap, color: 'bg-yellow-500/10 text-yellow-600 border-yellow-500/30', activeColor: 'bg-yellow-500 text-white border-yellow-500 shadow-lg shadow-yellow-500/25' },
     { value: 'promo_agen', label: 'Promo Agen', icon: Gift, color: 'bg-pink-500/10 text-pink-600 border-pink-500/30', activeColor: 'bg-pink-500 text-white border-pink-500 shadow-lg shadow-pink-500/25' },
+    { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
+  ],
+  admin: [
+    { value: 'broadcast', label: 'Pengumuman', icon: RadioTower, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25' },
+    { value: 'alert', label: 'Alert Sistem', icon: AlertTriangle, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25' },
+    { value: 'info', label: 'Info', icon: Info, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25' },
     { value: 'custom', label: 'Kustom', icon: MessageSquare, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25' },
   ],
   all: [
@@ -164,6 +171,11 @@ const QUICK_TEMPLATES_BY_ROLE: Record<RecipientRole, Array<{ key: string; icon: 
     { key: 'agent_promo', icon: Gift, label: 'Promo Agen', color: 'text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:border-pink-300' },
     { key: 'agent_info', icon: Info, label: 'Info Agen', color: 'text-cyan-500 bg-cyan-50 border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300' },
   ],
+  admin: [
+    { key: 'admin_broadcast', icon: Megaphone, label: 'Pengumuman Admin', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
+    { key: 'admin_alert', icon: AlertTriangle, label: 'Alert Sistem', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
+    { key: 'admin_info', icon: Info, label: 'Info Admin', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
+  ],
   all: [
     { key: 'all_broadcast', icon: Megaphone, label: 'Pengumuman Semua', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
     { key: 'all_gangguan', icon: AlertTriangle, label: 'Gangguan Jaringan', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
@@ -179,6 +191,10 @@ const TEMPLATE_CONTENT: Record<string, { title: string; body: string }> = {
   cust_gangguan: { title: '⚠️ Gangguan Jaringan', body: 'Saat ini terjadi gangguan pada jaringan kami. Tim teknis sedang bekerja untuk memulihkan layanan. Mohon maaf atas ketidaknyamanannya.' },
   cust_promo: { title: '🎁 Promo Spesial Salfanet!', body: 'Dapatkan penawaran spesial dari Salfanet! Upgrade paket internet Anda dengan harga terbaik. Berlaku terbatas!' },
   cust_info: { title: 'ℹ️ Informasi Layanan Salfanet', body: 'Kepada pelanggan Salfanet, berikut informasi penting terkait layanan kami. Harap dibaca dengan seksama.' },
+  // Admin templates
+  admin_broadcast: { title: '📢 Pengumuman Admin', body: 'Pengumuman penting untuk admin Salfanet. Harap perhatikan informasi ini.' },
+  admin_alert: { title: '🚨 Alert Sistem', body: 'Terdeteksi adanya anomali/peringatan pada sistem. Segera periksa dashboard admin.' },
+  admin_info: { title: 'ℹ️ Info Admin', body: 'Informasi penting terkait sistem Salfanet. Harap dibaca dan ditindaklanjuti.' },
   // Technician templates
   tech_broadcast: { title: '📢 Pengumuman untuk Teknisi', body: 'Kepada seluruh teknisi Salfanet, berikut pengumuman penting dari manajemen. Harap diperhatikan.' },
   tech_tugas: { title: '🔧 Ada Tugas Baru untuk Anda', body: 'Anda mendapat penugasan baru. Segera cek aplikasi teknisi untuk detail pekerjaan dan lokasi pelanggan.' },
@@ -266,9 +282,10 @@ export default function PushNotificationsPage() {
     const roleLabel = recipientRole === 'customer' ? 'Pelanggan'
       : recipientRole === 'technician' ? 'Teknisi'
       : recipientRole === 'agent' ? 'Agen'
-      : 'Semua (Pelanggan + Teknisi + Agen)';
+      : recipientRole === 'admin' ? 'Admin'
+      : 'Semua (Pelanggan + Teknisi + Agen + Admin)';
 
-    const targetLabel = recipientRole === 'agent' || recipientRole === 'technician'
+    const targetLabel = recipientRole === 'agent' || recipientRole === 'technician' || recipientRole === 'admin'
       ? `Semua ${roleLabel}`
       : targetType === 'all' ? t('pushNotif.targetAll')
         : targetType === 'active' ? t('pushNotif.targetActive')
@@ -338,7 +355,7 @@ export default function PushNotificationsPage() {
   const getTargetLabel = (tt: string) => {
     // New format: "role:targetType" e.g. "customer:all", "agent:all", "technician:all", "all:all"
     const [role, target] = tt.includes(':') ? tt.split(':') : ['customer', tt];
-    const roleLabel = role === 'agent' ? 'Agen' : role === 'technician' ? 'Teknisi' : role === 'all' ? 'Semua' : 'Pelanggan';
+    const roleLabel = role === 'agent' ? 'Agen' : role === 'technician' ? 'Teknisi' : role === 'admin' ? 'Admin' : role === 'all' ? 'Semua' : 'Pelanggan';
     const targetLabel = target === 'all' ? t('pushNotif.allUsers')
       : target === 'active' ? t('pushNotif.activeUsers')
       : target === 'expired' ? t('pushNotif.expiredUsers')
@@ -461,11 +478,12 @@ export default function PushNotificationsPage() {
               <CardDescription className="text-xs">Pilih penerima notifikasi ini</CardDescription>
             </CardHeader>
             <CardContent className="px-5 pt-0 pb-5">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                 {([
                   { value: 'customer' as RecipientRole, label: 'Pelanggan', icon: Users, color: 'bg-blue-500/10 text-blue-600 border-blue-500/30', activeColor: 'bg-blue-500 text-white border-blue-500 shadow-lg shadow-blue-500/25', count: stats?.usersWithTokens ?? 0, unit: 'push' },
-                  { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'terdaftar' },
+                  { value: 'technician' as RecipientRole, label: 'Teknisi', icon: Wrench, color: 'bg-amber-500/10 text-amber-600 border-amber-500/30', activeColor: 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/25', count: stats?.technicianSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'agent' as RecipientRole, label: 'Agen', icon: Megaphone, color: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30', activeColor: 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/25', count: stats?.agentSubscribers ?? 0, unit: 'terdaftar' },
+                  { value: 'admin' as RecipientRole, label: 'Admin', icon: Shield, color: 'bg-red-500/10 text-red-600 border-red-500/30', activeColor: 'bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/25', count: stats?.adminSubscribers ?? 0, unit: 'terdaftar' },
                   { value: 'all' as RecipientRole, label: 'Semua', icon: RadioTower, color: 'bg-purple-500/10 text-purple-600 border-purple-500/30', activeColor: 'bg-purple-500 text-white border-purple-500 shadow-lg shadow-purple-500/25', count: (stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0), unit: 'total' },
                 ] as Array<{ value: RecipientRole; label: string; icon: React.ComponentType<{ className?: string }>; color: string; activeColor: string; count: number; unit: string }>).map((role) => {
                   const RoleIcon = role.icon;

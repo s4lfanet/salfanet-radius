@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
 import { requirePermission } from '@/server/middleware/api-auth';
 import type { Prisma } from '@prisma/client';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 
 /**
  * GET /api/admin/agent-deposits
@@ -139,16 +140,8 @@ export async function PATCH(request: NextRequest) {
           },
         });
 
-        await tx.agentNotification.create({
-          data: {
-            id: Math.random().toString(36).substring(2, 15),
-            agentId: deposit.agentId,
-            type: 'deposit_success',
-            title: 'Deposit Disetujui',
-            message: `Top up manual Rp ${deposit.amount.toLocaleString('id-ID')} disetujui. Saldo baru: Rp ${updatedAgent.balance.toLocaleString('id-ID')}`,
-            link: null,
-          },
-        });
+        // Note: create outside transaction to avoid push blocking the tx
+        // The notification + push will be sent after the transaction commits
 
         await tx.notification.create({
           data: {
@@ -171,6 +164,13 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
+      // Send agent notification + push after transaction commits
+      await createAgentNotificationAndPush(deposit.agentId, {
+        type: 'deposit_success',
+        title: 'Deposit Disetujui',
+        message: `Top up manual Rp ${deposit.amount.toLocaleString('id-ID')} disetujui. Saldo baru: Rp ${result.updatedAgent!.balance.toLocaleString('id-ID')}`,
+      });
+
       return NextResponse.json({
         success: true,
         message: 'Deposit berhasil disetujui',
@@ -191,15 +191,10 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    await prisma.agentNotification.create({
-      data: {
-        id: Math.random().toString(36).substring(2, 15),
-        agentId: deposit.agentId,
-        type: 'deposit_rejected',
-        title: 'Deposit Ditolak',
-        message: `Permintaan top up manual Rp ${deposit.amount.toLocaleString('id-ID')} ditolak oleh admin`,
-        link: null,
-      },
+    await createAgentNotificationAndPush(deposit.agentId, {
+      type: 'deposit_rejected',
+      title: 'Deposit Ditolak',
+      message: `Permintaan top up manual Rp ${deposit.amount.toLocaleString('id-ID')} ditolak oleh admin`,
     });
 
     await prisma.notification.create({

@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.17.0 — Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh + Import Audit Fixes & Optional Profile + Mobile Scroll Fix (All Portals) + Semantic Color Token Migration & Responsive Layout Improvements + Collector Portal + APK Download Audit + Backend Security/Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.18.0 — Notification & Push Notification System Audit + Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh + Import Audit Fixes & Optional Profile + Mobile Scroll Fix (All Portals) + Semantic Color Token Migration & Responsive Layout Improvements + Collector Portal + APK Download Audit + Backend Security/Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -40,7 +40,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **RADIUS Setup** | Auto-generated RouterOS script pakai **IP asli VPS** (bukan domain/Cloudflare proxy), VPN-specific address selection |
 | **Bahasa** | Bahasa Indonesia (full) |
 | **PWA** | Installable di semua portal (admin, customer, agent, technician), offline fallback, service worker cache |
-| **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle, admin broadcast |
+| **Web Push** | VAPID-based browser push notifications, subscribe/unsubscribe toggle per portal (admin, agent, technician, collector), admin broadcast with role targeting (customer/agent/technician/admin/all), cron-triggered push (invoice reminder, auto-isolir, auto-renewal), server-side read state for customer notifications |
 | **Collector Portal** | Portal kolektor dengan dashboard, billing (mark-paid + upload bukti transfer), isolir list, ONT removal workflow, my-collections, settlement/setoran harian, admin verification (approve/reject), area-based access control |
 | **Mobile App** | Flutter customer portal (WiFi control, invoice, payment) |
 | **WhatsApp Baileys** | Native WhatsApp gateway built-in VPS via `@whiskeysockets/baileys`, PM2 proses terpisah, scan QR langsung di admin panel, auto-reconnect |

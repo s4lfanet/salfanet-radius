@@ -25,6 +25,39 @@ async function verifyCustomerToken(request: NextRequest) {
   }
 }
 
+// PATCH - Mark notification(s) as read
+export async function PATCH(request: NextRequest) {
+  const user = await verifyCustomerToken(request);
+  if (!user) {
+    return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const body = await request.json();
+    const { eventKeys } = body as { eventKeys?: string[] };
+
+    if (!eventKeys || !Array.isArray(eventKeys) || eventKeys.length === 0) {
+      return NextResponse.json({ success: false, error: 'eventKeys required' }, { status: 400 });
+    }
+
+    // Upsert read records (ignore duplicates)
+    await prisma.$transaction(
+      eventKeys.map(key =>
+        prisma.customerNotificationRead.upsert({
+          where: { userId_eventKey: { userId: user.id, eventKey: key } },
+          create: { userId: user.id, eventKey: key },
+          update: { readAt: new Date() },
+        })
+      )
+    );
+
+    return NextResponse.json({ success: true, marked: eventKeys.length });
+  } catch (error) {
+    console.error('Mark notifications read error:', error);
+    return NextResponse.json({ success: false, error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 // GET - Poll for customer notification events since a timestamp
 export async function GET(request: NextRequest) {
   const user = await verifyCustomerToken(request);
@@ -213,5 +246,23 @@ export async function GET(request: NextRequest) {
   // Sort by timestamp descending
   events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-  return NextResponse.json({ success: true, events });
+  // Fetch read state for these events
+  const eventKeys = events.map(e => e.id);
+  const readRecords = await prisma.customerNotificationRead.findMany({
+    where: {
+      userId: user.id,
+      eventKey: { in: eventKeys },
+    },
+    select: { eventKey: true },
+  });
+  const readSet = new Set(readRecords.map(r => r.eventKey));
+
+  const eventsWithRead = events.map(e => ({
+    ...e,
+    isRead: readSet.has(e.id),
+  }));
+
+  const unreadCount = eventsWithRead.filter(e => !e.isRead).length;
+
+  return NextResponse.json({ success: true, events: eventsWithRead, unreadCount });
 }
