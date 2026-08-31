@@ -137,6 +137,66 @@ apply_sql_migrations() {
         print_info "SQL migrations: $skipped already applied, nothing new"
 }
 
+# Ensure VAPID keys exist in .env for web push notifications.
+# Generates new keys via web-push if missing. Idempotent — skips if already present.
+ensure_vapid_keys() {
+    local ENV_FILE="$APP_DIR/.env"
+    [ -f "$ENV_FILE" ] || return 0
+
+    # Check if both keys already exist
+    if grep -q '^VAPID_PUBLIC_KEY=' "$ENV_FILE" 2>/dev/null && \
+       grep -q '^VAPID_PRIVATE_KEY=' "$ENV_FILE" 2>/dev/null; then
+        print_info "VAPID keys already configured — skipping generation"
+        return 0
+    fi
+
+    print_step "Generating VAPID keys for web push notifications"
+
+    # Try npx web-push generate-vapid-keys (outputs JSON with --json flag or text)
+    local VAPID_OUT
+    VAPID_OUT=$(cd "$APP_DIR/backend" && npx web-push generate-vapid-keys --json 2>/dev/null) || true
+
+    local PUB_KEY=""
+    local PRIV_KEY=""
+
+    if [ -n "$VAPID_OUT" ]; then
+        # Parse JSON output: {"publicKey":"...","privateKey":"..."}
+        PUB_KEY=$(echo "$VAPID_OUT" | grep -o '"publicKey"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//')
+        PRIV_KEY=$(echo "$VAPID_OUT" | grep -o '"privateKey"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*: *"//;s/"$//')
+    fi
+
+    # Fallback: parse text output (legacy format)
+    if [ -z "$PUB_KEY" ] || [ -z "$PRIV_KEY" ]; then
+        VAPID_OUT=$(cd "$APP_DIR/backend" && npx web-push generate-vapid-keys 2>&1) || true
+        PUB_KEY=$(echo "$VAPID_OUT" | grep -i 'Public Key' | head -1 | sed 's/.*:[[:space:]]*//' | tr -d '[:space:]')
+        PRIV_KEY=$(echo "$VAPID_OUT" | grep -i 'Private Key' | head -1 | sed 's/.*:[[:space:]]*//' | tr -d '[:space:]')
+    fi
+
+    if [ -z "$PUB_KEY" ] || [ -z "$PRIV_KEY" ]; then
+        print_info "Could not generate VAPID keys automatically — web-push not available"
+        print_info "Run manually: cd backend && npx web-push generate-vapid-keys"
+        return 0
+    fi
+
+    # Append to .env (don't overwrite existing lines)
+    echo "" >> "$ENV_FILE"
+    echo "# Web Push VAPID keys (auto-generated)" >> "$ENV_FILE"
+    echo "VAPID_PUBLIC_KEY=$PUB_KEY" >> "$ENV_FILE"
+    echo "VAPID_PRIVATE_KEY=$PRIV_KEY" >> "$ENV_FILE"
+
+    # Also set contact email if missing
+    if ! grep -q '^VAPID_CONTACT_EMAIL=' "$ENV_FILE" 2>/dev/null; then
+        echo "VAPID_CONTACT_EMAIL=admin@salfa.my.id" >> "$ENV_FILE"
+    fi
+
+    print_success "VAPID keys generated and added to .env"
+
+    # Copy .env to backend standalone if it exists (for runtime)
+    if [ -f "$APP_DIR/backend/.next/standalone/backend/.env" ]; then
+        cp "$ENV_FILE" "$APP_DIR/backend/.next/standalone/backend/.env"
+    fi
+}
+
 # Detect architecture
 if [ "$(uname -m)" = "aarch64" ] || [ "$(uname -m)" = "arm64" ]; then
     ARCH="arm64"
@@ -322,6 +382,9 @@ if [ -n "$USE_BRANCH" ]; then
         print_step "Running auth self-heal checks"
         APP_DIR="$APP_DIR" bash "$APP_DIR/frontend/vps-install/fix-auth-after-update.sh" 2>&1 | tail -10 || true
     fi
+
+    # Ensure VAPID keys for web push notifications
+    ensure_vapid_keys
 
     print_step "Building application"
     print_info "Removing previous .next build caches for clean build..."
@@ -627,6 +690,9 @@ apply_sql_migrations || true
 
 print_step "Applying seed data (new templates & config)"
 (cd "$APP_DIR/backend" && npm run db:seed 2>/dev/null) || print_info "Seed skipped (check manually)"
+
+# Ensure VAPID keys for web push notifications
+ensure_vapid_keys
 
 # ─── Update VPN Client (SSTP/L2TP ke CHR) jika sudah terinstall ──────────
 # Flow lama: VPS sebagai client → konek ke MikroTik CHR → FreeRADIUS
