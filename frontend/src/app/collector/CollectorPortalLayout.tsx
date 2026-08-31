@@ -95,19 +95,32 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="h-16 flex items-center gap-2 px-4 border-b border-border">
-          {companyLogo ? (
-            <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white dark:bg-slate-700 flex items-center justify-center">
-              <Image unoptimized src={companyLogo} alt={companyName} width={32} height={32} className="max-h-full max-w-full w-auto h-auto object-contain" />
+        <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {companyLogo ? (
+                <div className="w-9 h-9 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                  <Image unoptimized src={companyLogo} alt={companyName} width={36} height={36} className="max-w-full max-h-full w-auto h-auto object-contain" />
+                </div>
+              ) : (
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
+                  <WalletIcon className="w-5 h-5 text-white" />
+                </div>
+              )}
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px]">
+                  {companyName || 'Portal Kolektor'}
+                </h1>
+                <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-[0.15em] uppercase font-medium">Panel Kolektor</p>
+              </div>
             </div>
-          ) : (
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
-              <WalletIcon className="w-4 h-4 text-white" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <div className="font-bold text-sm text-foreground truncate">{companyName || 'Portal Kolektor'}</div>
-            <div className="text-xs text-muted-foreground truncate">Panel Kolektor</div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 hover:bg-sidebar-accent rounded-lg"
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4 text-sidebar-foreground/60" />
+            </button>
           </div>
         </div>
 

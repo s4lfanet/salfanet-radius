@@ -280,28 +280,28 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         )}
       >
         {/* Sidebar Header */}
-        <div className="p-4 border-b border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {companyLogo ? (
-                <div className="w-9 h-9 rounded-lg bg-sidebar-accent p-1 border border-sidebar-border flex items-center justify-center overflow-hidden shadow-sm">
-                  <Image unoptimized src={companyLogo} alt={companyName} width={36} height={36} className="w-full h-full object-contain" decoding="async" />
+                <div className="w-9 h-9 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                  <Image unoptimized src={companyLogo} alt={companyName} width={36} height={36} className="max-w-full max-h-full w-auto h-auto object-contain" decoding="async" />
                 </div>
               ) : (
-                <div className="w-9 h-9 rounded-lg bg-sidebar-accent p-1 border border-sidebar-border flex items-center justify-center shadow-sm">
-                  <Shield className="w-5 h-5 text-sidebar-primary" />
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
+                  <Shield className="w-5 h-5 text-white" />
                 </div>
               )}
-              <div>
-                <h1 className="text-sm font-bold text-sidebar-primary">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px]">
                   {companyName}
                 </h1>
-                <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-widest font-bold uppercase">Panel Pelanggan</p>
+                <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-[0.15em] uppercase font-medium">Panel Pelanggan</p>
               </div>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-2.5 hover:bg-sidebar-accent rounded-lg lg:hidden"
+              className="lg:hidden p-2 hover:bg-sidebar-accent rounded-lg"
               aria-label="Close menu"
             >
               <X className="w-4 h-4 text-sidebar-foreground" />

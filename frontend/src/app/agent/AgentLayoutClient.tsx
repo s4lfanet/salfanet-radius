@@ -101,19 +101,19 @@ function AgentSidebar({
         'lg:translate-x-0' // Always visible on desktop
       )}>
         {/* Logo */}
-        <div className="flex-shrink-0 p-4 border-b border-sidebar-border">
+        <div className="flex-shrink-0 p-4 border-b border-sidebar-border bg-sidebar-accent/50">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {company.logo ? (
                 <div className="w-9 h-9 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
-                  <Image unoptimized src={company.logo} alt={company.name || 'Logo'} width={36} height={36} className="w-full h-full object-contain" />
+                  <Image unoptimized src={company.logo} alt={company.name || 'Logo'} width={36} height={36} className="max-w-full max-h-full w-auto h-auto object-contain" />
                 </div>
               ) : (
-                <div className="p-2 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center">
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
                   <Ticket className="w-5 h-5 text-white" />
                 </div>
               )}
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h1 className="text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px]">
                   {company.name || t('agent.portal.title')}
                 </h1>
@@ -122,7 +122,7 @@ function AgentSidebar({
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-2.5 hover:bg-sidebar-accent rounded-lg lg:hidden"
+              className="lg:hidden p-2 hover:bg-sidebar-accent rounded-lg"
               aria-label="Close menu"
             >
               <X className="w-4 h-4 text-sidebar-foreground/60" />
