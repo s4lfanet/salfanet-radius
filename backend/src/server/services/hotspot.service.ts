@@ -47,8 +47,10 @@ export const CODE_TYPES: Record<string, { name: string; chars: string }> = {
 
 function generateVoucherCode(length: number, prefix = '', codeType = 'alpha-upper'): string {
   const chars = CODE_TYPES[codeType]?.chars ?? CODE_TYPES['alpha-upper'].chars;
+  // length is the TOTAL code length including prefix
+  const randomLength = Math.max(1, length - prefix.length);
   let code = prefix;
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < randomLength; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;
