@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { LogIn, Phone, Loader2, Shield, Ticket, MessageCircle } from 'lucide-react';
+import { LogIn, Phone, Loader2, Shield, Ticket, MessageCircle, Lock, ChevronLeft, ArrowRight } from 'lucide-react';
 import { showError } from '@/lib/sweetalert';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAgent, ApiError } from '@/lib/api';
@@ -14,6 +14,10 @@ export default function AgentLoginPage() {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [otp, setOtp] = useState('');
+  const [otpPhone, setOtpPhone] = useState('');
+  const [expiresIn, setExpiresIn] = useState(5);
   const [companyPhone, setCompanyPhone] = useState('');
   const [poweredBy, setPoweredBy] = useState('');
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
@@ -48,7 +52,7 @@ export default function AgentLoginPage() {
     setLoading(true);
 
     try {
-      const data = await apiAgent<{ agent: { id: string; name: string; phone: string }; token: string; error?: string }>(
+      const data = await apiAgent<{ agent: { id: string; name: string; phone: string }; token?: string; requireOTP?: boolean; phone?: string; expiresIn?: number; error?: string }>(
         '/api/agent/login',
         {
           method: 'POST',
@@ -56,9 +60,19 @@ export default function AgentLoginPage() {
         },
       );
 
-      localStorage.setItem('agentData', JSON.stringify(data.agent));
-      localStorage.setItem('agentToken', data.token);
-      router.push('/agent/dashboard');
+      if (data.requireOTP) {
+        setOtpPhone(data.phone || phone);
+        setExpiresIn(data.expiresIn || 5);
+        setStep('otp');
+        return;
+      }
+
+      // Direct login (OTP disabled)
+      if (data.token) {
+        localStorage.setItem('agentData', JSON.stringify(data.agent));
+        localStorage.setItem('agentToken', data.token);
+        router.push('/agent/dashboard');
+      }
     } catch (error) {
       if (error instanceof ApiError) {
         setError(error.message || t('agent.portal.errors.loginFailed'));
@@ -70,6 +84,40 @@ export default function AgentLoginPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const data = await apiAgent<{ agent: { id: string; name: string; phone: string; email?: string }; token: string; error?: string }>(
+        '/api/agent/verify-otp',
+        {
+          method: 'POST',
+          body: JSON.stringify({ phone: otpPhone, otpCode: otp }),
+        },
+      );
+
+      localStorage.setItem('agentData', JSON.stringify(data.agent));
+      localStorage.setItem('agentToken', data.token);
+      router.push('/agent/dashboard');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setError(error.message || 'Kode OTP salah');
+      } else {
+        setError('Terjadi kesalahan. Silakan coba lagi.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBack = () => {
+    setStep('phone');
+    setOtp('');
+    setError('');
   };
 
   if (!brandLoaded) {
@@ -116,7 +164,7 @@ export default function AgentLoginPage() {
 
           {/* Subtitle */}
           <p className="text-center text-sm text-indigo-600 dark:text-indigo-400 font-semibold mb-6">
-            {t('agent.portal.loginSubtitle')}
+            {step === 'otp' ? 'Verifikasi Kode OTP' : t('agent.portal.loginSubtitle')}
           </p>
 
           {/* Error */}
@@ -128,6 +176,7 @@ export default function AgentLoginPage() {
             </div>
           )}
 
+          {step === 'phone' ? (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800/50 transition-all">
               <div className="bg-indigo-600 px-4 flex items-center justify-center flex-shrink-0">
@@ -155,9 +204,60 @@ export default function AgentLoginPage() {
               )}
             </button>
           </form>
+          ) : (
+          <form onSubmit={handleVerifyOTP} className="space-y-4">
+            <div className="flex rounded-lg overflow-hidden border border-gray-300 dark:border-slate-600 focus-within:border-indigo-500 dark:focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-200 dark:focus-within:ring-indigo-800/50 transition-all">
+              <div className="bg-indigo-600 px-4 flex items-center justify-center flex-shrink-0">
+                <Lock className="w-5 h-5 text-white" />
+              </div>
+              <input
+                type="text"
+                required
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').substring(0, 6))}
+                className="flex-1 px-4 py-4 text-center text-xl font-mono tracking-widest bg-blue-50 dark:bg-slate-900 text-gray-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:outline-none transition-colors"
+                placeholder="000000"
+                maxLength={6}
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+            <p className="text-xs text-center text-gray-400 dark:text-slate-500">
+              Kode dikirim ke <strong className="text-indigo-600 dark:text-indigo-400">{phone}</strong>
+              <br />Berlaku {expiresIn} menit
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleBack}
+                disabled={loading}
+                className="flex-1 py-3 bg-muted hover:bg-muted/80 disabled:opacity-50 text-foreground text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                <ChevronLeft className="w-4 h-4" />Kembali
+              </button>
+              <button
+                type="submit"
+                disabled={loading || otp.length !== 6}
+                className="flex-[2] py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                {loading ? <><Loader2 className="w-4 h-4 animate-spin" />Memverifikasi...</> : <>Verifikasi<ArrowRight className="w-4 h-4" /></>}
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setStep('phone'); setOtp(''); setError(''); }}
+              disabled={loading}
+              className="w-full text-xs text-muted-foreground hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              Kirim Ulang Kode
+            </button>
+          </form>
+          )}
 
           {/* WhatsApp contact */}
-          {companyPhone && (
+          {step === 'phone' && companyPhone && (
             <div className="mt-5 pt-4 border-t border-border text-center">
               <p className="text-xs text-muted-foreground mb-2">{t('agent.portal.notRegistered')}</p>
               <a
@@ -173,7 +273,7 @@ export default function AgentLoginPage() {
           )}
 
           {/* Footer */}
-          <p className="text-center text-xs text-muted-foreground/70 mt-8">{poweredBy}</p>
+          {step === 'phone' && <p className="text-center text-xs text-muted-foreground/70 mt-8">{poweredBy}</p>}
         </div>
       </div>
 

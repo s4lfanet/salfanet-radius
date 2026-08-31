@@ -11,8 +11,11 @@ import { requireAgentAuth } from '@/server/middleware/agent-auth';
 const CODE_TYPES: Record<string, { chars: string }> = {
   'alpha-upper': { chars: 'ABCDEFGHJKLMNPQRSTUVWXYZ' },
   'alpha-lower': { chars: 'abcdefghjklmnpqrstuvwxyz' },
+  'alpha-mixed': { chars: 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz' },
   'numeric': { chars: '123456789' },
   'alphanumeric-upper': { chars: 'ABCDEFGHJKLMNPQRSTUVWXYZ123456789' },
+  'alphanumeric-lower': { chars: 'abcdefghjklmnpqrstuvwxyz123456789' },
+  'alphanumeric-mixed': { chars: 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjklmnpqrstuvwxyz123456789' },
 };
 
 // POST - Generate voucher by agent
@@ -286,8 +289,10 @@ export async function POST(request: NextRequest) {
 
 function generateVoucherCode(length: number = 6, prefix: string = '', codeType: string = 'alpha-upper'): string {
   const chars = CODE_TYPES[codeType]?.chars || CODE_TYPES['alpha-upper'].chars;
+  // length is the TOTAL code length including prefix
+  const randomLength = Math.max(1, length - prefix.length);
   let code = prefix;
-  for (let i = 0; i < length; i++) {
+  for (let i = 0; i < randomLength; i++) {
     code += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return code;

@@ -38,7 +38,7 @@ export const generateVoucherSchema = z.object({
   profileId: z.string().min(1),
   quantity: z.number().int().min(1).max(500).default(1),
   codeLength: z.number().int().min(4).max(32).default(6),
-  codeType: z.enum(['alpha-upper', 'alpha-lower', 'numeric', 'alphanumeric-upper']).default('alpha-upper'),
+  codeType: z.enum(['alpha-upper', 'alpha-lower', 'alpha-mixed', 'numeric', 'alphanumeric-upper', 'alphanumeric-lower', 'alphanumeric-mixed']).default('alpha-upper'),
   prefix: z.string().max(10).regex(/^[A-Za-z0-9_-]*$/, 'Karakter tidak valid').default(''),
 })
 
