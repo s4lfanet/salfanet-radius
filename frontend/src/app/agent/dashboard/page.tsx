@@ -740,18 +740,21 @@ export default function AgentDashboardPage() {
               >
                 <option value="alpha-upper" className="bg-card">{t('agent.portal.uppercase')}</option>
                 <option value="alpha-lower" className="bg-card">{t('agent.portal.lowercase')}</option>
+                <option value="alpha-mixed" className="bg-card">Huruf Besar + Kecil</option>
                 <option value="numeric" className="bg-card">{t('agent.portal.numeric')}</option>
                 <option value="alphanumeric-upper" className="bg-card">{t('agent.portal.alphaNum')}</option>
+                <option value="alphanumeric-lower" className="bg-card">Huruf Kecil + Angka</option>
+                <option value="alphanumeric-mixed" className="bg-card">Besar + Kecil + Angka</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('agent.portal.codeLength')} (4–10)</label>
+              <label className="block text-xs font-medium text-muted-foreground mb-1.5">{t('agent.portal.codeLength')} (4–12)</label>
               <input
                 type="number"
                 min="4"
-                max="10"
+                max="12"
                 value={codeLength}
-                onChange={(e) => setCodeLength(Math.min(10, Math.max(4, parseInt(e.target.value) || 6)))}
+                onChange={(e) => setCodeLength(Math.min(12, Math.max(4, parseInt(e.target.value) || 6)))}
                 className="w-full px-3 py-2.5 text-sm bg-input border border-border rounded-xl text-foreground focus:border-violet-500 dark:focus:border-violet-400 outline-none"
               />
             </div>
@@ -761,7 +764,7 @@ export default function AgentDashboardPage() {
                 type="text"
                 maxLength={5}
                 value={voucherPrefix}
-                onChange={(e) => setVoucherPrefix(e.target.value.toUpperCase())}
+                onChange={(e) => setVoucherPrefix(e.target.value)}
                 placeholder="mis. HS-"
                 className="w-full px-3 py-2.5 text-sm bg-input border border-border rounded-xl text-foreground focus:border-violet-500 dark:focus:border-violet-400 outline-none placeholder:text-muted-foreground/60"
               />
