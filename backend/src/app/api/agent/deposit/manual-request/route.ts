@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
 import { requireAgentAuth } from '@/server/middleware/agent-auth';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 
 /**
  * POST /api/agent/deposit/manual-request
@@ -111,15 +112,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await prisma.agentNotification.create({
-      data: {
-        id: Math.random().toString(36).substring(2, 15),
-        agentId,
-        type: 'deposit_request_submitted',
-        title: 'Permintaan Deposit Dikirim',
-        message: `Permintaan deposit manual Rp ${parsedAmount.toLocaleString('id-ID')} telah dikirim dan menunggu persetujuan admin`,
-        link: null,
-      },
+    await createAgentNotificationAndPush(agentId, {
+      type: 'deposit_request_submitted',
+      title: 'Permintaan Deposit Dikirim',
+      message: `Permintaan deposit manual Rp ${parsedAmount.toLocaleString('id-ID')} telah dikirim dan menunggu persetujuan admin`,
     });
 
     return NextResponse.json({

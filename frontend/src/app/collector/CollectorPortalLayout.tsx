@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
 import { useTheme } from '@/hooks/useTheme';
 import Image from 'next/image';
+import CollectorNotificationBell from '@/components/collector/CollectorNotificationBell';
 
 interface CollectorData {
   id: string;
@@ -186,12 +187,15 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
               {MENU_ITEMS.find(i => pathname === i.href || pathname.startsWith(i.href + '/'))?.title || 'Portal Kolektor'}
             </h1>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-lg hover:bg-accent text-muted-foreground"
-          >
-            {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <CollectorNotificationBell />
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-accent text-muted-foreground"
+            >
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+          </div>
         </header>
 
         {/* Page Content */}

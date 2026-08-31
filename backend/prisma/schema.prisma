@@ -1609,6 +1609,17 @@ model agentNotification {
   @@map("agent_notifications")
 }
 
+model customerNotificationRead {
+  id        String   @id @default(cuid())
+  userId    String
+  eventKey  String   // e.g. "paid-{invoiceId}", "reply-{ticketMsgId}"
+  readAt    DateTime @default(now())
+
+  @@unique([userId, eventKey])
+  @@index([userId])
+  @@map("customer_notification_reads")
+}
+
 model adminUser {
   id                String                  @id @default(cuid())
   username          String                  @unique

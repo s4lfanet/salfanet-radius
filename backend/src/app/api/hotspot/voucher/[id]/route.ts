@@ -4,6 +4,7 @@ import { prisma } from '@/server/db/client'
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service'
 import { removeVoucherFromRadius } from '@/server/services/radius/hotspot-sync.service'
 import { removeVoucherFromAllMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service'
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service'
 
 export async function DELETE(
   _request: Request,
@@ -29,16 +30,11 @@ export async function DELETE(
     // Notify agent if this voucher belonged to one
     if (voucher.agentId) {
       try {
-        await prisma.agentNotification.create({
-          data: {
-            id: Math.random().toString(36).substring(2, 15),
-            agentId: voucher.agentId,
-            type: 'voucher_deleted',
-            title: 'Voucher Dihapus',
-            message: `Admin telah menghapus voucher ${voucher.code} (${voucher.profile.name}).`,
-            link: null,
-          },
-        })
+        await createAgentNotificationAndPush(voucher.agentId, {
+          type: 'voucher_deleted',
+          title: 'Voucher Dihapus',
+          message: `Admin telah menghapus voucher ${voucher.code} (${voucher.profile.name}).`,
+        });
       } catch (_) {
         // non-critical
       }

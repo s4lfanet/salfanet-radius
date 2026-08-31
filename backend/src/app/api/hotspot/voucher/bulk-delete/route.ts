@@ -2,6 +2,7 @@
 import { requirePermission } from '@/server/middleware/api-auth'
 import { prisma } from '@/server/db/client'
 import { removeVoucherFromRadius } from '@/server/services/radius/hotspot-sync.service'
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service'
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,15 +42,10 @@ export async function POST(request: NextRequest) {
     }, {});
     for (const [agentId, info] of Object.entries(agentGrouped)) {
       try {
-        await prisma.agentNotification.create({
-          data: {
-            id: Math.random().toString(36).substring(2, 15),
-            agentId,
-            type: 'voucher_deleted',
-            title: 'Voucher Dihapus',
-            message: `Admin telah menghapus ${info.count} voucher ${info.profileName} dari akun Anda.`,
-            link: null,
-          },
+        await createAgentNotificationAndPush(agentId, {
+          type: 'voucher_deleted',
+          title: 'Voucher Dihapus',
+          message: `Admin telah menghapus ${info.count} voucher ${info.profileName} dari akun Anda.`,
         });
       } catch (_) { /* non-critical */ }
     }

@@ -6,6 +6,79 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.18.0] — 2026-08-31 — Notification & Push Notification System Audit
+
+### Summary
+Audit menyeluruh dan perbaikan sistem notifikasi dan push notification untuk semua portal (Admin, Agent, Customer, Technician, Collector). Perbaikan bug kritis dispatch push, vulnerability keamanan pada route agent, integrasi push ke cron jobs, serta penambahan push toggle dan in-app notification untuk collector.
+
+### Security
+- **[CRITICAL]** Agent push subscribe/unsubscribe route menerima `agentId` dari request body tanpa verifikasi — sekarang menggunakan `requireAgentAuth` dan mengambil `agentId` dari JWT token yang terverifikasi
+
+### Bug Fixes
+- **[CRITICAL]** Admin push subscriptions dikirim saat `recipientRole=technician` — push sekarang hanya dikirim ke admin subs ketika `recipientRole` adalah `admin` atau `all`
+- **[FIX]** Service worker notification click redirect hardcoded ke `/customer` — sekarang menggunakan `data.url`/`data.link` dari payload, fallback ke `/`
+
+### Features
+- **[FEATURE]** Admin push toggle di admin panel — komponen `AdminPushToggle.tsx` di user menu dropdown, route `/api/push/admin-subscribe` & `/api/push/admin-unsubscribe` dengan `checkAuth`
+- **[FEATURE]** Admin sebagai recipient role di broadcast push notifications page — type notification, quick templates, dan template content khusus admin
+- **[FEATURE]** Agent push toggle di sidebar — komponen `AgentPushToggle.tsx` dengan subscribe/unsubscribe via `apiAgent`
+- **[FEATURE]** Push notification terintegrasi di cron jobs: invoice reminder (overdue + reminder), auto-isolir (isolation-notice), auto-renewal (auto-renewal-success)
+- **[FEATURE]** `createAgentNotificationAndPush` helper — centralizes agent notification creation + web push sending, menggantikan semua `prisma.agentNotification.create` calls di 8 file
+- **[FEATURE]** Customer notification read state server-side — model `customerNotificationRead` di Prisma, PATCH endpoint untuk mark-as-read, `unreadCount` & `isRead` dari server
+- **[FEATURE]** Collector notification system — API `/api/collector/notifications` (derived dari payments, ONT tasks, tickets), komponen `CollectorNotificationBell.tsx` dengan push toggle + notification dropdown
+- **[FEATURE]** Technician notifications API — `/api/technician/notifications` dengan structured data dari tickets dan ONT tasks
+- **[FEATURE]** Service worker cache bumped to v17 untuk force update
+
+### Files Changed
+- `backend/src/server/services/push-notification.service.ts` — fix admin push dispatch logic, add 'admin' to recipientRole type
+- `backend/src/app/api/push/agent-subscribe/route.ts` — add `requireAgentAuth`
+- `backend/src/app/api/push/agent-unsubscribe/route.ts` — add `requireAgentAuth`
+- `backend/src/app/api/push/admin-subscribe/route.ts` — new route
+- `backend/src/app/api/push/admin-unsubscribe/route.ts` — new route
+- `backend/src/server/services/agent-notification.service.ts` — new helper
+- `backend/src/server/cron/invoice-jobs.ts` — add push for invoice reminders + auto-renewal
+- `backend/src/server/cron/auto-isolir.ts` — add push for isolation notices
+- `backend/src/app/api/admin/agent-deposits/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/agent/deposit/webhook/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/agent/generate-voucher/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/agent/deposit/manual-request/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/hotspot/agents/balance/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/server/services/hotspot.service.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/hotspot/voucher/bulk-delete/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/hotspot/voucher/delete-multiple/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/hotspot/voucher/[id]/route.ts` — use `createAgentNotificationAndPush`
+- `backend/src/app/api/customer/notifications/route.ts` — add PATCH mark-as-read, server-side read state
+- `backend/src/app/api/technician/notifications/route.ts` — new route
+- `backend/src/app/api/collector/notifications/route.ts` — new route
+- `backend/prisma/schema.prisma` — add `customerNotificationRead` model
+- `frontend/src/components/admin/AdminPushToggle.tsx` — new component
+- `frontend/src/components/agent/AgentPushToggle.tsx` — new component
+- `frontend/src/components/collector/CollectorNotificationBell.tsx` — new component
+- `frontend/src/app/admin/AdminClientLayout.tsx` — add `AdminPushToggle` to user menu
+- `frontend/src/app/agent/AgentLayoutClient.tsx` — add `AgentPushToggle` to sidebar
+- `frontend/src/app/collector/CollectorPortalLayout.tsx` — add `CollectorNotificationBell` to header
+- `frontend/src/app/customer/CustomerClientLayout.tsx` — server-side read state, `markAllAsRead` on bell open
+- `frontend/src/app/admin/push-notifications/page.tsx` — add 'admin' recipient role
+- `frontend/public/sw.js` — role-based redirect, cache v17
+- `package.json` — version bump to 5.18.0
+- `frontend/package.json` — version bump to 5.18.0
+- `README.md` — version update
+- `CHANGELOG.md` — this entry
+
+### Schema Changes
+- New model `customerNotificationRead` — table `customer_notification_reads` with `userId`, `eventKey`, `readAt`, unique constraint on `[userId, eventKey]`
+- Auto-applied via `prisma db push` on VPS update
+
+### Deployment
+```bash
+cd /var/www/salfanet-radius
+git pull origin master
+# updater.sh handles: pnpm install, prisma generate, prisma db push, build, PM2 restart
+bash frontend/vps-install/updater.sh --branch master
+```
+
+---
+
 ## [5.17.0] — 2026-08-30 — Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh
 
 ### Summary

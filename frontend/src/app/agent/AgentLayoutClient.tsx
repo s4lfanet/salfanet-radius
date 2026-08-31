@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { onUnauthorized, apiAgent } from '@/lib/api/client';
 import AgentNotificationDropdown from '@/components/agent/NotificationDropdown';
+import AgentPushToggle from '@/components/agent/AgentPushToggle';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
@@ -168,6 +169,11 @@ function AgentSidebar({
             </Link>
           ))}
         </nav>
+
+        {/* Push Notification Toggle */}
+        <div className="flex-shrink-0 px-3 pb-2">
+          <AgentPushToggle />
+        </div>
 
         {/* User Info & Logout */}
         <div className="flex-shrink-0 p-4 border-t border-sidebar-border">

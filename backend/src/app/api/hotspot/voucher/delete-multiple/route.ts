@@ -2,6 +2,7 @@
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { removeBatchVouchersFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 
 // POST - Hapus multiple vouchers
 export async function POST(request: NextRequest) {
@@ -47,15 +48,10 @@ export async function POST(request: NextRequest) {
     }, {});
     for (const [agentId, info] of Object.entries(agentGrouped)) {
       try {
-        await prisma.agentNotification.create({
-          data: {
-            id: Math.random().toString(36).substring(2, 15),
-            agentId,
-            type: 'voucher_deleted',
-            title: 'Voucher Dihapus',
-            message: `Admin telah menghapus ${info.count} voucher ${info.profileName} dari akun Anda.`,
-            link: null,
-          },
+        await createAgentNotificationAndPush(agentId, {
+          type: 'voucher_deleted',
+          title: 'Voucher Dihapus',
+          message: `Admin telah menghapus ${info.count} voucher ${info.profileName} dari akun Anda.`,
         });
       } catch (_) { /* non-critical */ }
     }

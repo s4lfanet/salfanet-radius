@@ -40,6 +40,7 @@ interface NotifEvent {
   title: string;
   message: string;
   timestamp: string;
+  isRead?: boolean;
 }
 
 // â”€â”€â”€ Inner layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -120,11 +121,30 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     setNotifHistory(prev => prev.filter(n => n.id !== id));
   };
 
+  // Mark all current notifications as read on server
+  const markAllAsRead = useCallback(async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('customer_token') : null;
+    if (!token || notifHistory.length === 0) return;
+    const unreadIds = notifHistory.filter(n => !n.isRead).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    try {
+      await apiCustomer('/api/customer/notifications', {
+        method: 'PATCH',
+        body: JSON.stringify({ eventKeys: unreadIds }),
+      });
+      // Update local state
+      setNotifHistory(prev => prev.map(n => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (e) {
+      // silent — best-effort
+    }
+  }, [notifHistory]);
+
   const poll = useCallback(async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('customer_token') : null;
     if (!token) return;
     try {
-      const data = await apiCustomer<{ success?: boolean; events?: NotifEvent[] }>(
+      const data = await apiCustomer<{ success?: boolean; events?: NotifEvent[]; unreadCount?: number }>(
         `/api/customer/notifications?since=${encodeURIComponent(lastCheckedRef.current)}`
       );
       if (!data.success || !Array.isArray(data.events) || data.events.length === 0) return;
@@ -133,11 +153,18 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       localStorage.setItem('customer_notif_last_checked', lastCheckedRef.current);
       const events: NotifEvent[] = data.events;
 
+      // Use server-side unreadCount if available, otherwise count unread from events
+      const serverUnread = typeof data.unreadCount === 'number' ? data.unreadCount : events.filter(e => !e.isRead).length;
+
       // Dedup: filter out events whose IDs already triggered a toast in this session
       const newEvents = events.filter(e => !shownEventIdsRef.current.has(e.id));
-      if (newEvents.length === 0) return;
+      if (newEvents.length === 0) {
+        // Still update unread count from server
+        if (typeof data.unreadCount === 'number') setUnreadCount(serverUnread);
+        return;
+      }
 
-      setUnreadCount(prev => prev + newEvents.length);
+      setUnreadCount(typeof data.unreadCount === 'number' ? serverUnread : prev => prev + newEvents.filter(e => !e.isRead).length);
       setNotifHistory(prev => {
         // Also dedup history by id
         const existingIds = new Set(prev.map(p => p.id));
@@ -375,7 +402,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
             {/* Bell */}
             <div className="relative">
               <button
-                onClick={() => { setBellOpen(v => !v); setUnreadCount(0); }}
+                onClick={() => { setBellOpen(v => !v); setUnreadCount(0); void markAllAsRead(); }}
                 className="relative p-2 flex items-center justify-center rounded-xl hover:bg-primary/10 border border-transparent hover:border-border transition-all"
               >
                 <Bell className="w-4 h-4 text-primary" />
@@ -487,7 +514,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               {/* Bell (mobile) */}
               <div className="relative">
                 <button
-                  onClick={() => { setBellOpen(v => !v); setUnreadCount(0); }}
+                  onClick={() => { setBellOpen(v => !v); setUnreadCount(0); void markAllAsRead(); }}
                   className="relative p-2 flex items-center justify-center hover:bg-primary/10 rounded-xl transition-all border border-border"
                 >
                   <Bell className="w-4 h-4 text-primary" />

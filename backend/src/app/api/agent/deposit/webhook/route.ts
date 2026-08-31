@@ -3,6 +3,7 @@ import { prisma } from '@/server/db/client';
 import { logActivity } from '@/server/services/activity-log.service';
 import { nowWIB } from '@/lib/timezone';
 import crypto from 'crypto';
+import { createAgentNotificationAndPush } from '@/server/services/agent-notification.service';
 
 /**
  * POST /api/agent/deposit/webhook
@@ -292,17 +293,12 @@ export async function POST(request: NextRequest) {
       const updatedAgent = result.updatedAgent!;
       console.log(`Agent ${deposit.agent.name} balance increased by ${deposit.amount}`);
 
-      // Create notification for agent (best-effort, outside transaction)
-      await prisma.agentNotification.create({
-        data: {
-          id: Math.random().toString(36).substring(2, 15),
-          agentId: deposit.agentId,
-          type: 'deposit_success',
-          title: 'Deposit Berhasil',
-          message: `Deposit sebesar Rp ${deposit.amount.toLocaleString('id-ID')} berhasil. Saldo baru: Rp ${updatedAgent.balance.toLocaleString('id-ID')}`,
-          link: null,
-        },
-      }).catch(e => console.error('Agent notification error:', e));
+      // Create notification + push for agent (best-effort, outside transaction)
+      await createAgentNotificationAndPush(deposit.agentId, {
+        type: 'deposit_success',
+        title: 'Deposit Berhasil',
+        message: `Deposit sebesar Rp ${deposit.amount.toLocaleString('id-ID')} berhasil. Saldo baru: Rp ${updatedAgent.balance.toLocaleString('id-ID')}`,
+      });
 
       // Create notification for admin (best-effort)
       await prisma.notification.create({

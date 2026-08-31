@@ -13,6 +13,7 @@ import { prisma } from '@/server/db/client';
 import { nowWIBAsync } from '@/lib/timezone';
 import { disconnectPPPoEUser, addToMikrotikAddressList } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
+import { sendPushToUser } from '@/server/services/notifications/push-templates.service';
 
 export async function runAutoIsolir(): Promise<{ isolated: number; total: number; errors: string[] }> {
   const errors: string[] = [];
@@ -21,7 +22,7 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
 
   // Check company settings
   const company = await prisma.company.findFirst({
-    select: { isolationEnabled: true, gracePeriodDays: true },
+    select: { isolationEnabled: true, gracePeriodDays: true, name: true, phone: true },
   });
   const isolationEnabled = company?.isolationEnabled !== false;
   if (!isolationEnabled) {
@@ -209,6 +210,14 @@ export async function runAutoIsolir(): Promise<{ isolated: number; total: number
         // CoA failure is non-fatal — user will get isolir profile on next login
         console.warn(`[AUTO_ISOLIR] CoA disconnect failed for ${user.username}:`, e?.message || e);
       }
+
+      // 5. Send push notification about isolation
+      await sendPushToUser(user.id, 'isolation-notice', {
+        customerName: user.name || user.username,
+        username: user.username,
+        companyName: company?.name || '',
+        companyPhone: company?.phone || '',
+      }).catch((e) => console.error(`[AUTO_ISOLIR] Push failed for ${user.username}:`, e?.message || e));
 
       isolated++;
       const subType = prepaidExpired.find(u => u.id === user.id) ? 'PREPAID' : 'POSTPAID';
