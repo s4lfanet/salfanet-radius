@@ -976,7 +976,7 @@ function AdminLayoutContent({
       <aside 
         data-sidebar="sidebar"
         className={cn(
-          'fixed top-0 left-0 z-50 h-dvh w-[280px] sm:w-64 transition-transform duration-300 ease-out',
+          'fixed top-0 left-0 z-50 h-dvh w-64 transition-transform duration-300 ease-out',
           'bg-sidebar/95 backdrop-blur-xl',
           'border-r border-sidebar-border',
           'shadow-[5px_0_30px_rgba(0,0,0,0.15)]',
@@ -988,38 +988,38 @@ function AdminLayoutContent({
         <div className="hidden dark:block absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-brand-400 to-transparent" />
 
         <div className="flex flex-col h-full">
-          {/* Logo - compact on mobile with safe area */}
-          <div className="flex-shrink-0 flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-sidebar-border bg-sidebar-accent/50">
-            <div className="flex items-center gap-2 sm:gap-3">
+          {/* Logo */}
+          <div className="flex-shrink-0 flex items-center justify-between p-4 border-b border-sidebar-border bg-sidebar-accent/50">
+            <div className="flex items-center gap-3">
               {company.logo ? (
-                <div className="w-[40px] h-[40px] sm:w-[46px] sm:h-[46px] rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                <div className="w-9 h-9 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
                   <Image
                     unoptimized
                     src={company.logo}
                     alt={company.name || 'Company Logo'}
-                    width={120}
-                    height={80}
+                    width={36}
+                    height={36}
                     className="max-w-full max-h-full w-auto h-auto object-contain"
                   />
                 </div>
               ) : (
-                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
-                  <span className="text-black font-black text-xs sm:text-sm">{company.name?.charAt(0) || 'S'}</span>
+                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
+                  <span className="text-white font-black text-sm">{company.name?.charAt(0) || 'S'}</span>
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <h1 className="text-[11px] sm:text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px] sm:max-w-[110px]">
+                <h1 className="text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px]">
                   {company.name || 'Loading...'}
                 </h1>
-                <p className="text-[9px] sm:text-[10px] text-brand-600 dark:text-brand-400/60 tracking-[0.15em] sm:tracking-[0.2em] uppercase font-medium">{t('common.billingSystem')}</p>
+                <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-[0.15em] uppercase font-medium">{t('common.billingSystem')}</p>
               </div>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2.5 sm:p-1.5 hover:bg-primary/20 rounded-lg sm:rounded-md text-muted-foreground hover:text-primary transition-colors border border-transparent hover:border-primary/30 active:scale-95"
+              className="lg:hidden p-2 hover:bg-primary/20 rounded-lg text-muted-foreground hover:text-primary transition-colors border border-transparent hover:border-primary/30 active:scale-95"
               aria-label="Close menu"
             >
-              <X className="w-5 h-5 sm:w-4 sm:h-4" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 

@@ -448,22 +448,22 @@ function TechSidebar({
         )}
       >
         {/* Logo */}
-        <div className="p-4 border-b border-sidebar-border flex-shrink-0">
+        <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-brand-500 to-brand-700 rounded-xl flex items-center justify-center">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
                 <Wrench className="w-5 h-5 text-white" />
               </div>
-              <div>
-                <h1 className="text-base font-bold text-sidebar-primary">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px]">
                   {t('techPortal.title')}
                 </h1>
-                <p className="text-[10px] text-sidebar-foreground/60">{t('techPortal.subtitle')}</p>
+                <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-[0.15em] uppercase font-medium">{t('techPortal.subtitle')}</p>
               </div>
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
-              className="p-2.5 hover:bg-sidebar-accent rounded-lg lg:hidden transition-colors"
+              className="lg:hidden p-2 hover:bg-sidebar-accent rounded-lg transition-colors"
               aria-label="Close menu"
             >
               <X className="w-4 h-4 text-sidebar-foreground/60" />
