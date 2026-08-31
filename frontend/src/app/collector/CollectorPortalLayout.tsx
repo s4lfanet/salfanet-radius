@@ -107,7 +107,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
           )}
           <div className="min-w-0">
             <div className="font-bold text-sm text-foreground truncate">{companyName || 'Portal Kolektor'}</div>
-            <div className="text-xs text-muted-foreground truncate">{collector.areaName || 'Umum'}</div>
+            <div className="text-xs text-muted-foreground truncate">Panel Kolektor</div>
           </div>
         </div>
 
