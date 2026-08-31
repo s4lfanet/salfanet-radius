@@ -451,8 +451,8 @@ function TechSidebar({
         <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
-                <Wrench className="w-5 h-5 text-white" />
+              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
+                <Wrench className="w-6 h-6 text-white" />
               </div>
               <div className="min-w-0 flex-1">
                 <h1 className="text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px]">
