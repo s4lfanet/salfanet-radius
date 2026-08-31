@@ -177,14 +177,17 @@ function SidebarPushToggle({ techId }: { techId: string }) {
         }
         if (perm !== 'granted') return;
         const vapidRes = await fetch('/api/push/vapid-public-key');
-        const { publicKey } = await vapidRes.json();
+        const vapidData = await vapidRes.json().catch(() => ({ success: false }));
+        if (!vapidData.success || !vapidData.publicKey) {
+          throw new Error('Server push notification belum dikonfigurasi (VAPID keys missing)');
+        }
         const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
         await navigator.serviceWorker.ready;
         let sub = await reg.pushManager.getSubscription();
         if (!sub) {
           sub = await reg.pushManager.subscribe({
             userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicKey),
+            applicationServerKey: urlBase64ToUint8Array(vapidData.publicKey),
           });
         }
         const subRes = await fetch('/api/push/technician-subscribe', {
