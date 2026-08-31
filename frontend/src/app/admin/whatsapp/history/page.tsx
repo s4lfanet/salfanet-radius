@@ -29,11 +29,15 @@ interface Stats {
 
 const getProviderColor = (type?: string) => {
   switch (type?.toLowerCase()) {
-    case 'mpwa': return 'bg-primary/20 text-primary dark:text-primary';
+    case 'mpwa': return 'bg-primary/20 text-primary dark:bg-primary/20 dark:text-primary';
     case 'waha': return 'bg-success/20 text-success dark:bg-green-900/30 dark:text-success';
     case 'fonnte': return 'bg-accent/20 text-accent dark:bg-purple-900/30 dark:text-purple-400';
     case 'wablas': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
-    default: return 'bg-gray-100 text-foreground dark:bg-inputdark:text-muted-foreground';
+    case 'gowa': return 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400';
+    case 'wablast': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'kirimi': return 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400';
+    case 'baileys': return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400';
+    default: return 'bg-gray-100 text-foreground dark:bg-gray-800 dark:text-muted-foreground';
   }
 };
 
@@ -310,7 +314,7 @@ export default function WhatsAppHistoryPage() {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {history.map((item) => (
-                        <tr key={item.id} className="hover:bg-muted/50/50 transition-colors">
+                        <tr key={item.id} className="hover:bg-muted/50 transition-colors">
                           <td className="px-3 py-1.5">
                             <div className="text-xs text-foreground">
                               {formatDistanceToNow(new Date(item.sentAt), {
