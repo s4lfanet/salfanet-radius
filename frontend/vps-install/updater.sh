@@ -360,8 +360,9 @@ if [ -n "$USE_BRANCH" ]; then
     print_step "Installing dependencies"
     # Monorepo with two Next.js apps (frontend/ + backend/).
     # Prefer pnpm at the workspace root; fall back to npm install in each app.
+    # Use --no-frozen-lockfile to avoid interactive prompts and allow lockfile updates.
     if command -v pnpm &>/dev/null; then
-        pnpm install 2>&1 | tail -10
+        pnpm install --no-frozen-lockfile 2>&1 | tail -10
     else
         print_info "pnpm not found — installing in frontend/ and backend/ separately..."
         (cd "$APP_DIR/frontend" && npm install --production=false 2>&1 | tail -10)
@@ -369,11 +370,25 @@ if [ -n "$USE_BRANCH" ]; then
     fi
 
     print_step "Generating Prisma client"
-    (cd "$APP_DIR/backend" && npx prisma generate)
+    # Use locally installed prisma (not npx which may download v7+ with breaking changes)
+    PRISMA_BIN="$APP_DIR/backend/node_modules/.bin/prisma"
+    if [ ! -x "$PRISMA_BIN" ]; then
+        PRISMA_BIN="$APP_DIR/node_modules/.bin/prisma"
+    fi
+    if [ -x "$PRISMA_BIN" ]; then
+        (cd "$APP_DIR/backend" && "$PRISMA_BIN" generate)
+    else
+        print_info "Local prisma not found, falling back to npx prisma@6"
+        (cd "$APP_DIR/backend" && npx prisma@6 generate)
+    fi
 
     print_step "Running database migrations"
     backup_genieacs_data
-    (cd "$APP_DIR/backend" && npx prisma db push --accept-data-loss 2>/dev/null || npx prisma db push)
+    if [ -x "$PRISMA_BIN" ]; then
+        (cd "$APP_DIR/backend" && "$PRISMA_BIN" db push --accept-data-loss 2>/dev/null || "$PRISMA_BIN" db push)
+    else
+        (cd "$APP_DIR/backend" && npx prisma@6 db push --accept-data-loss 2>/dev/null || npx prisma@6 db push)
+    fi
     restore_genieacs_data
     apply_sql_migrations || true
     # Migrate legacy admin_user -> admin_users if needed and ensure
@@ -394,7 +409,11 @@ if [ -n "$USE_BRANCH" ]; then
     # ── Build backend (API routes + Prisma + services, port 3001) ──────────
     print_info "Building backend..."
     cd "$APP_DIR/backend"
-    npx prisma generate
+    if [ -x "$PRISMA_BIN" ]; then
+        "$PRISMA_BIN" generate
+    else
+        npx prisma@6 generate
+    fi
     NODE_OPTIONS="--max-old-space-size=1536" NEXT_TELEMETRY_DISABLED=1 npx next build
     if [ -d ".next/standalone" ]; then
         mkdir -p .next/standalone/backend/public
@@ -680,11 +699,21 @@ if [ -f "$APP_DIR/.env" ]; then
     export $(grep -v '^#' "$APP_DIR/.env" | grep 'DATABASE_URL' | xargs) 2>/dev/null || true
 fi
 
-npx prisma generate 2>/dev/null || true
+npx prisma@6 generate 2>/dev/null || true
 backup_genieacs_data
-npx prisma db push --accept-data-loss 2>/dev/null || \
-    npx prisma db push || \
-    print_info "DB push skipped (check manually)"
+PRISMA_BIN="$APP_DIR/backend/node_modules/.bin/prisma"
+if [ ! -x "$PRISMA_BIN" ]; then
+    PRISMA_BIN="$APP_DIR/node_modules/.bin/prisma"
+fi
+if [ -x "$PRISMA_BIN" ]; then
+    "$PRISMA_BIN" db push --accept-data-loss 2>/dev/null || \
+        "$PRISMA_BIN" db push || \
+        print_info "DB push skipped (check manually)"
+else
+    npx prisma@6 db push --accept-data-loss 2>/dev/null || \
+        npx prisma@6 db push || \
+        print_info "DB push skipped (check manually)"
+fi
 restore_genieacs_data
 apply_sql_migrations || true
 
