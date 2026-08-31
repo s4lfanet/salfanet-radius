@@ -176,7 +176,7 @@
     "csvDownloaded": "File CSV berhasil diunduh",
     "restartRadius": "Restart RADIUS?",
     "restartRadiusWarning": "Ini akan memutuskan sementara semua sesi aktif.",
-    "billingSystem": "Sistem Billing",
+    "billingSystem": "Panel Admin",
     "redirectingToLogin": "Mengalihkan ke halaman login...",
     "sessionTimeout": "Sesi Waktu Habis",
     "securityProtocolActive": "Protokol Keamanan Aktif",
@@ -1039,7 +1039,7 @@
     "balanceUpdated": "Saldo diperbarui!",
     "portal": {
       "title": "Portal Agen",
-      "subtitle": "Login dengan nomor HP terdaftar",
+      "subtitle": "Panel Agen",
       "welcome": "Selamat Datang",
       "dashboard": "Dashboard",
       "vouchers": "Stok Voucher",
@@ -4070,7 +4070,7 @@
   },
   "techPortal": {
     "title": "Portal Teknisi",
-    "subtitle": "Manajemen Teknis",
+    "subtitle": "Panel Teknisi",
     "welcome": "Selamat Datang",
     "dashboard": "Beranda",
     "tickets": "Tiket Layanan",

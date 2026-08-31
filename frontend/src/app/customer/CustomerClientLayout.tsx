@@ -296,7 +296,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 <h1 className="text-sm font-bold text-sidebar-primary">
                   {companyName}
                 </h1>
-                <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-widest font-bold uppercase">Customer Portal</p>
+                <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-widest font-bold uppercase">Panel Pelanggan</p>
               </div>
             </div>
             <button
