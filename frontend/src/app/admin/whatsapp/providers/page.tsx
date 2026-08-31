@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import Image from 'next/image';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import {
@@ -755,7 +754,7 @@ export default function WhatsAppProvidersPage() {
             ) : qrImage ? (
               <>
                 <div className="p-3 bg-white rounded-lg shadow-[0_0_20px_rgba(0,247,255,0.3)]">
-                  <Image unoptimized src={qrImage} alt="QR Code" width={192} height={192} className="w-48 h-48" />
+                  <img src={qrImage} alt="QR Code" width={192} height={192} className="w-48 h-48" />
                 </div>
                 <p className="text-[10px] text-muted-foreground text-center">{t('whatsapp.scanWhatsapp')}</p>
                 <div className="flex items-center gap-2 text-[10px] text-amber-400">
