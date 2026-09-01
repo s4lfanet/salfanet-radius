@@ -2,19 +2,27 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 
 function parseInvoiceNumberFromOrder(orderId: string): string {
-  // Strip trailing timestamp (≥10 digit number after last hyphen)
-  const lastHyphenIdx = orderId.lastIndexOf('-');
-  const potentialTs = lastHyphenIdx >= 0 ? orderId.substring(lastHyphenIdx + 1) : '';
-  if (potentialTs && /^\d{10,}$/.test(potentialTs)) {
-    return orderId.substring(0, lastHyphenIdx);
+  let result = orderId;
+
+  // Strip trailing hex segment (8-char hex from randomBytes)
+  const hexMatch = result.match(/-([a-f0-9]{8})$/);
+  if (hexMatch) {
+    result = result.substring(0, result.length - hexMatch[0].length);
   }
 
-  if (orderId.startsWith('TOPUP-')) {
-    const parts = orderId.split('-');
+  // Strip trailing timestamp (≥10 digit number after last hyphen)
+  const lastHyphenIdx = result.lastIndexOf('-');
+  const potentialTs = lastHyphenIdx >= 0 ? result.substring(lastHyphenIdx + 1) : '';
+  if (potentialTs && /^\d{10,}$/.test(potentialTs)) {
+    return result.substring(0, lastHyphenIdx);
+  }
+
+  if (result.startsWith('TOPUP-')) {
+    const parts = result.split('-');
     return parts.slice(0, 3).join('-');
   }
 
-  return orderId;
+  return result;
 }
 
 function mapInvoiceStatus(status: string): 'settlement' | 'pending' | 'cancel' {

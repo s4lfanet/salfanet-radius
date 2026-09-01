@@ -1256,15 +1256,23 @@ async function handleInvoicePayment(
   webhookAmount?: number
 ) {
   // Order ID formats:
-  // 1. From /api/payment/create:        INV-${invoiceNumber}-${timestamp}  → orderId = INV-INV-202604-0001-ts
-  // 2. From /api/.../regenerate-payment: ${invoiceNumber}-${timestamp}     → orderId = INV-202604-0001-ts
-  // Strategy: strip only the trailing timestamp segment, keep everything before it.
-  const lastHyphenIdx = orderId.lastIndexOf('-');
-  const potentialTs = lastHyphenIdx >= 0 ? orderId.substring(lastHyphenIdx + 1) : '';
-  // Timestamp = long numeric string (≥10 digits)
-  const invoiceNumber = (potentialTs && /^\d{10,}$/.test(potentialTs))
-    ? orderId.substring(0, lastHyphenIdx)
-    : orderId;
+  // 1. From /api/payment/create:        INV-${invoiceNumber}-${timestamp}-${hex}
+  // 2. From /api/.../regenerate-payment: ${invoiceNumber}-${timestamp}
+  // Strategy: strip trailing timestamp and hex segments, keep the invoice number.
+  let invoiceNumber = orderId;
+
+  // Strip trailing hex segment (8-char hex from randomBytes)
+  const hexMatch = orderId.match(/-([a-f0-9]{8})$/);
+  if (hexMatch) {
+    invoiceNumber = orderId.substring(0, orderId.length - hexMatch[0].length);
+  }
+
+  // Strip trailing timestamp (≥10 digit number)
+  const lastHyphenIdx = invoiceNumber.lastIndexOf('-');
+  const potentialTs = lastHyphenIdx >= 0 ? invoiceNumber.substring(lastHyphenIdx + 1) : '';
+  if (potentialTs && /^\d{10,}$/.test(potentialTs)) {
+    invoiceNumber = invoiceNumber.substring(0, lastHyphenIdx);
+  }
 
   let invoice = await prisma.invoice.findFirst({
     where: { invoiceNumber },
