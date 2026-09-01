@@ -1,7 +1,8 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/server/db/client";
 import { requirePermission } from "@/server/middleware/api-auth";
-import { nowWIB } from "@/lib/timezone";
+import { nowWIB, WIB_TIMEZONE } from "@/lib/timezone";
+import { formatInTimeZone } from 'date-fns-tz';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -18,8 +19,9 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'all';
 
     const now = nowWIB();
-    const currentYear = now.getUTCFullYear();
-    const currentMonth = now.getUTCMonth();
+    const wibMonthStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
+    const currentYear = parseInt(wibMonthStr.substring(0, 4));
+    const currentMonth = parseInt(wibMonthStr.substring(5, 7)) - 1;
 
     const result: any = {};
 

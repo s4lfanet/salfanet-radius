@@ -8,7 +8,8 @@ import { sendPushToUser } from '@/server/services/notifications/push-templates.s
 import { EmailService } from '@/server/services/notifications/email.service';
 import { randomBytes } from 'crypto';
 import { nanoid } from 'nanoid';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB } from '@/lib/timezone';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, toUTC, nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
+import { formatInTimeZone } from 'date-fns-tz';
 import { ok, created, badRequest, unauthorized, notFound, serverError } from '@/lib/api-response';
 // Generate secure random token for payment link
 function generatePaymentToken(): string {
@@ -166,8 +167,9 @@ export async function POST(request: NextRequest) {
 
     // Generate invoice number: INV-YYYYMM-0001
     const now = nowWIB();
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const wibDateStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
+    const year = parseInt(wibDateStr.substring(0, 4));
+    const month = wibDateStr.substring(5, 7);
     const count = await prisma.invoice.count({
       where: {
         invoiceNumber: {

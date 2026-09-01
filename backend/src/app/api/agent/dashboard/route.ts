@@ -73,23 +73,22 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate statistics from all vouchers (not paginated)
-    // Use WIB timezone for month calculation (UTC stored in DB)
+    // Use company timezone for month/day calculation (UTC stored in DB)
     const now = nowWIB();
-    const currentMonth = now.getUTCMonth();
-    const currentYear = now.getUTCFullYear();
+    const currentMonthStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
+    const currentYear = parseInt(currentMonthStr.substring(0, 4));
+    const currentMonth = parseInt(currentMonthStr.substring(5, 7)) - 1;
+    const todayStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM-dd');
 
     // Calculate voucher statistics based on status
     const soldVouchers = allVouchersForStats.filter((v) => v.status === 'SOLD' || v.status === 'ACTIVE' || v.status === 'EXPIRED');
     const usedVouchers = allVouchersForStats.filter((v) => v.status === 'ACTIVE' || v.status === 'EXPIRED');
     
-    // Current month sold vouchers - Compare using UTC methods (WIB-as-UTC)
+    // Current month sold vouchers - Compare using company timezone
     const currentMonthSold = soldVouchers.filter((v) => {
-      const usedDate = v.firstLoginAt ? toWIB(v.firstLoginAt) : null;
-      if (!usedDate) return false;
-      return (
-        usedDate.getUTCMonth() === currentMonth &&
-        usedDate.getUTCFullYear() === currentYear
-      );
+      if (!v.firstLoginAt) return false;
+      const vMonthStr = formatInTimeZone(v.firstLoginAt, WIB_TIMEZONE, 'yyyy-MM');
+      return vMonthStr === currentMonthStr;
     });
     
     // Calculate income from sold vouchers (use sellingPrice)
@@ -100,14 +99,11 @@ export async function GET(request: NextRequest) {
     const currentMonthCommission = currentMonthSold.reduce((sum, v) => sum + (v.profile?.resellerFee || 0), 0);
     const allTimeCommission = soldVouchers.reduce((sum, v) => sum + (v.profile?.resellerFee || 0), 0);
 
-    // Calculate today's sales - Compare date only (WIB-as-UTC)
-    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-    const todayEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-    
+    // Calculate today's sales - Compare date only (company timezone)
     const todaySold = soldVouchers.filter((v) => {
-      const usedDate = v.firstLoginAt ? toWIB(v.firstLoginAt) : null;
-      if (!usedDate) return false;
-      return usedDate >= todayStart && usedDate < todayEnd;
+      if (!v.firstLoginAt) return false;
+      const vDateStr = formatInTimeZone(v.firstLoginAt, WIB_TIMEZONE, 'yyyy-MM-dd');
+      return vDateStr === todayStr;
     });
     
     const todayIncome = todaySold.reduce((sum, v) => sum + (v.profile?.sellingPrice || 0), 0);

@@ -46,11 +46,11 @@ export function calculateTimeLeft(expiresAtStr: string | Date): string {
   if (!expiresAtStr) return '-'
   
   try {
-    const expiresWIB = toWIB(expiresAtStr)
-    if (!expiresWIB) return '-'
+    const expires = typeof expiresAtStr === 'string' ? new Date(expiresAtStr) : expiresAtStr
+    if (isNaN(expires.getTime())) return '-'
     
-    const now = nowWIB()
-    const diff = Math.max(0, Math.floor((expiresWIB.getTime() - now.getTime()) / 1000))
+    const now = new Date()
+    const diff = Math.max(0, Math.floor((expires.getTime() - now.getTime()) / 1000))
     
     if (diff === 0) return 'Expired'
     

@@ -5,53 +5,29 @@
  * TIMEZONE CONSISTENCY ARCHITECTURE
  * ============================================
  * 
- * For consistent timezone handling across the entire system:
+ * All dates are stored as TRUE UTC in MySQL DATETIME columns.
+ * Prisma's mysql2 driver sends JS Date's UTC components to MySQL,
+ * and reads them back as UTC. No timezone shifting on storage.
  * 
- * 1. SYSTEM TIMEZONE: Asia/Jakarta (WIB, UTC+7)
- *    - Set via: timedatectl set-timezone Asia/Jakarta
- *    - Affects: All OS-level timestamps, FreeRADIUS logs
+ * 1. DATABASE STORAGE: True UTC
+ *    - Prisma/mysql2 stores JS Date UTC components to DATETIME
+ *    - All Date objects from Prisma are true UTC
+ *    - new Date() and nowWIB() both return true UTC
  * 
- * 2. MYSQL TIMEZONE: +07:00 (matching system)
- *    - Config: /etc/mysql/mysql.conf.d/timezone.cnf
- *    - Set via: SET GLOBAL time_zone = '+07:00';
- *    - CRITICAL: MySQL MUST use same timezone as system!
- *    - NOW() and all datetime columns will use this timezone
+ * 2. DISPLAY: Convert UTC to company timezone
+ *    - formatWIB() uses formatInTimeZone(d, currentTimezone, ...)
+ *    - toWIB() shifts UTC by company offset for display
  * 
- * 3. NODE.JS/PM2 TIMEZONE: Asia/Jakarta
- *    - Set via: TZ="Asia/Jakarta" in .env and ecosystem.config.js
- *    - Affects: new Date(), console.log timestamps
+ * 3. USER INPUT: Convert company timezone to UTC
+ *    - parseDateAsWIB() interprets input as company TZ, converts to UTC
+ *    - fromDatetimeLocalWIB() delegates to parseDateAsWIB()
+ *    - toUTC() passes through (Date objects are already UTC)
  * 
- * 4. FREERADIUS: Uses system timezone
- *    - radacct.acctstarttime is in system local time (WIB)
- *    - No conversion needed when storing to database
- * 
- * 5. DATABASE QUERIES:
- *    - Use NOW() for local time comparisons (NOT UTC_TIMESTAMP()!)
- *    - Example: WHERE expiresAt < NOW() -- Correct for WIB storage
- * 
- * ============================================
- * CRITICAL: Timezone Bug Prevention
- * ============================================
- * 
- * If MySQL timezone != System timezone:
- * - Voucher expiration will be incorrect (7 hour offset for WIB)
- * - NOW() vs UTC_TIMESTAMP() will give different results
- * - Sessions may appear active when they're expired
- * 
- * To verify timezone consistency:
- * ```bash
- * # 1. Check system timezone
- * timedatectl show --property=Timezone --value  # Should show: Asia/Jakarta
- * 
- * # 2. Check MySQL timezone
- * mysql -e "SELECT @@global.time_zone, NOW(), UTC_TIMESTAMP()"
- * # NOW() and system 'date' command should match!
- * 
- * # 3. Check Node.js timezone
- * node -e "console.log(new Date().toLocaleString('id-ID', {timeZone: 'Asia/Jakarta'}))"
- * ```
- * 
- * @see docs/VOUCHER_EXPIRATION_TIMEZONE_FIX.md for detailed explanation
+ * 4. COMPARISONS: All in true UTC
+ *    - nowWIB() returns new Date() (true UTC)
+ *    - isExpiredWIB() compares against Date.now()
+ *    - Date range filters use startOfDayWIBtoUTC/endOfDayWIBtoUTC
+ *      which convert company-TZ start/end of day to true UTC
  */
 
 import { 
@@ -141,42 +117,47 @@ export function getTimezoneOffsetMs(): number {
 }
 
 /**
- * Parse a date string as WIB values, returning a WIB-as-UTC Date.
- * Used for user-entered dates that should be interpreted as WIB.
+ * Parse a date string as company-timezone values, returning a true UTC Date.
+ * Used for user-entered dates that should be interpreted as company timezone.
  * @param dateStr - Date string (e.g., "2026-03-01" or "2026-03-01T10:00:00")
- * @returns Date where UTC values represent WIB time
+ * @returns Date in true UTC (converted from company timezone input)
  */
 export function parseDateAsWIB(dateStr: string): Date {
   if (!dateStr.includes('T')) {
-    // Date only: "2026-03-01" → midnight WIB
-    return new Date(dateStr + 'T00:00:00.000Z');
+    // Date only: "2026-03-01" → midnight company timezone → convert to UTC
+    const wibMidnight = new Date(dateStr + 'T00:00:00.000Z');
+    return new Date(wibMidnight.getTime() - getTimezoneOffsetMs());
   }
   if (!dateStr.endsWith('Z') && !dateStr.includes('+')) {
-    // DateTime without timezone: treat values as WIB
-    return new Date(dateStr.endsWith('.000') ? dateStr + 'Z' : dateStr + (dateStr.includes('.') ? 'Z' : '.000Z'));
+    // DateTime without timezone: treat values as company timezone → convert to UTC
+    const normalized = dateStr.endsWith('.000') ? dateStr + 'Z' : dateStr + (dateStr.includes('.') ? 'Z' : '.000Z');
+    const wibDate = new Date(normalized);
+    return new Date(wibDate.getTime() - getTimezoneOffsetMs());
   }
-  // Already has timezone indicator
+  // Already has timezone indicator — parse as-is
   return new Date(dateStr);
 }
 
 /**
- * Convert date for display purposes.
+ * Convert a UTC date from the database to a company-timezone Date.
  * 
  * PRISMA + MYSQL TIMEZONE ARCHITECTURE:
- * MySQL stores DATETIME in WIB (Asia/Jakarta, +07:00).
- * Prisma reads the raw value and treats it as UTC.
- * So all Prisma Date objects have WIB time values in their UTC field.
+ * Prisma's mysql2 driver stores JS Date's UTC components to MySQL DATETIME.
+ * MySQL DATETIME has no timezone awareness — values are stored as-is.
+ * When read back, Prisma interprets them as UTC.
  * 
- * This function returns the date as-is since the UTC values
- * already represent WIB time (no conversion needed).
+ * This function converts the UTC date to the company timezone for display.
  * 
- * @param date - Date from database (WIB values in UTC field)
- * @returns Same date or null
+ * @param date - Date from database (true UTC)
+ * @returns Date shifted to company timezone, or null
  */
 export function toWIB(date: Date | string | null | undefined): Date | null {
   if (!date) return null;
   try {
-    return typeof date === 'string' ? new Date(date) : date;
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return null;
+    // Convert UTC to company timezone by adding the offset
+    return new Date(d.getTime() + getTimezoneOffsetMs());
   } catch (error) {
     console.error('toWIB error:', error);
     return null;
@@ -184,50 +165,33 @@ export function toWIB(date: Date | string | null | undefined): Date | null {
 }
 
 /**
- * Convert a local company-timezone date to company-TZ-as-UTC format for
- * Prisma/MySQL storage.
+ * Convert a company-timezone date to true UTC for Prisma/MySQL storage.
  *
- * Since Prisma stores the Date's UTC value to MySQL DATETIME,
- * and MySQL expects company-timezone values, we need the Date's UTC
- * to equal the company timezone time.
+ * Prisma's mysql2 driver stores JS Date's UTC components to MySQL DATETIME.
+ * So we need to pass true UTC dates to Prisma.
  *
- * IMPORTANT: This function uses the company timezone offset (from
- * getTimezoneOffsetMs), NOT the server's local timezone. This ensures
- * correct behavior even when the server TZ differs from the company TZ.
- *
- * @param local - Date in local timezone (from user input, new Date() etc.)
- * @returns Date where UTC values represent company timezone time (for Prisma storage)
+ * @param local - Date in company timezone (from user input, new Date() etc.)
+ * @returns Date in true UTC (for Prisma storage)
  */
 export function toUTC(local: Date | string): Date {
   if (typeof local === 'string') {
     return parseDateAsWIB(local);
   }
-  // For Date objects: we need to shift from real UTC to company-TZ-as-UTC.
-  // The input Date's UTC value is the real UTC time.
-  // We want the output Date's UTC value to be the company timezone time.
-  //
-  // company_time = real_UTC + company_offset
-  // So: output = new Date(input.getTime() + company_offset)
-  //
-  // But if the server TZ == company TZ, then getFullYear() etc. already
-  // return company time, and the old approach (Date.UTC(getFullYear(), ...))
-  // would work. However, if server TZ != company TZ, that approach breaks.
-  //
-  // The safe approach: add the company offset to the real UTC time.
-  const offsetMs = getTimezoneOffsetMs();
-  return new Date(local.getTime() + offsetMs);
+  // If the input is a JS Date from new Date(), it's already in true UTC.
+  // No conversion needed — Prisma stores UTC components directly.
+  return local;
 }
 
 /**
- * Format a database date as WIB string.
+ * Format a database date as company-timezone string.
  * 
- * Since Prisma stores MySQL WIB values in the Date's UTC field,
- * we format using UTC timezone to display the raw WIB values correctly.
- * This works on both server (any TZ) and browser (any TZ) consistently.
+ * Prisma stores true UTC values to MySQL DATETIME (via mysql2 driver).
+ * This function converts the UTC date to the company timezone for display.
+ * Works on both server (any TZ) and browser (any TZ) consistently.
  * 
- * @param date - Date from database (WIB values in UTC field)
+ * @param date - Date from database (true UTC)
  * @param formatStr - Format string (default: 'dd MMM yyyy HH:mm')
- * @returns Formatted date string showing WIB time
+ * @returns Formatted date string showing company timezone time
  */
 export function formatWIB(
   date: Date | string | null | undefined,
@@ -238,8 +202,8 @@ export function formatWIB(
   try {
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return '-';
-    // Format using UTC timezone — the UTC values ARE the WIB time
-    return formatInTimeZone(d, 'UTC', formatStr, { locale: localeId });
+    // Convert from true UTC to company timezone for display
+    return formatInTimeZone(d, currentTimezone, formatStr, { locale: localeId });
   } catch (error) {
     console.error('formatWIB error:', error);
     return '-';
@@ -263,7 +227,7 @@ export function formatLocalDate(
 }
 
 /**
- * Relative time from now in WIB (e.g., "2 jam yang lalu")
+ * Relative time from now in company timezone (e.g., "2 jam yang lalu")
  */
 export function relativeWIB(date: Date | string | null | undefined): string {
   if (!date) return '-';
@@ -271,8 +235,8 @@ export function relativeWIB(date: Date | string | null | undefined): string {
   try {
     const d = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(d.getTime())) return '-';
-    // Both d and nowWIB() are in WIB-as-UTC format, so distance is correct
-    const now = nowWIB();
+    // Both d and new Date() are in true UTC, so distance is correct
+    const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     const diffSec = Math.floor(Math.abs(diffMs) / 1000);
     const diffMin = Math.floor(diffSec / 60);
@@ -292,50 +256,44 @@ export function relativeWIB(date: Date | string | null | undefined): string {
 }
 
 /**
- * Check if date is expired (compared to current WIB time)
- * Both DB dates and nowWIB() are in WIB-as-UTC format, so comparison works.
+ * Check if date is expired (compared to current time)
+ * Both DB dates and new Date() are in true UTC, so comparison works.
  */
 export function isExpiredWIB(date: Date | string | null | undefined): boolean {
   if (!date) return false;
   const d = typeof date === 'string' ? new Date(date) : date;
   if (isNaN(d.getTime())) return false;
-  return d.getTime() < nowWIB().getTime();
+  return d.getTime() < Date.now();
 }
 
 /**
  * Days until expiry (negative if expired)
- * Both dates in WIB-as-UTC format for correct comparison.
+ * Both dates in true UTC for correct comparison.
  */
 export function daysUntilExpiry(date: Date | string | null | undefined): number | null {
   if (!date) return null;
   const d = typeof date === 'string' ? new Date(date) : date;
   if (isNaN(d.getTime())) return null;
-  // Both in WIB-as-UTC space
-  const now = nowWIB();
+  const now = new Date();
   return Math.floor((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 /**
- * Get current time in WIB-as-UTC format.
- * Returns a Date where UTC values represent current WIB time.
- * This is consistent with how Prisma reads MySQL DATETIME values.
- *
- * NOTE: This uses the cached timezone. For cron jobs that need the latest
- * company timezone, call `await refreshTimezoneFromDB()` first, or use
- * `nowWIBAsync()` instead.
+ * Get current time in true UTC format.
+ * Prisma stores true UTC to MySQL DATETIME, so this is consistent.
  */
 export function nowWIB(): Date {
-  return new Date(Date.now() + getTimezoneOffsetMs());
+  return new Date();
 }
 
 /**
  * Async variant of nowWIB() — refreshes timezone from DB before computing.
- * Use this in cron jobs and critical business logic where the company
- * timezone might have been changed since process start.
+ * Since nowWIB() now returns true UTC, this just refreshes the timezone
+ * cache for other functions that use currentTimezone.
  */
 export async function nowWIBAsync(): Promise<Date> {
   await refreshTimezoneFromDB();
-  return new Date(Date.now() + getTimezoneOffsetMs());
+  return new Date();
 }
 
 /**
@@ -362,22 +320,31 @@ export function addDaysToUTC(utc: Date | string, days: number): Date {
 }
 
 /**
- * Get start of day in WIB, in WIB-as-UTC format for Prisma queries.
- * Accepts strings (parsed as WIB) or Date objects (WIB-as-UTC from DB/nowWIB).
+ * Get start of day in company timezone, as true UTC for Prisma queries.
+ * Accepts strings (parsed as company TZ) or Date objects (true UTC from DB/new Date()).
  */
 export function startOfDayWIBtoUTC(date: Date | string = nowWIB()): Date {
   const d = typeof date === 'string' ? parseDateAsWIB(date) : date;
-  // Use UTC components (which represent WIB in our system)
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 0, 0, 0, 0));
+  // Get company-timezone components for this date
+  const tzStr = formatInTimeZone(d, currentTimezone, 'yyyy-MM-dd');
+  // Start of that day in company timezone = midnight company TZ as UTC
+  const midnightCompanyTZ = new Date(tzStr + 'T00:00:00.000Z');
+  // Convert from company timezone to true UTC
+  return new Date(midnightCompanyTZ.getTime() - getTimezoneOffsetMs());
 }
 
 /**
- * Get end of day in WIB, in WIB-as-UTC format for Prisma queries.
- * Accepts strings (parsed as WIB) or Date objects (WIB-as-UTC from DB/nowWIB).
+ * Get end of day in company timezone, as true UTC for Prisma queries.
+ * Accepts strings (parsed as company TZ) or Date objects (true UTC from DB/new Date()).
  */
 export function endOfDayWIBtoUTC(date: Date | string = nowWIB()): Date {
   const d = typeof date === 'string' ? parseDateAsWIB(date) : date;
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 23, 59, 59, 999));
+  // Get company-timezone components for this date
+  const tzStr = formatInTimeZone(d, currentTimezone, 'yyyy-MM-dd');
+  // End of that day in company timezone = 23:59:59.999 company TZ as UTC
+  const endOfDayCompanyTZ = new Date(tzStr + 'T23:59:59.999Z');
+  // Convert from company timezone to true UTC
+  return new Date(endOfDayCompanyTZ.getTime() - getTimezoneOffsetMs());
 }
 
 /**
@@ -389,11 +356,11 @@ export function toDatetimeLocalWIB(utc: Date | string | null | undefined): strin
 }
 
 /**
- * Parse datetime-local input (WIB) to WIB-as-UTC Date for Prisma storage.
- * datetime-local values are always WIB from the user's perspective.
+ * Parse datetime-local input (company timezone) to true UTC Date for Prisma storage.
+ * datetime-local values are always in company timezone from the user's perspective.
  */
 export function fromDatetimeLocalWIB(datetimeLocal: string): Date {
-  // Parse as WIB values directly into UTC field
+  // Parse as company timezone values, then convert to true UTC
   return parseDateAsWIB(datetimeLocal);
 }
 

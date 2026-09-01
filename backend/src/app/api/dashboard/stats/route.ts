@@ -2,7 +2,8 @@
 import { prisma } from "@/server/db/client";
 import { requirePermission } from "@/server/middleware/api-auth";
 import { getRecentActivities } from "@/server/services/activity-log.service";
-import { nowWIB, startOfDayWIBtoUTC } from "@/lib/timezone";
+import { nowWIB, startOfDayWIBtoUTC, WIB_TIMEZONE } from "@/lib/timezone";
+import { formatInTimeZone } from 'date-fns-tz';
 import { batchFetchMikrotikActiveSessions } from "@/server/services/mikrotik/active-sessions.service";
 
 // Disable caching for this route - always fetch fresh data
@@ -21,14 +22,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const monthParam = searchParams.get('month'); // e.g. "2026-02"
     const nowLocal = nowWIB();
+    const wibMonthStr = formatInTimeZone(nowLocal, WIB_TIMEZONE, 'yyyy-MM');
     let selectedYear: number;
     let selectedMonth: number; // 0-indexed
     if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
       [selectedYear, selectedMonth] = monthParam.split('-').map(Number);
       selectedMonth -= 1; // convert 1-indexed to 0-indexed
     } else {
-      selectedYear = nowLocal.getUTCFullYear();
-      selectedMonth = nowLocal.getUTCMonth();
+      selectedYear = parseInt(wibMonthStr.substring(0, 4));
+      selectedMonth = parseInt(wibMonthStr.substring(5, 7)) - 1;
     }
     const monthKey = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}`;
 
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
     const endOfMonth = new Date(Date.UTC(selectedYear, selectedMonth + 1, 0, 23, 59, 59, 999));
     const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
     const periodLabel = `${MONTH_NAMES_ID[selectedMonth]} ${selectedYear}`;
-    const isCurrentMonth = (selectedYear === now.getUTCFullYear() && selectedMonth === now.getUTCMonth());
+    const isCurrentMonth = (monthKey === wibMonthStr);
 
     // ==================== 1. Total PPPoE Users ====================
     let totalPppoeUsers = 0;
@@ -351,9 +353,8 @@ export async function GET(request: NextRequest) {
     let unpaidInvoicesCount = 0;
     let totalAllTimeRevenue = 0;
     try {
-      // Use local Date constructor so mysql2 sends WIB midnight string to MySQL
-      // (now.getUTCDate/Month/FullYear are WIB calendar values since now=nowWIB())
-      const startOfToday = new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0);
+      // Start of today in company timezone, converted to true UTC for Prisma query
+      const startOfToday = startOfDayWIBtoUTC(now);
 
       const [todayAgg, monthAgg, monthCount, unpaidCount, allTimeAgg] = await Promise.all([
         prisma.invoice.aggregate({
