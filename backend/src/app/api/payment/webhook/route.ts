@@ -1464,7 +1464,7 @@ async function handleInvoicePayment(
           console.log(`   - Profile: ${user.profileId} → ${newProfileId}`);
         }
 
-        userUpdateData = { expiredAt: finalExpiredAt, status: newStatus, profileId: newProfileId };
+        userUpdateData = { expiredAt: finalExpiredAt, status: newStatus, profileId: newProfileId ?? '' };
       }
 
       return { userUpdateData, isPackageChange, wasDisabled };

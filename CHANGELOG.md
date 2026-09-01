@@ -6,6 +6,38 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.19.0] — 2026-09-01 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support
+
+### Summary
+Audit dan perbaikan menyeluruh untuk payment webhook (Midtrans), payment success page, dan isolasi/reactivation user untuk kedua mode autentikasi (RADIUS & local MikroTik). Perbaikan bug kritis pada orderId parsing, variable shadowing yang mencegah RADIUS reactivation, serta penambahan dukungan HOTSPOT connectionType untuk isolasi dan reaktivasi di semua route.
+
+### Bug Fixes
+- **[CRITICAL]** Webhook `orderId` parsing tidak strip trailing hex segment — invoice tidak ditemukan, status tetap PENDING. Fix: strip semua trailing segments (timestamp + hex)
+- **[CRITICAL]** `wasDisabled` variable shadowing di `handleInvoicePayment` — `const wasDisabled` di dalam block shadowing outer `let wasDisabled`, menyebabkan RADIUS reactivation tidak pernah berjalan untuk user isolated/suspended. Fix: gunakan assignment `wasDisabled =` bukan `const wasDisabled`
+- **[CRITICAL]** HOTSPOT connectionType tidak ditangani di semua route reaktivasi (webhook, mark-paid, status, bulk-status, extend, invoices PUT) — user Hotspot local mode yang diisolir tidak bisa di-reactivate. Fix: cek `connectionType`, HOTSPOT → `manageHotspotUser(disabled=false)` + `kickHotspotSession`
+- **[FIX]** Invoice DELETE gagal karena foreign key constraints. Fix: hapus semua related records (manualPayment, paymentProof, invoiceAddon, paymentAttempt, registrationRequest, qrisPending) sebelum hapus invoice
+- **[FIX]** Missing translation keys di payment pages. Fix: tambah top-level `payment` section di `id.json`
+- **[FIX]** Payment success page tidak menampilkan data invoice/user lengkap. Fix: tambah user relation & customerUsername di invoice check response
+- **[FIX]** Race condition antara webhook dan frontend polling. Fix: tambah polling retry (5x, 2s delay) di payment success page
+- **[FIX]** Type error: `user.profileId` (string | null) tidak assignable ke `profileId: string`. Fix: coerce dengan `?? ''`
+
+### Features
+- **[FEATURE]** ConnectionType-aware isolation & reactivation — semua route sekarang mengecek `user.connectionType` dan menggunakan `manageHotspotUser`/`kickHotspotSession` untuk HOTSPOT atau `managePppSecret`/`kickPppoeSession` untuk PPPoE/STATIC_IP
+
+### Files Changed
+- `backend/src/app/api/payment/webhook/route.ts` — fix orderId parsing, wasDisabled shadowing, HOTSPOT reactivation, type fix
+- `backend/src/app/api/payment/check-order/route.ts` — fix parseInvoiceNumberFromOrder
+- `backend/src/app/api/invoices/check/route.ts` — add user relation & customerUsername
+- `backend/src/app/api/invoices/route.ts` — fix DELETE foreign keys, HOTSPOT reactivation in PUT
+- `backend/src/app/api/pppoe/users/[id]/mark-paid/route.ts` — HOTSPOT reactivation
+- `backend/src/app/api/pppoe/users/status/route.ts` — HOTSPOT enable/disable + kick
+- `backend/src/app/api/pppoe/users/bulk-status/route.ts` — HOTSPOT enable/disable + kick
+- `backend/src/app/api/pppoe/users/[id]/extend/route.ts` — HOTSPOT re-enable + kick
+- `frontend/src/app/payment/success/page.tsx` — polling retry
+- `frontend/src/locales/id.json` — payment translation keys
+
+---
+
 ## [5.18.0] — 2026-08-31 — Notification & Push Notification System Audit
 
 ### Summary
