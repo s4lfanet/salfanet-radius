@@ -97,43 +97,43 @@ export async function syncVoucherToRadius(
     // 1. Add to radcheck (password only)
     // Note: NAS-IP-Address restriction via radcheck doesn't work in standard FreeRADIUS
     // Router restriction is stored in database for reference/filtering but not enforced at RADIUS level
-    await prisma.radcheck.upsert({
-      where: {
-        username_attribute_nas_identifier: {
+    const existingRadcheck = await prisma.radcheck.findFirst({
+      where: { username: voucher.code, attribute: 'Cleartext-Password', nas_identifier: null }
+    })
+    if (existingRadcheck) {
+      await prisma.radcheck.update({
+        where: { id: existingRadcheck.id },
+        data: { value: password }
+      })
+    } else {
+      await prisma.radcheck.create({
+        data: {
           username: voucher.code,
           attribute: 'Cleartext-Password',
-          nas_identifier: null
+          op: ':=',
+          value: password
         }
-      },
-      create: {
-        username: voucher.code,
-        attribute: 'Cleartext-Password',
-        op: ':=',
-        value: password
-      },
-      update: {
-        value: password
-      }
-    })
+      })
+    }
 
     // 2. Add to radusergroup (unique group per voucher)
-    await prisma.radusergroup.upsert({
-      where: {
-        username_groupname_nas_identifier: {
+    const existingRadusergroup = await prisma.radusergroup.findFirst({
+      where: { username: voucher.code, groupname: uniqueGroupName, nas_identifier: null }
+    })
+    if (existingRadusergroup) {
+      await prisma.radusergroup.update({
+        where: { id: existingRadusergroup.id },
+        data: { priority: 1 }
+      })
+    } else {
+      await prisma.radusergroup.create({
+        data: {
           username: voucher.code,
           groupname: uniqueGroupName,
-          nas_identifier: null
+          priority: 1
         }
-      },
-      create: {
-        username: voucher.code,
-        groupname: uniqueGroupName,
-        priority: 1
-      },
-      update: {
-        priority: 1
-      }
-    })
+      })
+    }
 
     // 3. Create radgroupreply entries for this unique group
     // Delete old entries first
