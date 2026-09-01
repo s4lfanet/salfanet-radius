@@ -12,7 +12,7 @@ import { z } from '@/lib/parse-body';
 
 // Zod schema for payment creation — validates and prevents mass assignment
 const paymentCreateSchema = z.object({
-  invoiceId: z.string().uuid().optional(),
+  invoiceId: z.string().min(1).optional(),
   orderNumber: z.string().max(64).optional(),
   amount: z.number().int().positive().optional(),
   gateway: z.enum(['midtrans', 'xendit', 'duitku', 'tripay', 'manual', 'cash', 'transfer', 'qris_own']),
