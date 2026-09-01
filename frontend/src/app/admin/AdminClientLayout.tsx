@@ -527,7 +527,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
                     'flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md transition-all duration-200 group/item',
                     (pathname === child.href || fullPath === child.href)
                       ? 'text-brand-500 bg-brand-50 dark:text-brand-400 dark:bg-brand-500/[0.12]'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white/5'
+                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-white/5'
                   )}
                 >
                   <span className="tracking-wide">{t(child.titleKey)}</span>
