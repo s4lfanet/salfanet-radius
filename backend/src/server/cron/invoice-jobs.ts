@@ -1,5 +1,6 @@
 import { prisma } from '@/server/db/client';
-import { nowWIB, nowWIBAsync } from '@/lib/timezone';
+import { nowWIB, nowWIBAsync, WIB_TIMEZONE } from '@/lib/timezone';
+import { formatInTimeZone } from 'date-fns-tz';
 import { generateInvoiceNumber } from '@/server/services/billing/invoice.service';
 import { nanoid } from 'nanoid';
 import { randomBytes } from 'crypto';
@@ -21,8 +22,9 @@ export async function runInvoiceGenerate(): Promise<{ generated: number; skipped
   });
   const baseUrl = company?.baseUrl || 'http://localhost:3000';
 
-  const year = now.getUTCFullYear();
-  const month = now.getUTCMonth() + 1;
+  const wibMonthStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
+  const year = parseInt(wibMonthStr.substring(0, 4));
+  const month = parseInt(wibMonthStr.substring(5, 7));
   const monthStart = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
   const monthEnd = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
 

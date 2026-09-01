@@ -3,7 +3,7 @@ import { showSuccess, showError } from '@/lib/sweetalert';
 import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from '@/hooks/useTranslation';
-import { isExpiredWIB } from '@/lib/timezone';
+import { isExpiredWIB, WIB_TIMEZONE } from '@/lib/timezone';
 import { apiAgent } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -82,7 +82,7 @@ export default function AgentVouchersPage() {
     if (!date) return '-';
     try {
       const d = typeof date === 'string' ? new Date(date) : date;
-      return formatInTimeZone(d, 'UTC', formatStr);
+      return formatInTimeZone(d, WIB_TIMEZONE, formatStr);
     } catch {
       return '-';
     }

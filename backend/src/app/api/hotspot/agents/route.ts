@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
-import { toWIB, nowWIB } from '@/lib/timezone';
+import { nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
+import { formatInTimeZone } from 'date-fns-tz';
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 
@@ -40,24 +41,20 @@ export async function GET() {
 
     // Calculate statistics for each agent based on vouchers
     const agentsWithStats = agents.map((agent) => {
-      // Use WIB timezone for month calculation (UTC stored in DB)
+      // Use company timezone for month calculation (UTC stored in DB)
       const now = nowWIB();
-      const currentMonth = now.getUTCMonth();
-      const currentYear = now.getUTCFullYear();
+      const currentMonthStr = formatInTimeZone(now, WIB_TIMEZONE, 'yyyy-MM');
 
       // Filter sold vouchers (SOLD, ACTIVE, EXPIRED = terjual)
       const soldVouchers = agent.vouchers.filter((v) => 
         v.status === 'SOLD' || v.status === 'ACTIVE' || v.status === 'EXPIRED'
       );
 
-      // Current month sold vouchers - Compare using UTC methods (WIB-as-UTC)
+      // Current month sold vouchers - Compare using company timezone
       const currentMonthSold = soldVouchers.filter((v) => {
-        const usedDate = v.firstLoginAt ? toWIB(v.firstLoginAt) : null;
-        if (!usedDate) return false;
-        return (
-          usedDate.getUTCMonth() === currentMonth &&
-          usedDate.getUTCFullYear() === currentYear
-        );
+        if (!v.firstLoginAt) return false;
+        const vMonthStr = formatInTimeZone(v.firstLoginAt, WIB_TIMEZONE, 'yyyy-MM');
+        return vMonthStr === currentMonthStr;
       });
 
       // Calculate commission (resellerFee is what agent earns)
