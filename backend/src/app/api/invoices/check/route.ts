@@ -29,6 +29,15 @@ export async function GET(request: NextRequest) {
         dueDate: true,
         customerName: true,
         customerPhone: true,
+        customerUsername: true,
+        user: {
+          select: {
+            name: true,
+            phone: true,
+            username: true,
+            expiredAt: true,
+          },
+        },
       },
     });
 
