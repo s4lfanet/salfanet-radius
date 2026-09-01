@@ -1041,6 +1041,36 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.19.0 — 2026-09-01 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support
+
+### Summary
+Audit dan perbaikan menyeluruh untuk payment webhook (Midtrans), payment success page, dan isolasi/reactivation user untuk kedua mode autentikasi (RADIUS & local MikroTik). Perbaikan bug kritis pada orderId parsing, variable shadowing yang mencegah RADIUS reactivation, serta penambahan dukungan HOTSPOT connectionType untuk isolasi dan reaktivasi di semua route.
+
+### Bug Fixes
+- **[CRITICAL]** Webhook `orderId` parsing tidak strip trailing hex segment — invoice tidak ditemukan, status tetap PENDING. Fix: strip semua trailing segments (timestamp + hex)
+- **[CRITICAL]** `wasDisabled` variable shadowing di `handleInvoicePayment` — `const wasDisabled` di dalam block shadowing outer `let wasDisabled`, menyebabkan RADIUS reactivation tidak pernah berjalan untuk user isolated/suspended. Fix: gunakan assignment `wasDisabled =` bukan `const wasDisabled`
+- **[CRITICAL]** HOTSPOT connectionType tidak ditangani di semua route reaktivasi (webhook, mark-paid, status, bulk-status, extend, invoices PUT) — user Hotspot local mode yang diisolir tidak bisa di-reactivate. Fix: cek `connectionType`, HOTSPOT → `manageHotspotUser(disabled=false)` + `kickHotspotSession`
+- **[FIX]** Invoice DELETE gagal karena foreign key constraints. Fix: hapus semua related records (manualPayment, paymentProof, invoiceAddon, paymentAttempt, registrationRequest, qrisPending) sebelum hapus invoice
+- **[FIX]** Missing translation keys di payment pages. Fix: tambah top-level `payment` section di `id.json`
+- **[FIX]** Payment success page tidak menampilkan data invoice/user lengkap. Fix: tambah user relation & customerUsername di invoice check response
+- **[FIX]** Race condition antara webhook dan frontend polling. Fix: tambah polling retry (5x, 2s delay) di payment success page
+- **[FIX]** Type error: `user.profileId` (string | null) tidak assignable ke `profileId: string`. Fix: coerce dengan `?? ''`
+
+### Features
+- **[FEATURE]** ConnectionType-aware isolation & reactivation — semua route sekarang mengecek `user.connectionType` dan menggunakan `manageHotspotUser`/`kickHotspotSession` untuk HOTSPOT atau `managePppSecret`/`kickPppoeSession` untuk PPPoE/STATIC_IP
+
+### Files Changed
+- `backend/src/app/api/payment/webhook/route.ts` — fix orderId parsing, wasDisabled shadowing, HOTSPOT reactivation, type fix
+- `backend/src/app/api/payment/check-order/route.ts` — fix parseInvoiceNumberFromOrder
+- `backend/src/app/api/invoices/check/route.ts` — add user relation & customerUsername
+- `backend/src/app/api/invoices/route.ts` — fix DELETE foreign keys, HOTSPOT reactivation in PUT
+- `backend/src/app/api/pppoe/users/[id]/mark-paid/route.ts` — HOTSPOT reactivation
+- `backend/src/app/api/pppoe/users/status/route.ts` — HOTSPOT enable/disable + kick
+- `backend/src/app/api/pppoe/users/bulk-status/route.ts` — HOTSPOT enable/disable + kick
+- `backend/src/app/api/pppoe/users/[id]/extend/route.ts` — HOTSPOT re-enable + kick
+- `frontend/src/app/payment/success/page.tsx` — polling retry
+- `frontend/src/locales/id.json` — payment translation keys
+
 ### v5.18.0 — 2026-08-31 — Notification & Push Notification System Audit
 
 ### Summary
@@ -1229,59 +1259,6 @@ Perbaikan issue scroll mobile yang tidak bisa sampai ke bawah halaman di semua p
 - `frontend/src/app/collector/CollectorPortalLayout.tsx` — min-h-dvh (2 places)
 - `package.json` — version bump to 5.15.1
 - `README.md` — version update
-- `CHANGELOG.md` — this entry
-
-### v5.15.0 — 2026-08-25 — Semantic Color Token Migration & Responsive Layout Improvements
-
-### Summary
-Migrasi massif hardcoded color values (`bg-white`, `bg-slate-*`, `text-slate-*`, `border-slate-*`, `text-gray-*`) ke semantic CSS variables (`bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-input`, `bg-muted`, `hover:bg-accent`) di 83 file frontend. Perbaikan responsive layout: fluid typography dengan `clamp()`, responsive chart heights, fullscreen map picker di mobile, modal max-height dengan scroll overflow, aria-hidden pada mobile sidebars. Build berhasil dengan 0 error.
-
-### Semantic Color Token Migration (83 files)
-- **[FIX]** Agent portal (5 files): `dashboard/page.tsx`, `page.tsx` (landing), `sessions/`, `tickets/`, `vouchers/` — semua `bg-white dark:bg-slate-*` → `bg-card`, `text-slate-*` → `text-foreground`/`text-muted-foreground`, `border-slate-*` → `border-border`, `bg-slate-50` → `bg-input`
-- **[FIX]** Technician portal (13 files): Semua halaman `(portal)/` — dashboard, customers, genieacs, isolated, monitor, offline, online, ont-tasks, profile, register, tickets + `TechnicianPortalLayout.tsx` + `login/page.tsx` — migrasi cyberpunk theme colors (`dark:bg-[#1a0f35]`, `dark:text-[#e0d0ff]`) ke semantic tokens untuk light mode consistency
-- **[FIX]** Admin portal (37 files): Semua halaman dengan hardcoded colors — network diagrams, OLT monitoring, genieacs, sessions, settings, whatsapp, pppoe, hotspot, invoices, payment, tickets, logs, dll. + `AdminClientLayout.tsx` + `login/page.tsx`
-- **[FIX]** Customer portal (1 file): `tickets/[id]/page.tsx` — `bg-white dark:bg-gray-900` → `bg-card`, `text-gray-*` → `text-foreground`/`text-muted-foreground`
-- **[FIX]** Collector portal (1 file): `login/page.tsx` — logo container + feature cards
-- **[FIX]** Shared components (27 files): Network components (AddNodePanel, NetworkNodePanel, SplitterDiagram variants, FiberTracing, FilterPanel, SplicePointsSection, SplitterSection, AssignCustomerDialog, EditAssignmentDialog, FreeRadiusStatusCard), UI primitives (alert-dialog, checkbox, textarea, label), cyberpunk components (SimpleModal, CyberButton), agent NotificationDropdown, genieacs (GenieACSLayout, ParameterTree), UserDetailModal
-
-### Responsive Layout Improvements (from previous commit, documented here)
-- **[FEATURE]** Fluid typography dengan `clamp()` untuk headings dan paragraphs di `globals.css`
-- **[FEATURE]** Responsive chart heights via `useResponsiveHeight` hook — 25% height reduction on mobile
-- **[FEATURE]** MapPicker fullscreen on mobile dengan `50vh` map height
-- **[FEATURE]** Modal max-height dengan flex layout dan scroll overflow di `SimpleModal`
-- **[FEATURE]** Responsive table utilities: column hiding, `min-w-full`, horizontal scroll
-- **[FEATURE]** Fluid auto-fit grid classes untuk container width adaptation
-- **[FIX]** `aria-hidden` pada mobile sidebars (agent, technician) — sidebar hidden from screen readers when closed
-- **[FIX]** Admin stat grid: 6 cols → 4 cols at lg for more breathing room
-
-### Token Mapping Reference
-| Hardcoded | Semantic Token |
-|-----------|---------------|
-| `bg-white dark:bg-slate-*` | `bg-card` |
-| `bg-slate-50 dark:bg-slate-900` | `bg-input` |
-| `bg-slate-100 dark:bg-slate-700` | `bg-muted` |
-| `text-slate-900 dark:text-white` | `text-foreground` |
-| `text-slate-500 dark:text-slate-400` | `text-muted-foreground` |
-| `border-slate-200 dark:border-slate-700` | `border-border` |
-| `hover:bg-slate-100 dark:hover:bg-slate-700` | `hover:bg-accent` |
-| `divide-slate-200 dark:divide-slate-700` | `divide-border` |
-
-### Build Status
-- `next build` berhasil dengan 0 error, semua routes compiled successfully
-
-### Files Changed
-- 83 file `.tsx` di `frontend/src/app/` dan `frontend/src/components/`
-- `frontend/src/app/globals.css` — fluid typography, responsive utilities
-- `frontend/src/components/charts/RechartsComponents.tsx` — responsive chart heights
-- `frontend/src/components/MapPicker.tsx` — fullscreen mobile
-- `frontend/src/components/cyberpunk/SimpleModal.tsx` — modal max-height + scroll
-- `frontend/src/app/agent/AgentLayoutClient.tsx` — aria-hidden mobile sidebar
-- `frontend/src/app/technician/TechnicianPortalLayout.tsx` — aria-hidden mobile sidebar
-- `frontend/src/app/admin/AdminClientLayout.tsx` — aria-hidden revert (lg:translate-x-0)
-- `frontend/src/app/admin/page.tsx` — stat grid cols adjustment
-- `frontend/src/app/collector/CollectorPortalLayout.tsx` — aria-hidden revert
-- `package.json` — version bump to 5.15.0
-- `README.md` — version update, auto-changelog sync
 - `CHANGELOG.md` — this entry
 
 <!-- AUTO-CHANGELOG:END -->
