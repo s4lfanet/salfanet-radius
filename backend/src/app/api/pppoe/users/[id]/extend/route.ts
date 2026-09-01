@@ -100,17 +100,31 @@ export async function POST(
         `;
       }
 
-      // Restore PPP secret profile in MikroTik (critical for local mode)
+      // Restore PPP secret / hotspot user in MikroTik (critical for local mode)
       if (user.routerId && shouldManagePppSecretForSuspend(user.router?.authMode)) {
-        managePppSecret(user.routerId, 'enable', {
-          username: user.username,
-          password: user.password,
-          profile: newProfile.groupName,
-        }).then((r) => {
-          console.log(`[Extend] PPP secret restored to "${newProfile.groupName}" for ${user.username}: ${r.message}`);
-        }).catch((e) => {
-          console.error(`[Extend] PPP secret restore failed for ${user.username}:`, e?.message || e);
-        });
+        const connType = user.connectionType || 'PPPOE';
+        if (connType === 'HOTSPOT') {
+          const { manageHotspotUser } = await import('@/server/services/mikrotik/arp-hotspot.service');
+          manageHotspotUser(user.routerId, 'update', {
+            username: user.username,
+            password: user.password,
+            disabled: false,
+          }).then((r) => {
+            console.log(`[Extend] Hotspot re-enabled for ${user.username}: ${r.message}`);
+          }).catch((e) => {
+            console.error(`[Extend] Hotspot re-enable failed for ${user.username}:`, e?.message || e);
+          });
+        } else {
+          managePppSecret(user.routerId, 'enable', {
+            username: user.username,
+            password: user.password,
+            profile: newProfile.groupName,
+          }).then((r) => {
+            console.log(`[Extend] PPP secret restored to "${newProfile.groupName}" for ${user.username}: ${r.message}`);
+          }).catch((e) => {
+            console.error(`[Extend] PPP secret restore failed for ${user.username}:`, e?.message || e);
+          });
+        }
       }
 
       // Only send CoA disconnect if the user was previously isolated — they need to
@@ -120,11 +134,21 @@ export async function POST(
       if (wasIsolated) {
         // Kick via MikroTik API (for local sessions)
         if (user.routerId && shouldManagePppSecretForSuspend(user.router?.authMode)) {
-          kickPppoeSession(user.routerId, user.username).then((kicked) => {
-            console.log(`[Extend] Kicked ${kicked} session(s) for ${user.username} (was isolated)`);
-          }).catch((e) => {
-            console.error(`[Extend] Kick failed for ${user.username}:`, e?.message || e);
-          });
+          const connType = user.connectionType || 'PPPOE';
+          if (connType === 'HOTSPOT') {
+            const { kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+            kickHotspotSession(user.routerId, user.username).then((kicked) => {
+              console.log(`[Extend] Kicked ${kicked} hotspot session(s) for ${user.username} (was isolated)`);
+            }).catch((e) => {
+              console.error(`[Extend] Hotspot kick failed for ${user.username}:`, e?.message || e);
+            });
+          } else {
+            kickPppoeSession(user.routerId, user.username).then((kicked) => {
+              console.log(`[Extend] Kicked ${kicked} session(s) for ${user.username} (was isolated)`);
+            }).catch((e) => {
+              console.error(`[Extend] Kick failed for ${user.username}:`, e?.message || e);
+            });
+          }
         }
 
         const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
