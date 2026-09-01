@@ -148,38 +148,38 @@ const NOTIFICATION_TYPES_BY_ROLE: Record<RecipientRole, Array<{ value: string; l
 
 const QUICK_TEMPLATES_BY_ROLE: Record<RecipientRole, Array<{ key: string; icon: React.ComponentType<{ className?: string }>; label: string; color: string }>> = {
   customer: [
-    { key: 'cust_broadcast', icon: Megaphone, label: 'Pengumuman Umum', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
-    { key: 'cust_tagihan', icon: ReceiptText, label: 'Tagihan Jatuh Tempo', color: 'text-orange-500 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300' },
-    { key: 'cust_maintenance', icon: Wrench, label: 'Maintenance', color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
-    { key: 'cust_gangguan', icon: AlertTriangle, label: 'Gangguan Jaringan', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
-    { key: 'cust_promo', icon: Gift, label: 'Promo Spesial', color: 'text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:border-pink-300' },
-    { key: 'cust_info', icon: Info, label: 'Info Layanan', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
+    { key: 'cust_broadcast', icon: Megaphone, label: 'Pengumuman Umum', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/50' },
+    { key: 'cust_tagihan', icon: ReceiptText, label: 'Tagihan Jatuh Tempo', color: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/30 hover:bg-orange-100 dark:hover:bg-orange-500/20 hover:border-orange-300 dark:hover:border-orange-500/50' },
+    { key: 'cust_maintenance', icon: Wrench, label: 'Maintenance', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/50' },
+    { key: 'cust_gangguan', icon: AlertTriangle, label: 'Gangguan Jaringan', color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/20 hover:border-red-300 dark:hover:border-red-500/50' },
+    { key: 'cust_promo', icon: Gift, label: 'Promo Spesial', color: 'text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 border-pink-200 dark:border-pink-500/30 hover:bg-pink-100 dark:hover:bg-pink-500/20 hover:border-pink-300 dark:hover:border-pink-500/50' },
+    { key: 'cust_info', icon: Info, label: 'Info Layanan', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/50' },
   ],
   technician: [
-    { key: 'tech_broadcast', icon: Megaphone, label: 'Pengumuman Teknisi', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
-    { key: 'tech_tugas', icon: Wrench, label: 'Ada Tugas Baru', color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
-    { key: 'tech_jadwal', icon: Zap, label: 'Perubahan Jadwal', color: 'text-cyan-600 bg-cyan-50 border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300' },
-    { key: 'tech_darurat', icon: AlertTriangle, label: 'Kondisi Darurat', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
-    { key: 'tech_maintenance', icon: Wrench, label: 'Jadwal Maintenance', color: 'text-amber-500 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
-    { key: 'tech_info', icon: Info, label: 'Info Teknis', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
+    { key: 'tech_broadcast', icon: Megaphone, label: 'Pengumuman Teknisi', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/50' },
+    { key: 'tech_tugas', icon: Wrench, label: 'Ada Tugas Baru', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/50' },
+    { key: 'tech_jadwal', icon: Zap, label: 'Perubahan Jadwal', color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 hover:border-cyan-300 dark:hover:border-cyan-500/50' },
+    { key: 'tech_darurat', icon: AlertTriangle, label: 'Kondisi Darurat', color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/20 hover:border-red-300 dark:hover:border-red-500/50' },
+    { key: 'tech_maintenance', icon: Wrench, label: 'Jadwal Maintenance', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/50' },
+    { key: 'tech_info', icon: Info, label: 'Info Teknis', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/50' },
   ],
   agent: [
-    { key: 'agent_broadcast', icon: Megaphone, label: 'Pengumuman Agen', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
-    { key: 'agent_komisi', icon: ReceiptText, label: 'Komisi Diterima', color: 'text-orange-500 bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300' },
-    { key: 'agent_registrasi', icon: Users, label: 'Registrasi Baru', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
-    { key: 'agent_target', icon: Zap, label: 'Update Target', color: 'text-yellow-600 bg-yellow-50 border-yellow-200 hover:bg-yellow-100 hover:border-yellow-300' },
-    { key: 'agent_promo', icon: Gift, label: 'Promo Agen', color: 'text-pink-500 bg-pink-50 border-pink-200 hover:bg-pink-100 hover:border-pink-300' },
-    { key: 'agent_info', icon: Info, label: 'Info Agen', color: 'text-cyan-500 bg-cyan-50 border-cyan-200 hover:bg-cyan-100 hover:border-cyan-300' },
+    { key: 'agent_broadcast', icon: Megaphone, label: 'Pengumuman Agen', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/50' },
+    { key: 'agent_komisi', icon: ReceiptText, label: 'Komisi Diterima', color: 'text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-orange-500/30 hover:bg-orange-100 dark:hover:bg-orange-500/20 hover:border-orange-300 dark:hover:border-orange-500/50' },
+    { key: 'agent_registrasi', icon: Users, label: 'Registrasi Baru', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/50' },
+    { key: 'agent_target', icon: Zap, label: 'Update Target', color: 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-yellow-500/30 hover:bg-yellow-100 dark:hover:bg-yellow-500/20 hover:border-yellow-300 dark:hover:border-yellow-500/50' },
+    { key: 'agent_promo', icon: Gift, label: 'Promo Agen', color: 'text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-500/10 border-pink-200 dark:border-pink-500/30 hover:bg-pink-100 dark:hover:bg-pink-500/20 hover:border-pink-300 dark:hover:border-pink-500/50' },
+    { key: 'agent_info', icon: Info, label: 'Info Agen', color: 'text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 border-cyan-200 dark:border-cyan-500/30 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 hover:border-cyan-300 dark:hover:border-cyan-500/50' },
   ],
   admin: [
-    { key: 'admin_broadcast', icon: Megaphone, label: 'Pengumuman Admin', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
-    { key: 'admin_alert', icon: AlertTriangle, label: 'Alert Sistem', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
-    { key: 'admin_info', icon: Info, label: 'Info Admin', color: 'text-emerald-500 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300' },
+    { key: 'admin_broadcast', icon: Megaphone, label: 'Pengumuman Admin', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/50' },
+    { key: 'admin_alert', icon: AlertTriangle, label: 'Alert Sistem', color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/20 hover:border-red-300 dark:hover:border-red-500/50' },
+    { key: 'admin_info', icon: Info, label: 'Info Admin', color: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 hover:border-emerald-300 dark:hover:border-emerald-500/50' },
   ],
   all: [
-    { key: 'all_broadcast', icon: Megaphone, label: 'Pengumuman Semua', color: 'text-blue-500 bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300' },
-    { key: 'all_gangguan', icon: AlertTriangle, label: 'Gangguan Jaringan', color: 'text-red-500 bg-red-50 border-red-200 hover:bg-red-100 hover:border-red-300' },
-    { key: 'all_maintenance', icon: Wrench, label: 'Maintenance', color: 'text-amber-600 bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300' },
+    { key: 'all_broadcast', icon: Megaphone, label: 'Pengumuman Semua', color: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-500/20 hover:border-blue-300 dark:hover:border-blue-500/50' },
+    { key: 'all_gangguan', icon: AlertTriangle, label: 'Gangguan Jaringan', color: 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 border-red-200 dark:border-red-500/30 hover:bg-red-100 dark:hover:bg-red-500/20 hover:border-red-300 dark:hover:border-red-500/50' },
+    { key: 'all_maintenance', icon: Wrench, label: 'Maintenance', color: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-500/20 hover:border-amber-300 dark:hover:border-amber-500/50' },
   ],
 };
 
@@ -400,7 +400,7 @@ export default function PushNotificationsPage() {
               <div className="p-2 bg-blue-500/10 rounded-lg flex items-center justify-center">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
-              <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">total</span>
+              <span className="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/15 px-2 py-0.5 rounded-full">total</span>
             </div>
             <p className="text-lg sm:text-2xl font-bold tracking-tight">{loading ? '—' : stats?.totalUsers ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.totalCustomers')}</p>
@@ -413,7 +413,7 @@ export default function PushNotificationsPage() {
               <div className="p-2 bg-emerald-500/10 rounded-lg flex items-center justify-center">
                 <Smartphone className="w-5 h-5 text-emerald-600" />
               </div>
-              <span className="text-xs font-medium text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full">push</span>
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/15 px-2 py-0.5 rounded-full">push</span>
             </div>
             <p className="text-lg sm:text-2xl font-bold tracking-tight text-emerald-600">{loading ? '—' : stats?.usersWithTokens ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.registeredPush')}</p>
@@ -426,7 +426,7 @@ export default function PushNotificationsPage() {
               <div className="p-2 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <RadioTower className="w-5 h-5 text-orange-600" />
               </div>
-              <span className="text-xs font-medium text-orange-600 bg-orange-100 px-2 py-0.5 rounded-full">sent</span>
+              <span className="text-xs font-medium text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-500/15 px-2 py-0.5 rounded-full">sent</span>
             </div>
             <p className="text-lg sm:text-2xl font-bold tracking-tight">{loading ? '—' : stats?.totalBroadcasts ?? 0}</p>
             <p className="text-xs text-muted-foreground mt-1">{t('pushNotif.totalBroadcast')}</p>
@@ -677,12 +677,12 @@ export default function PushNotificationsPage() {
                       <>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">{t('pushNotif.registeredPushLabel')}</span>
-                          <span className="font-bold text-emerald-600">{stats?.usersWithTokens ?? 0} {t('pushNotif.users')}</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{stats?.usersWithTokens ?? 0} {t('pushNotif.users')}</span>
                         </div>
                         {(stats?.fcmUserCount ?? 0) > 0 && (
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-muted-foreground">Push Mobile (FCM)</span>
-                            <span className="font-bold text-blue-600">{stats?.fcmUserCount ?? 0} {t('pushNotif.users')}</span>
+                            <span className="font-bold text-blue-600 dark:text-blue-400">{stats?.fcmUserCount ?? 0} {t('pushNotif.users')}</span>
                           </div>
                         )}
                         <div className="flex items-center justify-between text-xs">
@@ -708,41 +708,41 @@ export default function PushNotificationsPage() {
                       <>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Total teknisi dengan Push aktif</span>
-                          <span className="font-bold text-amber-600">{(stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)} teknisi</span>
+                          <span className="font-bold text-amber-600 dark:text-amber-400">{(stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)} teknisi</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground text-[10px]">↳ Teknisi OTP</span>
-                          <span className="font-medium text-amber-500">{stats?.technicianSubscribers ?? 0}</span>
+                          <span className="font-medium text-amber-500 dark:text-amber-400">{stats?.technicianSubscribers ?? 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground text-[10px]">↳ Admin via portal teknisi</span>
-                          <span className="font-medium text-orange-500">{stats?.adminSubscribers ?? 0}</span>
+                          <span className="font-medium text-orange-500 dark:text-orange-400">{stats?.adminSubscribers ?? 0}</span>
                         </div>
                       </>
                     )}
                     {recipientRole === 'agent' && (
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Agen dengan Push aktif</span>
-                        <span className="font-bold text-emerald-600">{stats?.agentSubscribers ?? 0} agen</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{stats?.agentSubscribers ?? 0} agen</span>
                       </div>
                     )}
                     {recipientRole === 'all' && (
                       <>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Pelanggan</span>
-                          <span className="font-bold text-blue-600">{stats?.usersWithTokens ?? 0}</span>
+                          <span className="font-bold text-blue-600 dark:text-blue-400">{stats?.usersWithTokens ?? 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Teknisi</span>
-                          <span className="font-bold text-amber-600">{(stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
+                          <span className="font-bold text-amber-600 dark:text-amber-400">{(stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">Agen</span>
-                          <span className="font-bold text-emerald-600">{stats?.agentSubscribers ?? 0}</span>
+                          <span className="font-bold text-emerald-600 dark:text-emerald-400">{stats?.agentSubscribers ?? 0}</span>
                         </div>
                         <div className="flex items-center justify-between text-xs border-t pt-2 mt-1">
                           <span className="text-muted-foreground font-semibold">Total penerima</span>
-                          <span className="font-bold text-purple-600">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
+                          <span className="font-bold text-purple-600 dark:text-purple-400">{(stats?.usersWithTokens ?? 0) + (stats?.agentSubscribers ?? 0) + (stats?.technicianSubscribers ?? 0) + (stats?.adminSubscribers ?? 0)}</span>
                         </div>
                       </>
                     )}
@@ -864,7 +864,7 @@ export default function PushNotificationsPage() {
                 {/* Mobile Card View */}
                 <div className="block md:hidden space-y-3.5">
                   {broadcasts.map((bc) => (
-                    <div key={bc.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3.5">
+                    <div key={bc.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 dark:border-[#bc13fe]/30 p-3.5">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold leading-tight">{bc.title}</p>
@@ -882,15 +882,15 @@ export default function PushNotificationsPage() {
                           <p className="text-xs font-medium">{bc.sentBy || 'admin'}</p>
                         </div>
                         <div className="flex items-center gap-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span className="text-emerald-600 font-bold text-sm">{bc.sentCount}</span>
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-emerald-600 dark:text-emerald-400 font-bold text-sm">{bc.sentCount}</span>
                           <span className="text-muted-foreground text-[10px]">{t('pushNotif.headerSent')}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           {bc.failedCount > 0 ? (
                             <>
-                              <XCircle className="w-3 h-3 text-red-500" />
-                              <span className="text-red-500 font-bold text-sm">{bc.failedCount}</span>
+                              <XCircle className="w-3 h-3 text-red-500 dark:text-red-400" />
+                              <span className="text-red-500 dark:text-red-400 font-bold text-sm">{bc.failedCount}</span>
                               <span className="text-muted-foreground text-[10px]">{t('pushNotif.headerFailed')}</span>
                             </>
                           ) : (
@@ -935,14 +935,14 @@ export default function PushNotificationsPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
-                            <div className="inline-flex items-center gap-1 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">
+                            <div className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span className="font-bold text-sm">{bc.sentCount}</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-center">
                             {bc.failedCount > 0 ? (
-                              <div className="inline-flex items-center gap-1 text-red-500 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full">
+                              <div className="inline-flex items-center gap-1 text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full">
                                 <XCircle className="w-3.5 h-3.5" />
                                 <span className="font-bold text-sm">{bc.failedCount}</span>
                               </div>
