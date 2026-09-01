@@ -87,11 +87,35 @@ function PaymentSuccessContent() {
   };
 
   const fetchInvoiceStatus = async () => {
-    try {
-      const res = await fetch(`/api/invoices/check?token=${token}`);
-      const data = await res.json();
-      if (res.ok && data.invoice) setInvoice(data.invoice); else setError(data.error || t('payment.invoiceNotFound'));
-    } catch { setError(t('payment.checkStatusFailed')); } finally { setLoading(false); }
+    const maxRetries = 5;
+    for (let i = 0; i < maxRetries; i++) {
+      try {
+        const res = await fetch(`/api/invoices/check?token=${token}`);
+        const data = await res.json();
+        if (res.ok && data.invoice) {
+          // If invoice is still PENDING and transaction_status is settlement,
+          // webhook may not have been processed yet — retry
+          if (data.invoice.status === 'PENDING' && transactionStatus === 'settlement' && i < maxRetries - 1) {
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+          setInvoice(data.invoice);
+          return;
+        }
+        if (i < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+        setError(data.error || t('payment.invoiceNotFound'));
+      } catch {
+        if (i < maxRetries - 1) {
+          await new Promise(r => setTimeout(r, 2000));
+          continue;
+        }
+        setError(t('payment.checkStatusFailed'));
+      }
+    }
+    setLoading(false);
   };
 
   if (loading) return (
