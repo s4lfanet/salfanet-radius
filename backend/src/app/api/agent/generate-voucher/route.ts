@@ -1,6 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
+import { syncVoucherToAssignedRouter } from '@/server/services/mikrotik/hotspot-voucher.service';
 import { logActivity } from '@/server/services/activity-log.service';
 import { nowWIB } from '@/lib/timezone';
 import { parseBody } from '@/lib/parse-body';
@@ -205,6 +206,24 @@ export async function POST(request: NextRequest) {
     console.log(`[RADIUS SYNC] Agent batch ${batchCode}: ${syncSuccessCount} OK, ${syncFailCount} failed`);
     if (syncFailCount > 0) {
       console.error(`[RADIUS SYNC] ${syncFailCount} voucher(s) failed to sync for agent ${agent.name}`);
+    }
+
+    // Sync to MikroTik local NAS (creates /ip/hotspot/user via API)
+    // Voucher has routerId from agent's assigned router, so it syncs to that specific router
+    let mtSyncSuccess = 0;
+    let mtSyncFail = 0;
+    for (const voucher of vouchers) {
+      try {
+        const mtResult = await syncVoucherToAssignedRouter(voucher.id);
+        mtSyncSuccess += mtResult.success;
+        mtSyncFail += mtResult.failed;
+      } catch (mtError: any) {
+        mtSyncFail++;
+        console.error(`[MIKROTIK SYNC] Failed for voucher ${voucher.code}: ${mtError?.message}`);
+      }
+    }
+    if (mtSyncSuccess > 0) {
+      console.log(`[MIKROTIK SYNC] Agent batch ${batchCode}: ${mtSyncSuccess} OK, ${mtSyncFail} failed`);
     }
 
     // Get updated agent balance

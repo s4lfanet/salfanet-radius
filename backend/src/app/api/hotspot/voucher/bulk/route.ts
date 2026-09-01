@@ -2,6 +2,7 @@
 import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { syncVoucherToRadius } from '@/server/services/radius/hotspot-sync.service';
+import { syncVoucherToAssignedRouter } from '@/server/services/mikrotik/hotspot-voucher.service';
 
 export async function GET(request: NextRequest) {
   const authCheck = await requirePermission('vouchers.view');
@@ -189,6 +190,13 @@ export async function POST(request: NextRequest) {
         } catch (radiusError) {
           console.error(`RADIUS sync error for ${newVoucher.code}:`, radiusError);
           // Don't fail the import if sync fails
+        }
+
+        // Sync to MikroTik local NAS (creates /ip/hotspot/user via API)
+        try {
+          await syncVoucherToAssignedRouter(newVoucher.id);
+        } catch (mtError) {
+          console.error(`MikroTik sync error for ${newVoucher.code}:`, mtError);
         }
 
         results.success++;

@@ -8,6 +8,7 @@ import { formatInTimeZone } from 'date-fns-tz';
 import { logActivity } from '@/server/services/activity-log.service';
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service';
 import { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } from '@/server/services/mikrotik/ppp-secret.service';
+import { syncVoucherToAssignedRouter } from '@/server/services/mikrotik/hotspot-voucher.service';
 import { settlePaymentAttempt } from '@/server/services/payment/payment-attempt.service';
 import crypto from 'crypto';
 import { nanoid } from 'nanoid';
@@ -604,6 +605,19 @@ async function handleVoucherOrder(
           console.log(`✅ Voucher ${voucherCode} synced to RADIUS`);
         } catch (radiusError) {
           console.error(`RADIUS sync error for ${voucherCode}:`, radiusError);
+        }
+
+        // Sync to MikroTik local NAS (creates /ip/hotspot/user via API)
+        // If voucher has no routerId, syncs to ALL active local-mode routers (multi-NAS support)
+        try {
+          const mtResult = await syncVoucherToAssignedRouter(voucher.id);
+          if (mtResult.success > 0) {
+            console.log(`✅ Voucher ${voucherCode} synced to MikroTik (${mtResult.success}/${mtResult.total} routers)`);
+          } else if (mtResult.total > 0) {
+            console.error(`❌ Voucher ${voucherCode} failed to sync to MikroTik (${mtResult.failed}/${mtResult.total} failed)`);
+          }
+        } catch (mtError) {
+          console.error(`MikroTik sync error for ${voucherCode}:`, mtError);
         }
       }
 
