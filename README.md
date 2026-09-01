@@ -3,7 +3,7 @@
 Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with FreeRADIUS integration supporting PPPoE and Hotspot authentication.
 
 > **Architecture:** pnpm monorepo — **Two Next.js apps** (frontend UI + backend API) + Baileys WhatsApp service
-> **Version:** 5.18.0 — Notification & Push Notification System Audit + Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh + Import Audit Fixes & Optional Profile + Mobile Scroll Fix (All Portals) + Semantic Color Token Migration & Responsive Layout Improvements + Collector Portal + APK Download Audit + Backend Security/Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
+> **Version:** 5.19.0 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support + Notification & Push Notification System Audit + Bulk Import Fixes, Null-Safe Profile Access & Auto-Refresh + Import Audit Fixes & Optional Profile + Mobile Scroll Fix (All Portals) + Semantic Color Token Migration & Responsive Layout Improvements + Collector Portal + APK Download Audit + Backend Security/Validation Fixes + MikroTik Local-Only Voucher Sync + QRIS Mandiri Payment + Auto-Update System + Phase 7 (React Query) + Phase 6D (UI State & Error Handling) + Phase 6C (API Client Correctness) + Phase 6B (Type-Safety) + Phase 6A (API Contract Audit) + Phase 5 (frontend audit) + Phase 2 (111 batches, ~510 fetch calls migrated) + Phase 3 architecture improvements
 
 ---
 
@@ -30,7 +30,7 @@ Modern, full-stack billing & RADIUS management system for ISP/RTRW.NET with Free
 | **Financial** | Income/expense tracking with categories, keuangan reconciliation |
 | **Network (FTTH)** | OLT/ODC/ODP management, customer port assignment, network map, distance calculation |
 | **GenieACS TR-069** | CPE/ONT management, WiFi config (SSID/password), device status & uptime |
-| **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong** |
+| **Isolation** | Auto-isolate expired customers, customizable WhatsApp/Email/HTML landing page templates, **fallback MikroTik API kick saat radacct kosong**, **HOTSPOT local mode isolation/reactivation** (manageHotspotUser enable/disable + kick), **connectionType-aware reactivation** (PPPoE & Hotspot) di semua route (webhook, mark-paid, status, bulk-status, extend) |
 | **Cron Jobs** | 17 automated background jobs (tsx runner via PM2 fork), history, distributed locking, manual trigger, **auto-close orphaned/stale sessions** |
 | **Roles & Permissions** | 53 permissions, 6 portals (Admin/Customer/Agent/Technician/Collector + SuperAdmin) |
 | **Activity Log** | Audit trail with auto-cleanup (30 days) |
