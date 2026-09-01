@@ -67,7 +67,8 @@ export async function createMidtransPayment(params: {
       finish: `${baseUrl}/payment/success?token=${params.invoiceToken}`,
       error: `${baseUrl}/payment/failed?token=${params.invoiceToken}`,
       pending: `${baseUrl}/payment/pending?token=${params.invoiceToken}`
-    }
+    },
+    notification_url: `${baseUrl}/api/payment/webhook`
   }
 
   try {

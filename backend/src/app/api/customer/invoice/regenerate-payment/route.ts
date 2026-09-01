@@ -175,6 +175,7 @@ export async function POST(request: NextRequest) {
             price: invoice.amount,
             quantity: 1,
           }],
+          callbackUrl: `${appBaseUrl}/api/payment/webhook`,
           returnUrl: `${appBaseUrl}/customer`,
           expiredTime: 86400,
         });
