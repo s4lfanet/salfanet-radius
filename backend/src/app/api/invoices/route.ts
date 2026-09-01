@@ -33,8 +33,14 @@ export async function DELETE(request: NextRequest) {
 
       if (idList.length === 0) return badRequest('No valid IDs provided');
 
-      // Delete related payments first
+      // Delete related records first
       await prisma.payment.deleteMany({ where: { invoiceId: { in: idList } } });
+      await prisma.manualPayment.deleteMany({ where: { invoiceId: { in: idList } } });
+      await prisma.paymentProof.deleteMany({ where: { invoiceId: { in: idList } } });
+      await prisma.invoiceAddon.deleteMany({ where: { invoiceId: { in: idList } } });
+      await prisma.paymentAttempt.deleteMany({ where: { invoiceId: { in: idList } } });
+      await prisma.registrationRequest.updateMany({ where: { invoiceId: { in: idList } }, data: { invoiceId: null } });
+      await prisma.qrisPending.updateMany({ where: { invoiceId: { in: idList } }, data: { invoiceId: null } });
 
       const result = await prisma.invoice.deleteMany({ where: { id: { in: idList } } });
 
@@ -46,7 +52,14 @@ export async function DELETE(request: NextRequest) {
     const existingInvoice = await prisma.invoice.findUnique({ where: { id } });
     if (!existingInvoice) return notFound('Invoice');
 
+    // Delete related records first
     await prisma.payment.deleteMany({ where: { invoiceId: id } });
+    await prisma.manualPayment.deleteMany({ where: { invoiceId: id } });
+    await prisma.paymentProof.deleteMany({ where: { invoiceId: id } });
+    await prisma.invoiceAddon.deleteMany({ where: { invoiceId: id } });
+    await prisma.paymentAttempt.deleteMany({ where: { invoiceId: id } });
+    await prisma.registrationRequest.updateMany({ where: { invoiceId: id }, data: { invoiceId: null } });
+    await prisma.qrisPending.updateMany({ where: { invoiceId: id }, data: { invoiceId: null } });
     await prisma.invoice.delete({ where: { id } });
 
     return ok({ success: true, message: 'Invoice deleted successfully' });
