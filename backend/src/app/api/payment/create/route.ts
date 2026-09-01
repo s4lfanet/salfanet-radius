@@ -455,6 +455,7 @@ export async function POST(request: NextRequest) {
               quantity: 1,
             },
           ],
+          callbackUrl: `${appBaseUrl}/api/payment/webhook`,
           returnUrl: `${appBaseUrl}/pay/${invoice.paymentToken}`,
           expiredTime: 86400, // 24 hours
         });
@@ -623,7 +624,8 @@ async function createVoucherPayment(order: any, gateway: string) {
           finish: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=success`,
           error: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=failed`,
           pending: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=pending`
-        }
+        },
+        notification_url: `${baseUrl}/api/payment/webhook`
       };
 
       const transaction = await snap.createTransaction(parameter);
@@ -656,7 +658,8 @@ async function createVoucherPayment(order: any, gateway: string) {
           currency: 'IDR',
           reminderTime: 1,
           successRedirectUrl: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=success`,
-          failureRedirectUrl: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=failed`
+          failureRedirectUrl: `${baseUrl}/evoucher/pay/${order.paymentToken}?status=failed`,
+          callbackUrl: `${baseUrl}/api/payment/webhook`
         }
       });
 
@@ -723,6 +726,7 @@ async function createVoucherPayment(order: any, gateway: string) {
             quantity: 1,
           },
         ],
+        callbackUrl: `${baseUrl}/api/payment/webhook`,
         returnUrl: `${baseUrl}/evoucher/pay/${order.paymentToken}`,
         expiredTime: 86400, // 24 hours
       });

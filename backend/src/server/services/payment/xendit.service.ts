@@ -55,7 +55,8 @@ export async function createXenditInvoice(params: {
         currency: 'IDR',
         reminderTime: 1,
         successRedirectUrl: `${baseUrl}/payment/success?token=${params.invoiceToken}`,
-        failureRedirectUrl: `${baseUrl}/payment/failed?token=${params.invoiceToken}`
+        failureRedirectUrl: `${baseUrl}/payment/failed?token=${params.invoiceToken}`,
+        callbackUrl: `${baseUrl}/api/payment/webhook`
       }
     })
 
