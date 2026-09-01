@@ -587,23 +587,38 @@ export async function PUT(request: NextRequest) {
 
             console.log(`  - RADIUS: Profile set to ${groupName}`);
 
-            // 4.5. Restore MikroTik PPP secret from 'isolir' → user's profile
-            // Critical: during isolation, PPP secret profile was changed to 'isolir'.
-            // Must restore it back to the user's actual profile, otherwise user
-            // reconnects with isolir profile (local auth mode).
+            // 4.5. Restore MikroTik PPP secret / hotspot user from 'isolir' → user's profile
+            // Critical: during isolation, PPP secret profile was changed to 'isolir'
+            // or hotspot user was disabled. Must restore based on connectionType.
             if (user.router?.id && shouldManagePppSecretForSuspend(authMode)) {
-              managePppSecret(user.router.id, 'enable', {
-                username: user.username,
-                password: user.password,
-                profile: groupName,
-              })
-                .then(r => console.log(`  - PPP secret: Restored to ${groupName} for ${user.username}: ${r.message}`))
-                .catch(e => console.error(`  - PPP secret: Failed to restore for ${user.username}:`, e?.message || e));
+              const connType = (user as any).connectionType || 'PPPOE';
+              if (connType === 'HOTSPOT') {
+                const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+                manageHotspotUser(user.router.id, 'update', {
+                  username: user.username,
+                  password: user.password,
+                  disabled: false,
+                })
+                  .then(r => console.log(`  - Hotspot: Re-enabled for ${user.username}: ${r.message}`))
+                  .catch(e => console.error(`  - Hotspot: Failed to re-enable for ${user.username}:`, e?.message || e));
 
-              // Kick active session via MikroTik API (critical for local auth)
-              kickPppoeSession(user.router.id, user.username)
+                kickHotspotSession(user.router.id, user.username)
+                  .then(k => console.log(`  - Hotspot: Kicked ${k} session(s) for ${user.username}`))
+                  .catch(e => console.error(`  - Hotspot: Kick failed for ${user.username}:`, e?.message || e));
+              } else {
+                managePppSecret(user.router.id, 'enable', {
+                  username: user.username,
+                  password: user.password,
+                  profile: groupName,
+                })
+                  .then(r => console.log(`  - PPP secret: Restored to ${groupName} for ${user.username}: ${r.message}`))
+                  .catch(e => console.error(`  - PPP secret: Failed to restore for ${user.username}:`, e?.message || e));
+
+                // Kick active session via MikroTik API (critical for local auth)
+                kickPppoeSession(user.router.id, user.username)
                 .then(kicked => console.log(`  - MikroTik: Kicked ${kicked} session(s) for ${user.username}`))
                 .catch(e => console.error(`  - MikroTik: Kick failed for ${user.username}:`, e?.message || e));
+              }
             }
 
             if (shouldActivate) {

@@ -42,6 +42,7 @@ export async function PUT(request: Request) {
         phone: true,
         email: true,
         expiredAt: true,
+        connectionType: true,
         profile: { select: { groupName: true } },
         router: { select: { id: true, nasname: true, authMode: true } },
       },
@@ -196,33 +197,59 @@ export async function PUT(request: Request) {
       return updated;
     });
 
-    // Manage PPP Secret in MikroTik based on authMode (local only — radius uses radcheck)
-    // - active:   enable PPP secret + restore original profile
-    // - isolated: enable PPP secret + change profile to 'isolir'
-    // - blocked:  disable PPP secret (prevent local fallback auth)
-    // - stop:     disable PPP secret (prevent local fallback auth)
+    // Manage PPP Secret / Hotspot user in MikroTik based on authMode (local only — radius uses radcheck)
+    // - active:   enable + restore original profile (PPPoE) / re-enable (Hotspot)
+    // - isolated: enable + change profile to 'isolir' (PPPoE) / disable (Hotspot)
+    // - blocked:  disable (prevent local fallback auth)
+    // - stop:     disable (prevent local fallback auth)
     if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
-      const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
-      const profile = status === 'isolated' ? 'isolir' : (status === 'active' ? (user.profile?.groupName || undefined) : undefined);
-      try {
-        const r = await managePppSecret(user.router.id, action, {
-          username: user.username,
-          password: user.password,
-          profile,
-          comment: `Salfanet-${user.id.slice(0, 8)}`,
-        });
-        console.log(`[PPP_SECRET] ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`);
-      } catch (e: any) {
-        console.error(`[PPP_SECRET] ${action} failed for "${user.username}":`, e?.message || e);
-      }
-
-      // Kick active session via MikroTik API (critical for local — CoA doesn't work on local-auth sessions)
-      if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+      const connType = user.connectionType || 'PPPOE';
+      if (connType === 'HOTSPOT') {
+        const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+        const disabled = status === 'blocked' || status === 'stop';
         try {
-          const kicked = await kickPppoeSession(user.router.id, user.username);
-          console.log(`[PPP_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+          const r = await manageHotspotUser(user.router.id, 'update', {
+            username: user.username,
+            password: user.password,
+            disabled,
+            comment: `Salfanet-${user.id.slice(0, 8)}`,
+          });
+          console.log(`[HOTSPOT] ${disabled ? 'disabled' : 'enabled'} for "${user.username}" (status=${status}): ${r.message}`);
         } catch (e: any) {
-          console.error(`[PPP_KICK] Failed for "${user.username}":`, e?.message || e);
+          console.error(`[HOTSPOT] Failed for "${user.username}":`, e?.message || e);
+        }
+
+        if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+          try {
+            const kicked = await kickHotspotSession(user.router.id, user.username);
+            console.log(`[HOTSPOT_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+          } catch (e: any) {
+            console.error(`[HOTSPOT_KICK] Failed for "${user.username}":`, e?.message || e);
+          }
+        }
+      } else {
+        const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
+        const profile = status === 'isolated' ? 'isolir' : (status === 'active' ? (user.profile?.groupName || undefined) : undefined);
+        try {
+          const r = await managePppSecret(user.router.id, action, {
+            username: user.username,
+            password: user.password,
+            profile,
+            comment: `Salfanet-${user.id.slice(0, 8)}`,
+          });
+          console.log(`[PPP_SECRET] ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`);
+        } catch (e: any) {
+          console.error(`[PPP_SECRET] ${action} failed for "${user.username}":`, e?.message || e);
+        }
+
+        // Kick active session via MikroTik API (critical for local — CoA doesn't work on local-auth sessions)
+        if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+          try {
+            const kicked = await kickPppoeSession(user.router.id, user.username);
+            console.log(`[PPP_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+          } catch (e: any) {
+            console.error(`[PPP_KICK] Failed for "${user.username}":`, e?.message || e);
+          }
         }
       }
     }

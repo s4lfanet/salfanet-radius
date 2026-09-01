@@ -184,25 +184,50 @@ export async function POST(
           `;
         }
 
-        // Restore PPP secret profile in MikroTik (critical for local mode)
-        // Change profile back to original + enable + kick active session
+        // Restore PPP secret / hotspot user in MikroTik (critical for local mode)
+        // Based on connectionType: PPPoE → restore secret profile, Hotspot → re-enable user
         if (userRecord.router?.id && shouldManagePppSecretForSuspend(userRecord.router.authMode)) {
-          managePppSecret(userRecord.router.id, 'enable', {
-            username: userRecord.username,
-            password: userRecord.password,
-            profile: userRecord.profile?.groupName || '',
-          }).then((r) => {
-            console.log(`[MarkPaid] PPP secret restored to "${userRecord.profile?.groupName || ''}" for ${userRecord.username}: ${r.message}`);
-          }).catch((e) => {
-            console.error(`[MarkPaid] PPP secret restore failed for ${userRecord.username}:`, e?.message || e);
-          });
+          // Need to fetch connectionType since userRecord select doesn't include it
+          const connType = await prisma.pppoeUser.findUnique({
+            where: { id },
+            select: { connectionType: true },
+          }).then(u => u?.connectionType || 'PPPOE');
 
-          // Kick active session so user reconnects with restored profile
-          kickPppoeSession(userRecord.router.id, userRecord.username).then((kicked) => {
-            console.log(`[MarkPaid] Kicked ${kicked} session(s) for ${userRecord.username}`);
-          }).catch((e) => {
-            console.error(`[MarkPaid] Kick failed for ${userRecord.username}:`, e?.message || e);
-          });
+          if (connType === 'HOTSPOT') {
+            const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+            manageHotspotUser(userRecord.router.id, 'update', {
+              username: userRecord.username,
+              password: userRecord.password,
+              disabled: false,
+            }).then((r) => {
+              console.log(`[MarkPaid] Hotspot re-enabled for ${userRecord.username}: ${r.message}`);
+            }).catch((e) => {
+              console.error(`[MarkPaid] Hotspot re-enable failed for ${userRecord.username}:`, e?.message || e);
+            });
+
+            kickHotspotSession(userRecord.router.id, userRecord.username).then((kicked) => {
+              console.log(`[MarkPaid] Kicked ${kicked} hotspot session(s) for ${userRecord.username}`);
+            }).catch((e) => {
+              console.error(`[MarkPaid] Hotspot kick failed for ${userRecord.username}:`, e?.message || e);
+            });
+          } else {
+            managePppSecret(userRecord.router.id, 'enable', {
+              username: userRecord.username,
+              password: userRecord.password,
+              profile: userRecord.profile?.groupName || '',
+            }).then((r) => {
+              console.log(`[MarkPaid] PPP secret restored to "${userRecord.profile?.groupName || ''}" for ${userRecord.username}: ${r.message}`);
+            }).catch((e) => {
+              console.error(`[MarkPaid] PPP secret restore failed for ${userRecord.username}:`, e?.message || e);
+            });
+
+            // Kick active session so user reconnects with restored profile
+            kickPppoeSession(userRecord.router.id, userRecord.username).then((kicked) => {
+              console.log(`[MarkPaid] Kicked ${kicked} session(s) for ${userRecord.username}`);
+            }).catch((e) => {
+              console.error(`[MarkPaid] Kick failed for ${userRecord.username}:`, e?.message || e);
+            });
+          }
         }
 
         // Send CoA disconnect so user immediately reconnects with restored profile

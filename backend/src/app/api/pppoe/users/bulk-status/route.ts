@@ -155,32 +155,58 @@ export async function PUT(request: Request) {
         `;
       }
 
-      // Manage PPP secret for local routers
-      // - active:   enable + restore original profile
-      // - isolated: enable + change profile to 'isolir'
+      // Manage PPP secret / hotspot user for local routers
+      // - active:   enable + restore original profile (PPPoE) / re-enable (Hotspot)
+      // - isolated: enable + change profile to 'isolir' (PPPoE) / disable (Hotspot)
       // - blocked/stop: disable + kick
       if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
-        const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
-        const profile = status === 'isolated' ? 'isolir' : (status === 'active' ? (user.profile?.groupName || undefined) : undefined);
-        try {
-          const r = await managePppSecret(user.router.id, action, {
-            username: user.username,
-            password: user.password,
-            profile,
-            comment: `Salfanet-${user.id.slice(0, 8)}`,
-          });
-          console.log(`[PPP_SECRET] bulk ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`);
-        } catch (e: any) {
-          console.error(`[PPP_SECRET] bulk ${action} failed for "${user.username}":`, e?.message || e);
-        }
-
-        // Kick active session via MikroTik API
-        if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+        const connType = user.connectionType || 'PPPOE';
+        if (connType === 'HOTSPOT') {
+          const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+          const disabled = status === 'blocked' || status === 'stop' || status === 'isolated';
           try {
-            const kicked = await kickPppoeSession(user.router.id, user.username);
-            console.log(`[PPP_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+            const r = await manageHotspotUser(user.router.id, 'update', {
+              username: user.username,
+              password: user.password,
+              disabled,
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+            console.log(`[HOTSPOT] bulk ${disabled ? 'disabled' : 'enabled'} for "${user.username}" (status=${status}): ${r.message}`);
           } catch (e: any) {
-            console.error(`[PPP_KICK] bulk failed for "${user.username}":`, e?.message || e);
+            console.error(`[HOTSPOT] bulk failed for "${user.username}":`, e?.message || e);
+          }
+
+          if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+            try {
+              const kicked = await kickHotspotSession(user.router.id, user.username);
+              console.log(`[HOTSPOT_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+            } catch (e: any) {
+              console.error(`[HOTSPOT_KICK] bulk failed for "${user.username}":`, e?.message || e);
+            }
+          }
+        } else {
+          const action = (status === 'active' || status === 'isolated') ? 'enable' : 'disable';
+          const profile = status === 'isolated' ? 'isolir' : (status === 'active' ? (user.profile?.groupName || undefined) : undefined);
+          try {
+            const r = await managePppSecret(user.router.id, action, {
+              username: user.username,
+              password: user.password,
+              profile,
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+            console.log(`[PPP_SECRET] bulk ${action} profile=${profile || 'unchanged'} for "${user.username}" (status=${status}): ${r.message}`);
+          } catch (e: any) {
+            console.error(`[PPP_SECRET] bulk ${action} failed for "${user.username}":`, e?.message || e);
+          }
+
+          // Kick active session via MikroTik API
+          if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+            try {
+              const kicked = await kickPppoeSession(user.router.id, user.username);
+              console.log(`[PPP_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+            } catch (e: any) {
+              console.error(`[PPP_KICK] bulk failed for "${user.username}":`, e?.message || e);
+            }
           }
         }
       }

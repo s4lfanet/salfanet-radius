@@ -1785,25 +1785,49 @@ async function handleInvoicePayment(
 
             console.log(`✅ RADIUS entries restored for ${user.username}`);
 
-            // 4b. Restore PPP secret profile in MikroTik (critical for local mode)
-            //     Change profile back to original + enable + kick active session
+            // 4b. Restore PPP secret / hotspot user in MikroTik (critical for local mode)
+            //     Based on connectionType: PPPoE → restore secret profile, Hotspot → re-enable user
             if (user.routerId && shouldManagePppSecretForSuspend((user as any).router?.authMode)) {
-              try {
-                const r = await managePppSecret(user.routerId, 'enable', {
-                  username: user.username,
-                  password: user.password,
-                  profile: profile.groupName,
-                });
-                console.log(`✅ [Webhook] PPP secret restored to "${profile.groupName}" for ${user.username}: ${r.message}`);
-              } catch (e: any) {
-                console.error(`[Webhook] PPP secret restore failed for ${user.username}:`, e?.message || e);
-              }
+              const connType = (user as any).connectionType || 'PPPOE';
+              if (connType === 'HOTSPOT') {
+                // Hotspot: re-enable hotspot user + kick active session
+                try {
+                  const { manageHotspotUser, kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+                  const r = await manageHotspotUser(user.routerId, 'update', {
+                    username: user.username,
+                    password: user.password,
+                    disabled: false,
+                  });
+                  console.log(`✅ [Webhook] Hotspot re-enabled for ${user.username}: ${r.message}`);
+                } catch (e: any) {
+                  console.error(`[Webhook] Hotspot re-enable failed for ${user.username}:`, e?.message || e);
+                }
+                try {
+                  const { kickHotspotSession } = await import('@/server/services/mikrotik/arp-hotspot.service');
+                  const kicked = await kickHotspotSession(user.routerId, user.username);
+                  console.log(`✅ [Webhook] Kicked ${kicked} hotspot session(s) for ${user.username}`);
+                } catch (e: any) {
+                  console.error(`[Webhook] Hotspot kick failed for ${user.username}:`, e?.message || e);
+                }
+              } else {
+                // PPPoE / STATIC_IP: restore PPP secret profile + kick active session
+                try {
+                  const r = await managePppSecret(user.routerId, 'enable', {
+                    username: user.username,
+                    password: user.password,
+                    profile: profile.groupName,
+                  });
+                  console.log(`✅ [Webhook] PPP secret restored to "${profile.groupName}" for ${user.username}: ${r.message}`);
+                } catch (e: any) {
+                  console.error(`[Webhook] PPP secret restore failed for ${user.username}:`, e?.message || e);
+                }
 
-              try {
-                const kicked = await kickPppoeSession(user.routerId, user.username);
-                console.log(`✅ [Webhook] Kicked ${kicked} session(s) for ${user.username}`);
-              } catch (e: any) {
-                console.error(`[Webhook] Kick failed for ${user.username}:`, e?.message || e);
+                try {
+                  const kicked = await kickPppoeSession(user.routerId, user.username);
+                  console.log(`✅ [Webhook] Kicked ${kicked} session(s) for ${user.username}`);
+                } catch (e: any) {
+                  console.error(`[Webhook] Kick failed for ${user.username}:`, e?.message || e);
+                }
               }
             }
 
