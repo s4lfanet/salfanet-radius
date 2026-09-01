@@ -99,9 +99,10 @@ export async function syncVoucherToRadius(
     // Router restriction is stored in database for reference/filtering but not enforced at RADIUS level
     await prisma.radcheck.upsert({
       where: {
-        username_attribute: {
+        username_attribute_nas_identifier: {
           username: voucher.code,
-          attribute: 'Cleartext-Password'
+          attribute: 'Cleartext-Password',
+          nas_identifier: null
         }
       },
       create: {
@@ -118,9 +119,10 @@ export async function syncVoucherToRadius(
     // 2. Add to radusergroup (unique group per voucher)
     await prisma.radusergroup.upsert({
       where: {
-        username_groupname: {
+        username_groupname_nas_identifier: {
           username: voucher.code,
-          groupname: uniqueGroupName
+          groupname: uniqueGroupName,
+          nas_identifier: null
         }
       },
       create: {
