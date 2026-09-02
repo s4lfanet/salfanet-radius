@@ -52,58 +52,61 @@ function PaymentSuccessContent() {
 
   const checkOrderId = async () => {
     const maxRetries = 5;
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const res = await fetch(`/api/payment/check-order?orderId=${encodeURIComponent(orderId || '')}`);
-        const data = await res.json();
+    try {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const res = await fetch(`/api/payment/check-order?orderId=${encodeURIComponent(orderId || '')}`);
+          const data = await res.json();
 
-        if (res.ok && data.type === 'agent_deposit' && data.deposit) {
-          setIsAgentDeposit(true);
-          setDeposit(data.deposit);
-          return;
-        }
-
-        if (res.ok && data.invoice) {
-          const normalizedStatus = (data.status || '').toLowerCase();
-
-          if (normalizedStatus === 'settlement' || data.invoice.status === 'PAID') {
-            setIsAgentDeposit(false);
-            setInvoice(data.invoice);
+          if (res.ok && data.type === 'agent_deposit' && data.deposit) {
+            setIsAgentDeposit(true);
+            setDeposit(data.deposit);
             return;
           }
 
-          // If still PENDING but transaction_status is settlement, webhook may not have processed yet — retry
-          if ((normalizedStatus === 'pending' || data.invoice.status === 'PENDING') && transactionStatus === 'settlement' && i < maxRetries - 1) {
+          if (res.ok && data.invoice) {
+            const normalizedStatus = (data.status || '').toLowerCase();
+
+            if (normalizedStatus === 'settlement' || data.invoice.status === 'PAID') {
+              setIsAgentDeposit(false);
+              setInvoice(data.invoice);
+              return;
+            }
+
+            // If still PENDING but transaction_status is settlement, webhook may not have processed yet — retry
+            if ((normalizedStatus === 'pending' || data.invoice.status === 'PENDING') && transactionStatus === 'settlement' && i < maxRetries - 1) {
+              await new Promise(r => setTimeout(r, 2000));
+              continue;
+            }
+
+            if (normalizedStatus === 'pending' || data.invoice.status === 'PENDING') {
+              const nextToken = data.invoice.paymentToken ? `token=${encodeURIComponent(data.invoice.paymentToken)}&` : '';
+              router.replace(`/payment/pending?${nextToken}order_id=${encodeURIComponent(orderId || '')}`);
+              return;
+            }
+
+            router.replace(`/payment/failed?order_id=${encodeURIComponent(orderId || '')}&reason=${encodeURIComponent(normalizedStatus || 'cancel')}`);
+            return;
+          }
+
+          // Order not found — retry if we have retries left
+          if (i < maxRetries - 1) {
             await new Promise(r => setTimeout(r, 2000));
             continue;
           }
 
-          if (normalizedStatus === 'pending' || data.invoice.status === 'PENDING') {
-            const nextToken = data.invoice.paymentToken ? `token=${encodeURIComponent(data.invoice.paymentToken)}&` : '';
-            router.replace(`/payment/pending?${nextToken}order_id=${encodeURIComponent(orderId || '')}`);
-            return;
+          setError(t('payment.paymentNotFound'));
+        } catch {
+          if (i < maxRetries - 1) {
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
           }
-
-          router.replace(`/payment/failed?order_id=${encodeURIComponent(orderId || '')}&reason=${encodeURIComponent(normalizedStatus || 'cancel')}`);
-          return;
+          setError(t('payment.checkStatusFailed'));
         }
-
-        // Order not found — retry if we have retries left
-        if (i < maxRetries - 1) {
-          await new Promise(r => setTimeout(r, 2000));
-          continue;
-        }
-
-        setError(t('payment.paymentNotFound'));
-      } catch {
-        if (i < maxRetries - 1) {
-          await new Promise(r => setTimeout(r, 2000));
-          continue;
-        }
-        setError(t('payment.checkStatusFailed'));
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const fetchDepositStatus = async () => {
@@ -116,34 +119,37 @@ function PaymentSuccessContent() {
 
   const fetchInvoiceStatus = async () => {
     const maxRetries = 5;
-    for (let i = 0; i < maxRetries; i++) {
-      try {
-        const res = await fetch(`/api/invoices/check?token=${token}`);
-        const data = await res.json();
-        if (res.ok && data.invoice) {
-          // If invoice is still PENDING and transaction_status is settlement,
-          // webhook may not have been processed yet — retry
-          if (data.invoice.status === 'PENDING' && transactionStatus === 'settlement' && i < maxRetries - 1) {
+    try {
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          const res = await fetch(`/api/invoices/check?token=${token}`);
+          const data = await res.json();
+          if (res.ok && data.invoice) {
+            // If invoice is still PENDING and transaction_status is settlement,
+            // webhook may not have been processed yet — retry
+            if (data.invoice.status === 'PENDING' && transactionStatus === 'settlement' && i < maxRetries - 1) {
+              await new Promise(r => setTimeout(r, 2000));
+              continue;
+            }
+            setInvoice(data.invoice);
+            return;
+          }
+          if (i < maxRetries - 1) {
             await new Promise(r => setTimeout(r, 2000));
             continue;
           }
-          setInvoice(data.invoice);
-          return;
+          setError(data.error || t('payment.invoiceNotFound'));
+        } catch {
+          if (i < maxRetries - 1) {
+            await new Promise(r => setTimeout(r, 2000));
+            continue;
+          }
+          setError(t('payment.checkStatusFailed'));
         }
-        if (i < maxRetries - 1) {
-          await new Promise(r => setTimeout(r, 2000));
-          continue;
-        }
-        setError(data.error || t('payment.invoiceNotFound'));
-      } catch {
-        if (i < maxRetries - 1) {
-          await new Promise(r => setTimeout(r, 2000));
-          continue;
-        }
-        setError(t('payment.checkStatusFailed'));
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (loading) return (
