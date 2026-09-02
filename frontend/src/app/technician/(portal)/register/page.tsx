@@ -104,6 +104,8 @@ export default function TechnicianRegisterPage() {
     if (!form.profileId) { setActiveTab('network'); return setError('Pilih paket internet terlebih dahulu'); }
     if (!form.name.trim()) { setActiveTab('basic'); return setError('Nama pelanggan wajib diisi'); }
     if (!form.phone.trim()) { setActiveTab('basic'); return setError('Nomor HP wajib diisi'); }
+    if (!form.idCardPhoto.trim()) { setActiveTab('network'); return setError('Foto KTP wajib diupload'); }
+    if (!form.latitude.trim() || !form.longitude.trim()) { setActiveTab('basic'); return setError('Lokasi GPS wajib diisi. Klik tombol "Ambil Lokasi GPS"'); }
 
     setSubmitting(true);
     setError('');
@@ -131,13 +133,14 @@ export default function TechnicianRegisterPage() {
       if (form.latitude.trim()) body.latitude = form.latitude.trim();
       if (form.longitude.trim()) body.longitude = form.longitude.trim();
       if (form.registeredAt.trim()) body.registeredAt = form.registeredAt.trim();
+      body.firstInvoice = form.subscriptionType === 'POSTPAID' ? 'prorate' : 'full';
 
       const data = await apiAdmin<{ user?: { customerId?: string } }>('/api/technician/customers/create', {
         method: 'POST',
         body: JSON.stringify(body),
       });
       setSuccess({ customerId: data.user?.customerId ?? '', name: form.name, username: form.username });
-      addToast({ type: 'success', title: 'Berhasil', description: `Pelanggan ${form.name} berhasil dibuat` });
+      addToast({ type: 'success', title: 'Berhasil', description: `Pelanggan ${form.name} berhasil didaftarkan. Menunggu approval admin.` });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Terjadi kesalahan';
       setError(msg);
@@ -180,8 +183,8 @@ export default function TechnicianRegisterPage() {
                 Username: {success.username}
               </p>
             </div>
-            <p className="text-xs text-green-600 dark:text-green-400 mb-6">
-              Pelanggan aktif dan siap digunakan. RADIUS telah disinkronkan.
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-6">
+              Pendaftaran berhasil dikirim. Menunggu persetujuan admin untuk mengaktifkan layanan.
             </p>
             <button
               onClick={handleReset}
@@ -319,14 +322,14 @@ export default function TechnicianRegisterPage() {
 
                   {/* GPS Koordinat */}
                   <div>
-                    <label className={labelClass}>Latitude <span className="text-slate-400 text-[10px]">(opsional)</span></label>
+                    <label className={labelClass}>Latitude <span className="text-red-500 text-[10px]">*</span></label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                       <input type="number" step="any" value={form.latitude} onChange={(e) => setValue('latitude', e.target.value)} placeholder="-6.200000" className={inputClass} />
                     </div>
                   </div>
                   <div>
-                    <label className={labelClass}>Longitude <span className="text-slate-400 text-[10px]">(opsional)</span></label>
+                    <label className={labelClass}>Longitude <span className="text-red-500 text-[10px]">*</span></label>
                     <div className="relative">
                       <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                       <input type="number" step="any" value={form.longitude} onChange={(e) => setValue('longitude', e.target.value)} placeholder="106.816666" className={inputClass} />
@@ -498,7 +501,7 @@ export default function TechnicianRegisterPage() {
               <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
                 <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
                   <CreditCard className="w-4 h-4 text-[#bc13fe]" />
-                  Dokumen Identitas (KTP) <span className="text-slate-400 text-[10px] font-normal">(opsional)</span>
+                  Dokumen Identitas (KTP) <span className="text-red-500 text-[10px]">*</span>
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>

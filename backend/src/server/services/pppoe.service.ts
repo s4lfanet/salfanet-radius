@@ -139,7 +139,8 @@ export async function listPppoeUsers(params: ListPppoeUsersParams) {
   if (params.status) {
     whereClause.status = params.status;
   } else {
-    whereClause.status = { not: 'stop' };
+    // Exclude 'stop', 'pending_approval', and 'rejected' from default listing
+    whereClause.status = { notIn: ['stop', 'pending_approval', 'rejected'] };
   }
 
   // Server-side search: username, name, phone, customerId
@@ -282,7 +283,7 @@ export async function getPppoeUserById(id: string) {
 // â”€â”€â”€ Create â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function createPppoeUser(
-  data: CreatePppoeUserInput & { noPppoeAccount?: boolean },
+  data: CreatePppoeUserInput & { noPppoeAccount?: boolean; pendingApproval?: boolean },
   session: Session | null,
   request: NextRequest
 ) {
@@ -295,6 +296,7 @@ export async function createPppoeUser(
     registeredByTechnicianId,
   } = data;
   const noPppoeAccount = !!(data as any).noPppoeAccount;
+  const pendingApproval = !!(data as any).pendingApproval;
 
   // Resolve name/phone: prefer explicit values, fall back to linked customer
   let resolvedName = data.name || '';
@@ -413,7 +415,7 @@ export async function createPppoeUser(
       macAddress: cleanMac(macAddress),
       comment: comment || null,
       expiredAt: finalExpiredAt,
-      status: 'active',
+      status: pendingApproval ? 'pending_approval' : 'active',
       subscriptionType: subscriptionType || 'POSTPAID',
       billingDay: billingDay ? Math.min(Math.max(parseInt(String(billingDay)), 1), 28) : 1,
       idCardNumber: idCardNumber || null,
@@ -431,6 +433,8 @@ export async function createPppoeUser(
       ...(installDate ? { installDate: new Date(installDate) } : {}),
       ...(connectionType ? { connectionType: connectionType as any } : {}),
       ...(registeredByTechnicianId ? { registeredByTechnicianId } : {}),
+      // Approval workflow
+      ...(pendingApproval ? { approvalStatus: 'pending' } : {}),
     } as never,
   });
 
@@ -447,7 +451,7 @@ export async function createPppoeUser(
   // are only created if the DB operation succeeds.
   let radiusSynced = false;
 
-  if (!noPppoeAccount && password) {
+  if (!noPppoeAccount && password && !pendingApproval) {
     try {
       const nasIdentifier = routerId || null;
 
@@ -614,7 +618,7 @@ export async function createPppoeUser(
     } catch (syncError) {
       console.error('RADIUS sync / external task enqueue error:', syncError);
     }
-  } else if (noPppoeAccount && ipAddress) {
+  } else if (noPppoeAccount && ipAddress && !pendingApproval) {
     try {
       const nasIdentifier = routerId || null;
       await prisma.radreply.create({
@@ -649,6 +653,209 @@ export async function createPppoeUser(
   try { await invalidateKey(CACHE_KEYS.profiles); } catch {}
 
   return { user: { ...user, syncedToRadius: radiusSynced }, radiusSynced };
+}
+
+// ─── Approve pending technician registration ────────────────────────────────
+
+export async function approvePppoeUser(
+  userId: string,
+  adminId: string,
+  adminName: string,
+  request: NextRequest,
+) {
+  const user = await prisma.pppoeUser.findUnique({
+    where: { id: userId },
+    include: { profile: true, router: true },
+  });
+  if (!user) throw Object.assign(new Error('User not found'), { code: 'NOT_FOUND' });
+  if (user.approvalStatus !== 'pending') {
+    throw Object.assign(new Error('User is not pending approval'), { code: 'INVALID_STATE' });
+  }
+
+  // Update status to active + approval
+  await prisma.pppoeUser.update({
+    where: { id: userId },
+    data: {
+      status: 'active',
+      approvalStatus: 'approved',
+      approvedBy: adminId,
+      approvedAt: new Date(),
+    },
+  });
+
+  // Now do RADIUS + MikroTik sync (same as createPppoeUser but post-approval)
+  let radiusSynced = false;
+  if (user.password) {
+    try {
+      const nasIdentifier = user.routerId || null;
+      const profile = user.profile;
+      if (!profile) throw new Error('Profile not found for user');
+
+      await prisma.$transaction(async (tx) => {
+        // RADIUS sync
+        await tx.radcheck.deleteMany({ where: { username: user.username, nas_identifier: nasIdentifier } });
+        await tx.radusergroup.deleteMany({ where: { username: user.username, nas_identifier: nasIdentifier } });
+        await tx.radreply.deleteMany({ where: { username: user.username, nas_identifier: nasIdentifier } });
+
+        await tx.radcheck.create({
+          data: { username: user.username, attribute: 'Cleartext-Password', op: ':=', value: user.password, nas_identifier: nasIdentifier },
+        });
+
+        await tx.radusergroup.create({
+          data: { username: user.username, groupname: profile.groupName, priority: 0, nas_identifier: nasIdentifier },
+        });
+
+        if (user.ipAddress) {
+          await tx.radreply.create({
+            data: { username: user.username, attribute: 'Framed-IP-Address', op: ':=', value: user.ipAddress, nas_identifier: nasIdentifier },
+          });
+        }
+
+        await tx.pppoeUser.update({
+          where: { id: userId },
+          data: { syncedToRadius: true, lastSyncAt: new Date() },
+        });
+
+        // Enqueue external tasks
+        const { enqueueTask } = await import('./external-task.service');
+
+        // MikroTik sync
+        if (user.routerId) {
+          const router = await tx.router.findUnique({ where: { id: user.routerId }, select: { authMode: true } });
+          const { shouldCreate, disabled } = shouldCreatePppSecret(router?.authMode);
+          const mtProfile = await getMikrotikProfileName(profile.id);
+          const effectiveConnType = user.connectionType || 'PPPOE';
+
+          if (effectiveConnType === 'PPPOE' && shouldCreate) {
+            await enqueueTask(tx, 'pppoe_user', user.id, 'sync_mikrotik_create', {
+              routerId: user.routerId,
+              username: user.username,
+              password: user.password,
+              profile: mtProfile || undefined,
+              disabled,
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+          } else if (effectiveConnType === 'STATIC_IP') {
+            await enqueueTask(tx, 'pppoe_user', user.id, 'sync_mikrotik_arp_create', {
+              routerId: user.routerId,
+              ipAddress: user.ipAddress || '',
+              macAddress: user.macAddress || '',
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+          } else if (effectiveConnType === 'HOTSPOT') {
+            await enqueueTask(tx, 'pppoe_user', user.id, 'sync_mikrotik_hotspot_create', {
+              routerId: user.routerId,
+              username: user.username,
+              password: user.password,
+              profile: mtProfile || undefined,
+              ipAddress: user.ipAddress || '',
+              disabled,
+              comment: `Salfanet-${user.id.slice(0, 8)}`,
+            });
+          }
+        }
+
+        // FreeRADIUS reload
+        await enqueueTask(tx, 'pppoe_user', user.id, 'reload_radius', {});
+
+        // WhatsApp notification
+        await enqueueTask(tx, 'pppoe_user', user.id, 'send_wa', {
+          template: 'admin_create_user',
+          data: {
+            customerName: user.name,
+            customerPhone: user.phone,
+            customerId: user.customerId || undefined,
+            username: user.username,
+            password: user.password,
+            profileName: profile.name,
+            area: undefined,
+            expiredAt: user.expiredAt,
+          },
+          idempotencyKey: `approve_user_${user.id}`,
+        });
+
+        // Email notification
+        if (user.email) {
+          await enqueueTask(tx, 'pppoe_user', user.id, 'send_email', {
+            template: 'admin_create_user',
+            data: {
+              email: user.email,
+              customerName: user.name,
+              username: user.username,
+              password: user.password,
+              profileName: profile.name,
+              area: undefined,
+            },
+            idempotencyKey: `approve_user_email_${user.id}`,
+          });
+        }
+      });
+
+      radiusSynced = true;
+    } catch (syncError) {
+      console.error('[Approve] RADIUS sync error:', syncError);
+    }
+  }
+
+  // Activity log
+  try {
+    await logActivity({
+      userId: adminId,
+      username: adminName,
+      action: 'APPROVE_PPPOE_USER',
+      description: `Approved technician registration: ${user.username}`,
+      module: 'pppoe',
+      status: 'success',
+      request,
+      metadata: { userId, username: user.username },
+    });
+  } catch {}
+
+  try { await invalidateKey(CACHE_KEYS.profiles); } catch {}
+
+  return { user: { ...user, syncedToRadius: radiusSynced }, radiusSynced };
+}
+
+// ─── Reject pending technician registration ─────────────────────────────────
+
+export async function rejectPppoeUser(
+  userId: string,
+  adminId: string,
+  adminName: string,
+  reason: string,
+  request: NextRequest,
+) {
+  const user = await prisma.pppoeUser.findUnique({ where: { id: userId } });
+  if (!user) throw Object.assign(new Error('User not found'), { code: 'NOT_FOUND' });
+  if (user.approvalStatus !== 'pending') {
+    throw Object.assign(new Error('User is not pending approval'), { code: 'INVALID_STATE' });
+  }
+
+  await prisma.pppoeUser.update({
+    where: { id: userId },
+    data: {
+      status: 'rejected',
+      approvalStatus: 'rejected',
+      approvedBy: adminId,
+      approvedAt: new Date(),
+      comment: reason ? `${user.comment || ''}\n[Rejected: ${reason}]`.trim() : user.comment,
+    },
+  });
+
+  try {
+    await logActivity({
+      userId: adminId,
+      username: adminName,
+      action: 'REJECT_PPPOE_USER',
+      description: `Rejected technician registration: ${user.username} — ${reason}`,
+      module: 'pppoe',
+      status: 'success',
+      request,
+      metadata: { userId, username: user.username, reason },
+    });
+  } catch {}
+
+  return { user };
 }
 
 // â”€â”€â”€ Update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
