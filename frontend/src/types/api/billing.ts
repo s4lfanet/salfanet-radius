@@ -57,6 +57,10 @@ export interface InvoiceListStats {
 export interface InvoiceListResponse {
   invoices: Invoice[];
   stats?: InvoiceListStats;
+  total?: number;
+  totalPages?: number;
+  page?: number;
+  limit?: number;
 }
 
 // POST/PUT /api/invoices returns { invoice } (no success field)

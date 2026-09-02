@@ -625,6 +625,7 @@ function AdminLayoutContent({
   useEffect(() => { addToastRef.current = addToast; }, [addToast]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
+  const [headerSearch, setHeaderSearch] = useState('');
 
   // Live clock
   useEffect(() => {
@@ -1134,6 +1135,13 @@ function AdminLayoutContent({
                   type="text"
                   placeholder={t('common.search')}
                   aria-label={t('common.search')}
+                  value={headerSearch}
+                  onChange={(e) => setHeaderSearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && headerSearch.trim()) {
+                      router.push(`/admin/pppoe/users?search=${encodeURIComponent(headerSearch.trim())}`);
+                    }
+                  }}
                   className="w-full pl-10 pr-4 py-2.5 bg-card/50 border-2 border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:bg-card/80 focus:shadow-focus-ring transition-all duration-300"
                 />
                 {/* Bottom focus line */}

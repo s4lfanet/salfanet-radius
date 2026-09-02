@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { showSuccess, showError, showConfirm, showToast } from '@/lib/sweetalert';
@@ -134,6 +134,9 @@ export default function InvoicesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [printDialogInvoice, setPrintDialogInvoice] = useState<Invoice | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   const [exportDateFrom, setExportDateFrom] = useState('');
   const [exportDateTo, setExportDateTo] = useState('');
@@ -151,15 +154,17 @@ export default function InvoicesPage() {
   const [genSendWa, setGenSendWa] = useState(false);
   const [genResult, setGenResult] = useState<InvoiceGenerateResponse | null>(null);
 
-  // ─── React Query: Invoice list (auto-refetches on tab/month change) ──────────
+  // ─── React Query: Invoice list (auto-refetches on tab/month/page/search change) ──────────
   const invoiceStatus = activeTab === 'unpaid' ? 'PENDING' : activeTab === 'paid' ? 'PAID' : 'all';
-  const invoicesQueryKey = buildQueryKey('/api/invoices', { status: invoiceStatus, month: invoiceMonth });
+  const invoicesQueryKey = buildQueryKey('/api/invoices', { status: invoiceStatus, month: invoiceMonth, page: currentPage, limit: pageSize, search: debouncedSearch });
   const { data: invoicesData, isLoading: loading } = useApiQuery<InvoiceListResponse>('/api/invoices', {
-    params: { status: invoiceStatus, month: invoiceMonth },
+    params: { status: invoiceStatus, month: invoiceMonth, page: currentPage, limit: pageSize, search: debouncedSearch },
     placeholderData: 'keepPreviousData',
   });
   // API Invoice type lacks nested `user` relation; local Invoice includes it
   const invoices = (invoicesData?.invoices as unknown as Invoice[]) || [];
+  const totalCount = invoicesData?.total || 0;
+  const totalPages = invoicesData?.totalPages || 1;
   const stats = invoicesData?.stats || {
     total: 0,
     unpaid: 0,
@@ -201,15 +206,20 @@ export default function InvoicesPage() {
     setInvoiceMonth(`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`);
   };
 
+  // Debounce search input (300ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reset to first page when tab or month changes
+  useEffect(() => { setCurrentPage(1); }, [activeTab, invoiceMonth]);
+
   const getFilteredInvoices = () => {
-    if (!searchQuery) return invoices;
-    const query = searchQuery.toLowerCase();
-    return invoices.filter(inv =>
-      inv.invoiceNumber.toLowerCase().includes(query) ||
-      inv.customerName?.toLowerCase().includes(query) ||
-      inv.customerUsername?.toLowerCase().includes(query) ||
-      inv.customerPhone?.includes(query)
-    );
+    return invoices;
   };
 
   const handleMarkAsPaid = (invoice: Invoice) => {
@@ -777,17 +787,7 @@ export default function InvoicesPage() {
     }
   };
 
-  const filteredInvoices = invoices.filter((inv) => {
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      inv.invoiceNumber.toLowerCase().includes(q) ||
-      inv.user?.name?.toLowerCase().includes(q) ||
-      inv.customerName?.toLowerCase().includes(q) ||
-      inv.user?.phone?.includes(q) ||
-      inv.customerPhone?.includes(q)
-    );
-  });
+  const filteredInvoices = invoices;
 
   if (loading && invoices.length === 0) {
     return (
@@ -1147,12 +1147,60 @@ export default function InvoicesPage() {
             )}
           </div>
 
-          {/* Result count */}
-          <div className="px-3 py-2 border-t border-border bg-muted">
-            <p className="text-[10px] sm:text-xs text-muted-foreground">
-              {t('table.showing')} {filteredInvoices.length} {t('table.of')} {invoices.length}
-            </p>
-          </div>
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-3 py-2 border-t border-border text-xs">
+              <div className="flex items-center gap-2">
+                <span className="text-muted-foreground">Page {currentPage} of {totalPages} ({totalCount} total)</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+                  className="bg-card border border-border rounded px-1 py-0.5 text-[10px]"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Last
+                </button>
+              </div>
+            </div>
+          )}
+          {totalPages <= 1 && (
+            <div className="px-3 py-2 border-t border-border bg-muted">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
+                {t('table.showing')} {filteredInvoices.length} {t('table.of')} {totalCount}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Detail Dialog */}

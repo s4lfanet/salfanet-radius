@@ -490,6 +490,12 @@ export default function PppoeUsersPage() {
   // ─── React Query data fetching ──────────────────────────────────────
   const queryClient = useQueryClient();
 
+  // Read search param from URL (e.g. from header global search)
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch) setSearchQuery(urlSearch);
+  }, [searchParams]);
+
   // Debounce search input (300ms) to avoid request on every keystroke
   useEffect(() => {
     const t = setTimeout(() => {

@@ -77,8 +77,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status'); // UNPAID, PAID, PENDING, OVERDUE
     const userId = searchParams.get('userId');
-    const limit = parseInt(searchParams.get('limit') || '100');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
     const monthParam = searchParams.get('month'); // YYYY-MM
+    const searchParam = searchParams.get('search')?.trim() || '';
 
     const where: any = {};
 
@@ -104,38 +106,59 @@ export async function GET(request: NextRequest) {
       where.userId = userId;
     }
 
-    const invoices = await prisma.invoice.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            customerId: true,  // ID Pelanggan
-            name: true,
-            phone: true,
-            email: true,
-            username: true,
-            profile: {
-              select: {
-                name: true,
+    // Search filter — match invoice number, customer name, username, or phone
+    if (searchParam) {
+      where.OR = [
+        { invoiceNumber: { contains: searchParam, mode: 'insensitive' } },
+        { customerName: { contains: searchParam, mode: 'insensitive' } },
+        { customerUsername: { contains: searchParam, mode: 'insensitive' } },
+        { customerPhone: { contains: searchParam } },
+        { user: { name: { contains: searchParam, mode: 'insensitive' } } },
+        { user: { username: { contains: searchParam, mode: 'insensitive' } } },
+        { user: { phone: { contains: searchParam } } },
+      ];
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [invoices, total] = await Promise.all([
+      prisma.invoice.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              customerId: true,  // ID Pelanggan
+              name: true,
+              phone: true,
+              email: true,
+              username: true,
+              profile: {
+                select: {
+                  name: true,
+                },
               },
-            },
-            area: {  // Area pelanggan
-              select: {
-                id: true,
-                name: true,
+              area: {  // Area pelanggan
+                select: {
+                  id: true,
+                  name: true,
+                },
               },
             },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: limit,
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.invoice.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit) || 1;
 
     // Calculate stats — run all 7 queries in parallel
-    const [total, unpaid, paid, pending, overdue, totalUnpaidAgg, totalPaidAgg] = await Promise.all([
+    const [totalAll, unpaid, paid, pending, overdue, totalUnpaidAgg, totalPaidAgg] = await Promise.all([
       prisma.invoice.count(),
       prisma.invoice.count({ where: { status: { in: ['PENDING', 'OVERDUE'] } } }),
       prisma.invoice.count({ where: { status: 'PAID' } }),
@@ -144,10 +167,14 @@ export async function GET(request: NextRequest) {
       prisma.invoice.aggregate({ where: { status: { in: ['PENDING', 'OVERDUE'] } }, _sum: { amount: true } }),
       prisma.invoice.aggregate({ where: { status: 'PAID' }, _sum: { amount: true } }),
     ]);
-    const stats = { total, unpaid, paid, pending, overdue, totalUnpaidAmount: totalUnpaidAgg, totalPaidAmount: totalPaidAgg };
+    const stats = { total: totalAll, unpaid, paid, pending, overdue, totalUnpaidAmount: totalUnpaidAgg, totalPaidAmount: totalPaidAgg };
 
     return ok({
       invoices,
+      total,
+      totalPages,
+      page,
+      limit,
       stats: {
         ...stats,
         totalUnpaidAmount: stats.totalUnpaidAmount._sum.amount || 0,
