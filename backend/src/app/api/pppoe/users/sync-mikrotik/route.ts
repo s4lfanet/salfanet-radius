@@ -1,5 +1,5 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
-import { requirePermission } from '@/server/middleware/api-auth';
+import { requirePermission, requireAnyPermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { RouterOSAPI } from 'node-routeros';
 import { generateUniqueReferralCode } from '@/server/services/referral.service';
@@ -54,7 +54,9 @@ interface SyncResult {
 // GET - Preview PPPoE secrets from MikroTik (without importing)
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = await requirePermission('network.view');
+    // Preview serves both network roles (TECHNICIAN: network.view) and
+    // customer roles (CUSTOMER_SERVICE: customers.view) who can import via POST
+    const authCheck = await requireAnyPermission(['network.view', 'customers.view']);
     if (!authCheck.authorized) return authCheck.response;
     const { searchParams } = new URL(request.url);
     const routerId = searchParams.get('routerId');

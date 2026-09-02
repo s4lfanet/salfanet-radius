@@ -222,10 +222,6 @@ export async function DELETE(
   try {
     const authCheck = await requirePermission('customers.edit');
     if (!authCheck.authorized) return authCheck.response;
-    const session = authCheck.session;
-    if ((session.user as any)?.role !== 'ADMIN' && (session.user as any)?.role !== 'SUPER_ADMIN' && (session.user as any)?.role !== 'SUPERADMIN') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
 
     const { id } = await params;
 

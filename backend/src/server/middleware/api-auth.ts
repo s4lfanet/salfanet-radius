@@ -1,7 +1,7 @@
 import 'server-only'
 import { getServerSession, Session } from 'next-auth';
 import { authOptions } from '@/server/auth/config';
-import { hasPermission, isSuperAdmin } from '@/server/auth/permissions';
+import { hasPermission, hasAnyPermission, isSuperAdmin } from '@/server/auth/permissions';
 import { NextResponse } from 'next/server';
 
 // Type definitions for auth check results
@@ -105,6 +105,45 @@ export async function requirePermission(permissionKey: string): Promise<AuthChec
       authorized: false,
       response: permCheck.response,
     };
+  }
+
+  return {
+    authorized: true,
+    session: authCheck.session,
+    userId: authCheck.userId,
+  };
+}
+
+/**
+ * Combined check: Auth + ANY of the given permissions
+ * Useful for routes shared by roles with different permission sets
+ * (e.g. sync router-list: network.view for TECHNICIAN, customers.view for CUSTOMER_SERVICE).
+ *
+ * Usage in API routes:
+ *
+ * const authCheck = await requireAnyPermission(['network.view', 'customers.view']);
+ * if (!authCheck.authorized) return authCheck.response;
+ */
+export async function requireAnyPermission(permissionKeys: string[]): Promise<AuthCheckResult> {
+  // First check authentication
+  const authCheck = await checkAuth();
+  if (!authCheck.authorized) {
+    return authCheck;
+  }
+
+  // Super Admin bypasses all permission checks
+  const isSuper = await isSuperAdmin(authCheck.userId);
+  if (!isSuper) {
+    const hasAccess = await hasAnyPermission(authCheck.userId, permissionKeys);
+    if (!hasAccess) {
+      return {
+        authorized: false,
+        response: NextResponse.json(
+          { success: false, error: 'Forbidden: Insufficient permissions' },
+          { status: 403 }
+        ),
+      };
+    }
   }
 
   return {
