@@ -12,8 +12,6 @@ import {
   WifiOff,
   AlertTriangle,
   Clock,
-  ChevronLeft,
-  ChevronRight,
   CalendarDays,
   X,
   MapPin,
@@ -23,6 +21,7 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { Pagination } from '@/components/Pagination';
 
 interface Customer {
   id: string;
@@ -403,32 +402,13 @@ export default function TechnicianCustomersPage() {
           </div>
 
           {/* Pagination */}
-          {pages > 1 && (
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-slate-400 dark:text-[#e0d0ff]/40">
-                {((page - 1) * LIMIT) + 1}–{Math.min(page * LIMIT, total)} dari {total.toLocaleString('id-ID')}
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page <= 1}
-                  className="p-2 rounded-xl bg-card border border-border text-muted-foreground disabled:opacity-30 hover:border-accent transition-all"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-                <span className="px-3 py-1.5 text-xs font-medium text-muted-foreground/70">
-                  {page} / {pages}
-                </span>
-                <button
-                  onClick={() => setPage((p) => Math.min(pages, p + 1))}
-                  disabled={page >= pages}
-                  className="p-2 rounded-xl bg-card border border-border text-muted-foreground disabled:opacity-30 hover:border-accent transition-all"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={page}
+            totalPages={pages}
+            total={total}
+            limit={LIMIT}
+            onPageChange={(p) => setPage(p)}
+          />
         </>
       )}
     </div>
