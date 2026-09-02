@@ -64,7 +64,11 @@ export async function GET(request: NextRequest) {
     let invoiceNumber = parseInvoiceNumberFromOrder(orderId);
     let invoice = await prisma.invoice.findFirst({
       where: { invoiceNumber },
-      include: { user: true },
+      include: {
+        user: {
+          select: { name: true, phone: true, username: true, expiredAt: true },
+        },
+      },
     });
 
     // Backward compatibility: old TOPUP-TEMP-{timestamp} order ids
@@ -80,7 +84,11 @@ export async function GET(request: NextRequest) {
             createdAt: { gte: searchWindow },
           },
           orderBy: { createdAt: 'desc' },
-          include: { user: true },
+          include: {
+            user: {
+              select: { name: true, phone: true, username: true, expiredAt: true },
+            },
+          },
         });
       }
     }
@@ -102,6 +110,12 @@ export async function GET(request: NextRequest) {
           customerName: invoice.user?.name || invoice.customerName,
           customerPhone: invoice.user?.phone || invoice.customerPhone,
           customerUsername: invoice.user?.username || invoice.customerUsername,
+          user: invoice.user ? {
+            name: invoice.user.name,
+            phone: invoice.user.phone,
+            username: invoice.user.username,
+            expiredAt: invoice.user.expiredAt,
+          } : null,
         },
       });
     }
