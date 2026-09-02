@@ -601,6 +601,11 @@ model pppoeUser {
   // Technician who registered this customer (PSB)
   registeredByTechnicianId String? @map("registered_by_technician_id")
 
+  // Approval workflow: technician registrations require admin approval
+  approvalStatus String?  @db.VarChar(20) // null = direct (admin), 'pending', 'approved', 'rejected'
+  approvedBy     String?  @map("approved_by") // admin user ID who approved
+  approvedAt     DateTime?
+
   invoices                invoice[]
   manualPayments          manualPayment[]
   tickets                 ticket[]
@@ -633,6 +638,7 @@ model pppoeUser {
   @@index([referredById])
   @@index([pppoeCustomerId])
   @@index([registeredByTechnicianId])
+  @@index([approvalStatus])
   // Performance indexes: common lookup patterns
   @@index([phone]) // customer login by phone number
   @@index([expiredAt]) // cron auto-isolate expired users

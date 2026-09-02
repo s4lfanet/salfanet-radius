@@ -50,9 +50,27 @@ export async function POST(req: NextRequest) {
       expires: new Date(Date.now() + 86400000).toISOString(),
     } as any;
 
-    const result = await createPppoeUser(body, mockSession, req);
+    // Mark as pending approval — technician registrations need admin approval
+    const createBody = {
+      ...body,
+      registeredByTechnicianId: tech.type === 'technician' ? tech.id : undefined,
+      pendingApproval: true,
+    };
 
-    return NextResponse.json({ success: true, ...result }, { status: 201 });
+    const result = await createPppoeUser(createBody, mockSession, req);
+
+    // Notify admins about the pending registration
+    try {
+      const { NotificationService } = await import('@/server/services/notifications/dispatcher.service');
+      await NotificationService.create({
+        type: 'technician_registration_pending',
+        title: 'Pendaftaran Pelanggan Baru Menunggu Approval',
+        message: `${tech.name} mendaftarkan ${name} (${username}). Menunggu persetujuan admin.`,
+        link: '/admin/pppoe/approvals',
+      });
+    } catch { /* best-effort */ }
+
+    return NextResponse.json({ success: true, ...result, pendingApproval: true }, { status: 201 });
   } catch (error: unknown) {
     const err = error as { code?: string; message?: string };
     if (err.code === 'DUPLICATE_USERNAME') {
