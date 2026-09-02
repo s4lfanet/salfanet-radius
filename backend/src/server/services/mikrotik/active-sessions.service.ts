@@ -97,21 +97,38 @@ export async function listPppActiveDetailed(routerId: string): Promise<MikrotikA
     ])
     const active = await safePrint(api, '/ppp/active/print')
 
-    // Byte counters from /interface/print?type=pppoe-in are expensive
-    // (576 interfaces on large routers) and not needed for monitoring.
-    // Skipped for CPU optimization — sessions show 0 bytes, which is fine
-    // since we only need online/offline status and uptime.
+    // Fetch byte counters from /interface/print — PPPoE interfaces have
+    // type="pppoe-in" and name="<pppoe-{username}>". We merge rx-byte/tx-byte
+    // by matching the username extracted from the interface name.
+    let byteMap = new Map<string, { rx: number; tx: number }>()
+    try {
+      const ifaces = await safePrint(api, '/interface/print')
+      for (const iface of ifaces) {
+        if (iface.type === 'pppoe-in' && iface.name) {
+          const match = iface.name.match(/^<pppoe-(.+)>$/)
+          if (match) {
+            byteMap.set(match[1], {
+              rx: Number(iface['rx-byte'] || 0),
+              tx: Number(iface['tx-byte'] || 0),
+            })
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error(`[MIKROTIK_SESSIONS] Interface byte fetch failed for ${router.name}:`, e?.message || e)
+    }
 
     return active.map((s: any) => {
       const sessionName = s.name || s.user || ''
+      const bytes = byteMap.get(sessionName)
       return {
         username: sessionName,
         ipAddress: s.address || null,
         macAddress: s['caller-id'] || s['mac-address'] || null,
         sessionId: s['.id'] || null,
         uptime: s.uptime || null,
-        rxBytes: 0,
-        txBytes: 0,
+        rxBytes: bytes?.rx ?? 0,
+        txBytes: bytes?.tx ?? 0,
         routerId: router.id,
         routerName: router.name,
         type: 'pppoe' as const,
