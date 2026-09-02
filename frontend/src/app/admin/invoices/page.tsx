@@ -1156,7 +1156,7 @@ export default function InvoicesPage() {
               total={totalCount}
               limit={pageSize}
               onPageChange={setCurrentPage}
-              disabled={invoicesQuery.isFetching}
+              disabled={loading}
               pageSizeOptions={[25, 50, 100]}
               onLimitChange={(v) => { setPageSize(v); setCurrentPage(1); }}
               alwaysVisible
