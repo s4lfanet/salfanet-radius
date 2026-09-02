@@ -84,22 +84,48 @@ async function getPPPoESessionsFromMikrotik(router: any): Promise<any[]> {
   try {
     await api.connect();
     const activePPP = await api.write('/ppp/active/print');
+
+    // Fetch byte counters from /interface/print — /ppp/active/print does NOT
+    // include bytes-in/bytes-out on RouterOS v6. PPPoE interfaces have
+    // type="pppoe-in" and name="<pppoe-{username}>".
+    let byteMap = new Map<string, { rx: number; tx: number }>();
+    try {
+      const ifaces = await api.write('/interface/print');
+      for (const iface of ifaces) {
+        if (iface.type === 'pppoe-in' && iface.name) {
+          const match = iface.name.match(/^<pppoe-(.+)>$/);
+          if (match) {
+            byteMap.set(match[1], {
+              rx: Number(iface['rx-byte'] || 0),
+              tx: Number(iface['tx-byte'] || 0),
+            });
+          }
+        }
+      }
+    } catch (e) {
+      console.error(`[realtime] Interface byte fetch failed for ${router.name}:`, e);
+    }
+
     await api.close();
-    return activePPP.map((user: any) => ({
-      type: 'pppoe',
-      username: user.name || user.username || '',
-      macAddress: user['caller-id'] || '',
-      ipAddress:  user.address  || user['local-address']  || '',
-      uptime: user.uptime || '0s',
-      uptimeSeconds: parseUptime(user.uptime || '0s'),
-      // PPPoE: bytes-in = upload (from client), bytes-out = download (to client)
-      uploadBytes:   parseInt(user['bytes-in']  || '0'),
-      downloadBytes: parseInt(user['bytes-out'] || '0'),
-      packetsIn:  parseInt(user['packets-in']  || '0'),
-      packetsOut: parseInt(user['packets-out'] || '0'),
-      sessionId:  user['session-id'] || user['.id'] || '',
-      service: user.service || '',
-    }));
+    return activePPP.map((user: any) => {
+      const username = user.name || user.username || '';
+      const bytes = byteMap.get(username);
+      // rx-byte = traffic FROM client (upload), tx-byte = traffic TO client (download)
+      return {
+        type: 'pppoe',
+        username,
+        macAddress: user['caller-id'] || '',
+        ipAddress:  user.address  || user['local-address']  || '',
+        uptime: user.uptime || '0s',
+        uptimeSeconds: parseUptime(user.uptime || '0s'),
+        uploadBytes:   bytes?.rx ?? 0,
+        downloadBytes: bytes?.tx ?? 0,
+        packetsIn:  parseInt(user['packets-in']  || '0'),
+        packetsOut: parseInt(user['packets-out'] || '0'),
+        sessionId:  user['session-id'] || user['.id'] || '',
+        service: user.service || '',
+      };
+    });
   } catch (error) {
     console.error(`[realtime] PPPoE fetch failed for ${router.name}:`, error);
     return [];
