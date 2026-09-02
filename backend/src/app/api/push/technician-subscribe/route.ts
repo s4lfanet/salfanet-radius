@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { checkAuth } from '@/server/middleware/api-auth';
 import { upsertTechnicianPushSubscription, upsertAdminPushSubscription } from '@/server/services/push-notification.service';
 
 export async function POST(request: NextRequest) {
@@ -9,8 +10,22 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { technicianId, subscription } = body;
 
-    if (!technicianId || !subscription) {
-      return NextResponse.json({ success: false, error: 'technicianId and subscription are required' }, { status: 400 });
+    if (!subscription) {
+      return NextResponse.json({ success: false, error: 'subscription is required' }, { status: 400 });
+    }
+
+    // No technicianId — try admin auth (collector uses admin session)
+    if (!technicianId) {
+      const authCheck = await checkAuth();
+      if (authCheck.authorized && authCheck.userId) {
+        const saved = await upsertAdminPushSubscription(
+          authCheck.userId,
+          subscription,
+          request.headers.get('user-agent'),
+        );
+        return NextResponse.json({ success: true, subscriptionId: saved.id });
+      }
+      return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
     }
 
     // Detect if this is an admin_user (TECHNICIAN role) by verifying the JWT cookie

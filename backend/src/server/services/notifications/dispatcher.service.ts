@@ -12,8 +12,9 @@ export const NotificationService = {
     message: string;
     link?: string;
   }) {
+    let notification = null;
     try {
-      return await prisma.notification.create({
+      notification = await prisma.notification.create({
         data: {
           id: Math.random().toString(36).substring(2, 15),
           ...data,
@@ -22,8 +23,23 @@ export const NotificationService = {
       });
     } catch (error) {
       console.error('Create notification error:', error);
-      return null;
     }
+
+    // Send web push to all admins (best-effort)
+    try {
+      const { sendWebPushToAllAdmins } = await import('@/server/services/push-notification.service');
+      await sendWebPushToAllAdmins({
+        title: data.title,
+        body: data.message,
+        url: data.link || '/admin',
+        tag: data.type,
+        data: { type: data.type, link: data.link || '/admin' },
+      });
+    } catch (pushError) {
+      console.error('[NotificationService] Push to admins failed:', pushError);
+    }
+
+    return notification;
   },
 
   /**

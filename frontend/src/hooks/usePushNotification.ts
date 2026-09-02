@@ -2,6 +2,52 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+export type PushRole = 'customer' | 'agent' | 'admin' | 'technician';
+
+interface PushRoleConfig {
+  /** localStorage key for Bearer token (customer/agent). null = use cookies (admin/technician) */
+  tokenKey?: string | null;
+  /** Subscribe endpoint */
+  subscribeUrl: string;
+  /** Unsubscribe endpoint */
+  unsubscribeUrl: string;
+  /** Extra body fields to send with subscribe (e.g. technicianId) */
+  extraBody?: Record<string, string>;
+  /** Credentials mode for fetch */
+  credentials?: RequestCredentials;
+  /** Session label for error messages */
+  sessionLabel: string;
+}
+
+const ROLE_CONFIGS: Record<PushRole, PushRoleConfig> = {
+  customer: {
+    tokenKey: 'customer_token',
+    subscribeUrl: '/api/push/subscribe',
+    unsubscribeUrl: '/api/push/unsubscribe',
+    sessionLabel: 'Customer session',
+  },
+  agent: {
+    tokenKey: 'agentToken',
+    subscribeUrl: '/api/push/agent-subscribe',
+    unsubscribeUrl: '/api/push/agent-unsubscribe',
+    sessionLabel: 'Agent session',
+  },
+  admin: {
+    tokenKey: null,
+    subscribeUrl: '/api/push/admin-subscribe',
+    unsubscribeUrl: '/api/push/admin-unsubscribe',
+    credentials: 'include',
+    sessionLabel: 'Admin session',
+  },
+  technician: {
+    tokenKey: null,
+    subscribeUrl: '/api/push/technician-subscribe',
+    unsubscribeUrl: '/api/push/technician-unsubscribe',
+    credentials: 'same-origin',
+    sessionLabel: 'Technician session',
+  },
+};
+
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -21,17 +67,30 @@ async function registerServiceWorker() {
   return registration;
 }
 
-export function usePushNotification() {
+export function usePushNotification(role: PushRole = 'customer', extraBody?: Record<string, string>) {
+  const config = { ...ROLE_CONFIGS[role], extraBody: { ...ROLE_CONFIGS[role].extraBody, ...extraBody } };
+
   const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    if (typeof window === 'undefined') {
-      return;
+  const buildHeaders = useCallback(() => {
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (config.tokenKey) {
+      const token = localStorage.getItem(config.tokenKey);
+      if (token) headers.Authorization = `Bearer ${token}`;
     }
+    return headers;
+  }, [config.tokenKey]);
+
+  const getToken = useCallback(() => {
+    return config.tokenKey ? localStorage.getItem(config.tokenKey) : 'cookie';
+  }, [config.tokenKey]);
+
+  const refresh = useCallback(async () => {
+    if (typeof window === 'undefined') return;
 
     const supported = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
     setIsSupported(supported);
@@ -48,17 +107,15 @@ export function usePushNotification() {
       const registration = await registerServiceWorker();
       const subscription = await registration.pushManager.getSubscription();
       setIsSubscribed(Boolean(subscription));
-      // Sync: if browser has subscription, re-register silently to ensure DB is up to date
+
       if (subscription) {
-        const token = localStorage.getItem('customer_token');
+        const token = getToken();
         if (token) {
-          fetch('/api/push/subscribe', {
+          fetch(config.subscribeUrl, {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ subscription: subscription.toJSON() }),
+            headers: buildHeaders(),
+            credentials: config.credentials,
+            body: JSON.stringify({ ...config.extraBody, subscription: subscription.toJSON() }),
           }).catch(() => { /* silent sync */ });
         }
       }
@@ -66,23 +123,18 @@ export function usePushNotification() {
       console.error('[Push Hook] Failed to refresh subscription:', serviceWorkerError);
       setError('Unable to initialize push notification service worker.');
     }
-  }, []);
+  }, [config, buildHeaders, getToken]);
 
   useEffect(() => {
     void refresh();
 
-    const handleFocus = () => {
-      void refresh();
-    };
-
+    const handleFocus = () => { void refresh(); };
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [refresh]);
 
   const subscribe = useCallback(async () => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
+    if (typeof window === 'undefined') return false;
 
     setError(null);
     setIsLoading(true);
@@ -92,18 +144,15 @@ export function usePushNotification() {
         throw new Error('Push notification is not supported on this browser.');
       }
 
-      const token = localStorage.getItem('customer_token');
-
+      const token = getToken();
       if (!token) {
-        throw new Error('Customer session not found. Please log in again.');
+        throw new Error(`${config.sessionLabel} not found. Please log in again.`);
       }
 
       let currentPermission = Notification.permission;
-
       if (currentPermission !== 'granted') {
         currentPermission = await Notification.requestPermission();
       }
-
       setPermission(currentPermission);
 
       if (currentPermission !== 'granted') {
@@ -127,15 +176,11 @@ export function usePushNotification() {
         });
       }
 
-      const response = await fetch('/api/push/subscribe', {
+      const response = await fetch(config.subscribeUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          subscription: subscription.toJSON(),
-        }),
+        headers: buildHeaders(),
+        credentials: config.credentials,
+        body: JSON.stringify({ ...config.extraBody, subscription: subscription.toJSON() }),
       });
 
       const result = await response.json();
@@ -153,21 +198,18 @@ export function usePushNotification() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [config, buildHeaders, getToken]);
 
   const unsubscribe = useCallback(async () => {
-    if (typeof window === 'undefined') {
-      return false;
-    }
+    if (typeof window === 'undefined') return false;
 
     setError(null);
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('customer_token');
-
+      const token = getToken();
       if (!token) {
-        throw new Error('Customer session not found. Please log in again.');
+        throw new Error(`${config.sessionLabel} not found. Please log in again.`);
       }
 
       const registration = await registerServiceWorker();
@@ -178,13 +220,11 @@ export function usePushNotification() {
         await subscription.unsubscribe();
       }
 
-      const response = await fetch('/api/push/unsubscribe', {
+      const response = await fetch(config.unsubscribeUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ endpoint }),
+        headers: buildHeaders(),
+        credentials: config.credentials,
+        body: JSON.stringify({ ...config.extraBody, endpoint }),
       });
 
       const result = await response.json();
@@ -201,7 +241,7 @@ export function usePushNotification() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [config, buildHeaders, getToken]);
 
   return {
     isSupported,

@@ -741,3 +741,30 @@ export async function sendWebPushToAgent(
   });
   return sendToStoredSubscriptions(subscriptions, payload, 'agent');
 }
+
+/**
+ * Send web push to a specific admin by adminId
+ */
+export async function sendWebPushToAdmin(
+  adminId: string,
+  payload: PushNotificationPayload,
+): Promise<PushSendResult> {
+  const subscriptions = await prisma.adminPushSubscription.findMany({
+    where: { adminId, isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return sendToStoredSubscriptions(subscriptions, payload, 'admin');
+}
+
+/**
+ * Send web push to ALL admins with active push subscriptions
+ */
+export async function sendWebPushToAllAdmins(
+  payload: PushNotificationPayload,
+): Promise<PushSendResult> {
+  const subscriptions = await prisma.adminPushSubscription.findMany({
+    where: { isActive: true },
+    select: { id: true, endpoint: true, p256dh: true, auth: true, expirationTime: true },
+  });
+  return sendToStoredSubscriptions(subscriptions, payload, 'admin');
+}
