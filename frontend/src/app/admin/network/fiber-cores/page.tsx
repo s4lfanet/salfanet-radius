@@ -7,6 +7,7 @@ import {
   RefreshCcw, Circle, Check, X, AlertTriangle,
   Bookmark, Cable, Filter, Eye, Tag, Layers, Activity
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
@@ -497,27 +498,15 @@ export default function FiberCoresPage() {
       </div>
 
       {/* Pagination */}
-      {pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button
-            onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-            disabled={pagination.page === 1}
-            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent disabled:opacity-50"
-          >
-            {t('common.prev')}
-          </button>
-          <span className="text-xs text-gray-500">
-            Halaman {pagination.page} dari {pagination.totalPages}
-          </span>
-          <button
-            onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-            disabled={pagination.page === pagination.totalPages}
-            className="px-3 py-1.5 text-xs border dark:border-gray-700 rounded hover:bg-accent disabled:opacity-50"
-          >
-            {t('common.next')}
-          </button>
-        </div>
-      )}
+      <div className="mt-4">
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          onPageChange={(p) => setPagination(prev => ({ ...prev, page: p }))}
+        />
+      </div>
 
       {/* Legend */}
       <div className="bg-card rounded-lg border dark:border-gray-800 p-3">

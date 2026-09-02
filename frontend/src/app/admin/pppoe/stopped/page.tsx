@@ -6,6 +6,7 @@ import { useState } from 'react';
 import {
   Users, Trash2, Download, Search, RefreshCcw, Plus, Shield, FileText,
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { formatWIB } from '@/lib/timezone';
 import { pppoeApi } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -448,26 +449,17 @@ export default function StoppedSubscriptionsPage() {
         </div>
 
         {/* Pagination */}
-        <div className="px-3 py-2 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="text-xs text-muted-foreground">
-            {t('pppoe.showing')} {filteredUsers.length === 0 ? 0 : startIndex + 1} {t('common.to')} {Math.min(startIndex + pageSize, filteredUsers.length)} {t('pppoe.of')} {filteredUsers.length} {t('pppoe.entries')}
-          </div>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 text-xs border border-border rounded disabled:opacity-50 hover:bg-muted"
-            >
-              Previous
-            </button>
-            <button
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages || totalPages === 0}
-              className="px-3 py-1 text-xs border border-border rounded disabled:opacity-50 hover:bg-muted"
-            >
-              Next
-            </button>
-          </div>
+        <div className="px-3 py-2 border-t border-border">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            total={filteredUsers.length}
+            limit={pageSize}
+            onPageChange={setCurrentPage}
+            pageSizeOptions={[10, 25, 50, 100]}
+            onLimitChange={(v) => { setPageSize(v); setCurrentPage(1); }}
+            alwaysVisible
+          />
         </div>
       </div>
 
