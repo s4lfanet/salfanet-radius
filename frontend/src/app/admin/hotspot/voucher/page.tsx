@@ -1080,7 +1080,7 @@ export default function HotspotVoucherPage() {
             total={totalVouchers}
             limit={pageSize}
             onPageChange={(p) => setCurrentPage(p)}
-            disabled={voucherQuery.isFetching}
+            disabled={loading}
             pageSizeOptions={[50, 100, 200, 500, 1000]}
             onLimitChange={(v) => { setPageSize(v); setCurrentPage(1); }}
             alwaysVisible
