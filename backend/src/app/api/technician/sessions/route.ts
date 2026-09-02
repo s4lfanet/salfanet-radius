@@ -28,32 +28,63 @@ function fmtBytes(b: number): string {
   return `${b} B`;
 }
 
-// Fetch live PPPoE sessions from MikroTik /ppp/active for local-auth routers
+// Fetch live PPPoE sessions from MikroTik /ppp/active for local-auth routers.
+// Also fetches /interface/print to get actual rx-byte/tx-byte counters,
+// since /ppp/active/print does NOT include byte counters on RouterOS v6.
 async function getMikrotikPppoeSessions(router: { id: string; name: string; nasname: string; ipAddress?: string | null; port?: number | null; username: string; password: string }) {
   const api = new RouterOSAPI({
     host: router.ipAddress || router.nasname,
     port: router.port || 8728,
     user: router.username,
     password: router.password,
-    timeout: 10,
+    timeout: 15,
   });
   try {
     await Promise.race([
       api.connect(),
       new Promise<never>((_, reject) => setTimeout(() => reject(new Error('connect timeout')), 15000)),
     ]);
+
+    // 1. Fetch active PPPoE sessions (username, IP, MAC, uptime)
     const active = await api.write('/ppp/active/print') as Array<any>;
-    return active.map((s) => ({
-      username: s.name || s.user || '',
-      framedIpAddress: s.address || s['local-address'] || '',
-      macAddress: s['caller-id'] || '',
-      uptimeSeconds: parseUptime(s.uptime || '0s'),
-      uploadBytes: parseInt(s['bytes-in'] || '0'),
-      downloadBytes: parseInt(s['bytes-out'] || '0'),
-      sessionId: s['session-id'] || s['.id'] || '',
-      routerId: router.id,
-      routerName: router.name,
-    }));
+
+    // 2. Fetch all interfaces to get byte counters (rx-byte/tx-byte)
+    //    PPPoE interfaces have type="pppoe-in" and name="<pppoe-{username}>"
+    let byteMap = new Map<string, { rx: number; tx: number }>();
+    try {
+      const ifaces = await api.write('/interface/print') as Array<any>;
+      for (const iface of ifaces) {
+        if (iface.type === 'pppoe-in' && iface.name) {
+          // Extract username from interface name: <pppoe-username> → username
+          const match = iface.name.match(/^<pppoe-(.+)>$/);
+          if (match) {
+            byteMap.set(match[1], {
+              rx: Number(iface['rx-byte'] || 0),
+              tx: Number(iface['tx-byte'] || 0),
+            });
+          }
+        }
+      }
+    } catch (e: any) {
+      console.error(`[TechSessions] Interface byte fetch failed for ${router.name}:`, e?.message || e);
+    }
+
+    return active.map((s) => {
+      const username = s.name || s.user || '';
+      const bytes = byteMap.get(username);
+      // On MikroTik: rx-byte = traffic FROM client (upload), tx-byte = traffic TO client (download)
+      return {
+        username,
+        framedIpAddress: s.address || s['local-address'] || '',
+        macAddress: s['caller-id'] || '',
+        uptimeSeconds: parseUptime(s.uptime || '0s'),
+        uploadBytes: bytes?.rx ?? 0,
+        downloadBytes: bytes?.tx ?? 0,
+        sessionId: s['session-id'] || s['.id'] || '',
+        routerId: router.id,
+        routerName: router.name,
+      };
+    });
   } catch (e: any) {
     console.error(`[TechSessions] MikroTik PPP active fetch failed for ${router.name}:`, e?.message || e);
     return [];
@@ -106,7 +137,6 @@ export async function GET(req: NextRequest) {
   });
 
   const localRouters = routers.filter(r => (r.authMode || 'local') !== 'radius');
-  const radiusRouterIds = new Set(routers.filter(r => r.authMode === 'radius').map(r => r.id));
 
   // 2. Get RADIUS accounting sessions from radacct (for radius-auth routers)
   const onlineSessions = await prisma.radacct.findMany({
