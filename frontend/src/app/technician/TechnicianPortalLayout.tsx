@@ -31,12 +31,14 @@ import { cn } from '@/lib/utils';
 import { onUnauthorized, apiAdmin } from '@/lib/api/client';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useTheme } from '@/hooks/useTheme';
+import { useAppStore } from '@/lib/store';
 import { CyberToastProvider, useToast } from '@/components/cyberpunk/CyberToast';
 import { registerGlobalToast, registerGlobalConfirm } from '@/lib/sweetalert';
 import { formatInTimeZone } from 'date-fns-tz';
 import { getCurrentTimezone } from '@/lib/timezone';
 import { id as localeId } from 'date-fns/locale';
 import { useQueryClient } from '@tanstack/react-query';
+import Image from 'next/image';
 
 interface TechnicianData {
   id: string;
@@ -71,16 +73,6 @@ const MENU_ITEMS: MenuItem[] = [
     titleKey: 'techPortal.offlineUsers',
     icon: <WifiOff className="w-4 h-4" />,
     href: '/technician/offline',
-  },
-  {
-    titleKey: 'techPortal.isolatedUsers',
-    icon: <Shield className="w-4 h-4" />,
-    href: '/technician/isolated',
-  },
-  {
-    titleKey: 'techPortal.customers',
-    icon: <Users className="w-4 h-4" />,
-    href: '/technician/customers',
   },
   {
     titleKey: 'techPortal.ontTasks',
@@ -429,6 +421,7 @@ function TechSidebar({
 }) {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { company } = useAppStore();
 
   return (
     <>
@@ -454,12 +447,25 @@ function TechSidebar({
         <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/50 flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
-                <Wrench className="w-6 h-6 text-white" />
-              </div>
+              {company.logo ? (
+                <div className="w-12 h-12 rounded-lg bg-sidebar p-1 border border-brand-400/30 flex items-center justify-center overflow-hidden">
+                  <Image
+                    unoptimized
+                    src={company.logo}
+                    alt={company.name || 'Company Logo'}
+                    width={48}
+                    height={48}
+                    className="max-w-full max-h-full w-auto h-auto object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center border border-brand-400/40">
+                  <Wrench className="w-6 h-6 text-white" />
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <h1 className="text-xs font-black tracking-wider text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:via-brand-300 dark:to-blue-400 truncate max-w-[130px]">
-                  {t('techPortal.title')}
+                  {company.name || t('techPortal.title')}
                 </h1>
                 <p className="text-[10px] text-brand-600 dark:text-brand-400/60 tracking-[0.15em] uppercase font-medium">{t('techPortal.subtitle')}</p>
               </div>
@@ -560,6 +566,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const { isDark, toggleTheme } = useTheme();
   const { addToast, confirm } = useToast();
+  const { company, initializeTimezone } = useAppStore();
 
   const [tech, setTech] = useState<TechnicianData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -572,6 +579,11 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
     const tick = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(tick);
   }, []);
+
+  // Initialize company info (logo, name, timezone) from store
+  useEffect(() => {
+    initializeTimezone();
+  }, [initializeTimezone]);
 
   useEffect(() => {
     registerGlobalToast(addToast);
@@ -703,7 +715,7 @@ function TechnicianPortalInner({ children }: { children: React.ReactNode }) {
                 <Menu className="w-5 h-5 text-foreground" />
               </button>
               <div>
-                <h1 className="text-base font-bold text-foreground">{t('techPortal.title')}</h1>
+                <h1 className="text-base font-bold text-foreground">{company.name || t('techPortal.title')}</h1>
                 <p className="text-[10px] text-muted-foreground">{tech?.name}</p>
               </div>
             </div>
