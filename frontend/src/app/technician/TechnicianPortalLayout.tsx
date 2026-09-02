@@ -275,24 +275,23 @@ function NotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<{ id: string; title: string; message: string; isRead: boolean; createdAt: string }[]>([]);
 
-  const loadTickets = async () => {
+  const loadNotifications = async () => {
     try {
-      const data = await apiAdmin<{ tickets?: Array<{ id: string; ticketNumber: string; subject: string; customerName: string; description: string; createdAt: string; status: string }> }>('/api/technician/tickets?status=OPEN');
-      const items = (data.tickets || []).map((t: { id: string; ticketNumber: string; subject: string; customerName: string; description: string; createdAt: string; status: string }) => ({
-        id: t.id,
-        title: `#${t.ticketNumber} — ${t.subject}`,
-        message: t.customerName || '',
-        isRead: !['OPEN'].includes(t.status),
-        createdAt: t.createdAt,
+      const data = await apiAdmin<{ success?: boolean; notifications?: Array<{ id: string; type: string; title: string; message: string; link: string; createdAt: string; priority: string }> }>('/api/technician/notifications');
+      const items = (data.notifications || []).map((n) => ({
+        id: n.id,
+        title: n.title,
+        message: n.message,
+        isRead: false,
+        createdAt: n.createdAt,
       }));
       setNotifications(prev => {
-        // Merge: keep push-injected items (id starts with 'push-') + fresh ticket data
+        // Merge: keep push-injected items (id starts with 'push-') + fresh data
         const pushItems = prev.filter(n => n.id.startsWith('push-'));
         return [...items, ...pushItems].slice(0, 20);
       });
-      const unread = items.filter((n: { isRead: boolean }) => !n.isRead).length;
-      setCount(prev => Math.max(prev, unread));
-    } catch (e: unknown) { /* silent — non-critical ticket polling */ console.warn('Failed to load tickets for notification bell:', e); }
+      setCount(items.length);
+    } catch (e: unknown) { /* silent — non-critical polling */ console.warn('Failed to load technician notifications:', e); }
   };
 
   // Listen for push notifications from service worker
@@ -341,10 +340,10 @@ function NotificationBell() {
     }
   }, [addToast]);
 
-  // Poll for new tickets
+  // Poll for new notifications (tickets + ONT tasks)
   useEffect(() => {
-    loadTickets();
-    const iv = setInterval(loadTickets, 30000);
+    loadNotifications();
+    const iv = setInterval(loadNotifications, 30000);
     return () => clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

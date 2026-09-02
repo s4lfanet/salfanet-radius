@@ -156,19 +156,19 @@ export async function POST(req: NextRequest) {
         ticket.subject,
         senderName
       );
+    }
 
-      // Also send web push to customer
-      if (ticket.customerId) {
-        try {
-          const { sendWebPushToUser } = await import('@/server/services/push-notification.service');
-          await sendWebPushToUser(ticket.customerId, {
-            title: '💬 Balasan Baru di Tiket Anda',
-            body: `${senderName}: ${message.substring(0, 100)}`,
-            url: '/customer/tickets',
-            tag: 'ticket-reply',
-          });
-        } catch { /* ignore */ }
-      }
+    // Send web push to customer (independent of phone — only needs customerId)
+    if (!isInternal && senderType !== 'CUSTOMER' && ticket.customerId) {
+      try {
+        const { sendWebPushToUser } = await import('@/server/services/push-notification.service');
+        await sendWebPushToUser(ticket.customerId, {
+          title: '💬 Balasan Baru di Tiket Anda',
+          body: `${senderName}: ${message.substring(0, 100)}`,
+          url: '/customer/tickets',
+          tag: 'ticket-reply',
+        });
+      } catch { /* ignore */ }
     }
 
     // If customer sends a message, notify admin and assigned technician
