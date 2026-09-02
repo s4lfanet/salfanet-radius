@@ -3,6 +3,64 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { RouterOSAPI } from 'node-routeros';
+
+// Parse MikroTik uptime format (e.g., "1h30m45s", "5m20s", "30s")
+function parseUptime(uptime: string): number {
+  let seconds = 0;
+  const weeks   = uptime.match(/(\d+)w/);
+  const days    = uptime.match(/(\d+)d/);
+  const hours   = uptime.match(/(\d+)h/);
+  const minutes = uptime.match(/(\d+)m/);
+  const secs    = uptime.match(/(\d+)s/);
+  if (weeks)   seconds += parseInt(weeks[1])   * 7 * 24 * 3600;
+  if (days)    seconds += parseInt(days[1])    * 24 * 3600;
+  if (hours)   seconds += parseInt(hours[1])   * 3600;
+  if (minutes) seconds += parseInt(minutes[1]) * 60;
+  if (secs)    seconds += parseInt(secs[1]);
+  return seconds;
+}
+
+function fmtBytes(b: number): string {
+  if (b > 1073741824) return `${(b / 1073741824).toFixed(1)} GB`;
+  if (b > 1048576) return `${(b / 1048576).toFixed(1)} MB`;
+  if (b > 1024) return `${(b / 1024).toFixed(1)} KB`;
+  return `${b} B`;
+}
+
+// Fetch live PPPoE sessions from MikroTik /ppp/active for local-auth routers
+async function getMikrotikPppoeSessions(router: { id: string; name: string; nasname: string; ipAddress?: string | null; port?: number | null; username: string; password: string }) {
+  const api = new RouterOSAPI({
+    host: router.ipAddress || router.nasname,
+    port: router.port || 8728,
+    user: router.username,
+    password: router.password,
+    timeout: 10,
+  });
+  try {
+    await Promise.race([
+      api.connect(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('connect timeout')), 15000)),
+    ]);
+    const active = await api.write('/ppp/active/print') as Array<any>;
+    return active.map((s) => ({
+      username: s.name || s.user || '',
+      framedIpAddress: s.address || s['local-address'] || '',
+      macAddress: s['caller-id'] || '',
+      uptimeSeconds: parseUptime(s.uptime || '0s'),
+      uploadBytes: parseInt(s['bytes-in'] || '0'),
+      downloadBytes: parseInt(s['bytes-out'] || '0'),
+      sessionId: s['session-id'] || s['.id'] || '',
+      routerId: router.id,
+      routerName: router.name,
+    }));
+  } catch (e: any) {
+    console.error(`[TechSessions] MikroTik PPP active fetch failed for ${router.name}:`, e?.message || e);
+    return [];
+  } finally {
+    try { await api.close(); } catch { /* ignore */ }
+  }
+}
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -38,7 +96,19 @@ export async function GET(req: NextRequest) {
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
   const limit = Math.min(100, parseInt(searchParams.get('limit') || '50', 10));
 
-  // Get active sessions from radacct
+  // 1. Get all active routers to determine which need MikroTik API polling
+  const routerWhere: { isActive: boolean; id?: string } = { isActive: true };
+  if (routerFilter) routerWhere.id = routerFilter;
+
+  const routers = await prisma.router.findMany({
+    where: routerWhere,
+    select: { id: true, name: true, nasname: true, ipAddress: true, port: true, username: true, password: true, authMode: true },
+  });
+
+  const localRouters = routers.filter(r => (r.authMode || 'local') !== 'radius');
+  const radiusRouterIds = new Set(routers.filter(r => r.authMode === 'radius').map(r => r.id));
+
+  // 2. Get RADIUS accounting sessions from radacct (for radius-auth routers)
   const onlineSessions = await prisma.radacct.findMany({
     where: { acctstoptime: null },
     select: {
@@ -57,8 +127,102 @@ export async function GET(req: NextRequest) {
     take: 1000,
   });
 
-  // Cross-reference with pppoeUser data
-  const usernames = onlineSessions.map((s) => s.username);
+  // 3. Fetch live PPPoE sessions from MikroTik for local-auth routers
+  const mikrotikSessions = localRouters.length > 0
+    ? (await Promise.all(localRouters.map(r => getMikrotikPppoeSessions(r)))).flat()
+    : [];
+
+  const TZ_OFFSET_MS = getTimezoneOffsetMs();
+  const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
+
+  // Build router map for local sessions
+  const routerMap = new Map(routers.map(r => [r.id, { id: r.id, name: r.name }]));
+
+  // 4. Merge radacct + MikroTik sessions into a unified format
+  type MergedSession = {
+    id: string;
+    username: string;
+    sessionId: string;
+    framedIpAddress: string;
+    macAddress: string;
+    startTime: string;
+    duration: number;
+    durationFormatted: string;
+    uploadFormatted: string;
+    downloadFormatted: string;
+    totalFormatted: string;
+    router: { id: string; name: string } | null;
+    user: { id: string; customerId: string; name: string; phone: string; profile: string; area: { id: string; name: string } | null } | null;
+  };
+
+  const radacctSessions: MergedSession[] = onlineSessions.map((s) => {
+    const startMs = s.acctstarttime ? new Date(s.acctstarttime).getTime() : now;
+    const durationSec = Math.max(0, Math.floor((now - startMs) / 1000));
+    const hours = Math.floor(durationSec / 3600);
+    const mins = Math.floor((durationSec % 3600) / 60);
+    const secs = durationSec % 60;
+    const dl = Number(s.acctoutputoctets ?? 0);
+    const ul = Number(s.acctinputoctets ?? 0);
+    return {
+      id: s.acctuniqueid ?? String(s.radacctid),
+      username: s.username,
+      sessionId: s.acctsessionid ?? '',
+      framedIpAddress: s.framedipaddress ?? '',
+      macAddress: s.callingstationid ?? '',
+      startTime: s.acctstarttime ? new Date(s.acctstarttime).toISOString() : '',
+      duration: durationSec,
+      durationFormatted: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      uploadFormatted: fmtBytes(ul),
+      downloadFormatted: fmtBytes(dl),
+      totalFormatted: fmtBytes(ul + dl),
+      router: null, // will be enriched from userMap below
+      user: null,   // will be enriched from userMap below
+    };
+  });
+
+  const mikrotikMerged: MergedSession[] = mikrotikSessions.map((s) => {
+    const durationSec = s.uptimeSeconds;
+    const hours = Math.floor(durationSec / 3600);
+    const mins = Math.floor((durationSec % 3600) / 60);
+    const secs = durationSec % 60;
+    return {
+      id: `mt-${s.routerId}-${s.username}`,
+      username: s.username,
+      sessionId: s.sessionId,
+      framedIpAddress: s.framedIpAddress,
+      macAddress: s.macAddress,
+      startTime: new Date(Date.now() - durationSec * 1000).toISOString(),
+      duration: durationSec,
+      durationFormatted: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      uploadFormatted: fmtBytes(s.uploadBytes),
+      downloadFormatted: fmtBytes(s.downloadBytes),
+      totalFormatted: fmtBytes(s.uploadBytes + s.downloadBytes),
+      router: routerMap.get(s.routerId) ?? null,
+      user: null, // will be enriched from userMap below
+    };
+  });
+
+  // Deduplicate: prefer radacct for RADIUS-auth routers, MikroTik for local-auth
+  const seenUsernames = new Set<string>();
+  let sessions: MergedSession[] = [];
+
+  // First add radacct sessions (RADIUS-auth routers)
+  for (const s of radacctSessions) {
+    if (!seenUsernames.has(s.username)) {
+      seenUsernames.add(s.username);
+      sessions.push(s);
+    }
+  }
+  // Then add MikroTik sessions (local-auth routers), skipping duplicates
+  for (const s of mikrotikMerged) {
+    if (!seenUsernames.has(s.username)) {
+      seenUsernames.add(s.username);
+      sessions.push(s);
+    }
+  }
+
+  // 5. Cross-reference with pppoeUser data to enrich all sessions
+  const usernames = sessions.map((s) => s.username);
   const pppoeUsers = usernames.length
     ? await prisma.pppoeUser.findMany({
         where: { username: { in: usernames } },
@@ -77,44 +241,12 @@ export async function GET(req: NextRequest) {
 
   const userMap = new Map(pppoeUsers.map((u) => [u.username, u]));
 
-  const TZ_OFFSET_MS = getTimezoneOffsetMs();
-  const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
-
-  let sessions = onlineSessions.map((s) => {
+  // Enrich sessions with user data and router info
+  sessions = sessions.map((s) => {
     const pUser = userMap.get(s.username);
-    const startMs = s.acctstarttime
-      ? new Date(s.acctstarttime).getTime()
-      : now;
-    const durationSec = Math.max(0, Math.floor((now - startMs) / 1000));
-
-    const hours = Math.floor(durationSec / 3600);
-    const mins = Math.floor((durationSec % 3600) / 60);
-    const secs = durationSec % 60;
-    const durationFormatted = `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-
-    const dl = Number(s.acctoutputoctets ?? 0);
-    const ul = Number(s.acctinputoctets ?? 0);
-    const total = dl + ul;
-    const fmtBytes = (b: number) => {
-      if (b > 1073741824) return `${(b / 1073741824).toFixed(1)} GB`;
-      if (b > 1048576) return `${(b / 1048576).toFixed(1)} MB`;
-      if (b > 1024) return `${(b / 1024).toFixed(1)} KB`;
-      return `${b} B`;
-    };
-
     return {
-      id: s.acctuniqueid ?? String(s.radacctid),
-      username: s.username,
-      sessionId: s.acctsessionid ?? '',
-      framedIpAddress: s.framedipaddress ?? '',
-      macAddress: s.callingstationid ?? '',
-      startTime: s.acctstarttime ? new Date(s.acctstarttime).toISOString() : '',
-      duration: durationSec,
-      durationFormatted,
-      uploadFormatted: fmtBytes(ul),
-      downloadFormatted: fmtBytes(dl),
-      totalFormatted: fmtBytes(total),
-      router: pUser?.router ?? null,
+      ...s,
+      router: s.router ?? pUser?.router ?? null,
       user: pUser
         ? {
             id: pUser.id,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -41,6 +42,21 @@ export async function GET(req: NextRequest) {
     select: { username: true },
   });
   const onlineUsernames = new Set(onlineSessions.map((s) => s.username));
+
+  // Also check MikroTik /ppp/active for local-auth routers (no radacct records)
+  const routers = await prisma.router.findMany({
+    where: { isActive: true },
+    select: { id: true, authMode: true },
+  });
+  const localRouterIds = routers
+    .filter(r => (r.authMode || 'local') !== 'radius')
+    .map(r => r.id);
+  if (localRouterIds.length > 0) {
+    const pppActiveNames = await batchListPppActive(localRouterIds);
+    for (const name of pppActiveNames) {
+      onlineUsernames.add(name);
+    }
+  }
 
   // Build query for PPPoE users with active/isolated status (not deleted/stopped permanently)
   const where: Record<string, unknown> = {

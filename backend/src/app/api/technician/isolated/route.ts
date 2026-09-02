@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
+import { batchListPppActive } from '@/server/services/mikrotik/ppp-secret.service';
 
 async function verifyTechnician(req: NextRequest) {
   const token = req.cookies.get('technician-token')?.value;
@@ -60,6 +61,24 @@ export async function GET(req: NextRequest) {
       })
     : [];
   const onlineMap = new Map(activeSessions.map((s) => [s.username, s.framedipaddress]));
+
+  // Also check MikroTik /ppp/active for local-auth routers
+  const routers = await prisma.router.findMany({
+    where: { isActive: true },
+    select: { id: true, authMode: true },
+  });
+  const localRouterIds = routers
+    .filter(r => (r.authMode || 'local') !== 'radius')
+    .map(r => r.id);
+  if (localRouterIds.length > 0 && usernames.length > 0) {
+    const pppActiveNames = await batchListPppActive(localRouterIds);
+    const usernameSet = new Set(usernames);
+    for (const name of pppActiveNames) {
+      if (usernameSet.has(name) && !onlineMap.has(name)) {
+        onlineMap.set(name, null);
+      }
+    }
+  }
 
   const data = users.map((u) => ({
     id: u.id,
