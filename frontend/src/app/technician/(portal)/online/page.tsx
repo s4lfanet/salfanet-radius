@@ -3,10 +3,11 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Wifi, Search, RefreshCw, Loader2, Signal, Clock, ArrowDown, ArrowUp } from 'lucide-react';
+import { Wifi, Search, RefreshCw, Loader2, Signal, ArrowDown, ArrowUp } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api/client';
+import { Pagination } from '@/components/Pagination';
 
 interface Session {
   id: string;
@@ -81,7 +82,7 @@ export default function TechnicianOnlinePage() {
 
   useEffect(() => {
     fetchSessions(1);
-    const interval = setInterval(() => fetchSessions(pagination.page), 15000);
+    const interval = setInterval(() => fetchSessions(pagination.page), 5000);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchSessions]);
@@ -200,21 +201,13 @@ export default function TechnicianOnlinePage() {
           </div>
 
           {/* Pagination */}
-          {pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-muted-foreground">
-                {t('techPortal.page')} {pagination.page} / {pagination.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button onClick={() => fetchSessions(pagination.page - 1)} disabled={pagination.page <= 1} className="px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-lg disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition text-foreground">
-                  {t('techPortal.prev')}
-                </button>
-                <button onClick={() => fetchSessions(pagination.page + 1)} disabled={pagination.page >= pagination.totalPages} className="px-3 py-1.5 text-xs font-medium bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-lg disabled:opacity-40 hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition text-foreground">
-                  {t('techPortal.next')}
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            limit={pagination.limit}
+            onPageChange={(p) => fetchSessions(p)}
+          />
         </>
       )}
     </div>

@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr } from '@/lib/timezone';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useApiMutation, buildQueryKey } from '@/lib/api/hooks';
+import { Pagination } from '@/components/Pagination';
 
 interface Session {
   id: string;
@@ -685,62 +686,13 @@ export default function SessionsPage() {
         </div>
 
         {/* Pagination Footer */}
-        {pagination.totalPages > 1 && (
-          <div className="px-3 py-2 border-t border-border flex items-center justify-between bg-muted/50">
-            <div className="text-xs text-muted-foreground">
-              {t('common.page')} {pagination.page} {t('sessions.of')} {pagination.totalPages}
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setCurrentPage(1)}
-                disabled={pagination.page === 1}
-                className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
-              >
-                {t('common.first')}
-              </button>
-              <button
-                onClick={() => setCurrentPage(pagination.page - 1)}
-                disabled={pagination.page === 1}
-                className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
-              >
-                {t('common.prev')}
-              </button>
-              {/* Page numbers */}
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                let pageNum = pagination.page - 2 + i;
-                if (pageNum < 1) pageNum = i + 1;
-                if (pageNum > pagination.totalPages) return null;
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-2.5 py-1 text-xs border rounded ${
-                      pageNum === pagination.page 
-                        ? 'bg-teal-600 text-white border-teal-600' 
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => setCurrentPage(pagination.page + 1)}
-                disabled={pagination.page === pagination.totalPages}
-                className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
-              >
-                {t('common.next')}
-              </button>
-              <button
-                onClick={() => setCurrentPage(pagination.totalPages)}
-                disabled={pagination.page === pagination.totalPages}
-                className="px-2 py-1 text-xs border rounded disabled:opacity-50 hover:bg-muted"
-              >
-                {t('common.last')}
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          onPageChange={(p) => setCurrentPage(p)}
+        />
       </div>
       </div>
     </div>

@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
+import { Pagination } from '@/components/Pagination';
 
 interface Session {
   id: string;
@@ -428,45 +429,13 @@ export default function PPPoESessionsPage() {
         </div>
 
         {/* Pagination Footer */}
-        <div className="px-3 py-2 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2 bg-muted">
-          <div className="text-xs text-muted-foreground">
-            {t('sessions.showing')} {((pagination.page - 1) * pageSize) + 1} {t('sessions.to')} {Math.min(pagination.page * pageSize, pagination.total)} {t('sessions.of')} {pagination.total} {t('sessions.entries')}
-          </div>
-          <div className="flex items-center gap-1 flex-wrap justify-center">
-            <button
-              onClick={() => setCurrentPage(pagination.page - 1)}
-              disabled={pagination.page === 1}
-              className="px-3 py-1 text-xs border border-border rounded disabled:opacity-50 hover:bg-muted/80 text-muted-foreground"
-            >
-              {t('common.previous')}
-            </button>
-            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-              let pageNum = pagination.page - 2 + i;
-              if (pageNum < 1) pageNum = i + 1;
-              if (pageNum > pagination.totalPages) return null;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => setCurrentPage(pageNum)}
-                  className={`px-3 py-1 text-xs border rounded ${
-                    pageNum === pagination.page 
-                      ? 'bg-primary text-primary-foreground border-primary' 
-                      : 'border-border hover:bg-muted/80 text-muted-foreground'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
-            <button
-              onClick={() => setCurrentPage(pagination.page + 1)}
-              disabled={pagination.page === pagination.totalPages}
-              className="px-3 py-1 text-xs border border-border rounded disabled:opacity-50 hover:bg-muted/80 text-muted-foreground"
-            >
-              {t('common.next')}
-            </button>
-          </div>
-        </div>
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pageSize}
+          onPageChange={(p) => setCurrentPage(p)}
+        />
       </div>
       </div>
     </div>

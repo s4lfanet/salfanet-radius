@@ -3,10 +3,11 @@
 export const dynamic = 'force-dynamic';
 
 import { useEffect, useState } from 'react';
-import { WifiOff, Search, RefreshCw, Loader2, Clock, User as UserIcon } from 'lucide-react';
+import { WifiOff, Search, RefreshCw, Loader2, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
+import { Pagination } from '@/components/Pagination';
 
 interface OfflineUser {
   id: string;
@@ -15,10 +16,14 @@ interface OfflineUser {
   phone: string;
   status: string;
   expiredAt: string | null;
-  profile: { id: string; name: string; groupName: string };
+  profile: { id: string; name: string; groupName: string } | null;
   router?: { id: string; name: string } | null;
   area?: { id: string; name: string } | null;
+  source?: 'database' | 'mikrotik';
+  disabled?: boolean;
 }
+
+interface PaginationData { total: number; page: number; limit: number; totalPages: number; }
 
 export default function TechnicianOfflinePage() {
   const { t } = useTranslation();
@@ -26,12 +31,18 @@ export default function TechnicianOfflinePage() {
   const [users, setUsers] = useState<OfflineUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [pagination, setPagination] = useState<PaginationData>({ total: 0, page: 1, limit: 50, totalPages: 1 });
 
-  const loadData = async () => {
+  const loadData = async (page: number = 1) => {
     try {
       setLoading(true);
-      const data = await apiAdmin<{ users: OfflineUser[] }>('/api/technician/offline');
+      const params = new URLSearchParams();
+      if (search) params.set('search', search);
+      params.set('page', page.toString());
+      params.set('limit', '50');
+      const data = await apiAdmin<{ users: OfflineUser[]; total: number; pagination?: PaginationData }>(`/api/technician/offline?${params}`);
       setUsers(data.users || []);
+      if (data.pagination) setPagination(data.pagination);
     } catch {
       addToast({ type: 'error', title: 'Failed to load data' });
     } finally {
@@ -40,7 +51,7 @@ export default function TechnicianOfflinePage() {
   };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(1); }, []);
 
   const filtered = users.filter(u =>
     u.username.toLowerCase().includes(search.toLowerCase()) ||
@@ -58,10 +69,10 @@ export default function TechnicianOfflinePage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground">{t('techPortal.offlineUsers')}</h1>
-            <p className="text-xs text-muted-foreground">{filtered.length} pelanggan offline</p>
+            <p className="text-xs text-muted-foreground">{pagination.total} pelanggan offline</p>
           </div>
         </div>
-        <button onClick={loadData} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+        <button onClick={() => loadData(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -96,19 +107,23 @@ export default function TechnicianOfflinePage() {
                   <th className="px-4 py-3 font-semibold text-muted-foreground">Router</th>
                   <th className="px-4 py-3 font-semibold text-muted-foreground">Area</th>
                   <th className="px-4 py-3 font-semibold text-muted-foreground">Status</th>
+                  <th className="px-4 py-3 font-semibold text-muted-foreground">Source</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((u) => (
                   <tr key={u.id} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition">
                     <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
-                    <td className="px-4 py-3 text-muted-foreground/80">{u.name}</td>
-                    <td className="px-4 py-3 text-muted-foreground/80">{u.phone}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{u.name || '-'}</td>
+                    <td className="px-4 py-3 text-muted-foreground/80">{u.phone || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.profile?.name || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.router?.name || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.area?.name || '-'}</td>
                     <td className="px-4 py-3">
-                      <span className={`px-2 py-0.5 text-xs font-bold rounded-lg ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400'}`}>{u.status}</span>
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded-lg ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : u.disabled ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-slate-500/10 text-slate-600 dark:text-slate-400'}`}>{u.disabled ? 'disabled' : u.status}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 text-xs rounded ${u.source === 'mikrotik' ? 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400' : 'bg-slate-500/10 text-slate-500'}`}>{u.source || 'database'}</span>
                     </td>
                   </tr>
                 ))}
@@ -123,9 +138,9 @@ export default function TechnicianOfflinePage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-bold text-foreground">{u.username}</p>
-                    <p className="text-xs text-muted-foreground">{u.name}</p>
+                    <p className="text-xs text-muted-foreground">{u.name || '-'}</p>
                   </div>
-                  <span className={`px-2 py-1 text-xs font-bold rounded-lg ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>Offline</span>
+                  <span className={`px-2 py-1 text-xs font-bold rounded-lg ${u.disabled ? 'bg-red-500/10 text-red-600 dark:text-red-400' : u.status === 'isolated' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>{u.disabled ? 'Disabled' : 'Offline'}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div>
@@ -139,11 +154,20 @@ export default function TechnicianOfflinePage() {
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10 text-xs">
                   <span className="text-muted-foreground">{u.router?.name || '-'} {u.area ? `• ${u.area.name}` : ''}</span>
-                  <span className={`px-2 py-0.5 rounded-lg font-medium ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-500' : 'text-muted-foreground'}`}>{u.status}</span>
+                  <span className={`px-2 py-0.5 rounded-lg font-medium ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-500' : u.disabled ? 'bg-red-500/10 text-red-500' : 'text-muted-foreground'}`}>{u.disabled ? 'disabled' : u.status}</span>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Pagination */}
+          <Pagination
+            page={pagination.page}
+            totalPages={pagination.totalPages}
+            total={pagination.total}
+            limit={pagination.limit}
+            onPageChange={(p) => loadData(p)}
+          />
         </>
       )}
     </div>
