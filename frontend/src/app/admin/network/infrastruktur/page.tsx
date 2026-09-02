@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Search, MapPin, ExternalLink, Trash2 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -391,33 +392,22 @@ function TableWrapper({
 }: {
   children: React.ReactNode; total: number; page: number; limit: number; onPage: (p: number) => void;
 }) {
-  const { t } = useTranslation();
   const totalPages = Math.ceil(total / limit);
   return (
     <div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">{children}</table>
       </div>
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 dark:border-gray-700">
-          <span className="text-xs text-muted-foreground">
-            {t('infrastruktur.totalItems', { count: total })}
-          </span>
-          <div className="flex gap-1">
-            <button disabled={page <= 1} onClick={() => onPage(page - 1)}
-              className="px-3 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 text-muted-foreground">
-              ‹ {t('common.prev')}
-            </button>
-            <span className="px-3 py-1 text-xs text-muted-foreground">
-              {page} / {totalPages}
-            </span>
-            <button disabled={page >= totalPages} onClick={() => onPage(page + 1)}
-              className="px-3 py-1 rounded text-xs border border-gray-200 dark:border-gray-600 disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-700 text-muted-foreground">
-              {t('common.next')} ›
-            </button>
-          </div>
-        </div>
-      )}
+      <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-700">
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          limit={limit}
+          onPageChange={onPage}
+          alwaysVisible
+        />
+      </div>
     </div>
   );
 }

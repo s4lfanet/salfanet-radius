@@ -22,7 +22,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, ChevronLeft, ChevronRight, PlusSquare, Users, User as UserIcon } from 'lucide-react';
+import { Loader2, DollarSign, FileText, CheckCircle, CheckCircle2, Clock, Eye, AlertCircle, Copy, Check, ExternalLink, MessageCircle, Trash2, Search, Download, Printer, Upload, PlusSquare, Users, User as UserIcon } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import Link from 'next/link';
 import { invoiceApi, pppoeApi, apiAdmin, buildUrl } from '@/lib/api';
 import { useApiQuery, useApiMutation, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -1148,59 +1149,19 @@ export default function InvoicesPage() {
           </div>
 
           {/* Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-3 py-2 border-t border-border text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Page {currentPage} of {totalPages} ({totalCount} total)</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
-                  className="bg-card border border-border rounded px-1 py-0.5 text-[10px]"
-                >
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  First
-                </button>
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Prev
-                </button>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Last
-                </button>
-              </div>
-            </div>
-          )}
-          {totalPages <= 1 && (
-            <div className="px-3 py-2 border-t border-border bg-muted">
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                {t('table.showing')} {filteredInvoices.length} {t('table.of')} {totalCount}
-              </p>
-            </div>
-          )}
+          <div className="px-3 py-2 border-t border-border">
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              total={totalCount}
+              limit={pageSize}
+              onPageChange={setCurrentPage}
+              disabled={invoicesQuery.isFetching}
+              pageSizeOptions={[25, 50, 100]}
+              onLimitChange={(v) => { setPageSize(v); setCurrentPage(1); }}
+              alwaysVisible
+            />
+          </div>
         </div>
 
         {/* Detail Dialog */}

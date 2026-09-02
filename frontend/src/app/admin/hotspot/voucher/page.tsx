@@ -11,6 +11,7 @@ import { formatInTimeZone } from 'date-fns-tz'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Pagination } from "@/components/Pagination"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Plus, Loader2, Trash2, Ticket, Printer, Check, Download, Upload, FileSpreadsheet, MessageCircle, Wifi, Pencil } from "lucide-react"
 import { renderVoucherTemplate, getPrintableHtml } from '@/lib/utils/templateRenderer'
@@ -1072,87 +1073,18 @@ export default function HotspotVoucherPage() {
         </div>
 
         {/* Pagination */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-4 py-3 border-t border-border bg-card">
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap justify-center sm:justify-start">
-            <div className="text-[10px] sm:text-xs text-muted-foreground">
-              {t('hotspot.showing')} {vouchers.length === 0 ? 0 : ((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalVouchers)} {t('hotspot.of')} {totalVouchers.toLocaleString()} {t('nav.voucher')}
-            </div>
-            <Select value={pageSize.toString()} onValueChange={(v) => { setPageSize(parseInt(v)); setCurrentPage(1); }}>
-              <SelectTrigger className="h-8 w-[100px] text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="50">50 {t('hotspot.perPage')}</SelectItem>
-                <SelectItem value="100">100 {t('hotspot.perPage')}</SelectItem>
-                <SelectItem value="200">200 {t('hotspot.perPage')}</SelectItem>
-                <SelectItem value="500">500 {t('hotspot.perPage')}</SelectItem>
-                <SelectItem value="1000">1000 {t('hotspot.perPage')}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(1)}
-              disabled={currentPage === 1}
-              className="h-8 text-xs px-3"
-            >
-              {t('hotspot.first')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-              className="h-8 text-xs px-3"
-            >
-              {t('hotspot.previous')}
-            </Button>
-            <div className="flex items-center gap-1">
-              {[...Array(Math.min(5, totalPages))].map((_, idx) => {
-                let pageNum;
-                if (totalPages <= 5) {
-                  pageNum = idx + 1;
-                } else if (currentPage <= 3) {
-                  pageNum = idx + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  pageNum = totalPages - 4 + idx;
-                } else {
-                  pageNum = currentPage - 2 + idx;
-                }
-                return (
-                  <Button
-                    key={pageNum}
-                    variant={currentPage === pageNum ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setCurrentPage(pageNum)}
-                    className="h-8 w-8 text-xs p-0"
-                  >
-                    {pageNum}
-                  </Button>
-                );
-              })}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage === totalPages}
-              className="h-8 text-xs px-3"
-            >
-              {t('hotspot.next')}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(totalPages)}
-              disabled={currentPage === totalPages}
-              className="h-8 text-xs px-3"
-            >
-              {t('hotspot.last')}
-            </Button>
-          </div>
+        <div className="px-3 sm:px-4 py-3 border-t border-border bg-card">
+          <Pagination
+            page={currentPage}
+            totalPages={totalPages}
+            total={totalVouchers}
+            limit={pageSize}
+            onPageChange={(p) => setCurrentPage(p)}
+            disabled={voucherQuery.isFetching}
+            pageSizeOptions={[50, 100, 200, 500, 1000]}
+            onLimitChange={(v) => { setPageSize(v); setCurrentPage(1); }}
+            alwaysVisible
+          />
         </div>
       </div>
 

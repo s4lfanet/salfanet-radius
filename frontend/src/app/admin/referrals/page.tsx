@@ -9,8 +9,9 @@ import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 import { CyberCard, CyberButton, CyberBadge } from '@/components/cyberpunk';
 import {
   Gift, Users, Wallet, Clock, CheckCircle, XCircle, Search,
-  Loader2, ChevronLeft, ChevronRight, AlertCircle
+  Loader2, AlertCircle
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 
 interface ReferralReward {
   id: string;
@@ -351,31 +352,15 @@ export default function AdminReferralsPage() {
           </div>
           </>
         )}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-            <p className="text-xs text-muted-foreground">
-              {t('referrals.page')} {page} {t('referrals.of')} {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <CyberButton
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </CyberButton>
-              <CyberButton
-                variant="outline"
-                size="sm"
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </CyberButton>
-            </div>
-          </div>
-        )}
+        <div className="mt-4 pt-4 border-t border-border">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={totalPages * 20}
+            limit={20}
+            onPageChange={setPage}
+          />
+        </div>
       </CyberCard>
     </div>
   );

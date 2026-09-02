@@ -21,6 +21,7 @@ import {
   Calendar, CreditCard, Camera, ImageIcon, Info, AlertTriangle, Wrench, CheckCircle, XCircle, Hand,
   GitCompareArrows, AlertCircle, CheckCheck, ChevronDown, ChevronRight, BookOpen,
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import MapPicker from '@/components/MapPicker';
 import { CameraPhotoInput } from '@/components/CameraPhotoInput';
 import { CameraViewfinder } from '@/components/CameraViewfinder';
@@ -1848,53 +1849,19 @@ export default function PppoeUsersPage() {
           </div>
 
           {/* Server-side Pagination Controls */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between px-3 py-2 border-t border-border text-xs">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground">Page {currentPage} of {totalPages} ({totalCount} total)</span>
-                <select
-                  value={pageSize}
-                  onChange={(e) => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
-                  className="bg-card border border-border rounded px-1 py-0.5 text-[10px]"
-                >
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
-                  <option value={100}>100</option>
-                  <option value={200}>200</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1 || usersQuery.isFetching}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  First
-                </button>
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1 || usersQuery.isFetching}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Prev
-                </button>
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages || usersQuery.isFetching}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-                <button
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages || usersQuery.isFetching}
-                  className="px-2 py-1 rounded border border-border hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Last
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="px-3 py-2 border-t border-border">
+            <Pagination
+              page={currentPage}
+              totalPages={totalPages}
+              total={totalCount}
+              limit={pageSize}
+              onPageChange={setCurrentPage}
+              disabled={usersQuery.isFetching}
+              pageSizeOptions={[25, 50, 100, 200]}
+              onLimitChange={(v) => { setPageSize(v); setCurrentPage(1); }}
+              alwaysVisible
+            />
+          </div>
         </div>
 
         {/* Action Dropdown Menu — di luar tabel, fixed positioning agar tidak terpotong */}

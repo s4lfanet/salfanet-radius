@@ -5,8 +5,9 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
     Database, Plus, Trash2, Search, Edit2, Check, X,
-    Loader2, ChevronLeft, ChevronRight
+    Loader2
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
@@ -230,26 +231,14 @@ export default function RadCheckPage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="p-4 border-t border-border flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">
-                        {t('common.page')} {page} {t('common.of')} {totalPages}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page === 1}
-                            className="p-2 border border-border rounded-lg disabled:opacity-50 hover:bg-muted transition-colors"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                            disabled={page === totalPages}
-                            className="p-2 border border-border rounded-lg disabled:opacity-50 hover:bg-muted transition-colors"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
+                <div className="p-4 border-t border-border">
+                    <Pagination
+                        page={page}
+                        totalPages={totalPages}
+                        total={(radcheckData?.total || 0)}
+                        limit={10}
+                        onPageChange={setPage}
+                    />
                 </div>
             </div>
 

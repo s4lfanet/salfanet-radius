@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Receipt, CheckCircle, Clock, AlertCircle, Loader2,
-  RefreshCw, CreditCard, ExternalLink, ChevronLeft, ChevronRight,
+  RefreshCw, CreditCard, ExternalLink,
   Banknote, ShieldCheck, CalendarClock, Printer, FileText, Check,
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { CyberCard, CyberButton, SimpleModal, ModalHeader, ModalTitle, ModalDescription, ModalBody, ModalFooter, ModalButton } from '@/components/cyberpunk';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { formatWIB } from '@/lib/timezone';
@@ -413,26 +414,14 @@ export default function CustomerInvoicesPage() {
       )}
 
       {/* Pagination */}
-      {!loading && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-2">
-          <button
-            onClick={() => handlePage(pagination.page - 1)}
-            disabled={pagination.page <= 1}
-            className="p-2 rounded-xl border border-slate-700 hover:border-cyan-500/40 hover:bg-cyan-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronLeft className="w-4 h-4 text-slate-300" />
-          </button>
-          <span className="text-sm text-slate-400">
-            Halaman <span className="font-bold text-white">{pagination.page}</span> / {pagination.totalPages}
-          </span>
-          <button
-            onClick={() => handlePage(pagination.page + 1)}
-            disabled={pagination.page >= pagination.totalPages}
-            className="p-2 rounded-xl border border-slate-700 hover:border-cyan-500/40 hover:bg-cyan-500/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-          >
-            <ChevronRight className="w-4 h-4 text-slate-300" />
-          </button>
-        </div>
+      {!loading && (
+        <Pagination
+          page={pagination.page}
+          totalPages={pagination.totalPages}
+          total={pagination.total}
+          limit={pagination.limit}
+          onPageChange={handlePage}
+        />
       )}
 
       <SimpleModal isOpen={printDialogInvoice !== null} onClose={() => setPrintDialogInvoice(null)} size="sm">

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usePermissions } from '@/hooks/usePermissions';
 import { formatWIB } from '@/lib/timezone';
-import { Activity, Search, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { Activity, Search, RefreshCw } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { useApiQuery } from '@/lib/api/hooks';
 
 interface ActivityLogEntry {
@@ -230,29 +231,17 @@ export default function ActivityLogsPage() {
         </div>
 
         {/* Pagination */}
-        {total > PAGE_SIZE && (
-          <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-white/5 text-xs">
-            <div className="text-muted-foreground">
-              Menampilkan {offset + 1}-{Math.min(offset + PAGE_SIZE, total)} dari {total}
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
-                disabled={!hasPrev || loading}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setOffset(offset + PAGE_SIZE)}
-                disabled={!hasNext || loading}
-                className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
+        <div className="px-3 py-2 border-t border-gray-100 dark:border-white/5">
+          <Pagination
+            page={Math.floor(offset / PAGE_SIZE) + 1}
+            totalPages={Math.ceil(total / PAGE_SIZE)}
+            total={total}
+            limit={PAGE_SIZE}
+            onPageChange={(p) => setOffset((p - 1) * PAGE_SIZE)}
+            disabled={loading}
+            alwaysVisible
+          />
+        </div>
       </div>
     </div>
   );

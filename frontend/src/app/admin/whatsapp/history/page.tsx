@@ -8,6 +8,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { id as localeId } from 'date-fns/locale';
 import { formatWIB } from '@/lib/timezone';
 import { useApiQuery } from '@/lib/api/hooks';
+import { Pagination } from '@/components/Pagination';
 
 interface HistoryItem {
   id: string;
@@ -379,32 +380,15 @@ export default function WhatsAppHistoryPage() {
                 </div>
 
                 {/* Pagination */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-3 py-2 border-t border-border">
-                  <span className="text-[10px] text-muted-foreground dark:text-muted-foreground">
-                    {t('whatsapp.page')} {page} {t('table.of')} {totalPages}
-                  </span>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => setPage(page - 1)}
-                      disabled={page === 1 || loading}
-                      className="h-6 px-2 text-[10px] font-medium text-foreground bg-card border border-border rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-1"
-                    >
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      {t('whatsapp.prev')}
-                    </button>
-                    <button
-                      onClick={() => setPage(page + 1)}
-                      disabled={page === totalPages || loading}
-                      className="h-6 px-2 text-[10px] font-medium text-foreground bg-card border border-border rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-1"
-                    >
-                      {t('whatsapp.next')}
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
+                <div className="px-3 py-2 border-t border-border">
+                  <Pagination
+                    page={page}
+                    totalPages={totalPages}
+                    total={totalPages * 20}
+                    limit={20}
+                    onPageChange={setPage}
+                    disabled={loading}
+                  />
                 </div>
               </>
             )}

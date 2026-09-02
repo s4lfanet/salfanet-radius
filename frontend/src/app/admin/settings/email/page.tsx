@@ -23,6 +23,7 @@ import {
   Calendar,
   X
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { showSuccess, showError } from '@/lib/sweetalert';
 import { apiAdmin } from '@/lib/api';
@@ -1416,31 +1417,15 @@ function HistoryTab() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="bg-muted px-6 py-4 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Previous
-                  </button>
-
-                  <span className="text-sm text-foreground">
-                    Page {currentPage} of {totalPages}
-                  </span>
-
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <div className="bg-muted px-6 py-4 border-t border-border">
+              <Pagination
+                page={currentPage}
+                totalPages={totalPages}
+                total={totalPages * 10}
+                limit={10}
+                onPageChange={setCurrentPage}
+              />
+            </div>
           </>
         )}
       </div>

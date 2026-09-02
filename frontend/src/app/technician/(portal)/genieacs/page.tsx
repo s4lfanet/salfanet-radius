@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useEffect, useState, useCallback } from 'react';
 import { Server, Search, RefreshCw, Loader2, Wifi, WifiOff, Eye, X, Power, Pencil, Check } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
@@ -377,45 +378,13 @@ export default function TechnicianGenieACSPage() {
             ))}
           </div>
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between pt-2">
-              <p className="text-xs text-muted-foreground/70">
-                Halaman {safeCurrentPage} dari {totalPages} &bull; {filtered.length} perangkat
-              </p>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={safeCurrentPage <= 1}
-                  className="px-3 py-1.5 text-xs font-semibold bg-card border border-border rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
-                >
-                  ? Prev
-                </button>
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let page = i + 1;
-                  if (totalPages > 5) {
-                    const start = Math.max(1, Math.min(safeCurrentPage - 2, totalPages - 4));
-                    page = start + i;
-                  }
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 text-xs font-bold rounded-xl transition ${page === safeCurrentPage ? 'bg-blue-500 text-white shadow' : 'bg-card border border-border text-muted-foreground hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
-                    >
-                      {page}
-                    </button>
-                  );
-                })}
-                <button
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={safeCurrentPage >= totalPages}
-                  className="px-3 py-1.5 text-xs font-semibold bg-card border border-border rounded-xl disabled:opacity-40 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 transition"
-                >
-                  Next ?
-                </button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            page={safeCurrentPage}
+            totalPages={totalPages}
+            total={filtered.length}
+            limit={PAGE_SIZE}
+            onPageChange={setCurrentPage}
+          />
         </>
       )}
 

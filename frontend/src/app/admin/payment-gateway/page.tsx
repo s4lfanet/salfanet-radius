@@ -6,8 +6,9 @@ import { showSuccess, showError, showConfirm, showToast } from '@/lib/sweetalert
 import { formatWIB } from '@/lib/timezone';
 import { 
   Loader2, CreditCard, Wallet, Save, Eye, EyeOff, CheckCircle2, AlertCircle, 
-  Copy, Check, List, RefreshCw, Search, ChevronLeft, ChevronRight, X, QrCode
+  Copy, Check, List, RefreshCw, Search, X, QrCode
 } from 'lucide-react';
+import { Pagination } from '@/components/Pagination';
 import { apiAdmin } from '@/lib/api';
 import { useApiQuery, useQueryClient, buildQueryKey } from '@/lib/api/hooks';
 
@@ -445,19 +446,13 @@ export default function PaymentGatewayPage() {
               </div>
 
               {/* Pagination */}
-              {logsTotalPages > 1 && (
-                <div className="flex items-center justify-between pt-2">
-                  <p className="text-[10px] text-muted-foreground">Page {logsPage} of {logsTotalPages}</p>
-                  <div className="flex gap-1">
-                    <button onClick={() => setLogsPage(p => Math.max(1, p - 1))} disabled={logsPage === 1} className="p-1 border rounded disabled:opacity-50">
-                      <ChevronLeft className="w-3 h-3" />
-                    </button>
-                    <button onClick={() => setLogsPage(p => Math.min(logsTotalPages, p + 1))} disabled={logsPage === logsTotalPages} className="p-1 border rounded disabled:opacity-50">
-                      <ChevronRight className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                page={logsPage}
+                totalPages={logsTotalPages}
+                total={logsTotalPages * 10}
+                limit={10}
+                onPageChange={setLogsPage}
+              />
             </div>
           )}
 
