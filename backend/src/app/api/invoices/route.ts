@@ -107,14 +107,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Search filter — match invoice number, customer name, username, or phone
+    // Note: MySQL contains is already case-insensitive, no need for mode: 'insensitive'
     if (searchParam) {
       where.OR = [
-        { invoiceNumber: { contains: searchParam, mode: 'insensitive' } },
-        { customerName: { contains: searchParam, mode: 'insensitive' } },
-        { customerUsername: { contains: searchParam, mode: 'insensitive' } },
+        { invoiceNumber: { contains: searchParam } },
+        { customerName: { contains: searchParam } },
+        { customerUsername: { contains: searchParam } },
         { customerPhone: { contains: searchParam } },
-        { user: { name: { contains: searchParam, mode: 'insensitive' } } },
-        { user: { username: { contains: searchParam, mode: 'insensitive' } } },
+        { user: { name: { contains: searchParam } } },
+        { user: { username: { contains: searchParam } } },
         { user: { phone: { contains: searchParam } } },
       ];
     }
