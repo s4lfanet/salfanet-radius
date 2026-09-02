@@ -5,6 +5,9 @@ import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
 import { RouterOSAPI } from 'node-routeros';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // Parse MikroTik uptime format (e.g., "1h30m45s", "5m20s", "30s")
 function parseUptime(uptime: string): number {
   let seconds = 0;
@@ -323,5 +326,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     sessions: paged,
     pagination: { total, page, limit, totalPages },
+  }, {
+    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
   });
 }

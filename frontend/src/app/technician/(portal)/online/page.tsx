@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Wifi, Search, RefreshCw, Loader2, Signal, ArrowDown, ArrowUp } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -44,6 +44,7 @@ export default function TechnicianOnlinePage() {
   const [search, setSearch] = useState('');
   const [routerFilter, setRouterFilter] = useState('');
   const [pagination, setPagination] = useState<Pagination>({ total: 0, page: 1, limit: 20, totalPages: 1 });
+  const pageRef = useRef(1);
 
   const formatUptime = (seconds: number) => {
     const d = Math.floor(seconds / 86400);
@@ -56,22 +57,22 @@ export default function TechnicianOnlinePage() {
     return `${s}s`;
   };
 
-  const fetchSessions = useCallback(async (page: number = 1) => {
+  const fetchSessions = useCallback(async (page: number = 1, isPoll = false) => {
     try {
-      setLoading(true);
+      if (!isPoll) setLoading(true);
       const params = new URLSearchParams();
       params.set('page', page.toString());
       params.set('limit', '20');
       if (routerFilter) params.set('routerId', routerFilter);
       if (search) params.set('search', search);
 
-      const data = await apiAdmin<{ sessions?: Session[]; pagination?: Pagination }>(`/api/technician/sessions?${params}`);
+      const data = await apiAdmin<{ sessions?: Session[]; pagination?: Pagination }>(`/api/technician/sessions?${params}`, { cache: 'no-store' });
       setSessions(data.sessions || []);
-      if (data.pagination) setPagination(data.pagination);
+      if (data.pagination) { setPagination(data.pagination); pageRef.current = data.pagination.page; }
     } catch {
-      addToast({ type: 'error', title: 'Failed to load sessions' });
+      if (!isPoll) addToast({ type: 'error', title: 'Failed to load sessions' });
     } finally {
-      setLoading(false);
+      if (!isPoll) setLoading(false);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routerFilter, search]);
@@ -82,7 +83,7 @@ export default function TechnicianOnlinePage() {
 
   useEffect(() => {
     fetchSessions(1);
-    const interval = setInterval(() => fetchSessions(pagination.page), 5000);
+    const interval = setInterval(() => fetchSessions(pageRef.current, true), 5000);
     return () => clearInterval(interval);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchSessions]);
