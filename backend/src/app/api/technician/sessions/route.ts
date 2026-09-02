@@ -28,6 +28,17 @@ function fmtBytes(b: number): string {
   return `${b} B`;
 }
 
+function fmtDuration(seconds: number): string {
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
 // Fetch live PPPoE sessions from MikroTik /ppp/active for local-auth routers.
 // Also fetches /interface/print to get actual rx-byte/tx-byte counters,
 // since /ppp/active/print does NOT include byte counters on RouterOS v6.
@@ -201,7 +212,7 @@ export async function GET(req: NextRequest) {
       macAddress: s.callingstationid ?? '',
       startTime: s.acctstarttime ? new Date(s.acctstarttime).toISOString() : '',
       duration: durationSec,
-      durationFormatted: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      durationFormatted: fmtDuration(durationSec),
       uploadFormatted: fmtBytes(ul),
       downloadFormatted: fmtBytes(dl),
       totalFormatted: fmtBytes(ul + dl),
@@ -223,7 +234,7 @@ export async function GET(req: NextRequest) {
       macAddress: s.macAddress,
       startTime: new Date(Date.now() - durationSec * 1000).toISOString(),
       duration: durationSec,
-      durationFormatted: `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      durationFormatted: fmtDuration(durationSec),
       uploadFormatted: fmtBytes(s.uploadBytes),
       downloadFormatted: fmtBytes(s.downloadBytes),
       totalFormatted: fmtBytes(s.uploadBytes + s.downloadBytes),
