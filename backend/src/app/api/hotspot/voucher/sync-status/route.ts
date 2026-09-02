@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { requirePermission } from '@/server/middleware/api-auth'
 import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service'
 
 export const dynamic = 'force-dynamic'
@@ -6,9 +7,11 @@ export const dynamic = 'force-dynamic'
 /**
  * POST /api/hotspot/voucher/sync-status
  * Fetches voucher status from all local-only MikroTik routers and updates DB.
- * Can be called by cron job or manually.
+ * Can be called manually (cron job calls the service in-process instead).
  */
 export async function POST() {
+  const authCheck = await requirePermission('vouchers.view')
+  if (!authCheck.authorized) return authCheck.response
   try {
     const result = await fetchAllVoucherStatusesFromMikrotik()
 

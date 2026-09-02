@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
-import { requirePermission } from '@/server/middleware/api-auth';
+import { requirePermission, requireAnyPermission } from '@/server/middleware/api-auth';
 import { RouterOSAPI } from 'node-routeros';
 
 const CMD_TIMEOUT = 12_000; // 12 seconds per command
@@ -29,7 +29,9 @@ async function apiCmd(api: any, command: string, params: string[] = [], label = 
 // GET - List all active routers (for picker UI)
 export async function GET() {
   try {
-    const authCheck = await requirePermission('network.view');
+    // Router picker serves both network roles (TECHNICIAN: network.view) and
+    // customer roles (CUSTOMER_SERVICE: customers.view) who perform the sync via POST
+    const authCheck = await requireAnyPermission(['network.view', 'customers.view']);
     if (!authCheck.authorized) return authCheck.response;
 
     const routers = await prisma.router.findMany({
