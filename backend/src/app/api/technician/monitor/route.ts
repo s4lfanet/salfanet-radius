@@ -107,9 +107,9 @@ export async function GET(req: NextRequest) {
     const dl = Number(s.acctoutputoctets ?? 0);
     const ul = Number(s.acctinputoctets ?? 0);
     const fmtBytes = (b: number) => {
-      if (b > 1073741824) return `${(b / 1073741824).toFixed(1)} GB`;
-      if (b > 1048576) return `${(b / 1048576).toFixed(1)} MB`;
-      if (b > 1024) return `${(b / 1024).toFixed(1)} KB`;
+      if (b >= 1073741824) return `${(b / 1073741824).toFixed(2)} GB`;
+      if (b >= 1048576) return `${(b / 1048576).toFixed(2)} MB`;
+      if (b >= 1024) return `${(b / 1024).toFixed(1)} KB`;
       return `${b} B`;
     };
 
@@ -166,9 +166,9 @@ export async function GET(req: NextRequest) {
 
     const uptimeSec = parseUptime(ms.uptime);
     const fmtBytes = (b: number) => {
-      if (b > 1073741824) return `${(b / 1073741824).toFixed(1)} GB`;
-      if (b > 1048576) return `${(b / 1048576).toFixed(1)} MB`;
-      if (b > 1024) return `${(b / 1024).toFixed(1)} KB`;
+      if (b >= 1073741824) return `${(b / 1073741824).toFixed(2)} GB`;
+      if (b >= 1048576) return `${(b / 1048576).toFixed(2)} MB`;
+      if (b >= 1024) return `${(b / 1024).toFixed(1)} KB`;
       return `${b} B`;
     };
 
