@@ -23,8 +23,8 @@
     "sync:readme-changelog": "pnpm --filter frontend sync:readme-changelog"
   },
   "engines": {
-    "node": ">=20.0.0",
-    "pnpm": ">=9.0.0"
+    "node": ">=22.0.0",
+    "pnpm": ">=11.0.0"
   },
   "packageManager": "pnpm@11.21.0"
 }
