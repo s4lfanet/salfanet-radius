@@ -99,6 +99,10 @@ export default function CollectorSettlementsPage() {
           <thead>
             <tr className="border-b border-border bg-accent/30">
               <th className="text-left p-2 font-medium text-muted-foreground">Pelanggan</th>
+              <th className="text-left p-2 font-medium text-muted-foreground">Kontak</th>
+              <th className="text-left p-2 font-medium text-muted-foreground">Alamat</th>
+              <th className="text-left p-2 font-medium text-muted-foreground">Paket</th>
+              <th className="text-left p-2 font-medium text-muted-foreground">Area</th>
               <th className="text-right p-2 font-medium text-muted-foreground">Jumlah</th>
               <th className="text-center p-2 font-medium text-muted-foreground">Metode</th>
               <th className="text-right p-2 font-medium text-muted-foreground">Waktu</th>
@@ -109,14 +113,12 @@ export default function CollectorSettlementsPage() {
               <tr key={inv.id} className={`border-b border-border ${i % 2 === 0 ? '' : 'bg-accent/20'}`}>
                 <td className="p-2">
                   <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '—'}</div>
-                  <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                    <span className="font-mono">{inv.customerId || inv.customerUsername || '—'}</span>
-                    {inv.phone && <><span>·</span><span>{inv.phone}</span></>}
-                  </div>
-                  {inv.profileName && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{inv.profileName} · {inv.areaName}</div>
-                  )}
+                  <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername || '—'}</div>
                 </td>
+                <td className="p-2 text-xs text-muted-foreground">{inv.phone || '—'}</td>
+                <td className="p-2 text-xs text-muted-foreground max-w-[180px] truncate" title={inv.address}>{inv.address || '—'}</td>
+                <td className="p-2 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
+                <td className="p-2 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
                 <td className="p-2 text-right font-medium text-foreground">{fmtRp(inv.amount)}</td>
                 <td className="p-2 text-center">{pmMethod(inv.paymentMethod)}</td>
                 <td className="p-2 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>

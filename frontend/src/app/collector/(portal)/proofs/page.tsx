@@ -132,6 +132,10 @@ export default function CollectorProofsPage() {
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
                     <th className="text-left p-3 font-semibold text-muted-foreground">Pelanggan</th>
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Kontak</th>
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Alamat</th>
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Paket</th>
+                    <th className="text-left p-3 font-semibold text-muted-foreground">Area</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Invoice</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Jumlah</th>
                     <th className="text-left p-3 font-semibold text-muted-foreground">Status</th>
@@ -144,14 +148,12 @@ export default function CollectorProofsPage() {
                     <tr key={proof.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                       <td className="p-3">
                         <div className="font-medium text-foreground">{proof.fullname || proof.username}</div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                          <span className="font-mono">{proof.customerId || proof.username}</span>
-                          {proof.phone && <><span>·</span><span>{proof.phone}</span></>}
-                        </div>
-                        {proof.profileName && (
-                          <div className="text-xs text-muted-foreground mt-0.5">{proof.profileName} · {proof.areaName}</div>
-                        )}
+                        <div className="text-xs text-muted-foreground font-mono">{proof.customerId || proof.username}</div>
                       </td>
+                      <td className="p-3 text-xs text-muted-foreground">{proof.phone || '—'}</td>
+                      <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={proof.address}>{proof.address || '—'}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{proof.profileName || '—'}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{proof.areaName || '—'}</td>
                       <td className="p-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
                       <td className="p-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>
                       <td className="p-3">

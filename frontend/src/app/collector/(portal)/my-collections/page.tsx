@@ -153,6 +153,10 @@ export default function CollectorMyCollectionsPage() {
               <thead>
                 <tr className="border-b border-border bg-muted/50">
                   <th className="text-left p-3 font-semibold text-muted-foreground">Pelanggan</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">Kontak</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">Alamat</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">Paket</th>
+                  <th className="text-left p-3 font-semibold text-muted-foreground">Area</th>
                   <th className="text-left p-3 font-semibold text-muted-foreground">Invoice</th>
                   <th className="text-right p-3 font-semibold text-muted-foreground">Jumlah</th>
                   <th className="text-center p-3 font-semibold text-muted-foreground">Metode</th>
@@ -161,19 +165,17 @@ export default function CollectorMyCollectionsPage() {
               </thead>
               <tbody>
                 {data.recent.length === 0 ? (
-                  <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Belum ada koleksi.</td></tr>
+                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Belum ada koleksi.</td></tr>
                 ) : data.recent.map(inv => (
                   <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                     <td className="p-3">
                       <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername}</div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <span className="font-mono">{inv.customerId || inv.customerUsername}</span>
-                        {inv.phone && <><span>·</span><span>{inv.phone}</span></>}
-                      </div>
-                      {inv.profileName && (
-                        <div className="text-xs text-muted-foreground mt-0.5">{inv.profileName} · {inv.areaName}</div>
-                      )}
+                      <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername}</div>
                     </td>
+                    <td className="p-3 text-xs text-muted-foreground">{inv.phone || '—'}</td>
+                    <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={inv.address}>{inv.address || '—'}</td>
+                    <td className="p-3 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
+                    <td className="p-3 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
                     <td className="p-3 text-xs text-muted-foreground">{inv.invoiceNumber}</td>
                     <td className="p-3 text-right font-semibold text-foreground">{fmtRp(inv.amount)}</td>
                     <td className="p-3 text-center">{pmBadge(inv.paymentMethod)}</td>

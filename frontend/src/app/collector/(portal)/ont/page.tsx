@@ -69,6 +69,8 @@ export default function CollectorOntPage() {
             <thead>
               <tr className="border-b border-border bg-accent/30">
                 <th className="text-left p-3 font-medium text-muted-foreground">Pelanggan</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Kontak</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Alamat</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Paket</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Wilayah</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Catatan</th>
@@ -80,14 +82,10 @@ export default function CollectorOntPage() {
                 <tr key={r.id} className={`border-b border-border ${i % 2 === 0 ? '' : 'bg-accent/10'}`}>
                   <td className="p-3">
                     <div className="font-medium text-foreground">{r.fullname}</div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      <span className="font-mono">{r.customerId || r.username}</span>
-                      {r.phone && <><span>·</span><span>{r.phone}</span></>}
-                    </div>
-                    {r.address && (
-                      <div className="text-xs text-muted-foreground mt-0.5">{r.address}</div>
-                    )}
+                    <div className="text-xs text-muted-foreground font-mono">{r.customerId || r.username}</div>
                   </td>
+                  <td className="p-3 text-xs text-muted-foreground">{r.phone || '—'}</td>
+                  <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={r.address}>{r.address || '—'}</td>
                   <td className="p-3 text-xs text-muted-foreground">{r.profileName || '—'}</td>
                   <td className="p-3 text-muted-foreground">{r.areaName || '—'}</td>
                   <td className="p-3 text-muted-foreground">{r.notes || '—'}</td>
