@@ -2,6 +2,17 @@ packages:
   - 'frontend'
   - 'backend'
   - 'packages/*'
-allowBuilds:
-  '@whiskeysockets/baileys': set this to true or false
-  sharp: set this to true or false
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@swc/core'
+  - '@whiskeysockets/baileys'
+  - 'core-js'
+  - 'cpu-features'
+  - 'esbuild'
+  - 'prisma'
+  - 'protobufjs'
+  - 'sharp'
+  - 'ssh2'
+  - 'unrs-resolver'
