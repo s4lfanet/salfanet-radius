@@ -71,6 +71,7 @@ export default function CustomerWiFiPage() {
   const [editing, setEditing] = useState<EditState | null>(null);
   const [saving, setSaving] = useState(false);
   const [rebooting, setRebooting] = useState(false);
+  const [pwdFieldUnlocked, setPwdFieldUnlocked] = useState(false);
 
   const toast = (type: 'success' | 'error' | 'info', title: string, desc?: string) =>
     addToast({ type, title, description: desc, duration: type === 'error' ? 8000 : 5000 });
@@ -143,6 +144,7 @@ export default function CustomerWiFiPage() {
   };
 
   const startEdit = (wlan: WLANConfig) => {
+    setPwdFieldUnlocked(false);
     setEditing({
       wlanIndex: wlan.index,
       ssid: wlan.ssid,
@@ -151,7 +153,10 @@ export default function CustomerWiFiPage() {
     });
   };
 
-  const cancelEdit = () => setEditing(null);
+  const cancelEdit = () => {
+    setPwdFieldUnlocked(false);
+    setEditing(null);
+  };
 
   const handleSave = async () => {
     if (!editing || !device) return;
@@ -432,10 +437,15 @@ export default function CustomerWiFiPage() {
                     </label>
                     <input
                       type="text"
+                      name="wifi-network-name"
                       value={editing.ssid}
                       onChange={(e) => setEditing({ ...editing, ssid: e.target.value })}
                       maxLength={32}
                       autoComplete="off"
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      data-bwignore="true"
+                      data-form-type="other"
                       placeholder="Nama WiFi baru"
                       className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-cyan-500 transition-colors"
                     />
@@ -450,10 +460,17 @@ export default function CustomerWiFiPage() {
                     <div className="relative">
                       <input
                         type={editing.showPassword ? 'text' : 'password'}
+                        name="wifi-network-key"
                         value={editing.password}
                         onChange={(e) => setEditing({ ...editing, password: e.target.value })}
+                        onFocus={() => setPwdFieldUnlocked(true)}
+                        readOnly={!pwdFieldUnlocked}
                         maxLength={63}
-                        autoComplete="new-password"
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-1p-ignore="true"
+                        data-bwignore="true"
+                        data-form-type="other"
                         placeholder="Kosongkan jika tidak ingin mengubah"
                         className="w-full bg-background dark:bg-slate-800 border border-border dark:border-slate-700 rounded-lg px-3 py-2 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-cyan-500 transition-colors"
                       />
