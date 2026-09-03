@@ -122,13 +122,27 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { subject, description, categoryId, priority } = body;
+    const { subject, description, categoryId, priority, latitude, longitude, locationTag, attachments } = body;
 
     if (!subject || !description) {
       return NextResponse.json(
         { error: 'Subject and description are required' },
         { status: 400 }
       );
+    }
+
+    // Parse coordinates
+    const lat = latitude ? parseFloat(latitude) : null;
+    const lng = longitude ? parseFloat(longitude) : null;
+
+    // Parse attachments (JSON array of file URLs)
+    let attachmentJson: string | null = null;
+    if (attachments) {
+      if (typeof attachments === 'string') {
+        attachmentJson = attachments;
+      } else if (Array.isArray(attachments) && attachments.length > 0) {
+        attachmentJson = JSON.stringify(attachments);
+      }
     }
 
     // Generate unique ticket number
@@ -159,6 +173,10 @@ export async function POST(request: NextRequest) {
         categoryId: categoryId || null,
         priority: priority || 'MEDIUM',
         status: 'OPEN',
+        latitude: lat,
+        longitude: lng,
+        locationTag: locationTag || null,
+        attachments: attachmentJson,
       },
       include: {
         category: true,

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { ArrowLeft, Send, CheckCircle, MapPin, Navigation } from 'lucide-react';
+import { ArrowLeft, Send, CheckCircle, MapPin, Navigation, Upload, X, FileText, Image as ImageIcon, MapPinned } from 'lucide-react';
 import { CyberCard } from '@/components/cyberpunk/CyberCard';
 import { CyberButton } from '@/components/cyberpunk/CyberButton';
 import { apiCustomer, ApiError } from '@/lib/api';
@@ -37,6 +37,9 @@ export default function CreateTicketPage() {
     longitude: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [uploadedFiles, setUploadedFiles] = useState<{ url: string; name: string; type: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [customerCoords, setCustomerCoords] = useState<{ lat: number | null; lng: number | null; address: string | null }>({ lat: null, lng: null, address: null });
 
   useEffect(() => {
     fetchCategories();
@@ -44,7 +47,7 @@ export default function CreateTicketPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  const loadCustomerData = () => {
+  const loadCustomerData = async () => {
     const token = localStorage.getItem('customer_token');
     const userData = localStorage.getItem('customer_user');
     
@@ -63,6 +66,30 @@ export default function CreateTicketPage() {
       }));
     } catch (error) {
       router.push('/customer/login');
+      return;
+    }
+
+    // Fetch full profile including coordinates from API
+    try {
+      const data = await apiCustomer<{ success: boolean; user: { address?: string; latitude?: number | null; longitude?: number | null } }>('/api/customer/me');
+      if (data.success && data.user) {
+        const { address, latitude, longitude } = data.user;
+        setCustomerCoords({ lat: latitude ?? null, lng: longitude ?? null, address: address ?? null });
+        // Auto-fill locationTag from address if available and empty
+        if (address && !formData.locationTag) {
+          setFormData(prev => ({ ...prev, locationTag: address }));
+        }
+        // Auto-fill coordinates from profile if available
+        if (latitude != null && longitude != null) {
+          setFormData(prev => ({
+            ...prev,
+            latitude: latitude.toFixed(6),
+            longitude: longitude.toFixed(6),
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch customer profile for coords:', err);
     }
   };
 
@@ -125,6 +152,56 @@ export default function CreateTicketPage() {
     );
   };
 
+  const handleUseCustomerCoords = () => {
+    if (customerCoords.lat != null && customerCoords.lng != null) {
+      setFormData(prev => ({
+        ...prev,
+        latitude: customerCoords.lat!.toFixed(6),
+        longitude: customerCoords.lng!.toFixed(6),
+      }));
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', file);
+
+        const token = localStorage.getItem('customer_token');
+        const res = await fetch('/api/customer/tickets/upload', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formDataObj,
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          toastError(data.error || `Gagal upload ${file.name}`);
+          continue;
+        }
+
+        setUploadedFiles(prev => [...prev, { url: data.url, name: file.name, type: data.fileType }]);
+      }
+    } catch (err) {
+      toastError('Gagal mengupload file');
+    } finally {
+      setUploading(false);
+      // Reset input so same file can be re-selected
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -144,25 +221,12 @@ export default function CreateTicketPage() {
         }
       }
 
-      // Build description with optional location info
-      let finalDescription = formData.description;
-      if (formData.locationTag || (formData.latitude && formData.longitude)) {
-        finalDescription += '\n\n---';
-        if (formData.locationTag) {
-          finalDescription += `\n📍 Lokasi: ${formData.locationTag}`;
-        }
-        if (formData.latitude && formData.longitude) {
-          finalDescription += `\n🌐 Koordinat: ${formData.latitude}, ${formData.longitude}`;
-          finalDescription += `\n🗺️ Maps: https://maps.google.com/?q=${formData.latitude},${formData.longitude}`;
-        }
-      }
-
       const data = await apiCustomer<{ id: string; ticketNumber: string; error?: string }>('/api/tickets', {
         method: 'POST',
         body: JSON.stringify({
           ...formData,
-          description: finalDescription,
           customerId, // Link ticket to customer
+          attachments: uploadedFiles.length > 0 ? uploadedFiles.map(f => f.url) : undefined,
         }),
       });
 
@@ -354,7 +418,34 @@ export default function CreateTicketPage() {
               className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
               placeholder="Contoh: Jl. Merdeka No. 10, dekat warung Pak Budi"
             />
-            <div className="flex items-center gap-2 mt-2">
+
+            {/* Coordinate inputs + action buttons */}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Latitude</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.latitude}
+                  onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                  className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                  placeholder="-5.147660"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Longitude</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={formData.longitude}
+                  onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
+                  className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+                  placeholder="119.434700"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 mt-2">
               <button
                 type="button"
                 onClick={handleGetGPS}
@@ -364,17 +455,111 @@ export default function CreateTicketPage() {
                 {gpsLoading ? (
                   <><div className="w-3 h-3 border border-cyan-400 border-t-transparent rounded-full animate-spin" /> Mendapatkan lokasi…</>
                 ) : (
-                  <><Navigation size={12} /> Ambil Koordinat GPS</>
+                  <><Navigation size={12} /> Ambil GPS Sekarang</>
                 )}
               </button>
+              {customerCoords.lat != null && customerCoords.lng != null && (
+                <button
+                  type="button"
+                  onClick={handleUseCustomerCoords}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-emerald-500/40 text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all"
+                >
+                  <MapPinned size={12} /> Dari Data Pelanggan
+                </button>
+              )}
               {formData.latitude && formData.longitude && (
-                <span className="text-xs text-emerald-400">
-                  📍 {formData.latitude}, {formData.longitude}
-                </span>
+                <a
+                  href={`https://maps.google.com/?q=${formData.latitude},${formData.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-cyan-400 hover:text-cyan-300 underline"
+                >
+                  📍 Lihat di Maps
+                </a>
               )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Opsional — membantu teknisi menemukan lokasi rumah Anda
+              Opsional — membantu teknisi menemukan lokasi rumah Anda. Bisa diisi manual, ambil GPS, atau dari data pelanggan.
+            </p>
+          </div>
+
+          {/* File Upload */}
+          <div>
+            <label className="block text-sm font-medium text-cyan-400 mb-2 drop-shadow-[0_0_5px_rgba(6,182,212,0.3)]">
+              <Upload size={14} className="inline mr-1" />
+              Lampiran (Foto / Dokumen)
+            </label>
+            <label
+              className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg px-4 py-6 cursor-pointer transition-all ${
+                uploading
+                  ? 'border-cyan-400/60 bg-cyan-500/5 opacity-70'
+                  : 'border-cyan-500/30 hover:border-cyan-500/50 hover:bg-cyan-500/5'
+              }`}
+            >
+              <input
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                onChange={handleFileUpload}
+                disabled={uploading}
+                className="hidden"
+              />
+              {uploading ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin" />
+                  <span className="text-xs text-cyan-400">Mengupload…</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1.5">
+                  <Upload size={24} className="text-cyan-400/60" />
+                  <span className="text-sm text-muted-foreground">
+                    Klik untuk pilih file
+                  </span>
+                  <span className="text-xs text-muted-foreground/70">
+                    JPG, PNG, WebP, PDF — maks 10MB per file
+                  </span>
+                </div>
+              )}
+            </label>
+
+            {/* Uploaded files preview */}
+            {uploadedFiles.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {uploadedFiles.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-3 p-2 rounded-lg bg-background dark:bg-slate-900/50 border border-cyan-500/20"
+                  >
+                    {file.type === 'pdf' ? (
+                      <FileText size={20} className="text-red-400 flex-shrink-0" />
+                    ) : (
+                      <ImageIcon size={20} className="text-cyan-400 flex-shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground truncate">{file.name}</p>
+                      <p className="text-xs text-muted-foreground">{file.type.toUpperCase()}</p>
+                    </div>
+                    {file.type !== 'pdf' && (
+                      <img
+                        src={file.url}
+                        alt={file.name}
+                        className="w-10 h-10 object-cover rounded border border-border flex-shrink-0"
+                      />
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-400 transition-colors flex-shrink-0"
+                      aria-label="Hapus file"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground mt-1">
+              Opsional — lampirkan foto kerusakan, screenshot error, atau dokumen pendukung lainnya
             </p>
           </div>
 

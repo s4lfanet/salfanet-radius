@@ -2228,6 +2228,10 @@ model ticket {
   closedAt       DateTime?
   resolvedAt     DateTime?
   lastResponseAt DateTime?
+  latitude       Float?
+  longitude      Float?
+  locationTag    String?         @db.VarChar(500)
+  attachments    String?         @db.Text // JSON array of file paths
   customer       pppoeUser?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
   category       ticketCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   messages       ticketMessage[]

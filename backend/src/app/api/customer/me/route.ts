@@ -45,6 +45,9 @@ export async function GET(request: NextRequest) {
           autoRenewal: true,
           customerId: true,
           profileId: true,
+          address: true,
+          latitude: true,
+          longitude: true,
           profile: {
             select: {
               id: true,
