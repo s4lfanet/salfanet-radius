@@ -94,63 +94,14 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * Update Customer Profile
+ * Update Customer Profile — DISABLED
+ * Customers are not permitted to edit their own profile data (name, phone, email).
+ * Any changes must be requested through an admin.
  * PATCH /api/customer/profile
- * Body: { name?, phone?, email? }
  */
-export async function PATCH(request: NextRequest) {
-  try {
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const session = await prisma.customerSession.findFirst({
-      where: { token, verified: true, expiresAt: { gte: new Date() } },
-    });
-    if (!session) {
-      return NextResponse.json({ success: false, message: 'Invalid or expired token' }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { name, phone, email } = body;
-
-    // Validate
-    if (name !== undefined && (typeof name !== 'string' || name.trim().length < 2)) {
-      return NextResponse.json({ success: false, message: 'Nama minimal 2 karakter' }, { status: 400 });
-    }
-    if (phone !== undefined && phone !== '' && !/^[0-9+\-\s]{8,20}$/.test(phone)) {
-      return NextResponse.json({ success: false, message: 'Format nomor telepon tidak valid' }, { status: 400 });
-    }
-    if (email !== undefined && email !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return NextResponse.json({ success: false, message: 'Format email tidak valid' }, { status: 400 });
-    }
-
-    const updateData: Record<string, string> = {};
-    if (name !== undefined) updateData.name = name.trim();
-    if (phone !== undefined) updateData.phone = phone.trim();
-    if (email !== undefined) updateData.email = email.trim();
-
-    if (Object.keys(updateData).length === 0) {
-      return NextResponse.json({ success: false, message: 'Tidak ada perubahan' }, { status: 400 });
-    }
-
-    const updated = await prisma.pppoeUser.update({
-      where: { id: session.userId },
-      data: updateData,
-      select: { id: true, name: true, phone: true, email: true },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: 'Profil berhasil diperbarui',
-      user: updated,
-    });
-  } catch (error: any) {
-    console.error('Update customer profile error:', error);
-    return NextResponse.json(
-      { success: false, message: 'Terjadi kesalahan', error: error.message },
-      { status: 500 }
-    );
-  }
+export async function PATCH(_request: NextRequest) {
+  return NextResponse.json(
+    { success: false, message: 'Perubahan data profil hanya dapat dilakukan oleh admin. Silakan hubungi admin.' },
+    { status: 403 }
+  );
 }
