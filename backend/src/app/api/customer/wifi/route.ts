@@ -444,6 +444,19 @@ function extractDeviceInfo(device: any) {
     return t;
   };
 
+  // Show only the ACTIVE WLAN per band (2.4GHz / 5GHz) — ONTs often expose
+  // multiple WLANConfiguration slots per band (main + guest + disabled
+  // presets) which would otherwise clutter the customer UI with duplicate
+  // or dead SSID cards. Pick the enabled entry with the most associated
+  // devices per band (tie-break: lowest index = primary SSID).
+  const activeWlanConfigs: any[] = [];
+  for (const band of ['2.4GHz', '5GHz']) {
+    const candidates = wlanConfigs.filter(w => w.band === band && w.enabled);
+    if (candidates.length === 0) continue;
+    candidates.sort((a, b) => (b.totalAssociations - a.totalAssociations) || (a.index - b.index));
+    activeWlanConfigs.push(candidates[0]);
+  }
+
   return {
     _id: device._id,
     pppUsername,
@@ -462,7 +475,7 @@ function extractDeviceInfo(device: any) {
     status: device._lastInform ? 
       (Date.now() - new Date(device._lastInform).getTime() < 3600000 ? 'Online' : 'Offline') : 
       'Unknown',
-    wlanConfigs: wlanConfigs.sort((a, b) => a.index - b.index),
+    wlanConfigs: activeWlanConfigs.sort((a, b) => a.index - b.index),
     connectedHosts,
     signalStrength: {
       rxPower: formatRxPower(rxPower),
