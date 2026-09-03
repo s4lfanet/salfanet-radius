@@ -279,7 +279,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-dvh bg-background relative">
+    <div className="min-h-dvh bg-background relative overflow-x-hidden">
       {/* Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" style={{ willChange: 'transform' }}>
         <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[80px]" style={{ transform: 'translateZ(0)' }} />
@@ -299,9 +299,9 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
       {/* â”€â”€ DESKTOP SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out',
+          'fixed top-0 left-0 h-dvh z-50 transition-all duration-300 ease-in-out',
           'w-64 bg-sidebar backdrop-blur-xl border-r border-sidebar-border',
-          'shadow-lg flex flex-col',
+          'shadow-lg flex flex-col safe-area-inset-left',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
           'lg:translate-x-0'
         )}
@@ -483,7 +483,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border shadow-sm">
+        <header className="lg:hidden sticky top-0 z-20 bg-background/80 backdrop-blur-xl border-b border-border shadow-sm safe-area-inset-top">
           <div className="px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               {/* Menu button (left side) */}
