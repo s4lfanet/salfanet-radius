@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import { apiAdmin, ApiError } from '@/lib/api/client';
 import {
   UserX, Search, Unplug, ChevronDown, X, Loader2,
   Wallet, Upload, MapPin, Wifi, Calendar, Phone,
-  CheckCircle,
+  CheckCircle, CreditCard, ArrowUpDown,
 } from 'lucide-react';
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
@@ -15,7 +15,7 @@ export default function CollectorIsolirPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [visibleCount, setVisibleCount] = useState(20);
+  const [visibleCount, setVisibleCount] = useState(50);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   // Cabut ONT modal
@@ -172,7 +172,7 @@ export default function CollectorIsolirPage() {
         <input
           type="text"
           value={search}
-          onChange={e => { setSearch(e.target.value); setVisibleCount(20); }}
+          onChange={e => { setSearch(e.target.value); setVisibleCount(50); }}
           className="w-full pl-10 pr-10 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500"
           placeholder="Cari nama, username, ID, No. HP..."
         />
@@ -192,160 +192,194 @@ export default function CollectorIsolirPage() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {visible.map(u => (
-              <div key={u.id} className="bg-card border border-border rounded-xl overflow-hidden">
-                {/* Header row — click to expand */}
-                <div
-                  className="p-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-accent/50 transition-colors"
-                  onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-foreground">{u.name}</span>
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium">Isolir</span>
-                      {!u.is_paid && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 font-medium">
-                          {u.unpaid_count} belum bayar
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1 flex items-center gap-2 flex-wrap">
-                      <span>{u.customerId || u.username}</span>
-                      <span>·</span>
-                      <span className="flex items-center gap-1"><Phone className="w-3 h-3" />{u.phone || '—'}</span>
-                    </div>
-                    {/* Quick info badges */}
-                    <div className="flex items-center gap-2 flex-wrap mt-2">
-                      {u.profile && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground flex items-center gap-1">
-                          <Wifi className="w-3 h-3" />{u.profile.name}
-                        </span>
-                      )}
-                      {u.area && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground flex items-center gap-1">
-                          <MapPin className="w-3 h-3" />{u.area.name}
-                        </span>
-                      )}
-                      {u.expiredAt && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-muted text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />Exp: {fmtDate(u.expiredAt)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0 flex items-center gap-3">
-                    {!u.is_paid && (
-                      <div className="text-sm font-bold text-orange-600">{fmtRp(u.unpaid_amount)}</div>
-                    )}
-                    <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedUser === u.id ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
-
-                {/* Expanded detail */}
-                {expandedUser === u.id && (
-                  <div className="border-t border-border p-4 bg-accent/30 space-y-3">
-                    {/* Customer details */}
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div>
-                        <span className="text-muted-foreground">Username:</span>{' '}
-                        <span className="font-mono text-foreground">{u.username}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Tipe Langganan:</span>{' '}
-                        <span className="text-foreground">{u.subscriptionType === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Koneksi:</span>{' '}
-                        <span className="text-foreground">{u.connectionType || 'PPPOE'}</span>
-                      </div>
-                      {u.router && (
-                        <div>
-                          <span className="text-muted-foreground">Router:</span>{' '}
-                          <span className="text-foreground">{u.router.name}</span>
-                        </div>
-                      )}
-                      {u.profile && (
-                        <div>
-                          <span className="text-muted-foreground">Paket:</span>{' '}
-                          <span className="text-foreground">{u.profile.name} ({fmtRp(u.profile.price)}/bln)</span>
-                        </div>
-                      )}
-                      {u.address && (
-                        <div className="col-span-2">
-                          <span className="text-muted-foreground">Alamat:</span>{' '}
-                          <span className="text-foreground">{u.address}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Invoices */}
-                    {u.invoices && u.invoices.length > 0 ? (
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-foreground">Tagihan Belum Lunas:</p>
-                        {u.invoices.map((inv: any) => (
-                          <div key={inv.id} className="flex items-center justify-between gap-3 py-2 px-3 rounded-lg bg-card border border-border">
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-foreground">
-                                #{inv.invoiceNumber}
-                                <span className="ml-2 text-xs text-orange-600 font-medium">{inv.status}</span>
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Jatuh tempo: {fmtDate(inv.dueDate)}
-                              </div>
-                            </div>
-                            <div className="text-right flex-shrink-0 flex items-center gap-2">
-                              <div className="text-sm font-bold text-foreground">{fmtRp(inv.amount)}</div>
-                              <div className="flex gap-1">
-                                {/* Bayar Cash */}
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); openPayModal(inv, u.name, 'cash'); }}
-                                  className="px-2.5 py-1.5 text-xs rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all flex items-center gap-1"
-                                  title="Bayar Tunai"
-                                >
-                                  <Wallet className="w-3.5 h-3.5" />
-                                  Cash
-                                </button>
-                                {/* Upload Bukti TF */}
-                                <button
-                                  onClick={(e) => { e.stopPropagation(); openPayModal(inv, u.name, 'transfer'); }}
-                                  className="px-2.5 py-1.5 text-xs rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all flex items-center gap-1"
-                                  title="Upload Bukti Transfer"
-                                >
-                                  <Upload className="w-3.5 h-3.5" />
-                                  TF
-                                </button>
-                              </div>
+          {/* Table */}
+          <div className="overflow-x-auto bg-card border border-border rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="bg-accent/50 border-b border-border">
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-3 font-medium">Pelanggan</th>
+                  <th className="px-3 py-3 font-medium">Paket</th>
+                  <th className="px-3 py-3 font-medium">Area</th>
+                  <th className="px-3 py-3 font-medium">Expired</th>
+                  <th className="px-3 py-3 font-medium text-right">Tagihan</th>
+                  <th className="px-3 py-3 font-medium text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {visible.map(u => (
+                  <Fragment key={u.id}>
+                    <tr className="hover:bg-accent/30 transition-colors">
+                      {/* Pelanggan */}
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
+                            className="p-0.5 rounded hover:bg-muted"
+                          >
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedUser === u.id ? 'rotate-180' : ''}`} />
+                          </button>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-foreground truncate">{u.name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <span className="font-mono">{u.customerId || u.username}</span>
+                              <span>·</span>
+                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '—'}</span>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground text-center py-2">Tidak ada tagihan belum lunas</div>
-                    )}
+                        </div>
+                      </td>
+                      {/* Paket */}
+                      <td className="px-3 py-3">
+                        {u.profile ? (
+                          <div>
+                            <div className="text-xs font-medium text-foreground flex items-center gap-1">
+                              <Wifi className="w-3 h-3 text-muted-foreground" />
+                              {u.profile.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</div>
+                          </div>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* Area */}
+                      <td className="px-3 py-3">
+                        {u.area ? (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {u.area.name}
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* Expired */}
+                      <td className="px-3 py-3">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {fmtDate(u.expiredAt)}
+                        </span>
+                      </td>
+                      {/* Tagihan */}
+                      <td className="px-3 py-3 text-right">
+                        {!u.is_paid ? (
+                          <div>
+                            <div className="text-sm font-bold text-orange-600">{fmtRp(u.unpaid_amount)}</div>
+                            <div className="text-xs text-muted-foreground">{u.unpaid_count} invoice</div>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-emerald-600 font-medium">Lunas</span>
+                        )}
+                      </td>
+                      {/* Aksi */}
+                      <td className="px-3 py-3">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => openCabutModal(u)}
+                            className="p-1.5 rounded-lg text-red-600 hover:bg-red-500/10 transition-all"
+                            title="Catat Cabut ONT"
+                          >
+                            <Unplug className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* Expanded invoice rows */}
+                    {expandedUser === u.id && (
+                      <tr className="bg-accent/20">
+                        <td colSpan={6} className="px-3 py-3">
+                          {/* Customer detail */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Username:</span>{' '}
+                              <span className="font-mono text-foreground">{u.username}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Tipe:</span>{' '}
+                              <span className="text-foreground">{u.subscriptionType === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Koneksi:</span>{' '}
+                              <span className="text-foreground">{u.connectionType || 'PPPOE'}</span>
+                            </div>
+                            {u.router && (
+                              <div>
+                                <span className="text-muted-foreground">Router:</span>{' '}
+                                <span className="text-foreground">{u.router.name}</span>
+                              </div>
+                            )}
+                            {u.address && (
+                              <div className="col-span-2 md:col-span-4">
+                                <span className="text-muted-foreground">Alamat:</span>{' '}
+                                <span className="text-foreground">{u.address}</span>
+                              </div>
+                            )}
+                          </div>
 
-                    {/* Cabut ONT button */}
-                    <div className="pt-2 border-t border-border">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openCabutModal(u); }}
-                        className="w-full py-2 rounded-lg border border-red-200 dark:border-red-500/30 text-red-600 dark:text-red-400 text-sm font-medium hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
-                      >
-                        <Unplug className="w-4 h-4" />
-                        Catat Cabut ONT
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                          {/* Invoice table */}
+                          {u.invoices && u.invoices.length > 0 ? (
+                            <div className="overflow-x-auto rounded-lg border border-border">
+                              <table className="w-full text-xs">
+                                <thead className="bg-card border-b border-border">
+                                  <tr className="text-left text-muted-foreground">
+                                    <th className="px-3 py-2 font-medium">No. Invoice</th>
+                                    <th className="px-3 py-2 font-medium">Jatuh Tempo</th>
+                                    <th className="px-3 py-2 font-medium">Status</th>
+                                    <th className="px-3 py-2 font-medium text-right">Jumlah</th>
+                                    <th className="px-3 py-2 font-medium text-center">Bayar</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                  {u.invoices.map((inv: any) => (
+                                    <tr key={inv.id} className="bg-card/50">
+                                      <td className="px-3 py-2 font-mono text-foreground">#{inv.invoiceNumber}</td>
+                                      <td className="px-3 py-2 text-muted-foreground">{fmtDate(inv.dueDate)}</td>
+                                      <td className="px-3 py-2">
+                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/10 text-orange-600">
+                                          {inv.status}
+                                        </span>
+                                      </td>
+                                      <td className="px-3 py-2 text-right font-bold text-foreground">{fmtRp(inv.amount)}</td>
+                                      <td className="px-3 py-2">
+                                        <div className="flex items-center justify-center gap-1">
+                                          <button
+                                            onClick={() => openPayModal(inv, u.name, 'cash')}
+                                            className="px-2 py-1 text-[11px] rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all flex items-center gap-1"
+                                            title="Bayar Tunai"
+                                          >
+                                            <Wallet className="w-3 h-3" />
+                                            Cash
+                                          </button>
+                                          <button
+                                            onClick={() => openPayModal(inv, u.name, 'transfer')}
+                                            className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all flex items-center gap-1"
+                                            title="Upload Bukti Transfer"
+                                          >
+                                            <Upload className="w-3 h-3" />
+                                            TF
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-muted-foreground text-center py-3">Tidak ada tagihan belum lunas</div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
+
           {visibleCount < filtered.length && (
             <div className="text-center mt-4">
               <button
-                onClick={() => setVisibleCount(c => c + 20)}
+                onClick={() => setVisibleCount(c => c + 50)}
                 className="px-6 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent flex items-center gap-2"
               >
-                <ChevronDown className="w-4 h-4" /> Muat {Math.min(20, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
+                <ChevronDown className="w-4 h-4" /> Muat {Math.min(50, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
               </button>
             </div>
           )}
