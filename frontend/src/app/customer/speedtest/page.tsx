@@ -44,7 +44,7 @@ export default function CustomerSpeedTestPage() {
           )}
           <iframe
             key={reloadKey}
-            src="https://openspeedtest.com/speedtest.html"
+            src="https://openspeedtest.com/speedtest"
             title="OpenSpeedTest"
             className="w-full h-full border-0"
             onLoad={() => setLoading(false)}
@@ -58,7 +58,7 @@ export default function CustomerSpeedTestPage() {
           Powered by OpenSpeedTest — hasil dapat bervariasi tergantung jaringan lokal Anda.
         </p>
         <a
-          href="https://openspeedtest.com/speedtest.html"
+          href="https://openspeedtest.com/speedtest"
           target="_blank"
           rel="noopener noreferrer"
           className="text-[10px] text-cyan-400 hover:underline flex items-center gap-1 flex-shrink-0"
