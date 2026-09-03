@@ -50,8 +50,10 @@ show_warning() {
     echo "  ❌ PM2 processes (salfanet-frontend, salfanet-backend, salfanet-cron, salfanet-wa)"
     echo "  ❌ Application files ($APP_DIR)"
     echo "  ❌ MySQL database ($DB_NAME)"
+    echo "  ❌ Redis server and data"
     echo "  ❌ FreeRADIUS configuration"
     echo "  ❌ Nginx configuration"
+    echo "  ❌ fail2ban config for salfanet"
     echo "  ❌ User account ($APP_USER)"
     echo "  ❌ System packages (optional)"
     echo "  ❌ All logs and data"
@@ -240,6 +242,52 @@ remove_database() {
     else
         print_info "MySQL not installed (skipping)"
     fi
+}
+
+remove_redis() {
+    print_step "Removing Redis"
+    
+    # Stop and disable Redis service
+    print_info "Stopping Redis service..."
+    systemctl stop redis-server 2>/dev/null || true
+    systemctl disable redis-server 2>/dev/null || true
+    
+    # Ask whether to remove Redis packages entirely
+    read -p "Remove Redis packages completely? [y/N]: " REMOVE_REDIS_PKG </dev/tty
+    if [[ "$REMOVE_REDIS_PKG" =~ ^[Yy]$ ]]; then
+        print_info "Removing Redis packages..."
+        apt-get purge -y redis-server redis-tools 2>/dev/null || true
+        apt-get autoremove -y 2>/dev/null || true
+        rm -rf /etc/redis 2>/dev/null || true
+        rm -rf /var/lib/redis 2>/dev/null || true
+        rm -rf /var/log/redis 2>/dev/null || true
+        print_success "Redis packages and data removed"
+    else
+        print_info "Redis packages kept (service stopped and disabled)"
+    fi
+    
+    print_success "Redis removed"
+}
+
+remove_security() {
+    print_step "Removing security configurations (fail2ban, cleanup cron)"
+    
+    # Remove fail2ban config for salfanet
+    print_info "Removing fail2ban configuration..."
+    rm -f /etc/fail2ban/jail.d/salfanet.conf 2>/dev/null || true
+    rm -f /etc/fail2ban/filter.d/salfanet.conf 2>/dev/null || true
+    # Restart fail2ban if still installed (to apply config removal)
+    if command -v fail2ban-client &>/dev/null; then
+        systemctl restart fail2ban 2>/dev/null || true
+        print_info "fail2ban restarted (salfanet configs removed)"
+    fi
+    
+    # Remove cleanup cron job
+    print_info "Removing cleanup cron job..."
+    rm -f /etc/cron.d/salfanet-cleanup 2>/dev/null || true
+    rm -f /etc/cron.d/salfanet-* 2>/dev/null || true
+    
+    print_success "Security configurations removed"
 }
 
 remove_freeradius() {
@@ -460,8 +508,10 @@ main() {
     stop_all_services
     remove_application
     remove_database
+    remove_redis
     remove_freeradius
     remove_nginx_config
+    remove_security
     remove_user
     remove_pm2
     clean_firewall
@@ -484,8 +534,10 @@ main() {
     echo "  ✓ PM2 processes stopped and removed"
     echo "  ✓ Application files deleted"
     echo "  ✓ Database and user removed"
+    echo "  ✓ Redis stopped and removed"
     echo "  ✓ FreeRADIUS cleaned"
     echo "  ✓ Nginx configuration removed"
+    echo "  ✓ Security configs (fail2ban, cron) removed"
     echo "  ✓ User account deleted"
     echo "  ✓ Logs cleaned"
     echo ""
