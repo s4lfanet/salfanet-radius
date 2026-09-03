@@ -939,7 +939,7 @@ function AdminLayoutContent({
   }
 
   return (
-    <div className="min-h-dvh bg-background relative">
+    <div className="min-h-dvh bg-background relative overflow-x-hidden">
       {/* Cyberpunk Background Effects */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         {/* Primary glow orbs */}

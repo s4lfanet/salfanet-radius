@@ -94,10 +94,10 @@ function AgentSidebar({
 
       {/* Sidebar */}
       <aside className={cn(
-        'fixed top-0 left-0 h-full z-50 transition-all duration-300 ease-in-out',
+        'fixed top-0 left-0 h-dvh z-50 transition-all duration-300 ease-in-out',
         'w-64 bg-sidebar border-r border-sidebar-border',
         'shadow-[5px_0_20px_rgba(0,0,0,0.25)]',
-        'flex flex-col',
+        'flex flex-col safe-area-inset-left',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         'lg:translate-x-0' // Always visible on desktop
       )}>
@@ -299,7 +299,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
 
   // Desktop layout with sidebar
   return (
-    <div data-role="agent" className="min-h-dvh bg-background">
+    <div data-role="agent" className="min-h-dvh bg-background overflow-x-hidden">
       {/* Background Effects - dark only */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none hidden dark:block">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full blur-3xl"></div>
@@ -363,7 +363,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Mobile Header */}
-        <header className="lg:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border shadow-theme-sm">
+        <header className="lg:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-xl border-b border-border shadow-theme-sm safe-area-inset-top">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <button
@@ -400,7 +400,7 @@ function AgentLayoutInner({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 relative z-10">
+        <main className="flex-1 relative z-10 safe-area-inset-bottom">
           {children}
         </main>
       </div>
