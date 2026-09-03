@@ -126,37 +126,36 @@ export default function CollectorProofsPage() {
         </div>
       ) : (
         <>
-          <div className="card overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/50">
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Pelanggan</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Kontak</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Alamat</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Paket</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Area</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Invoice</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Jumlah</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Status</th>
-                    <th className="text-left p-3 font-semibold text-muted-foreground">Tgl Kirim</th>
-                    <th className="text-center p-3 font-semibold text-muted-foreground">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map(proof => (
-                    <tr key={proof.id} className="border-b border-border last:border-0 hover:bg-muted/30">
-                      <td className="p-3">
+          <div className="overflow-x-auto bg-card border border-border rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="bg-accent/50 border-b border-border">
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-3 font-medium">Pelanggan</th>
+                  <th className="px-3 py-3 font-medium">Kontak</th>
+                  <th className="px-3 py-3 font-medium">Alamat</th>
+                  <th className="px-3 py-3 font-medium">Paket</th>
+                  <th className="px-3 py-3 font-medium">Area</th>
+                  <th className="px-3 py-3 font-medium">Invoice</th>
+                  <th className="px-3 py-3 font-medium">Jumlah</th>
+                  <th className="px-3 py-3 font-medium">Status</th>
+                  <th className="px-3 py-3 font-medium">Tgl Kirim</th>
+                  <th className="px-3 py-3 font-medium text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {visible.map(proof => (
+                  <tr key={proof.id} className="hover:bg-accent/30 transition-colors">
+                      <td className="px-3 py-3">
                         <div className="font-medium text-foreground">{proof.fullname || proof.username}</div>
                         <div className="text-xs text-muted-foreground font-mono">{proof.customerId || proof.username}</div>
                       </td>
-                      <td className="p-3 text-xs text-muted-foreground">{proof.phone || '—'}</td>
-                      <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={proof.address}>{proof.address || '—'}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{proof.profileName || '—'}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{proof.areaName || '—'}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
-                      <td className="p-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>
-                      <td className="p-3">
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.phone || '—'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={proof.address}>{proof.address || '—'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.profileName || '—'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.areaName || '—'}</td>
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
+                      <td className="px-3 py-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>
+                      <td className="px-3 py-3">
                         {proof.status === 'pending' && (
                           <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">Menunggu</span>
                         )}
@@ -172,8 +171,8 @@ export default function CollectorProofsPage() {
                           </div>
                         )}
                       </td>
-                      <td className="p-3 text-xs text-muted-foreground">{fmtDate(proof.submitted_at)}</td>
-                      <td className="p-3 text-center">
+                      <td className="px-3 py-3 text-xs text-muted-foreground">{fmtDate(proof.submitted_at)}</td>
+                      <td className="px-3 py-3 text-center">
                         <button
                           onClick={() => setViewImage(proof.proof_image)}
                           className="inline-flex items-center gap-1 px-2.5 py-1 text-xs border border-border rounded-lg hover:bg-muted transition-all"
@@ -184,8 +183,7 @@ export default function CollectorProofsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+            </table>
           </div>
           {visibleCount < filtered.length && (
             <div className="text-center">

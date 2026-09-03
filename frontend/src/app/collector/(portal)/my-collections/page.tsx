@@ -112,34 +112,32 @@ export default function CollectorMyCollectionsPage() {
         <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
           <TrendingUp className="w-4 h-4" /> Ringkasan Bulanan
         </h2>
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="overflow-x-auto bg-card border border-border rounded-xl">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Bulan</th>
-                  <th className="text-right p-3 font-semibold text-muted-foreground">Tagihan</th>
-                  <th className="text-right p-3 font-semibold text-muted-foreground">Total</th>
-                  <th className="text-right p-3 font-semibold text-muted-foreground">Tunai</th>
-                  <th className="text-right p-3 font-semibold text-muted-foreground">Transfer</th>
+              <thead className="bg-accent/50 border-b border-border">
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-3 font-medium">Bulan</th>
+                  <th className="px-3 py-3 font-medium text-right">Tagihan</th>
+                  <th className="px-3 py-3 font-medium text-right">Total</th>
+                  <th className="px-3 py-3 font-medium text-right">Tunai</th>
+                  <th className="px-3 py-3 font-medium text-right">Transfer</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border">
                 {data.monthly.length === 0 ? (
-                  <tr><td colSpan={5} className="p-6 text-center text-muted-foreground">Belum ada data.</td></tr>
+                  <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Belum ada data.</td></tr>
                 ) : data.monthly.map(m => (
-                  <tr key={m.month} className="border-b border-border last:border-0 hover:bg-muted/30">
-                    <td className="p-3 font-medium text-foreground">{fmtMonth(m.month)}</td>
-                    <td className="p-3 text-right text-muted-foreground">{m.total_count}</td>
-                    <td className="p-3 text-right font-semibold text-foreground">{fmtRp(m.total_amount)}</td>
-                    <td className="p-3 text-right text-cyan-600">{fmtRp(m.cash_amount)}</td>
-                    <td className="p-3 text-right text-purple-600">{fmtRp(m.transfer_amount)}</td>
+                  <tr key={m.month} className="hover:bg-accent/30 transition-colors">
+                    <td className="px-3 py-3 font-medium text-foreground">{fmtMonth(m.month)}</td>
+                    <td className="px-3 py-3 text-right text-muted-foreground">{m.total_count}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-foreground">{fmtRp(m.total_amount)}</td>
+                    <td className="px-3 py-3 text-right text-cyan-600">{fmtRp(m.cash_amount)}</td>
+                    <td className="px-3 py-3 text-right text-purple-600">{fmtRp(m.transfer_amount)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
       </div>
 
       {/* Recent Collections */}
@@ -147,45 +145,43 @@ export default function CollectorMyCollectionsPage() {
         <h2 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
           <Calendar className="w-4 h-4" /> Koleksi Terbaru
         </h2>
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="overflow-x-auto bg-card border border-border rounded-xl">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/50">
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Pelanggan</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Kontak</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Alamat</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Paket</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Area</th>
-                  <th className="text-left p-3 font-semibold text-muted-foreground">Invoice</th>
-                  <th className="text-right p-3 font-semibold text-muted-foreground">Jumlah</th>
-                  <th className="text-center p-3 font-semibold text-muted-foreground">Metode</th>
-                  <th className="text-right p-3 font-semibold text-muted-foreground">Waktu</th>
+              <thead className="bg-accent/50 border-b border-border">
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-3 font-medium">Pelanggan</th>
+                  <th className="px-3 py-3 font-medium">Kontak</th>
+                  <th className="px-3 py-3 font-medium">Alamat</th>
+                  <th className="px-3 py-3 font-medium">Paket</th>
+                  <th className="px-3 py-3 font-medium">Area</th>
+                  <th className="px-3 py-3 font-medium">Invoice</th>
+                  <th className="px-3 py-3 font-medium text-right">Jumlah</th>
+                  <th className="px-3 py-3 font-medium text-center">Metode</th>
+                  <th className="px-3 py-3 font-medium text-right">Waktu</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-border">
                 {data.recent.length === 0 ? (
-                  <tr><td colSpan={9} className="p-6 text-center text-muted-foreground">Belum ada koleksi.</td></tr>
+                  <tr><td colSpan={9} className="px-3 py-6 text-center text-muted-foreground">Belum ada koleksi.</td></tr>
                 ) : data.recent.map(inv => (
-                  <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30">
-                    <td className="p-3">
+                  <tr key={inv.id} className="hover:bg-accent/30 transition-colors">
+                    <td className="px-3 py-3">
                       <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername}</div>
                       <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername}</div>
                     </td>
-                    <td className="p-3 text-xs text-muted-foreground">{inv.phone || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={inv.address}>{inv.address || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{inv.invoiceNumber}</td>
-                    <td className="p-3 text-right font-semibold text-foreground">{fmtRp(inv.amount)}</td>
-                    <td className="p-3 text-center">{pmBadge(inv.paymentMethod)}</td>
-                    <td className="p-3 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.phone || '—'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={inv.address}>{inv.address || '—'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
+                    <td className="px-3 py-3 text-xs text-muted-foreground">{inv.invoiceNumber}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-foreground">{fmtRp(inv.amount)}</td>
+                    <td className="px-3 py-3 text-center">{pmBadge(inv.paymentMethod)}</td>
+                    <td className="px-3 py-3 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
       </div>
     </div>
   );

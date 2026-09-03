@@ -92,36 +92,36 @@ export default function CollectorSettlementsPage() {
   };
 
   const renderInvoices = (invoices: any[] = []) => {
-    if (!invoices.length) return <div className="bg-card border border-border rounded-lg p-4 text-center text-muted-foreground text-sm">Belum ada pembayaran.</div>;
+    if (!invoices.length) return <div className="bg-card border border-border rounded-xl p-4 text-center text-muted-foreground text-sm">Belum ada pembayaran.</div>;
     return (
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="overflow-x-auto bg-card border border-border rounded-xl">
         <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-accent/30">
-              <th className="text-left p-2 font-medium text-muted-foreground">Pelanggan</th>
-              <th className="text-left p-2 font-medium text-muted-foreground">Kontak</th>
-              <th className="text-left p-2 font-medium text-muted-foreground">Alamat</th>
-              <th className="text-left p-2 font-medium text-muted-foreground">Paket</th>
-              <th className="text-left p-2 font-medium text-muted-foreground">Area</th>
-              <th className="text-right p-2 font-medium text-muted-foreground">Jumlah</th>
-              <th className="text-center p-2 font-medium text-muted-foreground">Metode</th>
-              <th className="text-right p-2 font-medium text-muted-foreground">Waktu</th>
+          <thead className="bg-accent/50 border-b border-border">
+            <tr className="text-left text-xs text-muted-foreground">
+              <th className="px-3 py-3 font-medium">Pelanggan</th>
+              <th className="px-3 py-3 font-medium">Kontak</th>
+              <th className="px-3 py-3 font-medium">Alamat</th>
+              <th className="px-3 py-3 font-medium">Paket</th>
+              <th className="px-3 py-3 font-medium">Area</th>
+              <th className="px-3 py-3 font-medium text-right">Jumlah</th>
+              <th className="px-3 py-3 font-medium text-center">Metode</th>
+              <th className="px-3 py-3 font-medium text-right">Waktu</th>
             </tr>
           </thead>
-          <tbody>
-            {invoices.map((inv, i) => (
-              <tr key={inv.id} className={`border-b border-border ${i % 2 === 0 ? '' : 'bg-accent/20'}`}>
-                <td className="p-2">
+          <tbody className="divide-y divide-border">
+            {invoices.map((inv) => (
+              <tr key={inv.id} className="hover:bg-accent/30 transition-colors">
+                <td className="px-3 py-3">
                   <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '—'}</div>
                   <div className="text-xs text-muted-foreground font-mono">{inv.customerId || inv.customerUsername || '—'}</div>
                 </td>
-                <td className="p-2 text-xs text-muted-foreground">{inv.phone || '—'}</td>
-                <td className="p-2 text-xs text-muted-foreground max-w-[180px] truncate" title={inv.address}>{inv.address || '—'}</td>
-                <td className="p-2 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
-                <td className="p-2 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
-                <td className="p-2 text-right font-medium text-foreground">{fmtRp(inv.amount)}</td>
-                <td className="p-2 text-center">{pmMethod(inv.paymentMethod)}</td>
-                <td className="p-2 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.phone || '—'}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground max-w-[180px] truncate" title={inv.address}>{inv.address || '—'}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.profileName || '—'}</td>
+                <td className="px-3 py-3 text-xs text-muted-foreground">{inv.areaName || '—'}</td>
+                <td className="px-3 py-3 text-right font-medium text-foreground">{fmtRp(inv.amount)}</td>
+                <td className="px-3 py-3 text-center">{pmMethod(inv.paymentMethod)}</td>
+                <td className="px-3 py-3 text-right text-xs text-muted-foreground">{fmtTime(inv.paidAt)}</td>
               </tr>
             ))}
           </tbody>
@@ -201,34 +201,34 @@ export default function CollectorSettlementsPage() {
             rangeData.rows.length === 0 ? (
               <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">Tidak ada data.</div>
             ) : (
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="overflow-x-auto bg-card border border-border rounded-xl">
                 <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-accent/30">
-                      <th className="text-left p-2 font-medium text-muted-foreground">Tanggal</th>
-                      <th className="text-right p-2 font-medium text-muted-foreground">Tagihan</th>
-                      <th className="text-right p-2 font-medium text-muted-foreground">Total</th>
-                      <th className="text-right p-2 font-medium text-muted-foreground">Tunai</th>
-                      <th className="text-right p-2 font-medium text-muted-foreground">Transfer</th>
-                      <th className="text-center p-2 font-medium text-muted-foreground">Status</th>
-                      <th className="p-2"></th>
+                  <thead className="bg-accent/50 border-b border-border">
+                    <tr className="text-left text-xs text-muted-foreground">
+                      <th className="px-3 py-3 font-medium">Tanggal</th>
+                      <th className="px-3 py-3 font-medium text-right">Tagihan</th>
+                      <th className="px-3 py-3 font-medium text-right">Total</th>
+                      <th className="px-3 py-3 font-medium text-right">Tunai</th>
+                      <th className="px-3 py-3 font-medium text-right">Transfer</th>
+                      <th className="px-3 py-3 font-medium text-center">Status</th>
+                      <th className="px-3 py-3"></th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {rangeData.rows.map((row: any, i: number) => (
+                  <tbody className="divide-y divide-border">
+                    {rangeData.rows.map((row: any) => (
                       <>
                         <tr key={row.date}
-                          className={`border-b border-border cursor-pointer hover:bg-accent/30 ${i % 2 === 0 ? '' : 'bg-accent/10'}`}
+                          className="hover:bg-accent/30 transition-colors cursor-pointer"
                           onClick={() => fetchDetailForDate(row.date)}>
-                          <td className="p-2 font-medium text-foreground">
+                          <td className="px-3 py-3 font-medium text-foreground">
                             {new Date(row.date).toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
                           </td>
-                          <td className="p-2 text-right">{row.invoice_count}</td>
-                          <td className="p-2 text-right font-medium">{fmtRp(row.total_amount)}</td>
-                          <td className="p-2 text-right text-cyan-600">{fmtRp(row.cash_amount)}</td>
-                          <td className="p-2 text-right text-purple-600">{fmtRp(row.transfer_amount)}</td>
-                          <td className="p-2 text-center">{confirmBadge(row.confirmed_by, row.confirmed_at)}</td>
-                          <td className="p-2 text-center">
+                          <td className="px-3 py-3 text-right">{row.invoice_count}</td>
+                          <td className="px-3 py-3 text-right font-medium">{fmtRp(row.total_amount)}</td>
+                          <td className="px-3 py-3 text-right text-cyan-600">{fmtRp(row.cash_amount)}</td>
+                          <td className="px-3 py-3 text-right text-purple-600">{fmtRp(row.transfer_amount)}</td>
+                          <td className="px-3 py-3 text-center">{confirmBadge(row.confirmed_by, row.confirmed_at)}</td>
+                          <td className="px-3 py-3 text-center">
                             {expandedRow === row.date ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                           </td>
                         </tr>

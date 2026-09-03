@@ -64,32 +64,32 @@ export default function CollectorOntPage() {
           Belum ada riwayat pencabutan ONT.
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-xl overflow-hidden overflow-x-auto">
+        <div className="overflow-x-auto bg-card border border-border rounded-xl">
           <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-accent/30">
-                <th className="text-left p-3 font-medium text-muted-foreground">Pelanggan</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Kontak</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Alamat</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Paket</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Wilayah</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Catatan</th>
-                <th className="text-right p-3 font-medium text-muted-foreground">Waktu</th>
+            <thead className="bg-accent/50 border-b border-border">
+              <tr className="text-left text-xs text-muted-foreground">
+                <th className="px-3 py-3 font-medium">Pelanggan</th>
+                <th className="px-3 py-3 font-medium">Kontak</th>
+                <th className="px-3 py-3 font-medium">Alamat</th>
+                <th className="px-3 py-3 font-medium">Paket</th>
+                <th className="px-3 py-3 font-medium">Wilayah</th>
+                <th className="px-3 py-3 font-medium">Catatan</th>
+                <th className="px-3 py-3 font-medium text-right">Waktu</th>
               </tr>
             </thead>
-            <tbody>
-              {removals.map((r, i) => (
-                <tr key={r.id} className={`border-b border-border ${i % 2 === 0 ? '' : 'bg-accent/10'}`}>
-                  <td className="p-3">
+            <tbody className="divide-y divide-border">
+              {removals.map((r) => (
+                <tr key={r.id} className="hover:bg-accent/30 transition-colors">
+                  <td className="px-3 py-3">
                     <div className="font-medium text-foreground">{r.fullname}</div>
                     <div className="text-xs text-muted-foreground font-mono">{r.customerId || r.username}</div>
                   </td>
-                  <td className="p-3 text-xs text-muted-foreground">{r.phone || '—'}</td>
-                  <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={r.address}>{r.address || '—'}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{r.profileName || '—'}</td>
-                  <td className="p-3 text-muted-foreground">{r.areaName || '—'}</td>
-                  <td className="p-3 text-muted-foreground">{r.notes || '—'}</td>
-                  <td className="p-3 text-right text-xs text-muted-foreground">
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.phone || '—'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground max-w-[200px] truncate" title={r.address}>{r.address || '—'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.profileName || '—'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.areaName || '—'}</td>
+                  <td className="px-3 py-3 text-xs text-muted-foreground">{r.notes || '—'}</td>
+                  <td className="px-3 py-3 text-right text-xs text-muted-foreground">
                     {new Date(r.removedAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </td>
                 </tr>
