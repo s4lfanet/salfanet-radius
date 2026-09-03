@@ -455,10 +455,14 @@ clean_firewall() {
         ufw delete allow 500/udp  2>/dev/null || true
         ufw delete allow 4500/udp 2>/dev/null || true
         ufw delete allow 1701/udp 2>/dev/null || true
-        # HTTP/HTTPS (opened by install-nginx.sh)
+        # HTTP/HTTPS (opened by install-nginx.sh / common.sh)
         ufw delete allow 80/tcp   2>/dev/null || true
         ufw delete allow 443/tcp  2>/dev/null || true
-        print_success "Firewall rules removed"
+        ufw delete allow 8080/tcp 2>/dev/null || true
+        # WireGuard VPN (opened by install-wg-server.sh, optional)
+        ufw delete allow 51820/udp 2>/dev/null || true
+        # NOTE: SSH (22/tcp) is intentionally NOT removed to prevent lockout
+        print_success "Firewall rules removed (SSH kept for safety)"
     fi
 }
 
