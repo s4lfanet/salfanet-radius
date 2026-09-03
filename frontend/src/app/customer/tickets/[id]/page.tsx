@@ -8,6 +8,8 @@ import { useToast } from '@/components/cyberpunk/CyberToast';
 import { ArrowLeft, Send, User, Clock } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiCustomer, ApiError } from '@/lib/api';
+import { CyberCard } from '@/components/cyberpunk/CyberCard';
+import { CyberButton } from '@/components/cyberpunk/CyberButton';
 
 type TicketStatus = 'OPEN' | 'IN_PROGRESS' | 'WAITING_CUSTOMER' | 'RESOLVED' | 'CLOSED';
 type TicketPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
@@ -132,53 +134,53 @@ export default function TicketDetailPage() {
 
   const getStatusColor = (status: TicketStatus) => {
     const colors = {
-      OPEN: 'bg-blue-100 text-blue-800',
-      IN_PROGRESS: 'bg-yellow-100 text-yellow-800',
-      WAITING_CUSTOMER: 'bg-purple-100 text-purple-800',
-      RESOLVED: 'bg-green-100 text-green-800',
-      CLOSED: 'bg-gray-100 text-gray-800',
+      OPEN: 'bg-blue-500/15 text-blue-400 border border-blue-500/30',
+      IN_PROGRESS: 'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+      WAITING_CUSTOMER: 'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+      RESOLVED: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+      CLOSED: 'bg-muted text-muted-foreground border border-border',
     };
     return colors[status] || colors.OPEN;
   };
 
   const getPriorityColor = (priority: TicketPriority) => {
     const colors = {
-      LOW: 'bg-gray-100 text-gray-600',
-      MEDIUM: 'bg-teal-100 text-teal-600',
-      HIGH: 'bg-orange-100 text-orange-600',
-      URGENT: 'bg-red-100 text-red-600',
+      LOW: 'bg-muted text-muted-foreground border border-border',
+      MEDIUM: 'bg-teal-500/15 text-teal-400 border border-teal-500/30',
+      HIGH: 'bg-orange-500/15 text-orange-400 border border-orange-500/30',
+      URGENT: 'bg-red-500/15 text-red-400 border border-red-500/30',
     };
     return colors[priority] || colors.MEDIUM;
   };
 
   const getSenderBadgeColor = (senderType: SenderType) => {
     const colors = {
-      CUSTOMER: 'bg-cyan-100 text-cyan-800',
-      ADMIN: 'bg-teal-100 text-teal-800',
-      TECHNICIAN: 'bg-green-100 text-green-800',
-      SYSTEM: 'bg-gray-100 text-gray-600',
+      CUSTOMER: 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/30',
+      ADMIN: 'bg-teal-500/15 text-teal-400 border border-teal-500/30',
+      TECHNICIAN: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30',
+      SYSTEM: 'bg-muted text-muted-foreground border border-border',
     };
     return colors[senderType] || colors.SYSTEM;
   };
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600"></div>
+      <div className="min-h-dvh flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400"></div>
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div className="min-h-dvh bg-gray-50 flex items-center justify-center">
+      <div className="min-h-dvh flex items-center justify-center p-4">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             {t('ticket.ticketNotFound')}
           </h2>
           <Link
             href="/customer/tickets"
-            className="text-teal-600 hover:text-teal-700"
+            className="text-cyan-400 hover:text-cyan-300"
           >
             {t('ticket.backToTickets')}
           </Link>
@@ -192,11 +194,11 @@ export default function TicketDetailPage() {
   return (
     <div className="p-3 lg:p-5 space-y-3 w-full">
       {/* Header */}
-      <div className="bg-card rounded-lg border border-border p-3">
+      <CyberCard className="p-3">
         <div className="flex items-center gap-3 mb-3">
           <Link
             href="/customer/tickets"
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+            className="text-cyan-400 hover:text-cyan-300 transition-colors"
           >
             <ArrowLeft size={22} />
           </Link>
@@ -223,38 +225,34 @@ export default function TicketDetailPage() {
             <h2 className="text-lg font-bold text-foreground mb-1">
               {ticket.subject}
             </h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
+            <p className="text-xs text-muted-foreground">
               {t('ticket.created')}: {formatWIB(ticket.createdAt, 'd MMM yyyy HH:mm')}
             </p>
           </div>
         </div>
-      </div>
+      </CyberCard>
 
       {/* Initial Description */}
-      <div className="bg-card rounded-lg border border-border p-4">
+      <CyberCard className="p-4">
         <h3 className="font-semibold text-foreground text-sm mb-2">
           {t('ticket.description')}
         </h3>
-        <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">
+        <p className="text-foreground/80 text-sm whitespace-pre-wrap">
           {ticket.description}
         </p>
-        </div>
+      </CyberCard>
 
       {/* Messages */}
       <div className="space-y-3">
         {messages.map((msg) => (
-          <div
+          <CyberCard
             key={msg.id}
-            className={`bg-card rounded-lg border p-3 ${
-              msg.senderType === 'SYSTEM' 
-                ? 'border-border bg-muted' 
-                : 'border-border'
-            }`}
+            className={`p-3 ${msg.senderType === 'SYSTEM' ? 'bg-muted/50' : ''}`}
           >
             <div className="flex items-start gap-2">
               <div className="flex-shrink-0">
-                <div className="w-8 h-8 rounded-full bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-                  <User size={16} className="text-teal-600 dark:text-teal-400" />
+                <div className="w-8 h-8 rounded-full bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
+                  <User size={16} className="text-cyan-400" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
@@ -270,18 +268,18 @@ export default function TicketDetailPage() {
                       {formatWIB(msg.createdAt, 'd MMM HH:mm')}
                     </div>
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300 text-sm whitespace-pre-wrap">
+                  <p className="text-foreground/80 text-sm whitespace-pre-wrap">
                     {msg.message}
                   </p>
                 </div>
               </div>
-          </div>
+          </CyberCard>
         ))}
       </div>
 
       {/* Reply Form */}
       {!isClosed && (
-        <div className="bg-card rounded-lg border border-border p-4">
+        <CyberCard className="p-4">
           <h3 className="font-semibold text-foreground text-sm mb-3">
             {t('ticket.addReply')}
           </h3>
@@ -290,15 +288,16 @@ export default function TicketDetailPage() {
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
               rows={4}
-              className="w-full border border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-teal-500 focus:border-transparent mb-3"
+              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 text-foreground placeholder:text-muted-foreground/50 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all mb-3"
               placeholder={t('ticket.replyPlaceholder')}
               disabled={sending}
             />
             <div className="flex justify-end">
-              <button
+              <CyberButton
                 type="submit"
                 disabled={sending || !replyText.trim()}
-                className="flex items-center gap-2 bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                variant="cyan"
+                className="flex items-center gap-2 px-4 py-2 text-sm"
               >
                 {sending ? (
                   <>
@@ -311,15 +310,15 @@ export default function TicketDetailPage() {
                     {t('ticket.sendReply')}
                   </>
                 )}
-              </button>
+              </CyberButton>
             </div>
           </form>
-        </div>
+        </CyberCard>
       )}
 
       {isClosed && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-center">
-          <p className="text-yellow-800 dark:text-yellow-200 text-sm">
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 text-center">
+          <p className="text-amber-400 text-sm">
             {t('ticket.ticketClosed')}
           </p>
         </div>
