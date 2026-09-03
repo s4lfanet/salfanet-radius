@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useToast } from '@/components/cyberpunk/CyberToast';
-import { ArrowLeft, Send, User, Clock } from 'lucide-react';
+import { ArrowLeft, Send, User, Clock, MapPin, Paperclip, FileText, Image as ImageIcon } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { apiCustomer, ApiError } from '@/lib/api';
 import { CyberCard } from '@/components/cyberpunk/CyberCard';
@@ -32,6 +32,10 @@ interface TicketDetail {
   status: TicketStatus;
   priority: TicketPriority;
   createdAt: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationTag?: string | null;
+  attachments?: string | null;
   category?: {
     name: string;
     color: string;
@@ -241,6 +245,72 @@ export default function TicketDetailPage() {
           {ticket.description}
         </p>
       </CyberCard>
+
+      {/* Location & Attachments */
+      {(ticket.latitude || ticket.locationTag || ticket.attachments) && (
+        <CyberCard className="p-4 space-y-3">
+          {ticket.locationTag && (
+            <div className="flex items-start gap-2">
+              <MapPin size={16} className="text-cyan-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground mb-0.5">Lokasi</p>
+                <p className="text-sm text-foreground">{ticket.locationTag}</p>
+              </div>
+            </div>
+          )}
+          {ticket.latitude && ticket.longitude && (
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-emerald-400 flex-shrink-0" />
+              <a
+                href={`https://maps.google.com/?q=${ticket.latitude},${ticket.longitude}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-cyan-400 hover:text-cyan-300 underline"
+              >
+                {ticket.latitude}, {ticket.longitude} — Lihat di Google Maps
+              </a>
+            </div>
+          )}
+          {ticket.attachments && (() => {
+            try {
+              const files = JSON.parse(ticket.attachments) as string[];
+              return (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Paperclip size={16} className="text-cyan-400" />
+                    <p className="text-xs text-muted-foreground">Lampiran ({files.length})</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {files.map((url, idx) => {
+                      const isPdf = url.toLowerCase().endsWith('.pdf');
+                      return (
+                        <a
+                          key={idx}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 p-2 rounded-lg bg-background dark:bg-slate-900/50 border border-cyan-500/20 hover:border-cyan-500/40 transition-all"
+                        >
+                          {isPdf ? (
+                            <FileText size={20} className="text-red-400 flex-shrink-0" />
+                          ) : (
+                            <img src={url} alt={`Lampiran ${idx + 1}`} className="w-12 h-12 object-cover rounded border border-border flex-shrink-0" />
+                          )}
+                          <span className="text-xs text-foreground truncate">
+                            {isPdf ? `PDF ${idx + 1}` : `Foto ${idx + 1}`}
+                          </span>
+                        </a>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            } catch {
+              return null;
+            }
+          })()}
+        </CyberCard>
+      )}
 
       {/* Messages */}
       <div className="space-y-3">
