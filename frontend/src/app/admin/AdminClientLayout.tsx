@@ -22,7 +22,6 @@ import {
   X,
   ChevronDown,
   Shield,
-  Search,
   LogOut,
 
   Router,
@@ -626,7 +625,6 @@ function AdminLayoutContent({
   useEffect(() => { addToastRef.current = addToast; }, [addToast]);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [now, setNow] = useState<Date | null>(null);
-  const [headerSearch, setHeaderSearch] = useState('');
 
   // Live clock
   useEffect(() => {
@@ -1126,28 +1124,6 @@ function AdminLayoutContent({
               <h1 className="text-sm font-bold text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-400 dark:to-blue-400 truncate">
                 {company.name}
               </h1>
-            </div>
-
-            {/* Search - hidden on mobile */}
-            <div className="hidden sm:flex flex-1 max-w-md">
-              <div className="relative w-full group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-accent transition-colors" />
-                <input
-                  type="text"
-                  placeholder={t('common.search')}
-                  aria-label={t('common.search')}
-                  value={headerSearch}
-                  onChange={(e) => setHeaderSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && headerSearch.trim()) {
-                      router.push(`/admin/pppoe/users?search=${encodeURIComponent(headerSearch.trim())}`);
-                    }
-                  }}
-                  className="w-full pl-10 pr-4 py-2.5 bg-card/50 border-2 border-primary/20 rounded-xl text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:bg-card/80 focus:shadow-focus-ring transition-all duration-300"
-                />
-                {/* Bottom focus line */}
-                <div className="absolute bottom-0 left-3 right-3 h-px bg-gradient-to-r from-transparent via-accent/0 to-transparent group-focus-within:via-accent transition-all duration-300" />
-              </div>
             </div>
 
             <div className="hidden sm:block flex-1" />
