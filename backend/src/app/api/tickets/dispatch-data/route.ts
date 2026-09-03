@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
               name: true,
               phone: true,
               address: true,
+              latitude: true,
+              longitude: true,
               status: true,
               odpAssignment: {
                 select: {

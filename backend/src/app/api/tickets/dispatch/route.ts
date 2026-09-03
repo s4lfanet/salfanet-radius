@@ -32,6 +32,9 @@ export async function POST(req: NextRequest) {
       oltId,
       odcId,
       odpId,
+      latitude,
+      longitude,
+      attachments,
     } = body;
 
     if (!customerName?.trim() || !customerPhone?.trim() || !subject?.trim() || !description?.trim()) {
@@ -72,6 +75,20 @@ export async function POST(req: NextRequest) {
       enrichedDesc = enrichedDesc + '\n\n--- Informasi Infrastruktur ---\n' + enrichParts.join('\n');
     }
 
+    // Parse coordinates
+    const lat = latitude ? parseFloat(latitude) : null;
+    const lng = longitude ? parseFloat(longitude) : null;
+
+    // Parse attachments (JSON array of file URLs)
+    let attachmentJson: string | null = null;
+    if (attachments) {
+      if (typeof attachments === 'string') {
+        attachmentJson = attachments;
+      } else if (Array.isArray(attachments) && attachments.length > 0) {
+        attachmentJson = JSON.stringify(attachments);
+      }
+    }
+
     // Create ticket
     const ticket = await prisma.ticket.create({
       data: {
@@ -84,6 +101,10 @@ export async function POST(req: NextRequest) {
         categoryId: categoryId || null,
         priority: priority || 'MEDIUM',
         status: 'OPEN',
+        latitude: lat,
+        longitude: lng,
+        locationTag: customerAddress || null,
+        attachments: attachmentJson,
       },
       include: {
         category: { select: { id: true, name: true, color: true } },
