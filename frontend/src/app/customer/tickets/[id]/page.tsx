@@ -246,7 +246,7 @@ export default function TicketDetailPage() {
         </p>
       </CyberCard>
 
-      {/* Location & Attachments */
+      {/* Location & Attachments */}
       {(ticket.latitude || ticket.locationTag || ticket.attachments) && (
         <CyberCard className="p-4 space-y-3">
           {ticket.locationTag && (
