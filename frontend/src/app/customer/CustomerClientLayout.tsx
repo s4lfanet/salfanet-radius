@@ -43,7 +43,7 @@ interface NotifEvent {
   isRead?: boolean;
 }
 
-// â”€â”€â”€ Inner layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -------------------- Inner layout --------------------
 function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -85,7 +85,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
     return () => clearInterval(tick);
   }, []);
 
-  // â”€â”€ Persist notifications to localStorage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ———— Persist notifications to localStorage ————
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {

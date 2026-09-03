@@ -547,7 +547,7 @@ export default function CustomerDashboard() {
           ))}
           {invoices.filter(inv => inv.status === 'PENDING' || inv.status === 'OVERDUE').length > 3 && (
             <button onClick={() => router.push('/customer/invoices')} className="w-full text-center text-xs text-primary py-1 hover:underline">
-              Lihat semua tagihan ?
+              Lihat semua tagihan
             </button>
           )}
         </div>
@@ -565,7 +565,7 @@ export default function CustomerDashboard() {
               <h2 className="text-sm font-bold text-accent uppercase tracking-wider">{t('customer.ontWifi')}</h2>
             </div>
             {ontDevice && (
-              <button onClick={() => router.push('/customer/wifi')} className="text-[10px] text-primary hover:underline">Detail ?</button>
+              <button onClick={() => router.push('/customer/wifi')} className="text-[10px] text-primary hover:underline">Detail</button>
             )}
           </div>
           
@@ -655,7 +655,7 @@ export default function CustomerDashboard() {
               </div>
               <h2 className="text-sm font-bold text-success uppercase tracking-wider">{t('customer.invoices')}</h2>
             </div>
-            <button onClick={() => router.push('/customer/invoices')} className="text-[10px] text-primary hover:underline">Semua ?</button>
+            <button onClick={() => router.push('/customer/invoices')} className="text-[10px] text-primary hover:underline">Semua</button>
           </div>
           
           {invoices.length === 0 ? <div className="text-center py-4 text-muted-foreground text-xs"><Receipt className="w-8 h-8 mx-auto mb-1 opacity-30" /><p>{t('customer.noInvoices')}</p></div>
@@ -768,7 +768,7 @@ export default function CustomerDashboard() {
                 <div>
                   <label className="text-xs font-bold text-foreground mb-1.5 block">Bukti Transfer *</label>
                   <input type="file" accept="image/*" onChange={e => setManualForm(f => ({ ...f, file: e.target.files?.[0] ?? null }))} className="w-full text-xs text-muted-foreground file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-primary/20 file:text-primary hover:file:bg-primary/30 cursor-pointer" />
-                  {manualForm.file && <p className="text-[10px] text-success mt-1">? {manualForm.file.name}</p>}
+                  {manualForm.file && <p className="text-[10px] text-success mt-1 flex items-center gap-1"><Check className="w-3 h-3" /> {manualForm.file.name}</p>}
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
