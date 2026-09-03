@@ -36,7 +36,7 @@ generate_selfsigned_cert() {
 }
 
 # Helper: common proxy location blocks (used for HTTP and IP-only HTTPS blocks)
-# Matches production-grade config: separate /api/ no-cache + manifest static serving
+# Matches production-grade config: separate /api/ no-cache + dynamic manifest routes
 _proxy_locations() {
     cat <<'LOCATIONS'
     client_max_body_size 100M;
@@ -67,13 +67,8 @@ _proxy_locations() {
         add_header Content-Disposition 'attachment';
     }
 
-    # PWA manifest files — serve directly from public/ (no Node.js needed)
-    location ~ ^/manifest(-[a-z]+)?\.json$ {
-        root /var/www/salfanet-radius/frontend/public;
-        expires 1d;
-        add_header Cache-Control "public, max-age=86400";
-        add_header Content-Type "application/manifest+json";
-    }
+    # PWA manifest files are dynamic Next.js routes (src/app/manifest-*.json/route.ts)
+    # — do NOT serve statically, let location / proxy them to Next.js
 
     # Service worker — no cache
     location = /sw.js {
@@ -200,13 +195,8 @@ _proxy_locations_https_domain() {
         add_header Cache-Control "public, immutable";
     }
 
-    # PWA manifest files — serve directly from public/ (no Node.js needed)
-    location ~ ^/manifest(-[a-z]+)?\.json$ {
-        root /var/www/salfanet-radius/frontend/public;
-        expires 1d;
-        add_header Cache-Control "public, max-age=86400";
-        add_header Content-Type "application/manifest+json";
-    }
+    # PWA manifest files are dynamic Next.js routes (src/app/manifest-*.json/route.ts)
+    # — do NOT serve statically, let location / proxy them to Next.js
 
     # Service worker — no cache
     location = /sw.js {
