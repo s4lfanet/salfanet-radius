@@ -308,11 +308,11 @@ export default function CreateTicketPage() {
             <select
               value={formData.categoryId}
               onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
+              className="w-full bg-background dark:bg-slate-900/50 border border-cyan-500/30 rounded-lg px-4 py-2.5 text-foreground focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all [&>option]:bg-slate-900 [&>option]:text-cyan-100 dark:[&>option]:bg-slate-900 dark:[&>option]:text-cyan-100"
             >
-              <option value="">{t('ticket.selectCategory')}</option>
+              <option value="" className="bg-slate-900 text-muted-foreground">{t('ticket.selectCategory')}</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
+                <option key={cat.id} value={cat.id} className="bg-slate-900 text-cyan-100">
                   {cat.name}
                 </option>
               ))}

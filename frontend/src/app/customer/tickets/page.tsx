@@ -132,14 +132,14 @@ export default function CustomerTicketsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border-2 border-primary/30 bg-input rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              className="border-2 border-primary/30 bg-input rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none [&>option]:bg-slate-900 [&>option]:text-cyan-100"
             >
-              <option value="all">{t('ticket.allStatus')}</option>
-              <option value="OPEN">{t('ticket.status_OPEN')}</option>
-              <option value="IN_PROGRESS">{t('ticket.status_IN_PROGRESS')}</option>
-              <option value="WAITING_CUSTOMER">{t('ticket.status_WAITING_CUSTOMER')}</option>
-              <option value="RESOLVED">{t('ticket.status_RESOLVED')}</option>
-              <option value="CLOSED">{t('ticket.status_CLOSED')}</option>
+              <option value="all" className="bg-slate-900 text-cyan-100">{t('ticket.allStatus')}</option>
+              <option value="OPEN" className="bg-slate-900 text-cyan-100">{t('ticket.status_OPEN')}</option>
+              <option value="IN_PROGRESS" className="bg-slate-900 text-cyan-100">{t('ticket.status_IN_PROGRESS')}</option>
+              <option value="WAITING_CUSTOMER" className="bg-slate-900 text-cyan-100">{t('ticket.status_WAITING_CUSTOMER')}</option>
+              <option value="RESOLVED" className="bg-slate-900 text-cyan-100">{t('ticket.status_RESOLVED')}</option>
+              <option value="CLOSED" className="bg-slate-900 text-cyan-100">{t('ticket.status_CLOSED')}</option>
             </select>
           </div>
         </CyberCard>
