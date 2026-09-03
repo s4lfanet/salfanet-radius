@@ -3,10 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/hooks/useTranslation';
-import { 
-  Ticket, 
-  MessageSquare, 
-  Filter, 
+import {
+  Ticket,
+  MessageSquare,
+  Filter,
   Search,
   TrendingUp,
   Clock,
@@ -17,6 +17,11 @@ import {
   X,
   ChevronDown,
   Loader2,
+  MapPin,
+  Navigation,
+  Upload,
+  FileText,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { formatWIB } from '@/lib/timezone';
 import { showSuccess, showError } from '@/lib/sweetalert';
@@ -77,6 +82,8 @@ interface DispatchFormData {
   oltId: string;
   odcId: string;
   odpId: string;
+  latitude: string;
+  longitude: string;
 }
 
 interface DispatchDataResult {
@@ -86,7 +93,7 @@ interface DispatchDataResult {
   olts: { id: string; name: string; ipAddress: string }[];
   odcs: { id: string; name: string; oltId: string }[];
   odps: { id: string; name: string; odcId: string | null; portCount: number }[];
-  customers: { id: string; username: string; name: string | null; phone: string | null; address: string | null; odpAssignment: { odpId: string; odp: { id: string; name: string } } | null; _source?: 'pppoe' | 'billing' }[];
+  customers: { id: string; username: string; name: string | null; phone: string | null; address: string | null; latitude?: number | null; longitude?: number | null; odpAssignment: { odpId: string; odp: { id: string; name: string } } | null; _source?: 'pppoe' | 'billing' }[];
 }
 
 interface DispatchResponse {
@@ -113,7 +120,11 @@ export default function AdminTicketsPage() {
     customerId: null, customerName: '', customerPhone: '', customerAddress: '',
     subject: '', description: '', categoryId: '', priority: 'MEDIUM',
     routerId: '', oltId: '', odcId: '', odpId: '',
+    latitude: '', longitude: '',
   });
+  const [uploadedFiles, setUploadedFiles] = useState<{ url: string; name: string; type: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   const ticketsQueryKey = buildQueryKey('/api/tickets', { status: filters.status, priority: filters.priority, search: filters.search });
   const statsQueryKey = buildQueryKey('/api/tickets/stats');
@@ -174,9 +185,70 @@ export default function AdminTicketsPage() {
       customerPhone: c.phone || '',
       customerAddress: c.address || '',
       odpId: c.odpAssignment?.odpId || f.odpId,
+      latitude: c.latitude != null ? c.latitude.toFixed(6) : '',
+      longitude: c.longitude != null ? c.longitude.toFixed(6) : '',
     }));
     setCustomerSearch(c.name || c.username);
     setCustomerLockedIn(true);
+  };
+
+  const handleGetGPS = () => {
+    if (!navigator.geolocation) {
+      showError('GPS tidak didukung', 'Browser tidak mendukung GPS');
+      return;
+    }
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setForm(f => ({
+          ...f,
+          latitude: pos.coords.latitude.toFixed(6),
+          longitude: pos.coords.longitude.toFixed(6),
+        }));
+        setGpsLoading(false);
+      },
+      () => {
+        showError('Gagal GPS', 'Gagal mendapatkan lokasi GPS. Pastikan izin lokasi diaktifkan.');
+        setGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      for (const file of Array.from(files)) {
+        const formDataObj = new FormData();
+        formDataObj.append('file', file);
+
+        const res = await fetch('/api/tickets/upload', {
+          method: 'POST',
+          credentials: 'include',
+          body: formDataObj,
+        });
+
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          showError('Gagal upload', data.error || `Gagal upload ${file.name}`);
+          continue;
+        }
+
+        setUploadedFiles(prev => [...prev, { url: data.url, name: file.name, type: data.fileType }]);
+      }
+    } catch {
+      showError('Gagal upload', 'Gagal mengupload file');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDispatch = async () => {
@@ -186,13 +258,18 @@ export default function AdminTicketsPage() {
     }
     setDispatchLoading(true);
     try {
+      const payload = {
+        ...form,
+        attachments: uploadedFiles.length > 0 ? uploadedFiles.map(f => f.url) : undefined,
+      };
       const data = await apiAdmin<DispatchResponse>('/api/tickets/dispatch', {
         method: 'POST',
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       showSuccess('Tiket Terkirim', `#${data.ticket.ticketNumber} dikirim ke ${data.notified} teknisi`);
       setShowDispatch(false);
-      setForm({ customerId: null, customerName: '', customerPhone: '', customerAddress: '', subject: '', description: '', categoryId: '', priority: 'MEDIUM', routerId: '', oltId: '', odcId: '', odpId: '' });
+      setForm({ customerId: null, customerName: '', customerPhone: '', customerAddress: '', subject: '', description: '', categoryId: '', priority: 'MEDIUM', routerId: '', oltId: '', odcId: '', odpId: '', latitude: '', longitude: '' });
+      setUploadedFiles([]);
       setCustomerSearch('');
       setCustomerLockedIn(false);
       setCustomerSearchLoading(false);
@@ -618,6 +695,104 @@ export default function AdminTicketsPage() {
                     <label className="text-xs text-muted-foreground mb-1 block">Alamat</label>
                     <input value={form.customerAddress} onChange={e => setForm(f => ({ ...f, customerAddress: e.target.value }))} placeholder="Alamat pelanggan" className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none" />
                   </div>
+
+                  {/* Coordinates */}
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> Koordinat Lokasi
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={form.latitude}
+                        onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))}
+                        placeholder="Latitude (-5.14...)"
+                        className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none"
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={form.longitude}
+                        onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))}
+                        placeholder="Longitude (119.4...)"
+                        className="w-full px-3 py-2 text-xs bg-background border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#bc13fe]/40 outline-none"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                      <button
+                        type="button"
+                        onClick={handleGetGPS}
+                        disabled={gpsLoading}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] rounded-lg border border-[#00f7ff]/40 text-[#00f7ff] bg-[#00f7ff]/10 hover:bg-[#00f7ff]/20 transition-all disabled:opacity-50"
+                      >
+                        {gpsLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Navigation className="w-3 h-3" />}
+                        Ambil GPS
+                      </button>
+                      {form.latitude && form.longitude && (
+                        <a
+                          href={`https://maps.google.com/?q=${form.latitude},${form.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-[#00f7ff] hover:underline"
+                        >
+                          Lihat di Maps
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* File Upload Section */}
+                <div className="bg-muted/40 rounded-xl p-4 space-y-3">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide flex items-center gap-1">
+                    <Upload className="w-3 h-3" /> Lampiran (Foto / Dokumen)
+                  </p>
+                  <label
+                    className={`flex flex-col items-center justify-center w-full border-2 border-dashed rounded-lg px-4 py-5 cursor-pointer transition-all ${
+                      uploading
+                        ? 'border-[#bc13fe]/60 bg-[#bc13fe]/5 opacity-70'
+                        : 'border-border hover:border-[#bc13fe]/40 hover:bg-[#bc13fe]/5'
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                    {uploading ? (
+                      <div className="flex flex-col items-center gap-1.5">
+                        <Loader2 className="w-5 h-5 animate-spin text-[#bc13fe]" />
+                        <span className="text-[10px] text-[#bc13fe]">Mengupload...</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1">
+                        <Upload className="w-5 h-5 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">Klik untuk pilih file</span>
+                        <span className="text-[10px] text-muted-foreground/70">JPG, PNG, WebP, PDF - maks 10MB</span>
+                      </div>
+                    )}
+                  </label>
+                  {uploadedFiles.length > 0 && (
+                    <div className="space-y-1.5">
+                      {uploadedFiles.map((file, index) => (
+                        <div key={index} className="flex items-center gap-2 p-2 rounded-lg bg-background border border-border">
+                          {file.type === 'pdf' ? (
+                            <FileText className="w-4 h-4 text-red-400 flex-shrink-0" />
+                          ) : (
+                            <img src={file.url} alt={file.name} className="w-8 h-8 object-cover rounded border border-border flex-shrink-0" />
+                          )}
+                          <span className="text-xs text-foreground truncate flex-1">{file.name}</span>
+                          <button type="button" onClick={() => handleRemoveFile(index)} className="p-1 hover:bg-destructive/10 rounded text-muted-foreground hover:text-destructive flex-shrink-0">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Infrastructure Section */}
