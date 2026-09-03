@@ -109,7 +109,13 @@ export default function CollectorSettlementsPage() {
               <tr key={inv.id} className={`border-b border-border ${i % 2 === 0 ? '' : 'bg-accent/20'}`}>
                 <td className="p-2">
                   <div className="font-medium text-foreground">{inv.customerName || inv.customerUsername || '—'}</div>
-                  <div className="text-xs text-muted-foreground">{inv.customerUsername || '—'}</div>
+                  <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <span className="font-mono">{inv.customerId || inv.customerUsername || '—'}</span>
+                    {inv.phone && <><span>·</span><span>{inv.phone}</span></>}
+                  </div>
+                  {inv.profileName && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{inv.profileName} · {inv.areaName}</div>
+                  )}
                 </td>
                 <td className="p-2 text-right font-medium text-foreground">{fmtRp(inv.amount)}</td>
                 <td className="p-2 text-center">{pmMethod(inv.paymentMethod)}</td>

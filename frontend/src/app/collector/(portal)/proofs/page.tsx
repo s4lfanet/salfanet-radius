@@ -17,6 +17,11 @@ interface ProofItem {
   fullname: string;
   username: string;
   phone: string;
+  customerId: string;
+  profileName: string;
+  profilePrice: number;
+  areaName: string;
+  address: string;
   is_my_upload: boolean;
 }
 
@@ -139,7 +144,13 @@ export default function CollectorProofsPage() {
                     <tr key={proof.id} className="border-b border-border last:border-0 hover:bg-muted/30">
                       <td className="p-3">
                         <div className="font-medium text-foreground">{proof.fullname || proof.username}</div>
-                        <div className="text-xs text-muted-foreground">{proof.phone || '—'}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <span className="font-mono">{proof.customerId || proof.username}</span>
+                          {proof.phone && <><span>·</span><span>{proof.phone}</span></>}
+                        </div>
+                        {proof.profileName && (
+                          <div className="text-xs text-muted-foreground mt-0.5">{proof.profileName} · {proof.areaName}</div>
+                        )}
                       </td>
                       <td className="p-3 text-xs text-muted-foreground">{proof.invoice_number}</td>
                       <td className="p-3 font-semibold text-foreground">{fmtRp(proof.amount)}</td>

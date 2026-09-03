@@ -29,9 +29,25 @@ export async function GET(req: NextRequest) {
         invoiceNumber: true,
         customerName: true,
         customerUsername: true,
+        userId: true,
       },
       orderBy: { paidAt: 'desc' },
     });
+
+    // Fetch user details for enrichment
+    const userIds = [...new Set(invoices.map(i => i.userId).filter(Boolean))] as string[];
+    const users = await prisma.pppoeUser.findMany({
+      where: { id: { in: userIds } },
+      select: {
+        id: true,
+        customerId: true,
+        phone: true,
+        address: true,
+        profile: { select: { name: true, price: true } },
+        area: { select: { name: true } },
+      },
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
 
     // Group by month
     const monthlyMap: Record<string, { total_count: number; total_amount: number; cash_amount: number; transfer_amount: number }> = {};
@@ -52,15 +68,23 @@ export async function GET(req: NextRequest) {
       total_count: invoices.length,
       total_amount: invoices.reduce((s, i) => s + i.amount, 0),
       monthly,
-      recent: invoices.slice(0, 20).map(i => ({
-        id: i.id,
-        invoiceNumber: i.invoiceNumber,
-        amount: i.amount,
-        paymentMethod: i.paymentMethod,
-        paidAt: i.paidAt,
-        customerName: i.customerName,
-        customerUsername: i.customerUsername,
-      })),
+      recent: invoices.slice(0, 20).map(i => {
+        const u = i.userId ? userMap.get(i.userId) : null;
+        return {
+          id: i.id,
+          invoiceNumber: i.invoiceNumber,
+          amount: i.amount,
+          paymentMethod: i.paymentMethod,
+          paidAt: i.paidAt,
+          customerName: i.customerName,
+          customerUsername: i.customerUsername,
+          customerId: u?.customerId || '',
+          phone: u?.phone || '',
+          profileName: u?.profile?.name || '',
+          areaName: u?.area?.name || '',
+          address: u?.address || '',
+        };
+      }),
     });
   } catch (error) {
     console.error('My collections error:', error);
