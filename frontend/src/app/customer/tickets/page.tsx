@@ -132,6 +132,7 @@ export default function CustomerTicketsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              style={{ colorScheme: 'dark' }}
               className="border-2 border-primary/30 bg-input rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-primary focus:border-primary outline-none [&>option]:bg-slate-900 [&>option]:text-cyan-100"
             >
               <option value="all" className="bg-slate-900 text-cyan-100">{t('ticket.allStatus')}</option>
