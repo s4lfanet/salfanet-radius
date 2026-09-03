@@ -26,7 +26,15 @@ export async function GET(req: NextRequest) {
     // Also get proofs for users in this collector's area via username matching
     const areaUsers = await prisma.pppoeUser.findMany({
       where: { areaId: adminUser.areaId },
-      select: { username: true, name: true, phone: true },
+      select: {
+        username: true,
+        name: true,
+        phone: true,
+        customerId: true,
+        address: true,
+        profile: { select: { name: true, price: true } },
+        area: { select: { name: true } },
+      },
     });
     const areaUsernames = areaUsers.map(u => u.username);
 
@@ -83,6 +91,11 @@ export async function GET(req: NextRequest) {
           fullname: inv?.customerName || usr?.name || p.username,
           username: p.username,
           phone: usr?.phone || '',
+          customerId: usr?.customerId || '',
+          profileName: usr?.profile?.name || '',
+          profilePrice: usr?.profile?.price || 0,
+          areaName: usr?.area?.name || '',
+          address: usr?.address || '',
           is_my_upload: p.collectorId === collector.id,
         };
       }),

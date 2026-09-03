@@ -71,6 +71,21 @@ export async function GET(req: NextRequest) {
       proofMap = new Map(proofs.map(p => [p.invoiceId, { status: p.status, rejectReason: p.rejectReason }]));
     }
 
+    // Fetch user details for enrichment
+    const userIds = [...new Set(invoices.map(i => i.userId).filter(Boolean))] as string[];
+    const users = await prisma.pppoeUser.findMany({
+      where: { id: { in: userIds } },
+      select: {
+        id: true,
+        customerId: true,
+        phone: true,
+        address: true,
+        profile: { select: { name: true, price: true } },
+        area: { select: { name: true } },
+      },
+    });
+    const userMap = new Map(users.map(u => [u.id, u]));
+
     return NextResponse.json({
       date,
       summary: {
@@ -82,6 +97,7 @@ export async function GET(req: NextRequest) {
       },
       invoices: invoices.map(i => {
         const proof = proofMap.get(i.id);
+        const u = i.userId ? userMap.get(i.userId) : null;
         return {
           id: i.id,
           invoiceNumber: i.invoiceNumber,
@@ -90,6 +106,11 @@ export async function GET(req: NextRequest) {
           paidAt: i.paidAt,
           customerName: i.customerName,
           customerUsername: i.customerUsername,
+          customerId: u?.customerId || '',
+          phone: u?.phone || '',
+          profileName: u?.profile?.name || '',
+          areaName: u?.area?.name || '',
+          address: u?.address || '',
           has_proof: !!i.collectorProof,
           proof_status: proof?.status || null,
           proof_reject_reason: proof?.rejectReason || null,

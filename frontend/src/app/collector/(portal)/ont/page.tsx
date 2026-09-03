@@ -69,6 +69,7 @@ export default function CollectorOntPage() {
             <thead>
               <tr className="border-b border-border bg-accent/30">
                 <th className="text-left p-3 font-medium text-muted-foreground">Pelanggan</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Paket</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Wilayah</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Catatan</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Waktu</th>
@@ -79,8 +80,15 @@ export default function CollectorOntPage() {
                 <tr key={r.id} className={`border-b border-border ${i % 2 === 0 ? '' : 'bg-accent/10'}`}>
                   <td className="p-3">
                     <div className="font-medium text-foreground">{r.fullname}</div>
-                    <div className="text-xs text-muted-foreground">{r.customerId || r.username}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <span className="font-mono">{r.customerId || r.username}</span>
+                      {r.phone && <><span>·</span><span>{r.phone}</span></>}
+                    </div>
+                    {r.address && (
+                      <div className="text-xs text-muted-foreground mt-0.5">{r.address}</div>
+                    )}
                   </td>
+                  <td className="p-3 text-xs text-muted-foreground">{r.profileName || '—'}</td>
                   <td className="p-3 text-muted-foreground">{r.areaName || '—'}</td>
                   <td className="p-3 text-muted-foreground">{r.notes || '—'}</td>
                   <td className="p-3 text-right text-xs text-muted-foreground">

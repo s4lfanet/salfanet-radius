@@ -24,7 +24,10 @@ export async function GET(req: NextRequest) {
         username: true,
         name: true,
         customerId: true,
+        phone: true,
+        address: true,
         areaId: true,
+        profile: { select: { name: true, price: true } },
       },
     });
 
@@ -51,6 +54,9 @@ export async function GET(req: NextRequest) {
         username: r.username,
         fullname: u?.name || r.username,
         customerId: u?.customerId || null,
+        phone: u?.phone || '',
+        profileName: u?.profile?.name || '',
+        address: u?.address || '',
         areaName: u?.areaId ? areaMap.get(u.areaId) || null : null,
         notes: r.notes,
         removedAt: r.removedAt,
