@@ -38,12 +38,12 @@ export async function GET(req: NextRequest) {
       orderBy: { name: 'asc' },
     });
 
-    // Get invoices for these users
+    // Get ALL invoices for these users (not just filtered) so is_paid is accurate
     const userIds = users.map(u => u.id);
-    const invoices = await prisma.invoice.findMany({
+    const allInvoices = await prisma.invoice.findMany({
       where: {
         userId: { in: userIds },
-        status: { in: filter === 'unpaid' ? ['PENDING', 'OVERDUE'] : ['PAID', 'PENDING', 'OVERDUE'] },
+        status: { not: 'CANCELLED' },
       },
       select: {
         id: true,
@@ -59,23 +59,39 @@ export async function GET(req: NextRequest) {
       orderBy: { dueDate: 'desc' },
     });
 
-    const invoiceMap = new Map<string, typeof invoices>();
-    for (const inv of invoices) {
+    // For display: filter by the requested filter
+    const displayInvoices = allInvoices.filter(inv =>
+      filter === 'unpaid'
+        ? (inv.status === 'PENDING' || inv.status === 'OVERDUE')
+        : true
+    );
+
+    const invoiceMap = new Map<string, typeof allInvoices>();
+    for (const inv of displayInvoices) {
       const arr = invoiceMap.get(inv.userId) || [];
       arr.push(inv);
       invoiceMap.set(inv.userId, arr);
     }
 
+    // Build is_paid map from ALL invoices (not just filtered)
+    const allInvoiceMap = new Map<string, typeof allInvoices>();
+    for (const inv of allInvoices) {
+      const arr = allInvoiceMap.get(inv.userId) || [];
+      arr.push(inv);
+      allInvoiceMap.set(inv.userId, arr);
+    }
+
     let enriched = users.map(u => {
-      const userInvoices = invoiceMap.get(u.id) || [];
-      const unpaid = userInvoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE');
-      const paid = userInvoices.filter(i => i.status === 'PAID');
+      const userAllInvoices = allInvoiceMap.get(u.id) || [];
+      const userDisplayInvoices = invoiceMap.get(u.id) || [];
+      const unpaid = userAllInvoices.filter(i => i.status === 'PENDING' || i.status === 'OVERDUE');
+      const paid = userAllInvoices.filter(i => i.status === 'PAID');
       return {
         ...u,
-        invoices: userInvoices,
+        invoices: userDisplayInvoices,
         unpaid_count: unpaid.length,
         unpaid_amount: unpaid.reduce((s, i) => s + i.amount, 0),
-        is_paid: unpaid.length === 0,
+        is_paid: userAllInvoices.length > 0 && unpaid.length === 0,
         has_paid_by_collector: paid.some(i => i.paidById === collector.id),
       };
     });
@@ -83,7 +99,7 @@ export async function GET(req: NextRequest) {
     if (filter === 'unpaid') {
       enriched = enriched.filter(u => u.unpaid_count > 0);
     } else if (filter === 'paid') {
-      enriched = enriched.filter(u => u.unpaid_count === 0 && u.invoices.length > 0);
+      enriched = enriched.filter(u => u.is_paid);
     }
 
     return NextResponse.json({ users: enriched });

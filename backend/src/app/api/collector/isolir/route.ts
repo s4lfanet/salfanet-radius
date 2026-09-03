@@ -41,12 +41,12 @@ export async function GET(req: NextRequest) {
       orderBy: { name: 'asc' },
     });
 
-    // Fetch unpaid invoices for each user
+    // Fetch ALL invoices for these users (not just unpaid) so is_paid is accurate
     const userIds = users.map(u => u.id);
-    const unpaidInvoices = await prisma.invoice.findMany({
+    const allInvoices = await prisma.invoice.findMany({
       where: {
         userId: { in: userIds },
-        status: { in: ['PENDING', 'OVERDUE'] },
+        status: { not: 'CANCELLED' },
       },
       select: {
         id: true,
@@ -59,7 +59,18 @@ export async function GET(req: NextRequest) {
       orderBy: { dueDate: 'asc' },
     });
 
-    // Group invoices by userId
+    // Group all invoices by userId
+    const allInvoicesByUser = new Map<string, typeof allInvoices>();
+    for (const inv of allInvoices) {
+      const arr = allInvoicesByUser.get(inv.userId) || [];
+      arr.push(inv);
+      allInvoicesByUser.set(inv.userId, arr);
+    }
+
+    // Unpaid only (for display)
+    const unpaidInvoices = allInvoices.filter(inv => inv.status === 'PENDING' || inv.status === 'OVERDUE');
+
+    // Group unpaid invoices by userId
     const invoicesByUser = new Map<string, typeof unpaidInvoices>();
     for (const inv of unpaidInvoices) {
       const arr = invoicesByUser.get(inv.userId) || [];
@@ -72,19 +83,23 @@ export async function GET(req: NextRequest) {
       unpaidMap.set(inv.userId, (unpaidMap.get(inv.userId) || 0) + inv.amount);
     }
 
-    const enriched = users.map(u => ({
-      ...u,
-      is_paid: !unpaidMap.has(u.id),
-      unpaid_amount: unpaidMap.get(u.id) || 0,
-      unpaid_count: invoicesByUser.get(u.id)?.length || 0,
-      invoices: (invoicesByUser.get(u.id) || []).map(inv => ({
-        id: inv.id,
-        invoiceNumber: inv.invoiceNumber,
-        amount: inv.amount,
-        dueDate: inv.dueDate?.toISOString() || null,
-        status: inv.status,
-      })),
-    }));
+    const enriched = users.map(u => {
+      const userAllInvoices = allInvoicesByUser.get(u.id) || [];
+      const userUnpaidInvoices = invoicesByUser.get(u.id) || [];
+      return {
+        ...u,
+        is_paid: userAllInvoices.length > 0 && userUnpaidInvoices.length === 0,
+        unpaid_amount: unpaidMap.get(u.id) || 0,
+        unpaid_count: userUnpaidInvoices.length,
+        invoices: userUnpaidInvoices.map(inv => ({
+          id: inv.id,
+          invoiceNumber: inv.invoiceNumber,
+          amount: inv.amount,
+          dueDate: inv.dueDate?.toISOString() || null,
+          status: inv.status,
+        })),
+      };
+    });
 
     return NextResponse.json({ users: enriched });
   } catch (error) {
