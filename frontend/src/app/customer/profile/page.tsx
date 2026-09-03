@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Phone, CreditCard, Calendar, Package, LogOut, Shield, Edit3, Save, X, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, CreditCard, Calendar, Package, LogOut, Shield, Edit3, Save, X, Loader2, ArrowDown, ArrowUp } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB } from '@/lib/timezone';
 import { CyberCard, CyberButton } from '@/components/cyberpunk';
@@ -309,8 +309,10 @@ export default function CustomerProfilePage() {
               <CreditCard size={16} className="text-primary mt-0.5" />
               <div className="flex-1">
                 <p className="text-xs text-accent font-bold uppercase tracking-wide">Kecepatan</p>
-                <p className="text-sm font-medium text-foreground">
-                  â†“ {customer.profile.downloadSpeed} Mbps / â†‘ {customer.profile.uploadSpeed} Mbps
+                <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                  <ArrowDown size={13} className="text-green-500" /> {customer.profile.downloadSpeed} Mbps
+                  <span className="text-muted-foreground">/</span>
+                  <ArrowUp size={13} className="text-blue-500" /> {customer.profile.uploadSpeed} Mbps
                 </p>
               </div>
             </div>
