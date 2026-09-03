@@ -90,10 +90,10 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
   if (!collector) return null;
 
   return (
-    <div className="min-h-dvh bg-background flex">
+    <div className="min-h-dvh bg-background flex overflow-x-hidden" data-role="collector">
       {/* Sidebar - Desktop */}
       <aside className={cn(
-        "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 lg:translate-x-0",
+        "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 lg:translate-x-0 safe-area-inset-left",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="p-4 border-b border-sidebar-border bg-sidebar-accent/50">
@@ -169,13 +169,13 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
 
       {/* Overlay for mobile */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Bar */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6">
+        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 lg:px-6 sticky top-0 z-20 safe-area-inset-top">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -199,7 +199,7 @@ export default function CollectorPortalLayout({ children }: { children: React.Re
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-auto p-4 lg:p-6 safe-area-inset-bottom">
           {children}
         </main>
       </div>
