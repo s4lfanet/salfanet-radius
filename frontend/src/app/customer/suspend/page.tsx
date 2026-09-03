@@ -221,6 +221,7 @@ export default function CustomerSuspendPage() {
                   min={todayStr}
                   value={form.startDate}
                   onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
+                  style={{ colorScheme: 'dark' }}
                   className={`w-full pl-8 pr-2 py-2 bg-[#0a0520]/80 border rounded-lg text-sm text-white focus:outline-none ${
                     errors.startDate ? 'border-red-500' : 'border-[#bc13fe]/30 focus:border-[#bc13fe]'
                   }`}
@@ -237,6 +238,7 @@ export default function CustomerSuspendPage() {
                   min={form.startDate || todayStr}
                   value={form.endDate}
                   onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
+                  style={{ colorScheme: 'dark' }}
                   className={`w-full pl-8 pr-2 py-2 bg-[#0a0520]/80 border rounded-lg text-sm text-white focus:outline-none ${
                     errors.endDate ? 'border-red-500' : 'border-[#bc13fe]/30 focus:border-[#bc13fe]'
                   }`}
