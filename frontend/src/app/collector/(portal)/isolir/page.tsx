@@ -8,6 +8,7 @@ import {
   CheckCircle, CreditCard, ArrowUpDown,
 } from 'lucide-react';
 
+const PAGE_SIZE = 50;
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -15,7 +16,7 @@ export default function CollectorIsolirPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [visibleCount, setVisibleCount] = useState(50);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   // Cabut ONT modal
@@ -172,7 +173,7 @@ export default function CollectorIsolirPage() {
         <input
           type="text"
           value={search}
-          onChange={e => { setSearch(e.target.value); setVisibleCount(50); }}
+          onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
           className="w-full pl-10 pr-10 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500"
           placeholder="Cari nama, username, ID, No. HP..."
         />
@@ -376,10 +377,10 @@ export default function CollectorIsolirPage() {
           {visibleCount < filtered.length && (
             <div className="text-center mt-4">
               <button
-                onClick={() => setVisibleCount(c => c + 50)}
+                onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
                 className="px-6 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent flex items-center gap-2"
               >
-                <ChevronDown className="w-4 h-4" /> Muat {Math.min(50, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
+                <ChevronDown className="w-4 h-4" /> Muat {Math.min(PAGE_SIZE, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
               </button>
             </div>
           )}
