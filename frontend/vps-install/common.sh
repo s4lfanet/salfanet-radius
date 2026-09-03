@@ -17,7 +17,7 @@ export WHITE='\033[1;37m'
 export NC='\033[0m' # No Color
 
 # Global configuration variables
-export NODE_VERSION="${NODE_VERSION:-20}"
+export NODE_VERSION="${NODE_VERSION:-22}"
 export APP_DIR="${APP_DIR:-/var/www/salfanet-radius}"
 # APP_USER and APP_GROUP will be set in initialize_user_selection()
 export APP_USER="${APP_USER:-}"
