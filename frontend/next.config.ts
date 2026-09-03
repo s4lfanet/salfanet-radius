@@ -53,7 +53,7 @@ const nextConfig: NextConfig = {
       // Connections: self + Cloudflare analytics beacon + payment gateways
       "connect-src 'self' https://cloudflareinsights.com https://api.midtrans.com https://api.xendit.co https://sandbox.duitku.com https://passport.duitku.com https://sandbox.tripay.co.id https://tripay.co.id",
       // Frames: hanya self (bukan 'none' agar SweetAlert2 modal bisa inline)
-      "frame-src 'self' https://app.midtrans.com https://app.sandbox.midtrans.com https://www.openstreetmap.org",
+      "frame-src 'self' https://app.midtrans.com https://app.sandbox.midtrans.com https://www.openstreetmap.org https://openspeedtest.com",
       // Batas upload media — 10MB
       "media-src 'self' blob:",
       // Worker: untuk PDF generation
