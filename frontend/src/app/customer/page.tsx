@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote, RefreshCw, Upload } from 'lucide-react';
+import { User, Wifi, Receipt, Loader2, ExternalLink, Edit2, X, Check, Package, Zap, FileText, MessageSquare, Gift, PauseCircle, Banknote, RefreshCw, Upload, Gauge } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 
 // Force dynamic rendering
@@ -487,6 +487,7 @@ export default function CustomerDashboard() {
             { name: 'Riwayat',      href: '/customer/history',       icon: Receipt,       color: 'text-purple-400',  bg: 'bg-purple-500/10 border-purple-500/30' },
             { name: 'Perpanjang',   href: '/customer/renewal',       icon: RefreshCw,     color: 'text-cyan-400',    bg: 'bg-cyan-500/10 border-cyan-500/30' },
             { name: 'WiFi',         href: '/customer/wifi',          icon: Wifi,          color: 'text-blue-400',    bg: 'bg-blue-500/10 border-blue-500/30' },
+            { name: 'Speed Test',   href: '/customer/speedtest',     icon: Gauge,         color: 'text-cyan-300',    bg: 'bg-cyan-500/10 border-cyan-500/30' },
             { name: 'Bantuan',      href: '/customer/tickets',       icon: MessageSquare, color: 'text-yellow-400',  bg: 'bg-yellow-500/10 border-yellow-500/30' },
             { name: 'Tagihan',      href: '/customer/invoices',      icon: FileText,      color: 'text-green-400',   bg: 'bg-green-500/10 border-green-500/30' },
             { name: 'Upgrade',      href: '/customer/upgrade',       icon: Package,       color: 'text-orange-400',  bg: 'bg-orange-500/10 border-orange-500/30' },
