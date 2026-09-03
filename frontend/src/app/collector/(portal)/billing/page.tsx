@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { apiAdmin, ApiError } from '@/lib/api/client';
 import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
 import { BluetoothPrinter, type ThermalReceiptData } from '@/lib/bluetooth-printer';
-import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Image as ImageIcon, Printer, Bluetooth, MessageCircle, FileText } from 'lucide-react';
+import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, Bluetooth, MessageCircle, FileText, Wallet, MapPin, Wifi, Calendar, Phone } from 'lucide-react';
 
+const PAGE_SIZE = 50;
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
 const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
 
@@ -14,8 +15,7 @@ export default function CollectorBillingPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('unpaid');
-  const [visibleCount, setVisibleCount] = useState(20);
-  const [payingInvoice, setPayingInvoice] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [payModal, setPayModal] = useState<{ invoiceId: string; invoiceNumber: string; amount: number; customerName: string } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -44,7 +44,8 @@ export default function CollectorBillingPage() {
     const q = search.toLowerCase();
     return (u.name || '').toLowerCase().includes(q) ||
       (u.username || '').toLowerCase().includes(q) ||
-      (u.customerId || '').toLowerCase().includes(q);
+      (u.customerId || '').toLowerCase().includes(q) ||
+      (u.phone || '').toLowerCase().includes(q);
   });
   const visible = filtered.slice(0, visibleCount);
 
@@ -319,7 +320,7 @@ export default function CollectorBillingPage() {
         ].map(f => (
           <button
             key={f.key}
-            onClick={() => { setFilter(f.key); setVisibleCount(20); }}
+            onClick={() => { setFilter(f.key); setVisibleCount(PAGE_SIZE); }}
             className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
               filter === f.key
                 ? 'bg-emerald-600 text-white'
@@ -337,9 +338,9 @@ export default function CollectorBillingPage() {
         <input
           type="text"
           value={search}
-          onChange={e => { setSearch(e.target.value); setVisibleCount(20); }}
+          onChange={e => { setSearch(e.target.value); setVisibleCount(PAGE_SIZE); }}
           className="w-full pl-10 pr-10 py-2 rounded-lg border border-border bg-card text-foreground text-sm outline-none focus:ring-2 focus:ring-emerald-500"
-          placeholder="Cari nama, username, ID..."
+          placeholder="Cari nama, username, ID, No. HP..."
         />
         {search && (
           <button onClick={() => setSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground">
@@ -358,165 +359,285 @@ export default function CollectorBillingPage() {
         </div>
       ) : (
         <>
-          <div className="space-y-3">
-            {visible.map(u => (
-              <div key={u.id} className="bg-card border border-border rounded-xl overflow-hidden">
-                <div
-                  className="p-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-accent/50 transition-colors"
-                  onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-foreground">{u.name}</span>
-                      {u.status === 'suspended' || u.status === 'isolated' ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-medium">Isolir</span>
-                      ) : null}
-                      {!u.is_paid && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-600 font-medium">
-                          {u.unpaid_count} belum bayar
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {u.customerId || u.username} · {u.phone || '—'}
-                    </div>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    {!u.is_paid && (
-                      <div className="text-sm font-bold text-orange-600">{fmtRp(u.unpaid_amount)}</div>
-                    )}
-                    <ChevronDown className={`w-4 h-4 text-muted-foreground inline-block transition-transform ${expandedUser === u.id ? 'rotate-180' : ''}`} />
-                  </div>
-                </div>
-
-                {expandedUser === u.id && (
-                  <div className="border-t border-border p-4 bg-accent/30">
-                    {u.invoices && u.invoices.length > 0 ? (
-                      <div className="space-y-2">
-                        {u.invoices.map((inv: any) => (
-                          <div key={inv.id} className="flex items-center justify-between gap-4 py-2 px-3 rounded-lg bg-card border border-border">
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium text-foreground">
-                                #{inv.invoiceNumber}
-                                {inv.status === 'PAID' && (
-                                  <span className="ml-2 text-xs text-emerald-600 font-medium">Lunas</span>
-                                )}
-                              </div>
-                              <div className="text-xs text-muted-foreground">
-                                Jatuh tempo: {fmtDate(inv.dueDate)}
-                                {inv.paymentMethod && ` · ${inv.paymentMethod}`}
-                              </div>
-                            </div>
-                            <div className="text-right flex-shrink-0 flex items-center gap-2">
-                              <div>
-                                <div className="text-sm font-bold text-foreground">{fmtRp(inv.amount)}</div>
-                                {inv.status !== 'PAID' && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setPayModal({
-                                        invoiceId: inv.id,
-                                        invoiceNumber: inv.invoiceNumber,
-                                        amount: inv.amount,
-                                        customerName: u.name,
-                                      });
-                                    }}
-                                    className="mt-1 text-xs px-3 py-1 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all"
-                                  >
-                                    Tandai Lunas
-                                  </button>
-                                )}
-                              </div>
-
-                              {/* Action buttons for paid invoices */}
-                              {inv.status === 'PAID' && (
-                                <div className="flex items-center gap-1 relative">
-                                  {/* Print menu */}
-                                  <div className="relative" ref={showPrintMenu === inv.id ? printMenuRef : null}>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id);
-                                      }}
-                                      disabled={actionLoading?.startsWith('a4-') || actionLoading?.startsWith('thermal-') || actionLoading?.startsWith('bt-')}
-                                      className="p-1.5 rounded-lg border border-border text-muted-foreground hover:bg-accent transition-all"
-                                      title="Cetak Invoice"
-                                    >
-                                      {actionLoading?.startsWith('a4-') && actionLoading === `a4-${inv.id}` ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                      ) : actionLoading?.startsWith('thermal-') && actionLoading === `thermal-${inv.id}` ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                      ) : actionLoading?.startsWith('bt-') && actionLoading === `bt-${inv.id}` ? (
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                      ) : (
-                                        <Printer className="w-4 h-4" />
-                                      )}
-                                    </button>
-                                    {showPrintMenu === inv.id && (
-                                      <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
-                                        >
-                                          <FileText className="w-3.5 h-3.5" />
-                                          Cetak Invoice A4
-                                        </button>
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
-                                        >
-                                          <Printer className="w-3.5 h-3.5" />
-                                          Cetak Struk 80mm
-                                        </button>
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }}
-                                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
-                                        >
-                                          <Bluetooth className="w-3.5 h-3.5" />
-                                          Cetak via Bluetooth
-                                        </button>
-                                      </div>
-                                    )}
-                                  </div>
-
-                                  {/* WhatsApp send */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name);
-                                    }}
-                                    disabled={actionLoading === `wa-${inv.id}`}
-                                    className="p-1.5 rounded-lg border border-border text-muted-foreground hover:bg-accent hover:text-green-600 transition-all"
-                                    title="Kirim Bukti Lunas via WhatsApp"
-                                  >
-                                    {actionLoading === `wa-${inv.id}` ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <MessageCircle className="w-4 h-4" />
-                                    )}
-                                  </button>
-                                </div>
-                              )}
+          {/* Table */}
+          <div className="overflow-x-auto bg-card border border-border rounded-xl">
+            <table className="w-full text-sm">
+              <thead className="bg-accent/50 border-b border-border">
+                <tr className="text-left text-xs text-muted-foreground">
+                  <th className="px-3 py-3 font-medium">Pelanggan</th>
+                  <th className="px-3 py-3 font-medium">Paket</th>
+                  <th className="px-3 py-3 font-medium">Area</th>
+                  <th className="px-3 py-3 font-medium">Status</th>
+                  <th className="px-3 py-3 font-medium">Expired</th>
+                  <th className="px-3 py-3 font-medium text-right">Tagihan</th>
+                  <th className="px-3 py-3 font-medium text-center">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {visible.map(u => (
+                  <Fragment key={u.id}>
+                    <tr className="hover:bg-accent/30 transition-colors">
+                      {/* Pelanggan */}
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
+                            className="p-0.5 rounded hover:bg-muted"
+                          >
+                            <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${expandedUser === u.id ? 'rotate-180' : ''}`} />
+                          </button>
+                          <div className="min-w-0">
+                            <div className="font-semibold text-foreground truncate">{u.name}</div>
+                            <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <span className="font-mono">{u.customerId || u.username}</span>
+                              <span>·</span>
+                              <span className="flex items-center gap-0.5"><Phone className="w-3 h-3" />{u.phone || '—'}</span>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground text-center py-4">Tidak ada invoice</div>
+                        </div>
+                      </td>
+                      {/* Paket */}
+                      <td className="px-3 py-3">
+                        {u.profile ? (
+                          <div>
+                            <div className="text-xs font-medium text-foreground flex items-center gap-1">
+                              <Wifi className="w-3 h-3 text-muted-foreground" />
+                              {u.profile.name}
+                            </div>
+                            <div className="text-xs text-muted-foreground">{fmtRp(u.profile.price)}/bln</div>
+                          </div>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* Area */}
+                      <td className="px-3 py-3">
+                        {u.area ? (
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {u.area.name}
+                          </span>
+                        ) : <span className="text-muted-foreground">—</span>}
+                      </td>
+                      {/* Status */}
+                      <td className="px-3 py-3">
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                          u.status === 'active' ? 'bg-emerald-500/10 text-emerald-600' :
+                          u.status === 'isolated' || u.status === 'suspended' ? 'bg-red-500/10 text-red-600' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {u.status === 'active' ? 'Aktif' : u.status === 'isolated' || u.status === 'suspended' ? 'Isolir' : u.status}
+                        </span>
+                      </td>
+                      {/* Expired */}
+                      <td className="px-3 py-3">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {fmtDate(u.expiredAt)}
+                        </span>
+                      </td>
+                      {/* Tagihan */}
+                      <td className="px-3 py-3 text-right">
+                        {!u.is_paid ? (
+                          <div>
+                            <div className="text-sm font-bold text-orange-600">{fmtRp(u.unpaid_amount)}</div>
+                            <div className="text-xs text-muted-foreground">{u.unpaid_count} invoice</div>
+                          </div>
+                        ) : u.invoices?.length > 0 ? (
+                          <span className="text-xs text-emerald-600 font-medium">Lunas</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {/* Aksi */}
+                      <td className="px-3 py-3">
+                        <div className="flex items-center justify-center">
+                          <button
+                            onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)}
+                            className="text-xs text-emerald-600 font-medium hover:underline"
+                          >
+                            {u.invoices?.length || 0} invoice
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {/* Expanded invoice rows */}
+                    {expandedUser === u.id && (
+                      <tr className="bg-accent/20">
+                        <td colSpan={7} className="px-3 py-3">
+                          {/* Customer detail */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Username:</span>{' '}
+                              <span className="font-mono text-foreground">{u.username}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Tipe:</span>{' '}
+                              <span className="text-foreground">{u.subscriptionType === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">Koneksi:</span>{' '}
+                              <span className="text-foreground">{u.connectionType || 'PPPOE'}</span>
+                            </div>
+                            {u.router && (
+                              <div>
+                                <span className="text-muted-foreground">Router:</span>{' '}
+                                <span className="text-foreground">{u.router.name}</span>
+                              </div>
+                            )}
+                            {u.address && (
+                              <div className="col-span-2 md:col-span-4">
+                                <span className="text-muted-foreground">Alamat:</span>{' '}
+                                <span className="text-foreground">{u.address}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Invoice table */}
+                          {u.invoices && u.invoices.length > 0 ? (
+                            <div className="overflow-x-auto rounded-lg border border-border">
+                              <table className="w-full text-xs">
+                                <thead className="bg-card border-b border-border">
+                                  <tr className="text-left text-muted-foreground">
+                                    <th className="px-3 py-2 font-medium">No. Invoice</th>
+                                    <th className="px-3 py-2 font-medium">Jatuh Tempo</th>
+                                    <th className="px-3 py-2 font-medium">Status</th>
+                                    <th className="px-3 py-2 font-medium text-right">Jumlah</th>
+                                    <th className="px-3 py-2 font-medium text-center">Aksi</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border">
+                                  {u.invoices.map((inv: any) => (
+                                    <tr key={inv.id} className="bg-card/50">
+                                      <td className="px-3 py-2 font-mono text-foreground">#{inv.invoiceNumber}</td>
+                                      <td className="px-3 py-2 text-muted-foreground">{fmtDate(inv.dueDate)}</td>
+                                      <td className="px-3 py-2">
+                                        {inv.status === 'PAID' ? (
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/10 text-emerald-600">Lunas</span>
+                                        ) : (
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-500/10 text-orange-600">{inv.status}</span>
+                                        )}
+                                      </td>
+                                      <td className="px-3 py-2 text-right font-bold text-foreground">{fmtRp(inv.amount)}</td>
+                                      <td className="px-3 py-2">
+                                        <div className="flex items-center justify-center gap-1">
+                                          {/* Unpaid: Cash + TF buttons */}
+                                          {inv.status !== 'PAID' && (
+                                            <>
+                                              <button
+                                                onClick={() => {
+                                                  setPayModal({ invoiceId: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amount, customerName: u.name });
+                                                  setPaymentMethod('cash');
+                                                  setProofPreview(null);
+                                                  setProofFile(null);
+                                                }}
+                                                className="px-2 py-1 text-[11px] rounded bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-all flex items-center gap-1"
+                                                title="Bayar Tunai"
+                                              >
+                                                <Wallet className="w-3 h-3" />
+                                                Cash
+                                              </button>
+                                              <button
+                                                onClick={() => {
+                                                  setPayModal({ invoiceId: inv.id, invoiceNumber: inv.invoiceNumber, amount: inv.amount, customerName: u.name });
+                                                  setPaymentMethod('transfer');
+                                                  setProofPreview(null);
+                                                  setProofFile(null);
+                                                }}
+                                                className="px-2 py-1 text-[11px] rounded bg-blue-600 text-white font-medium hover:bg-blue-700 transition-all flex items-center gap-1"
+                                                title="Upload Bukti Transfer"
+                                              >
+                                                <Upload className="w-3 h-3" />
+                                                TF
+                                              </button>
+                                            </>
+                                          )}
+                                          {/* Paid: Print + WhatsApp buttons */}
+                                          {inv.status === 'PAID' && (
+                                            <>
+                                              <div className="relative" ref={showPrintMenu === inv.id ? printMenuRef : null}>
+                                                <button
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowPrintMenu(showPrintMenu === inv.id ? null : inv.id);
+                                                  }}
+                                                  disabled={actionLoading?.startsWith('a4-') && actionLoading === `a4-${inv.id}` || actionLoading?.startsWith('thermal-') && actionLoading === `thermal-${inv.id}` || actionLoading?.startsWith('bt-') && actionLoading === `bt-${inv.id}`}
+                                                  className="p-1 rounded text-muted-foreground hover:bg-accent transition-all"
+                                                  title="Cetak"
+                                                >
+                                                  {actionLoading === `a4-${inv.id}` || actionLoading === `thermal-${inv.id}` || actionLoading === `bt-${inv.id}` ? (
+                                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                  ) : (
+                                                    <Printer className="w-3.5 h-3.5" />
+                                                  )}
+                                                </button>
+                                                {showPrintMenu === inv.id && (
+                                                  <div className="absolute right-0 top-full mt-1 z-20 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[180px]">
+                                                    <button
+                                                      onClick={(e) => { e.stopPropagation(); handlePrintA4(inv.id); }}
+                                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
+                                                    >
+                                                      <FileText className="w-3.5 h-3.5" />
+                                                      Cetak Invoice A4
+                                                    </button>
+                                                    <button
+                                                      onClick={(e) => { e.stopPropagation(); handlePrintThermal(inv.id); }}
+                                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
+                                                    >
+                                                      <Printer className="w-3.5 h-3.5" />
+                                                      Cetak Struk 80mm
+                                                    </button>
+                                                    <button
+                                                      onClick={(e) => { e.stopPropagation(); handlePrintBluetooth(inv.id); }}
+                                                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-foreground hover:bg-accent text-left"
+                                                    >
+                                                      <Bluetooth className="w-3.5 h-3.5" />
+                                                      Cetak via Bluetooth
+                                                    </button>
+                                                  </div>
+                                                )}
+                                              </div>
+                                              <button
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleSendWhatsApp(inv.id, inv.invoiceNumber, u.name);
+                                                }}
+                                                disabled={actionLoading === `wa-${inv.id}`}
+                                                className="p-1 rounded text-muted-foreground hover:text-green-600 hover:bg-accent transition-all"
+                                                title="Kirim Bukti Lunas via WhatsApp"
+                                              >
+                                                {actionLoading === `wa-${inv.id}` ? (
+                                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                                ) : (
+                                                  <MessageCircle className="w-3.5 h-3.5" />
+                                                )}
+                                              </button>
+                                            </>
+                                          )}
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          ) : (
+                            <div className="text-xs text-muted-foreground text-center py-3">Tidak ada invoice</div>
+                          )}
+                        </td>
+                      </tr>
                     )}
-                  </div>
-                )}
-              </div>
-            ))}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           {visibleCount < filtered.length && (
             <div className="text-center mt-4">
               <button
-                onClick={() => setVisibleCount(c => c + 20)}
-                className="px-6 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent"
+                onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
+                className="px-6 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent flex items-center gap-2"
               >
-                Muat {Math.min(20, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
+                <ChevronDown className="w-4 h-4" /> Muat {Math.min(PAGE_SIZE, filtered.length - visibleCount)} lagi ({visibleCount}/{filtered.length})
               </button>
             </div>
           )}
@@ -539,21 +660,25 @@ export default function CollectorBillingPage() {
               <label className="block text-sm font-medium text-foreground mb-2">Metode Pembayaran</label>
               <div className="flex gap-2">
                 {[
-                  { key: 'cash', label: 'Tunai' },
-                  { key: 'transfer', label: 'Transfer' },
-                ].map(m => (
-                  <button
-                    key={m.key}
-                    onClick={() => { setPaymentMethod(m.key); if (m.key === 'cash') { setProofPreview(null); setProofFile(null); } }}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                      paymentMethod === m.key
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-accent text-muted-foreground hover:bg-accent/80'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
+                  { key: 'cash', label: 'Tunai', icon: Wallet },
+                  { key: 'transfer', label: 'Transfer', icon: Upload },
+                ].map(m => {
+                  const Icon = m.icon;
+                  return (
+                    <button
+                      key={m.key}
+                      onClick={() => { setPaymentMethod(m.key); if (m.key === 'cash') { setProofPreview(null); setProofFile(null); } }}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                        paymentMethod === m.key
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-accent text-muted-foreground hover:bg-accent/80'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {m.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

@@ -22,7 +22,7 @@ interface ProofItem {
   collector_username: string;
 }
 
-const STEP = 10;
+const STEP = 50;
 
 export default function AdminPaymentProofsPage() {
   const [proofs, setProofs] = useState<ProofItem[]>([]);

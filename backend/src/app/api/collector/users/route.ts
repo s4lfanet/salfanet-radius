@@ -34,6 +34,12 @@ export async function GET(req: NextRequest) {
         phone: true,
         address: true,
         status: true,
+        expiredAt: true,
+        subscriptionType: true,
+        connectionType: true,
+        profile: { select: { id: true, name: true, price: true } },
+        area: { select: { id: true, name: true } },
+        router: { select: { id: true, name: true } },
       },
       orderBy: { name: 'asc' },
     });

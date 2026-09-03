@@ -20,7 +20,7 @@ interface ProofItem {
   is_my_upload: boolean;
 }
 
-const STEP = 10;
+const STEP = 50;
 
 export default function CollectorProofsPage() {
   const [proofs, setProofs] = useState<ProofItem[]>([]);
