@@ -2,17 +2,17 @@ packages:
   - 'frontend'
   - 'backend'
   - 'packages/*'
-onlyBuiltDependencies:
-  - '@parcel/watcher'
-  - '@prisma/client'
-  - '@prisma/engines'
-  - '@swc/core'
-  - '@whiskeysockets/baileys'
-  - 'core-js'
-  - 'cpu-features'
-  - 'esbuild'
-  - 'prisma'
-  - 'protobufjs'
-  - 'sharp'
-  - 'ssh2'
-  - 'unrs-resolver'
+allowBuilds:
+  '@parcel/watcher': true
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@swc/core': true
+  '@whiskeysockets/baileys': true
+  'core-js': true
+  'cpu-features': true
+  'esbuild': true
+  'prisma': true
+  'protobufjs': true
+  'sharp': true
+  'ssh2': true
+  'unrs-resolver': true
