@@ -166,7 +166,7 @@ CRON_SECRET="${CRON_SECRET}"
 # Node Environment
 NODE_ENV="production"
 
-# Redis Cache (Opsional - aktifkan dengan: bash vps-install/install-redis.sh)
+# Redis Cache (auto-enabled by install-redis.sh during installation)
 # REDIS_URL=redis://127.0.0.1:6379
 
 # GenieACS Configuration (optional - configure in admin panel)

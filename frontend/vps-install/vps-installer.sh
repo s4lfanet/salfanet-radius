@@ -272,6 +272,14 @@ run_installation() {
         exit 1
     }
     
+    # Step 4b: Redis Installation (cache + rate limiting)
+    print_info "Running Step 4b: Redis Installation..."
+    source "$SCRIPT_DIR/install-redis.sh"
+    install_redis || {
+        print_warning "Redis installation failed — application will use in-memory fallback"
+        export REDIS_INSTALLED="false"
+    }
+
     # Step 5: FreeRADIUS Installation
     print_info "Running Step 5: FreeRADIUS Installation..."
     source "$SCRIPT_DIR/install-freeradius.sh"
@@ -443,7 +451,7 @@ tail -f /var/log/freeradius/radius.log  # Logs
 2. Login admin, ganti password
 3. Tambahkan NAS/router di pengaturan RADIUS
 4. Bagikan link APK ke customer: $([ -n "${VPS_DOMAIN:-}" ] && echo "https://${VPS_DOMAIN}/downloads/salfanet-radius.apk" || echo "http://${VPS_IP}/downloads/salfanet-radius.apk")
-$([ "${REDIS_INSTALLED:-false}" = "false" ] && echo "5. [Opsional] Install Redis: bash ${APP_DIR}/frontend/vps-install/install-redis.sh" || echo "")
+$([ "${REDIS_INSTALLED:-false}" = "false" ] && echo "5. [Opsional] Install Redis: bash ${APP_DIR}/frontend/vps-install/install-redis.sh" || echo "5. Redis: sudah terinstall dan aktif")
 $([ "${DEPLOY_ENV}" = "vps" ] && [ -z "${VPS_DOMAIN:-}" ] && echo "6. Setup SSL: certbot --nginx -d yourdomain.com" || \
   echo "6. [Opsional] Setup Cloudflare Tunnel untuk akses dari internet")
 
