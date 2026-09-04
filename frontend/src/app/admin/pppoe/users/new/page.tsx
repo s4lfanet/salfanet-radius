@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { showSuccess, showError } from '@/lib/sweetalert';
@@ -253,7 +253,7 @@ export default function NewPppoeUserPage() {
           <ArrowLeft className="h-3.5 w-3.5" />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc]">
+          <h1 className="text-lg font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
             Registrasi Pelanggan Baru
           </h1>
           <p className="text-[10px] text-muted-foreground">PSB — Pasang Baru</p>

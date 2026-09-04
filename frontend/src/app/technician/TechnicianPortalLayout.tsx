@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
@@ -362,7 +362,7 @@ function NotificationBell() {
       >
         <Bell className="w-4 h-4 text-muted-foreground" />
         {count > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(255,0,0,0.5)] animate-bounce">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-md shadow-red-500/20 animate-bounce">
             {count > 9 ? '9+' : count}
           </span>
         )}

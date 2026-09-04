@@ -28,25 +28,25 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
 
     const colorMap = {
       cyan: {
-        border: 'border-cyan-500/30',
-        focusBorder: 'focus:border-cyan-400',
-        focusRing: 'focus:ring-cyan-400/30',
-        focusGlow: 'focus:shadow-[0_0_20px_rgba(0,255,255,0.2)]',
-        labelColor: 'text-cyan-400',
+        border: 'border-brand-500/30',
+        focusBorder: 'focus:border-brand-500',
+        focusRing: 'focus:ring-brand-500/30',
+        focusGlow: 'focus:shadow-md focus:shadow-brand-500/20',
+        labelColor: 'text-brand-600 dark:text-brand-400',
       },
       magenta: {
         border: 'border-pink-500/30',
         focusBorder: 'focus:border-pink-400',
         focusRing: 'focus:ring-pink-400/30',
-        focusGlow: 'focus:shadow-[0_0_20px_rgba(255,0,255,0.2)]',
+        focusGlow: 'focus:shadow-md shadow-pink-500/20',
         labelColor: 'text-pink-400',
       },
       purple: {
-        border: 'border-purple-500/30',
-        focusBorder: 'focus:border-purple-400',
-        focusRing: 'focus:ring-purple-400/30',
-        focusGlow: 'focus:shadow-[0_0_20px_rgba(147,51,234,0.2)]',
-        labelColor: 'text-purple-400',
+        border: 'border-violet-500/30',
+        focusBorder: 'focus:border-violet-400',
+        focusRing: 'focus:ring-violet-400/30',
+        focusGlow: 'focus:shadow-md shadow-violet-500/20',
+        labelColor: 'text-violet-600 dark:text-violet-400',
       },
     };
 
@@ -59,17 +59,17 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
         colorMap[neonColor].focusGlow
       ),
       neon: cn(
-        'bg-black/50 backdrop-blur-sm',
+        'bg-input/50 backdrop-blur-sm',
         'border-2',
         colorMap[neonColor].border,
         colorMap[neonColor].focusBorder,
-        'focus:shadow-[0_0_30px_rgba(0,255,255,0.3),inset_0_0_20px_rgba(0,255,255,0.05)]'
+        'focus:shadow-lg focus:shadow-brand-500/30'
       ),
       glass: cn(
-        'bg-white/5 backdrop-blur-xl',
-        'border border-white/10',
-        'focus:border-white/30',
-        'focus:bg-white/10'
+        'bg-card/40 backdrop-blur-xl',
+        'border border-border/50',
+        'focus:border-border',
+        'focus:bg-muted/50'
       ),
     };
 
@@ -128,9 +128,9 @@ const CyberInput = React.forwardRef<HTMLInputElement, CyberInputProps>(
           <div className={cn(
             'absolute bottom-0 left-1/2 h-0.5 bg-gradient-to-r transition-all duration-300',
             isFocused ? 'w-full -translate-x-1/2' : 'w-0 -translate-x-1/2',
-            neonColor === 'cyan' && 'from-cyan-400 via-cyan-500 to-cyan-400',
+            neonColor === 'cyan' && 'from-brand-400 via-brand-500 to-cyan-400',
             neonColor === 'magenta' && 'from-pink-400 via-pink-500 to-pink-400',
-            neonColor === 'purple' && 'from-purple-400 via-purple-500 to-purple-400'
+            neonColor === 'purple' && 'from-violet-400 via-violet-500 to-purple-400'
           )} />
         </div>
         {error && (
@@ -160,10 +160,10 @@ const CyberTextarea = React.forwardRef<HTMLTextAreaElement, CyberTextareaProps>(
 
     const colorMap = {
       cyan: {
-        border: 'border-cyan-500/30',
-        focusBorder: 'focus:border-cyan-400',
-        focusRing: 'focus:ring-cyan-400/30',
-        labelColor: 'text-cyan-400',
+        border: 'border-brand-500/30',
+        focusBorder: 'focus:border-brand-500',
+        focusRing: 'focus:ring-brand-500/30',
+        labelColor: 'text-brand-600 dark:text-brand-400',
       },
       magenta: {
         border: 'border-pink-500/30',
@@ -172,10 +172,10 @@ const CyberTextarea = React.forwardRef<HTMLTextAreaElement, CyberTextareaProps>(
         labelColor: 'text-pink-400',
       },
       purple: {
-        border: 'border-purple-500/30',
-        focusBorder: 'focus:border-purple-400',
-        focusRing: 'focus:ring-purple-400/30',
-        labelColor: 'text-purple-400',
+        border: 'border-violet-500/30',
+        focusBorder: 'focus:border-violet-400',
+        focusRing: 'focus:ring-violet-400/30',
+        labelColor: 'text-violet-600 dark:text-violet-400',
       },
     };
 
@@ -234,9 +234,9 @@ const CyberSelect = React.forwardRef<HTMLSelectElement, CyberSelectProps>(
 
     const colorMap = {
       cyan: {
-        border: 'border-cyan-500/30',
-        focusBorder: 'focus:border-cyan-400',
-        labelColor: 'text-cyan-400',
+        border: 'border-brand-500/30',
+        focusBorder: 'focus:border-brand-500',
+        labelColor: 'text-brand-600 dark:text-brand-400',
       },
       magenta: {
         border: 'border-pink-500/30',
@@ -244,9 +244,9 @@ const CyberSelect = React.forwardRef<HTMLSelectElement, CyberSelectProps>(
         labelColor: 'text-pink-400',
       },
       purple: {
-        border: 'border-purple-500/30',
-        focusBorder: 'focus:border-purple-400',
-        labelColor: 'text-purple-400',
+        border: 'border-violet-500/30',
+        focusBorder: 'focus:border-violet-400',
+        labelColor: 'text-violet-600 dark:text-violet-400',
       },
     };
 

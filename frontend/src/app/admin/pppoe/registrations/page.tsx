@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -278,19 +278,19 @@ export default function RegistrationsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10" /></div>
+      <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" /></div>
     );
   }
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)] flex items-center gap-2">
-              <UserPlus className="w-6 h-6 text-[#00f7ff]" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+              <UserPlus className="w-6 h-6 text-brand-500" />
               {t('pppoe.registrationsTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('pppoe.registrationsSubtitle')}</p>
@@ -371,10 +371,10 @@ export default function RegistrationsPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3">
           {registrations.length === 0 ? (
-            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-6 text-center text-muted-foreground text-xs">{t('pppoe.noRegistrations')}</div>
+            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-6 text-center text-muted-foreground text-xs">{t('pppoe.noRegistrations')}</div>
           ) : (
             registrations.filter(reg => reg.status !== 'INSTALLED').map((reg) => (
-              <div key={reg.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+              <div key={reg.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-medium text-sm text-foreground">{reg.name}</p>
@@ -581,11 +581,11 @@ export default function RegistrationsPage() {
           {selectedRegistration && (
             <>
               <ModalBody className="space-y-4">
-                <div className="bg-[#00f7ff]/10 p-3 rounded-lg space-y-1.5 text-xs border border-[#00f7ff]/30">
+                <div className="bg-brand-500/10 p-3 rounded-lg space-y-1.5 text-xs border border-brand-500/30">
                   <div className="flex justify-between"><span className="text-muted-foreground">{t('common.name')}:</span><span className="font-medium text-foreground">{selectedRegistration.name}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">{t('common.phone')}:</span><span className="font-medium text-foreground">{selectedRegistration.phone}</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.profile')}:</span><span className="font-medium text-foreground">{selectedRegistration.profile.name}</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.username')}:</span><span className="font-mono text-[#00f7ff]">{customUsername || `${selectedRegistration.name.split(' ')[0].toLowerCase()}-${selectedRegistration.phone}`}</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">{t('pppoe.username')}:</span><span className="font-mono text-brand-500">{customUsername || `${selectedRegistration.name.split(' ')[0].toLowerCase()}-${selectedRegistration.phone}`}</span></div>
                 </div>
 
                 {/* Connection Type */}
@@ -593,7 +593,7 @@ export default function RegistrationsPage() {
                   <ModalLabel required>Tipe Koneksi</ModalLabel>
                   <div className="grid grid-cols-3 gap-2">
                     {(['PPPOE', 'STATIC_IP', 'HOTSPOT'] as const).map(ct => (
-                      <label key={ct} className={`flex items-center justify-center p-2 border rounded-lg cursor-pointer transition-all text-xs ${connectionType === ct ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_10px_rgba(0,247,255,0.2)]' : 'border-[#bc13fe]/30 hover:border-[#bc13fe]/50'}`}>
+                      <label key={ct} className={`flex items-center justify-center p-2 border rounded-lg cursor-pointer transition-all text-xs ${connectionType === ct ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'border-violet-500/30 hover:border-violet-500/50'}`}>
                         <input type="radio" name="connectionType" value={ct} checked={connectionType === ct} onChange={(e) => setConnectionType(e.target.value as 'PPPOE' | 'STATIC_IP' | 'HOTSPOT')} className="sr-only" />
                         {ct === 'PPPOE' ? 'PPPoE' : ct === 'STATIC_IP' ? 'Static IP' : 'Hotspot'}
                       </label>
@@ -634,12 +634,12 @@ export default function RegistrationsPage() {
                 <div>
                   <ModalLabel required>{t('pppoe.subscriptionType')}</ModalLabel>
                   <div className="space-y-2">
-                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'POSTPAID' ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_10px_rgba(0,247,255,0.2)]' : 'border-[#bc13fe]/30 hover:border-[#bc13fe]/50'}`}>
-                      <input type="radio" name="subscriptionType" value="POSTPAID" checked={subscriptionType === 'POSTPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'POSTPAID')} className="w-4 h-4 text-[#00f7ff] border-[#bc13fe]/50 bg-[#0a0520] focus:ring-[#00f7ff]" />
+                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'POSTPAID' ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'border-violet-500/30 hover:border-violet-500/50'}`}>
+                      <input type="radio" name="subscriptionType" value="POSTPAID" checked={subscriptionType === 'POSTPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'POSTPAID')} className="w-4 h-4 text-brand-500 border-violet-500/50 bg-card focus:ring-brand-500" />
                       <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">📅 {t('pppoe.postpaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.monthlyBillingDesc')}</div></div>
                     </label>
-                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'PREPAID' ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_10px_rgba(0,247,255,0.2)]' : 'border-[#bc13fe]/30 hover:border-[#bc13fe]/50'}`}>
-                      <input type="radio" name="subscriptionType" value="PREPAID" checked={subscriptionType === 'PREPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'PREPAID')} className="w-4 h-4 text-[#00f7ff] border-[#bc13fe]/50 bg-[#0a0520] focus:ring-[#00f7ff]" />
+                    <label className={`flex items-center p-2.5 border rounded-lg cursor-pointer transition-all ${subscriptionType === 'PREPAID' ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_10px_rgba(6,182,212,0.2)]' : 'border-violet-500/30 hover:border-violet-500/50'}`}>
+                      <input type="radio" name="subscriptionType" value="PREPAID" checked={subscriptionType === 'PREPAID'} onChange={(e) => setSubscriptionType(e.target.value as 'PREPAID')} className="w-4 h-4 text-brand-500 border-violet-500/50 bg-card focus:ring-brand-500" />
                       <div className="ml-3 flex-1"><div className="text-xs font-medium text-foreground">⏰ {t('pppoe.prepaid')}</div><div className="text-[10px] text-muted-foreground">{t('pppoe.prepaidValidityDesc')}</div></div>
                     </label>
                   </div>
@@ -648,7 +648,7 @@ export default function RegistrationsPage() {
                   <div>
                     <ModalLabel required>📅 {t('pppoe.billingDate')}</ModalLabel>
                     <ModalSelect value={billingDay} onChange={(e) => setBillingDay(e.target.value)}>
-                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (<option key={day} value={day} className="dark:bg-[#0a0520]">{t('pppoe.dayOf')} {day}</option>))}
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (<option key={day} value={day} className="dark:bg-card">{t('pppoe.dayOf')} {day}</option>))}
                     </ModalSelect>
                     <p className="text-[10px] text-muted-foreground mt-1">{t('pppoe.monthlyDueDateLabel')}</p>
                   </div>
@@ -660,27 +660,27 @@ export default function RegistrationsPage() {
                 <div>
                   <ModalLabel>Area</ModalLabel>
                   <ModalSelect value={approveAreaId} onChange={(e) => setApproveAreaId(e.target.value)}>
-                    <option value="" className="dark:bg-[#0a0520]">-- Pilih Area (opsional) --</option>
-                    {areas.map((a) => <option key={a.id} value={a.id} className="dark:bg-[#0a0520]">{a.name}</option>)}
+                    <option value="" className="dark:bg-card">-- Pilih Area (opsional) --</option>
+                    {areas.map((a) => <option key={a.id} value={a.id} className="dark:bg-card">{a.name}</option>)}
                   </ModalSelect>
                   {selectedRegistration.area && (
-                    <p className="text-[10px] text-[#00f7ff] mt-1">💡 Dipilih saat daftar: <strong>{selectedRegistration.area.name}</strong></p>
+                    <p className="text-[10px] text-brand-500 mt-1">💡 Dipilih saat daftar: <strong>{selectedRegistration.area.name}</strong></p>
                   )}
                 </div>
                 <div>
                   <ModalLabel>Router / MikroTik</ModalLabel>
                   <ModalSelect value={approveRouterId} onChange={(e) => setApproveRouterId(e.target.value)}>
-                    <option value="" className="dark:bg-[#0a0520]">-- Pilih Router (opsional) --</option>
-                    {routers.map((r) => <option key={r.id} value={r.id} className="dark:bg-[#0a0520]">{r.name} ({r.ipAddress})</option>)}
+                    <option value="" className="dark:bg-card">-- Pilih Router (opsional) --</option>
+                    {routers.map((r) => <option key={r.id} value={r.id} className="dark:bg-card">{r.name} ({r.ipAddress})</option>)}
                   </ModalSelect>
                   <p className="text-[10px] text-muted-foreground mt-1">Router MikroTik tempat pelanggan ini terhubung</p>
                 </div>
                 {subscriptionType === 'PREPAID' && (
-                  <div className="bg-[#00ff88]/10 border border-[#00ff88]/30 rounded-lg p-3 space-y-1">
-                    <div className="text-xs font-medium text-[#00ff88]">💡 Rincian Tagihan Prepaid:</div>
-                    <div className="flex justify-between text-xs text-[#00ff88]"><span>{t('pppoe.installationFee')}:</span><span>Rp {(installationFee ? parseFloat(installationFee) : 0).toLocaleString('id-ID')}</span></div>
-                    <div className="flex justify-between text-xs text-[#00ff88]"><span>{t('pppoe.packageFee')}:</span><span>Rp {selectedRegistration.profile.price.toLocaleString('id-ID')}</span></div>
-                    <div className="flex justify-between text-sm font-bold text-[#00ff88] pt-1 border-t border-[#00ff88]/30"><span>{t('pppoe.totalBilling')}:</span><span>Rp {((installationFee ? parseFloat(installationFee) : 0) + selectedRegistration.profile.price).toLocaleString('id-ID')}</span></div>
+                  <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 space-y-1">
+                    <div className="text-xs font-medium text-green-500">💡 Rincian Tagihan Prepaid:</div>
+                    <div className="flex justify-between text-xs text-green-500"><span>{t('pppoe.installationFee')}:</span><span>Rp {(installationFee ? parseFloat(installationFee) : 0).toLocaleString('id-ID')}</span></div>
+                    <div className="flex justify-between text-xs text-green-500"><span>{t('pppoe.packageFee')}:</span><span>Rp {selectedRegistration.profile.price.toLocaleString('id-ID')}</span></div>
+                    <div className="flex justify-between text-sm font-bold text-green-500 pt-1 border-t border-green-500/30"><span>{t('pppoe.totalBilling')}:</span><span>Rp {((installationFee ? parseFloat(installationFee) : 0) + selectedRegistration.profile.price).toLocaleString('id-ID')}</span></div>
                   </div>
                 )}
                 {subscriptionType === 'POSTPAID' && (

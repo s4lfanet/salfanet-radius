@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -93,22 +93,22 @@ export default function TopUpRequestPage() {
       <div className="mb-6">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-sm text-[#00f7ff] hover:text-[#00f7ff]/80 mb-4 transition-colors"
+          className="flex items-center gap-2 text-sm text-brand-500 hover:text-brand-500/80 mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           {t('nav.backToDashboard')}
         </button>
 
-        <CyberCard className="p-5 bg-gradient-to-r from-[#bc13fe]/20 to-[#00f7ff]/20">
+        <CyberCard className="p-5 bg-gradient-to-r from-violet-500/20 to-brand-500/20">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#bc13fe]/30 rounded-xl border border-[#bc13fe]/50 shadow-[0_0_15px_rgba(188,19,254,0.4)] shrink-0 flex items-center justify-center">
-              <DollarSign className="w-7 h-7 text-[#bc13fe]" />
+            <div className="p-3 bg-violet-500/30 rounded-xl border border-violet-500/50 shadow-[0_0_15px_rgba(139,92,246,0.4)] shrink-0 flex items-center justify-center">
+              <DollarSign className="w-7 h-7 text-violet-500" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00f7ff] to-white drop-shadow-[0_0_20px_rgba(0,247,255,0.5)]">
+              <h1 className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 to-white drop-shadow-[0_0_20px_rgba(6,182,212,0.5)]">
                 {t('customer.topupRequest')}
               </h1>
-              <p className="text-[#e0d0ff]/70 text-sm mt-0.5">
+              <p className="text-muted-foreground/70 text-sm mt-0.5">
                 {t('customer.topupRequestDesc')}
               </p>
             </div>
@@ -120,36 +120,36 @@ export default function TopUpRequestPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Form â€” takes 2/3 on desktop */}
         <div className="lg:col-span-2">
-        <CyberCard className="p-6 bg-card/80 backdrop-blur-xl border-2 border-[#bc13fe]/30">
+        <CyberCard className="p-6 bg-card/80 backdrop-blur-xl border-2 border-violet-500/30">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Amount */}
             <div>
-              <label className="block text-sm font-bold text-[#00f7ff] mb-2 uppercase tracking-wider">
+              <label className="block text-sm font-bold text-brand-500 mb-2 uppercase tracking-wider">
                 {t('customer.topupAmount')} <span className="text-red-400">*</span>
               </label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#e0d0ff]/60">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/60">
                   Rp
                 </span>
                 <input
                   type="number"
                   value={formData.amount}
                   onChange={(e) => setFormData(prev => ({ ...prev, amount: e.target.value }))}
-                  className="w-full pl-12 pr-4 py-3 bg-slate-900/80 border-2 border-[#bc13fe]/40 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 focus:shadow-[0_0_15px_rgba(0,247,255,0.2)] transition-all"
+                  className="w-full pl-12 pr-4 py-3 bg-slate-900/80 border-2 border-violet-500/40 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all"
                   placeholder="10000"
                   required
                   min="10000"
                   step="1000"
                 />
               </div>
-              <p className="text-xs text-[#e0d0ff]/50 mt-2">
+              <p className="text-xs text-muted-foreground/50 mt-2">
                 {t('customer.minimumTopupLabel')}
               </p>
             </div>
 
             {/* Payment Method */}
             <div>
-              <label className="block text-sm font-bold text-[#00f7ff] mb-3 uppercase tracking-wider">
+              <label className="block text-sm font-bold text-brand-500 mb-3 uppercase tracking-wider">
                 {t('customer.paymentMethod')} <span className="text-red-400">*</span>
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -157,13 +157,13 @@ export default function TopUpRequestPage() {
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'TRANSFER' }))}
                   className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'TRANSFER'
-                      ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_20px_rgba(0,247,255,0.3)]'
-                      : 'border-[#bc13fe]/30 bg-slate-900/50 hover:border-[#00f7ff]/50'
+                      ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                      : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
                     }`}
                 >
-                  <CreditCard className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'TRANSFER' ? 'text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.8)]' : 'text-[#e0d0ff]/50'
+                  <CreditCard className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'TRANSFER' ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-muted-foreground/50'
                     }`} />
-                  <p className={`text-xs font-bold ${formData.paymentMethod === 'TRANSFER' ? 'text-[#00f7ff]' : 'text-[#e0d0ff]/50'
+                  <p className={`text-xs font-bold ${formData.paymentMethod === 'TRANSFER' ? 'text-brand-500' : 'text-muted-foreground/50'
                     }`}>
                     {t('customer.bankTransfer')}
                   </p>
@@ -173,13 +173,13 @@ export default function TopUpRequestPage() {
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'EWALLET' }))}
                   className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'EWALLET'
-                      ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_20px_rgba(0,247,255,0.3)]'
-                      : 'border-[#bc13fe]/30 bg-slate-900/50 hover:border-[#00f7ff]/50'
+                      ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                      : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
                     }`}
                 >
-                  <Smartphone className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'EWALLET' ? 'text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.8)]' : 'text-[#e0d0ff]/50'
+                  <Smartphone className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'EWALLET' ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-muted-foreground/50'
                     }`} />
-                  <p className={`text-xs font-bold ${formData.paymentMethod === 'EWALLET' ? 'text-[#00f7ff]' : 'text-[#e0d0ff]/50'
+                  <p className={`text-xs font-bold ${formData.paymentMethod === 'EWALLET' ? 'text-brand-500' : 'text-muted-foreground/50'
                     }`}>
                     {t('customer.ewallet')}
                   </p>
@@ -189,13 +189,13 @@ export default function TopUpRequestPage() {
                   type="button"
                   onClick={() => setFormData(prev => ({ ...prev, paymentMethod: 'CASH' }))}
                   className={`p-4 rounded-xl border-2 transition-all ${formData.paymentMethod === 'CASH'
-                      ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_20px_rgba(0,247,255,0.3)]'
-                      : 'border-[#bc13fe]/30 bg-slate-900/50 hover:border-[#00f7ff]/50'
+                      ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.3)]'
+                      : 'border-violet-500/30 bg-slate-900/50 hover:border-brand-500/50'
                     }`}
                 >
-                  <Banknote className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'CASH' ? 'text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.8)]' : 'text-[#e0d0ff]/50'
+                  <Banknote className={`w-6 h-6 mx-auto mb-2 ${formData.paymentMethod === 'CASH' ? 'text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'text-muted-foreground/50'
                     }`} />
-                  <p className={`text-xs font-bold ${formData.paymentMethod === 'CASH' ? 'text-[#00f7ff]' : 'text-[#e0d0ff]/50'
+                  <p className={`text-xs font-bold ${formData.paymentMethod === 'CASH' ? 'text-brand-500' : 'text-muted-foreground/50'
                     }`}>
                     {t('customer.cash')}
                   </p>
@@ -206,10 +206,10 @@ export default function TopUpRequestPage() {
             {/* Proof Upload */}
             {formData.paymentMethod !== 'CASH' && (
               <div>
-                <label className="block text-sm font-bold text-[#00f7ff] mb-3 uppercase tracking-wider">
+                <label className="block text-sm font-bold text-brand-500 mb-3 uppercase tracking-wider">
                   {t('customer.paymentProof')} <span className="text-red-400">*</span>
                 </label>
-                <div className="border-2 border-dashed border-[#bc13fe]/40 rounded-xl p-6 text-center hover:border-[#00f7ff]/50 transition-colors bg-slate-900/50">
+                <div className="border-2 border-dashed border-violet-500/40 rounded-xl p-6 text-center hover:border-brand-500/50 transition-colors bg-slate-900/50">
                   <input
                     type="file"
                     accept="image/*"
@@ -218,11 +218,11 @@ export default function TopUpRequestPage() {
                     id="proof-upload"
                   />
                   <label htmlFor="proof-upload" className="cursor-pointer">
-                    <Upload className="w-12 h-12 mx-auto mb-3 text-[#bc13fe]" />
-                    <p className="text-sm text-[#00f7ff] font-bold">
+                    <Upload className="w-12 h-12 mx-auto mb-3 text-violet-500" />
+                    <p className="text-sm text-brand-500 font-bold">
                       {formData.proofFile ? formData.proofFile.name : t('customer.uploadProof')}
                     </p>
-                    <p className="text-xs text-[#e0d0ff]/50 mt-2">
+                    <p className="text-xs text-muted-foreground/50 mt-2">
                       {t('customer.fileFormat')}
                     </p>
                   </label>
@@ -232,13 +232,13 @@ export default function TopUpRequestPage() {
 
             {/* Note */}
             <div>
-              <label className="block text-sm font-bold text-[#00f7ff] mb-2 uppercase tracking-wider">
+              <label className="block text-sm font-bold text-brand-500 mb-2 uppercase tracking-wider">
                 {t('customer.note')} ({t('common.optional')})
               </label>
               <textarea
                 value={formData.note}
                 onChange={(e) => setFormData(prev => ({ ...prev, note: e.target.value }))}
-                className="w-full px-4 py-3 bg-slate-900/80 border-2 border-[#bc13fe]/40 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 focus:shadow-[0_0_15px_rgba(0,247,255,0.2)] transition-all min-h-[100px]"
+                className="w-full px-4 py-3 bg-slate-900/80 border-2 border-violet-500/40 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 focus:shadow-[0_0_15px_rgba(6,182,212,0.2)] transition-all min-h-[100px]"
                 placeholder={t('customer.notePlaceholder')}
               />
             </div>
@@ -278,13 +278,13 @@ export default function TopUpRequestPage() {
 
         {/* Info panel â€” 1/3 on desktop, full-width below form on mobile */}
         <div className="lg:col-span-1">
-          <div className="bg-[#00f7ff]/10 border-2 border-[#00f7ff]/30 rounded-xl p-5">
-            <h3 className="text-sm font-bold text-[#00f7ff] mb-3">â„¹ï¸ {t('customer.importantInfo')}:</h3>
-            <ul className="text-xs text-[#e0d0ff]/70 space-y-2">
-              <li className="flex gap-2"><span className="text-[#00f7ff] shrink-0">â€¢</span>{t('customer.infoProcessTime')}</li>
-              <li className="flex gap-2"><span className="text-[#00f7ff] shrink-0">â€¢</span>{t('customer.infoProofClear')}</li>
-              <li className="flex gap-2"><span className="text-[#00f7ff] shrink-0">â€¢</span>{t('customer.infoBalanceAuto')}</li>
-              <li className="flex gap-2"><span className="text-[#00f7ff] shrink-0">â€¢</span>{t('customer.infoContactAdmin')}</li>
+          <div className="bg-brand-500/10 border-2 border-brand-500/30 rounded-xl p-5">
+            <h3 className="text-sm font-bold text-brand-500 mb-3">â„¹ï¸ {t('customer.importantInfo')}:</h3>
+            <ul className="text-xs text-muted-foreground/70 space-y-2">
+              <li className="flex gap-2"><span className="text-brand-500 shrink-0">â€¢</span>{t('customer.infoProcessTime')}</li>
+              <li className="flex gap-2"><span className="text-brand-500 shrink-0">â€¢</span>{t('customer.infoProofClear')}</li>
+              <li className="flex gap-2"><span className="text-brand-500 shrink-0">â€¢</span>{t('customer.infoBalanceAuto')}</li>
+              <li className="flex gap-2"><span className="text-brand-500 shrink-0">â€¢</span>{t('customer.infoContactAdmin')}</li>
             </ul>
           </div>
         </div>

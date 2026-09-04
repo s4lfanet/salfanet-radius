@@ -12,19 +12,19 @@ const CyberTable = React.forwardRef<HTMLDivElement, CyberTableProps>(
   ({ className, variant = 'default', children, ...props }, ref) => {
     const variantStyles = {
       default: cn(
-        'border-2 border-cyan-500/20 rounded-xl overflow-hidden',
-        'shadow-[0_0_20px_rgba(0,255,255,0.1)]',
+        'border-2 border-brand-500/20 rounded-xl overflow-hidden',
+        'shadow-md shadow-brand-500/10',
         'bg-background/50 backdrop-blur-sm'
       ),
       neon: cn(
-        'border-2 border-cyan-500/30 rounded-xl overflow-hidden',
-        'shadow-[0_0_30px_rgba(0,255,255,0.15),inset_0_0_30px_rgba(0,255,255,0.02)]',
-        'bg-black/40 backdrop-blur-xl'
+        'border-2 border-brand-500/30 rounded-xl overflow-hidden',
+        'shadow-lg shadow-brand-500/15',
+        'bg-input/40 backdrop-blur-xl'
       ),
       glass: cn(
-        'border border-white/10 rounded-xl overflow-hidden',
-        'shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
-        'bg-white/5 backdrop-blur-xl'
+        'border border-border/50 rounded-xl overflow-hidden',
+        'shadow-md',
+        'bg-card/40 backdrop-blur-xl'
       ),
     };
 
@@ -53,8 +53,8 @@ const CyberTableHeader = React.forwardRef<
   <thead
     ref={ref}
     className={cn(
-      'bg-gradient-to-r from-cyan-500/10 via-purple-500/5 to-pink-500/10',
-      'border-b-2 border-cyan-500/20',
+      'bg-gradient-to-r from-brand-500/10 via-violet-500/5 to-pink-500/10',
+      'border-b-2 border-brand-500/20',
       '[&_tr]:border-b-0',
       className
     )}
@@ -84,7 +84,7 @@ const CyberTableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      'border-t-2 border-cyan-500/20 bg-cyan-500/5',
+      'border-t-2 border-brand-500/20 bg-brand-500/5',
       'font-medium',
       className
     )}
@@ -104,11 +104,11 @@ const CyberTableRow = React.forwardRef<HTMLTableRowElement, CyberTableRowProps>(
       ref={ref}
       className={cn(
         'border-b border-white/5 transition-all duration-300',
-        'hover:bg-gradient-to-r hover:from-cyan-500/5 hover:via-transparent hover:to-pink-500/5',
-        'hover:shadow-[inset_0_0_30px_rgba(0,255,255,0.03)]',
+        'hover:bg-gradient-to-r hover:from-brand-500/5 hover:via-transparent hover:to-pink-500/5',
+        'hover:shadow-sm',
         selected && [
-          'bg-cyan-500/10 border-cyan-500/30',
-          'shadow-[inset_0_0_20px_rgba(0,255,255,0.05)]',
+          'bg-brand-500/10 border-brand-500/30',
+          'shadow-sm',
         ],
         className
       )}
@@ -128,7 +128,7 @@ const CyberTableHead = React.forwardRef<
     className={cn(
       'h-12 px-4 text-left align-middle',
       'font-bold text-xs uppercase tracking-wider',
-      'text-cyan-400 drop-shadow-[0_0_10px_rgba(0,255,255,0.3)]',
+      'text-brand-600 dark:text-brand-400',
       'whitespace-nowrap',
       '[&:has([role=checkbox])]:pr-0',
       className
@@ -190,7 +190,7 @@ function CyberTableEmpty({
       <CyberTableCell colSpan={100} className="h-48">
         <div className="flex flex-col items-center justify-center text-center">
           {icon && (
-            <div className="mb-4 p-4 rounded-full bg-cyan-500/10 text-cyan-400">
+            <div className="mb-4 p-4 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400">
               {icon}
             </div>
           )}
@@ -211,7 +211,7 @@ function CyberTableSkeleton({ columns = 5 }: { columns?: number }) {
         <CyberTableRow key={rowIndex} className="animate-pulse">
           {Array.from({ length: columns }).map((_, colIndex) => (
             <CyberTableCell key={colIndex}>
-              <div className="h-4 bg-cyan-500/10 rounded w-full max-w-[150px]" />
+              <div className="h-4 bg-brand-500/10 rounded w-full max-w-[150px]" />
             </CyberTableCell>
           ))}
         </CyberTableRow>

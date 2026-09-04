@@ -99,7 +99,7 @@ const cyberButtonVariants = cva(
 
         // Glass — subtle overlay
         glass: [
-          'bg-white/10 dark:bg-white/5 backdrop-blur-xl text-slate-800 dark:text-slate-200',
+          'bg-muted/50 dark:bg-card/40 backdrop-blur-xl text-slate-800 dark:text-slate-200',
           'border border-border',
           'shadow-sm',
           'hover:bg-blue-50/80 dark:hover:bg-blue-950/30 hover:border-blue-300 dark:hover:border-blue-700',

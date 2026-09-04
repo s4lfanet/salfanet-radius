@@ -133,18 +133,18 @@ export default function AreasPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><MapPin className="w-12 h-12 text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10 animate-pulse" /></div>
+      <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><MapPin className="w-12 h-12 text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10 animate-pulse" /></div>
     );
   }
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('pppoe.areasTitle')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('pppoe.areasTitle')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               {t('pppoe.areasSubtitle')}
             </p>
@@ -168,10 +168,10 @@ export default function AreasPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
+          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('pppoe.totalArea')}</p>
+                <p className="text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.totalArea')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{areas.length}</p>
               </div>
               <MapPin className="h-5 w-5 text-primary" />
@@ -225,12 +225,12 @@ export default function AreasPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3">
           {filteredAreas.length === 0 ? (
-            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-6 text-center text-muted-foreground text-xs">
+            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-6 text-center text-muted-foreground text-xs">
               {areas.length === 0 ? t('pppoe.noArea') : t('pppoe.noMatchArea')}
             </div>
           ) : (
             filteredAreas.map((area) => (
-              <div key={area.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+              <div key={area.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-3.5 w-3.5 text-primary" />
@@ -360,7 +360,7 @@ export default function AreasPage() {
                 <ModalTextarea value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} placeholder={t('pppoe.descriptionOptional')} rows={2} />
               </div>
               <div className="flex items-center gap-2">
-                <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded border-[#bc13fe]/50 bg-background dark:bg-[#0a0520] accent-brand-500 dark:accent-[#00f7ff] w-4 h-4" />
+                <input type="checkbox" id="isActive" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500 w-4 h-4" />
                 <label htmlFor="isActive" className="text-xs sm:text-sm text-foreground">{t('pppoe.areaActive')}</label>
               </div>
             </ModalBody>
@@ -374,7 +374,7 @@ export default function AreasPage() {
         {/* Delete Dialog */}
         <SimpleModal isOpen={!!deleteAreaId} onClose={() => setDeleteAreaId(null)} size="sm">
           <ModalBody className="text-center py-6">
-            <div className="w-14 h-14 bg-[#ff4466]/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#ff4466]/50">
+            <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
               <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteArea')}</h2>

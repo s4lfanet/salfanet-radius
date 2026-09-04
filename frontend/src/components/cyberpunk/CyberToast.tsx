@@ -130,28 +130,28 @@ function CyberToastItem({ toast, onClose }: CyberToastItemProps) {
       color: 'text-green-400',
       border: 'border-green-500/50',
       bg: 'from-green-500/10 to-transparent',
-      glow: 'shadow-[0_0_30px_rgba(0,255,0,0.2)]',
+      glow: 'shadow-md shadow-green-500/20',
     },
     error: {
       icon: AlertCircle,
       color: 'text-red-400',
       border: 'border-red-500/50',
       bg: 'from-red-500/10 to-transparent',
-      glow: 'shadow-[0_0_30px_rgba(255,0,0,0.2)]',
+      glow: 'shadow-md shadow-red-500/20',
     },
     warning: {
       icon: AlertTriangle,
       color: 'text-orange-400',
       border: 'border-orange-500/50',
       bg: 'from-orange-500/10 to-transparent',
-      glow: 'shadow-[0_0_30px_rgba(255,165,0,0.2)]',
+      glow: 'shadow-md shadow-orange-500/20',
     },
     info: {
       icon: Info,
-      color: 'text-cyan-400',
-      border: 'border-cyan-500/50',
-      bg: 'from-cyan-500/10 to-transparent',
-      glow: 'shadow-[0_0_30px_rgba(0,255,255,0.2)]',
+      color: 'text-brand-600 dark:text-brand-400',
+      border: 'border-brand-500/50',
+      bg: 'from-brand-500/10 to-transparent',
+      glow: 'shadow-md shadow-brand-500/20',
     },
   };
 
@@ -187,7 +187,7 @@ function CyberToastItem({ toast, onClose }: CyberToastItemProps) {
           className={cn(
             'flex-shrink-0 p-1 rounded-lg',
             'text-muted-foreground hover:text-foreground',
-            'hover:bg-white/10 transition-colors'
+            'hover:bg-muted/50 transition-colors'
           )}
         >
           <X className="w-4 h-4" />
@@ -195,14 +195,14 @@ function CyberToastItem({ toast, onClose }: CyberToastItemProps) {
       </div>
       
       {/* Progress bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white/10">
+      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-muted/50">
         <div
           className={cn(
             'h-full bg-gradient-to-r',
             toast.type === 'success' && 'from-green-400 to-green-500',
             toast.type === 'error' && 'from-red-400 to-red-500',
             toast.type === 'warning' && 'from-orange-400 to-orange-500',
-            toast.type === 'info' && 'from-cyan-400 to-cyan-500',
+            toast.type === 'info' && 'from-brand-400 to-brand-500',
             'animate-shrink-width'
           )}
           style={{
@@ -229,25 +229,25 @@ function CyberConfirmModal({ options, onClose }: CyberConfirmModalProps) {
       icon: AlertCircle,
       iconColor: 'text-red-400',
       border: 'border-red-500/40',
-      glow: 'shadow-[0_0_40px_rgba(255,0,0,0.15)]',
-      confirmBg: 'bg-red-600 hover:bg-red-700 shadow-[0_0_15px_rgba(239,68,68,0.4)]',
+      glow: 'shadow-md shadow-red-500/20',
+      confirmBg: 'bg-red-600 hover:bg-red-700 shadow-md shadow-red-500/40',
       titleColor: 'text-red-400',
     },
     warning: {
       icon: AlertTriangle,
       iconColor: 'text-orange-400',
       border: 'border-orange-500/40',
-      glow: 'shadow-[0_0_40px_rgba(249,115,22,0.15)]',
-      confirmBg: 'bg-orange-600 hover:bg-orange-700 shadow-[0_0_15px_rgba(249,115,22,0.4)]',
+      glow: 'shadow-md shadow-orange-500/40',
+      confirmBg: 'bg-orange-600 hover:bg-orange-700 shadow-md shadow-orange-500/40',
       titleColor: 'text-orange-400',
     },
     info: {
       icon: ShieldAlert,
-      iconColor: 'text-cyan-400',
-      border: 'border-cyan-500/40',
-      glow: 'shadow-[0_0_40px_rgba(0,247,255,0.15)]',
-      confirmBg: 'bg-cyan-600 hover:bg-cyan-700 shadow-[0_0_15px_rgba(0,247,255,0.4)]',
-      titleColor: 'text-cyan-400',
+      iconColor: 'text-brand-600 dark:text-brand-400',
+      border: 'border-brand-500/40',
+      glow: 'shadow-lg shadow-brand-500/15',
+      confirmBg: 'bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/40',
+      titleColor: 'text-brand-600 dark:text-brand-400',
     },
   };
 
@@ -274,27 +274,27 @@ function CyberConfirmModal({ options, onClose }: CyberConfirmModalProps) {
       <div
         className={cn(
           'relative z-10 w-full max-w-sm rounded-2xl border-2 p-6',
-          'bg-card dark:bg-[#0a0520]/95 backdrop-blur-xl',
+          'bg-card dark:bg-card/95 backdrop-blur-xl',
           border, glow,
           'animate-in fade-in zoom-in-95 duration-200'
         )}
       >
         {/* Icon + Title */}
         <div className="flex items-center gap-3 mb-3">
-          <div className={cn('p-2.5 rounded-xl bg-white/5', iconColor)}>
+          <div className={cn('p-2.5 rounded-xl bg-card/40', iconColor)}>
             <Icon className="w-5 h-5" />
           </div>
           <h3 className={cn('text-base font-bold', titleColor)}>{title}</h3>
         </div>
 
         {/* Message */}
-        <p className="text-sm text-muted-foreground dark:text-[#e0d0ff]/80 mb-6 leading-relaxed">{message}</p>
+        <p className="text-sm text-muted-foreground dark:text-muted-foreground/80 mb-6 leading-relaxed">{message}</p>
 
         {/* Actions */}
         <div className="flex gap-3 justify-end">
           <button
             onClick={() => onClose(false)}
-            className="px-4 py-2 text-sm font-semibold rounded-xl border border-border dark:border-white/20 text-muted-foreground dark:text-[#e0d0ff]/80 hover:border-foreground/40 dark:hover:border-white/40 hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-white/5 transition-all"
+            className="px-4 py-2 text-sm font-semibold rounded-xl border border-border dark:border-white/20 text-muted-foreground dark:text-muted-foreground/80 hover:border-foreground/40 dark:hover:border-border hover:text-foreground dark:hover:text-white hover:bg-muted dark:hover:bg-card/40 transition-all"
           >
             {cancelText}
           </button>
@@ -347,9 +347,9 @@ function CyberAlert({ type, title, description, onClose, className }: CyberAlert
     },
     info: {
       icon: Info,
-      color: 'text-cyan-400',
-      border: 'border-cyan-500/30',
-      bg: 'bg-cyan-500/5',
+      color: 'text-brand-600 dark:text-brand-400',
+      border: 'border-brand-500/30',
+      bg: 'bg-brand-500/5',
     },
   };
 
@@ -377,7 +377,7 @@ function CyberAlert({ type, title, description, onClose, className }: CyberAlert
         {onClose && (
           <button
             onClick={onClose}
-            className="flex-shrink-0 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
+            className="flex-shrink-0 p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

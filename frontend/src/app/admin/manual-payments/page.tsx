@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
@@ -235,14 +235,14 @@ export default function ManualPaymentsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('manualPayment.title')}</h1>
+        <h1 className="text-3xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('manualPayment.title')}</h1>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           {t('manualPayment.description')}
         </p>
@@ -268,10 +268,10 @@ export default function ManualPaymentsPage() {
             <CardTitle className="text-4xl font-black text-destructive drop-shadow-[0_0_5px_rgba(255,51,102,0.5)]">{stats.rejected}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-2 border-primary/30 bg-card/80 backdrop-blur-sm shadow-[0_0_15px_rgba(188,19,254,0.1)]">
+        <Card className="border-2 border-primary/30 bg-card/80 backdrop-blur-sm shadow-[0_0_15px_rgba(139,92,246,0.1)]">
           <CardHeader className="p-4 pb-3">
             <CardDescription className="text-xs font-bold text-primary uppercase tracking-wide">{t('manualPayments.totalLabel')}</CardDescription>
-            <CardTitle className="text-4xl font-black text-primary drop-shadow-[0_0_5px_rgba(188,19,254,0.5)]">{stats.total}</CardTitle>
+            <CardTitle className="text-4xl font-black text-primary drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -353,7 +353,7 @@ export default function ManualPaymentsPage() {
               {filteredPayments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3 space-y-2"
+                  className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3 space-y-2"
                 >
                   {/* Header: Customer + Status */}
                   <div className="flex items-start justify-between gap-2">
@@ -388,13 +388,13 @@ export default function ManualPaymentsPage() {
 
                   {/* Amount */}
                   <div className="text-right">
-                    <span className="text-sm font-bold text-[#00f7ff]">
+                    <span className="text-sm font-bold text-brand-500">
                       {formatCurrency(Number(payment.amount))}
                     </span>
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-[#bc13fe]/10">
+                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-violet-500/10">
                     <Button
                       size="sm"
                       variant="outline"
@@ -664,7 +664,7 @@ export default function ManualPaymentsPage() {
                     <img
                       src={selectedPayment.receiptImage}
                       alt={t('manualPayment.transferReceipt')}
-                      className="max-w-full h-auto rounded-lg border-2 border-accent/30 shadow-[0_0_20px_rgba(0,247,255,0.2)]"
+                      className="max-w-full h-auto rounded-lg border-2 border-accent/30 shadow-[0_0_20px_rgba(6,182,212,0.2)]"
                       loading="lazy"
                     />
                   </div>

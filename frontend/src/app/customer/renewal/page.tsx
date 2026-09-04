@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -263,7 +263,7 @@ export default function RenewalPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-primary shadow-[0_0_15px_rgba(188,19,254,0.5)]" />
+        <Loader2 className="w-6 h-6 animate-spin text-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]" />
       </div>
     );
   }
@@ -276,14 +276,14 @@ export default function RenewalPage() {
           <ChevronLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-lg font-bold text-primary drop-shadow-[0_0_5px_rgba(188,19,254,0.5)]">Perpanjang Langganan</h1>
+          <h1 className="text-lg font-bold text-primary drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">Perpanjang Langganan</h1>
           <p className="text-xs text-accent mt-0.5">Perpanjang paket internet Anda</p>
         </div>
       </div>
 
       {/* Current Account Info */}
       {user && (
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 shadow-[0_0_20px_rgba(188,19,254,0.1)]">
+        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 shadow-[0_0_20px_rgba(139,92,246,0.1)]">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-1.5 bg-primary/20 rounded-lg border border-primary/30 flex items-center justify-center">
               <Package className="w-3.5 h-3.5 text-primary" />

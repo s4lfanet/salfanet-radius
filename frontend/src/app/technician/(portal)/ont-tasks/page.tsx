@@ -89,7 +89,7 @@ export default function TechnicianOntTasksPage() {
             <p className="text-xs text-muted-foreground">{filtered.length} tugas</p>
           </div>
         </div>
-        <button onClick={fetchData} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+        <button onClick={fetchData} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -97,7 +97,7 @@ export default function TechnicianOntTasksPage() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari username / nama..." className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Cari username / nama..." className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500/30 transition" />
         </div>
         <div className="flex gap-1">
           {([
@@ -105,7 +105,7 @@ export default function TechnicianOntTasksPage() {
             { key: 'COMPLETED', label: 'Selesai' },
             { key: 'CANCELLED', label: 'Dibatalkan' },
           ] as const).map((f) => (
-            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-[#bc13fe] text-white shadow-[0_0_15px_rgba(188,19,254,0.4)]' : 'bg-slate-100 dark:bg-[#1a0f35] border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10'}`}>
+            <button key={f.key} onClick={() => setStatus(f.key)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${status === f.key ? 'bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]' : 'bg-slate-100 dark:bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-violet-500/10'}`}>
               {f.label}
             </button>
           ))}
@@ -114,7 +114,7 @@ export default function TechnicianOntTasksPage() {
 
       {loading && tasks.length === 0 ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground/70">
@@ -155,7 +155,7 @@ export default function TechnicianOntTasksPage() {
               </div>
 
               {task.status === 'PENDING' && (
-                <div className="border-t border-slate-100 dark:border-[#bc13fe]/10 bg-input/50 p-3 space-y-2">
+                <div className="border-t border-slate-100 dark:border-violet-500/10 bg-input/50 p-3 space-y-2">
                   {activeId === task.id ? (
                     <>
                       <input
@@ -182,7 +182,7 @@ export default function TechnicianOntTasksPage() {
                         <button
                           disabled={submitting}
                           onClick={() => { setActiveId(null); setNote(''); }}
-                          className="px-3 py-2 bg-slate-200 dark:bg-[#1a0f35] text-muted-foreground text-xs font-bold rounded-lg transition"
+                          className="px-3 py-2 bg-slate-200 dark:bg-muted text-muted-foreground text-xs font-bold rounded-lg transition"
                         >
                           Tutup
                         </button>
@@ -191,7 +191,7 @@ export default function TechnicianOntTasksPage() {
                   ) : (
                     <button
                       onClick={() => { setActiveId(task.id); setNote(''); }}
-                      className="w-full px-3 py-2 bg-[#bc13fe] hover:bg-[#a010e0] text-white text-xs font-bold rounded-lg transition"
+                      className="w-full px-3 py-2 bg-violet-500 hover:bg-violet-600 text-white text-xs font-bold rounded-lg transition"
                     >
                       Proses Tugas
                     </button>

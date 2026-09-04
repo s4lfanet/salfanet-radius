@@ -133,7 +133,7 @@ export default function SecuritySettingsPage() {
   if (loading) {
     return (
       <div className="min-h-[400px] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-[#00f7ff]" />
+        <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
       </div>
     );
   }
@@ -142,7 +142,7 @@ export default function SecuritySettingsPage() {
     <div className="max-w-2xl mx-auto p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc]">
+        <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
           Security Settings
         </h1>
         <p className="text-sm text-muted-foreground mt-1">Manage your account security — Two-Factor Authentication</p>
@@ -158,7 +158,7 @@ export default function SecuritySettingsPage() {
 
       {/* ────────── STATUS PHASE ────────── */}
       {phase === 'status' && (
-        <div className="bg-card/80 dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-[#bc13fe]/30 rounded-2xl p-6">
+        <div className="bg-card/80 dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-violet-500/30 rounded-2xl p-6">
           <div className="flex items-start gap-4">
             <div className={`p-3 rounded-xl ${enabled ? 'bg-green-500/20 border border-green-500/30' : 'bg-muted dark:bg-slate-700/50 border border-border dark:border-slate-600/50'}`}>
               <Shield className={`w-7 h-7 ${enabled ? 'text-green-400' : 'text-muted-foreground dark:text-slate-400'}`} />
@@ -186,7 +186,7 @@ export default function SecuritySettingsPage() {
                 <button
                   onClick={startSetup}
                   disabled={submitting}
-                  className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium transition-opacity shadow-md dark:bg-gradient-to-r dark:from-[#bc13fe] dark:to-[#00f7ff] dark:shadow-[0_0_20px_rgba(188,19,254,0.3)] flex items-center gap-2 disabled:opacity-50"
+                  className="px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium transition-opacity shadow-md dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500 dark:shadow-[0_0_20px_rgba(139,92,246,0.3)] flex items-center gap-2 disabled:opacity-50"
                 >
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
                   Set Up 2FA
@@ -203,7 +203,7 @@ export default function SecuritySettingsPage() {
               { icon: KeyRound, title: '6-Digit Code', desc: 'A new code is generated every 30 seconds' },
             ].map(({ icon: Icon, title, desc }) => (
               <div key={title} className="p-3 bg-muted/50 dark:bg-slate-900/50 rounded-xl border border-border dark:border-slate-700/50">
-                <Icon className="w-5 h-5 text-primary dark:text-[#00f7ff] mb-2" />
+                <Icon className="w-5 h-5 text-primary dark:text-brand-500 mb-2" />
                 <p className="text-xs font-semibold text-foreground mb-1">{title}</p>
                 <p className="text-xs text-muted-foreground">{desc}</p>
               </div>
@@ -214,7 +214,7 @@ export default function SecuritySettingsPage() {
 
       {/* ────────── SETUP QR PHASE ────────── */}
       {phase === 'setup-qr' && (
-        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-[#bc13fe]/30 rounded-2xl p-6 space-y-5">
+        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-violet-500/30 rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Step 1 — Scan QR Code</h2>
             <button onClick={cancelPhase} className="text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"><X className="w-5 h-5" /></button>
@@ -226,7 +226,7 @@ export default function SecuritySettingsPage() {
 
           {/* QR Code */}
           <div className="flex justify-center">
-            <div className="p-4 bg-white rounded-2xl shadow-[0_0_30px_rgba(188,19,254,0.3)]">
+            <div className="p-4 bg-white rounded-2xl shadow-[0_0_30px_rgba(139,92,246,0.3)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={qrCode} alt="2FA QR Code" width={200} height={200} loading="lazy" />
             </div>
@@ -236,7 +236,7 @@ export default function SecuritySettingsPage() {
           <div className="p-4 bg-muted dark:bg-slate-900/70 rounded-xl border border-border dark:border-slate-700/50">
             <p className="text-xs text-muted-foreground dark:text-slate-400 mb-2">If you can&apos;t scan the QR code, enter this key manually:</p>
             <div className="flex items-center gap-2">
-              <code className={`flex-1 text-sm font-mono text-primary dark:text-[#00f7ff] break-all ${!showSecret ? 'blur-sm select-none' : ''}`}>
+              <code className={`flex-1 text-sm font-mono text-primary dark:text-brand-500 break-all ${!showSecret ? 'blur-sm select-none' : ''}`}>
                 {secret}
               </code>
               <button onClick={() => setShowSecret(s => !s)} className="text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white shrink-0">
@@ -247,7 +247,7 @@ export default function SecuritySettingsPage() {
 
           <button
             onClick={() => { setPhase('setup-verify'); setError(''); }}
-            className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl transition-all shadow-md hover:bg-primary/90 dark:bg-gradient-to-r dark:from-[#bc13fe] dark:to-[#00f7ff] dark:text-white dark:shadow-[0_0_20px_rgba(188,19,254,0.3)] dark:hover:opacity-90"
+            className="w-full bg-primary text-primary-foreground font-bold py-3 rounded-xl transition-all shadow-md hover:bg-primary/90 dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500 dark:text-white dark:shadow-[0_0_20px_rgba(139,92,246,0.3)] dark:hover:opacity-90"
           >
             I&apos;ve Scanned the Code →
           </button>
@@ -256,7 +256,7 @@ export default function SecuritySettingsPage() {
 
       {/* ────────── SETUP VERIFY PHASE ────────── */}
       {phase === 'setup-verify' && (
-        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-[#bc13fe]/30 rounded-2xl p-6 space-y-5">
+        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/60 dark:to-slate-900/60 border border-border dark:border-violet-500/30 rounded-2xl p-6 space-y-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">Step 2 — Verify Code</h2>
             <button onClick={cancelPhase} className="text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white"><X className="w-5 h-5" /></button>
@@ -273,7 +273,7 @@ export default function SecuritySettingsPage() {
           )}
 
           <div>
-            <label className="text-xs font-semibold text-primary dark:text-[#00f7ff] uppercase tracking-wider block mb-2">
+            <label className="text-xs font-semibold text-primary dark:text-brand-500 uppercase tracking-wider block mb-2">
               Authenticator Code
             </label>
             <input
@@ -288,7 +288,7 @@ export default function SecuritySettingsPage() {
                 setSetupCode(f);
               }}
               placeholder="000 000"
-              className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-[#bc13fe]/40 rounded-xl px-4 py-3.5 text-foreground dark:text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-[#00f7ff] focus:outline-none transition-all"
+              className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-violet-500/40 rounded-xl px-4 py-3.5 text-foreground dark:text-white text-2xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
             />
           </div>
 
@@ -299,7 +299,7 @@ export default function SecuritySettingsPage() {
             <button
               onClick={verifyAndEnable}
               disabled={submitting}
-              className="flex-1 bg-primary text-primary-foreground font-bold py-3 rounded-xl shadow-md hover:bg-primary/90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-gradient-to-r dark:from-[#bc13fe] dark:to-[#00f7ff] dark:text-white dark:shadow-[0_0_20px_rgba(188,19,254,0.3)] dark:hover:opacity-90"
+              className="flex-1 bg-primary text-primary-foreground font-bold py-3 rounded-xl shadow-md hover:bg-primary/90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500 dark:text-white dark:shadow-[0_0_20px_rgba(139,92,246,0.3)] dark:hover:opacity-90"
             >
               {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
               Enable 2FA
@@ -333,7 +333,7 @@ export default function SecuritySettingsPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-primary dark:text-[#00f7ff] uppercase tracking-wider block mb-2">
+              <label className="text-xs font-semibold text-primary dark:text-brand-500 uppercase tracking-wider block mb-2">
                 Current Password
               </label>
               <div className="relative">
@@ -343,7 +343,7 @@ export default function SecuritySettingsPage() {
                   onChange={e => setDisablePassword(e.target.value)}
                   placeholder="Enter your password"
                   autoFocus
-                  className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-[#bc13fe]/40 rounded-xl px-4 py-3 pr-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-[#00f7ff] focus:outline-none transition-all"
+                  className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-violet-500/40 rounded-xl px-4 py-3 pr-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
                 />
                 <button onClick={() => setShowDisablePassword(s => !s)} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground dark:text-slate-400 dark:hover:text-white">
                   {showDisablePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -352,7 +352,7 @@ export default function SecuritySettingsPage() {
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-primary dark:text-[#00f7ff] uppercase tracking-wider block mb-2">
+              <label className="text-xs font-semibold text-primary dark:text-brand-500 uppercase tracking-wider block mb-2">
                 Authenticator Code
               </label>
               <input
@@ -366,7 +366,7 @@ export default function SecuritySettingsPage() {
                   setDisableCode(f);
                 }}
                 placeholder="000 000"
-                className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-[#bc13fe]/40 rounded-xl px-4 py-3.5 text-foreground dark:text-white text-xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-[#00f7ff] focus:outline-none transition-all"
+                className="w-full bg-background dark:bg-slate-900 border-2 border-border dark:border-violet-500/40 rounded-xl px-4 py-3.5 text-foreground dark:text-white text-xl font-mono tracking-[0.5em] text-center placeholder-muted-foreground dark:placeholder-slate-600 focus:border-primary dark:focus:border-brand-500 focus:outline-none transition-all"
               />
             </div>
           </div>

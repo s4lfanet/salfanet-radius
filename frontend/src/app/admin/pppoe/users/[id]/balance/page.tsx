@@ -360,7 +360,7 @@ export default function BalanceManagementPage() {
             </div>
           ) : (
             transactions.map((transaction) => (
-              <div key={transaction.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+              <div key={transaction.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                     transaction.type === 'DEPOSIT'
@@ -479,17 +479,17 @@ export default function BalanceManagementPage() {
             <div>
               <ModalLabel required>{t('pppoe.paymentMethod')}</ModalLabel>
               <ModalSelect value={topUpData.paymentMethod} onChange={(e) => setTopUpData({ ...topUpData, paymentMethod: e.target.value as 'CASH' | 'TRANSFER' | 'EWALLET' })}>
-                <option value="CASH" className="dark:bg-[#0a0520]">{t('pppoe.cash')}</option>
-                <option value="TRANSFER" className="dark:bg-[#0a0520]">{t('pppoe.bankTransfer')}</option>
-                <option value="EWALLET" className="dark:bg-[#0a0520]">{t('pppoe.eWallet')}</option>
+                <option value="CASH" className="dark:bg-card">{t('pppoe.cash')}</option>
+                <option value="TRANSFER" className="dark:bg-card">{t('pppoe.bankTransfer')}</option>
+                <option value="EWALLET" className="dark:bg-card">{t('pppoe.eWallet')}</option>
               </ModalSelect>
             </div>
             <div>
               <ModalLabel>{t('pppoe.noteOptional')}</ModalLabel>
               <ModalTextarea value={topUpData.note} onChange={(e) => setTopUpData({ ...topUpData, note: e.target.value })} placeholder={t('pppoe.additionalNote')} rows={3} />
             </div>
-            <div className="bg-[#00f7ff]/10 border border-[#00f7ff]/30 rounded-lg p-3">
-              <p className="text-xs text-[#00f7ff]">ℹ️ {t('pppoe.balanceInfo')}</p>
+            <div className="bg-brand-500/10 border border-brand-500/30 rounded-lg p-3">
+              <p className="text-xs text-brand-500">ℹ️ {t('pppoe.balanceInfo')}</p>
             </div>
           </ModalBody>
           <ModalFooter>

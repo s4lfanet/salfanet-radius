@@ -128,7 +128,7 @@ export default function AdminSuspendRequestsPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <PauseCircle className="w-7 h-7 text-[#bc13fe]" />
+          <PauseCircle className="w-7 h-7 text-violet-500" />
           <div>
             <h1 className="text-2xl font-bold">{t('suspendRequests.title')}</h1>
             <p className="text-sm text-gray-500">{t('suspendRequests.subtitle')}</p>
@@ -148,8 +148,8 @@ export default function AdminSuspendRequestsPage() {
             onClick={() => setFilter(s)}
             className={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
               filter === s
-                ? 'bg-[#bc13fe] text-white border-[#bc13fe]'
-                : 'border-gray-300 text-gray-600 hover:border-[#bc13fe]/60'
+                ? 'bg-violet-500 text-white border-violet-500'
+                : 'border-gray-300 text-gray-600 hover:border-violet-500/60'
             }`}
           >
             {s === 'all' ? t('common.all') : STATUS_LABELS[s] || s}
@@ -161,7 +161,7 @@ export default function AdminSuspendRequestsPage() {
       <div className="bg-card rounded-xl border shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-[#bc13fe]" />
+            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
           </div>
         ) : rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-gray-400">
@@ -344,7 +344,7 @@ export default function AdminSuspendRequestsPage() {
                   onChange={e => setAdminNotes(e.target.value)}
                   placeholder={action === 'APPROVE' ? 'Contoh: Disetujui, selamat menikmati masa libur.' : 'Contoh: Tidak dapat diproses karena ada tagihan belum lunas.'}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#bc13fe]/40 resize-none"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-500/40 resize-none"
                 />
               </div>
             </div>

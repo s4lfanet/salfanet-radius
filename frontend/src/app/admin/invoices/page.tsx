@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
@@ -794,10 +794,10 @@ export default function InvoicesPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
       </div>
     );
   }
@@ -806,17 +806,17 @@ export default function InvoicesPage() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
 
       <div className="relative z-10 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('invoices.title')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('invoices.title')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('invoices.monthlyBilling')}</p>
           </div>
           <div className="flex gap-1.5 flex-wrap">
@@ -833,15 +833,15 @@ export default function InvoicesPage() {
             <div className="flex items-center gap-1 flex-wrap">
               <span className="text-[10px] text-muted-foreground whitespace-nowrap">Periode:</span>
               <input type="date" value={exportDateFrom} onChange={e => setExportDateFrom(e.target.value)}
-                className="text-[10px] px-1.5 py-1 bg-[#1a1135]/80 border border-[#bc13fe]/30 rounded text-foreground focus:outline-none focus:border-[#bc13fe]/60" />
-              <span className="text-[10px] text-[#e0d0ff]/40">–</span>
+                className="text-[10px] px-1.5 py-1 bg-muted/80 border border-violet-500/30 rounded text-foreground focus:outline-none focus:border-violet-500/60" />
+              <span className="text-[10px] text-muted-foreground/40">–</span>
               <input type="date" value={exportDateTo} onChange={e => setExportDateTo(e.target.value)}
-                className="text-[10px] px-1.5 py-1 bg-[#1a1135]/80 border border-[#bc13fe]/30 rounded text-foreground focus:outline-none focus:border-[#bc13fe]/60" />
+                className="text-[10px] px-1.5 py-1 bg-muted/80 border border-violet-500/30 rounded text-foreground focus:outline-none focus:border-violet-500/60" />
             </div>
             <button onClick={handleExportExcel} className="inline-flex items-center px-2 py-1.5 text-xs border border-success text-success rounded hover:bg-success/10"><Download className="h-3 w-3 mr-1" />Excel</button>
             <button onClick={handleExportPDF} className="inline-flex items-center px-2 py-1.5 text-xs border border-destructive text-destructive rounded hover:bg-destructive/10"><Download className="h-3 w-3 mr-1" />PDF</button>
             <Link href="/admin/invoices/import">
-              <button className="inline-flex items-center px-2 py-1.5 text-xs border border-[#bc13fe]/60 text-foreground rounded hover:bg-[#bc13fe]/10">
+              <button className="inline-flex items-center px-2 py-1.5 text-xs border border-violet-500/60 text-foreground rounded hover:bg-violet-500/10">
                 <Upload className="h-3 w-3 mr-1" />Import CSV
               </button>
             </Link>
@@ -857,21 +857,21 @@ export default function InvoicesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
+          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide truncate">{t('common.total')}</p>
+                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('common.total')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.total}</p>
               </div>
-              <div className="p-1.5 sm:p-2 rounded-lg shadow-lg bg-[#bc13fe]/20 flex-shrink-0 flex items-center justify-center">
+              <div className="p-1.5 sm:p-2 rounded-lg shadow-lg bg-violet-500/20 flex-shrink-0 flex items-center justify-center">
                 <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
+          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide truncate">{t('invoices.pending')}</p>
+                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.pending')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.unpaid}</p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 truncate">{formatCurrency(Number(stats.totalUnpaidAmount))}</p>
               </div>
@@ -880,10 +880,10 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
+          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide truncate">{t('invoices.paid')}</p>
+                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.paid')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.paid}</p>
                 <p className="text-[10px] sm:text-xs text-muted-foreground mt-1 truncate">{formatCurrency(Number(stats.totalPaidAmount))}</p>
               </div>
@@ -892,10 +892,10 @@ export default function InvoicesPage() {
               </div>
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
+          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <p className="text-[10px] sm:text-xs text-[#00f7ff] uppercase tracking-wide truncate">{t('invoices.overdue')}</p>
+                <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.overdue')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.overdue}</p>
               </div>
               <div className="p-1.5 sm:p-2 rounded-lg shadow-lg bg-amber-400/20 flex-shrink-0 flex items-center justify-center">
@@ -1093,7 +1093,7 @@ export default function InvoicesPage() {
                     {(invoice.user?.customerId) && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">ID Pelanggan:</span>
-                        <span className="font-mono text-[#00f7ff]">{invoice.user.customerId}</span>
+                        <span className="font-mono text-brand-500">{invoice.user.customerId}</span>
                       </div>
                     )}
                     <div className="flex justify-between">

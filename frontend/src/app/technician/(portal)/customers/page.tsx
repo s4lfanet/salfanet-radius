@@ -162,7 +162,7 @@ export default function TechnicianCustomersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('techPortal.searchCustomer')}
-            className="w-full pl-9 pr-8 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-[#bc13fe]/50 focus:ring-1 focus:ring-[#bc13fe]/20 transition"
+            className="w-full pl-9 pr-8 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition"
           />
           {search && (
             <button onClick={() => setSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-full transition">
@@ -173,7 +173,7 @@ export default function TechnicianCustomersPage() {
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground focus:outline-none focus:border-[#bc13fe]/50 transition sm:w-40"
+          className="px-3 py-2.5 text-sm bg-card border border-border rounded-xl text-foreground focus:outline-none focus:border-violet-500/50 transition sm:w-40"
         >
           <option value="">{t('techPortal.allStatus')}</option>
           {STATUS_FILTERS.map((s) => (
@@ -200,17 +200,17 @@ export default function TechnicianCustomersPage() {
       {/* Table */}
       {loading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#bc13fe]" />
-          <p className="text-xs text-slate-400 dark:text-[#e0d0ff]/40">{t('techPortal.loading')}</p>
+          <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+          <p className="text-xs text-slate-400 dark:text-muted-foreground/40">{t('techPortal.loading')}</p>
         </div>
       ) : customers.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-[#1a0f35]/60 flex items-center justify-center">
-            <Users className="w-7 h-7 text-slate-300 dark:text-[#bc13fe]/30" />
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-muted/60 flex items-center justify-center">
+            <Users className="w-7 h-7 text-slate-300 dark:text-violet-500/30" />
           </div>
-          <p className="text-sm text-slate-500 dark:text-[#e0d0ff]/40">{t('techPortal.noData')}</p>
+          <p className="text-sm text-slate-500 dark:text-muted-foreground/40">{t('techPortal.noData')}</p>
           {search && (
-            <button onClick={() => setSearch('')} className="text-xs text-[#bc13fe] hover:underline">
+            <button onClick={() => setSearch('')} className="text-xs text-violet-500 hover:underline">
               Clear search
             </button>
           )}
@@ -218,20 +218,20 @@ export default function TechnicianCustomersPage() {
       ) : (
         <>
           {/* Mobile Card View */}
-          <div className="block md:hidden divide-y divide-slate-100 dark:divide-[#bc13fe]/8">
+          <div className="block md:hidden divide-y divide-slate-100 dark:divide-violet-500/8">
             {customers.map((c) => {
               const cfg = STATUS_CONFIG[c.status] ?? STATUS_CONFIG.active;
               const nearExpiry = isNearExpiry(c.expiredAt);
               return (
-                <div key={c.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition-colors">
+                <div key={c.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${cfg.dot}`} />
                       <div className="min-w-0">
                         <p className="font-semibold text-foreground text-[13px] truncate">{c.name}</p>
-                        <p className="text-[11px] font-mono text-[#00bcd4] dark:text-[#00f7ff] truncate">
+                        <p className="text-[11px] font-mono text-[#00bcd4] dark:text-brand-500 truncate">
                           {c.username}
-                          {c.customerId && <span className="ml-1.5 text-[#bc13fe]/60">#{c.customerId}</span>}
+                          {c.customerId && <span className="ml-1.5 text-violet-500/60">#{c.customerId}</span>}
                         </p>
                       </div>
                     </div>
@@ -248,17 +248,17 @@ export default function TechnicianCustomersPage() {
                     {c.profile ? (
                       <div className="text-right">
                         <span className="font-medium text-foreground/80">{c.profile.name}</span>
-                        <span className="text-slate-400 dark:text-[#e0d0ff]/40 ml-1">{formatIDR(c.profile.price)}</span>
+                        <span className="text-slate-400 dark:text-muted-foreground/40 ml-1">{formatIDR(c.profile.price)}</span>
                       </div>
                     ) : <div />}
                     {c.area && (
-                      <div className="flex items-center gap-1 text-slate-400 dark:text-[#e0d0ff]/40">
+                      <div className="flex items-center gap-1 text-slate-400 dark:text-muted-foreground/40">
                         <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                         <span className="truncate">{c.area.name}</span>
                       </div>
                     )}
                     {c.router && (
-                      <div className="flex items-center gap-1 text-slate-400 dark:text-[#e0d0ff]/35">
+                      <div className="flex items-center gap-1 text-slate-400 dark:text-muted-foreground/35">
                         <Wifi className="w-2.5 h-2.5 flex-shrink-0" />
                         <span className="truncate">{c.router.name}</span>
                       </div>
@@ -280,7 +280,7 @@ export default function TechnicianCustomersPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-100 dark:border-[#bc13fe]/10 bg-input/40">
+                  <tr className="border-b border-slate-100 dark:border-violet-500/10 bg-input/40">
                     <th className="text-left px-4 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 whitespace-nowrap">
                       {t('techPortal.name')} / Username
                     </th>
@@ -301,14 +301,14 @@ export default function TechnicianCustomersPage() {
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-[#bc13fe]/8">
+                <tbody className="divide-y divide-slate-100 dark:divide-violet-500/8">
                   {customers.map((c) => {
                     const cfg = STATUS_CONFIG[c.status] ?? STATUS_CONFIG.active;
                     const nearExpiry = isNearExpiry(c.expiredAt);
                     return (
                       <tr
                         key={c.id}
-                        className="hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition-colors"
+                        className="hover:bg-slate-50 dark:hover:bg-violet-500/5 transition-colors"
                       >
                         {/* Name + Username */}
                         <td className="px-4 py-3">
@@ -318,10 +318,10 @@ export default function TechnicianCustomersPage() {
                               <p className="font-semibold text-foreground text-[13px] truncate max-w-[160px]">
                                 {c.name}
                               </p>
-                              <p className="text-[11px] font-mono text-[#00bcd4] dark:text-[#00f7ff] truncate">
+                              <p className="text-[11px] font-mono text-[#00bcd4] dark:text-brand-500 truncate">
                                 {c.username}
                                 {c.customerId && (
-                                  <span className="ml-1.5 text-[#bc13fe]/60 dark:text-[#bc13fe]/50">
+                                  <span className="ml-1.5 text-violet-500/60 dark:text-violet-500/50">
                                     #{c.customerId}
                                   </span>
                                 )}
@@ -344,7 +344,7 @@ export default function TechnicianCustomersPage() {
                               <p className="text-[12px] font-medium text-foreground/80 whitespace-nowrap">
                                 {c.profile.name}
                               </p>
-                              <p className="text-[11px] text-slate-400 dark:text-[#e0d0ff]/40">
+                              <p className="text-[11px] text-slate-400 dark:text-muted-foreground/40">
                                 {formatIDR(c.profile.price)}
                               </p>
                             </div>
@@ -363,7 +363,7 @@ export default function TechnicianCustomersPage() {
                               </div>
                             )}
                             {c.router && (
-                              <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-[#e0d0ff]/35">
+                              <div className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-muted-foreground/35">
                                 <Wifi className="w-2.5 h-2.5 flex-shrink-0" />
                                 <span className="truncate max-w-[100px]">{c.router.name}</span>
                               </div>

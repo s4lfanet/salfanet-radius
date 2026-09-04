@@ -190,12 +190,12 @@ export default function VirtualParametersPage() {
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)] flex items-center gap-2">
-              <Cpu className="w-6 h-6 text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)]" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+              <Cpu className="w-6 h-6 text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
               {t('genieacs.virtualParamsTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">
@@ -272,7 +272,7 @@ export default function VirtualParametersPage() {
 
           {loading ? (
             <div className="flex items-center justify-center py-10">
-              <Loader2 className="w-5 h-5 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)]" />
+              <Loader2 className="w-5 h-5 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
             </div>
           ) : items.length === 0 ? (
             <div className="py-10 text-center">
@@ -292,7 +292,7 @@ export default function VirtualParametersPage() {
             {/* Mobile Card View */}
             <div className="block md:hidden space-y-3 p-3">
               {items.map((vp) => (
-                <div key={vp.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+                <div key={vp.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1 min-w-0">
                       <span className="text-sm font-semibold text-foreground">{vp.name}</span>
@@ -384,25 +384,25 @@ export default function VirtualParametersPage() {
       <SimpleModal isOpen={showForm} onClose={() => setShowForm(false)} size="lg">
           <ModalHeader>
             <ModalTitle className="flex items-center gap-2">
-              <Code2 className="w-4 h-4 text-[#00f7ff]" />
+              <Code2 className="w-4 h-4 text-brand-500" />
               {editing ? t('genieacs.editVirtualParam') : t('genieacs.addVirtualParamTitle')}
             </ModalTitle>
             <ModalDescription>{t('genieacs.fillPathExpression')}</ModalDescription>
           </ModalHeader>
 
             {/* Tabs */}
-            <div className="flex border-b border-[#bc13fe]/30 px-5">
+            <div className="flex border-b border-violet-500/30 px-5">
               <button
                 type="button"
                 onClick={() => setActiveTab('basic')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'basic' ? 'text-[#00f7ff] border-b-2 border-[#00f7ff]' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'basic' ? 'text-brand-500 border-b-2 border-brand-500' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {t('genieacs.basicSettings')}
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('display')}
-                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'display' ? 'text-[#00f7ff] border-b-2 border-[#00f7ff]' : 'text-muted-foreground hover:text-foreground'}`}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${activeTab === 'display' ? 'text-brand-500 border-b-2 border-brand-500' : 'text-muted-foreground hover:text-foreground'}`}
               >
                 {t('genieacs.displaySettings')}
               </button>
@@ -450,21 +450,21 @@ export default function VirtualParametersPage() {
                 <div className="mt-1 space-y-1">
                   <p className="text-[11px] text-muted-foreground">{t('genieacs.expressionHint')}</p>
                   <details className="text-[11px] text-muted-foreground">
-                    <summary className="cursor-pointer text-[#00f7ff] hover:underline">{t('genieacs.viewExpressionExamples')}</summary>
-                    <div className="mt-2 p-2 bg-muted/50 dark:bg-[#0a0520]/50 rounded border border-[#bc13fe]/20 space-y-2">
+                    <summary className="cursor-pointer text-brand-500 hover:underline">{t('genieacs.viewExpressionExamples')}</summary>
+                    <div className="mt-2 p-2 bg-muted/50 dark:bg-card/50 rounded border border-violet-500/20 space-y-2">
                       <div>
                         <p className="font-semibold text-foreground">1. Uptime (detik):</p>
-                        <pre className="text-[10px] overflow-x-auto text-[#00f7ff]/80">{`let uptime = declare("Device.DeviceInfo.UpTime", {value: Date.now()}).value[0];
+                        <pre className="text-[10px] overflow-x-auto text-brand-500/80">{`let uptime = declare("Device.DeviceInfo.UpTime", {value: Date.now()}).value[0];
 return Math.floor((Date.now() - Date.parse(uptime)) / 1000);`}</pre>
                       </div>
                       <div>
                         <p className="font-semibold text-foreground">2. Signal Strength:</p>
-                        <pre className="text-[10px] overflow-x-auto text-[#00f7ff]/80">{`let rx = declare("Device.X_HW_WebPonInfo.RxPower", {value: 0}).value[0];
+                        <pre className="text-[10px] overflow-x-auto text-brand-500/80">{`let rx = declare("Device.X_HW_WebPonInfo.RxPower", {value: 0}).value[0];
 return parseFloat(rx) || 0;`}</pre>
                       </div>
                       <div>
                         <p className="font-semibold text-foreground">3. PPPoE Username:</p>
-                        <pre className="text-[10px] overflow-x-auto text-[#00f7ff]/80">{`let user = declare("Device.PPP.Interface.1.Username", {value: ""}).value[0];
+                        <pre className="text-[10px] overflow-x-auto text-brand-500/80">{`let user = declare("Device.PPP.Interface.1.Username", {value: ""}).value[0];
 return user || "N/A";`}</pre>
                       </div>
                     </div>
@@ -488,7 +488,7 @@ return user || "N/A";`}</pre>
                       type="checkbox"
                       checked={form.isActive}
                       onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-                      className="rounded border-[#bc13fe]/40 bg-background dark:bg-background dark:bg-[#0a0520] accent-brand-500 dark:accent-[#00f7ff]/50"
+                      className="rounded border-violet-500/40 bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500/50"
                     />
                     {t('genieacs.activateThisParam')}
                   </label>
@@ -514,10 +514,10 @@ return user || "N/A";`}</pre>
                         value={form.displayType}
                         onChange={(e) => setForm({ ...form, displayType: e.target.value })}
                       >
-                        <option value="card" className="dark:bg-[#0a0520]">Card</option>
-                        <option value="badge" className="dark:bg-[#0a0520]">Badge</option>
-                        <option value="meter" className="dark:bg-[#0a0520]">Meter</option>
-                        <option value="list" className="dark:bg-[#0a0520]">List</option>
+                        <option value="card" className="dark:bg-card">Card</option>
+                        <option value="badge" className="dark:bg-card">Badge</option>
+                        <option value="meter" className="dark:bg-card">Meter</option>
+                        <option value="list" className="dark:bg-card">List</option>
                       </ModalSelect>
                     </div>
 
@@ -540,14 +540,14 @@ return user || "N/A";`}</pre>
                         value={form.color}
                         onChange={(e) => setForm({ ...form, color: e.target.value })}
                       >
-                        <option value="blue" className="dark:bg-[#0a0520]">Blue</option>
-                        <option value="green" className="dark:bg-[#0a0520]">Green</option>
-                        <option value="purple" className="dark:bg-[#0a0520]">Purple</option>
-                        <option value="red" className="dark:bg-[#0a0520]">Red</option>
-                        <option value="orange" className="dark:bg-[#0a0520]">Orange</option>
-                        <option value="teal" className="dark:bg-[#0a0520]">Teal</option>
-                        <option value="pink" className="dark:bg-[#0a0520]">Pink</option>
-                        <option value="indigo" className="dark:bg-[#0a0520]">Indigo</option>
+                        <option value="blue" className="dark:bg-card">Blue</option>
+                        <option value="green" className="dark:bg-card">Green</option>
+                        <option value="purple" className="dark:bg-card">Purple</option>
+                        <option value="red" className="dark:bg-card">Red</option>
+                        <option value="orange" className="dark:bg-card">Orange</option>
+                        <option value="teal" className="dark:bg-card">Teal</option>
+                        <option value="pink" className="dark:bg-card">Pink</option>
+                        <option value="indigo" className="dark:bg-card">Indigo</option>
                       </ModalSelect>
                     </div>
 
@@ -590,14 +590,14 @@ return user || "N/A";`}</pre>
                       type="checkbox"
                       checked={form.showInSummary}
                       onChange={(e) => setForm({ ...form, showInSummary: e.target.checked })}
-                      className="rounded border-[#bc13fe]/40 bg-background dark:bg-background dark:bg-[#0a0520] accent-brand-500 dark:accent-[#00f7ff]/50"
+                      className="rounded border-violet-500/40 bg-background dark:bg-background dark:bg-card accent-brand-500 dark:accent-brand-500/50"
                     />
                     {t('genieacs.showInSummary')}
                   </label>
 
-                  <div className="bg-[#00f7ff]/10 border border-[#00f7ff]/30 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-[#00f7ff] mb-1"><Palette className="w-3.5 h-3.5 inline mr-1" />{t('genieacs.displayOptions')}</p>
-                    <ul className="text-[10px] text-[#00f7ff]/80 space-y-0.5">
+                  <div className="bg-brand-500/10 border border-brand-500/30 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-brand-500 mb-1"><Palette className="w-3.5 h-3.5 inline mr-1" />{t('genieacs.displayOptions')}</p>
+                    <ul className="text-[10px] text-brand-500/80 space-y-0.5">
                       <li><strong>Card:</strong> {t('genieacs.cardDesc')}</li>
                       <li><strong>Badge:</strong> {t('genieacs.badgeDesc')}</li>
                       <li><strong>Meter:</strong> {t('genieacs.meterDesc')}</li>

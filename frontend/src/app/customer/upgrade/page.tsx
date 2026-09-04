@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -208,7 +208,7 @@ export default function UpgradePackagePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff] drop-shadow-[0_0_20px_rgba(0,247,255,0.6)]" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
       </div>
     );
   }
@@ -217,8 +217,8 @@ export default function UpgradePackagePage() {
     <div className="p-3 lg:p-6 space-y-5 w-full">
       {/* Page Header */}
       <div>
-        <h1 className="text-lg font-bold text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">{t('customer.upgradePackage')}</h1>
-        <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/60 mt-0.5">{t('customer.selectPackagePaymentMethod')}</p>
+        <h1 className="text-lg font-bold text-white ">{t('customer.upgradePackage')}</h1>
+        <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mt-0.5">{t('customer.selectPackagePaymentMethod')}</p>
       </div>
 
       {/* Error Alert */}
@@ -234,15 +234,15 @@ export default function UpgradePackagePage() {
         <div className="lg:col-span-2 space-y-4">
           {/* Current Package Card */}
           {currentPackage && (
-            <CyberCard className="bg-card/80 backdrop-blur-xl border-2 border-[#bc13fe]/30 overflow-hidden">
-              <div className="h-1 w-full bg-gradient-to-r from-[#bc13fe] via-[#ff44cc] to-[#00f7ff]" />
+            <CyberCard className="bg-card/80 backdrop-blur-xl border-2 border-violet-500/30 overflow-hidden">
+              <div className="h-1 w-full bg-gradient-to-r from-violet-500 via-pink-500 to-brand-500" />
               <div className="p-5">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2.5 bg-[#bc13fe]/20 rounded-xl border border-[#bc13fe]/30 shadow-[0_0_15px_rgba(188,19,254,0.3)] flex items-center justify-center">
-                    <Package className="w-5 h-5 text-[#bc13fe]" />
+                  <div className="p-2.5 bg-violet-500/20 rounded-xl border border-violet-500/30 shadow-[0_0_15px_rgba(139,92,246,0.3)] flex items-center justify-center">
+                    <Package className="w-5 h-5 text-violet-500" />
                   </div>
                   <div>
-                    <p className="text-[10px] text-[#e0d0ff]/50 uppercase tracking-wider font-bold">{t('customer.currentPackage')}</p>
+                    <p className="text-[10px] text-muted-foreground/50 uppercase tracking-wider font-bold">{t('customer.currentPackage')}</p>
                     <h3 className="font-bold text-lg text-white leading-tight">{currentPackage.name}</h3>
                   </div>
                 </div>
@@ -276,7 +276,7 @@ export default function UpgradePackagePage() {
                     'Invoice akan dibuat dan dikirim ke akun Anda',
                     'Paket aktif setelah pembayaran dikonfirmasi',
                   ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-[10px] text-muted-foreground dark:text-[#e0d0ff]/60">
+                    <li key={i} className="flex items-start gap-1.5 text-[10px] text-muted-foreground dark:text-muted-foreground/60">
                       <span className="w-3.5 h-3.5 flex-shrink-0 rounded-full bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-[8px] font-bold text-cyan-400 mt-0.5">{i + 1}</span>
                       {item}
                     </li>
@@ -290,8 +290,8 @@ export default function UpgradePackagePage() {
         {/* -- RIGHT COLUMN: Package selection + payment (3/5) -- */}
         <div className="lg:col-span-3 space-y-4">
           {/* Available Packages */}
-          <CyberCard className="bg-card/80 backdrop-blur-xl border-2 border-[#00f7ff]/30">
-            <div className="px-5 pt-5 pb-3 border-b border-[#00f7ff]/10 flex items-center gap-3">
+          <CyberCard className="bg-card/80 backdrop-blur-xl border-2 border-brand-500/30">
+            <div className="px-5 pt-5 pb-3 border-b border-brand-500/10 flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 rounded-lg border border-amber-500/30 flex items-center justify-center">
                 <Zap className="w-4 h-4 text-amber-400" />
               </div>
@@ -314,13 +314,13 @@ export default function UpgradePackagePage() {
                       isCurrentPackage
                       ? 'border-slate-600/30 bg-muted/30 dark:bg-slate-800/30 opacity-50 cursor-not-allowed'
                           : isSelected
-                            ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_20px_rgba(0,247,255,0.25)]'
-                            : 'border-[#bc13fe]/30 bg-background/50 dark:bg-slate-900/50 hover:border-[#00f7ff]/60 hover:bg-[#00f7ff]/5 hover:shadow-[0_0_15px_rgba(0,247,255,0.15)]'
+                            ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_20px_rgba(6,182,212,0.25)]'
+                            : 'border-violet-500/30 bg-background/50 dark:bg-slate-900/50 hover:border-brand-500/60 hover:bg-brand-500/5 hover:shadow-[0_0_15px_rgba(6,182,212,0.15)]'
                     }`}
                   >
                     {isSelected && !isCurrentPackage && (
                       <div className="absolute top-2 right-2">
-                        <CheckCircle className="w-5 h-5 text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.8)]" />
+                        <CheckCircle className="w-5 h-5 text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
                       </div>
                     )}
                     <div className="flex items-start justify-between mb-2 pr-6">
@@ -329,14 +329,14 @@ export default function UpgradePackagePage() {
                         <span className="text-[9px] px-1.5 py-0.5 bg-slate-700/50 text-slate-400 rounded-full border border-slate-600/50 absolute top-2 right-2">Aktif</span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground dark:text-[#e0d0ff]/60 mb-3">
+                    <p className="text-xs text-muted-foreground dark:text-muted-foreground/60 mb-3">
                       {pkg.description || pkg.name}
                     </p>
-                    <p className="text-lg font-bold text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.4)]">
-                      {formatCurrency(pkg.price)}<span className="text-[10px] font-normal text-muted-foreground dark:text-[#e0d0ff]/40">/{t('common.month')}</span>
+                    <p className="text-lg font-bold text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.4)]">
+                      {formatCurrency(pkg.price)}<span className="text-[10px] font-normal text-muted-foreground dark:text-muted-foreground/40">/{t('common.month')}</span>
                     </p>
                     {pkg.description && (
-                      <p className="text-[10px] text-muted-foreground dark:text-[#e0d0ff]/40 mt-1.5 leading-tight">{pkg.description}</p>
+                      <p className="text-[10px] text-muted-foreground dark:text-muted-foreground/40 mt-1.5 leading-tight">{pkg.description}</p>
                     )}
                   </button>
                 );
@@ -349,26 +349,26 @@ export default function UpgradePackagePage() {
             const pkg = packages.find(p => p.id === selectedPackage);
             if (!pkg) return null;
             return (
-              <div className="flex items-center gap-3 p-3 bg-[#00f7ff]/5 border border-[#00f7ff]/20 rounded-xl">
+              <div className="flex items-center gap-3 p-3 bg-brand-500/5 border border-brand-500/20 rounded-xl">
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <span className="text-[10px] text-muted-foreground dark:text-[#e0d0ff]/50">Dipilih:</span>
+                  <span className="text-[10px] text-muted-foreground dark:text-muted-foreground/50">Dipilih:</span>
                   <span className="text-xs font-bold text-white truncate">{pkg.name}</span>
-                  <span className="text-[10px] text-muted-foreground dark:text-[#e0d0ff]/50 hidden sm:inline">({formatSpeed(pkg.downloadSpeed)}/{formatSpeed(pkg.uploadSpeed)})</span>
+                  <span className="text-[10px] text-muted-foreground dark:text-muted-foreground/50 hidden sm:inline">({formatSpeed(pkg.downloadSpeed)}/{formatSpeed(pkg.uploadSpeed)})</span>
                 </div>
-                <ArrowRight className="w-4 h-4 text-[#00f7ff] flex-shrink-0" />
-                <span className="text-sm font-bold text-[#00f7ff] flex-shrink-0">{formatCurrency(pkg.price)}</span>
+                <ArrowRight className="w-4 h-4 text-brand-500 flex-shrink-0" />
+                <span className="text-sm font-bold text-brand-500 flex-shrink-0">{formatCurrency(pkg.price)}</span>
               </div>
             );
           })()}
 
           {/* Payment Gateway Selection */}
           {selectedPackage && paymentGateways.length > 0 && (
-            <CyberCard className="bg-card/80 backdrop-blur-xl border-2 border-[#ff44cc]/30">
-              <div className="px-5 pt-5 pb-3 border-b border-[#ff44cc]/10 flex items-center gap-3">
-                <div className="p-2 bg-[#ff44cc]/20 rounded-lg border border-[#ff44cc]/30 flex items-center justify-center">
-                  <CreditCard className="w-4 h-4 text-[#ff44cc]" />
+            <CyberCard className="bg-card/80 backdrop-blur-xl border-2 border-pink-500/30">
+              <div className="px-5 pt-5 pb-3 border-b border-pink-500/10 flex items-center gap-3">
+                <div className="p-2 bg-pink-500/20 rounded-lg border border-pink-500/30 flex items-center justify-center">
+                  <CreditCard className="w-4 h-4 text-pink-500" />
                 </div>
-                <h2 className="text-sm font-bold text-[#ff44cc] uppercase tracking-wider">{t('customer.paymentMethod')}</h2>
+                <h2 className="text-sm font-bold text-pink-500 uppercase tracking-wider">{t('customer.paymentMethod')}</h2>
               </div>
 
               <div className="p-4 space-y-2">
@@ -378,22 +378,22 @@ export default function UpgradePackagePage() {
                     onClick={() => setSelectedGateway(gateway.provider)}
                     className={`w-full text-left p-3.5 rounded-xl border-2 transition-all ${
                       selectedGateway === gateway.provider
-                        ? 'border-[#00f7ff] bg-[#00f7ff]/10 shadow-[0_0_15px_rgba(0,247,255,0.2)]'
-                        : 'border-[#bc13fe]/20 bg-background/50 dark:bg-slate-900/50 hover:border-[#00f7ff]/40'
+                        ? 'border-brand-500 bg-brand-500/10 shadow-[0_0_15px_rgba(6,182,212,0.2)]'
+                        : 'border-violet-500/20 bg-background/50 dark:bg-slate-900/50 hover:border-brand-500/40'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-muted dark:bg-slate-800 border border-[#bc13fe]/20 rounded-lg flex items-center justify-center">
-                          <CreditCard className="w-4 h-4 text-[#00f7ff]" />
+                        <div className="p-2 bg-muted dark:bg-slate-800 border border-violet-500/20 rounded-lg flex items-center justify-center">
+                          <CreditCard className="w-4 h-4 text-brand-500" />
                         </div>
                         <div>
                           <p className="font-bold text-sm text-white">{gateway.name}</p>
-                          <p className="text-[10px] text-muted-foreground dark:text-[#e0d0ff]/50 capitalize">{gateway.provider}</p>
+                          <p className="text-[10px] text-muted-foreground dark:text-muted-foreground/50 capitalize">{gateway.provider}</p>
                         </div>
                       </div>
                       {selectedGateway === gateway.provider && (
-                        <CheckCircle className="w-5 h-5 text-[#00f7ff] drop-shadow-[0_0_8px_rgba(0,247,255,0.8)]" />
+                        <CheckCircle className="w-5 h-5 text-brand-500 drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
                       )}
                     </div>
                   </button>
@@ -414,7 +414,7 @@ export default function UpgradePackagePage() {
                         <><CreditCard className="w-5 h-5" />{t('customer.payNow')}</>
                       )}
                     </CyberButton>
-                    <p className="text-[10px] text-muted-foreground dark:text-[#e0d0ff]/40 text-center">{t('customer.paymentRedirectInfo')}</p>
+                    <p className="text-[10px] text-muted-foreground dark:text-muted-foreground/40 text-center">{t('customer.paymentRedirectInfo')}</p>
                   </>
                 )}
               </div>
@@ -423,7 +423,7 @@ export default function UpgradePackagePage() {
 
           {/* No-gateway fallback */}
           {selectedPackage && paymentGateways.length === 0 && (
-            <CyberCard className="p-5 bg-card/80 backdrop-blur-xl border-2 border-[#00f7ff]/30">
+            <CyberCard className="p-5 bg-card/80 backdrop-blur-xl border-2 border-brand-500/30">
               <div className="flex items-start gap-3 mb-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
                 <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-yellow-400">{t('customer.contactAdminPayment')}</p>

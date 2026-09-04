@@ -13,7 +13,9 @@
     "start": "next start",
     "lint": "eslint",
     "clean:local": "node -e \"const fs=require('fs');const rm=(p)=>{try{if(fs.existsSync(p))fs.rmSync(p,{recursive:true,force:true});}catch(e){console.error('[clean:local] failed:',p,e.message);process.exitCode=1;}};['.next','tsconfig.tsbuildinfo','coverage','test-results','.turbo','.cache'].forEach(rm);console.log('[clean:local] done');\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "overrides": {
     "minimatch": "^10.2.1"
@@ -62,6 +64,10 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@storybook/addon-essentials": "^8.6.14",
+    "@storybook/addon-themes": "^8.6.14",
+    "@storybook/react-vite": "^8.6.14",
+    "@storybook/react": "^8.6.14",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20.19.33",
     "@types/react": "^19",
@@ -69,6 +75,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.4",
+    "storybook": "^8.6.14",
     "typescript": "^5"
   }
 }

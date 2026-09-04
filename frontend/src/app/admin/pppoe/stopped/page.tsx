@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -200,14 +200,14 @@ export default function StoppedSubscriptionsPage() {
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2">
-          <Users className="h-6 w-6 text-[#00f7ff]" />
+          <Users className="h-6 w-6 text-brand-500" />
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('pppoe.stoppedSubscriptions')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('pppoe.stoppedSubscriptions')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('pppoe.stoppedSubscriptionsDesc')}</p>
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function StoppedSubscriptionsPage() {
       <div className="flex flex-wrap gap-2">
         <button 
           onClick={handleExport} 
-          className="px-3 py-1.5 text-xs bg-accent hover:bg-accent/90 text-black font-bold rounded-lg flex items-center gap-1.5 shadow-[0_0_15px_rgba(0,247,255,0.3)] hover:shadow-[0_0_20px_rgba(0,247,255,0.5)] transition-all border border-accent/50"
+          className="px-3 py-1.5 text-xs bg-accent hover:bg-accent/90 text-black font-bold rounded-lg flex items-center gap-1.5 shadow-[0_0_15px_rgba(6,182,212,0.3)] hover:shadow-[0_0_20px_rgba(6,182,212,0.5)] transition-all border border-accent/50"
         >
           <FileText className="h-3 w-3" />
           {t('pppoe.export')}
@@ -297,7 +297,7 @@ export default function StoppedSubscriptionsPage() {
             </div>
           ) : (
             paginatedUsers.map((user) => (
-              <div key={user.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+              <div key={user.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-start gap-2 flex-1 min-w-0">
                     <input

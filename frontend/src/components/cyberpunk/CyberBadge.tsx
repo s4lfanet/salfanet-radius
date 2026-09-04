@@ -12,76 +12,76 @@ const cyberBadgeVariants = cva(
       variant: {
         // Neon cyan
         default: [
-          'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50',
-          'shadow-[0_0_10px_rgba(0,255,255,0.2)]',
+          'bg-brand-500/20 text-brand-600 dark:text-brand-400 border border-brand-500/50',
+          'shadow-md shadow-brand-500/20',
         ].join(' '),
         
         // Neon magenta
         magenta: [
           'bg-pink-500/20 text-pink-400 border border-pink-500/50',
-          'shadow-[0_0_10px_rgba(255,0,255,0.2)]',
+          'shadow-md shadow-pink-500/20',
         ].join(' '),
         
         // Neon purple
         purple: [
-          'bg-purple-500/20 text-purple-400 border border-purple-500/50',
-          'shadow-[0_0_10px_rgba(147,51,234,0.2)]',
+          'bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-500/50',
+          'shadow-md shadow-violet-500/20',
         ].join(' '),
         
         // Neon green (success)
         success: [
           'bg-green-500/20 text-green-400 border border-green-500/50',
-          'shadow-[0_0_10px_rgba(0,255,0,0.2)]',
+          'shadow-md shadow-green-500/20',
         ].join(' '),
         
         // Neon red (destructive)
         destructive: [
           'bg-red-500/20 text-red-400 border border-red-500/50',
-          'shadow-[0_0_10px_rgba(255,0,0,0.2)]',
+          'shadow-md shadow-red-500/20',
         ].join(' '),
         
         // Neon orange (warning)
         warning: [
           'bg-orange-500/20 text-orange-400 border border-orange-500/50',
-          'shadow-[0_0_10px_rgba(255,165,0,0.2)]',
+          'shadow-md shadow-orange-500/20',
         ].join(' '),
         
         // Neon blue (info)
         info: [
           'bg-blue-500/20 text-blue-400 border border-blue-500/50',
-          'shadow-[0_0_10px_rgba(59,130,246,0.2)]',
+          'shadow-md shadow-blue-500/20',
         ].join(' '),
         
         // Solid variants
         'solid-cyan': [
-          'bg-cyan-500 text-black border border-cyan-400',
-          'shadow-[0_0_20px_rgba(0,255,255,0.4)]',
+          'bg-brand-500 text-black border border-cyan-400',
+          'shadow-md shadow-brand-500/40',
         ].join(' '),
         
         'solid-magenta': [
           'bg-pink-500 text-white border border-pink-400',
-          'shadow-[0_0_20px_rgba(255,0,255,0.4)]',
+          'shadow-md shadow-pink-500/20',
         ].join(' '),
         
         'solid-success': [
           'bg-green-500 text-black border border-green-400',
-          'shadow-[0_0_20px_rgba(0,255,0,0.4)]',
+          'shadow-md shadow-green-500/20',
         ].join(' '),
         
         'solid-destructive': [
           'bg-red-500 text-white border border-red-400',
-          'shadow-[0_0_20px_rgba(255,0,0,0.4)]',
+          'shadow-md shadow-red-500/20',
         ].join(' '),
         
         // Outline
         outline: [
-          'bg-transparent text-foreground border border-white/30',
-          'hover:border-cyan-400/50 hover:text-cyan-400',
+          'bg-transparent text-foreground border border-border',
+          'hover:border-brand-500/50 hover:text-brand-600 dark:text-brand-400',
         ].join(' '),
         
         // Glass
         glass: [
-          'bg-white/5 backdrop-blur-sm text-foreground border border-white/10',
+          'bg-card/40 backdrop-blur-sm text-foreground border border-border/50',
         ].join(' '),
       },
       size: {

@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -556,7 +556,7 @@ export default function CustomerDashboard() {
       {/* -- ONT/WiFi + All Invoices (desktop 2-col) --------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* ONT/WiFi Card */}
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-accent/30 shadow-[0_0_30px_rgba(0,247,255,0.15)]">
+        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-accent/30 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-accent/20 rounded-lg border border-accent/30 flex items-center justify-center">
@@ -713,7 +713,7 @@ export default function CustomerDashboard() {
       {/* Manual Payment Proof Modal */}
       {manualPayModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50 pb-20 sm:pb-0 px-4 pt-4">
-          <div className="bg-card border border-primary/30 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-[0_0_40px_rgba(188,19,254,0.2)]">
+          <div className="bg-card border border-primary/30 rounded-2xl w-full max-w-md max-h-[80vh] overflow-y-auto shadow-[0_0_40px_rgba(139,92,246,0.2)]">
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <div>

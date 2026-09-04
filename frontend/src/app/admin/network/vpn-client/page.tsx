@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
@@ -884,12 +884,12 @@ ${vpnCmd}
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <div className="relative z-10 flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)]" />
-          <p className="text-[#00f7ff] font-medium animate-pulse">{t('network.loadingVpnClients')}</p>
+          <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)]" />
+          <p className="text-brand-500 font-medium animate-pulse">{t('network.loadingVpnClients')}</p>
         </div>
       </div>
     );
@@ -900,10 +900,10 @@ ${vpnCmd}
       <main className="bg-background relative">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none dark:block hidden">
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#bc13fe]/15 rounded-full blur-[120px] animate-pulse"></div>
-          <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-[#00f7ff]/15 rounded-full blur-[100px] animate-pulse delay-700"></div>
-          <div className="absolute bottom-0 left-1/2 w-[600px] h-[400px] bg-[#ff44cc]/10 rounded-full blur-[150px] animate-pulse delay-1000"></div>
-          <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-violet-500/15 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-brand-500/15 rounded-full blur-[100px] animate-pulse delay-700"></div>
+          <div className="absolute bottom-0 left-1/2 w-[600px] h-[400px] bg-pink-500/10 rounded-full blur-[150px] animate-pulse delay-1000"></div>
+          <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
         </div>
 
         <div className="max-w-7xl mx-auto relative z-10 p-6 lg:p-8">
@@ -912,10 +912,10 @@ ${vpnCmd}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2.5 bg-gradient-to-br from-[#00f7ff] to-[#bc13fe] rounded-xl shadow-[0_0_20px_rgba(0,247,255,0.4)] flex items-center justify-center">
+                  <div className="p-2.5 bg-gradient-to-br from-brand-500 to-violet-500 rounded-xl shadow-[0_0_20px_rgba(6,182,212,0.4)] flex items-center justify-center">
                     <Users className="w-6 h-6 text-white" />
                   </div>
-                  <h1 className="text-3xl lg:text-4xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc]">
+                  <h1 className="text-3xl lg:text-4xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500">
                     {t('network.vpnClientManagement')}
                   </h1>
                 </div>
@@ -928,7 +928,7 @@ ${vpnCmd}
                   setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(0,247,255,0.5)] transition-all duration-300 transform hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addVpnClient')}
@@ -938,26 +938,26 @@ ${vpnCmd}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-[#bc13fe]/30 p-5 hover:border-[#bc13fe]/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-violet-500/30 p-5 hover:border-violet-500/50 transition-all group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('common.totalClients')}</p>
                   <p className="text-3xl font-bold text-foreground">{totalClients}</p>
                 </div>
-                <div className="p-3 bg-[#bc13fe]/20 rounded-xl group-hover:bg-[#bc13fe]/30 transition-colors flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#bc13fe]" />
+                <div className="p-3 bg-violet-500/20 rounded-xl group-hover:bg-violet-500/30 transition-colors flex items-center justify-center">
+                  <Users className="w-6 h-6 text-violet-500" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-[#00f7ff]/30 p-5 hover:border-[#00f7ff]/50 transition-all group">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl rounded-2xl border border-brand-500/30 p-5 hover:border-brand-500/50 transition-all group">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">{t('network.radiusServer')}</p>
-                  <p className="text-3xl font-bold text-[#00f7ff]">{radiusServers}</p>
+                  <p className="text-3xl font-bold text-brand-500">{radiusServers}</p>
                 </div>
-                <div className="p-3 bg-[#00f7ff]/20 rounded-xl group-hover:bg-[#00f7ff]/30 transition-colors flex items-center justify-center">
-                  <Radio className="w-6 h-6 text-[#00f7ff]" />
+                <div className="p-3 bg-brand-500/20 rounded-xl group-hover:bg-brand-500/30 transition-colors flex items-center justify-center">
+                  <Radio className="w-6 h-6 text-brand-500" />
                 </div>
               </div>
             </div>
@@ -977,25 +977,25 @@ ${vpnCmd}
 
           {/* ── Tutorial / Flow Banner ───────────────────────────────── */}
           <div className="mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-[#00f7ff]/20 rounded-2xl overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-brand-500/20 rounded-2xl overflow-hidden">
               <button
                 onClick={() => setShowTutorial(!showTutorial)}
-                className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[#00f7ff]/5 transition-colors"
+                className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-brand-500/5 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-[#00f7ff]/20 rounded-lg flex items-center justify-center">
-                    <Info className="w-4 h-4 text-[#00f7ff]" />
+                  <div className="p-1.5 bg-brand-500/20 rounded-lg flex items-center justify-center">
+                    <Info className="w-4 h-4 text-brand-500" />
                   </div>
-                  <span className="text-sm font-bold text-[#00f7ff] uppercase tracking-wider">Cara Penggunaan — Alur VPN Client</span>
+                  <span className="text-sm font-bold text-brand-500 uppercase tracking-wider">Cara Penggunaan — Alur VPN Client</span>
                 </div>
                 {showTutorial ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </button>
               {showTutorial && (
-                <div className="px-6 pb-6 border-t border-[#00f7ff]/10">
+                <div className="px-6 pb-6 border-t border-brand-500/10">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
                     {[
-                      { step: 1, icon: '🖥️', color: 'border-[#bc13fe]/40 bg-[#bc13fe]/5', title: 'VPN Server Dulu', desc: 'Pastikan VPN Server sudah dikonfigurasi di menu VPN Server (MikroTik CHR atau WireGuard VPS).', link: '/admin/network/vpn-server', linkLabel: '→ Menu VPN Server' },
-                      { step: 2, icon: '➕', color: 'border-[#00f7ff]/40 bg-[#00f7ff]/5', title: 'Buat VPN Client', desc: 'Klik "+ Tambah VPN Client", pilih protokol (WireGuard/L2TP/SSTP/PPTP), dan nama NAS. Sistem otomatis generate user & konfigurasi di CHR.', link: null, linkLabel: null },
+                      { step: 1, icon: '🖥️', color: 'border-violet-500/40 bg-violet-500/5', title: 'VPN Server Dulu', desc: 'Pastikan VPN Server sudah dikonfigurasi di menu VPN Server (MikroTik CHR atau WireGuard VPS).', link: '/admin/network/vpn-server', linkLabel: '→ Menu VPN Server' },
+                      { step: 2, icon: '➕', color: 'border-brand-500/40 bg-brand-500/5', title: 'Buat VPN Client', desc: 'Klik "+ Tambah VPN Client", pilih protokol (WireGuard/L2TP/SSTP/PPTP), dan nama NAS. Sistem otomatis generate user & konfigurasi di CHR.', link: null, linkLabel: null },
                       { step: 3, icon: '📋', color: 'border-green-500/40 bg-green-500/5', title: 'Apply Script ke NAS', desc: 'Copy script RouterOS yang dihasilkan → paste di terminal MikroTik/WinBox pada router/NAS pelanggan. VPN akan tersambung otomatis.', link: null, linkLabel: null },
                       { step: 4, icon: '📡', color: 'border-amber-500/40 bg-amber-500/5', title: 'Tandai RADIUS Server', desc: 'Centang "Jadikan RADIUS Server" pada client yang jalan di VPS/Raspberry Pi. Lalu daftarkan NAS di menu NAS/Router.', link: '/admin/network/routers', linkLabel: '→ Menu NAS/Router' },
                     ].map(item => (
@@ -1007,7 +1007,7 @@ ${vpnCmd}
                         <p className="text-sm font-bold text-foreground mb-1">{item.title}</p>
                         <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
                         {item.link && (
-                          <a href={item.link} className="inline-block mt-2 text-xs font-medium text-[#00f7ff] hover:underline">{item.linkLabel}</a>
+                          <a href={item.link} className="inline-block mt-2 text-xs font-medium text-brand-500 hover:underline">{item.linkLabel}</a>
                         )}
                       </div>
                     ))}
@@ -1024,7 +1024,7 @@ ${vpnCmd}
 
           {/* ── VPS Built-in VPN Settings ─────────────────────────────── */}
           <div className="mb-8">
-            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-[#00f7ff]/30 rounded-2xl overflow-hidden">
+            <div className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-brand-500/30 rounded-2xl overflow-hidden">
               <button
                 onClick={() => {
                   setShowVpsSettings(!showVpsSettings);
@@ -1033,21 +1033,21 @@ ${vpnCmd}
                     queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-l2tp-info') });
                   }
                 }}
-                className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[#00f7ff]/5 transition-colors"
+                className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-brand-500/5 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-1.5 bg-[#00f7ff]/20 rounded-lg flex items-center justify-center">
-                    <Settings className="w-4 h-4 text-[#00f7ff]" />
+                  <div className="p-1.5 bg-brand-500/20 rounded-lg flex items-center justify-center">
+                    <Settings className="w-4 h-4 text-brand-500" />
                   </div>
                   <div>
-                    <span className="text-sm font-bold text-[#00f7ff] uppercase tracking-wider">Konfigurasi VPS Built-in VPN</span>
+                    <span className="text-sm font-bold text-brand-500 uppercase tracking-wider">Konfigurasi VPS Built-in VPN</span>
                     <span className="ml-2 text-xs text-muted-foreground">— Pool IP &amp; Gateway untuk WireGuard dan L2TP yang terinstall di VPS</span>
                   </div>
                 </div>
                 {showVpsSettings ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
               </button>
               {showVpsSettings && (
-                <div className="border-t border-[#00f7ff]/20 px-6 py-5 space-y-6">
+                <div className="border-t border-brand-500/20 px-6 py-5 space-y-6">
                   <p className="text-xs text-muted-foreground">Atur range IP pool yang akan di-assign otomatis ke setiap VPN client baru. Konfigurasi ini khusus untuk VPN WireGuard dan L2TP yang berjalan langsung di VPS (bukan MikroTik CHR).</p>
 
                   {/* WireGuard Pool Config */}
@@ -1129,7 +1129,7 @@ ${vpnCmd}
                     <div className="p-4 rounded-xl border border-slate-700/40 bg-slate-900/40 text-center">
                       <Wifi className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">WireGuard belum terinstall di VPS.</p>
-                      <a href="/admin/network/vpn-server" className="text-xs text-[#00f7ff] hover:underline mt-1 inline-block">→ Install dari menu VPN Server</a>
+                      <a href="/admin/network/vpn-server" className="text-xs text-brand-500 hover:underline mt-1 inline-block">→ Install dari menu VPN Server</a>
                     </div>
                   )}
 
@@ -1139,9 +1139,9 @@ ${vpnCmd}
                       <Loader2 className="w-4 h-4 animate-spin" /> Memuat info L2TP...
                     </div>
                   ) : l2tpServerInfo?.installed ? (
-                    <div className="p-4 rounded-xl border border-[#bc13fe]/30 bg-[#bc13fe]/5">
+                    <div className="p-4 rounded-xl border border-violet-500/30 bg-violet-500/5">
                       <div className="flex items-center justify-between mb-3">
-                        <p className="text-sm font-bold text-[#bc13fe] flex items-center gap-2">
+                        <p className="text-sm font-bold text-violet-500 flex items-center gap-2">
                           <Radio className="w-4 h-4" /> Pool IP L2TP/IPsec VPS
                         </p>
                         {!l2tpPoolEdit && (
@@ -1163,7 +1163,7 @@ ${vpnCmd}
                                 gateway: l2tpServerInfo.gateway || (base ? `${base}.1` : ''),
                               });
                             }}
-                            className="text-xs text-[#bc13fe] hover:text-[#d060ff] border border-[#bc13fe]/40 px-2 py-1 rounded-lg"
+                            className="text-xs text-violet-500 hover:text-[#d060ff] border border-violet-500/40 px-2 py-1 rounded-lg"
                           >
                             Edit
                           </button>
@@ -1201,18 +1201,18 @@ ${vpnCmd}
                             <input type="text" value={l2tpPoolForm.gateway} onChange={(e) => setL2tpPoolForm(p => ({...p, gateway: e.target.value}))} className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground font-mono text-sm" placeholder="mis. 10.201.0.1" />
                           </div>
                           <div className="flex gap-2 pt-1">
-                            <button onClick={handleL2tpSavePoolConfig} disabled={l2tpPoolSaving} className="flex-1 py-2 bg-[#bc13fe] text-white text-sm font-bold rounded-lg hover:bg-[#d060ff] disabled:opacity-50 transition-colors">{l2tpPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
+                            <button onClick={handleL2tpSavePoolConfig} disabled={l2tpPoolSaving} className="flex-1 py-2 bg-violet-500 text-white text-sm font-bold rounded-lg hover:bg-[#d060ff] disabled:opacity-50 transition-colors">{l2tpPoolSaving ? 'Menyimpan...' : 'Simpan'}</button>
                             <button onClick={() => setL2tpPoolEdit(false)} className="flex-1 py-2 bg-muted border border-border text-foreground text-sm rounded-lg hover:bg-accent transition-colors">Batal</button>
                           </div>
                         </div>
                       )}
-                      <p className="text-xs text-muted-foreground mt-2">Pool subnet: <span className="font-mono text-[#bc13fe]">{(() => { const s = l2tpServerInfo.poolStart; const b = (typeof s === 'string' && s.includes('.')) ? s.split('.').slice(0,3).join('.') : l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.'); return b ? `${b}.0/24` : l2tpServerInfo.subnet || '-'; })()}</span> · Server: {l2tpServerInfo.publicIp}</p>
+                      <p className="text-xs text-muted-foreground mt-2">Pool subnet: <span className="font-mono text-violet-500">{(() => { const s = l2tpServerInfo.poolStart; const b = (typeof s === 'string' && s.includes('.')) ? s.split('.').slice(0,3).join('.') : l2tpServerInfo.subnet?.split('/')[0].split('.').slice(0,3).join('.'); return b ? `${b}.0/24` : l2tpServerInfo.subnet || '-'; })()}</span> · Server: {l2tpServerInfo.publicIp}</p>
                     </div>
                   ) : (
                     <div className="p-4 rounded-xl border border-slate-700/40 bg-slate-900/40 text-center">
                       <Radio className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">L2TP/IPsec belum terinstall di VPS.</p>
-                      <a href="/admin/network/vpn-server" className="text-xs text-[#00f7ff] hover:underline mt-1 inline-block">→ Install dari menu VPN Server</a>
+                      <a href="/admin/network/vpn-server" className="text-xs text-brand-500 hover:underline mt-1 inline-block">→ Install dari menu VPN Server</a>
                     </div>
                   )}
                 </div>
@@ -1222,9 +1222,9 @@ ${vpnCmd}
 
           {/* Clients List */}
           {clients.length === 0 ? (
-            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl border-2 border-dashed border-[#bc13fe]/40 p-16 text-center">
-              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-[#bc13fe]/20 to-[#00f7ff]/20 rounded-2xl flex items-center justify-center">
-                <Shield className="w-10 h-10 text-[#bc13fe]" />
+            <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-3xl border-2 border-dashed border-violet-500/40 p-16 text-center">
+              <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-violet-500/20 to-brand-500/20 rounded-2xl flex items-center justify-center">
+                <Shield className="w-10 h-10 text-violet-500" />
               </div>
               <h3 className="text-lg sm:text-2xl font-bold text-foreground mb-3">{t('network.noVpnClientsYet')}</h3>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
@@ -1235,7 +1235,7 @@ ${vpnCmd}
                   setFormData({ name: '', description: '', vpnServerId: '', vpnType: 'l2tp', customVpnIp: '', localNetworks: '' })
                   setShowModal(true)
                 }}
-                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(0,247,255,0.5)] transition-all duration-300 transform hover:scale-105"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_30px_rgba(6,182,212,0.5)] transition-all duration-300 transform hover:scale-105"
               >
                 <Plus className="w-5 h-5" />
                 {t('network.addFirstVpnClient')}
@@ -1246,18 +1246,18 @@ ${vpnCmd}
               {clients.map((client) => (
                 <div
                   key={client.id}
-                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-[#bc13fe]/30 rounded-2xl overflow-hidden hover:border-[#00f7ff]/50 hover:shadow-[0_0_30px_rgba(0,247,255,0.15)] transition-all duration-300 group"
+                  className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl border border-violet-500/30 rounded-2xl overflow-hidden hover:border-brand-500/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.15)] transition-all duration-300 group"
                 >
                   <div className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-3 mb-3">
-                          <div className="p-2 bg-gradient-to-br from-[#00f7ff]/30 to-[#bc13fe]/30 rounded-lg flex items-center justify-center">
-                            <Shield className="w-5 h-5 text-[#00f7ff]" />
+                          <div className="p-2 bg-gradient-to-br from-brand-500/30 to-violet-500/30 rounded-lg flex items-center justify-center">
+                            <Shield className="w-5 h-5 text-brand-500" />
                           </div>
-                          <h3 className="font-bold text-lg text-foreground group-hover:text-[#00f7ff] transition-colors">{client.name}</h3>
+                          <h3 className="font-bold text-lg text-foreground group-hover:text-brand-500 transition-colors">{client.name}</h3>
                           {client.isRadiusServer && (
-                            <span className="px-3 py-1 text-xs font-bold rounded-lg bg-[#00f7ff]/20 text-[#00f7ff] border border-[#00f7ff]/50 shadow-[0_0_10px_rgba(0,247,255,0.3)]">
+                            <span className="px-3 py-1 text-xs font-bold rounded-lg bg-brand-500/20 text-brand-500 border border-brand-500/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]">
                               {t('network.radiusServer')}
                             </span>
                           )}
@@ -1265,13 +1265,13 @@ ${vpnCmd}
 
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
                           <div>
-                            <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.vpnServer')}</p>
+                            <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.vpnServer')}</p>
                             <p className="font-medium text-foreground text-sm">
                               {resolveServer(client.vpnServerId)?.name || 'N/A'}
                             </p>
                           </div>
                           <div>
-                            <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.vpnIp')}</p>
+                            <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.vpnIp')}</p>
                             {editingIpClientId === client.id ? (
                               <div className="flex items-center gap-1.5">
                                 <input
@@ -1279,7 +1279,7 @@ ${vpnCmd}
                                   value={editingIpValue}
                                   onChange={(e) => setEditingIpValue(e.target.value)}
                                   onKeyDown={(e) => { if (e.key === 'Enter') handleEditIpSave(client.id); if (e.key === 'Escape') setEditingIpClientId(null); }}
-                                  className="w-32 px-2 py-1 text-xs font-mono bg-background border border-[#00f7ff]/50 rounded-lg text-foreground focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/30 outline-none"
+                                  className="w-32 px-2 py-1 text-xs font-mono bg-background border border-brand-500/50 rounded-lg text-foreground focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 outline-none"
                                   autoFocus
                                   placeholder={client.vpnIp}
                                 />
@@ -1304,7 +1304,7 @@ ${vpnCmd}
                                 <p className="font-mono text-foreground text-sm">{client.vpnIp}</p>
                                 <button
                                   onClick={() => { setEditingIpClientId(client.id); setEditingIpValue(client.vpnIp); }}
-                                  className="p-1 bg-[#00f7ff]/10 border border-[#00f7ff]/30 text-[#00f7ff] rounded-lg hover:bg-[#00f7ff]/20 transition-all opacity-60 hover:opacity-100"
+                                  className="p-1 bg-brand-500/10 border border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/20 transition-all opacity-60 hover:opacity-100"
                                   title="Edit IP"
                                 >
                                   <Key className="w-3 h-3" />
@@ -1313,13 +1313,13 @@ ${vpnCmd}
                             )}
                           </div>
                           <div>
-                            <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.username')}</p>
+                            <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.username')}</p>
                             <p className="font-mono text-foreground text-sm">{client.username}</p>
                           </div>
                           {client.winboxPort && (
                             <div>
-                              <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.winboxRemote')}</p>
-                              <p className="font-mono text-[#00f7ff] text-sm drop-shadow-[0_0_6px_rgba(0,247,255,0.6)]">
+                              <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.winboxRemote')}</p>
+                              <p className="font-mono text-brand-500 text-sm drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]">
                                 {resolveServer(client.vpnServerId)?.host}:{client.winboxPort}
                               </p>
                             </div>
@@ -1331,13 +1331,13 @@ ${vpnCmd}
                         )}
 
                         {/* RADIUS Toggle */}
-                        <div className="mt-4 pt-4 border-t border-[#bc13fe]/20">
+                        <div className="mt-4 pt-4 border-t border-violet-500/20">
                           <label className="flex items-center gap-3 cursor-pointer w-fit">
                             <input
                               type="checkbox"
                               checked={client.isRadiusServer || false}
                               onChange={(e) => handleToggleRadiusServer(client.id, e.target.checked)}
-              className="w-5 h-5 rounded border-[#bc13fe]/50 bg-background dark:bg-slate-900 text-[#00f7ff] focus:ring-[#00f7ff]/50 focus:ring-offset-0"
+              className="w-5 h-5 rounded border-violet-500/50 bg-background dark:bg-slate-900 text-brand-500 focus:ring-brand-500/50 focus:ring-offset-0"
                             />
                             <span className="text-xs sm:text-sm text-muted-foreground">
                               {client.isRadiusServer ? t('network.defaultRadiusServer') : t('network.setAsRadiusServer')}
@@ -1347,13 +1347,13 @@ ${vpnCmd}
 
                         {/* VPS Routing Setup — only shown for RADIUS server nodes */}
                         {client.isRadiusServer && (
-                          <div className="mt-4 pt-4 border-t border-[#00f7ff]/20">
+                          <div className="mt-4 pt-4 border-t border-brand-500/20">
                             <button
                               onClick={() => toggleRoutingPanel(client.id)}
-                              className="flex items-center gap-2 text-sm font-medium text-[#00f7ff] hover:text-white transition-colors w-full text-left"
+                              className="flex items-center gap-2 text-sm font-medium text-brand-500 hover:text-white transition-colors w-full text-left"
                             >
-                              <div className="p-1.5 bg-[#00f7ff]/20 rounded-lg flex items-center justify-center">
-                                <Terminal className="w-3.5 h-3.5 text-[#00f7ff]" />
+                              <div className="p-1.5 bg-brand-500/20 rounded-lg flex items-center justify-center">
+                                <Terminal className="w-3.5 h-3.5 text-brand-500" />
                               </div>
                               <span>{t('network.vpsRoutingSetup')}</span>
                               <span className="ml-auto flex items-center gap-1 text-xs text-muted-foreground">
@@ -1366,23 +1366,23 @@ ${vpnCmd}
                             </button>
 
                             {expandedRoutingPanels.has(client.id) && (
-                              <div className="mt-3 rounded-xl overflow-hidden border border-[#00f7ff]/20">
+                              <div className="mt-3 rounded-xl overflow-hidden border border-brand-500/20">
                                 {/* Panel header */}
-                                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[#00f7ff]/10 to-[#bc13fe]/10 border-b border-[#00f7ff]/20">
+                                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-brand-500/10 to-violet-500/10 border-b border-brand-500/20">
                                   <div>
-                                    <p className="text-xs font-bold text-[#00f7ff] uppercase tracking-wider">{t('network.vpsRoutingSetup')}</p>
+                                    <p className="text-xs font-bold text-brand-500 uppercase tracking-wider">{t('network.vpsRoutingSetup')}</p>
                                     <p className="text-xs text-muted-foreground mt-0.5">{t('network.vpsRoutingSetupDesc')}</p>
                                   </div>
                                   <button
                                     onClick={() => copyToClipboard(generateVpsRoutingScript(client))}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#00f7ff]/20 border border-[#00f7ff]/30 text-[#00f7ff] rounded-lg hover:bg-[#00f7ff]/30 transition-all text-xs font-medium flex-shrink-0"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-500/20 border border-brand-500/30 text-brand-500 rounded-lg hover:bg-brand-500/30 transition-all text-xs font-medium flex-shrink-0"
                                   >
                                     <Copy className="w-3.5 h-3.5" />
                                     {t('network.copyVpsScript')}
                                   </button>
                                   <button
                                     onClick={() => handleApplyRouting(client)}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-[#bc13fe]/20 border border-[#bc13fe]/30 text-[#bc13fe] rounded-lg hover:bg-[#bc13fe]/30 transition-all text-xs font-medium flex-shrink-0"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/20 border border-violet-500/30 text-violet-500 rounded-lg hover:bg-violet-500/30 transition-all text-xs font-medium flex-shrink-0"
                                   >
                                     <Zap className="w-3.5 h-3.5" />
                                     Apply Frontend
@@ -1408,7 +1408,7 @@ ${vpnCmd}
                       <div className="flex items-center gap-2 flex-shrink-0 lg:pt-1">
                         <button
                           onClick={() => viewCredentials(client)}
-                          className="flex items-center gap-2 px-4 py-2.5 bg-[#00f7ff]/20 border border-[#00f7ff]/40 text-[#00f7ff] rounded-xl hover:bg-[#00f7ff]/30 transition-all"
+                          className="flex items-center gap-2 px-4 py-2.5 bg-brand-500/20 border border-brand-500/40 text-brand-500 rounded-xl hover:bg-brand-500/30 transition-all"
                           title="Lihat Kredensial"
                         >
                           <Eye className="w-4 h-4" />
@@ -1434,9 +1434,9 @@ ${vpnCmd}
         {/* Add Modal */}
         {showModal && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[#bc13fe]/50 rounded-2xl max-w-lg w-full p-6 shadow-[0_0_50px_rgba(188,19,254,0.3)]">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-violet-500/50 rounded-2xl max-w-lg w-full p-6 shadow-[0_0_50px_rgba(139,92,246,0.3)]">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-gradient-to-br from-[#00f7ff] to-[#bc13fe] rounded-lg flex items-center justify-center">
+                <div className="p-2 bg-gradient-to-br from-brand-500 to-violet-500 rounded-lg flex items-center justify-center">
                   <Plus className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-foreground">{t('network.addVpnClient')}</h2>
@@ -1444,13 +1444,13 @@ ${vpnCmd}
 
               <form onSubmit={handleCreate} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">
+                  <label className="block text-sm font-medium text-brand-500 mb-2">
                     {t('network.vpnServer')} <span className="text-red-400">*</span>
                   </label>
                   <select
                     value={formData.vpnServerId}
                     onChange={(e) => setFormData({ ...formData, vpnServerId: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                     required
                   >
                     <option value="" className="bg-slate-800">{t('network.selectVpnClient')}</option>
@@ -1490,13 +1490,13 @@ ${vpnCmd}
                   {formData.vpnType === 'wireguard' && !wgServerInfoLoading && wgServerInfo && !wgServerInfo.installed && vpnServers.filter(s => s.wgEnabled).length === 0 && (
                     <p className="text-xs text-amber-400 mt-1.5">
                       ⚠️ WireGuard belum terinstall di VPS dan tidak ada CHR dengan WireGuard aktif.
-                      <a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">Setup di menu VPN Server</a>.
+                      <a href="/admin/network/vpn-server" className="text-brand-500 underline ml-1">Setup di menu VPN Server</a>.
                     </p>
                   )}
                   {formData.vpnType === 'l2tp' && !l2tpServerInfoLoading && l2tpServerInfo && !l2tpServerInfo.installed && vpnServers.filter(s => s.l2tpEnabled).length === 0 && (
                     <p className="text-xs text-amber-400 mt-1.5">
                       ⚠️ L2TP belum terinstall di VPS dan tidak ada CHR dengan L2TP aktif.
-                      <a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">Setup di menu VPN Server</a>.
+                      <a href="/admin/network/vpn-server" className="text-brand-500 underline ml-1">Setup di menu VPN Server</a>.
                     </p>
                   )}
                   {formData.vpnType && (formData.vpnType === 'sstp' || formData.vpnType === 'pptp') && vpnServers.filter(server => {
@@ -1506,13 +1506,13 @@ ${vpnCmd}
                   }).length === 0 && (
                     <p className="text-xs text-amber-400 mt-1.5 flex items-center gap-1">
                       ⚠️ Tidak ada CHR yang mengaktifkan protokol <strong>{formData.vpnType.toUpperCase()}</strong>.
-                      <span> Setup di</span><a href="/admin/network/vpn-server" className="text-[#00f7ff] underline ml-1">menu VPN Server</a>.
+                      <span> Setup di</span><a href="/admin/network/vpn-server" className="text-brand-500 underline ml-1">menu VPN Server</a>.
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">
+                  <label className="block text-sm font-medium text-brand-500 mb-2">
                     VPN Protocol <span className="text-red-400">*</span>
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -1522,8 +1522,8 @@ ${vpnCmd}
                         type="button"
                         onClick={() => { setFormData({ ...formData, vpnType: type, vpnServerId: '' }); if (type === 'wireguard') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-wg-peer') }); if (type === 'l2tp') queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vps-l2tp-info') }); }}
                         className={`px-3 py-2.5 rounded-xl text-sm font-bold transition-all ${formData.vpnType === type
-                          ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black shadow-[0_0_15px_rgba(0,247,255,0.4)]'
-                          : 'bg-muted/60 dark:bg-slate-800/60 border border-[#bc13fe]/30 text-foreground hover:bg-[#bc13fe]/20'
+                          ? 'bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                          : 'bg-muted/60 dark:bg-slate-800/60 border border-violet-500/30 text-foreground hover:bg-violet-500/20'
                         }`}
                       >
                         {type === 'l2tp' ? 'L2TP/IPSec' : type === 'wireguard' ? 'WireGuard' : type.toUpperCase()}
@@ -1531,7 +1531,7 @@ ${vpnCmd}
                     ))}
                   </div>
                   {formData.vpnType === 'wireguard' && (
-                    <p className="text-xs text-[#00f7ff]/80 mt-2 flex items-center gap-1"><Wifi className="w-3 h-3" /> WireGuard memerlukan RouterOS 7+ di NAS. Sistem akan menambah peer ke CHR secara otomatis.</p>
+                    <p className="text-xs text-brand-500/80 mt-2 flex items-center gap-1"><Wifi className="w-3 h-3" /> WireGuard memerlukan RouterOS 7+ di NAS. Sistem akan menambah peer ke CHR secara otomatis.</p>
                   )}
                   {formData.vpnType === 'pptp' && (
                     <p className="text-xs text-amber-400/80 mt-2">⚠️ PPTP sudah deprecated dan kurang aman. Gunakan WireGuard atau L2TP jika memungkinkan.</p>
@@ -1539,27 +1539,27 @@ ${vpnCmd}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">
+                  <label className="block text-sm font-medium text-brand-500 mb-2">
                     {t('network.clientName')} <span className="text-red-400">*</span>
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                     placeholder="e.g., Branch Office A"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-[#00f7ff] mb-2">
+                  <label className="block text-sm font-medium text-brand-500 mb-2">
                     {t('network.descriptionOptional')}
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all resize-none"
+                    className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all resize-none"
                     placeholder={t('network.additionalNotes')}
                     rows={3}
                   />
@@ -1568,18 +1568,18 @@ ${vpnCmd}
                 {/* Local Networks — for any WireGuard peer (VPS routes to local subnets behind NAS) */}
                 {formData.vpnType === 'wireguard' && (
                   <div>
-                    <label className="block text-sm font-medium text-[#00f7ff] mb-2">
+                    <label className="block text-sm font-medium text-brand-500 mb-2">
                       IP Lokal / Subnet di Balik NAS <span className="text-muted-foreground font-normal">(opsional)</span>
                     </label>
                     <input
                       type="text"
                       value={formData.localNetworks}
                       onChange={(e) => setFormData({ ...formData, localNetworks: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                       placeholder="cth: 192.168.75.0/24,136.1.1.100/32"
                     />
                     <p className="text-xs text-muted-foreground mt-1">
-                      Pisahkan dengan koma. IP/subnet ini akan ditambahkan ke <span className="text-[#00f7ff] font-mono">AllowedIPs</span> peer WireGuard di VPS sehingga VPS bisa menjangkau jaringan lokal di balik NAS (Mikrotik).
+                      Pisahkan dengan koma. IP/subnet ini akan ditambahkan ke <span className="text-brand-500 font-mono">AllowedIPs</span> peer WireGuard di VPS sehingga VPS bisa menjangkau jaringan lokal di balik NAS (Mikrotik).
                     </p>
                   </div>
                 )}
@@ -1587,14 +1587,14 @@ ${vpnCmd}
                 {/* Custom VPN IP — only for non-VPS WG (VPS WG assigns IPs automatically) */}
                 {formData.vpnServerId && formData.vpnServerId !== '__vps_wg__' && (
                   <div>
-                    <label className="block text-sm font-medium text-[#00f7ff] mb-1">
+                    <label className="block text-sm font-medium text-brand-500 mb-1">
                       IP VPN Client <span className="text-muted-foreground font-normal">(opsional — kosongkan untuk auto)</span>
                     </label>
                     <input
                       type="text"
                       value={formData.customVpnIp}
                       onChange={(e) => setFormData({ ...formData, customVpnIp: e.target.value })}
-                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                      className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground placeholder-gray-500 font-mono focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                       placeholder="cth: 10.20.30.15 (kosong = auto-assign)"
                     />
                     {(() => {
@@ -1602,7 +1602,7 @@ ${vpnCmd}
                       const sub = srv?.subnet;
                       if (!sub) return null;
                       const base = sub.split('/')[0].split('.').slice(0, 3).join('.');
-                      return <p className="text-xs text-muted-foreground mt-1">Subnet server: <span className="text-[#00f7ff] font-mono">{sub}</span> — IP harus dalam range <span className="font-mono">{base}.10</span> – <span className="font-mono">{base}.254</span></p>;
+                      return <p className="text-xs text-muted-foreground mt-1">Subnet server: <span className="text-brand-500 font-mono">{sub}</span> — IP harus dalam range <span className="font-mono">{base}.10</span> – <span className="font-mono">{base}.254</span></p>;
                     })()}
                   </div>
                 )}
@@ -1618,7 +1618,7 @@ ${vpnCmd}
                   <button
                     type="submit"
                     disabled={creating}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(0,247,255,0.4)] transition-all disabled:opacity-50"
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black font-bold rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50"
                   >
                     {creating ? t('common.creating') : t('network.createClient')}
                   </button>
@@ -1631,9 +1631,9 @@ ${vpnCmd}
         {/* Credentials Modal */}
         {showCredentials && credentials && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[#bc13fe]/50 rounded-2xl max-w-4xl w-full p-6 shadow-[0_0_50px_rgba(188,19,254,0.3)] max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-violet-500/50 rounded-2xl max-w-4xl w-full p-6 shadow-[0_0_50px_rgba(139,92,246,0.3)] max-h-[90vh] overflow-y-auto">
               <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 bg-gradient-to-br from-[#00f7ff] to-[#bc13fe] rounded-lg flex items-center justify-center">
+                <div className="p-2 bg-gradient-to-br from-brand-500 to-violet-500 rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <h2 className="text-xl font-bold text-foreground">{t('network.vpnClientCredentials')}</h2>
@@ -1641,51 +1641,51 @@ ${vpnCmd}
 
               <div className="space-y-6">
                 {/* Credentials Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-gradient-to-br from-[#bc13fe]/10 to-[#00f7ff]/10 border border-[#bc13fe]/30 rounded-xl">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-5 bg-gradient-to-br from-violet-500/10 to-brand-500/10 border border-violet-500/30 rounded-xl">
                   <div>
-                    <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.vpnServer')}</p>
+                    <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.vpnServer')}</p>
                     <p className="font-mono text-sm text-foreground">{credentials.server}</p>
                   </div>
                   <div>
-                    <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.vpnIp')}</p>
+                    <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.vpnIp')}</p>
                     <p className="font-mono text-sm text-foreground">{credentials.vpnIp}</p>
                   </div>
                   <div>
-                    <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.username')}</p>
+                    <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.username')}</p>
                     <p className="font-mono text-sm text-foreground">{credentials.username}</p>
                   </div>
                   <div>
-                    <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.password')}</p>
+                    <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.password')}</p>
                     <p className="font-mono text-sm text-foreground">{credentials.password}</p>
                   </div>
                   {credentials.winboxRemote && (
                     <div>
-                      <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.winboxRemote')}</p>
-                      <p className="font-mono text-sm text-[#00f7ff] drop-shadow-[0_0_6px_rgba(0,247,255,0.6)]">{credentials.winboxRemote}</p>
+                      <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.winboxRemote')}</p>
+                      <p className="font-mono text-sm text-brand-500 drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]">{credentials.winboxRemote}</p>
                     </div>
                   )}
                   {credentials.apiUsername && (
                     <div>
-                      <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.apiUsername')}</p>
+                      <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.apiUsername')}</p>
                       <p className="font-mono text-sm text-green-400">{credentials.apiUsername}</p>
                     </div>
                   )}
                   {credentials.apiPassword && (
                     <div>
-                      <p className="text-[#00f7ff] text-xs uppercase tracking-wider mb-1">{t('network.apiPassword')}</p>
+                      <p className="text-brand-500 text-xs uppercase tracking-wider mb-1">{t('network.apiPassword')}</p>
                       <p className="font-mono text-sm text-green-400">{credentials.apiPassword}</p>
                     </div>
                   )}
                   {credentials.radiusServerIp && (
-                    <div className="col-span-2 mt-1 p-3 bg-[#bc13fe]/10 border border-[#bc13fe]/30 rounded-lg">
-                      <p className="text-[#bc13fe] text-xs uppercase tracking-wider mb-2 font-bold">RADIUS Configuration</p>
+                    <div className="col-span-2 mt-1 p-3 bg-violet-500/10 border border-violet-500/30 rounded-lg">
+                      <p className="text-violet-500 text-xs uppercase tracking-wider mb-2 font-bold">RADIUS Configuration</p>
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <p className="text-[#bc13fe] text-xs uppercase tracking-wider mb-1">RADIUS Server IP</p>
+                          <p className="text-violet-500 text-xs uppercase tracking-wider mb-1">RADIUS Server IP</p>
                           <p className="font-mono text-sm text-amber-300">{credentials.radiusServerIp}</p>
                         </div>
                         <div>
-                          <p className="text-[#bc13fe] text-xs uppercase tracking-wider mb-1">NAS Secret</p>
+                          <p className="text-violet-500 text-xs uppercase tracking-wider mb-1">NAS Secret</p>
                           <p className="font-mono text-sm text-amber-300">{credentials.nasSecret}</p>
                         </div>
                       </div>
@@ -1694,8 +1694,8 @@ ${vpnCmd}
                 </div>
 
                 {/* VPN Type Selector */}
-                <div className="p-5 bg-[#00f7ff]/10 border border-[#00f7ff]/30 rounded-xl">
-                  <p className="text-sm font-medium text-[#00f7ff] mb-3 uppercase tracking-wider">
+                <div className="p-5 bg-brand-500/10 border border-brand-500/30 rounded-xl">
+                  <p className="text-sm font-medium text-brand-500 mb-3 uppercase tracking-wider">
                     {t('network.selectVpnType')}
                   </p>
                   <div className="flex gap-2 flex-wrap">
@@ -1704,8 +1704,8 @@ ${vpnCmd}
                         key={type}
                         onClick={() => setSelectedVpnType(type)}
                         className={`flex-1 min-w-[80px] px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${selectedVpnType === type
-                          ? 'bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black shadow-[0_0_20px_rgba(0,247,255,0.4)]'
-                          : 'bg-muted/60 dark:bg-slate-800/60 border border-[#bc13fe]/30 text-foreground hover:bg-[#bc13fe]/20'
+                          ? 'bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black shadow-[0_0_20px_rgba(6,182,212,0.4)]'
+                          : 'bg-muted/60 dark:bg-slate-800/60 border border-violet-500/30 text-foreground hover:bg-violet-500/20'
                           }`}
                       >
                         {type === 'l2tp' ? 'L2TP/IPSec' : type === 'wireguard' ? 'WireGuard' : type.toUpperCase()}
@@ -1713,17 +1713,17 @@ ${vpnCmd}
                     ))}
                   </div>
                   {selectedVpnType === 'wireguard' && (
-                    <div className="mt-3 p-3 bg-[#bc13fe]/10 border border-[#bc13fe]/30 rounded-xl">
+                    <div className="mt-3 p-3 bg-violet-500/10 border border-violet-500/30 rounded-xl">
                       <div className="flex items-start gap-2">
-                        <Key className="w-4 h-4 text-[#bc13fe] mt-0.5 flex-shrink-0" />
+                        <Key className="w-4 h-4 text-violet-500 mt-0.5 flex-shrink-0" />
                         <div>
-                          <p className="text-xs font-bold text-[#bc13fe] mb-1">WireGuard Keys</p>
+                          <p className="text-xs font-bold text-violet-500 mb-1">WireGuard Keys</p>
                           {credentials.clientPrivateKey ? (
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-muted-foreground w-20 shrink-0">Private Key:</span>
                                 <code className="text-xs font-mono text-green-400 truncate">{credentials.clientPrivateKey.substring(0, 20)}...</code>
-                                <button onClick={() => copyToClipboard(credentials.clientPrivateKey!)} className="text-xs text-[#00f7ff] hover:underline shrink-0"><Copy className="w-3 h-3" /></button>
+                                <button onClick={() => copyToClipboard(credentials.clientPrivateKey!)} className="text-xs text-brand-500 hover:underline shrink-0"><Copy className="w-3 h-3" /></button>
                               </div>
                               {credentials.serverPublicKey && (
                                 <div className="flex items-center gap-2">
@@ -1744,18 +1744,18 @@ ${vpnCmd}
                 {/* MikroTik Script */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium text-[#00f7ff] uppercase tracking-wider">
+                    <p className="text-sm font-medium text-brand-500 uppercase tracking-wider">
                       {t('network.mikrotikConfigScript')}
                     </p>
                     <button
                       onClick={() => copyToClipboard(generateMikroTikScript())}
-                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#bc13fe] to-[#ff44cc] text-white font-bold rounded-lg hover:shadow-[0_0_20px_rgba(188,19,254,0.4)] transition-all text-sm"
+                      className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-bold rounded-lg hover:shadow-[0_0_20px_rgba(139,92,246,0.4)] transition-all text-sm"
                     >
                       <Copy className="w-4 h-4" />
                       {t('network.copyScript')}
                     </button>
                   </div>
-                  <pre className="p-5 bg-gray-100 dark:bg-slate-950 text-green-700 dark:text-green-400 border border-[#bc13fe]/30 rounded-xl text-xs overflow-auto max-h-80 whitespace-pre font-mono">
+                  <pre className="p-5 bg-gray-100 dark:bg-slate-950 text-green-700 dark:text-green-400 border border-violet-500/30 rounded-xl text-xs overflow-auto max-h-80 whitespace-pre font-mono">
                     {generateMikroTikScript()}
                   </pre>
                 </div>
@@ -1776,7 +1776,7 @@ ${vpnCmd}
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-              <span><strong className="text-amber-300 dark:text-amber-300 text-amber-600">{t('network.remoteAccess')}:</strong> {t('network.useWinboxVia')} <code className="px-1.5 py-0.5 bg-muted dark:bg-slate-800 border border-[#00f7ff]/30 rounded text-[#00f7ff]">{credentials.winboxRemote}</code></span>
+              <span><strong className="text-amber-300 dark:text-amber-300 text-amber-600">{t('network.remoteAccess')}:</strong> {t('network.useWinboxVia')} <code className="px-1.5 py-0.5 bg-muted dark:bg-slate-800 border border-brand-500/30 rounded text-brand-500">{credentials.winboxRemote}</code></span>
                     </li>
                     <li className="flex items-start gap-2">
                       <CheckCircle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
@@ -1788,7 +1788,7 @@ ${vpnCmd}
 
               <button
                 onClick={() => { setShowCredentials(false); queryClient.invalidateQueries({ queryKey: buildQueryKey('/api/network/vpn-client') }); }}
-                className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-[#bc13fe] to-[#ff44cc] hover:from-[#bc13fe]/90 hover:to-[#ff44cc]/90 rounded-xl transition-all font-bold text-white shadow-[0_0_20px_rgba(188,19,254,0.4)]"
+                className="w-full mt-6 px-4 py-4 bg-gradient-to-r from-violet-500 to-pink-500 hover:from-violet-500/90 hover:to-pink-500/90 rounded-xl transition-all font-bold text-white shadow-[0_0_20px_rgba(139,92,246,0.4)]"
               >
                 {t('common.close')}
               </button>
@@ -1799,10 +1799,10 @@ ${vpnCmd}
         {/* Apply Routing via Frontend Modal */}
         {showApplyRoutingModal && applyRoutingClient && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-2.5 sm:p-4">
-            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-[#00f7ff]/50 rounded-2xl max-w-xl w-full p-6 shadow-[0_0_50px_rgba(0,247,255,0.3)] max-h-[90vh] overflow-y-auto">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 border border-brand-500/50 rounded-2xl max-w-xl w-full p-6 shadow-[0_0_50px_rgba(6,182,212,0.3)] max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-[#00f7ff] to-[#bc13fe] rounded-lg flex items-center justify-center">
+                  <div className="p-2 bg-gradient-to-br from-brand-500 to-violet-500 rounded-lg flex items-center justify-center">
                     <Route className="w-5 h-5 text-white" />
                   </div>
                   <h2 className="text-xl font-bold text-foreground">Apply VPS Routing</h2>
@@ -1812,11 +1812,11 @@ ${vpnCmd}
                 </button>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Terapkan routing script ke VPS: <span className="text-[#00f7ff] font-medium">{applyRoutingClient.name}</span>
+                Terapkan routing script ke VPS: <span className="text-brand-500 font-medium">{applyRoutingClient.name}</span>
               </p>
 
-              <div className="p-4 rounded-xl border border-[#00f7ff]/30 bg-muted/50 dark:bg-slate-900/60 mb-4">
-                <p className="text-xs font-bold text-[#00f7ff] mb-3">🔑 SSH Credentials VPS RADIUS</p>
+              <div className="p-4 rounded-xl border border-brand-500/30 bg-muted/50 dark:bg-slate-900/60 mb-4">
+                <p className="text-xs font-bold text-brand-500 mb-3">🔑 SSH Credentials VPS RADIUS</p>
                 <input
                     className="w-full px-3 py-2 bg-input border border-border rounded-lg text-foreground text-sm mb-2"
                     placeholder="IP VPS RADIUS (contoh: 103.151.140.110)"
@@ -1848,8 +1848,8 @@ ${vpnCmd}
               </div>
 
               {applyRoutingOutput && (
-                <div className="mb-4 p-3 bg-gray-100 dark:bg-slate-950 rounded-xl border border-[#00f7ff]/20 max-h-52 overflow-y-auto">
-                  <p className="text-[#00f7ff] text-xs uppercase mb-1 font-bold">Output:</p>
+                <div className="mb-4 p-3 bg-gray-100 dark:bg-slate-950 rounded-xl border border-brand-500/20 max-h-52 overflow-y-auto">
+                  <p className="text-brand-500 text-xs uppercase mb-1 font-bold">Output:</p>
                   <pre className="text-xs text-green-300 font-mono whitespace-pre-wrap">{applyRoutingOutput}</pre>
                 </div>
               )}
@@ -1864,7 +1864,7 @@ ${vpnCmd}
                 <button
                   onClick={executeApplyRouting}
                   disabled={applyRoutingRunning}
-                  className="flex-1 px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black rounded-xl hover:shadow-[0_0_20px_rgba(0,247,255,0.4)] transition-all disabled:opacity-50"
+                  className="flex-1 px-4 py-2.5 text-sm font-bold bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black rounded-xl hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all disabled:opacity-50"
                 >
                   {applyRoutingRunning ? 'Menjalankan...' : '🚀 Apply Routing'}
                 </button>

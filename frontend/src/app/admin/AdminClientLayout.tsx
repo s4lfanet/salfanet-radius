@@ -532,7 +532,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
                 >
                   <span className="tracking-wide">{t(child.titleKey)}</span>
                   {child.badge === 'pending' && pendingCount > 0 && (
-                    <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold min-w-[18px] text-center shadow-[0_0_8px_rgba(255,0,0,0.5)] animate-pulse">
+                    <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-md font-bold min-w-[18px] text-center shadow-md shadow-red-500/20 animate-pulse">
                       {pendingCount}
                     </span>
                   )}
@@ -579,7 +579,7 @@ function NavItem({ item, pendingCount, manualPaymentsCount, unreadNotifications,
         <>
           <span className="truncate tracking-wide">{t(item.titleKey)}</span>
           {badgeCount > 0 && (
-            <span className="ml-auto flex-shrink-0 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md min-w-[18px] text-center shadow-[0_0_8px_rgba(255,0,0,0.5)] animate-pulse">
+            <span className="ml-auto flex-shrink-0 bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md min-w-[18px] text-center shadow-md shadow-red-500/20 animate-pulse">
               {badgeCount > 99 ? '99+' : badgeCount}
             </span>
           )}
@@ -1176,7 +1176,7 @@ function AdminLayoutContent({
                 <Timer className="w-6 h-6 text-amber-400" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-foreground tracking-wider uppercase drop-shadow-[0_0_10px_rgba(0,255,255,0.3)]">
+                <h3 className="text-lg font-black text-foreground tracking-wider uppercase drop-shadow-[0_0_10px_rgba(6,182,212,0.3)]">
                   {t('common.sessionTimeout')}
                 </h3>
                 <p className="text-[10px] text-brand-400/60 tracking-[0.2em] uppercase font-medium">

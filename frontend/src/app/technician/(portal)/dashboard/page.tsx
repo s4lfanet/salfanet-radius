@@ -90,8 +90,8 @@ export default function TechnicianDashboardPage() {
     switch (s) {
       case 'RESOLVED': return 'bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-500/30';
       case 'CLOSED': return 'bg-slate-500/10 text-muted-foreground border-slate-200 dark:border-slate-500/30';
-      case 'IN_PROGRESS': return 'bg-cyan-500/10 text-[#00bcd4] dark:text-[#00f7ff] border-cyan-200 dark:border-[#00f7ff]/30';
-      case 'WAITING_CUSTOMER': return 'bg-purple-500/10 text-purple-600 dark:text-[#bc13fe] border-purple-200 dark:border-[#bc13fe]/30';
+      case 'IN_PROGRESS': return 'bg-cyan-500/10 text-[#00bcd4] dark:text-brand-500 border-cyan-200 dark:border-brand-500/30';
+      case 'WAITING_CUSTOMER': return 'bg-purple-500/10 text-purple-600 dark:text-violet-500 border-purple-200 dark:border-violet-500/30';
       case 'OPEN': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30';
       default: return 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-500/30';
     }
@@ -120,9 +120,9 @@ export default function TechnicianDashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: t('technician.totalTasks'), value: stats.total, icon: ClipboardList, color: 'text-[#bc13fe]', bg: 'bg-purple-500/10 dark:bg-[#bc13fe]/10', border: 'border-purple-200 dark:border-[#bc13fe]/20' },
+          { label: t('technician.totalTasks'), value: stats.total, icon: ClipboardList, color: 'text-violet-500', bg: 'bg-purple-500/10 dark:bg-violet-500/10', border: 'border-purple-200 dark:border-violet-500/20' },
           { label: t('technician.openTasks'), value: stats.open, icon: Clock, color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-200 dark:border-amber-500/20' },
-          { label: t('technician.activeTasks'), value: stats.active, icon: AlertTriangle, color: 'text-[#00bcd4] dark:text-[#00f7ff]', bg: 'bg-cyan-500/10 dark:bg-[#00f7ff]/10', border: 'border-cyan-200 dark:border-[#00f7ff]/20' },
+          { label: t('technician.activeTasks'), value: stats.active, icon: AlertTriangle, color: 'text-[#00bcd4] dark:text-brand-500', bg: 'bg-cyan-500/10 dark:bg-brand-500/10', border: 'border-cyan-200 dark:border-brand-500/20' },
           { label: t('technician.completedTasks'), value: stats.completed, icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-500/10', border: 'border-green-200 dark:border-green-500/20' },
         ].map(({ label, value, icon: Icon, color, bg, border }) => (
           <div key={label} className={`bg-card ${border} border rounded-2xl p-4 transition-all`}>
@@ -158,7 +158,7 @@ export default function TechnicianDashboardPage() {
           <option value="LOW">{t('technician.priorityLow')}</option>
         </select>
         <label className="flex items-center gap-1.5 cursor-pointer">
-          <input type="checkbox" checked={showMyTasks} onChange={(e) => setShowMyTasks(e.target.checked)} className="w-3.5 h-3.5 rounded border-border bg-input text-[#00f7ff] focus:ring-[#00f7ff]/50" />
+          <input type="checkbox" checked={showMyTasks} onChange={(e) => setShowMyTasks(e.target.checked)} className="w-3.5 h-3.5 rounded border-border bg-input text-brand-500 focus:ring-brand-500/50" />
           <span className="text-xs text-muted-foreground">{t('technician.myTasksOnly')}</span>
         </label>
         <button onClick={loadTickets} className="ml-auto p-2 bg-muted border border-border text-muted-foreground rounded-xl hover:bg-accent transition" title="Perbarui Data">
@@ -169,7 +169,7 @@ export default function TechnicianDashboardPage() {
       {/* Tickets */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
       ) : tickets.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
@@ -184,7 +184,7 @@ export default function TechnicianDashboardPage() {
               <div className="flex flex-wrap gap-2 justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className="text-[10px] font-bold text-[#00f7ff] dark:text-[#00f7ff] opacity-70">#{ticket.ticketNumber}</span>
+                    <span className="text-[10px] font-bold text-brand-500 dark:text-brand-500 opacity-70">#{ticket.ticketNumber}</span>
                     {ticket.category && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-foreground">{ticket.category.name}</span>
                     )}
@@ -212,7 +212,7 @@ export default function TechnicianDashboardPage() {
                   <button
                     onClick={() => handleAction(ticket.id, 'claim')}
                     disabled={actionLoading === ticket.id}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-[#00f7ff] to-[#00d4e6] text-black text-xs font-bold rounded-xl hover:shadow-[0_0_15px_rgba(0,247,255,0.4)] transition disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-2 bg-gradient-to-r from-brand-500 to-[#00d4e6] text-black text-xs font-bold rounded-xl hover:shadow-[0_0_15px_rgba(6,182,212,0.4)] transition disabled:opacity-50"
                   >
                     {actionLoading === ticket.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                     {t('technician.takeTask')}

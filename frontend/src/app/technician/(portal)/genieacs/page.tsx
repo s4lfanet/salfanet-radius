@@ -209,7 +209,7 @@ export default function TechnicianGenieACSPage() {
             <p className="text-xs text-muted-foreground">{filtered.length} / {devices.length} {t('techPortal.devices')}</p>
           </div>
         </div>
-        <button onClick={fetchDevices} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+        <button onClick={fetchDevices} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -217,7 +217,7 @@ export default function TechnicianGenieACSPage() {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} placeholder={t('techPortal.searchDevice')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+        <input value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} placeholder={t('techPortal.searchDevice')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500/30 transition" />
       </div>
 
       {/* Filters */}
@@ -227,7 +227,7 @@ export default function TechnicianGenieACSPage() {
             <button
               key={s}
               onClick={() => handleFilterChange(s)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10'}`}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${filterStatus === s ? 'bg-blue-500 text-white shadow' : 'text-muted-foreground hover:bg-slate-100 dark:hover:bg-violet-500/10'}`}
             >
               {s === 'all' ? 'Semua' : s === 'online' ? 'Online' : 'Offline'}
               {s !== 'all' && (
@@ -240,7 +240,7 @@ export default function TechnicianGenieACSPage() {
           <select
             value={filterManufacturer}
             onChange={e => handleFilterChange('all', e.target.value)}
-            className="px-3 py-1.5 bg-card border border-border rounded-xl text-xs text-foreground/80 focus:outline-none focus:ring-2 focus:ring-[#00f7ff]/30"
+            className="px-3 py-1.5 bg-card border border-border rounded-xl text-xs text-foreground/80 focus:outline-none focus:ring-2 focus:ring-brand-500/30"
           >
             <option value="all">Semua Merk</option>
             {manufacturers.map(m => (
@@ -253,7 +253,7 @@ export default function TechnicianGenieACSPage() {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground/70">
@@ -279,7 +279,7 @@ export default function TechnicianGenieACSPage() {
               </thead>
               <tbody>
                 {paginated.map((d) => (
-                  <tr key={d._id} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition">
+                  <tr key={d._id} className="border-b border-slate-100 dark:border-violet-500/10 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition">
                     <td className="px-4 py-3 font-mono text-xs text-foreground">{d.serialNumber}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{d.manufacturer}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{d.model}</td>
@@ -300,7 +300,7 @@ export default function TechnicianGenieACSPage() {
                       <button
                         onClick={() => handleViewDetail(d._id)}
                         title={t('techPortal.details')}
-                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 rounded-lg transition"
+                        className="p-1.5 hover:bg-slate-100 dark:hover:bg-violet-500/10 rounded-lg transition"
                       >
                         <Eye className="w-4 h-4 text-muted-foreground" />
                       </button>
@@ -348,16 +348,16 @@ export default function TechnicianGenieACSPage() {
                     <span className="font-mono text-foreground/80">{d.serialNumber?.slice(0, 12)}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10">
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-violet-500/10">
                   <span className="text-muted-foreground">{d.pppoeIP || d.tr069IP || '-'}</span>
                   <span className={`font-mono ${parseFloat(d.rxPower) > -25 ? 'text-green-500' : parseFloat(d.rxPower) > -28 ? 'text-yellow-500' : 'text-red-500'}`}>
                     {d.rxPower ? `RX: ${d.rxPower}` : ''}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10">
+                <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-violet-500/10">
                   <button
                     onClick={() => handleViewDetail(d._id)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-[#bc13fe]/10 text-foreground border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/20 transition"
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold bg-slate-100 dark:bg-violet-500/10 text-foreground border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/20 transition"
                   >
                     <Eye className="w-3.5 h-3.5" />
                     {t('techPortal.details')}
@@ -394,7 +394,7 @@ export default function TechnicianGenieACSPage() {
           <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl" onClick={e => e.stopPropagation()}>
             {loadingDetail ? (
               <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+                <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
               </div>
             ) : detailDevice ? (
               <>
@@ -403,7 +403,7 @@ export default function TechnicianGenieACSPage() {
                     <h2 className="text-base font-bold text-foreground">{detailDevice.model}</h2>
                     <p className="text-xs text-muted-foreground">{detailDevice.serialNumber}</p>
                   </div>
-                  <button onClick={() => { setDetailDevice(null); setWifiEdit(null); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-[#bc13fe]/10 rounded-lg transition">
+                  <button onClick={() => { setDetailDevice(null); setWifiEdit(null); }} className="p-1.5 hover:bg-slate-100 dark:hover:bg-violet-500/10 rounded-lg transition">
                     <X className="w-5 h-5 text-slate-500" />
                   </button>
                 </div>
@@ -530,7 +530,7 @@ export default function TechnicianGenieACSPage() {
                                   <input
                                     value={wifiEdit.ssid}
                                     onChange={e => setWifiEdit({ ...wifiEdit, ssid: e.target.value })}
-                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-card border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#00f7ff]/40 outline-none"
+                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-card border border-border rounded-lg text-foreground focus:ring-1 focus:ring-brand-500/40 outline-none"
                                     placeholder="SSID"
                                   />
                                 </div>
@@ -540,7 +540,7 @@ export default function TechnicianGenieACSPage() {
                                     type="password"
                                     value={wifiEdit.wifiPassword}
                                     onChange={e => setWifiEdit({ ...wifiEdit, wifiPassword: e.target.value })}
-                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-card border border-border rounded-lg text-foreground focus:ring-1 focus:ring-[#00f7ff]/40 outline-none"
+                                    className="mt-1 w-full px-2.5 py-1.5 text-xs bg-card border border-border rounded-lg text-foreground focus:ring-1 focus:ring-brand-500/40 outline-none"
                                     placeholder="password"
                                   />
                                 </div>
