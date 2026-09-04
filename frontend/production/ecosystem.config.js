@@ -95,6 +95,7 @@ module.exports = {
       name: 'salfanet-cron',
       script: 'backend/node_modules/.bin/tsx',
       args: ['backend/cron-runner.ts'],
+      interpreter: 'none',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',

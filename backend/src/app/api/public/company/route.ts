@@ -17,6 +17,7 @@ export async function GET() {
         footerTechnician: true,
         footerAgent: true,
         footerCollector: true,
+        timezone: true,
       }
     });
 
@@ -32,6 +33,7 @@ export async function GET() {
         footerTechnician: company?.footerTechnician || null,
         footerAgent: company?.footerAgent || null,
         footerCollector: company?.footerCollector || null,
+        timezone: company?.timezone || 'Asia/Jakarta',
       }
     });
   } catch (error: any) {
@@ -48,6 +50,7 @@ export async function GET() {
         footerTechnician: null,
         footerAgent: null,
         footerCollector: null,
+        timezone: 'Asia/Jakarta',
       }
     });
   }

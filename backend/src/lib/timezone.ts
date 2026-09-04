@@ -96,6 +96,33 @@ export async function refreshTimezoneFromDB(): Promise<string> {
 }
 
 /**
+ * Self-initializing background refresh — fixes a root-cause bug where
+ * `currentTimezone` was ONLY updated via setCurrentTimezone() when an admin
+ * manually saved company settings (PATCH /api/company) from THIS SAME
+ * process. On every PM2 restart/deploy, currentTimezone silently reset to
+ * the ENV default (NEXT_PUBLIC_TIMEZONE || 'Asia/Jakarta'), causing every
+ * getCurrentTimezone()/formatWIB() call used by notification builders
+ * (WhatsApp/email templates) to embed WRONG timestamps until someone
+ * happened to re-save company settings on that process.
+ *
+ * This runs once on module load (server-only) and every DB_TIMEZONE_CACHE_TTL
+ * afterwards, so the in-memory timezone is always in sync with the DB
+ * regardless of restarts. Guarded against duplicate registration (HMR / dev).
+ */
+declare global {
+  // eslint-disable-next-line no-var
+  var __salfanetTimezoneAutoRefreshStarted: boolean | undefined;
+}
+
+if (typeof window === 'undefined' && !globalThis.__salfanetTimezoneAutoRefreshStarted) {
+  globalThis.__salfanetTimezoneAutoRefreshStarted = true;
+  refreshTimezoneFromDB().catch(() => { /* non-fatal — DB may not be ready yet */ });
+  setInterval(() => {
+    refreshTimezoneFromDB().catch(() => { /* non-fatal */ });
+  }, DB_TIMEZONE_CACHE_TTL);
+}
+
+/**
  * Get timezone offset in milliseconds from the configured timezone.
  * Uses Intl.DateTimeFormat (DST-aware) instead of hardcoded values.
  * Falls back to extracting offset from the system's own timezone if

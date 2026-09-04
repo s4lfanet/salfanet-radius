@@ -64,6 +64,60 @@ export function getCurrentTimezone(): string {
   return currentTimezone;
 }
 
+// Cache for server-fetched timezone (refreshed periodically)
+let dbTimezoneCache: string | null = null;
+let dbTimezoneCacheTime = 0;
+const DB_TIMEZONE_CACHE_TTL = 60 * 1000; // 1 minute
+
+/**
+ * Refresh timezone from the backend's public company API (server-side only).
+ * Frontend has no direct DB access — it fetches from the backend service.
+ * Caches for 1 minute to avoid repeated requests.
+ */
+async function refreshTimezoneFromBackend(): Promise<string> {
+  const now = Date.now();
+  if (dbTimezoneCache && (now - dbTimezoneCacheTime) < DB_TIMEZONE_CACHE_TTL) {
+    currentTimezone = dbTimezoneCache;
+    return currentTimezone;
+  }
+  try {
+    const baseUrl = process.env.SERVER_API_URL || process.env.BACKEND_URL || 'http://localhost:3001';
+    const res = await fetch(`${baseUrl}/api/public/company`, { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      const tz = data?.company?.timezone || data?.data?.timezone || data?.timezone;
+      if (tz) {
+        dbTimezoneCache = tz;
+        dbTimezoneCacheTime = now;
+        currentTimezone = tz;
+      }
+    }
+  } catch {
+    // Backend unavailable — keep current/default
+  }
+  return currentTimezone;
+}
+
+/**
+ * Self-initializing background refresh (server-side only) — fixes stale
+ * timezone state after a PM2 restart. Without this, frontend SSR pages
+ * would keep using the ENV default (NEXT_PUBLIC_TIMEZONE) until a browser
+ * session called setCurrentTimezone() via the client-side company store.
+ * Guarded against duplicate registration (HMR / dev).
+ */
+declare global {
+  // eslint-disable-next-line no-var
+  var __salfanetTimezoneAutoRefreshStarted: boolean | undefined;
+}
+
+if (typeof window === 'undefined' && !globalThis.__salfanetTimezoneAutoRefreshStarted) {
+  globalThis.__salfanetTimezoneAutoRefreshStarted = true;
+  refreshTimezoneFromBackend().catch(() => { /* non-fatal */ });
+  setInterval(() => {
+    refreshTimezoneFromBackend().catch(() => { /* non-fatal */ });
+  }, DB_TIMEZONE_CACHE_TTL);
+}
+
 /**
  * Get timezone offset in milliseconds from the configured timezone.
  * Uses Intl.DateTimeFormat (DST-aware) instead of hardcoded values.
