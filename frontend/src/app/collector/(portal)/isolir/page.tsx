@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { apiAdmin, ApiError } from '@/lib/api/client';
+import { formatWIB } from '@/lib/timezone';
 import {
   UserX, Search, Unplug, ChevronDown, X, Loader2,
   Wallet, Upload, MapPin, Wifi, Calendar, Phone,
@@ -10,7 +11,7 @@ import {
 
 const PAGE_SIZE = 50;
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-const fmtDate = (d: string | null) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtDate = (d: string | null) => d ? formatWIB(d, 'dd MMM yyyy') : '—';
 
 export default function CollectorIsolirPage() {
   const [users, setUsers] = useState<any[]>([]);

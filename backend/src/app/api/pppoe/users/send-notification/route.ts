@@ -3,6 +3,7 @@ import { requirePermission } from '@/server/middleware/api-auth';
 import { prisma } from '@/server/db/client';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
 import { EmailService } from '@/server/services/notifications/email.service';
+import { getCurrentTimezone } from '@/lib/timezone';
 
 export async function POST(request: NextRequest) {
   try {
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
             ...variables,
             invoiceNumber: latestInvoice.invoiceNumber,
             amount,
-            dueDate: latestInvoice.dueDate.toLocaleDateString('id-ID'),
+            dueDate: latestInvoice.dueDate.toLocaleDateString('id-ID', { timeZone: getCurrentTimezone() }),
             customerEmail: user.email || '',
             paymentLink: `${company?.baseUrl}/pay/${latestInvoice.paymentToken}`,
             additionalMessage: additionalMessage || '',
@@ -172,9 +173,9 @@ export async function POST(request: NextRequest) {
             ...variables,
             invoiceNumber: paidInvoice.invoiceNumber,
             amount,
-            paidDate: paidInvoice.paidAt?.toLocaleDateString('id-ID') || '',
+            paidDate: paidInvoice.paidAt?.toLocaleDateString('id-ID', { timeZone: getCurrentTimezone() }) || '',
             customerEmail: user.email || '',
-            expiredDate: user.expiredAt?.toLocaleDateString('id-ID') || '',
+            expiredDate: user.expiredAt?.toLocaleDateString('id-ID', { timeZone: getCurrentTimezone() }) || '',
             additionalMessage: additionalMessage || '',
           };
         }

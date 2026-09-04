@@ -1607,6 +1607,7 @@ async function handleInvoicePayment(
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric',
+                      timeZone: getCurrentTimezone(),
                     })
                   : '-';
                 const variables: Record<string, string> = {

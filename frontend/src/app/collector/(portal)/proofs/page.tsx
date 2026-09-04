@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Inbox, Search, Eye, ChevronDown, Loader2, X } from 'lucide-react';
 import { apiAdmin } from '@/lib/api';
+import { formatWIB } from '@/lib/timezone';
 
 interface ProofItem {
   id: string;
@@ -61,7 +62,7 @@ export default function CollectorProofsPage() {
   const visible = filtered.slice(0, visibleCount);
 
   const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-  const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : '—';
+  const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM') : '—';
 
   return (
     <div className="space-y-6">

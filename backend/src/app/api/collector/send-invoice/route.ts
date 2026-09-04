@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { verifyCollector } from '@/server/auth/collector-auth';
 import { WhatsAppService } from '@/server/services/notifications/whatsapp.service';
+import { getCurrentTimezone } from '@/lib/timezone';
 
 /**
  * POST /api/collector/send-invoice
@@ -70,6 +71,7 @@ export async function POST(req: NextRequest) {
           day: '2-digit',
           month: 'long',
           year: 'numeric',
+          timeZone: getCurrentTimezone(),
         })
       : '-';
 

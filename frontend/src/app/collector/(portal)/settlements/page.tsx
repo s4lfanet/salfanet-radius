@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { apiAdmin } from '@/lib/api/client';
+import { formatWIB } from '@/lib/timezone';
 import { Wallet, Activity, ChevronDown, ChevronUp } from 'lucide-react';
 
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-const fmtTime = (d: string) => d ? new Date(d).toLocaleString('id-ID', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—';
-const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) : '—';
+const fmtTime = (d: string) => d ? formatWIB(d, 'dd MMM HH:mm') : '—';
+const fmtDate = (d: string) => d ? formatWIB(d, 'EEEE, dd MMMM yyyy') : '—';
 
 export default function CollectorSettlementsPage() {
   const today = new Date().toISOString().slice(0, 10);
@@ -65,7 +66,7 @@ export default function CollectorSettlementsPage() {
   const confirmBadge = (confirmed_by: string, confirmed_at: string) => {
     if (confirmed_by) return (
       <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-medium">
-        Dikonfirmasi {confirmed_at ? new Date(confirmed_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' }) : ''}
+        Dikonfirmasi {confirmed_at ? formatWIB(confirmed_at, 'dd MMM') : ''}
       </span>
     );
     return <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600">Belum dikonfirmasi</span>;
@@ -221,7 +222,7 @@ export default function CollectorSettlementsPage() {
                           className="hover:bg-accent/30 transition-colors cursor-pointer"
                           onClick={() => fetchDetailForDate(row.date)}>
                           <td className="px-3 py-3 font-medium text-foreground">
-                            {new Date(row.date).toLocaleDateString('id-ID', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}
+                            {formatWIB(row.date, 'EEE, dd MMM yyyy')}
                           </td>
                           <td className="px-3 py-3 text-right">{row.invoice_count}</td>
                           <td className="px-3 py-3 text-right font-medium">{fmtRp(row.total_amount)}</td>
