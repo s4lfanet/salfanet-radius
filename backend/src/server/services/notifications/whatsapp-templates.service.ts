@@ -456,6 +456,7 @@ export async function sendPaymentSuccess(data: {
           day: '2-digit',
           month: 'long',
           year: 'numeric',
+          timeZone: getCurrentTimezone(),
         })
       : '-';
 
