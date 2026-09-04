@@ -208,7 +208,30 @@ install_dependencies() {
     fi
     # Clear npm cache to avoid stale/corrupt entries from previous attempts
     npm cache clean --force 2>/dev/null || true
-    
+
+    # This is a pnpm-only monorepo (root package.json has no real dependencies,
+    # workspace packages are linked via "workspace:*" protocol which npm cannot
+    # resolve). Ensure pnpm is available BEFORE attempting install, otherwise
+    # falling back to npm silently produces an empty/broken node_modules.
+    if [ -f "pnpm-workspace.yaml" ] && ! command -v pnpm &>/dev/null; then
+        print_info "pnpm not found — installing via corepack (bundled with Node.js)..."
+        if command -v corepack &>/dev/null; then
+            corepack enable 2>/dev/null || true
+            corepack prepare pnpm@latest --activate 2>&1 | tee -a /tmp/npm-install.log || true
+        fi
+        # Fallback: install pnpm globally via npm if corepack failed
+        if ! command -v pnpm &>/dev/null; then
+            print_info "Falling back to 'npm install -g pnpm'..."
+            npm install -g pnpm 2>&1 | tee -a /tmp/npm-install.log || true
+        fi
+        if command -v pnpm &>/dev/null; then
+            print_success "pnpm installed: $(pnpm --version)"
+        else
+            print_error "Failed to install pnpm — this monorepo requires pnpm to install dependencies correctly."
+            return 1
+        fi
+    fi
+
     print_info "Downloading packages from npm registry..."
     
     # Try pnpm first (monorepo workspace), fall back to npm
