@@ -37,9 +37,14 @@ const nextConfig: NextConfig = {
   poweredByHeader: false, // Remove X-Powered-By header
   compress: true, // Enable gzip compression
 
-  // Proxy /api/* to backend in local dev (in production, Nginx handles this)
+  // Proxy /api/* to backend in local dev only (in production, Nginx handles this)
   async rewrites() {
+    if (process.env.NODE_ENV === 'production') return [];
     return [
+      {
+        source: '/api/auth/:path*',
+        destination: '/api/auth/:path*',
+      },
       {
         source: '/api/:path*',
         destination: process.env.BACKEND_URL || 'http://localhost:3001/api/:path*',
