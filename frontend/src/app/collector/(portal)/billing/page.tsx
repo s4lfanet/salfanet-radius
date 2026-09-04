@@ -4,11 +4,12 @@ import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import { apiAdmin, ApiError } from '@/lib/api/client';
 import { printInvoiceStandard, printInvoiceThermal } from '@/lib/invoice-print';
 import { BluetoothPrinter, type ThermalReceiptData } from '@/lib/bluetooth-printer';
+import { formatWIB } from '@/lib/timezone';
 import { Users, Search, CheckCircle, Loader2, ChevronDown, X, Upload, Printer, Bluetooth, MessageCircle, FileText, Wallet, MapPin, Wifi, Calendar, Phone } from 'lucide-react';
 
 const PAGE_SIZE = 50;
 const fmtRp = (v: number) => `Rp ${Number(v || 0).toLocaleString('id-ID')}`;
-const fmtDate = (d: string) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+const fmtDate = (d: string) => d ? formatWIB(d, 'dd MMM yyyy') : '—';
 
 export default function CollectorBillingPage() {
   const [users, setUsers] = useState<any[]>([]);

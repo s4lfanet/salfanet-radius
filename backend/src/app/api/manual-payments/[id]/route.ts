@@ -360,7 +360,7 @@ export async function PATCH(
           .replace(/{{customerId}}/g, (manualPayment.user as any)?.customerId || '-')
           .replace(/{{invoiceNumber}}/g, invoiceNumber)
           .replace(/{{amount}}/g, amount)
-          .replace(/{{expiredDate}}/g, newExpiry.toLocaleDateString('id-ID'))
+          .replace(/{{expiredDate}}/g, newExpiry.toLocaleDateString('id-ID', { timeZone: getCurrentTimezone() }))
           .replace(/{{profileName}}/g, (manualPayment.user as any)?.profile?.name || '-')
           .replace(/{{area}}/g, (manualPayment.user as any)?.area?.name || '-')
           .replace(/{{companyName}}/g, company?.name || '')

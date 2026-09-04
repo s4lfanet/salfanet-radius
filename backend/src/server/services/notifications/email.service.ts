@@ -1095,7 +1095,7 @@ export const EmailService = {
         new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
       const formatDate = (date: Date) => 
-        date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() });
 
       let htmlBody = template?.htmlBody || this.generateRegistrationApprovalEmail({
         customerName: data.toName,
@@ -1182,7 +1182,7 @@ export const EmailService = {
       new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 
     const formatDate = (date: Date) => 
-      date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+      date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() });
 
     return `
 <!DOCTYPE html>

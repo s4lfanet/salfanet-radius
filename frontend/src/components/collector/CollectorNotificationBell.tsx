@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Bell, BellOff, Loader2, X, Ticket, Wrench, Receipt } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { apiAdmin } from '@/lib/api/client';
+import { formatWIB } from '@/lib/timezone';
 
 interface NotifEvent {
   id: string;
@@ -146,7 +147,7 @@ export default function CollectorNotificationBell() {
     if (mins < 60) return `${mins} menit lalu`;
     const hours = Math.floor(mins / 60);
     if (hours < 24) return `${hours} jam lalu`;
-    return d.toLocaleDateString('id-ID');
+    return formatWIB(d, 'dd MMM yyyy');
   };
 
   const pushOn = pushSubscribed && permission === 'granted';

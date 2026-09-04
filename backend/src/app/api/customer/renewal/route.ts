@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { randomBytes, randomUUID } from 'crypto';
-import { toUTC, nowWIB } from '@/lib/timezone';
+import { toUTC, nowWIB, getCurrentTimezone } from '@/lib/timezone';
 
 function generatePaymentToken(): string {
   return randomBytes(32).toString('hex');
@@ -263,7 +263,7 @@ export async function POST(request: NextRequest) {
           .replace(/{{customerName}}/g, user.name)
           .replace(/{{invoiceNumber}}/g, invoiceNumber)
           .replace(/{{amount}}/g, amount.toLocaleString('id-ID'))
-          .replace(/{{dueDate}}/g, newExpiredDate.toLocaleDateString('id-ID'))
+          .replace(/{{dueDate}}/g, newExpiredDate.toLocaleDateString('id-ID', { timeZone: getCurrentTimezone() }))
           .replace(/{{paymentLink}}/g, paymentLink)
           .replace(/{{companyName}}/g, company?.name || 'Billing System')
           .replace(/{{companyPhone}}/g, company?.phone || '');
@@ -329,7 +329,7 @@ export async function POST(request: NextRequest) {
               username: user.username,
               invoiceNumber: invoiceNumber,
               amount: `Rp ${amount.toLocaleString('id-ID')}`,
-              dueDate: newExpiredDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+              dueDate: newExpiredDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', timeZone: getCurrentTimezone() }),
               paymentLink: paymentLink,
               paymentToken: paymentToken,
               baseUrl: baseUrl,
