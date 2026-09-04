@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -338,10 +338,10 @@ export default function CronSettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl" />
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 relative z-10" />
       </div>
     );
   }
@@ -351,18 +351,18 @@ export default function CronSettingsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl" />
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
       </div>
 
       <div className="relative z-10 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] flex items-center gap-3">
-              <Clock className="w-7 h-7 text-brand-500 dark:text-[#00f7ff]" />
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 flex items-center gap-3">
+              <Clock className="w-7 h-7 text-brand-500 dark:text-brand-500" />
               {t('settings.cronTitle')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('settings.cronSubtitle')}</p>

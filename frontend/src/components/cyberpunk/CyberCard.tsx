@@ -14,38 +14,38 @@ const CyberCard = React.forwardRef<HTMLDivElement, CyberCardProps>(
   ({ className, variant = 'default', neonColor = 'cyan', hoverEffect = true, glowIntensity = 'low', children, ...props }, ref) => {
     const neonColorMap = {
       cyan: {
-        border: 'border-cyan-500/30',
-        hoverBorder: 'hover:border-cyan-400/60',
-        glow: 'shadow-[0_0_20px_rgba(0,255,255,0.1)]',
-        hoverGlow: 'hover:shadow-[0_0_30px_rgba(0,255,255,0.2)]',
-        gradient: 'from-cyan-500/10 to-transparent',
+        border: 'border-brand-500/30',
+        hoverBorder: 'hover:border-brand-500/60',
+        glow: 'shadow-md shadow-brand-500/10',
+        hoverGlow: 'hover:shadow-lg hover:shadow-brand-500/20',
+        gradient: 'from-brand-500/10 to-transparent',
       },
       magenta: {
         border: 'border-pink-500/30',
         hoverBorder: 'hover:border-pink-400/60',
-        glow: 'shadow-[0_0_20px_rgba(255,0,255,0.1)]',
-        hoverGlow: 'hover:shadow-[0_0_30px_rgba(255,0,255,0.2)]',
+        glow: 'shadow-md shadow-pink-500/20',
+        hoverGlow: 'hover:shadow-md shadow-pink-500/20',
         gradient: 'from-pink-500/10 to-transparent',
       },
       purple: {
-        border: 'border-purple-500/30',
-        hoverBorder: 'hover:border-purple-400/60',
-        glow: 'shadow-[0_0_20px_rgba(147,51,234,0.1)]',
-        hoverGlow: 'hover:shadow-[0_0_30px_rgba(147,51,234,0.2)]',
-        gradient: 'from-purple-500/10 to-transparent',
+        border: 'border-violet-500/30',
+        hoverBorder: 'hover:border-violet-400/60',
+        glow: 'shadow-md shadow-violet-500/20',
+        hoverGlow: 'hover:shadow-md shadow-violet-500/20',
+        gradient: 'from-violet-500/10 to-transparent',
       },
       blue: {
         border: 'border-blue-500/30',
         hoverBorder: 'hover:border-blue-400/60',
-        glow: 'shadow-[0_0_20px_rgba(59,130,246,0.1)]',
-        hoverGlow: 'hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]',
+        glow: 'shadow-md shadow-blue-500/20',
+        hoverGlow: 'hover:shadow-md shadow-blue-500/20',
         gradient: 'from-blue-500/10 to-transparent',
       },
       green: {
         border: 'border-green-500/30',
         hoverBorder: 'hover:border-green-400/60',
-        glow: 'shadow-[0_0_20px_rgba(0,255,0,0.1)]',
-        hoverGlow: 'hover:shadow-[0_0_30px_rgba(0,255,0,0.2)]',
+        glow: 'shadow-md shadow-green-500/20',
+        hoverGlow: 'hover:shadow-md shadow-green-500/20',
         gradient: 'from-green-500/10 to-transparent',
       },
     };
@@ -59,22 +59,22 @@ const CyberCard = React.forwardRef<HTMLDivElement, CyberCardProps>(
         hoverEffect && neonColorMap[neonColor].hoverGlow
       ),
       glass: cn(
-        'bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl',
-        'shadow-[0_8px_32px_rgba(0,0,0,0.4)]',
-        hoverEffect && 'hover:bg-white/10 hover:border-white/20'
+        'bg-card/40 backdrop-blur-xl border border-border/50 rounded-xl',
+        'shadow-md',
+        hoverEffect && 'hover:bg-muted/50 hover:border-border'
       ),
       neon: cn(
         'bg-background border-2 rounded-xl relative overflow-hidden',
         neonColorMap[neonColor].border,
         hoverEffect && neonColorMap[neonColor].hoverBorder,
-        'shadow-[0_0_30px_rgba(0,255,255,0.2)]',
-        hoverEffect && 'hover:shadow-[0_0_50px_rgba(0,255,255,0.3)]'
+        'shadow-lg shadow-brand-500/20',
+        hoverEffect && 'hover:shadow-xl hover:shadow-brand-500/30'
       ),
       hologram: cn(
-        'bg-gradient-to-br from-cyan-500/5 via-purple-500/5 to-pink-500/5 backdrop-blur-xl',
-        'border border-white/10 rounded-xl',
-        'shadow-[0_0_40px_rgba(0,255,255,0.1),0_0_80px_rgba(255,0,255,0.05)]',
-        hoverEffect && 'hover:from-cyan-500/10 hover:via-purple-500/10 hover:to-pink-500/10'
+        'bg-gradient-to-br from-brand-500/5 via-violet-500/5 to-pink-500/5 backdrop-blur-xl',
+        'border border-border/50 rounded-xl',
+        'shadow-lg shadow-brand-500/10',
+        hoverEffect && 'hover:from-brand-500/10 hover:via-violet-500/10 hover:to-pink-500/10'
       ),
     };
 
@@ -125,7 +125,6 @@ const CyberCardTitle = React.forwardRef<
     ref={ref}
     className={cn(
       'text-lg font-bold tracking-wide text-foreground',
-      'drop-shadow-[0_0_10px_rgba(0,255,255,0.3)]',
       className
     )}
     {...props}
@@ -165,7 +164,7 @@ const CyberCardFooter = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'flex items-center gap-3 p-5 pt-0 border-t border-white/10 mt-4',
+      'flex items-center gap-3 p-5 pt-0 border-t border-border/50 mt-4',
       className
     )}
     {...props}
@@ -192,9 +191,9 @@ function CyberStatsCard({
   className,
 }: CyberStatsCardProps) {
   const colorMap = {
-    cyan: 'from-cyan-400 to-cyan-500',
+    cyan: 'from-brand-400 to-brand-500',
     magenta: 'from-pink-400 to-pink-500',
-    purple: 'from-purple-400 to-purple-500',
+    purple: 'from-violet-400 to-violet-500',
     green: 'from-green-400 to-green-500',
   };
 
@@ -224,7 +223,7 @@ function CyberStatsCard({
           <div className={cn(
             'p-2 rounded-lg bg-gradient-to-br',
             colorMap[neonColor],
-            'shadow-[0_0_20px_rgba(0,255,255,0.3)]'
+            'shadow-md shadow-brand-500/30'
           )}>
             <div className="text-black">{icon}</div>
           </div>

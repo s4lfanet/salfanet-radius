@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState } from "react"
 import { Plus, Loader2, Trash2, Edit, Ticket, RefreshCw, ChevronDown, ChevronRight, UploadCloud } from "lucide-react"
@@ -346,10 +346,10 @@ export default function HotspotProfilePage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
       </div>
     )
   }
@@ -357,17 +357,17 @@ export default function HotspotProfilePage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)] flex items-center gap-2">
-              <Ticket className="w-5 h-5 text-[#00f7ff]" />
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+              <Ticket className="w-5 h-5 text-brand-500" />
               {t('hotspot.profiles')}
             </h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('hotspot.profilesSubtitle')}</p>
@@ -438,7 +438,7 @@ export default function HotspotProfilePage() {
             <div className="text-center py-8 text-muted-foreground text-xs">{t('hotspot.noProfiles')}</div>
           ) : (
             profiles.map((profile) => (
-              <div key={profile.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+              <div key={profile.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <div className="font-medium text-sm text-foreground">{profile.name}</div>
@@ -598,9 +598,9 @@ export default function HotspotProfilePage() {
                       <ModalInput type="number" min={0} value={formData.resellerFee} onChange={(e) => setFormData({ ...formData, resellerFee: e.target.value })} placeholder="0" />
                     </div>
                   </div>
-                  <div className="bg-[#00ff88]/10 p-2 rounded-lg border border-[#00ff88]/30">
+                  <div className="bg-green-500/10 p-2 rounded-lg border border-green-500/30">
                     <div className="text-[10px] text-muted-foreground">{t('hotspot.sellingPrice')}</div>
-                    <div className="text-base font-bold text-[#00ff88] drop-shadow-[0_0_10px_rgba(0,255,136,0.5)]">{formatCurrency(sellingPrice)}</div>
+                    <div className="text-base font-bold text-green-500 drop-shadow-[0_0_10px_rgba(0,255,136,0.5)]">{formatCurrency(sellingPrice)}</div>
                   </div>
                   <div>
                     <ModalLabel>{t('hotspot.groupProfile')}</ModalLabel>
@@ -618,10 +618,10 @@ export default function HotspotProfilePage() {
                     <div>
                       <ModalLabel>{t('common.type')}</ModalLabel>
                       <ModalSelect value={formData.validityUnit} onChange={(e) => setFormData({ ...formData, validityUnit: e.target.value })}>
-                        <option value="MINUTES" className="dark:bg-[#0a0520]">{t('hotspot.minutes')}</option>
-                        <option value="HOURS" className="dark:bg-[#0a0520]">{t('hotspot.hours')}</option>
-                        <option value="DAYS" className="dark:bg-[#0a0520]">{t('hotspot.days')}</option>
-                        <option value="MONTHS" className="dark:bg-[#0a0520]">{t('hotspot.months')}</option>
+                        <option value="MINUTES" className="dark:bg-card">{t('hotspot.minutes')}</option>
+                        <option value="HOURS" className="dark:bg-card">{t('hotspot.hours')}</option>
+                        <option value="DAYS" className="dark:bg-card">{t('hotspot.days')}</option>
+                        <option value="MONTHS" className="dark:bg-card">{t('hotspot.months')}</option>
                       </ModalSelect>
                     </div>
                   </div>
@@ -652,7 +652,7 @@ export default function HotspotProfilePage() {
                           <ModalInput type="number" min="1" value={formData.speedUpload} onChange={(e) => setFormData({ ...formData, speedUpload: e.target.value })} required />
                         </div>
                       </div>
-                      <div className="mt-1.5 px-2 py-1.5 bg-muted/30 rounded text-[10px] font-mono text-[#00f7ff]">
+                      <div className="mt-1.5 px-2 py-1.5 bg-muted/30 rounded text-[10px] font-mono text-brand-500">
                         Rate Limit: {buildHotspotSpeed()}
                       </div>
                     </div>
@@ -660,7 +660,7 @@ export default function HotspotProfilePage() {
                     <div className="border border-border rounded-lg overflow-hidden">
                       <button type="button" onClick={() => setShowBurst(!showBurst)}
                         className="w-full flex items-center gap-2 px-4 py-3 text-xs font-medium hover:bg-muted/50 transition-colors text-left">
-                        {showBurst ? <ChevronDown className="h-3.5 w-3.5 text-[#00f7ff]" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                        {showBurst ? <ChevronDown className="h-3.5 w-3.5 text-brand-500" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                         <span>Burst + Priority + Limit-at</span>
                         <span className="text-[10px] font-normal text-muted-foreground ml-1">opsional</span>
                       </button>
@@ -721,8 +721,8 @@ export default function HotspotProfilePage() {
                       )}
                     </div>
                   </div>
-                  <div className="border border-[#00f7ff]/30 rounded-lg p-3 bg-[#00f7ff]/5">
-                    <div className="text-[10px] font-medium text-[#00f7ff] mb-2">⏱️ Pembatasan Penggunaan</div>
+                  <div className="border border-brand-500/30 rounded-lg p-3 bg-brand-500/5">
+                    <div className="text-[10px] font-medium text-brand-500 mb-2">⏱️ Pembatasan Penggunaan</div>
                     <p className="text-[9px] text-muted-foreground mb-3">Masa aktif adalah waktu voucher berlaku sejak pertama kali digunakan. Kuota & Durasi adalah batasan penggunaan selama masa aktif tersebut.</p>
                     <div className="space-y-3">
                       <div>
@@ -730,8 +730,8 @@ export default function HotspotProfilePage() {
                         <div className="flex gap-2">
                           <ModalInput type="number" min={0} step={0.1} value={formData.usageQuota} onChange={(e) => setFormData({ ...formData, usageQuota: e.target.value })} placeholder="0 = Unlimited" className="flex-1" />
                           <ModalSelect value={formData.usageQuotaUnit} onChange={(e) => setFormData({ ...formData, usageQuotaUnit: e.target.value })} className="w-20">
-                            <option value="MB" className="dark:bg-[#0a0520]">MB</option>
-                            <option value="GB" className="dark:bg-[#0a0520]">GB</option>
+                            <option value="MB" className="dark:bg-card">MB</option>
+                            <option value="GB" className="dark:bg-card">GB</option>
                           </ModalSelect>
                         </div>
                         <p className="text-[9px] text-muted-foreground mt-1">Kosongkan untuk unlimited</p>
@@ -741,24 +741,24 @@ export default function HotspotProfilePage() {
                         <div className="flex gap-2">
                           <ModalInput type="number" min={0} value={formData.usageDuration} onChange={(e) => setFormData({ ...formData, usageDuration: e.target.value })} placeholder="0 = Unlimited" className="flex-1" />
                           <ModalSelect value={formData.usageDurationUnit} onChange={(e) => setFormData({ ...formData, usageDurationUnit: e.target.value })} className="w-20">
-                            <option value="MINUTES" className="dark:bg-[#0a0520]">Menit</option>
-                            <option value="HOURS" className="dark:bg-[#0a0520]">Jam</option>
-                            <option value="DAYS" className="dark:bg-[#0a0520]">Hari</option>
-                            <option value="MONTHS" className="dark:bg-[#0a0520]">Bulan</option>
+                            <option value="MINUTES" className="dark:bg-card">Menit</option>
+                            <option value="HOURS" className="dark:bg-card">Jam</option>
+                            <option value="DAYS" className="dark:bg-card">Hari</option>
+                            <option value="MONTHS" className="dark:bg-card">Bulan</option>
                           </ModalSelect>
                         </div>
                         <p className="text-[9px] text-muted-foreground mt-1">Total waktu penggunaan (kosongkan = unlimited)</p>
                       </div>
                     </div>
                   </div>
-                  <div className="border border-[#bc13fe]/30 rounded-lg p-3 space-y-2 bg-[#bc13fe]/5">
-                    <div className="text-[10px] font-medium text-[#bc13fe] mb-2">🔐 Access Control</div>
+                  <div className="border border-violet-500/30 rounded-lg p-3 space-y-2 bg-violet-500/5">
+                    <div className="text-[10px] font-medium text-violet-500 mb-2">🔐 Access Control</div>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formData.agentAccess} onChange={(e) => setFormData({ ...formData, agentAccess: e.target.checked })} className="rounded border-[#bc13fe]/50 bg-background dark:bg-[#0a0520] accent-brand-500 dark:accent-[#00f7ff]" />
+                      <input type="checkbox" checked={formData.agentAccess} onChange={(e) => setFormData({ ...formData, agentAccess: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
                       <span className="text-xs text-foreground">{t('hotspot.agentAccess')}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={formData.eVoucherAccess} onChange={(e) => setFormData({ ...formData, eVoucherAccess: e.target.checked })} className="rounded border-[#bc13fe]/50 bg-background dark:bg-[#0a0520] accent-brand-500 dark:accent-[#00f7ff]" />
+                      <input type="checkbox" checked={formData.eVoucherAccess} onChange={(e) => setFormData({ ...formData, eVoucherAccess: e.target.checked })} className="rounded border-violet-500/50 bg-background dark:bg-card accent-brand-500 dark:accent-brand-500" />
                       <span className="text-xs text-foreground">{t('hotspot.evoucherAccess')}</span>
                     </label>
                   </div>
@@ -777,7 +777,7 @@ export default function HotspotProfilePage() {
         {/* Delete Confirmation */}
         <SimpleModal isOpen={!!deleteProfileId} onClose={() => setDeleteProfileId(null)} size="sm">
           <ModalBody className="text-center py-6">
-            <div className="w-14 h-14 bg-[#ff4466]/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#ff4466]/50">
+            <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
               <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('hotspot.deleteProfile')}</h2>

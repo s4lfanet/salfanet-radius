@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { formatCurrency } from '@/lib/utils';
 import { useEffect, useState, useCallback } from "react"
@@ -540,7 +540,7 @@ export default function HotspotVoucherPage() {
   }
 
   const selectedProfile = profiles.find(p => p.id === formData.profileId);
-  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10" /></div>; }
+  if (loading) { return <div className="flex items-center justify-center min-h-[60vh]"><div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div><Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" /></div>; }
   // Stats are now loaded from API
 
   return (
@@ -548,7 +548,7 @@ export default function HotspotVoucherPage() {
       {/* ─── Delete Progress Overlay ─── */}
       {deleteOverlay.open && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div className="bg-card border-2 border-red-500/60 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-[0_0_80px_rgba(239,68,68,0.4)]">
+          <div className="bg-card border-2 border-red-500/60 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-md shadow-red-500/40">
             <div className="flex justify-center mb-5">
               {deleteOverlay.phase === 'done' ? (
                 <div className="w-16 h-16 rounded-full bg-green-500/20 border-2 border-green-400 flex items-center justify-center">
@@ -595,7 +595,7 @@ export default function HotspotVoucherPage() {
       {/* ─── Generate Progress Overlay ─── */}
       {genOverlay.open && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div className="bg-card border-2 border-[#bc13fe]/60 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-[0_0_80px_rgba(188,19,254,0.5)]">
+          <div className="bg-card border-2 border-violet-500/60 rounded-2xl p-8 max-w-sm w-full mx-4 shadow-[0_0_80px_rgba(139,92,246,0.5)]">
             {/* Icon */}
             <div className="flex justify-center mb-5">
               {genOverlay.phase === 'done' ? (
@@ -607,8 +607,8 @@ export default function HotspotVoucherPage() {
                   <Ticket className="h-8 w-8 text-red-400" />
                 </div>
               ) : (
-                <div className="w-16 h-16 rounded-full bg-[#bc13fe]/20 border-2 border-[#bc13fe] flex items-center justify-center">
-                  <Loader2 className="h-8 w-8 text-[#bc13fe] animate-spin" />
+                <div className="w-16 h-16 rounded-full bg-violet-500/20 border-2 border-violet-500 flex items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-violet-500 animate-spin" />
                 </div>
               )}
             </div>
@@ -630,11 +630,11 @@ export default function HotspotVoucherPage() {
                 </div>
                 <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
                   <div
-                    className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-[#bc13fe] via-[#ff44cc] to-[#00f7ff]"
+                    className="h-3 rounded-full transition-all duration-500 bg-gradient-to-r from-violet-500 via-pink-500 to-brand-500"
                     style={{ width: `${genOverlay.total > 0 ? Math.round((genOverlay.current / genOverlay.total) * 100) : 0}%` }}
                   />
                 </div>
-                <p className="text-center text-sm font-bold text-[#00f7ff] mt-2">
+                <p className="text-center text-sm font-bold text-brand-500 mt-2">
                   {genOverlay.total > 0 ? Math.round((genOverlay.current / genOverlay.total) * 100) : 0}%
                 </p>
               </div>
@@ -666,17 +666,17 @@ export default function HotspotVoucherPage() {
       )}
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       
       <div className="relative z-10 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('hotspot.title')}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('hotspot.title')}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('hotspot.generateVoucher')}</p>
         </div>
         <div className="flex gap-1.5 flex-wrap">
@@ -891,21 +891,21 @@ export default function HotspotVoucherPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all relative">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.total}</p></div><Ticket className="h-6 w-6 text-[#00f7ff] drop-shadow-[0_0_15px_rgba(0,247,255,0.6)]" /></div>
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all relative">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.total}</p></div><Ticket className="h-6 w-6 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" /></div>
           {isSSEConnected && <div className="absolute top-2 right-2" title="Real-time updates active"><Wifi className="h-3 w-3 text-green-400 animate-pulse" /></div>}
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('hotspot.waiting')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.waiting}</p></div><Ticket className="h-6 w-6 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" /></div>
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.waiting')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.waiting}</p></div><Ticket className="h-6 w-6 text-amber-400 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]" /></div>
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('hotspot.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.active}</p></div><Ticket className="h-6 w-6 text-green-400 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" /></div>
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.active}</p></div><Ticket className="h-6 w-6 text-green-400 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" /></div>
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('hotspot.expired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.expired}</p></div><Ticket className="h-6 w-6 text-red-400 drop-shadow-[0_0_15px_rgba(239,68,68,0.6)]" /></div>
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('hotspot.expired')}</p><p className="text-lg sm:text-2xl font-bold text-foreground drop-shadow-none mt-1">{stats.expired}</p></div><Ticket className="h-6 w-6 text-red-400 drop-shadow-md shadow-red-500/40" /></div>
         </div>
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between"><div><p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('common.total')} {t('common.price')}</p><p className="text-xl font-bold text-foreground drop-shadow-none mt-1">{formatCurrency(stats.totalValue)}</p></div><Ticket className="h-6 w-6 text-[#ff44cc] drop-shadow-[0_0_15px_rgba(255,68,204,0.6)]" /></div>
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all col-span-2 sm:col-span-1">
+          <div className="flex items-center justify-between"><div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')} {t('common.price')}</p><p className="text-xl font-bold text-foreground drop-shadow-none mt-1">{formatCurrency(stats.totalValue)}</p></div><Ticket className="h-6 w-6 text-pink-500 drop-shadow-[0_0_15px_rgba(236,72,153,0.6)]" /></div>
         </div>
       </div>
 
@@ -945,7 +945,7 @@ export default function HotspotVoucherPage() {
             <div className="text-center py-8 text-muted-foreground text-xs">{t('table.noResults')}</div>
           ) : (
             vouchers.map((v) => (
-              <div key={v.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3 space-y-2">
+              <div key={v.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3 space-y-2">
                 {/* Header: Checkbox + Code + Status + Delete */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">

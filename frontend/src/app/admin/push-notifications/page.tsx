@@ -864,7 +864,7 @@ export default function PushNotificationsPage() {
                 {/* Mobile Card View */}
                 <div className="block md:hidden space-y-3.5">
                   {broadcasts.map((bc) => (
-                    <div key={bc.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 dark:border-[#bc13fe]/30 p-3.5">
+                    <div key={bc.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 dark:border-violet-500/30 p-3.5">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold leading-tight">{bc.title}</p>

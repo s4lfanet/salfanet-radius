@@ -261,7 +261,7 @@ export default function RadiusConfigPage() {
                                 onClick={handleSave}
                                 disabled={!hasChanges || loadingFile || saving || !selectedFile}
                                 className={`flex items-center gap-2 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition-colors disabled:opacity-50 ${hasChanges
-                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(0,255,255,0.3)]'
+                                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_10px_rgba(6,182,212,0.3)]'
                                         : 'bg-muted text-muted-foreground'
                                     }`}
                             >

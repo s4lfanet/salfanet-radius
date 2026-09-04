@@ -34,7 +34,7 @@ export default function CustomerSpeedTestPage() {
         </button>
       </div>
 
-      <CyberCard className="p-0 overflow-hidden bg-card/80 backdrop-blur-xl border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(0,247,255,0.15)]">
+      <CyberCard className="p-0 overflow-hidden bg-card/80 backdrop-blur-xl border-2 border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
         <div className="relative w-full" style={{ height: 'calc(100dvh - 220px)', minHeight: 480 }}>
           {loading && (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card z-10">

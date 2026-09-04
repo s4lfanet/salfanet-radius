@@ -92,7 +92,7 @@ export default function AddonTypesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-foreground dark:text-[#e0d0ff] flex items-center gap-2">
+          <h1 className="text-xl font-bold text-foreground dark:text-muted-foreground flex items-center gap-2">
             <Package className="h-5 w-5" />
             Layanan Tambahan
           </h1>
@@ -102,21 +102,21 @@ export default function AddonTypesPage() {
           <button onClick={() => refetch()} className="p-2 border border-border rounded hover:bg-muted transition" title="Refresh">
             <RefreshCw className="h-4 w-4" />
           </button>
-          <button onClick={openCreate} className="inline-flex items-center px-3 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition">
+          <button onClick={openCreate} className="inline-flex items-center px-3 py-2 text-sm bg-primary text-white dark:bg-brand-500 dark:text-card rounded hover:opacity-90 transition">
             <Plus className="h-4 w-4 mr-1" /> Tambah Addon
           </button>
         </div>
       </div>
 
       {/* Table */}
-      <div className="border border-border dark:border-[#bc13fe]/30 rounded-lg overflow-hidden">
+      <div className="border border-border dark:border-violet-500/30 rounded-lg overflow-hidden">
         {loading ? (
           <div className="p-8 text-center text-muted-foreground">Memuat...</div>
         ) : addons.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground">
             <Package className="h-10 w-10 mx-auto mb-3 opacity-40" />
             <p>Belum ada layanan tambahan.</p>
-            <button onClick={openCreate} className="mt-3 inline-flex items-center px-3 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition">
+            <button onClick={openCreate} className="mt-3 inline-flex items-center px-3 py-2 text-sm bg-primary text-white dark:bg-brand-500 dark:text-card rounded hover:opacity-90 transition">
               <Plus className="h-4 w-4 mr-1" /> Buat Addon Pertama
             </button>
           </div>
@@ -133,12 +133,12 @@ export default function AddonTypesPage() {
                   <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border dark:divide-[#bc13fe]/20">
+              <tbody className="divide-y divide-border dark:divide-violet-500/20">
                 {addons.map(a => (
                   <tr key={a.id} className={`hover:bg-muted/30 ${!a.isActive ? 'opacity-50' : ''}`}>
-                    <td className="px-3 py-2 text-sm font-medium text-foreground dark:text-[#e0d0ff]">{a.name}</td>
+                    <td className="px-3 py-2 text-sm font-medium text-foreground dark:text-muted-foreground">{a.name}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground hidden md:table-cell">{a.description || '—'}</td>
-                    <td className="px-3 py-2 text-sm font-bold text-primary dark:text-[#00f7ff]">Rp {Number(a.price).toLocaleString('id-ID')}</td>
+                    <td className="px-3 py-2 text-sm font-bold text-primary dark:text-brand-500">Rp {Number(a.price).toLocaleString('id-ID')}</td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium ${a.isRecurring ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                         {a.isRecurring ? 'Bulanan' : 'Sekali'}
@@ -152,7 +152,7 @@ export default function AddonTypesPage() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1 justify-end">
-                        <button onClick={() => openEdit(a)} className="p-1.5 text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded" title="Edit">
+                        <button onClick={() => openEdit(a)} className="p-1.5 text-brand-500 hover:bg-brand-500/10 rounded" title="Edit">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
                         <button onClick={() => handleDelete(a)} className="p-1.5 text-destructive hover:bg-destructive/10 rounded" title="Hapus">
@@ -171,9 +171,9 @@ export default function AddonTypesPage() {
       {/* Modal Create/Edit */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-background dark:bg-card border border-border dark:border-violet-500/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] flex items-center gap-2">
+              <h2 className="text-lg font-bold text-foreground dark:text-muted-foreground flex items-center gap-2">
                 <Package className="h-5 w-5" />
                 {editing ? 'Edit Layanan Tambahan' : 'Tambah Layanan Tambahan'}
               </h2>
@@ -188,7 +188,7 @@ export default function AddonTypesPage() {
                   placeholder="Mis: Sewa STB, IPTV Premium"
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30"
                   autoFocus
                 />
               </div>
@@ -199,7 +199,7 @@ export default function AddonTypesPage() {
                   placeholder="Deskripsi singkat layanan ini"
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30"
                 />
               </div>
               <div>
@@ -210,14 +210,14 @@ export default function AddonTypesPage() {
                   placeholder="0"
                   value={form.price}
                   onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-[#0a0520] dark:border-[#bc13fe]/30"
+                  className="w-full px-3 py-2 text-sm bg-background border border-border rounded dark:bg-card dark:border-violet-500/30"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Tipe Biaya</label>
                 <div className="flex gap-2 mt-1">
                   {[{ val: true, label: 'Bulanan (recurring)' }, { val: false, label: 'Sekali bayar' }].map(opt => (
-                    <label key={String(opt.val)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm border-2 transition ${form.isRecurring === opt.val ? 'border-primary dark:border-[#00f7ff] bg-primary/10 dark:bg-[#00f7ff]/10 font-medium text-primary dark:text-[#00f7ff]' : 'border-border dark:border-[#bc13fe]/30 text-muted-foreground'}`}>
+                    <label key={String(opt.val)} className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm border-2 transition ${form.isRecurring === opt.val ? 'border-primary dark:border-brand-500 bg-primary/10 dark:bg-brand-500/10 font-medium text-primary dark:text-brand-500' : 'border-border dark:border-violet-500/30 text-muted-foreground'}`}>
                       <input type="radio" className="hidden" checked={form.isRecurring === opt.val} onChange={() => setForm(f => ({ ...f, isRecurring: opt.val }))} />
                       {opt.label}
                     </label>
@@ -228,7 +228,7 @@ export default function AddonTypesPage() {
 
             <div className="flex gap-2 mt-5">
               <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2 text-sm border border-border rounded hover:bg-muted transition">Batal</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white dark:bg-[#00f7ff] dark:text-[#0a0520] rounded hover:opacity-90 transition disabled:opacity-50">
+              <button onClick={handleSave} disabled={saving} className="flex-1 px-4 py-2 text-sm bg-primary text-white dark:bg-brand-500 dark:text-card rounded hover:opacity-90 transition disabled:opacity-50">
                 {saving ? 'Menyimpan...' : editing ? 'Simpan Perubahan' : 'Tambahkan'}
               </button>
             </div>

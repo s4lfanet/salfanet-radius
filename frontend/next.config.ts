@@ -36,6 +36,16 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false, // Protect code & save memory
   poweredByHeader: false, // Remove X-Powered-By header
   compress: true, // Enable gzip compression
+
+  // Proxy /api/* to backend in local dev (in production, Nginx handles this)
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: process.env.BACKEND_URL || 'http://localhost:3001/api/:path*',
+      },
+    ];
+  },
   
   // Headers for security
   async headers() {

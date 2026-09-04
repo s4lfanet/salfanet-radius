@@ -145,7 +145,7 @@ export default function RadCheckPage() {
                         <div className="text-center py-8 text-muted-foreground text-sm">{t('radius.noRecords')}</div>
                     ) : (
                         items.map((item) => (
-                            <div key={item.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+                            <div key={item.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                                 <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium text-foreground">{item.username}</span>
                                     <button

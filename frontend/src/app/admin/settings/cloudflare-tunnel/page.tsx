@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -156,15 +156,15 @@ export default function CloudflareTunnelPage() {
     <div className="bg-background relative">
       {/* Background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl opacity-50"></div>
       </div>
 
       <div className="relative z-10 space-y-6 max-w-3xl">
         {/* Header */}
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)] flex items-center gap-2">
-            <Cloud className="w-6 h-6 text-brand-500 dark:text-[#00f7ff]" />
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)] flex items-center gap-2">
+            <Cloud className="w-6 h-6 text-brand-500 dark:text-brand-500" />
             Cloudflare Tunnel
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">

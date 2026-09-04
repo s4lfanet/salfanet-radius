@@ -72,7 +72,7 @@ export default function TechnicianOfflinePage() {
             <p className="text-xs text-muted-foreground">{pagination.total} pelanggan offline</p>
           </div>
         </div>
-        <button onClick={() => loadData(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+        <button onClick={() => loadData(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -80,13 +80,13 @@ export default function TechnicianOfflinePage() {
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500/30 transition" />
       </div>
 
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground/70">
@@ -112,7 +112,7 @@ export default function TechnicianOfflinePage() {
               </thead>
               <tbody>
                 {filtered.map((u) => (
-                  <tr key={u.id} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition">
+                  <tr key={u.id} className="border-b border-slate-100 dark:border-violet-500/10 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition">
                     <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.name || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.phone || '-'}</td>
@@ -152,7 +152,7 @@ export default function TechnicianOfflinePage() {
                     <span className="text-foreground/80">{u.profile?.name || '-'}</span>
                   </div>
                 </div>
-                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10 text-xs">
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-violet-500/10 text-xs">
                   <span className="text-muted-foreground">{u.router?.name || '-'} {u.area ? `• ${u.area.name}` : ''}</span>
                   <span className={`px-2 py-0.5 rounded-lg font-medium ${u.status === 'isolated' ? 'bg-orange-500/10 text-orange-500' : u.disabled ? 'bg-red-500/10 text-red-500' : 'text-muted-foreground'}`}>{u.disabled ? 'disabled' : u.status}</span>
                 </div>

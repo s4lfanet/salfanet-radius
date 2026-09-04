@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -252,14 +252,14 @@ export default function PaymentGatewayPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#bc13fe] to-[#ff44cc] rounded-xl p-4 text-white shadow-[0_0_30px_rgba(188,19,254,0.3)]">
+      <div className="bg-gradient-to-r from-violet-500 to-pink-500 rounded-xl p-4 text-white shadow-[0_0_30px_rgba(139,92,246,0.3)]">
         <div className="flex items-center gap-2">
           <CreditCard className="w-5 h-5" />
           <div>
@@ -369,7 +369,7 @@ export default function PaymentGatewayPage() {
                   <div className="text-center py-6 text-muted-foreground text-xs">{t('paymentGateway.noLogs')}</div>
                 ) : (
                   webhookLogs.map((log) => (
-                    <div key={log.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+                    <div key={log.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-mono text-foreground truncate">{log.orderId}</p>

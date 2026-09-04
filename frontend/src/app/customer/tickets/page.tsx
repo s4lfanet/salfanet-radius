@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -83,8 +83,8 @@ export default function CustomerTicketsPage() {
 
   const getStatusColor = (status: TicketStatus) => {
     const colors = {
-      OPEN: 'bg-accent/20 text-accent border border-accent/40 shadow-[0_0_5px_rgba(0,247,255,0.3)]',
-      IN_PROGRESS: 'bg-primary/20 text-primary border border-primary/40 shadow-[0_0_5px_rgba(188,19,254,0.3)]',
+      OPEN: 'bg-accent/20 text-accent border border-accent/40 shadow-[0_0_5px_rgba(6,182,212,0.3)]',
+      IN_PROGRESS: 'bg-primary/20 text-primary border border-primary/40 shadow-[0_0_5px_rgba(139,92,246,0.3)]',
       WAITING_CUSTOMER: 'bg-warning/20 text-warning border border-warning/40 shadow-[0_0_5px_rgba(255,170,0,0.3)]',
       RESOLVED: 'bg-success/20 text-success border border-success/40 shadow-[0_0_5px_rgba(0,255,136,0.3)]',
       CLOSED: 'bg-muted text-muted-foreground border border-border',
@@ -107,7 +107,7 @@ export default function CustomerTicketsPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-xl font-bold text-primary uppercase tracking-wider drop-shadow-[0_0_8px_rgba(188,19,254,0.6)]">
+          <h1 className="text-xl font-bold text-primary uppercase tracking-wider drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]">
             {t('ticket.myTickets')}
           </h1>
           <p className="text-sm text-accent/70 mt-0.5">
@@ -128,7 +128,7 @@ export default function CustomerTicketsPage() {
         {/* Filters */}
         <CyberCard className="p-4 mb-6 bg-card/80 backdrop-blur-xl border-2 border-primary/30">
           <div className="flex items-center gap-4">
-            <Filter size={20} className="text-accent drop-shadow-[0_0_5px_rgba(0,247,255,0.5)]" />
+            <Filter size={20} className="text-accent drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -147,12 +147,12 @@ export default function CustomerTicketsPage() {
         {/* Tickets List */}
         {loading ? (
           <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto shadow-[0_0_15px_rgba(188,19,254,0.5)]"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto shadow-[0_0_15px_rgba(139,92,246,0.5)]"></div>
             <p className="text-accent mt-4">{t('ticket.loading')}</p>
           </div>
         ) : tickets.length === 0 ? (
           <CyberCard className="p-12 text-center bg-card/80 backdrop-blur-xl border-2 border-primary/30">
-            <Ticket size={48} className="text-primary mx-auto mb-4 drop-shadow-[0_0_10px_rgba(188,19,254,0.5)]" />
+            <Ticket size={48} className="text-primary mx-auto mb-4 drop-shadow-[0_0_10px_rgba(139,92,246,0.5)]" />
             <h3 className="text-lg font-bold text-primary mb-2 uppercase tracking-wider">
               {t('ticket.noTickets')}
             </h3>
@@ -173,7 +173,7 @@ export default function CustomerTicketsPage() {
               <CyberCard
                 key={ticket.id}
                 onClick={() => router.push(`/customer/tickets/${ticket.id}`)}
-                className="p-6 cursor-pointer bg-card/80 backdrop-blur-xl border-2 border-primary/30 hover:border-accent/50 hover:shadow-[0_0_30px_rgba(0,247,255,0.2)] transition-all"
+                className="p-6 cursor-pointer bg-card/80 backdrop-blur-xl border-2 border-primary/30 hover:border-accent/50 hover:shadow-[0_0_30px_rgba(6,182,212,0.2)] transition-all"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">

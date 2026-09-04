@@ -101,7 +101,7 @@ export default function TechnicianOnlinePage() {
             <p className="text-xs text-muted-foreground">{pagination.total} {t('techPortal.activeUsers')}</p>
           </div>
         </div>
-        <button onClick={() => fetchSessions(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+        <button onClick={() => fetchSessions(pagination.page)} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -110,7 +110,7 @@ export default function TechnicianOnlinePage() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500/30 transition" />
         </div>
         <select value={routerFilter} onChange={(e) => setRouterFilter(e.target.value)} className="px-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground">
           <option value="">{t('techPortal.allRouters')}</option>
@@ -121,7 +121,7 @@ export default function TechnicianOnlinePage() {
       {/* Loading */}
       {loading && sessions.length === 0 ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
       ) : sessions.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground/70">
@@ -147,7 +147,7 @@ export default function TechnicianOnlinePage() {
               </thead>
               <tbody>
                 {sessions.map((s) => (
-                  <tr key={s.id} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition">
+                  <tr key={s.id} className="border-b border-slate-100 dark:border-violet-500/10 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition">
                     <td className="px-4 py-3 font-medium text-foreground">{s.username}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{s.user?.name || '-'}</td>
                     <td className="px-4 py-3 text-muted-foreground/80 font-mono text-xs">{s.framedIpAddress}</td>
@@ -186,7 +186,7 @@ export default function TechnicianOnlinePage() {
                     <span className="font-mono text-foreground/80">{s.macAddress?.slice(0, 11)}...</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 pt-1 border-t border-slate-100 dark:border-[#bc13fe]/10">
+                <div className="flex items-center gap-4 pt-1 border-t border-slate-100 dark:border-violet-500/10">
                   <div className="flex items-center gap-1">
                     <ArrowDown className="w-3 h-3 text-blue-500" />
                     <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{s.downloadFormatted}</span>

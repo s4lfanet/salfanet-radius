@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -495,10 +495,10 @@ export default function KeuanganPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
       </div>
     );
   }
@@ -506,16 +506,16 @@ export default function KeuanganPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('keuangan.title')}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('keuangan.title')}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('keuangan.transactions')}</p>
         </div>
         <div className="flex gap-2">
@@ -532,10 +532,10 @@ export default function KeuanganPage() {
 
       {/* Stats - Cyberpunk Style */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 sm:p-4 hover:border-[#bc13fe]/50 hover:shadow-[0_0_30px_rgba(188,19,254,0.3)] transition-all">
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 hover:border-violet-500/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-xs font-medium text-[#00f7ff] uppercase tracking-wide">{t('keuangan.income')}</p>
+              <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.income')}</p>
               <p className="text-lg sm:text-xl font-bold text-foreground drop-shadow-none mt-1 truncate">{formatCurrency(stats.totalIncome)}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{stats.incomeCount} trans</p>
             </div>
@@ -543,7 +543,7 @@ export default function KeuanganPage() {
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-[#bc13fe]/20 space-y-1 text-[10px] sm:text-xs">
+          <div className="mt-3 pt-3 border-t border-violet-500/20 space-y-1 text-[10px] sm:text-xs">
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t('keuangan.pppoeLabel')}</span>
               <span className="font-medium text-foreground truncate ml-2">{formatCurrency(stats.pppoeIncome || 0)}</span>
@@ -559,10 +559,10 @@ export default function KeuanganPage() {
           </div>
         </div>
 
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 sm:p-4 hover:border-[#bc13fe]/50 hover:shadow-[0_0_30px_rgba(188,19,254,0.3)] transition-all">
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 hover:border-violet-500/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-xs font-medium text-[#00f7ff] uppercase tracking-wide">{t('keuangan.expense')}</p>
+              <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.expense')}</p>
               <p className="text-lg sm:text-xl font-bold text-foreground drop-shadow-none mt-1 truncate">{formatCurrency(stats.totalExpense)}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{stats.expenseCount} trans</p>
             </div>
@@ -572,10 +572,10 @@ export default function KeuanganPage() {
           </div>
         </div>
 
-        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-3 sm:p-4 hover:border-[#bc13fe]/50 hover:shadow-[0_0_30px_rgba(188,19,254,0.3)] transition-all">
+        <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-3 sm:p-4 hover:border-violet-500/50 hover:shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all">
           <div className="flex items-center justify-between">
             <div className="min-w-0">
-              <p className="text-[10px] sm:text-xs font-medium text-[#00f7ff] uppercase tracking-wide">{t('keuangan.balance')}</p>
+              <p className="text-[10px] sm:text-xs font-medium text-brand-500 uppercase tracking-wide">{t('keuangan.balance')}</p>
               <p className={`text-lg sm:text-xl font-bold text-foreground mt-1 truncate`}>{formatCurrency(stats.balance)}</p>
               <p className="text-[10px] sm:text-xs text-muted-foreground mt-1">{t('keuangan.income')} - {t('keuangan.expense')}</p>
             </div>

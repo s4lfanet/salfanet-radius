@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
@@ -70,36 +70,36 @@ function TwoFactorForm() {
   };
 
   return (
-    <div className="min-h-dvh bg-gradient-to-br from-slate-900 via-[#1a0f35] to-slate-900 relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-dvh bg-gradient-to-br from-slate-900 via-muted to-slate-900 relative overflow-hidden flex items-center justify-center p-4">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#bc13fe]/20 rounded-full blur-[120px] animate-pulse"></div>
-        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-[#00f7ff]/20 rounded-full blur-[100px] animate-pulse delay-700"></div>
-        <div className="absolute bottom-0 left-1/2 w-[600px] h-[400px] bg-[#ff44cc]/15 rounded-full blur-[150px] animate-pulse delay-1000"></div>
-        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+        <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-violet-500/20 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute top-1/3 right-1/4 w-[400px] h-[400px] bg-brand-500/20 rounded-full blur-[100px] animate-pulse delay-700"></div>
+        <div className="absolute bottom-0 left-1/2 w-[600px] h-[400px] bg-pink-500/15 rounded-full blur-[150px] animate-pulse delay-1000"></div>
+        <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
       </div>
 
       <div className="w-full max-w-sm relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#bc13fe] to-[#00f7ff] rounded-2xl mb-5 shadow-[0_0_50px_rgba(188,19,254,0.5)] border-2 border-[#bc13fe]/40">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-violet-500 to-brand-500 rounded-2xl mb-5 shadow-[0_0_50px_rgba(139,92,246,0.5)] border-2 border-violet-500/40">
             <Smartphone className="w-10 h-10 text-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#00f7ff] via-white to-[#ff44cc] drop-shadow-[0_0_20px_rgba(0,247,255,0.5)]">
+          <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-500 via-white to-pink-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.5)]">
             {companyName}
           </h1>
-          <p className="text-sm text-primary dark:text-[#00f7ff] mt-2 font-mono uppercase tracking-widest">
+          <p className="text-sm text-primary dark:text-brand-500 mt-2 font-mono uppercase tracking-widest">
             Two-Factor Authentication
           </p>
         </div>
 
         {/* 2FA Form */}
-        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/80 dark:to-slate-900/80 backdrop-blur-xl rounded-3xl border-2 border-border dark:border-[#bc13fe]/30 shadow-xl dark:shadow-[0_0_50px_rgba(188,19,254,0.2)] p-8">
+        <div className="bg-card dark:bg-gradient-to-br dark:from-slate-800/80 dark:to-slate-900/80 backdrop-blur-xl rounded-3xl border-2 border-border dark:border-violet-500/30 shadow-xl dark:shadow-[0_0_50px_rgba(139,92,246,0.2)] p-8">
           {/* Info box */}
-          <div className="mb-6 p-4 bg-primary/10 dark:bg-[#00f7ff]/10 border border-primary/30 dark:border-[#00f7ff]/30 rounded-xl">
+          <div className="mb-6 p-4 bg-primary/10 dark:bg-brand-500/10 border border-primary/30 dark:border-brand-500/30 rounded-xl">
             <div className="flex items-start gap-3">
-              <Shield className="w-5 h-5 text-primary dark:text-[#00f7ff] mt-0.5 shrink-0" />
-              <p className="text-sm text-muted-foreground dark:text-[#e0d0ff]/90 leading-relaxed">
+              <Shield className="w-5 h-5 text-primary dark:text-brand-500 mt-0.5 shrink-0" />
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground/90 leading-relaxed">
                 Open your authenticator app (Google Authenticator, Authy, etc.) and enter the 6-digit code for this account.
               </p>
             </div>
@@ -113,11 +113,11 @@ function TwoFactorForm() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-xs font-semibold text-primary dark:text-[#00f7ff] mb-2 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-primary dark:text-brand-500 mb-2 uppercase tracking-wider">
                 Authenticator Code
               </label>
               <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary dark:text-[#bc13fe]">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-primary dark:text-violet-500">
                   <KeyRound className="w-5 h-5" />
                 </div>
                 <input
@@ -128,7 +128,7 @@ function TwoFactorForm() {
                   value={code}
                   onChange={e => handleCodeChange(e.target.value)}
                   placeholder="000 000"
-                  className="w-full bg-background dark:bg-slate-900/80 border-2 border-border dark:border-[#bc13fe]/40 rounded-xl px-4 py-3.5 pl-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-500 focus:border-primary dark:focus:border-[#00f7ff] focus:outline-none dark:focus:shadow-[0_0_20px_rgba(0,247,255,0.2)] transition-all text-2xl font-mono tracking-[0.5em] text-center"
+                  className="w-full bg-background dark:bg-slate-900/80 border-2 border-border dark:border-violet-500/40 rounded-xl px-4 py-3.5 pl-12 text-foreground dark:text-white placeholder-muted-foreground dark:placeholder-slate-500 focus:border-primary dark:focus:border-brand-500 focus:outline-none dark:focus:shadow-[0_0_20px_rgba(6,182,212,0.2)] transition-all text-2xl font-mono tracking-[0.5em] text-center"
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-2 text-center">Code is valid for 30 seconds</p>
@@ -137,7 +137,7 @@ function TwoFactorForm() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 rounded-xl transition-all duration-300 shadow-md dark:bg-gradient-to-r dark:from-[#bc13fe] dark:to-[#00f7ff] dark:hover:from-[#d020ff] dark:hover:to-[#00d4dc] dark:text-white dark:shadow-[0_0_30px_rgba(188,19,254,0.4)] dark:hover:shadow-[0_0_50px_rgba(188,19,254,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 rounded-xl transition-all duration-300 shadow-md dark:bg-gradient-to-r dark:from-violet-500 dark:to-brand-500 dark:hover:from-[#d020ff] dark:hover:to-[#00d4dc] dark:text-white dark:shadow-[0_0_30px_rgba(139,92,246,0.4)] dark:hover:shadow-[0_0_50px_rgba(139,92,246,0.6)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {loading ? (
                 <><Loader2 className="w-5 h-5 animate-spin" /> Verifying…</>
@@ -150,7 +150,7 @@ function TwoFactorForm() {
           <div className="mt-5 text-center">
             <button
               onClick={() => router.push('/admin/login')}
-              className="text-sm text-muted-foreground hover:text-primary dark:hover:text-[#00f7ff] transition-colors flex items-center gap-1 mx-auto"
+              className="text-sm text-muted-foreground hover:text-primary dark:hover:text-brand-500 transition-colors flex items-center gap-1 mx-auto"
             >
               <ArrowLeft className="w-4 h-4" /> Back to Login
             </button>
@@ -168,8 +168,8 @@ function TwoFactorForm() {
 export default function TwoFactorPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-dvh bg-[#1a0f35] flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-[#00f7ff]" />
+      <div className="min-h-dvh bg-muted flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-brand-500" />
       </div>
     }>
       <TwoFactorForm />

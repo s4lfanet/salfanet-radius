@@ -9,6 +9,7 @@ allowBuilds:
   '@swc/core': true
   '@whiskeysockets/baileys': true
   'core-js': true
+  core-js-pure: set this to true or false
   'cpu-features': true
   'esbuild': true
   'prisma': true

@@ -140,36 +140,36 @@ function DaftarPageInner() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
+      <div className="min-h-dvh bg-muted relative overflow-hidden flex items-center justify-center p-4">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
-        <Loader2 className="w-12 h-12 animate-spin text-[#00f7ff] drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10" />
+        <Loader2 className="w-12 h-12 animate-spin text-brand-500 drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
       </div>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-dvh bg-[#1a0f35] relative overflow-hidden flex items-center justify-center p-4">
+      <div className="min-h-dvh bg-muted relative overflow-hidden flex items-center justify-center p-4">
         {/* Animated Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-          <div className="absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
         </div>
 
-        <div className="relative z-10 bg-[#1a0f35]/80 backdrop-blur-xl rounded-2xl border-2 border-[#00ff88]/50 p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,255,136,0.3)]">
-          <div className="w-16 h-16 bg-[#00ff88]/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#00ff88]/50 shadow-[0_0_30px_rgba(0,255,136,0.4)]">
-            <CheckCircle className="w-8 h-8 text-[#00ff88] drop-shadow-[0_0_10px_rgba(0,255,136,0.8)]" />
+        <div className="relative z-10 bg-muted/80 backdrop-blur-xl rounded-2xl border-2 border-green-500/50 p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(0,255,136,0.3)]">
+          <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-green-500/50 shadow-[0_0_30px_rgba(0,255,136,0.4)]">
+            <CheckCircle className="w-8 h-8 text-green-500 drop-shadow-[0_0_10px_rgba(0,255,136,0.8)]" />
           </div>
-          <h2 className="text-xl font-bold bg-gradient-to-r from-[#00ff88] to-[#00f7ff] bg-clip-text text-transparent mb-2">
+          <h2 className="text-xl font-bold bg-gradient-to-r from-green-500 to-brand-500 bg-clip-text text-transparent mb-2">
             Pendaftaran Berhasil!
           </h2>
-          <p className="text-sm text-[#e0d0ff]/80 mb-6">
+          <p className="text-sm text-muted-foreground/80 mb-6">
             Terima kasih telah mendaftar. Tim kami akan segera menghubungi Anda.
           </p>
           <button
@@ -178,7 +178,7 @@ function DaftarPageInner() {
               setFormData({ name: '', phone: '', email: '', address: '', areaId: '', profileId: '', notes: '', referralCode: '', idCardNumber: '', latitude: null, longitude: null });
               setIdCardPhoto('');
             }}
-            className="w-full px-4 py-3 bg-gradient-to-r from-[#bc13fe] to-[#00f7ff] hover:from-[#a010e0] hover:to-[#00d4dd] text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(188,19,254,0.4)] hover:shadow-[0_0_30px_rgba(188,19,254,0.6)]"
+            className="w-full px-4 py-3 bg-gradient-to-r from-violet-500 to-brand-500 hover:from-violet-600 hover:to-brand-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_20px_rgba(139,92,246,0.4)] hover:shadow-[0_0_30px_rgba(139,92,246,0.6)]"
           >
             Daftar Lagi
           </button>
@@ -188,32 +188,32 @@ function DaftarPageInner() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#1a0f35] relative py-6 px-4">
+    <div className="min-h-dvh bg-muted relative py-6 px-4">
       {/* Animated Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
 
       <div className="max-w-lg mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#bc13fe] to-[#00f7ff] rounded-2xl shadow-[0_0_40px_rgba(188,19,254,0.5)] mb-4">
-            <Wifi className="w-8 h-8 text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-violet-500 to-brand-500 rounded-2xl shadow-[0_0_40px_rgba(139,92,246,0.5)] mb-4">
+            <Wifi className="w-8 h-8 text-white " />
           </div>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#00f7ff] via-white to-[#ff44cc] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-brand-500 via-white to-pink-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">
             {companyName}
           </h1>
-          <p className="text-sm text-[#e0d0ff]/80 mt-1">Daftar Layanan Internet</p>
+          <p className="text-sm text-muted-foreground/80 mt-1">Daftar Layanan Internet</p>
         </div>
 
         {/* Form Card */}
-        <div className="bg-[#1a0f35]/80 backdrop-blur-xl rounded-2xl border-2 border-[#bc13fe]/30 p-5 shadow-[0_0_50px_rgba(188,19,254,0.2)]">
+        <div className="bg-muted/80 backdrop-blur-xl rounded-2xl border-2 border-violet-500/30 p-5 shadow-[0_0_50px_rgba(139,92,246,0.2)]">
           <div className="flex items-center gap-2 mb-5">
-            <div className="p-2 bg-[#bc13fe]/20 rounded-lg border border-[#bc13fe]/30 flex items-center justify-center">
-              <UserPlus className="w-5 h-5 text-[#bc13fe] drop-shadow-[0_0_10px_rgba(188,19,254,0.6)]" />
+            <div className="p-2 bg-violet-500/20 rounded-lg border border-violet-500/30 flex items-center justify-center">
+              <UserPlus className="w-5 h-5 text-violet-500 drop-shadow-[0_0_10px_rgba(139,92,246,0.6)]" />
             </div>
             <h2 className="text-base font-bold text-white">Formulir Pendaftaran</h2>
           </div>
@@ -221,48 +221,48 @@ function DaftarPageInner() {
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Personal Info Section */}
             <div className="space-y-4">
-              <p className="text-[10px] font-bold text-[#00f7ff] uppercase tracking-widest flex items-center gap-2">
-                <span className="w-8 h-[1px] bg-gradient-to-r from-[#00f7ff] to-transparent"></span>
+              <p className="text-[10px] font-bold text-brand-500 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-8 h-[1px] bg-gradient-to-r from-brand-500 to-transparent"></span>
                 Informasi Pribadi
               </p>
 
               {/* Name */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <UserPlus className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Nama Lengkap <span className="text-[#ff44cc]">*</span>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <UserPlus className="w-3.5 h-3.5 text-brand-500" />
+                  Nama Lengkap <span className="text-pink-500">*</span>
                 </label>
                 <input
                   type="text"
                   placeholder="Nama lengkap Anda"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none"
                   required
                 />
               </div>
 
               {/* Phone */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <Phone className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Nomor WhatsApp <span className="text-[#ff44cc]">*</span>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <Phone className="w-3.5 h-3.5 text-brand-500" />
+                  Nomor WhatsApp <span className="text-pink-500">*</span>
                 </label>
                 <input
                   type="tel"
                   placeholder="08xxxxxxxxxx"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none"
                   required
                 />
-                <p className="text-[10px] text-[#e0d0ff]/60 mt-1">Untuk komunikasi</p>
+                <p className="text-[10px] text-muted-foreground/60 mt-1">Untuk komunikasi</p>
               </div>
 
               {/* Email */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <Mail className="w-3.5 h-3.5 text-[#00f7ff]" />
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <Mail className="w-3.5 h-3.5 text-brand-500" />
                   Email
                 </label>
                 <input
@@ -270,21 +270,21 @@ function DaftarPageInner() {
                   placeholder="email@example.com (opsional)"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none"
                 />
               </div>
 
               {/* Address */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <Home className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Alamat Lengkap <span className="text-[#ff44cc]">*</span>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <Home className="w-3.5 h-3.5 text-brand-500" />
+                  Alamat Lengkap <span className="text-pink-500">*</span>
                 </label>
                 <textarea
                   placeholder="Jalan, RT/RW, Kelurahan, Kecamatan"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none resize-none"
+                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none resize-none"
                   rows={2}
                   required
                 />
@@ -293,29 +293,29 @@ function DaftarPageInner() {
               {/* Area */}
               {areas.length > 0 && (
                 <div>
-                  <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                    <Map className="w-3.5 h-3.5 text-[#00f7ff]" />
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                    <Map className="w-3.5 h-3.5 text-brand-500" />
                     Area / Zona Layanan
                   </label>
                   <select
                     value={formData.areaId}
                     onChange={(e) => setFormData({ ...formData, areaId: e.target.value })}
-                    className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none appearance-none cursor-pointer"
+                    className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none appearance-none cursor-pointer"
                   >
-                    <option value="" className="bg-[#0a0520]">-- Pilih area layanan (opsional) --</option>
+                    <option value="" className="bg-card">-- Pilih area layanan (opsional) --</option>
                     {areas.map((area) => (
-                      <option key={area.id} value={area.id} className="bg-[#0a0520]">{area.name}</option>
+                      <option key={area.id} value={area.id} className="bg-card">{area.name}</option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-[#e0d0ff]/60 mt-1">Pilih area jika tersedia untuk mempercepat proses</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">Pilih area jika tersedia untuk mempercepat proses</p>
                 </div>
               )}
 
               {/* GPS Location */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Lokasi GPS <span className="text-[#ff44cc]">*</span>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-brand-500" />
+                  Lokasi GPS <span className="text-pink-500">*</span>
                 </label>
                 <div className="space-y-2">
                   <div className="grid grid-cols-2 gap-2">
@@ -355,7 +355,7 @@ function DaftarPageInner() {
                         );
                       }}
                       disabled={submitting}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold bg-gradient-to-r from-[#bc13fe] to-[#00f7ff] hover:from-[#a010e0] hover:to-[#00d4dd] disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl transition-all shadow-[0_0_15px_rgba(188,19,254,0.3)]"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold bg-gradient-to-r from-violet-500 to-brand-500 hover:from-violet-600 hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white rounded-xl transition-all shadow-[0_0_15px_rgba(139,92,246,0.3)]"
                     >
                       {submitting ? (
                         <><Loader2 className="w-3.5 h-3.5 animate-spin" />Mengambil...</>
@@ -368,7 +368,7 @@ function DaftarPageInner() {
                     <button
                       type="button"
                       onClick={() => setMapPickerOpen(true)}
-                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold border-2 border-[#00f7ff] text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded-xl transition-all"
+                      className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-bold border-2 border-brand-500 text-brand-500 hover:bg-brand-500/10 rounded-xl transition-all"
                     >
                       <MapPin className="w-3.5 h-3.5" />
                       🗺️ Manual
@@ -376,18 +376,18 @@ function DaftarPageInner() {
                   </div>
 
                   {formData.latitude && formData.longitude && (
-                    <div className="bg-[#00ff88]/10 border border-[#00ff88]/30 p-3 rounded-xl">
-                      <p className="text-xs text-[#00ff88] font-bold flex items-center gap-1.5">
+                    <div className="bg-green-500/10 border border-green-500/30 p-3 rounded-xl">
+                      <p className="text-xs text-green-500 font-bold flex items-center gap-1.5">
                         <CheckCircle className="w-3.5 h-3.5" />
                         Lokasi GPS Tersimpan
                       </p>
-                      <p className="text-[10px] text-[#00f7ff] mt-1 font-mono">
+                      <p className="text-[10px] text-brand-500 mt-1 font-mono">
                         📍 Lat: {formData.latitude.toFixed(6)}, Lng: {formData.longitude.toFixed(6)}
                       </p>
                     </div>
                   )}
                 </div>
-                <p className="text-[10px] text-[#e0d0ff]/60 mt-1.5">
+                <p className="text-[10px] text-muted-foreground/60 mt-1.5">
                   💡 Pilih "Otomatis" untuk GPS real-time atau "Manual" untuk pilih di peta
                 </p>
               </div>
@@ -395,25 +395,25 @@ function DaftarPageInner() {
 
             {/* Package Selection Section */}
             <div className="space-y-4">
-              <p className="text-[10px] font-bold text-[#00f7ff] uppercase tracking-widest flex items-center gap-2">
-                <span className="w-8 h-[1px] bg-gradient-to-r from-[#00f7ff] to-transparent"></span>
+              <p className="text-[10px] font-bold text-brand-500 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-8 h-[1px] bg-gradient-to-r from-brand-500 to-transparent"></span>
                 Pilih Paket
               </p>
 
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <Package className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Paket Internet <span className="text-[#ff44cc]">*</span>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <Package className="w-3.5 h-3.5 text-brand-500" />
+                  Paket Internet <span className="text-pink-500">*</span>
                 </label>
                 <select
                   value={formData.profileId}
                   onChange={(e) => setFormData({ ...formData, profileId: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none appearance-none cursor-pointer"
+                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none appearance-none cursor-pointer"
                   required
                 >
-                  <option value="" className="bg-[#0a0520]">Pilih paket internet</option>
+                  <option value="" className="bg-card">Pilih paket internet</option>
                   {profiles.map((profile) => (
-                    <option key={profile.id} value={profile.id} className="bg-[#0a0520]">
+                    <option key={profile.id} value={profile.id} className="bg-card">
                       {profile.name} - {formatCurrency(profile.price)}/bln
                     </option>
                   ))}
@@ -421,19 +421,19 @@ function DaftarPageInner() {
               </div>
 
               {selectedProfile && (
-                <div className="bg-gradient-to-br from-[#bc13fe]/20 to-[#00f7ff]/20 p-4 rounded-xl border border-[#bc13fe]/30">
-                  <h4 className="text-xs font-bold text-[#00f7ff] mb-2 uppercase tracking-wide">Detail Paket</h4>
+                <div className="bg-gradient-to-br from-violet-500/20 to-brand-500/20 p-4 rounded-xl border border-violet-500/30">
+                  <h4 className="text-xs font-bold text-brand-500 mb-2 uppercase tracking-wide">Detail Paket</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-[#e0d0ff]/70">Paket:</span>
+                      <span className="text-muted-foreground/70">Paket:</span>
                       <span className="font-bold text-white">{selectedProfile.name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[#e0d0ff]/70">Harga:</span>
-                      <span className="font-bold text-[#00ff88] text-base">{formatCurrency(selectedProfile.price)}/bln</span>
+                      <span className="text-muted-foreground/70">Harga:</span>
+                      <span className="font-bold text-green-500 text-base">{formatCurrency(selectedProfile.price)}/bln</span>
                     </div>
                     {selectedProfile.description && (
-                      <p className="pt-2 border-t border-[#bc13fe]/20 text-[#e0d0ff]/80 text-xs">{selectedProfile.description}</p>
+                      <p className="pt-2 border-t border-violet-500/20 text-muted-foreground/80 text-xs">{selectedProfile.description}</p>
                     )}
                   </div>
                 </div>
@@ -442,16 +442,16 @@ function DaftarPageInner() {
 
             {/* ID Card Section */}
             <div className="space-y-4">
-              <p className="text-[10px] font-bold text-[#00f7ff] uppercase tracking-widest flex items-center gap-2">
-                <span className="w-8 h-[1px] bg-gradient-to-r from-[#00f7ff] to-transparent"></span>
+              <p className="text-[10px] font-bold text-brand-500 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-8 h-[1px] bg-gradient-to-r from-brand-500 to-transparent"></span>
                 Dokumen Identitas (Wajib)
               </p>
 
               {/* KTP Number */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Nomor KTP <span className="text-[#ff44cc]">*</span>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <CreditCard className="w-3.5 h-3.5 text-brand-500" />
+                  Nomor KTP <span className="text-pink-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -460,15 +460,15 @@ function DaftarPageInner() {
                   onChange={(e) => setFormData({ ...formData, idCardNumber: e.target.value.replace(/\D/g, '').slice(0, 16) })}
                   maxLength={16}
                   required
-                  className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none font-mono tracking-widest"
+                  className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none font-mono tracking-widest"
                 />
               </div>
 
               {/* KTP Photo */}
               <div>
-                <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                  <Camera className="w-3.5 h-3.5 text-[#00f7ff]" />
-                  Foto KTP <span className="text-[#ff44cc]">*</span>
+                <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                  <Camera className="w-3.5 h-3.5 text-brand-500" />
+                  Foto KTP <span className="text-pink-500">*</span>
                 </label>
                 <CameraPhotoInput
                   photoUrl={idCardPhoto}
@@ -504,23 +504,23 @@ function DaftarPageInner() {
 
             {/* Notes */}
             <div>
-              <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                <FileText className="w-3.5 h-3.5 text-[#00f7ff]" />
+              <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                <FileText className="w-3.5 h-3.5 text-brand-500" />
                 Catatan (Opsional)
               </label>
               <textarea
                 placeholder="Catatan atau permintaan khusus"
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none resize-none"
+                className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none resize-none"
                 rows={2}
               />
             </div>
 
             {/* Referral Code */}
             <div>
-              <label className="flex items-center gap-1.5 text-xs font-medium text-[#e0d0ff] mb-1.5">
-                <Gift className="w-3.5 h-3.5 text-[#00f7ff]" />
+              <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-1.5">
+                <Gift className="w-3.5 h-3.5 text-brand-500" />
                 Kode Referral (Opsional)
               </label>
               <input
@@ -529,10 +529,10 @@ function DaftarPageInner() {
                 value={formData.referralCode}
                 onChange={(e) => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
                 maxLength={10}
-                className="w-full px-3 py-2.5 text-sm bg-[#0a0520] border-2 border-[#bc13fe]/30 rounded-xl text-white placeholder-[#e0d0ff]/40 focus:border-[#00f7ff] focus:ring-1 focus:ring-[#00f7ff]/50 focus:shadow-[0_0_15px_rgba(0,247,255,0.3)] transition-all outline-none font-mono tracking-widest uppercase"
+                className="w-full px-3 py-2.5 text-sm bg-card border-2 border-violet-500/30 rounded-xl text-white placeholder-muted-foreground/40 focus:border-brand-500 focus:ring-1 focus:ring-brand-500/50 focus:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all outline-none font-mono tracking-widest uppercase"
               />
               {formData.referralCode && (
-                <p className="text-[10px] text-[#00ff88] mt-1 flex items-center gap-1">
+                <p className="text-[10px] text-green-500 mt-1 flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" /> Bonus saldo akan diberikan setelah aktivasi!
                 </p>
               )}
@@ -542,7 +542,7 @@ function DaftarPageInner() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#bc13fe] to-[#00f7ff] hover:from-[#a010e0] hover:to-[#00d4dd] disabled:from-gray-600 disabled:to-gray-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_25px_rgba(188,19,254,0.4)] hover:shadow-[0_0_35px_rgba(188,19,254,0.6)] disabled:shadow-none"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-violet-500 to-brand-500 hover:from-violet-600 hover:to-brand-600 disabled:from-gray-600 disabled:to-gray-600 text-white text-sm font-bold rounded-xl transition-all duration-300 shadow-[0_0_25px_rgba(139,92,246,0.4)] hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] disabled:shadow-none"
             >
               {submitting ? (
                 <><Loader2 className="w-4 h-4 animate-spin" />Mengirim...</>
@@ -551,15 +551,15 @@ function DaftarPageInner() {
               )}
             </button>
 
-            <p className="text-[10px] text-center text-[#e0d0ff]/60">
+            <p className="text-[10px] text-center text-muted-foreground/60">
               Dengan mendaftar, Anda menyetujui syarat dan ketentuan layanan
             </p>
           </form>
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-xs text-[#e0d0ff]/50">
-          Powered by <span className="text-[#00f7ff]">{poweredBy}</span>
+        <p className="mt-6 text-center text-xs text-muted-foreground/50">
+          Powered by <span className="text-brand-500">{poweredBy}</span>
         </p>
       </div>
 

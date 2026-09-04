@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 import { showSuccess, showError, showConfirm } from '@/lib/sweetalert';
 import { useState, useRef } from 'react';
 import { Plus, Pencil, Trash2, CheckCircle2, XCircle, FileText, RefreshCw, Download, Upload, ChevronRight, ChevronDown, Eye, Radio, Wifi, WifiOff, RotateCcw } from 'lucide-react';
@@ -459,21 +459,21 @@ export default function PPPoEProfilesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div>
-        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-[#00f7ff] dark:drop-shadow-[0_0_20px_rgba(0,247,255,0.6)] relative z-10" />
+        <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div><div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div></div>
+        <RefreshCw className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-shadow-[0_0_20px_rgba(6,182,212,0.6)] relative z-10" />
       </div>
     );
   }
 
   return (
     <div className="bg-background relative">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-[#bc13fe]/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-[#00f7ff]/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-[#ff44cc]/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(188,19,254,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(188,19,254,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/4 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl"></div><div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div><div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div><div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div></div>
       <div className="relative z-10 space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-[#00f7ff] dark:via-white dark:to-[#ff44cc] dark:drop-shadow-[0_0_30px_rgba(0,247,255,0.5)]">{t('pppoe.profilesTitle')}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-brand-500 dark:via-white dark:to-pink-500 dark:drop-shadow-[0_0_30px_rgba(6,182,212,0.5)]">{t('pppoe.profilesTitle')}</h1>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">{t('pppoe.profilesSubtitle')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -494,15 +494,15 @@ export default function PPPoEProfilesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
+          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
             <div className="flex items-center justify-between">
-              <div><p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.length}</p></div>
-              <FileText className="h-7 w-7 text-[#00f7ff] drop-shadow-[0_0_15px_rgba(0,247,255,0.6)]" />
+              <div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('common.total')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.length}</p></div>
+              <FileText className="h-7 w-7 text-brand-500 drop-shadow-[0_0_15px_rgba(6,182,212,0.6)]" />
             </div>
           </div>
-          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-[#bc13fe]/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(188,19,254,0.2)] hover:border-[#bc13fe]/50 transition-all">
+          <div className="bg-card/80 backdrop-blur-xl rounded-xl border-2 border-violet-500/30 p-2.5 sm:p-4 shadow-[0_0_20px_rgba(139,92,246,0.2)] hover:border-violet-500/50 transition-all">
             <div className="flex items-center justify-between">
-              <div><p className="text-xs text-[#00f7ff] uppercase tracking-wide">{t('pppoe.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.filter(p => p.isActive).length}</p></div>
+              <div><p className="text-xs text-brand-500 uppercase tracking-wide">{t('pppoe.active')}</p><p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{profiles.filter(p => p.isActive).length}</p></div>
               <CheckCircle2 className="h-7 w-7 text-green-400 drop-shadow-[0_0_15px_rgba(34,197,94,0.6)]" />
             </div>
           </div>
@@ -517,10 +517,10 @@ export default function PPPoEProfilesPage() {
         {/* Mobile Card View */}
         <div className="block md:hidden space-y-3">
           {profiles.length === 0 ? (
-            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-6 text-center text-muted-foreground text-xs">{t('pppoe.noProfiles')}</div>
+            <div className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-6 text-center text-muted-foreground text-xs">{t('pppoe.noProfiles')}</div>
           ) : (
             profiles.map((profile) => (
-              <div key={profile.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-[#bc13fe]/20 p-3">
+              <div key={profile.id} className="bg-card/80 backdrop-blur-xl rounded-xl border border-violet-500/20 p-3">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <p className="font-medium text-sm text-foreground">{profile.name}</p>
@@ -587,7 +587,7 @@ export default function PPPoEProfilesPage() {
                         <p className="text-[9px] text-muted-foreground mt-0.5">{profile.validityValue} {profile.validityUnit === 'MONTHS' ? 'Bulan' : 'Hari'}</p>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#bc13fe]/10 text-[#bc13fe] border border-[#bc13fe]/30">{profile.groupName}</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-violet-500/10 text-violet-500 border border-violet-500/30">{profile.groupName}</span>
                       </td>
                       <td className="px-3 py-2.5">
                         <div className="flex flex-col gap-0.5">
@@ -665,7 +665,7 @@ export default function PPPoEProfilesPage() {
                           <button
                             title="Lihat Detail"
                             onClick={() => setDetailProfile(profile)}
-                            className="p-1.5 text-muted-foreground hover:text-[#00f7ff] hover:bg-[#00f7ff]/10 rounded transition-colors"
+                            className="p-1.5 text-muted-foreground hover:text-brand-500 hover:bg-brand-500/10 rounded transition-colors"
                           ><Eye className="h-3.5 w-3.5" /></button>
                           <button
                             title="Edit"
@@ -715,7 +715,7 @@ export default function PPPoEProfilesPage() {
                   }}
                   placeholder="Contoh: Paket 10 Mbps"
                   required
-                  className={fieldErrors['name'] ? 'border-[#ff4466]' : ''}
+                  className={fieldErrors['name'] ? 'border-red-500' : ''}
                 />
               </div>
 
@@ -727,7 +727,7 @@ export default function PPPoEProfilesPage() {
                   value={formData.groupName}
                   onChange={(e) => setFormData({ ...formData, groupName: e.target.value })}
                   placeholder="Default mengikuti nama paket"
-                  className={`font-mono ${fieldErrors['groupName'] ? 'border-[#ff4466]' : ''}`}
+                  className={`font-mono ${fieldErrors['groupName'] ? 'border-red-500' : ''}`}
                 />
                 <p className="text-[9px] text-muted-foreground mt-1">
                   {formData.groupName && formData.groupName === getAutoGroupName(formData.name)
@@ -755,14 +755,14 @@ export default function PPPoEProfilesPage() {
                     <ModalLabel required>Download ({formData.speedUnit})</ModalLabel>
                     <ModalInput type="number" min="1" value={formData.downloadSpeed} onChange={(e) => setFormData({ ...formData, downloadSpeed: e.target.value })} required />
                     {toKbpsDisplay(formData.downloadSpeed, formData.speedUnit) && (
-                      <p className="text-[10px] text-[#00f7ff] mt-1">{toKbpsDisplay(formData.downloadSpeed, formData.speedUnit)}</p>
+                      <p className="text-[10px] text-brand-500 mt-1">{toKbpsDisplay(formData.downloadSpeed, formData.speedUnit)}</p>
                     )}
                   </div>
                   <div>
                     <ModalLabel required>Upload ({formData.speedUnit})</ModalLabel>
                     <ModalInput type="number" min="1" value={formData.uploadSpeed} onChange={(e) => setFormData({ ...formData, uploadSpeed: e.target.value })} required />
                     {toKbpsDisplay(formData.uploadSpeed, formData.speedUnit) && (
-                      <p className="text-[10px] text-[#00f7ff] mt-1">{toKbpsDisplay(formData.uploadSpeed, formData.speedUnit)}</p>
+                      <p className="text-[10px] text-brand-500 mt-1">{toKbpsDisplay(formData.uploadSpeed, formData.speedUnit)}</p>
                     )}
                   </div>
                 </div>
@@ -774,7 +774,7 @@ export default function PPPoEProfilesPage() {
                 <select
                   value={formData.radiusPoolName}
                   onChange={(e) => setFormData({ ...formData, radiusPoolName: e.target.value })}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                 >
                   <option value="">Auto — dari speed tier ({formData.downloadSpeed}Mbps-Pool)</option>
                   {radiusPools.map(p => (
@@ -792,7 +792,7 @@ export default function PPPoEProfilesPage() {
               <div className="border border-border rounded-lg overflow-hidden">
                 <button type="button" onClick={() => setShowBurst(!showBurst)}
                   className="w-full flex items-center gap-2 px-4 py-3 text-xs font-medium hover:bg-muted/50 transition-colors text-left">
-                  {showBurst ? <ChevronDown className="h-3.5 w-3.5 text-[#00f7ff]" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {showBurst ? <ChevronDown className="h-3.5 w-3.5 text-brand-500" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
                   <span>Pengaturan Burst (MikroTik)</span>
                   <span className="text-[10px] font-normal text-muted-foreground ml-1">opsional — kecepatan sementara saat awal koneksi</span>
                 </button>
@@ -863,7 +863,7 @@ export default function PPPoEProfilesPage() {
               {/* Harga Jual */}
               <div>
                 <ModalLabel required>Harga Jual (IDR)</ModalLabel>
-                <ModalInput type="number" min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="150000" required className={fieldErrors['price'] ? 'border-[#ff4466]' : ''} />
+                <ModalInput type="number" min="0" value={formData.price} onChange={(e) => setFormData({ ...formData, price: e.target.value })} placeholder="150000" required className={fieldErrors['price'] ? 'border-red-500' : ''} />
                 {(formData.price && formData.hpp) || (formData.price && formData.ppnActive) ? (
                   <p className="text-[10px] text-green-400 mt-1">
                     {formData.hpp && formData.price && parseInt(formData.price) > 0 && parseInt(formData.hpp) > 0 && (
@@ -895,7 +895,7 @@ export default function PPPoEProfilesPage() {
                       <span className="text-xs text-muted-foreground">% (PPN Indonesia = 11%)</span>
                     </div>
                     {formData.price && (
-                      <div className="text-[10px] text-[#00f7ff]">
+                      <div className="text-[10px] text-brand-500">
                         Total termasuk PPN: Rp {Math.round(parseInt(formData.price) * (1 + (parseInt(formData.ppnRate) || 11) / 100)).toLocaleString('id-ID')}
                       </div>
                     )}
@@ -907,13 +907,13 @@ export default function PPPoEProfilesPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <ModalLabel required>Masa Aktif</ModalLabel>
-                  <ModalInput type="number" min="1" value={formData.validityValue} onChange={(e) => setFormData({ ...formData, validityValue: e.target.value })} required className={fieldErrors['validityValue'] ? 'border-[#ff4466]' : ''} />
+                  <ModalInput type="number" min="1" value={formData.validityValue} onChange={(e) => setFormData({ ...formData, validityValue: e.target.value })} required className={fieldErrors['validityValue'] ? 'border-red-500' : ''} />
                 </div>
                 <div>
                   <ModalLabel required>Satuan</ModalLabel>
                   <ModalSelect value={formData.validityUnit} onChange={(e) => setFormData({ ...formData, validityUnit: e.target.value as 'DAYS' | 'MONTHS' })}>
-                    <option value="DAYS" className="dark:bg-[#0a0520]">Hari</option>
-                    <option value="MONTHS" className="dark:bg-[#0a0520]">Bulan</option>
+                    <option value="DAYS" className="dark:bg-card">Hari</option>
+                    <option value="MONTHS" className="dark:bg-card">Bulan</option>
                   </ModalSelect>
                 </div>
               </div>
@@ -1018,7 +1018,7 @@ export default function PPPoEProfilesPage() {
                   <div>
                     <ModalTitle className="text-lg">{detailProfile.name}</ModalTitle>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-[#bc13fe]/20 text-[#bc13fe] border border-[#bc13fe]/30">{detailProfile.groupName}</span>
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-mono font-bold bg-violet-500/20 text-violet-500 border border-violet-500/30">{detailProfile.groupName}</span>
                       <span className="text-[10px] text-muted-foreground">{detailProfile.validityValue} {detailProfile.validityUnit === 'MONTHS' ? 'MONTHS' : 'DAYS'}</span>
                       {detailProfile.isActive
                         ? <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-medium bg-green-500/10 text-green-400 border border-green-500/20"><CheckCircle2 className="h-2.5 w-2.5 mr-0.5" />Aktif</span>
@@ -1081,7 +1081,7 @@ export default function PPPoEProfilesPage() {
                         </div>
                         <div className="flex justify-between items-center px-3 py-2 text-xs">
                           <span className="text-muted-foreground">Harga Final (incl. PPN)</span>
-                          <span className="font-bold text-[#00f7ff]">Rp {Math.round(detailProfile.price * (1 + (detailProfile.ppnRate ?? 11) / 100)).toLocaleString('id-ID')}</span>
+                          <span className="font-bold text-brand-500">Rp {Math.round(detailProfile.price * (1 + (detailProfile.ppnRate ?? 11) / 100)).toLocaleString('id-ID')}</span>
                         </div>
                       </>
                     )}
@@ -1095,7 +1095,7 @@ export default function PPPoEProfilesPage() {
                     <div className="flex items-center gap-2">
                       {detailProfile.sharedUser
                         ? <XCircle className="h-3.5 w-3.5 text-muted-foreground" />
-                        : <CheckCircle2 className="h-3.5 w-3.5 text-[#00f7ff]" />}
+                        : <CheckCircle2 className="h-3.5 w-3.5 text-brand-500" />}
                       <span className="text-muted-foreground">Shared User</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1218,7 +1218,7 @@ export default function PPPoEProfilesPage() {
                       setSyncPoolRanges(`${selected.start_ip}-${selected.end_ip}`);
                     }
                   }}
-                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-[#00f7ff] focus:ring-2 focus:ring-[#00f7ff]/30 transition-all"
+                  className="w-full px-4 py-3 bg-input border border-border rounded-xl text-foreground focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition-all"
                 >
                   <option value="">-- Pilih pool (opsional, atau isi manual di bawah) --</option>
                   {radiusPools.map(p => (
@@ -1295,7 +1295,7 @@ export default function PPPoEProfilesPage() {
         {/* Delete Dialog */}
         <SimpleModal isOpen={!!deleteProfileId} onClose={() => setDeleteProfileId(null)} size="sm">
           <ModalBody className="text-center py-6">
-            <div className="w-14 h-14 bg-[#ff4466]/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-[#ff4466]/50">
+            <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-red-500/50">
               <Trash2 className="w-7 h-7 text-[#ff6b8a]" />
             </div>
             <h2 className="text-base font-bold text-foreground mb-2">{t('pppoe.deleteProfile')}</h2>

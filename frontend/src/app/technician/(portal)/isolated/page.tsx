@@ -94,7 +94,7 @@ export default function TechnicianIsolatedPage() {
             <p className="text-xs text-muted-foreground">{filtered.length} {t('techPortal.customers')}</p>
           </div>
         </div>
-        <button onClick={fetchData} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-[#1a0f35] border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10 transition">
+        <button onClick={fetchData} title="Perbarui Data" className="p-2 bg-slate-100 dark:bg-muted border border-border rounded-xl hover:bg-slate-200 dark:hover:bg-violet-500/10 transition">
           <RefreshCw className={`w-4 h-4 text-muted-foreground ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
@@ -121,11 +121,11 @@ export default function TechnicianIsolatedPage() {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-[#00f7ff]/30 transition" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('techPortal.search')} className="w-full pl-10 pr-3 py-2.5 bg-card border border-border rounded-xl text-sm text-foreground placeholder:text-slate-400 focus:ring-2 focus:ring-brand-500/30 transition" />
         </div>
         <div className="flex gap-1">
           {(['all', 'online', 'offline'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${filter === f ? 'bg-[#bc13fe] text-white shadow-[0_0_15px_rgba(188,19,254,0.4)]' : 'bg-slate-100 dark:bg-[#1a0f35] border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-[#bc13fe]/10'}`}>
+            <button key={f} onClick={() => setFilter(f)} className={`px-3 py-2 text-xs font-bold rounded-xl transition ${filter === f ? 'bg-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.4)]' : 'bg-slate-100 dark:bg-muted border border-border text-muted-foreground hover:bg-slate-200 dark:hover:bg-violet-500/10'}`}>
               {f === 'all' ? t('techPortal.all') : f === 'online' ? 'Online' : 'Offline'}
             </button>
           ))}
@@ -135,7 +135,7 @@ export default function TechnicianIsolatedPage() {
       {/* Content */}
       {loading && users.length === 0 ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground/70">
@@ -160,7 +160,7 @@ export default function TechnicianIsolatedPage() {
               </thead>
               <tbody>
                 {filtered.map((u) => (
-                  <tr key={u.id} onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)} className="border-b border-slate-100 dark:border-[#bc13fe]/10 hover:bg-slate-50 dark:hover:bg-[#bc13fe]/5 transition cursor-pointer">
+                  <tr key={u.id} onClick={() => setExpandedUser(expandedUser === u.id ? null : u.id)} className="border-b border-slate-100 dark:border-violet-500/10 hover:bg-slate-50 dark:hover:bg-violet-500/5 transition cursor-pointer">
                     <td className="px-4 py-3 font-medium text-foreground">{u.username}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.name}</td>
                     <td className="px-4 py-3 text-muted-foreground/80">{u.profileName}</td>
@@ -207,7 +207,7 @@ export default function TechnicianIsolatedPage() {
 
                 {/* Expanded detail */}
                 {expandedUser === u.id && u.unpaidInvoices.length > 0 && (
-                  <div className="border-t border-slate-100 dark:border-[#bc13fe]/10 bg-input/50 p-3 space-y-2">
+                  <div className="border-t border-slate-100 dark:border-violet-500/10 bg-input/50 p-3 space-y-2">
                     <p className="text-xs font-bold text-foreground/80">{t('techPortal.unpaidInvoices')} ({u.unpaidInvoices.length})</p>
                     {u.unpaidInvoices.map(inv => (
                       <div key={inv.id} className="flex items-center justify-between text-xs">

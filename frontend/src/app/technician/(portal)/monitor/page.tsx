@@ -97,13 +97,13 @@ export default function TechnicianMonitorPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <Monitor className="w-5 h-5 text-[#00f7ff]" />
+            <Monitor className="w-5 h-5 text-brand-500" />
             Monitor Pelanggan
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
             Status online/offline pelanggan · Auto-refresh 30d
             {lastRefresh && (
-              <span className="ml-1.5 text-[#00f7ff]/60">
+              <span className="ml-1.5 text-brand-500/60">
                 (Terakhir: {formatWIB(lastRefresh, 'HH:mm')})
               </span>
             )}
@@ -112,7 +112,7 @@ export default function TechnicianMonitorPage() {
         <button
           onClick={loadData}
           disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-muted hover:bg-accent text-slate-700 dark:text-[#00f7ff] border border-slate-200 dark:border-[#00f7ff]/30 rounded-xl transition-all"
+          className="flex items-center gap-2 px-3 py-2 text-xs font-semibold bg-muted hover:bg-accent text-slate-700 dark:text-brand-500 border border-slate-200 dark:border-brand-500/30 rounded-xl transition-all"
         >
           <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
           Refresh
@@ -140,14 +140,14 @@ export default function TechnicianMonitorPage() {
             label: 'Aktif',
             value: stats.active,
             icon: <Activity className="w-4 h-4" />,
-            color: 'text-[#00f7ff] bg-[#00f7ff]/10 border-[#00f7ff]/30',
+            color: 'text-brand-500 bg-brand-500/10 border-brand-500/30',
             pulse: false,
           },
           {
             label: 'Total Pelanggan',
             value: stats.total,
             icon: <Users className="w-4 h-4" />,
-            color: 'text-[#bc13fe] bg-[#bc13fe]/10 border-[#bc13fe]/30',
+            color: 'text-violet-500 bg-violet-500/10 border-violet-500/30',
             pulse: false,
           },
         ].map((s) => (
@@ -177,7 +177,7 @@ export default function TechnicianMonitorPage() {
           onClick={() => setTab('online')}
           className={`flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
             tab === 'online'
-              ? 'bg-card text-green-600 dark:text-[#00f7ff] shadow-sm border border-green-200 dark:border-[#00f7ff]/30'
+              ? 'bg-card text-green-600 dark:text-brand-500 shadow-sm border border-green-200 dark:border-brand-500/30'
               : 'text-muted-foreground hover:text-foreground'
           }`}
         >
@@ -200,7 +200,7 @@ export default function TechnicianMonitorPage() {
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+          <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
         </div>
       ) : tab === 'online' ? (
         /* Online sessions table */
@@ -221,7 +221,7 @@ export default function TechnicianMonitorPage() {
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse flex-shrink-0 mt-1" />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-foreground truncate">{s.customerName ?? s.username}</p>
-                        <p className="text-[10px] font-mono text-[#00f7ff]">{s.username}</p>
+                        <p className="text-[10px] font-mono text-brand-500">{s.username}</p>
                         {s.customerPhone && (
                           <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
                             <Phone className="w-2.5 h-2.5" />{s.customerPhone}
@@ -293,7 +293,7 @@ export default function TechnicianMonitorPage() {
                               <p className="text-xs font-semibold text-foreground">
                                 {s.customerName ?? s.username}
                               </p>
-                              <p className="text-[10px] text-[#00f7ff] font-mono">{s.username}</p>
+                              <p className="text-[10px] text-brand-500 font-mono">{s.username}</p>
                               {s.customerPhone && (
                                 <p className="text-[10px] text-slate-400 flex items-center gap-0.5">
                                   <Phone className="w-2.5 h-2.5" />
@@ -359,7 +359,7 @@ export default function TechnicianMonitorPage() {
                       <p className="text-sm font-semibold text-foreground truncate">
                         {c.name}
                       </p>
-                      <p className="text-[10px] font-mono text-[#bc13fe]">{c.username}</p>
+                      <p className="text-[10px] font-mono text-violet-500">{c.username}</p>
                       <p className="text-[10px] text-muted-foreground flex items-center gap-0.5 mt-0.5">
                         <Phone className="w-2.5 h-2.5" />
                         {c.phone}

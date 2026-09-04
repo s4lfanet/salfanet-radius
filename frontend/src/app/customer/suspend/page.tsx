@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -117,7 +117,7 @@ export default function CustomerSuspendPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#00f7ff]" />
+        <Loader2 className="w-8 h-8 animate-spin text-brand-500" />
       </div>
     );
   }
@@ -126,16 +126,16 @@ export default function CustomerSuspendPage() {
     <div className="p-4 lg:p-6 w-full space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <PauseCircle className="w-8 h-8 text-[#00f7ff]" />
+        <PauseCircle className="w-8 h-8 text-brand-500" />
         <div>
           <h1 className="text-xl font-bold text-foreground">Suspend Sementara</h1>
-          <p className="text-sm text-[#e0d0ff]/60">Ajukan jeda layanan internet sementara</p>
+          <p className="text-sm text-muted-foreground/60">Ajukan jeda layanan internet sementara</p>
         </div>
       </div>
 
       {/* Info Box */}
-      <div className="bg-[#1a1135]/80 border border-[#bc13fe]/30 rounded-xl p-4 text-sm text-[#e0d0ff]/70 space-y-1">
-        <p className="flex items-start gap-2"><AlertCircle className="w-4 h-4 text-[#bc13fe] shrink-0 mt-0.5" />
+      <div className="bg-muted/80 border border-violet-500/30 rounded-xl p-4 text-sm text-muted-foreground/70 space-y-1">
+        <p className="flex items-start gap-2"><AlertCircle className="w-4 h-4 text-violet-500 shrink-0 mt-0.5" />
           <span>Suspend sementara menghentikan layanan internet untuk periode tertentu (maks. 90 hari).</span></p>
         <p className="pl-6">? Tagihan tetap berjalan selama suspend.</p>
         <p className="pl-6">? Permintaan perlu disetujui oleh admin terlebih dahulu.</p>
@@ -155,7 +155,7 @@ export default function CustomerSuspendPage() {
       {/* Current Request Status */}
       {current && (
         <CyberCard className="p-4 space-y-3">
-          <p className="text-xs font-semibold text-[#e0d0ff]/50 uppercase tracking-wider">Permintaan Aktif</p>
+          <p className="text-xs font-semibold text-muted-foreground/50 uppercase tracking-wider">Permintaan Aktif</p>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {(() => {
@@ -182,63 +182,63 @@ export default function CustomerSuspendPage() {
           </div>
           <div className="grid grid-cols-2 gap-2 text-sm">
             <div>
-              <p className="text-[#e0d0ff]/40 text-xs">Mulai</p>
+              <p className="text-muted-foreground/40 text-xs">Mulai</p>
               <p className="text-foreground font-medium">{fmt(current.startDate)}</p>
             </div>
             <div>
-              <p className="text-[#e0d0ff]/40 text-xs">Selesai</p>
+              <p className="text-muted-foreground/40 text-xs">Selesai</p>
               <p className="text-foreground font-medium">{fmt(current.endDate)}</p>
             </div>
           </div>
           {current.reason && (
             <div>
-              <p className="text-[#e0d0ff]/40 text-xs">Alasan</p>
-              <p className="text-[#e0d0ff] text-sm">{current.reason}</p>
+              <p className="text-muted-foreground/40 text-xs">Alasan</p>
+              <p className="text-muted-foreground text-sm">{current.reason}</p>
             </div>
           )}
           {current.adminNotes && (
-            <div className="bg-[#0a0520]/60 rounded-lg p-3 mt-1">
-              <p className="text-[#e0d0ff]/40 text-xs mb-1">Catatan Admin</p>
-              <p className="text-[#e0d0ff] text-sm">{current.adminNotes}</p>
+            <div className="bg-card/60 rounded-lg p-3 mt-1">
+              <p className="text-muted-foreground/40 text-xs mb-1">Catatan Admin</p>
+              <p className="text-muted-foreground text-sm">{current.adminNotes}</p>
             </div>
           )}
-          <p className="text-[#e0d0ff]/30 text-xs">Diajukan: {fmt(current.requestedAt)}</p>
+          <p className="text-muted-foreground/30 text-xs">Diajukan: {fmt(current.requestedAt)}</p>
         </CyberCard>
       )}
 
       {/* Request Form — only show if no active PENDING/APPROVED request */}
       {(!current || ['REJECTED', 'CANCELLED', 'COMPLETED'].includes(current.status)) && (
         <CyberCard className="p-4 space-y-4">
-          <p className="text-sm font-semibold text-[#00f7ff]">Ajukan Suspend Baru</p>
+          <p className="text-sm font-semibold text-brand-500">Ajukan Suspend Baru</p>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-[#e0d0ff]/60 mb-1 block">Tanggal Mulai *</label>
+              <label className="text-xs text-muted-foreground/60 mb-1 block">Tanggal Mulai *</label>
               <div className="relative">
-                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#bc13fe]/60" />
+                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500/60" />
                 <input
                   type="date"
                   min={todayStr}
                   value={form.startDate}
                   onChange={e => setForm(f => ({ ...f, startDate: e.target.value }))}
-                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-[#0a0520]/80 border rounded-lg text-sm text-white focus:outline-none ${
-                    errors.startDate ? 'border-red-500' : 'border-[#bc13fe]/30 focus:border-[#bc13fe]'
+                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-card/80 border rounded-lg text-sm text-white focus:outline-none ${
+                    errors.startDate ? 'border-red-500' : 'border-violet-500/30 focus:border-violet-500'
                   }`}
                 />
               </div>
               {errors.startDate && <p className="text-red-400 text-xs mt-1">{errors.startDate}</p>}
             </div>
             <div>
-              <label className="text-xs text-[#e0d0ff]/60 mb-1 block">Tanggal Selesai *</label>
+              <label className="text-xs text-muted-foreground/60 mb-1 block">Tanggal Selesai *</label>
               <div className="relative">
-                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[#bc13fe]/60" />
+                <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-500/60" />
                 <input
                   type="date"
                   min={form.startDate || todayStr}
                   value={form.endDate}
                   onChange={e => setForm(f => ({ ...f, endDate: e.target.value }))}
-                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-[#0a0520]/80 border rounded-lg text-sm text-white focus:outline-none ${
-                    errors.endDate ? 'border-red-500' : 'border-[#bc13fe]/30 focus:border-[#bc13fe]'
+                  className={`[color-scheme:light] dark:[color-scheme:dark] w-full pl-8 pr-2 py-2 bg-card/80 border rounded-lg text-sm text-white focus:outline-none ${
+                    errors.endDate ? 'border-red-500' : 'border-violet-500/30 focus:border-violet-500'
                   }`}
                 />
               </div>
@@ -247,13 +247,13 @@ export default function CustomerSuspendPage() {
           </div>
 
           <div>
-            <label className="text-xs text-[#e0d0ff]/60 mb-1 block">Alasan (opsional)</label>
+            <label className="text-xs text-muted-foreground/60 mb-1 block">Alasan (opsional)</label>
             <textarea
               value={form.reason}
               onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
               placeholder="Contoh: Mudik Lebaran, renovasi rumah, perjalanan dinas..."
               rows={3}
-              className="w-full px-3 py-2 bg-[#0a0520]/80 border border-[#bc13fe]/30 rounded-lg text-sm text-white placeholder-[#e0d0ff]/30 focus:outline-none focus:border-[#bc13fe] resize-none"
+              className="w-full px-3 py-2 bg-card/80 border border-violet-500/30 rounded-lg text-sm text-white placeholder-muted-foreground/30 focus:outline-none focus:border-violet-500 resize-none"
             />
           </div>
 

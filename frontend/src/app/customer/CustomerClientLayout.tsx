@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -408,7 +408,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
               >
                 <Bell className="w-4 h-4 text-primary" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(239,68,68,0.6)]">
+                  <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-md shadow-red-500/40">
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
@@ -520,7 +520,7 @@ function CustomerLayoutInner({ children }: { children: React.ReactNode }) {
                 >
                   <Bell className="w-4 h-4 text-primary" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-[0_0_8px_rgba(239,68,68,0.6)]">
+                    <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-md shadow-red-500/40">
                       {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   )}

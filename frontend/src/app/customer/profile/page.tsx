@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -110,7 +110,7 @@ export default function CustomerProfilePage() {
   if (loading) {
     return (
       <div className="p-3 flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary shadow-[0_0_15px_rgba(188,19,254,0.5)]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]"></div>
       </div>
     );
   }
@@ -130,10 +130,10 @@ export default function CustomerProfilePage() {
   return (
     <div className="p-3 lg:p-6 space-y-3 w-full">
       {/* Profile Header */}
-      <CyberCard className="p-6 bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-xl border-2 border-primary/40 dark:shadow-[0_0_30px_rgba(188,19,254,0.3)] shadow-sm">
+      <CyberCard className="p-6 bg-gradient-to-r from-primary/20 to-accent/20 backdrop-blur-xl border-2 border-primary/40 dark:shadow-[0_0_30px_rgba(139,92,246,0.3)] shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/30 border-2 border-primary flex items-center justify-center shadow-[0_0_20px_rgba(188,19,254,0.5)]">
-            <User size={32} className="text-primary drop-shadow-[0_0_10px_rgba(188,19,254,0.8)]" />
+          <div className="w-16 h-16 rounded-full bg-primary/30 border-2 border-primary flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.5)]">
+            <User size={32} className="text-primary drop-shadow-[0_0_10px_rgba(139,92,246,0.8)]" />
           </div>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-foreground">{customer.name}</h1>
@@ -146,10 +146,10 @@ export default function CustomerProfilePage() {
       </CyberCard>
 
       {/* Contact Information */}
-      <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-accent/30 dark:shadow-[0_0_30px_rgba(0,247,255,0.15)] shadow-sm">
+      <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-accent/30 dark:shadow-[0_0_30px_rgba(6,182,212,0.15)] shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-accent flex items-center gap-2 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(0,247,255,0.5)]">
-            <Mail size={16} className="drop-shadow-[0_0_5px_rgba(0,247,255,0.8)]" />
+          <h2 className="text-sm font-bold text-accent flex items-center gap-2 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">
+            <Mail size={16} className="drop-shadow-[0_0_5px_rgba(6,182,212,0.8)]" />
             {t('profile.contactInfo')}
           </h2>
           <p className="text-[10px] text-muted-foreground italic">Hubungi admin untuk mengubah data</p>
@@ -186,9 +186,9 @@ export default function CustomerProfilePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
       {/* Package Information */}
       {customer.profile && (
-        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 dark:shadow-[0_0_30px_rgba(188,19,254,0.15)] shadow-sm">
-          <h2 className="text-sm font-bold text-primary mb-3 flex items-center gap-2 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(188,19,254,0.5)]">
-            <Package size={16} className="drop-shadow-[0_0_5px_rgba(188,19,254,0.8)]" />
+        <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 dark:shadow-[0_0_30px_rgba(139,92,246,0.15)] shadow-sm">
+          <h2 className="text-sm font-bold text-primary mb-3 flex items-center gap-2 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">
+            <Package size={16} className="drop-shadow-[0_0_5px_rgba(139,92,246,0.8)]" />
             {t('profile.packageInfo')}
           </h2>
           <div className="space-y-3">
@@ -226,9 +226,9 @@ export default function CustomerProfilePage() {
       )}
 
       {/* Account Information */}
-      <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 dark:shadow-[0_0_30px_rgba(188,19,254,0.15)] shadow-sm">
-        <h2 className="text-sm font-bold text-primary mb-3 flex items-center gap-2 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(188,19,254,0.5)]">
-          <Shield size={16} className="drop-shadow-[0_0_5px_rgba(188,19,254,0.8)]" />
+      <CyberCard className="p-4 bg-card/80 backdrop-blur-xl border-2 border-primary/30 dark:shadow-[0_0_30px_rgba(139,92,246,0.15)] shadow-sm">
+        <h2 className="text-sm font-bold text-primary mb-3 flex items-center gap-2 uppercase tracking-wider drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">
+          <Shield size={16} className="drop-shadow-[0_0_5px_rgba(139,92,246,0.8)]" />
           {t('profile.accountInfo')}
         </h2>
         <div className="space-y-3">

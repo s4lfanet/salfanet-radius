@@ -176,10 +176,10 @@ export default function TechnicianRegisterPage() {
               <span className="font-semibold text-foreground">{success.name}</span> telah berhasil didaftarkan ke sistem
             </p>
             <div className="flex flex-col gap-1 mb-4">
-              <p className="text-xs font-mono text-[#bc13fe] bg-[#bc13fe]/10 px-3 py-1.5 rounded-lg inline-block">
+              <p className="text-xs font-mono text-violet-500 bg-violet-500/10 px-3 py-1.5 rounded-lg inline-block">
                 ID: {success.customerId}
               </p>
-              <p className="text-xs font-mono text-[#00f7ff] bg-[#00f7ff]/10 px-3 py-1.5 rounded-lg inline-block">
+              <p className="text-xs font-mono text-brand-500 bg-brand-500/10 px-3 py-1.5 rounded-lg inline-block">
                 Username: {success.username}
               </p>
             </div>
@@ -188,7 +188,7 @@ export default function TechnicianRegisterPage() {
             </p>
             <button
               onClick={handleReset}
-              className="w-full py-3 px-4 bg-gradient-to-r from-[#bc13fe] to-[#00f7ff] text-white font-bold text-sm rounded-xl hover:opacity-90 transition-all"
+              className="w-full py-3 px-4 bg-gradient-to-r from-violet-500 to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 transition-all"
             >
               Daftar Pelanggan Baru
             </button>
@@ -198,8 +198,8 @@ export default function TechnicianRegisterPage() {
     );
   }
 
-  const inputClass = 'w-full pl-9 pr-3 py-2.5 text-sm bg-input/80 border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-[#bc13fe]/60 focus:ring-1 focus:ring-[#bc13fe]/30';
-  const selectClass = 'w-full pl-9 pr-9 py-2.5 text-sm bg-input/80 border border-border rounded-xl text-foreground focus:outline-none focus:border-[#00f7ff]/60 focus:ring-1 focus:ring-[#00f7ff]/30 appearance-none';
+  const inputClass = 'w-full pl-9 pr-3 py-2.5 text-sm bg-input/80 border border-border rounded-xl text-foreground placeholder-slate-400 focus:outline-none focus:border-violet-500/60 focus:ring-1 focus:ring-violet-500/30';
+  const selectClass = 'w-full pl-9 pr-9 py-2.5 text-sm bg-input/80 border border-border rounded-xl text-foreground focus:outline-none focus:border-brand-500/60 focus:ring-1 focus:ring-brand-500/30 appearance-none';
   const labelClass = 'block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5';
 
   return (
@@ -208,7 +208,7 @@ export default function TechnicianRegisterPage() {
         {/* Header */}
         <div className="mb-4">
           <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-[#bc13fe]" />
+            <UserPlus className="w-5 h-5 text-violet-500" />
             {t('techPortal.register')}
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -263,7 +263,7 @@ export default function TechnicianRegisterPage() {
               {/* Section: Account */}
               <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
                 <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Key className="w-4 h-4 text-[#bc13fe]" />
+                  <Key className="w-4 h-4 text-violet-500" />
                   Akun PPPoE
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -287,7 +287,7 @@ export default function TechnicianRegisterPage() {
               {/* Section: Personal Info */}
               <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
                 <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                  <User className="w-4 h-4 text-[#bc13fe]" />
+                  <User className="w-4 h-4 text-violet-500" />
                   Informasi Pelanggan
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -348,13 +348,13 @@ export default function TechnicianRegisterPage() {
                           { enableHighAccuracy: true, timeout: 10000 }
                         );
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-semibold bg-[#bc13fe]/10 hover:bg-[#bc13fe]/20 text-[#bc13fe] border border-[#bc13fe]/30 rounded-xl transition-all disabled:opacity-60"
+                      className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-semibold bg-violet-500/10 hover:bg-violet-500/20 text-violet-500 border border-violet-500/30 rounded-xl transition-all disabled:opacity-60"
                     >
-                      {gpsLoading ? <><span className="w-3.5 h-3.5 border-2 border-[#bc13fe]/40 border-t-[#bc13fe] rounded-full animate-spin" /></> : <MapPin className="w-3.5 h-3.5" />}
+                      {gpsLoading ? <><span className="w-3.5 h-3.5 border-2 border-violet-500/40 border-t-violet-500 rounded-full animate-spin" /></> : <MapPin className="w-3.5 h-3.5" />}
                       {gpsLoading ? 'Mendapatkan lokasi...' : '📍 Ambil Lokasi GPS Saya'}
                     </button>
                     {form.latitude && form.longitude && (
-                      <a href={`https://maps.google.com/?q=${form.latitude},${form.longitude}`} target="_blank" rel="noopener noreferrer" className="mt-1.5 flex items-center gap-1 text-xs text-[#00f7ff] hover:underline">
+                      <a href={`https://maps.google.com/?q=${form.latitude},${form.longitude}`} target="_blank" rel="noopener noreferrer" className="mt-1.5 flex items-center gap-1 text-xs text-brand-500 hover:underline">
                         <MapPin className="w-3 h-3" /> Lihat di Google Maps
                       </a>
                     )}
@@ -397,7 +397,7 @@ export default function TechnicianRegisterPage() {
               {/* Section: Package & Network */}
               <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
                 <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Wifi className="w-4 h-4 text-[#00f7ff]" />
+                  <Wifi className="w-4 h-4 text-brand-500" />
                   Paket & Jaringan
                 </h2>
                 {loadingData ? (
@@ -425,9 +425,9 @@ export default function TechnicianRegisterPage() {
                         const selected = profiles.find((p) => p.id === form.profileId);
                         if (!selected) return null;
                         return (
-                          <div className="mt-2 px-4 py-3 bg-[#00f7ff]/5 dark:bg-[#00f7ff]/10 border border-[#00f7ff]/20 rounded-xl">
+                          <div className="mt-2 px-4 py-3 bg-brand-500/5 dark:bg-brand-500/10 border border-brand-500/20 rounded-xl">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-bold text-[#00f7ff]">{selected.name}</span>
+                              <span className="text-sm font-bold text-brand-500">{selected.name}</span>
                               <span className="text-sm font-bold text-foreground">{formatIDR(selected.price)}/bln</span>
                             </div>
                           </div>
@@ -463,7 +463,7 @@ export default function TechnicianRegisterPage() {
               {/* Section: Billing */}
               <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
                 <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-[#bc13fe]" />
+                  <CreditCard className="w-4 h-4 text-violet-500" />
                   Pengaturan Billing
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -478,7 +478,7 @@ export default function TechnicianRegisterPage() {
                             value={type}
                             checked={form.subscriptionType === type}
                             onChange={(e) => setValue('subscriptionType', e.target.value)}
-                            className="w-4 h-4 text-[#bc13fe] focus:ring-[#bc13fe]/50 border-border bg-input"
+                            className="w-4 h-4 text-violet-500 focus:ring-violet-500/50 border-border bg-input"
                           />
                           <span className="text-sm text-foreground">{type === 'POSTPAID' ? 'Pascabayar' : 'Prabayar'}</span>
                         </label>
@@ -500,7 +500,7 @@ export default function TechnicianRegisterPage() {
               {/* Section: KTP Document */}
               <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
                 <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-[#bc13fe]" />
+                  <CreditCard className="w-4 h-4 text-violet-500" />
                   Dokumen Identitas (KTP) <span className="text-red-500 text-[10px]">*</span>
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -589,7 +589,7 @@ export default function TechnicianRegisterPage() {
               {/* Section: Advanced (Optional) */}
               <div className="bg-card/60 rounded-2xl border border-border/50 p-5">
                 <h2 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
-                  <Hash className="w-4 h-4 text-[#00f7ff]" />
+                  <Hash className="w-4 h-4 text-brand-500" />
                   Pengaturan Lanjutan <span className="text-slate-400 text-[10px] font-normal">(opsional)</span>
                 </h2>
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -621,7 +621,7 @@ export default function TechnicianRegisterPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3.5 px-4 bg-gradient-to-r from-[#bc13fe] to-[#00f7ff] text-white font-bold text-sm rounded-xl hover:opacity-90 disabled:opacity-70 transition-all flex items-center justify-center gap-2"
+                className="w-full py-3.5 px-4 bg-gradient-to-r from-violet-500 to-brand-500 text-white font-bold text-sm rounded-xl hover:opacity-90 disabled:opacity-70 transition-all flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
