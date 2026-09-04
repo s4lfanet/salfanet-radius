@@ -17,6 +17,7 @@ import cron from 'node-cron'
 import { PrismaClient } from '@prisma/client'
 import { timingSafeEqual } from 'crypto'
 import http from 'http'
+import { formatInTimeZone } from 'date-fns-tz'
 
 // ─── Prisma (standalone, for schedule config only) ──────────────────────────
 
@@ -377,6 +378,80 @@ async function runJob(jobType: string) {
   }
 }
 
+// ─── Missed-job catch-up ────────────────────────────────────────────────────
+//
+// node-cron (and any tick-based scheduler) can ONLY fire while this process
+// is running. If the VPS/process was down during a job's scheduled time
+// (e.g. server restart, power outage, maintenance), that day's run is
+// silently skipped — there is no built-in catch-up.
+//
+// For jobs with real business impact if skipped for a whole day (invoices
+// not generated, auto-renewals not processed, users not auto-stopped, etc.),
+// we check on startup whether a successful run already happened today
+// (in company timezone) after its scheduled time. If not, and the scheduled
+// time for today has already passed, we run it once immediately.
+
+interface CatchUpJobDef {
+  type: string
+  // Scheduled hour:minute (company timezone) — only single daily "M H * * *" schedules supported.
+  hour: number
+  minute: number
+}
+
+// Critical daily jobs where missing a whole day has real business impact.
+// Frequent jobs (every N minutes/hours) self-heal on the next tick and are
+// intentionally excluded — catching them up could cause duplicate side effects.
+const CRITICAL_DAILY_JOBS: CatchUpJobDef[] = [
+  { type: 'invoice_generate',        hour: 7, minute: 0 },
+  { type: 'auto_renewal',            hour: 8, minute: 0 },
+  { type: 'auto_stop',               hour: 5, minute: 0 },
+  { type: 'radius_reconciliation',   hour: 6, minute: 0 },
+  { type: 'financial_reconciliation', hour: 5, minute: 0 },
+]
+
+async function runMissedCatchUpJobs(): Promise<void> {
+  const nowStr = formatInTimeZone(new Date(), companyTimezone, 'yyyy-MM-dd HH:mm')
+  const [todayStr, nowTimeStr] = nowStr.split(' ')
+  const [nowHour, nowMinute] = nowTimeStr.split(':').map(Number)
+  const todayStartUTC = new Date(
+    new Date(`${todayStr}T00:00:00.000Z`).getTime() - getCompanyOffsetMs()
+  )
+
+  for (const job of CRITICAL_DAILY_JOBS) {
+    try {
+      const { enabled } = await getEffectiveSchedule(job.type)
+      if (!enabled) continue
+
+      // Has today's scheduled time already passed?
+      const scheduledPassed = nowHour > job.hour || (nowHour === job.hour && nowMinute >= job.minute)
+      if (!scheduledPassed) continue
+
+      // Was there already a successful run today?
+      const alreadyRan = await prisma.cronHistory.findFirst({
+        where: {
+          jobType: job.type,
+          status: 'success',
+          startedAt: { gte: todayStartUTC },
+        },
+      })
+      if (alreadyRan) continue
+
+      console.log(`[${new Date().toISOString()}] [CRON] ${job.type} — CATCH-UP: missed today's ${String(job.hour).padStart(2, '0')}:${String(job.minute).padStart(2, '0')} run (VPS/process likely was down). Running now...`)
+      await runJob(job.type)
+    } catch (err) {
+      console.error(`[CRON] Catch-up check failed for ${job.type}:`, err instanceof Error ? err.message : err)
+    }
+  }
+}
+
+function getCompanyOffsetMs(): number {
+  const offsetStr = formatInTimeZone(new Date(), companyTimezone, 'xxx') // e.g. "+07:00"
+  const match = offsetStr.match(/^([+-])(\d{2}):(\d{2})$/)
+  if (!match) return 0
+  const sign = match[1] === '+' ? 1 : -1
+  return sign * (parseInt(match[2]) * 60 + parseInt(match[3])) * 60 * 1000
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -435,6 +510,12 @@ async function main() {
   console.log('═══════════════════════════════════════════════════════════')
   console.log(`  ${tasks.length} jobs scheduled. Waiting for next tick...`)
   console.log('')
+
+  // Catch up on critical daily jobs that may have been missed while this
+  // process/VPS was down (e.g. server restart, power outage).
+  runMissedCatchUpJobs().catch(err => {
+    console.error('[CRON] Catch-up sweep failed:', err instanceof Error ? err.message : err)
+  })
 
   process.on('SIGINT', async () => {
     console.log('\n[CRON] Shutting down...')

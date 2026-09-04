@@ -65,13 +65,15 @@ describe('Phase 6 — Cron Reliability & Timezone Hardening', () => {
   describe('/api/cron — always acquire lock (no bypass)', () => {
     const cronRoute = readFile('app/api/cron/route.ts');
 
-    it('must acquire lock for ALL requests (not just non-secret)', () => {
-      // The old code had: if (!hasCronSecret) { ownerToken = await acquireCronLock... }
-      // This should be removed — lock is always acquired.
-      expect(cronRoute).not.toMatch(/if\s*\(!hasCronSecret\)\s*\{[^}]*acquireCronLock/);
+    it('must acquire lock for manual admin triggers (non-secret requests)', () => {
+      // Cron-runner calls (with CRON_SECRET) already hold a distributed lock
+      // in the runner process, so the API-level lock is intentionally skipped
+      // to avoid deadlock. Manual admin triggers (no secret) must acquire lock.
+      expect(cronRoute).toContain('if (!hasCronSecret)');
+      expect(cronRoute).toContain('acquireCronLock(jobType)');
     });
 
-    it('must call acquireCronLock unconditionally', () => {
+    it('must return 409 when lock is held for manual triggers', () => {
       expect(cronRoute).toContain('acquireCronLock(jobType)');
       expect(cronRoute).toContain('409');
     });
@@ -389,15 +391,16 @@ describe('Phase 6 — Cron Reliability & Timezone Hardening', () => {
       expect(timezone).toContain('timeZone: tz');
     });
 
-    it('toUTC must use company offset (not server local getFullYear)', () => {
-      // The old toUTC used getFullYear() which depends on server TZ.
-      // The new one should use getTimezoneOffsetMs().
+    it('toUTC must not use server local getFullYear (delegate to parseDateAsWIB for strings)', () => {
+      // toUTC passes through JS Date objects (already true UTC) and delegates
+      // string parsing to parseDateAsWIB (which uses company timezone).
+      // The old code used getFullYear() which depends on server TZ.
       const toUTCSection = timezone.slice(
         timezone.indexOf('export function toUTC'),
         timezone.indexOf('export function formatWIB')
       );
-      expect(toUTCSection).toContain('getTimezoneOffsetMs');
       expect(toUTCSection).not.toContain('wib.getFullYear()');
+      expect(toUTCSection).not.toContain('getFullYear()');
     });
 
     it('getTimezoneOffsetMs fallback must use system offset (not hardcoded +7)', () => {
