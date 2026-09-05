@@ -51,6 +51,7 @@ Selamat! Pendaftaran Anda telah *DISETUJUI*!
 🔐 Password: {{password}}
 📦 Paket: {{profileName}}
 💳 Tipe: {{subscriptionType}}
+📍 Alamat: {{address}}
 
 ━━━━━━━━━━━━━━━━━━━━━━
 *💰 INVOICE INSTALASI*
@@ -88,6 +89,7 @@ Halo {{customerName}},
 📌 No. Invoice: {{invoiceNumber}}
 👤 Nama: {{customerName}}
 📦 Paket: {{profileName}}
+📍 Alamat: {{address}}
 
 💰 Total Tagihan: {{amount}}
 📅 Jatuh Tempo: {{dueDate}}
@@ -119,6 +121,7 @@ Akun internet Anda telah dibuat oleh admin!
 🔑 Password: {{password}}
 📦 Paket: {{profileName}}
 📍 Area: {{area}}
+🏠 Alamat: {{address}}
 📅 Aktif hingga: {{expiredDate}}
 
 Silakan gunakan kredensial di atas untuk login ke jaringan kami.
@@ -143,9 +146,10 @@ Ini adalah pengingat untuk invoice Anda yang akan segera jatuh tempo.
 *📋 Detail Invoice*
 ━━━━━━━━━━━━━━━━━━━━━━
 🧾 No. Invoice: {{invoiceNumber}}
-� Username: {{username}}
+👤 Username: {{username}}
 📦 Paket: {{profileName}}
 📍 Area: {{area}}
+🏠 Alamat: {{address}}
 💰 Jumlah: {{amount}}
 📅 Jatuh Tempo: {{dueDate}}
 ⏱️ Sisa Waktu: {{daysRemaining}} hari
@@ -179,6 +183,7 @@ Terima kasih! Pembayaran Anda telah berhasil dikonfirmasi.
 💰 Jumlah: {{amount}}
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
+🏠 Alamat: {{address}}
 📅 Aktif hingga: {{expiredDate}}
 
 🎉 Akun Anda sekarang aktif. Terima kasih!
@@ -405,6 +410,7 @@ Layanan Anda telah diperpanjang otomatis!
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
 📍 Area: {{area}}
+🏠 Alamat: {{address}}
 💰 Biaya: {{amount}}
 💳 Saldo Sekarang: {{newBalance}}
 📅 Aktif hingga: {{expiredDate}}
@@ -503,7 +509,8 @@ Halo {{customerName}},
 🆔 ID Pelanggan: {{customerId}}
 👤 Username: {{username}}
 📦 Paket: {{profileName}}
-� Area: {{area}}
+📍 Area: {{area}}
+🏠 Alamat: {{address}}
 📅 Masa Aktif: {{expiredAt}}
 
 📞 {{companyPhone}}

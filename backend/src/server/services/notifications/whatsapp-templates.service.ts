@@ -154,6 +154,7 @@ export async function sendRegistrationApproval(data: {
   dueDate?: Date;
   paymentLink?: string;
   totalAmount?: number;
+  address?: string;
 }) {
   try {
     const company = await prisma.company.findFirst();
@@ -180,6 +181,7 @@ export async function sendRegistrationApproval(data: {
       username: data.username,
       password: data.password,
       profileName: data.profileName,
+      address: data.address || '-',
       installationFee: `Rp ${data.installationFee.toLocaleString('id-ID')}`,
       invoiceNumber: data.invoiceNumber || '-',
       subscriptionType: data.subscriptionType || 'POSTPAID',
@@ -218,6 +220,7 @@ export async function sendInstallationInvoice(data: {
   paymentLink: string;
   dueDate: Date;
   profileName?: string;
+  address?: string;
 }) {
   try {
     const company = await prisma.company.findFirst();
@@ -248,6 +251,7 @@ export async function sendInstallationInvoice(data: {
       dueDate: dueDateStr,
       paymentLink: data.paymentLink,
       profileName: data.profileName || '-',
+      address: data.address || '-',
       bankAccounts: bankAccountsText,
       companyName,
       companyPhone,
@@ -279,6 +283,7 @@ export async function sendAdminCreateUser(data: {
   password: string;
   profileName: string;
   area?: string;
+  address?: string;
   expiredAt?: Date;
 }) {
   try {
@@ -306,6 +311,7 @@ export async function sendAdminCreateUser(data: {
       password: data.password,
       profileName: data.profileName,
       area: data.area || '-',
+      address: data.address || '-',
       expiredDate: expiredDateStr,
       companyName,
       companyPhone,
@@ -337,6 +343,7 @@ export async function sendInvoiceReminder(data: {
   customerUsername?: string;
   profileName?: string;
   area?: string;
+  address?: string;
   invoiceNumber: string;
   amount: number;
   dueDate: Date | string; // Accept both Date and string
@@ -394,6 +401,7 @@ export async function sendInvoiceReminder(data: {
       username: data.customerUsername || '-',
       profileName: data.profileName || '-',
       area: data.area || '-',
+      address: data.address || '-',
       invoiceNumber: data.invoiceNumber,
       amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
       dueDate: dueDateStr,
@@ -433,6 +441,7 @@ export async function sendPaymentSuccess(data: {
   password: string;
   profileName: string;
   area?: string;
+  address?: string;
   invoiceNumber: string;
   amount: number;
   newExpiredAt?: Date | string | null;
@@ -468,6 +477,7 @@ export async function sendPaymentSuccess(data: {
       password: data.password,
       profileName: data.profileName,
       area: data.area || '-',
+      address: data.address || '-',
       invoiceNumber: data.invoiceNumber,
       amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
       expiredDate,
@@ -559,6 +569,7 @@ export async function sendAutoRenewalSuccess(data: {
   username: string;
   profileName: string;
   area?: string;
+  address?: string;
   amount: number;
   newBalance: number;
   expiredDate: Date;
@@ -590,6 +601,7 @@ export async function sendAutoRenewalSuccess(data: {
       username: data.username,
       profileName: data.profileName,
       area: data.area || '-',
+      address: data.address || '-',
       amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
       newBalance: `Rp ${data.newBalance.toLocaleString('id-ID')}`,
       expiredDate: expiredDateStr,

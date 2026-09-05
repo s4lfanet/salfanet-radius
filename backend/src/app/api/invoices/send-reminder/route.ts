@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
       customerName: invoice.customerName || invoice.customerUsername || 'Customer',
       customerId: (invoice.user as any)?.customerId || undefined,
       customerUsername: invoice.customerUsername || invoice.user?.username,
+      address: invoice.user?.address || undefined,
       invoiceNumber: invoice.invoiceNumber,
       amount: invoice.amount,
       dueDate: dueDate,

@@ -26,6 +26,7 @@ export type PushTemplateType =
 export interface PushTemplateData {
   // Common
   customerName?: string;
+  customerAddress?: string;
   companyName?: string;
   companyPhone?: string;
   
@@ -75,6 +76,7 @@ export function generatePushContent(
   if (data.dueDate) dataPayload.dueDate = new Date(data.dueDate).toISOString();
   if (data.expiredDate) dataPayload.expiredDate = new Date(data.expiredDate).toISOString();
   if (data.customerName) dataPayload.customerName = data.customerName;
+  if (data.customerAddress) dataPayload.customerAddress = data.customerAddress;
   if (data.profileName) dataPayload.profileName = data.profileName;
   if (data.username) dataPayload.username = data.username;
   if (data.newBalance !== undefined) dataPayload.newBalance = String(data.newBalance);
@@ -91,9 +93,11 @@ export function generatePushContent(
       const due = data.dueDate ? formatDate(data.dueDate) : '';
       const pkg = data.profileName || '';
       
+      const addr = data.customerAddress || '';
+
       return {
         title: `⏰ Pengingat Pembayaran - ${inv}`,
-        body: `Halo ${name},\n\nIni adalah pengingat untuk tagihan Anda yang akan segera jatuh tempo.\n\n📋 Detail Invoice:\n🧾 No. Invoice: ${inv}\n📦 Paket: ${pkg}\n💰 Jumlah: ${amt}\n📅 Jatuh Tempo: ${due}\n\nSegera lakukan pembayaran agar layanan internet Anda tidak terganggu.${footer}`,
+        body: `Halo ${name},\n\nIni adalah pengingat untuk tagihan Anda yang akan segera jatuh tempo.\n\n📋 Detail Invoice:\n🧾 No. Invoice: ${inv}\n📦 Paket: ${pkg}${addr ? `\n📍 Alamat: ${addr}` : ''}\n💰 Jumlah: ${amt}\n📅 Jatuh Tempo: ${due}\n\nSegera lakukan pembayaran agar layanan internet Anda tidak terganggu.${footer}`,
         dataPayload: {
           ...dataPayload,
           link: '/(tabs)/invoices',
@@ -108,9 +112,11 @@ export function generatePushContent(
       const due = data.dueDate ? formatDate(data.dueDate) : '';
       const days = data.daysOverdue || 0;
       
+      const addr = data.customerAddress || '';
+
       return {
         title: `⚠️ Tagihan Jatuh Tempo - ${inv}`,
-        body: `Halo ${name},\n\nTagihan Anda telah melewati jatuh tempo.\n\n📋 Detail Invoice:\n🧾 No. Invoice: ${inv}\n💰 Jumlah: ${amt}\n📅 Jatuh Tempo: ${due}${days > 0 ? `\n⏱️ Terlambat: ${days} hari` : ''}\n\nMohon segera lakukan pembayaran untuk menghindari isolir layanan.${footer}`,
+        body: `Halo ${name},\n\nTagihan Anda telah melewati jatuh tempo.\n\n📋 Detail Invoice:\n🧾 No. Invoice: ${inv}${addr ? `\n📍 Alamat: ${addr}` : ''}\n💰 Jumlah: ${amt}\n📅 Jatuh Tempo: ${due}${days > 0 ? `\n⏱️ Terlambat: ${days} hari` : ''}\n\nMohon segera lakukan pembayaran untuk menghindari isolir layanan.${footer}`,
         dataPayload: {
           ...dataPayload,
           link: '/(tabs)/invoices',
@@ -125,9 +131,11 @@ export function generatePushContent(
       const user = data.username || '';
       const exp = data.expiredDate ? formatDate(data.expiredDate) : '';
       
+      const addr = data.customerAddress || '';
+
       return {
         title: `✅ Pembayaran Berhasil - ${inv}`,
-        body: `Halo ${name},\n\nTerima kasih! Pembayaran Anda telah berhasil dikonfirmasi.\n\n📋 Detail Pembayaran:\n📌 Invoice: ${inv}\n💰 Jumlah: ${amt}${user ? `\n👤 Username: ${user}` : ''}${exp ? `\n📅 Aktif hingga: ${exp}` : ''}\n\n🎉 Akun Anda sekarang aktif. Terima kasih!${footer}`,
+        body: `Halo ${name},\n\nTerima kasih! Pembayaran Anda telah berhasil dikonfirmasi.\n\n📋 Detail Pembayaran:\n📌 Invoice: ${inv}\n💰 Jumlah: ${amt}${user ? `\n👤 Username: ${user}` : ''}${addr ? `\n📍 Alamat: ${addr}` : ''}${exp ? `\n📅 Aktif hingga: ${exp}` : ''}\n\n🎉 Akun Anda sekarang aktif. Terima kasih!${footer}`,
         dataPayload: {
           ...dataPayload,
           link: '/(tabs)/invoices',
@@ -174,9 +182,11 @@ export function generatePushContent(
       const bal = data.newBalance !== undefined ? formatCurrency(data.newBalance) : '';
       const exp = data.expiredDate ? formatDate(data.expiredDate) : '';
       
+      const addr = data.customerAddress || '';
+
       return {
         title: `🔄 Perpanjangan Otomatis Berhasil`,
-        body: `Halo ${name},\n\nPaket ${pkg} Anda telah diperpanjang otomatis.\n\n📋 Detail:\n💰 Biaya: ${amt}\n💳 Sisa Saldo: ${bal}\n📅 Aktif hingga: ${exp}\n\nTerima kasih telah menggunakan layanan kami!${footer}`,
+        body: `Halo ${name},\n\nPaket ${pkg} Anda telah diperpanjang otomatis.\n\n📋 Detail:\n💰 Biaya: ${amt}\n💳 Sisa Saldo: ${bal}\n📅 Aktif hingga: ${exp}${addr ? `\n📍 Alamat: ${addr}` : ''}\n\nTerima kasih telah menggunakan layanan kami!${footer}`,
         dataPayload: {
           ...dataPayload,
           link: '/(tabs)',
@@ -190,9 +200,11 @@ export function generatePushContent(
       const amt = data.amount ? formatCurrency(data.amount) : '';
       const due = data.dueDate ? formatDate(data.dueDate) : '';
       
+      const addr = data.customerAddress || '';
+
       return {
         title: `🔒 Layanan Diisolir`,
-        body: `Halo ${name}${user ? ` (@${user})` : ''},\n\nLayanan internet Anda telah diisolir karena ada tagihan yang belum dibayar.${amt ? `\n\n💰 Tagihan: ${amt}` : ''}${due ? `\n📅 Jatuh Tempo: ${due}` : ''}\n\nSilakan segera lakukan pembayaran untuk mengaktifkan kembali layanan Anda.${footer}`,
+        body: `Halo ${name}${user ? ` (@${user})` : ''},\n\nLayanan internet Anda telah diisolir karena ada tagihan yang belum dibayar.${amt ? `\n\n💰 Tagihan: ${amt}` : ''}${due ? `\n📅 Jatuh Tempo: ${due}` : ''}${addr ? `\n📍 Alamat: ${addr}` : ''}\n\nSilakan segera lakukan pembayaran untuk mengaktifkan kembali layanan Anda.${footer}`,
         dataPayload: {
           ...dataPayload,
           link: '/(tabs)/invoices',
@@ -240,6 +252,7 @@ export async function sendPushToUser(
       select: {
         name: true,
         username: true,
+        address: true,
         pushSubscriptions: {
           where: { isActive: true },
           select: { id: true },
@@ -259,6 +272,9 @@ export async function sendPushToUser(
 
     if (!data.customerName) {
       data.customerName = user.name || user.username;
+    }
+    if (!data.customerAddress) {
+      data.customerAddress = user.address || undefined;
     }
 
     const { title, body, dataPayload } = generatePushContent(type, data);

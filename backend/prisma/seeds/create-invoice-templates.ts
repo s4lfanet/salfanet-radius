@@ -19,9 +19,10 @@ export async function createInvoiceTemplates() {
 Invoice perpanjanan layanan Anda telah dibuat:
 
 📋 *No. Invoice:* {{invoiceNumber}}
-� *Username:* {{username}}
+👤 *Username:* {{username}}
 📦 *Paket:* {{profileName}}
 📍 *Area:* {{area}}
+🏠 *Alamat:* {{address}}
 💰 *Total:* Rp {{amount}}
 📅 *Jatuh Tempo:* {{dueDate}}
 
@@ -47,6 +48,7 @@ Invoice perpanjanan layanan Anda telah dibuat:
 👤 *Username:* {{username}}
 📦 *Paket:* {{profileName}}
 📍 *Area:* {{area}}
+🏠 *Alamat:* {{address}}
 💰 *Total:* Rp {{amount}}
 📅 *Jatuh Tempo:* {{dueDate}}
 
@@ -122,6 +124,14 @@ Terima kasih,
                   </td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
                     {{username}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    {{address}}
                   </td>
                 </tr>
                 <tr>
@@ -239,6 +249,14 @@ Terima kasih,
                 </tr>
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    {{address}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
                     <strong>Total Tagihan:</strong>
                   </td>
                   <td style="color: #333333; font-size: 14px; font-weight: bold; border-bottom: 1px solid #e9ecef; padding: 12px;">
@@ -346,6 +364,10 @@ Terima kasih,
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{area}}</td>
                 </tr>
                 <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>Alamat:</strong></td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{address}}</td>
+                </tr>
+                <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>Total Tagihan:</strong></td>
                   <td style="color: #e67e22; font-size: 16px; font-weight: bold; border-bottom: 1px solid #e9ecef; padding: 12px;">{{amount}}</td>
                 </tr>
@@ -436,6 +458,10 @@ Terima kasih,
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>Area:</strong></td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{area}}</td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>Alamat:</strong></td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">{{address}}</td>
                 </tr>
                 <tr>
                   <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;"><strong>Total Tagihan:</strong></td>

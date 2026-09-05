@@ -21,6 +21,7 @@ Akun internet Anda telah dibatasi karena masa berlangganan telah habis.
 
 📋 *Detail Akun:*
 Username: {{username}}
+Alamat: {{address}}
 Expired: {{expiredDate}}
 
 🔒 *Status Saat Ini:*
@@ -48,6 +49,7 @@ Terima kasih,
       variables: {
         customerName: 'Nama pelanggan',
         username: 'Username PPPoE',
+        address: 'Alamat pelanggan',
         expiredDate: 'Tanggal expired',
         rateLimit: 'Rate limit (misal: 64k/64k)',
         paymentLink: 'Link untuk pembayaran',
@@ -108,6 +110,10 @@ Terima kasih,
             <td>{{username}}</td>
           </tr>
           <tr>
+            <td><strong>Alamat</strong></td>
+            <td>{{address}}</td>
+          </tr>
+          <tr>
             <td><strong>Expired Date</strong></td>
             <td>{{expiredDate}}</td>
           </tr>
@@ -160,6 +166,7 @@ Terima kasih,
       variables: {
         customerName: 'Nama pelanggan',
         username: 'Username PPPoE',
+        address: 'Alamat pelanggan',
         expiredDate: 'Tanggal expired (format: 5 November 2024)',
         rateLimit: 'Rate limit (misal: 64k/64k)',
         paymentLink: 'URL link untuk pembayaran',
@@ -306,6 +313,10 @@ Terima kasih,
             <td><strong>{{customerName}}</strong></td>
           </tr>
           <tr>
+            <td>Alamat</td>
+            <td><strong>{{address}}</strong></td>
+          </tr>
+          <tr>
             <td>Expired Date</td>
             <td><strong style="color: #dc2626;">{{expiredDate}}</strong></td>
           </tr>
@@ -361,6 +372,7 @@ Terima kasih,
       variables: {
         username: 'Username PPPoE',
         customerName: 'Nama pelanggan',
+        address: 'Alamat pelanggan',
         expiredDate: 'Tanggal expired',
         rateLimit: 'Rate limit bandwidth',
         paymentLink: 'URL link pembayaran',

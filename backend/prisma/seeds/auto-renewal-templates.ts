@@ -18,6 +18,7 @@ Paket internet Anda telah *diperpanjang otomatis* dari saldo akun.
 📋 *Detail:*
 • Username: {{username}}
 • Paket: {{profileName}}
+• Alamat: {{address}}
 • Biaya: {{amount}}
 • Saldo tersisa: {{newBalance}}
 • Masa aktif hingga: {{expiredDate}}
@@ -86,6 +87,14 @@ const emailTemplate = {
                   </td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
                     {{profileName}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    {{address}}
                   </td>
                 </tr>
                 <tr>
