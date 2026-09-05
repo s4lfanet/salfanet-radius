@@ -1547,84 +1547,64 @@ export default function PppoeUsersPage() {
 
           {/* Collapsible filter panel */}
           {showFilters && (
-            <div className="border-t border-border p-3 space-y-3">
-              {/* Dropdown filters row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="border-t border-border p-3 space-y-2">
+              {/* All filters as dropdowns in a single grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block">{t('pppoe.profile')}</label>
-                  <select value={filterProfile} onChange={(e) => setFilterProfile(e.target.value)} className="w-full px-2.5 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
+                  <select value={filterProfile} onChange={(e) => setFilterProfile(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
                     <option value="">{t('pppoe.allProfiles')}</option>
                     {profiles.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div>
                   <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block">NAS / Router</label>
-                  <select value={filterRouter} onChange={(e) => setFilterRouter(e.target.value)} className="w-full px-2.5 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
+                  <select value={filterRouter} onChange={(e) => setFilterRouter(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
                     <option value="">{t('pppoe.allNas')}</option>
                     <option value="global">{t('pppoe.global')}</option>
                     {routers.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
                   </select>
                 </div>
-              </div>
-
-              {/* Status filter pills */}
-              <div>
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">{t('common.status')}</label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {['', 'active', 'isolated', 'blocked'].map(s => (
-                    <button key={s} onClick={() => setFilterStatus(s)} className={`px-2.5 py-1 text-[11px] rounded-lg font-medium transition ${filterStatus === s ? (s === '' ? 'bg-teal-600 text-white' : s === 'active' ? 'bg-success text-white' : s === 'isolated' ? 'bg-warning text-white' : 'bg-destructive text-destructive-foreground') : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                      {s === '' ? t('common.all') : s === 'active' ? t('pppoe.active') : s === 'isolated' ? t('pppoe.isolir') : t('pppoe.block')}
-                    </button>
-                  ))}
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block">{t('common.status')}</label>
+                  <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
+                    <option value="">{t('common.all')}</option>
+                    <option value="active">{t('pppoe.active')}</option>
+                    <option value="isolated">{t('pppoe.isolir')}</option>
+                    <option value="blocked">{t('pppoe.block')}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block flex items-center gap-1">Sesi
+                    <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" title="Live">
+                      <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />Live
+                    </span>
+                  </label>
+                  <select value={filterSession} onChange={(e) => setFilterSession(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
+                    <option value="">Semua</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1 block">Pembayaran</label>
+                  <select value={filterPaymentStatus} onChange={(e) => setFilterPaymentStatus(e.target.value)} className="w-full px-2 py-1.5 text-xs border border-border rounded-lg bg-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 transition">
+                    <option value="">Semua</option>
+                    <option value="paid">Sudah Bayar</option>
+                    <option value="unpaid">Belum Bayar</option>
+                    <option value="isolated">Isolir</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Session filter pills */}
-              <div>
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block flex items-center gap-1.5">Sesi
-                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400" title="Status sesi diperbarui otomatis setiap 10 detik">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />Live
-                  </span>
-                </label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {[['', 'Semua'], ['online', 'Online'], ['offline', 'Offline']].map(([val, label]) => (
-                    <button key={val} onClick={() => setFilterSession(val)} className={`px-2.5 py-1 text-[11px] rounded-lg font-medium transition flex items-center gap-1 ${filterSession === val ? (val === 'online' ? 'bg-emerald-600 text-white' : val === 'offline' ? 'bg-gray-500 text-white' : 'bg-teal-600 text-white') : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                      {val === 'online' && <span className="w-1.5 h-1.5 rounded-full bg-current" />}{label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Payment status filter pills */}
-              <div>
-                <label className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-1.5 block">Pembayaran</label>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {([['', 'Semua'], ['paid', 'Sudah Bayar'], ['unpaid', 'Belum Bayar'], ['isolated', 'Isolir']] as [string, string][]).map(([val, label]) => (
-                    <button key={val} onClick={() => setFilterPaymentStatus(val)} className={`px-2.5 py-1 text-[11px] rounded-lg font-medium transition ${filterPaymentStatus === val ? (val === '' ? 'bg-teal-600 text-white' : val === 'paid' ? 'bg-success text-white' : val === 'unpaid' ? 'bg-destructive text-white' : 'bg-warning text-white') : 'bg-muted text-muted-foreground hover:bg-muted/80'}`}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Active filter chips + reset + count */}
+              {/* Reset + count */}
               <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/50">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus) ? (
-                    <>
-                      {searchQuery && <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-primary/10 text-primary border border-primary/20"><Search className="h-2.5 w-2.5" />{searchQuery.length > 15 ? searchQuery.slice(0, 15) + '…' : searchQuery}<button onClick={() => setSearchQuery('')} className="hover:text-primary/70"><X className="h-2.5 w-2.5" /></button></span>}
-                      {filterProfile && <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-primary/10 text-primary border border-primary/20">{profiles.find(p => p.id === filterProfile)?.name || 'Profile'}<button onClick={() => setFilterProfile('')} className="hover:text-primary/70"><X className="h-2.5 w-2.5" /></button></span>}
-                      {filterRouter && <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-primary/10 text-primary border border-primary/20">{filterRouter === 'global' ? t('pppoe.global') : routers.find(r => r.id === filterRouter)?.name || 'NAS'}<button onClick={() => setFilterRouter('')} className="hover:text-primary/70"><X className="h-2.5 w-2.5" /></button></span>}
-                      {filterStatus && <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-primary/10 text-primary border border-primary/20">{filterStatus === 'active' ? t('pppoe.active') : filterStatus === 'isolated' ? t('pppoe.isolir') : t('pppoe.block')}<button onClick={() => setFilterStatus('')} className="hover:text-primary/70"><X className="h-2.5 w-2.5" /></button></span>}
-                      {filterSession && <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-primary/10 text-primary border border-primary/20">{filterSession === 'online' ? 'Online' : 'Offline'}<button onClick={() => setFilterSession('')} className="hover:text-primary/70"><X className="h-2.5 w-2.5" /></button></span>}
-                      {filterPaymentStatus && <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] rounded-md bg-primary/10 text-primary border border-primary/20">{filterPaymentStatus === 'paid' ? 'Sudah Bayar' : filterPaymentStatus === 'unpaid' ? 'Belum Bayar' : 'Isolir'}<button onClick={() => setFilterPaymentStatus('')} className="hover:text-primary/70"><X className="h-2.5 w-2.5" /></button></span>}
-                      <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); setFilterPaymentStatus(''); }} className="text-[10px] text-destructive hover:text-destructive/80 font-medium ml-1 flex items-center gap-0.5"><X className="h-3 w-3" />{t('common.reset')}</button>
-                    </>
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground">{t('table.showing')} {filteredUsers.length} {t('table.of')} {totalCount}</span>
-                  )}
-                </div>
-                <span className="text-[10px] text-muted-foreground whitespace-nowrap">{t('table.showing')} {filteredUsers.length} {t('table.of')} {totalCount}</span>
+                {(searchQuery || filterProfile || filterRouter || filterStatus || filterSession || filterPaymentStatus) ? (
+                  <button onClick={() => { setSearchQuery(''); setFilterProfile(''); setFilterRouter(''); setFilterStatus(''); setFilterSession(''); setFilterPaymentStatus(''); }} className="text-[10px] text-destructive hover:text-destructive/80 font-medium flex items-center gap-0.5"><X className="h-3 w-3" />{t('common.reset')}</button>
+                ) : (
+                  <span />
+                )}
+                <span className="text-[10px] text-muted-foreground">{t('table.showing')} {filteredUsers.length} {t('table.of')} {totalCount}</span>
               </div>
             </div>
           )}
