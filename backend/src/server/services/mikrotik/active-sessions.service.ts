@@ -8,6 +8,7 @@ export interface MikrotikActiveSession {
   macAddress: string | null
   sessionId: string | null
   uptime: string | null
+  sessionTimeLeft: string | null
   rxBytes: number
   txBytes: number
   routerId: string
@@ -127,6 +128,7 @@ export async function listPppActiveDetailed(routerId: string): Promise<MikrotikA
         macAddress: s['caller-id'] || s['mac-address'] || null,
         sessionId: s['.id'] || null,
         uptime: s.uptime || null,
+        sessionTimeLeft: null,
         rxBytes: bytes?.rx ?? 0,
         txBytes: bytes?.tx ?? 0,
         routerId: router.id,
@@ -173,6 +175,7 @@ export async function listHotspotActiveDetailed(routerId: string): Promise<Mikro
       macAddress: s['mac-address'] || s['caller-id'] || null,
       sessionId: s['.id'] || null,
       uptime: s.uptime || null,
+      sessionTimeLeft: s['session-time-left'] || null,
       rxBytes: Number(s['bytes-in'] || s['rx-byte'] || 0),
       txBytes: Number(s['bytes-out'] || s['tx-byte'] || 0),
       routerId: router.id,

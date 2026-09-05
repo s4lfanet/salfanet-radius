@@ -479,9 +479,53 @@ export async function GET(request: NextRequest) {
     // Routers with authMode='local' authenticate PPPoE/Hotspot locally and
     // do NOT send RADIUS accounting records. Their sessions won't appear in
     // radacct. Fetch them directly from MikroTik API and merge.
+    //
+    // For local-auth hotspot routers, many users authenticate via mac-cookie
+    // or http-chap directly on MikroTik and are NOT registered in our DB
+    // (hotspot_vouchers / pppoe_users). We still show them so operators can
+    // see ALL active sessions on the router, with dataSource='mikrotik'.
     const existingUsernames = new Set(allSessions.map(s => s.username));
     const mikrotikType = type as 'pppoe' | 'hotspot' | null;
     const mikrotikSessions = await batchFetchMikrotikActiveSessions(routers, mikrotikType);
+
+    // Build a map of MikroTik sessions by username for enrichment of
+    // synthetic voucher sessions (which lack IP/MAC/uptime/bytes).
+    const mtSessionByUsername = new Map<string, MikrotikActiveSession>();
+    for (const ms of mikrotikSessions) {
+      if (!mtSessionByUsername.has(ms.username)) {
+        mtSessionByUsername.set(ms.username, ms);
+      }
+    }
+
+    // ── 4e1. Enrich synthetic voucher sessions with live MikroTik data ────
+    // Synthetic sessions come from DB-only voucher records and have no IP,
+    // MAC, uptime, or byte counters. If the same username is active on
+    // MikroTik right now, overlay the live data.
+    allSessions = allSessions.map((s) => {
+      if (s.dataSource !== 'radius' || s.type !== 'hotspot') return s;
+      const mt = mtSessionByUsername.get(s.username);
+      if (!mt) return s;
+      const duration = parseUptime(mt.uptime);
+      return {
+        ...s,
+        framedIpAddress: mt.ipAddress || s.framedIpAddress,
+        macAddress: mt.macAddress || s.macAddress,
+        sessionId: mt.sessionId || s.sessionId,
+        startTime: duration > 0
+          ? new Date(now - duration * 1000).toISOString()
+          : s.startTime,
+        lastUpdate: new Date(now).toISOString(),
+        duration,
+        durationFormatted: formatDuration(duration),
+        uploadBytes: mt.rxBytes,
+        downloadBytes: mt.txBytes,
+        totalBytes: mt.rxBytes + mt.txBytes,
+        uploadFormatted: formatBytes(mt.rxBytes),
+        downloadFormatted: formatBytes(mt.txBytes),
+        totalFormatted: formatBytes(mt.rxBytes + mt.txBytes),
+        dataSource: 'mikrotik',
+      } as typeof s;
+    });
 
     // Look up pppoeUser and hotspotVoucher for MikroTik sessions
     const mikrotikUsernames = [...new Set(mikrotikSessions.map(s => s.username))];
@@ -507,14 +551,28 @@ export async function GET(request: NextRequest) {
     const mtPppoeByUsername = new Map(mtPppoeUsers.map(u => [u.username, u]));
     const mtVoucherByCode = new Map(mtHotspotVouchers.map(v => [v.code, v]));
 
+    // Build a set of router IDs with authMode='local' — for these routers,
+    // we show ALL MikroTik hotspot sessions (including unregistered users)
+    // because the router authenticates locally and users may not be in DB.
+    const localAuthRouterIds = new Set(
+      routers.filter(r => r.authMode === 'local').map(r => r.id),
+    );
+
     for (const ms of mikrotikSessions) {
-      // Skip if already in radacct sessions (avoid duplicates)
+      // Skip if already in radacct sessions or enriched synthetic (avoid duplicates)
       if (existingUsernames.has(ms.username)) continue;
 
       const pppoeUser = mtPppoeByUsername.get(ms.username);
       const voucher = mtVoucherByCode.get(ms.username);
-      // Only show sessions for registered users
-      if (!pppoeUser && !voucher) continue;
+
+      // For local-auth routers, show ALL sessions (even unregistered users)
+      // so operators can see every active hotspot client on the router.
+      // For radius-auth routers, only show registered users.
+      if (!pppoeUser && !voucher) {
+        if (!localAuthRouterIds.has(ms.routerId)) continue;
+        // Only show unregistered sessions for hotspot type (not PPPoE)
+        if (ms.type !== 'hotspot') continue;
+      }
 
       const sessionType = pppoeUser ? 'pppoe' : 'hotspot';
       const duration = parseUptime(ms.uptime);
@@ -525,9 +583,9 @@ export async function GET(request: NextRequest) {
       allSessions.push({
         id: `mt-${ms.routerId}-${ms.username}`,
         username: ms.username,
-        sessionId: ms.sessionId,
+        sessionId: ms.sessionId || '',
         type: sessionType,
-        nasIpAddress: null,
+        nasIpAddress: '',
         framedIpAddress: ms.ipAddress,
         macAddress: ms.macAddress || '-',
         calledStationId: '-',
