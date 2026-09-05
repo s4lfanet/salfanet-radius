@@ -13,6 +13,7 @@
  * PM2:
  *   pm2 start 'npx tsx cron-runner.ts' --name salfanet-cron --cwd /var/www/salfanet-radius/frontend
  */
+import 'dotenv/config'
 import cron from 'node-cron'
 import { PrismaClient } from '@prisma/client'
 import { timingSafeEqual } from 'crypto'

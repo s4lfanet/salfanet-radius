@@ -116,7 +116,8 @@ module.exports = {
         NODE_OPTIONS: '--max-old-space-size=120',
         TZ: 'Asia/Jakarta',
         CRON_API_URL: 'http://127.0.0.1:3001',
-        CRON_SECRET: process.env.CRON_SECRET || '',
+        // CRON_SECRET and DATABASE_URL are loaded from backend/.env by
+        // `import 'dotenv/config'` at the top of cron-runner.ts.
       },
       error_file: './logs/cron-error.log',
       out_file: './logs/cron-out.log',
