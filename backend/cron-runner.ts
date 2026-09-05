@@ -108,7 +108,7 @@ const CRON_JOB_DEFS: CronJobDef[] = [
   { type: 'radius_reconciliation', name: 'RADIUS Reconciliation',  description: 'Daily reconciliation SalfaNet vs FreeRADIUS', defaultSchedule: '0 6 * * *' },
   { type: 'external_task_processor', name: 'External Task Processor', description: 'Process external task outbox (MikroTik, WhatsApp, Email, CoA)', defaultSchedule: '* * * * *' },
   { type: 'financial_reconciliation', name: 'Financial Reconciliation', description: 'Reconcile invoice-payment consistency', defaultSchedule: '0 5 * * *' },
-  { type: 'hotspot_voucher_sync',  name: 'Hotspot Voucher Sync',  description: 'Sync voucher status dari MikroTik local-only routers', defaultSchedule: '*/5 * * * *' },
+  { type: 'hotspot_voucher_sync',  name: 'Hotspot Voucher Sync',  description: 'Sync voucher status dari MikroTik API + RADIUS radacct', defaultSchedule: '*/5 * * * *' },
 ]
 
 // ─── Schedule config ────────────────────────────────────────────────────────

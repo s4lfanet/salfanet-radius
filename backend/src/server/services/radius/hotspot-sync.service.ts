@@ -235,6 +235,137 @@ export async function removeVoucherFromRadius(code: string) {
 }
 
 /**
+ * Sync voucher statuses from RADIUS radacct table.
+ * For RADIUS-mode routers, active sessions are in radacct (acctstoptime IS NULL).
+ * This updates voucher status to ACTIVE and sets firstLoginAt from acctstarttime.
+ *
+ * Also closes vouchers that were ACTIVE but no longer have an open radacct session
+ * and whose expiresAt has passed.
+ */
+export async function syncVoucherStatusFromRadius(): Promise<{
+  activated: number;
+  expired: number;
+  total: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  const now = new Date();
+
+  try {
+    // 1. Find all active radacct sessions (acctstoptime IS NULL) whose username
+    //    matches a hotspot voucher code
+    const activeRadacct = await prisma.radacct.findMany({
+      where: {
+        acctstoptime: null,
+      },
+      select: {
+        username: true,
+        acctstarttime: true,
+        nasipaddress: true,
+      },
+    });
+
+    if (activeRadacct.length === 0) {
+      // No active RADIUS sessions — just expire old ACTIVE vouchers
+      const expired = await prisma.hotspotVoucher.updateMany({
+        where: {
+          status: 'ACTIVE',
+          expiresAt: { lt: now, not: null },
+        },
+        data: { status: 'EXPIRED' },
+      });
+      return { activated: 0, expired: expired.count, total: 0, errors };
+    }
+
+    const activeUsernames = new Set(activeRadacct.map((s) => s.username));
+    const activeSessionMap = new Map<string, Date>();
+    for (const s of activeRadacct) {
+      const existing = activeSessionMap.get(s.username);
+      if (!existing || (s.acctstarttime && new Date(s.acctstarttime) < existing)) {
+        if (s.acctstarttime) activeSessionMap.set(s.username, new Date(s.acctstarttime));
+      }
+    }
+
+    // 2. Find vouchers that match active radacct sessions
+    const waitingOrActiveVouchers = await prisma.hotspotVoucher.findMany({
+      where: {
+        status: { in: ['WAITING', 'ACTIVE'] },
+        code: { in: Array.from(activeUsernames) },
+      },
+      select: {
+        id: true,
+        code: true,
+        status: true,
+        firstLoginAt: true,
+        expiresAt: true,
+        profile: { select: { validityValue: true, validityUnit: true } },
+      },
+    });
+
+    let activated = 0;
+    for (const voucher of waitingOrActiveVouchers) {
+      const sessionStart = activeSessionMap.get(voucher.code);
+      if (!sessionStart) continue;
+
+      const updateData: any = {};
+
+      // Set firstLoginAt from radacct if not already set
+      if (!voucher.firstLoginAt) {
+        updateData.firstLoginAt = sessionStart;
+
+        // Calculate expiresAt based on profile validity
+        if (!voucher.expiresAt) {
+          const { validityValue, validityUnit } = voucher.profile;
+          let intervalMs = 0;
+          switch (validityUnit) {
+            case 'MINUTES': intervalMs = validityValue * 60 * 1000; break;
+            case 'HOURS': intervalMs = validityValue * 60 * 60 * 1000; break;
+            case 'DAYS': intervalMs = validityValue * 24 * 60 * 60 * 1000; break;
+            case 'MONTHS': intervalMs = validityValue * 30 * 24 * 60 * 60 * 1000; break;
+          }
+          if (intervalMs > 0) {
+            updateData.expiresAt = new Date(sessionStart.getTime() + intervalMs);
+          }
+        }
+      }
+
+      // Set status to ACTIVE
+      if (voucher.status !== 'ACTIVE') {
+        updateData.status = 'ACTIVE';
+        activated++;
+      }
+
+      if (Object.keys(updateData).length > 0) {
+        await prisma.hotspotVoucher.update({
+          where: { id: voucher.id },
+          data: updateData,
+        });
+      }
+    }
+
+    // 3. Expire ACTIVE vouchers whose expiresAt has passed and are NOT in active radacct
+    const expired = await prisma.hotspotVoucher.updateMany({
+      where: {
+        status: { in: ['WAITING', 'ACTIVE'] },
+        expiresAt: { lt: now, not: null },
+        code: { notIn: Array.from(activeUsernames) },
+      },
+      data: { status: 'EXPIRED' },
+    });
+
+    return {
+      activated,
+      expired: expired.count,
+      total: waitingOrActiveVouchers.length,
+      errors,
+    };
+  } catch (error: any) {
+    errors.push(error?.message || 'Unknown error');
+    return { activated: 0, expired: 0, total: 0, errors };
+  }
+}
+
+/**
  * Sync batch of vouchers to RADIUS
  */
 export async function syncBatchToRadius(batchCode: string) {

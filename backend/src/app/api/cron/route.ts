@@ -22,6 +22,7 @@ import {
   runPppoeSessionSync,
 } from '@/server/cron/additional-jobs'
 import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service'
+import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sync.service'
 import { timingSafeEqual } from 'crypto'
 
 /**
@@ -190,7 +191,10 @@ export async function POST(request: NextRequest) {
           result = await runFinancialReconciliation()
           break
         case 'hotspot_voucher_sync':
-          result = await fetchAllVoucherStatusesFromMikrotik()
+          result = {
+            mikrotik: await fetchAllVoucherStatusesFromMikrotik(),
+            radius: await syncVoucherStatusFromRadius(),
+          }
           break
         default:
           result = { success: true, message: `Job ${jobType} not yet implemented` }

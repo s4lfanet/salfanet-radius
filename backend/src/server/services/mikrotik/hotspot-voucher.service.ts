@@ -27,7 +27,9 @@ export interface VoucherStatusSyncResult {
 
 /**
  * Get MikroTik connection config from router record.
- * Returns null if router not found, missing credentials, or not local mode.
+ * Returns null if router not found, missing credentials, or inactive.
+ * Works for BOTH local and radius auth modes — MikroTik API is accessible
+ * regardless of user authentication mode.
  */
 async function getLocalRouterConfig(routerId: string) {
   const router = await prisma.router.findUnique({
@@ -45,7 +47,6 @@ async function getLocalRouterConfig(routerId: string) {
     },
   })
   if (!router) return null
-  if (router.authMode !== 'local') return null
   if (!router.isActive) return null
   const host = router.ipAddress || router.nasname
   if (!host || !router.username || !router.password) return null
@@ -53,13 +54,15 @@ async function getLocalRouterConfig(routerId: string) {
 }
 
 /**
- * Get all active local-only routers.
+ * Get all active routers with MikroTik API credentials.
+ * Works for BOTH local and radius auth modes.
  */
 async function getLocalRouters() {
   const routers = await prisma.router.findMany({
     where: {
-      authMode: 'local',
       isActive: true,
+      username: { not: null },
+      password: { not: null },
     },
     select: {
       id: true,
@@ -73,7 +76,7 @@ async function getLocalRouters() {
       isActive: true,
     },
   })
-  return routers.filter(r => r.ipAddress || r.nasname)
+  return routers.filter(r => (r.ipAddress || r.nasname) && r.username && r.password)
 }
 
 /**
@@ -159,7 +162,7 @@ export async function syncVoucherToMikrotik(
       routerId,
       routerName: 'unknown',
       voucherCode: '',
-      message: 'Router not found, not local mode, or missing credentials',
+      message: 'Router not found, inactive, or missing API credentials',
     }
   }
 
@@ -324,7 +327,7 @@ export async function removeVoucherFromMikrotik(
       routerId,
       routerName: 'unknown',
       voucherCode,
-      message: 'Router not found, not local mode, or missing credentials',
+      message: 'Router not found, inactive, or missing API credentials',
     }
   }
 
@@ -454,7 +457,7 @@ export async function removeBatchVouchersFromMikrotik(
         routerId,
         routerName: 'unknown',
         voucherCode: code,
-        message: 'Router not found or not local mode',
+        message: 'Router not found or inactive',
       })),
     }
   }
@@ -573,7 +576,7 @@ export async function removeBatchVouchersFromMikrotik(
 export async function fetchVoucherStatusFromMikrotik(routerId: string): Promise<VoucherStatusSyncResult> {
   const router = await getLocalRouterConfig(routerId)
   if (!router) {
-    return { routerId, routerName: 'unknown', updated: 0, errors: ['Router not found or not local mode'] }
+    return { routerId, routerName: 'unknown', updated: 0, errors: ['Router not found or inactive'] }
   }
 
   let api: any
@@ -821,7 +824,7 @@ export async function cleanupOrphanedMikrotikUsers(
       totalUsers: 0,
       orphanedCount: 0,
       removedCount: 0,
-      errors: ['Router not found or not local mode'],
+      errors: ['Router not found or inactive'],
       dryRun: options?.dryRun ?? false,
     }
   }
