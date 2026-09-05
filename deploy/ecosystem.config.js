@@ -96,9 +96,12 @@ module.exports = {
     // ─────────────────────────────────────────────────────────────────────
     {
       name: 'salfanet-cron',
-      script: 'backend/node_modules/.bin/tsx',
+      // Use tsx's JS entry point (cli.mjs) directly — the .bin/tsx wrapper is a
+      // POSIX shell script which PM2 misinterprets as JS when no interpreter is
+      // set, causing SyntaxError on the shell `basedir=$(dirname ...)` line.
+      script: 'backend/node_modules/tsx/dist/cli.mjs',
       args: ['backend/cron-runner.ts'],
-      interpreter: 'none',
+      interpreter: 'node',
       cwd: APP_DIR,
       instances: 1,
       exec_mode: 'fork',
