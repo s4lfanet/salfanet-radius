@@ -84,6 +84,7 @@ export interface ListVouchersParams {
   status?: string | null;
   routerId?: string | null;
   agentId?: string | null;
+  search?: string | null;
   page?: number;
   limit?: number;
 }
@@ -98,6 +99,9 @@ export async function listVouchers(params: ListVouchersParams) {
   if (params.agentId && params.agentId !== 'all') where.agentId = params.agentId;
   if (params.status && params.status !== 'all' && ['WAITING', 'ACTIVE', 'EXPIRED'].includes(params.status)) {
     where.status = params.status;
+  }
+  if (params.search && params.search.trim()) {
+    where.code = { contains: params.search.trim() };
   }
 
   // Stats use same filters minus status
@@ -139,7 +143,11 @@ export async function listVouchers(params: ListVouchersParams) {
       router: { select: { id: true, name: true, shortname: true } },
       agent: { select: { id: true, name: true, phone: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [
+      // ACTIVE first, then EXPIRED, then WAITING
+      { status: 'asc' },
+      { createdAt: 'desc' },
+    ],
     skip,
     take: limit,
   });
