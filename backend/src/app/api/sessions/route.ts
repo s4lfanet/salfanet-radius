@@ -486,7 +486,9 @@ export async function GET(request: NextRequest) {
     // see ALL active sessions on the router, with dataSource='mikrotik'.
     const existingUsernames = new Set(allSessions.map(s => s.username));
     const mikrotikType = type as 'pppoe' | 'hotspot' | null;
+    console.log(`[SESSIONS_DEBUG] routers=${routers.length} type=${mikrotikType} existingSessions=${allSessions.length}`);
     const mikrotikSessions = await batchFetchMikrotikActiveSessions(routers, mikrotikType);
+    console.log(`[SESSIONS_DEBUG] mikrotikSessions fetched=${mikrotikSessions.length}`);
 
     // Build a map of MikroTik sessions by username for enrichment of
     // synthetic voucher sessions (which lack IP/MAC/uptime/bytes).
@@ -620,6 +622,8 @@ export async function GET(request: NextRequest) {
       });
       existingUsernames.add(ms.username);
     }
+
+    console.log(`[SESSIONS_DEBUG] after mikrotik merge: allSessions=${allSessions.length} localAuthRouterIds=${[...localAuthRouterIds]}`);
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────
     if (type) {
