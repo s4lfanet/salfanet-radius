@@ -76,9 +76,9 @@ module.exports = {
         PORT: 3001,
         HOSTNAME: '127.0.0.1',
         TZ: 'Asia/Jakarta',
-        // CRON_SECRET — shared with cron-runner for API auth bypass
-        CRON_SECRET: process.env.CRON_SECRET || '',
-        // Database, auth, and external service vars are read from backend/.env
+        // CRON_SECRET, DATABASE_URL, NEXTAUTH_SECRET, etc. are read from
+        // backend/.env by Next.js standalone. Do NOT inject empty defaults
+        // here — that shadows the .env values with empty strings.
       },
       error_file: './logs/backend-error.log',
       out_file: './logs/backend-out.log',
