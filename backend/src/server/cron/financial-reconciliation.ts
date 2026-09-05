@@ -100,13 +100,19 @@ export async function runFinancialReconciliation(): Promise<ReconciliationResult
   }
 
   // ── Check 4: Duplicate payments for same invoice ────────────────────────
-  const duplicatePayments = await prisma.payment.groupBy({
+  // NOTE: payment.invoiceId has a @unique constraint in the Prisma schema, so
+  // duplicates cannot occur at the DB level. This check is a defensive safety
+  // net in case the constraint is ever dropped. We avoid the `having` clause
+  // because Prisma 6's typing for groupBy `having` with `_count._all` does not
+  // type-check (see paymentScalarWhereWithAggregatesInput). Filter in JS instead.
+  const paymentCounts = await prisma.payment.groupBy({
     by: ['invoiceId'],
     where: { status: 'PAID' },
     _count: { _all: true },
-    having: { _count: { _all: { gt: 1 } } },
-    take: 50,
+    orderBy: { _count: { invoiceId: 'desc' } },
+    take: 200,
   });
+  const duplicatePayments = paymentCounts.filter((d) => d._count._all > 1);
 
   for (const dup of duplicatePayments) {
     issues.push({

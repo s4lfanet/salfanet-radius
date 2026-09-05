@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination } from "@/components/Pagination"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
-import { Plus, Loader2, Trash2, Ticket, Printer, Check, Download, Upload, FileSpreadsheet, MessageCircle, Wifi, Pencil } from "lucide-react"
+import { Plus, Loader2, Trash2, Ticket, Printer, Check, Download, Upload, FileSpreadsheet, MessageCircle, Wifi, Pencil, Search, X } from "lucide-react"
 import { renderVoucherTemplate, getPrintableHtml } from '@/lib/utils/templateRenderer'
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from '@/hooks/useTranslation'
@@ -86,6 +86,8 @@ export default function HotspotVoucherPage() {
   const [filterStatus, setFilterStatus] = useState("")
   const [filterRouter, setFilterRouter] = useState("")
   const [filterAgent, setFilterAgent] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedSearch, setDebouncedSearch] = useState("")
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [editTargetIds, setEditTargetIds] = useState<string[]>([])
   const [editMode, setEditMode] = useState<'single' | 'batch'>('single')
@@ -114,6 +116,7 @@ export default function HotspotVoucherPage() {
     status: filterStatus && filterStatus !== 'all' ? filterStatus : undefined,
     routerId: filterRouter && filterRouter !== 'all' ? filterRouter : undefined,
     agentId: filterAgent && filterAgent !== 'all' ? filterAgent : undefined,
+    search: debouncedSearch.trim() || undefined,
     page: currentPage,
     limit: pageSize,
   }
@@ -240,6 +243,15 @@ export default function HotspotVoucherPage() {
       return '-'
     }
   }
+
+  // Debounce search input (300ms) — avoids refetch on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery)
+      setCurrentPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Reset to page 1 when filters change (React Query auto-refetches on param change)
   useEffect(() => { setCurrentPage(1); }, [filterProfile, filterBatch, filterStatus, filterRouter, filterAgent])
@@ -911,7 +923,12 @@ export default function HotspotVoucherPage() {
 
       {/* Filters */}
       <div className="bg-card rounded-lg border border-border p-3">
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+          <div className="relative col-span-2 sm:col-span-1">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <input type="text" placeholder={t('common.search')} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-7 pr-6 py-1.5 text-xs bg-muted border border-border rounded focus:outline-none focus:ring-1 focus:ring-primary/40" />
+            {searchQuery && <button onClick={() => setSearchQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>}
+          </div>
           <select value={filterProfile} onChange={(e) => setFilterProfile(e.target.value)} className="px-2 py-1.5 text-xs bg-muted border border-border rounded"><option value="">{t('common.all')} {t('nav.profiles')}</option><option value="all">{t('common.all')} {t('nav.profiles')}</option>{profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
           <select value={filterRouter} onChange={(e) => setFilterRouter(e.target.value)} className="px-2 py-1.5 text-xs bg-muted border border-border rounded"><option value="">{t('common.all')} {t('nav.routers')}</option><option value="all">{t('common.all')} {t('nav.routers')}</option>{routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
           <select value={filterAgent} onChange={(e) => setFilterAgent(e.target.value)} className="px-2 py-1.5 text-xs bg-muted border border-border rounded"><option value="">{t('common.all')} {t('nav.agent')}</option><option value="all">{t('common.all')} {t('nav.agent')}</option>{agents.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select>

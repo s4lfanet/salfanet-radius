@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
       status: searchParams.get('status'),
       routerId: searchParams.get('routerId'),
       agentId: searchParams.get('agentId'),
+      search: searchParams.get('search'),
       page: parseInt(searchParams.get('page') || '1'),
       limit: parseInt(searchParams.get('limit') || '100'),
     });
