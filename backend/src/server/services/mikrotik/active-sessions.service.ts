@@ -188,8 +188,9 @@ export async function listHotspotActiveDetailed(routerId: string): Promise<Mikro
 }
 
 /**
- * Batch fetch active sessions from multiple MikroTik routers (local auth mode).
- * Only fetches from routers where authMode = 'local' (RADIUS mode has radacct).
+ * Batch fetch active sessions from multiple MikroTik routers.
+ * Fetches from ALL routers with API credentials, regardless of authMode.
+ * MikroTik API is accessible for both local and radius auth modes.
  *
  * @param routers - Array of router objects with id, authMode
  * @param type - 'pppoe' | 'hotspot' | null (both)
@@ -199,15 +200,13 @@ export async function batchFetchMikrotikActiveSessions(
   routers: Array<{ id: string; authMode?: string | null }>,
   type?: 'pppoe' | 'hotspot' | null
 ): Promise<MikrotikActiveSession[]> {
-  // Only fetch from local-auth routers (RADIUS mode sessions are in radacct)
-  const localRouterIds = routers
-    .filter(r => r.authMode !== 'radius')
-    .map(r => r.id)
+  // Fetch from ALL routers — MikroTik API works regardless of authMode
+  const routerIds = routers.map(r => r.id)
 
-  if (localRouterIds.length === 0) return []
+  if (routerIds.length === 0) return []
 
   const tasks: Promise<MikrotikActiveSession[]>[] = []
-  for (const id of localRouterIds) {
+  for (const id of routerIds) {
     if (!type || type === 'pppoe') {
       tasks.push(listPppActiveDetailed(id))
     }

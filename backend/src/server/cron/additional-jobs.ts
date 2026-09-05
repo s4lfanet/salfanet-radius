@@ -6,20 +6,44 @@
 import { prisma } from '@/server/db/client';
 import { nowWIB } from '@/lib/timezone';
 import { listPppActive } from '@/server/services/mikrotik/ppp-secret.service';
+import { fetchAllVoucherStatusesFromMikrotik } from '@/server/services/mikrotik/hotspot-voucher.service';
+import { syncVoucherStatusFromRadius } from '@/server/services/radius/hotspot-sync.service';
 
 // ─── hotspot_sync ───────────────────────────────────────────────────────────
 /**
  * Sinkronisasi voucher hotspot:
- *   - Voucher dengan status ACTIVE dan expiresAt < now → set EXPIRED
- *   - Voucher dengan status WAITING dan expiresAt < now → set EXPIRED
- *   - Update lastUsedBy tracking
+ *   1. Sync status dari MikroTik API (active users, schedulers) — semua router
+ *   2. Sync status dari RADIUS radacct (acctstoptime IS NULL) — untuk radius mode
+ *   3. Expire voucher yang sudah lewat masa berlakunya (expiresAt < now)
  */
-export async function runHotspotSync(): Promise<{ expired: number; total: number; errors: string[] }> {
+export async function runHotspotSync(): Promise<{ expired: number; total: number; activated: number; mikrotikUpdated: number; errors: string[] }> {
   const errors: string[] = [];
   const now = nowWIB();
 
   try {
-    // Expire vouchers yang sudah lewat masa berlakunya
+    // 1. Sync voucher statuses from MikroTik API (works for ALL routers with API creds)
+    let mikrotikUpdated = 0;
+    try {
+      const mtResult = await fetchAllVoucherStatusesFromMikrotik();
+      mikrotikUpdated = mtResult.results.reduce((sum, r) => sum + r.updated, 0);
+      for (const r of mtResult.results) {
+        errors.push(...r.errors);
+      }
+    } catch (err: any) {
+      errors.push(`MikroTik sync: ${err?.message || 'Unknown'}`);
+    }
+
+    // 2. Sync voucher statuses from RADIUS radacct (for RADIUS-mode routers)
+    let activated = 0;
+    try {
+      const radiusResult = await syncVoucherStatusFromRadius();
+      activated = radiusResult.activated;
+      errors.push(...radiusResult.errors);
+    } catch (err: any) {
+      errors.push(`RADIUS sync: ${err?.message || 'Unknown'}`);
+    }
+
+    // 3. Expire vouchers yang sudah lewat masa berlakunya
     const expired = await prisma.hotspotVoucher.updateMany({
       where: {
         status: { in: ['WAITING', 'ACTIVE'] },
@@ -36,11 +60,13 @@ export async function runHotspotSync(): Promise<{ expired: number; total: number
     return {
       expired: expired.count,
       total: activeCount,
+      activated,
+      mikrotikUpdated,
       errors,
     };
   } catch (error: any) {
     errors.push(error?.message || 'Unknown error');
-    return { expired: 0, total: 0, errors };
+    return { expired: 0, total: 0, activated: 0, mikrotikUpdated: 0, errors };
   }
 }
 
