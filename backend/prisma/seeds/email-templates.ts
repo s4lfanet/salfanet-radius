@@ -179,6 +179,14 @@ export const emailTemplates = [
                     {{subscriptionType}}
                   </td>
                 </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; padding: 12px;">
+                    {{address}}
+                  </td>
+                </tr>
               </table>
 
               <table width="100%" cellpadding="12" cellspacing="0" style="background-color: #fff3cd; border-radius: 8px; margin: 20px 0;">
@@ -1171,6 +1179,14 @@ export const emailTemplates = [
                   </td>
                   <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px; font-family: monospace;">
                     {{customerUsername}}
+                  </td>
+                </tr>
+                <tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #d1fae5; padding: 12px;">
+                    {{address}}
                   </td>
                 </tr>
                 <tr>

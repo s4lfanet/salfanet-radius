@@ -237,6 +237,7 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
       id: true, invoiceNumber: true, amount: true, dueDate: true, status: true,
       customerName: true, customerPhone: true, customerUsername: true,
       paymentLink: true, sentReminders: true, userId: true,
+      user: { select: { address: true } },
     },
   });
 
@@ -304,6 +305,7 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
         phone: inv.customerPhone!,
         customerName: inv.customerName || inv.customerUsername || 'Customer',
         customerUsername: inv.customerUsername || undefined,
+        address: (inv as any).user?.address || undefined,
         invoiceNumber: inv.invoiceNumber,
         amount: inv.amount,
         dueDate: inv.dueDate,
@@ -319,6 +321,7 @@ export async function runInvoiceReminder(): Promise<{ sent: number; skipped: num
         const isOverdue = inv.status === 'OVERDUE' || inv.dueDate < now;
         await sendPushToUser(inv.userId, isOverdue ? 'invoice-overdue' : 'invoice-reminder', {
           customerName: inv.customerName || inv.customerUsername || 'Pelanggan',
+          customerAddress: (inv as any).user?.address || undefined,
           invoiceNumber: inv.invoiceNumber,
           amount: inv.amount,
           dueDate: inv.dueDate,
@@ -515,6 +518,7 @@ export async function runAutoRenewal(): Promise<{ renewed: number; skipped: numb
       const renewalCompany = await prisma.company.findFirst({ select: { name: true, phone: true } });
       await sendPushToUser(user.id, 'auto-renewal-success', {
         customerName: user.name || user.username,
+        customerAddress: user.address || undefined,
         username: user.username,
         amount,
         profileName: (user.profile as any).name || '',

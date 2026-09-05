@@ -20,6 +20,7 @@ Invoice Anda sudah melewati tanggal jatuh tempo:
 � Username: *{{username}}*
 📦 Paket: *{{profileName}}*
 📍 Area: *{{area}}*
+🏠 Alamat: *{{address}}*
 💰 Total Tagihan: *{{amount}}*
 📅 Jatuh Tempo: *{{dueDate}}*
 ⏰ Terlambat: *{{daysOverdue}} hari*
@@ -54,6 +55,7 @@ Invoice Anda sudah melewati tanggal jatuh tempo:
 👤 Username: *{{username}}*
 📦 Paket: *{{profileName}}*
 📍 Area: *{{area}}*
+🏠 Alamat: *{{address}}*
 💰 Total Tagihan: *{{amount}}*
 📅 Jatuh Tempo: *{{dueDate}}*
 ⏰ Terlambat: *{{daysOverdue}} hari*
@@ -146,6 +148,10 @@ Terima kasih,
           <tr>
             <td>📍 Area</td>
             <td>{{area}}</td>
+          </tr>
+          <tr>
+            <td>🏠 Alamat</td>
+            <td>{{address}}</td>
           </tr>
           <tr>
             <td>💰 Total Tagihan</td>
@@ -256,6 +262,10 @@ Terima kasih,
           <tr>
             <td>📍 Area</td>
             <td>{{area}}</td>
+          </tr>
+          <tr>
+            <td>🏠 Alamat</td>
+            <td>{{address}}</td>
           </tr>
           <tr>
             <td>💰 Total Tagihan</td>

@@ -287,6 +287,7 @@ export const EmailService = {
     password: string;
     profile: string;
     expiredAt?: Date;
+    address?: string;
   }): string {
     const expiredDate = data.expiredAt 
       ? formatWIB(data.expiredAt, 'd MMMM yyyy')
@@ -345,6 +346,14 @@ export const EmailService = {
                     ${data.profile}
                   </td>
                 </tr>
+                ${data.address ? `<tr>
+                  <td style="color: #666666; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; border-bottom: 1px solid #e9ecef; padding: 12px;">
+                    ${data.address}
+                  </td>
+                </tr>` : ''}
                 <tr>
                   <td style="color: #666666; font-size: 14px; padding: 12px;">
                     <strong>Masa Aktif:</strong>
@@ -480,6 +489,7 @@ export const EmailService = {
     amount: number;
     dueDate: Date;
     paymentUrl?: string;
+    address?: string;
   }): string {
     const dueDate = formatWIB(data.dueDate, 'd MMMM yyyy');
 
@@ -536,6 +546,14 @@ export const EmailService = {
                     ${dueDate}
                   </td>
                 </tr>
+                ${data.address ? `<tr>
+                  <td style="color: #666666; font-size: 14px; padding: 12px;">
+                    <strong>Alamat:</strong>
+                  </td>
+                  <td style="color: #333333; font-size: 14px; padding: 12px;">
+                    ${data.address}
+                  </td>
+                </tr>` : ''}
               </table>
               
               ${data.paymentUrl ? `
@@ -683,6 +701,7 @@ export const EmailService = {
     customerUsername?: string;
     profileName?: string;
     area?: string;
+    address?: string;
     invoiceNumber: string;
     amount: number;
     dueDate: Date;
@@ -757,6 +776,7 @@ export const EmailService = {
         username: data.customerUsername || '-',
         profileName: data.profileName || '-',
         area: data.area || '-',
+        address: data.address || '-',
         invoiceNumber: data.invoiceNumber,
         amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
         dueDate: dueDateStr,
@@ -808,6 +828,7 @@ export const EmailService = {
     email: string;
     customerName: string;
     customerUsername?: string;
+    address?: string;
     invoiceNumber: string;
     amount: number;
     paymentMethod: string;
@@ -941,6 +962,7 @@ export const EmailService = {
       const variables: Record<string, string> = {
         customerName: data.customerName,
         customerUsername: data.customerUsername || '-',
+        address: data.address || '-',
         invoiceNumber: data.invoiceNumber,
         amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
         paymentMethod: data.paymentMethod,
@@ -990,6 +1012,7 @@ export const EmailService = {
     password: string;
     profileName: string;
     area?: string;
+    address?: string;
     companyName: string;
     companyPhone: string;
   }) {
@@ -1021,6 +1044,7 @@ export const EmailService = {
         password: data.password,
         profileName: data.profileName,
         area: data.area || '-',
+        address: data.address || '-',
         companyName: data.companyName,
         companyPhone: data.companyPhone,
       };
@@ -1073,6 +1097,7 @@ export const EmailService = {
     paymentLink?: string;
     paymentToken?: string;
     subscriptionType?: 'POSTPAID' | 'PREPAID';
+    address?: string;
   }) {
     try {
       const settings = await this.getSettings();
@@ -1120,6 +1145,7 @@ export const EmailService = {
           username: data.username,
           password: data.password,
           profileName: data.profile,
+          address: data.address || '-',
           subscriptionType: data.subscriptionType || 'POSTPAID',
           invoiceNumber: data.invoiceNumber || '-',
           installationFee: data.installationFee.toLocaleString('id-ID'),
@@ -1177,6 +1203,7 @@ export const EmailService = {
     dueDate?: Date;
     paymentLink?: string;
     subscriptionType?: 'POSTPAID' | 'PREPAID';
+    address?: string;
   }): string {
     const formatCurrency = (amount: number) => 
       new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
@@ -1212,6 +1239,7 @@ export const EmailService = {
                 <tr><td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Password:</strong></td><td style="padding: 12px; border-bottom: 1px solid #eee;">${data.password}</td></tr>
                 <tr><td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Paket:</strong></td><td style="padding: 12px; border-bottom: 1px solid #eee;">${data.profileName}</td></tr>
                 <tr><td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Tipe:</strong></td><td style="padding: 12px; border-bottom: 1px solid #eee;">${data.subscriptionType || 'POSTPAID'}</td></tr>
+                ${data.address ? `<tr><td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Alamat:</strong></td><td style="padding: 12px; border-bottom: 1px solid #eee;">${data.address}</td></tr>` : ''}
                 ${data.invoiceNumber ? `<tr><td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>No. Invoice:</strong></td><td style="padding: 12px; border-bottom: 1px solid #eee;">${data.invoiceNumber}</td></tr>` : ''}
                 ${data.totalAmount ? `<tr><td style="padding: 12px; border-bottom: 1px solid #eee;"><strong>Total Tagihan:</strong></td><td style="padding: 12px; border-bottom: 1px solid #eee;">${formatCurrency(data.totalAmount)}</td></tr>` : ''}
                 ${data.dueDate ? `<tr><td style="padding: 12px;"><strong>Jatuh Tempo:</strong></td><td style="padding: 12px;">${formatDate(data.dueDate)}</td></tr>` : ''}
@@ -1247,6 +1275,7 @@ export async function sendAutoRenewalEmail(data: {
   amount: number;
   newBalance: number;
   expiredDate: Date;
+  address?: string;
 }) {
   try {
     const company = await prisma.company.findFirst();
@@ -1278,6 +1307,7 @@ export async function sendAutoRenewalEmail(data: {
       customerName: data.customerName,
       username: data.username,
       profileName: data.profileName,
+      address: data.address || '-',
       amount: `Rp ${data.amount.toLocaleString('id-ID')}`,
       newBalance: `Rp ${data.newBalance.toLocaleString('id-ID')}`,
       expiredDate: expiredDateStr,
