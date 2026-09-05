@@ -155,9 +155,11 @@ export default function HotspotSessionsPage() {
     return `${s}s`;
   };
 
-  const liveDuration = (startTimeStr: string | null) => {
+  const liveDuration = (startTimeStr: string | null | undefined) => {
     if (!startTimeStr) return 0;
-    return Math.max(0, Math.floor((now - new Date(startTimeStr).getTime()) / 1000));
+    const startMs = new Date(startTimeStr).getTime();
+    if (isNaN(startMs)) return 0;
+    return Math.max(0, Math.floor((now - startMs) / 1000));
   };
 
   // Remaining time countdown from expiresAt

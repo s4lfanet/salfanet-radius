@@ -14,14 +14,23 @@ export function useSSE<T = any>(
   options: SSEOptions = {}
 ) {
   const eventSourceRef = useRef<EventSource | null>(null)
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const {
-    onConnected,
-    onError,
-    onReconnecting,
-    autoReconnect = true,
-    reconnectInterval = 3000,
-  } = options
+  const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Store callbacks in refs so they don't affect connect's dependency array
+  const onMessageRef = useRef(onMessage)
+  const onConnectedRef = useRef(options.onConnected)
+  const onErrorRef = useRef(options.onError)
+  const onReconnectingRef = useRef(options.onReconnecting)
+  const autoReconnectRef = useRef(options.autoReconnect ?? true)
+  const reconnectIntervalRef = useRef(options.reconnectInterval ?? 3000)
+
+  // Update refs on every render (they always have latest values)
+  onMessageRef.current = onMessage
+  onConnectedRef.current = options.onConnected
+  onErrorRef.current = options.onError
+  onReconnectingRef.current = options.onReconnecting
+  autoReconnectRef.current = options.autoReconnect ?? true
+  reconnectIntervalRef.current = options.reconnectInterval ?? 3000
 
   const connect = useCallback(() => {
     // Cleanup previous connection
@@ -36,14 +45,14 @@ export function useSSE<T = any>(
       // Handle connection established
       eventSource.addEventListener('connected', () => {
         console.log('[SSE] Connected to', url)
-        onConnected?.()
+        onConnectedRef.current?.()
       })
 
       // Handle generic messages
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data)
-          onMessage('message', data)
+          onMessageRef.current('message', data)
         } catch (e) {
           console.error('[SSE] Failed to parse message:', e)
         }
@@ -53,7 +62,7 @@ export function useSSE<T = any>(
       eventSource.addEventListener('voucher-stats', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data)
-          onMessage('voucher-stats', data)
+          onMessageRef.current('voucher-stats', data)
         } catch (e) {
           console.error('[SSE] Failed to parse voucher-stats:', e)
         }
@@ -62,7 +71,7 @@ export function useSSE<T = any>(
       eventSource.addEventListener('voucher-changed', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data)
-          onMessage('voucher-changed', data)
+          onMessageRef.current('voucher-changed', data)
         } catch (e) {
           console.error('[SSE] Failed to parse voucher-changed:', e)
         }
@@ -71,21 +80,21 @@ export function useSSE<T = any>(
       // Handle errors
       eventSource.onerror = (error) => {
         console.error('[SSE] Connection error:', error)
-        onError?.(error)
+        onErrorRef.current?.(error)
 
         // Auto-reconnect
-        if (autoReconnect && eventSource.readyState === EventSource.CLOSED) {
-          onReconnecting?.()
+        if (autoReconnectRef.current && eventSource.readyState === EventSource.CLOSED) {
+          onReconnectingRef.current?.()
           reconnectTimeoutRef.current = setTimeout(() => {
             console.log('[SSE] Reconnecting...')
             connect()
-          }, reconnectInterval)
+          }, reconnectIntervalRef.current)
         }
       }
     } catch (error) {
       console.error('[SSE] Failed to create EventSource:', error)
     }
-  }, [url, onMessage, onConnected, onError, onReconnecting, autoReconnect, reconnectInterval])
+  }, [url]) // Only depend on url — callbacks are in refs
 
   useEffect(() => {
     connect()

@@ -171,9 +171,10 @@ export default function SessionsPage() {
     return `${s}s`;
   };
 
-  const liveDuration = (startTimeStr: string | null) => {
+  const liveDuration = (startTimeStr: string | null | undefined) => {
     if (!startTimeStr) return 0;
     const startMs = new Date(startTimeStr).getTime();
+    if (isNaN(startMs)) return 0;
     return Math.max(0, Math.floor((now - startMs) / 1000));
   };
 
