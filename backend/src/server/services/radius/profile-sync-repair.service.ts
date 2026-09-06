@@ -1,6 +1,6 @@
 /**
  * Profile Sync Repair — fix customers whose DB status is 'active' but whose
- * RADIUS radusergroup or MikroTik PPP secret profile is still 'isolir'.
+ * RADIUS radusergroup OR MikroTik PPP secret profile is still 'isolir'.
  *
  * This runs as part of the radius_reconciliation cron and can also be
  * triggered manually via the /api/pppoe/users/sync-audit endpoint.
@@ -8,13 +8,14 @@
  * Root cause it fixes:
  *   When a customer was restored to 'active' (via payment, extend, manual
  *   status change), the DB status and RADIUS tables were updated, but the
- *   MikroTik active session was not kicked. RouterOS retains the old profile
- *   on already-authenticated sessions, so the user stayed stuck on 'isolir'.
+ *   MikroTik PPP secret profile was not updated or the active session was
+ *   not kicked. RouterOS retains the old profile on already-authenticated
+ *   sessions, so the user stayed stuck on 'isolir'.
  *
  * Repair steps per affected user:
  *   1. Verify DB status is 'active'
- *   2. Fix radusergroup → real profile group (if still 'isolir')
- *   3. Fix MikroTik PPP secret profile → real profile (if still 'isolir')
+ *   2. Check radusergroup — fix if 'isolir' or mismatched
+ *   3. Check MikroTik PPP secret profile — fix if 'isolir' or mismatched
  *   4. Kick active PPPoE session so user re-authenticates with correct profile
  */
 import 'server-only'
@@ -23,6 +24,7 @@ import {
   managePppSecret,
   shouldManagePppSecretForSuspend,
   kickPppoeSession,
+  listPppSecrets,
 } from '@/server/services/mikrotik/ppp-secret.service'
 import { disconnectPPPoEUser } from '@/server/services/radius/coa-handler.service'
 
@@ -30,7 +32,7 @@ export interface ProfileSyncRepairReport {
   scanned: number
   repaired: number
   errors: string[]
-  repairedUsers: Array<{ username: string; oldGroup: string; newGroup: string; kicked: boolean }>
+  repairedUsers: Array<{ username: string; oldGroup: string; newGroup: string; kicked: boolean; source: string }>
 }
 
 export async function runProfileSyncRepair(): Promise<ProfileSyncRepairReport> {
@@ -67,6 +69,35 @@ export async function runProfileSyncRepair(): Promise<ProfileSyncRepairReport> {
     groupMap.set(rug.username, rug.groupname)
   }
 
+  // Also fetch MikroTik PPP secret profiles for local-auth routers
+  // Group users by router to batch-fetch secrets
+  const routerUserMap = new Map<string, { usernames: string[]; users: typeof activeUsers }>()
+  for (const user of activeUsers) {
+    if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
+      if (!routerUserMap.has(user.router.id)) {
+        routerUserMap.set(user.router.id, { usernames: [], users: [] })
+      }
+      const entry = routerUserMap.get(user.router.id)!
+      entry.usernames.push(user.username)
+      entry.users.push(user)
+    }
+  }
+
+  // Fetch PPP secrets from each local-auth router
+  const mtSecretProfileMap = new Map<string, string>() // username → profile
+  for (const [routerId, entry] of routerUserMap) {
+    try {
+      const secrets = await listPppSecrets(routerId)
+      for (const s of secrets) {
+        if (entry.usernames.includes(s.name)) {
+          mtSecretProfileMap.set(s.name, s.profile)
+        }
+      }
+    } catch (e: any) {
+      errors.push(`MikroTik secrets fetch for router ${routerId}: ${e?.message || e}`)
+    }
+  }
+
   let repaired = 0
   for (const user of activeUsers) {
     try {
@@ -74,21 +105,34 @@ export async function runProfileSyncRepair(): Promise<ProfileSyncRepairReport> {
       if (!expectedGroup) continue // no profile assigned — skip
 
       const actualGroup = groupMap.get(user.username) || null
+      const mtProfile = mtSecretProfileMap.get(user.username) || null
+
+      // Check if RADIUS group is wrong
       const isWrongGroup = actualGroup === 'isolir' || (actualGroup && actualGroup !== expectedGroup)
 
-      if (!isWrongGroup) continue // RADIUS group is correct — nothing to fix
+      // Check if MikroTik PPP secret profile is wrong
+      const isWrongMtProfile = mtProfile === 'isolir' || (mtProfile && mtProfile !== expectedGroup)
+
+      if (!isWrongGroup && !isWrongMtProfile) continue // everything is correct
 
       const nasIdentifier = user.router?.id || null
       const authMode = user.router?.authMode || 'local'
+      const source = isWrongGroup && isWrongMtProfile
+        ? `radusergroup+mt`
+        : isWrongGroup
+          ? `radusergroup`
+          : `mt-secret`
 
-      // 1. Fix radusergroup
-      await prisma.$executeRaw`
-        DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
-      `
-      await prisma.$executeRaw`
-        INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
-        VALUES (${user.username}, ${expectedGroup}, 1, ${nasIdentifier})
-      `
+      // 1. Fix radusergroup (if wrong)
+      if (isWrongGroup) {
+        await prisma.$executeRaw`
+          DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+        `
+        await prisma.$executeRaw`
+          INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+          VALUES (${user.username}, ${expectedGroup}, 1, ${nasIdentifier})
+        `
+      }
 
       // 2. Restore radcheck password (in case it was removed)
       await prisma.$executeRaw`
@@ -169,13 +213,15 @@ export async function runProfileSyncRepair(): Promise<ProfileSyncRepairReport> {
       } catch { /* non-fatal */ }
 
       repaired++
+      const oldGroup = isWrongGroup ? (actualGroup || '(none)') : (mtProfile || '(none)')
       repairedUsers.push({
         username: user.username,
-        oldGroup: actualGroup || '(none)',
+        oldGroup,
         newGroup: expectedGroup,
         kicked,
+        source,
       })
-      console.log(`[PROFILE_SYNC_REPAIR] Repaired ${user.username}: radusergroup "${actualGroup}" → "${expectedGroup}", kicked=${kicked}`)
+      console.log(`[PROFILE_SYNC_REPAIR] Repaired ${user.username}: ${source} "${oldGroup}" → "${expectedGroup}", kicked=${kicked}`)
     } catch (e: any) {
       errors.push(`${user.username}: ${e?.message || e}`)
       console.error(`[PROFILE_SYNC_REPAIR] Failed for ${user.username}:`, e?.message || e)
