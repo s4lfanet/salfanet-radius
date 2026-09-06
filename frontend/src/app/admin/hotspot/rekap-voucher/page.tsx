@@ -59,8 +59,8 @@ export default function RekapVoucherPage() {
   const [filterAgent, setFilterAgent] = useState('');
   const [filterProfile, setFilterProfile] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [periodMode, setPeriodMode] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('monthly');
-  const [periodValue, setPeriodValue] = useState<string>(() => formatWIB(nowWIB(), 'yyyy-MM'));
+  const [periodMode, setPeriodMode] = useState<'all' | 'daily' | 'weekly' | 'monthly'>('all');
+  const [periodValue, setPeriodValue] = useState<string>('');
   const [voucherModal, setVoucherModal] = useState<{
     open: boolean;
     batchCode: string;
@@ -204,9 +204,9 @@ export default function RekapVoucherPage() {
     if (!searchTerm) return true;
     const search = searchTerm.toLowerCase();
     return (
-      item.batchCode.toLowerCase().includes(search) ||
-      item.agent?.name.toLowerCase().includes(search) ||
-      item.profile.name.toLowerCase().includes(search)
+      item.batchCode?.toLowerCase().includes(search) ||
+      item.agent?.name?.toLowerCase().includes(search) ||
+      item.profile?.name?.toLowerCase().includes(search)
     );
   });
 
@@ -278,7 +278,6 @@ export default function RekapVoucherPage() {
               className="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-card"
             >
               <option value="">{t('hotspot.allAgents')}</option>
-              <option value="all">{t('hotspot.allAgents')}</option>
               {agents.map(agent => (
                 <option key={agent.id} value={agent.id}>{agent.name}</option>
               ))}
@@ -296,7 +295,6 @@ export default function RekapVoucherPage() {
               className="w-full px-2.5 py-1.5 text-xs border border-border rounded-md bg-card"
             >
               <option value="">{t('hotspot.allProfiles')}</option>
-              <option value="all">{t('hotspot.allProfiles')}</option>
               {profiles.map(profile => (
                 <option key={profile.id} value={profile.id}>{profile.name}</option>
               ))}
