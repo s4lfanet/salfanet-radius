@@ -566,9 +566,22 @@ export async function GET(request: NextRequest) {
       routers.filter(r => r.authMode === 'local').map(r => r.id),
     );
 
+    // Track which usernames were enriched as synthetic voucher sessions.
+    // These are skipped in the MikroTik loop to avoid double-counting,
+    // but duplicate MikroTik sessions (same username, different device)
+    // are still shown.
+    const enrichedSyntheticUsernames = new Set<string>();
+    allSessions.forEach(s => {
+      if (s.dataSource === 'mikrotik' && s.id.startsWith('voucher-')) {
+        enrichedSyntheticUsernames.add(s.username);
+      }
+    });
+
     for (const ms of mikrotikSessions) {
-      // Skip if already in radacct sessions or enriched synthetic (avoid duplicates)
+      // Skip if already in radacct sessions (RADIUS accounting has this user)
       if (existingUsernames.has(ms.username)) continue;
+      // Skip if already enriched as synthetic voucher (avoid double-count)
+      if (enrichedSyntheticUsernames.has(ms.username)) continue;
 
       const pppoeUser = mtPppoeByUsername.get(ms.username);
       const voucher = mtVoucherByCode.get(ms.username);
@@ -588,8 +601,11 @@ export async function GET(request: NextRequest) {
       const uploadBytes = ms.rxBytes;
       const downloadBytes = ms.txBytes;
 
+      // Use a unique ID that includes sessionId/MAC to distinguish
+      // multiple sessions from the same username (different devices).
+      const uniqueSuffix = ms.sessionId || ms.macAddress || ms.ipAddress || '';
       allSessions.push({
-        id: `mt-${ms.routerId}-${ms.username}`,
+        id: `mt-${ms.routerId}-${ms.username}-${uniqueSuffix}`,
         username: ms.username,
         sessionId: ms.sessionId || '',
         type: sessionType,
@@ -626,7 +642,8 @@ export async function GET(request: NextRequest) {
         } : null,
         dataSource: 'mikrotik',
       });
-      existingUsernames.add(ms.username);
+      // Note: do NOT add to existingUsernames — allow multiple sessions
+      // per username (same user on different devices/IPs).
     }
 
     // ── 5. Filter by session type ─────────────────────────────────────────────────
