@@ -480,7 +480,7 @@ export default function RekapVoucherPage() {
                 </tbody>
                 <tfoot className="bg-muted border-t border-border font-bold">
                   <tr>
-                    <td colSpan={isPeriodMode ? 6 : 8} className="px-3 py-2 text-right text-foreground whitespace-nowrap">Total:</td>
+                    <td colSpan={6} className="px-3 py-2 text-right text-foreground whitespace-nowrap">Total:</td>
                     {!isPeriodMode && <td className="px-3 py-2 text-right text-primary whitespace-nowrap">{totalQty}</td>}
                     {!isPeriodMode && <td className="px-3 py-2 text-right text-green-500 whitespace-nowrap">{totalStock}</td>}
                     <td className="px-3 py-2 text-right text-orange-500 whitespace-nowrap">{totalSold}</td>
