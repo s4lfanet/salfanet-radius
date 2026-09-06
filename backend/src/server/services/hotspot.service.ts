@@ -127,38 +127,51 @@ export async function listVouchers(params: ListVouchersParams) {
   );
 
   const skip = (page - 1) * limit;
-  const vouchers = await prisma.hotspotVoucher.findMany({
-    where,
-    include: {
-      profile: {
-        select: {
-          name: true,
-          sellingPrice: true,
-          validityValue: true,
-          validityUnit: true,
-          usageQuota: true,
-          usageDuration: true,
-        },
-      },
-      router: { select: { id: true, name: true, shortname: true } },
-      agent: { select: { id: true, name: true, phone: true } },
-    },
-    orderBy: [
-      // ACTIVE first (1), then EXPIRED (2), then WAITING (3)
-      // Use raw SQL for reliable status ordering
-    ],
-    skip,
-    take: limit,
-  });
 
-  // Sort vouchers: ACTIVE → EXPIRED → WAITING, then by createdAt desc
-  const statusOrder: Record<string, number> = { ACTIVE: 0, EXPIRED: 1, WAITING: 2 };
-  vouchers.sort((a: any, b: any) => {
-    const sa = statusOrder[a.status] ?? 9;
-    const sb = statusOrder[b.status] ?? 9;
-    if (sa !== sb) return sa - sb;
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
+  // Build WHERE clauses safely with parameterized values
+  const conditions: string[] = [];
+  const sqlArgs: any[] = [];
+  if (params.profileId && params.profileId !== 'all') { conditions.push('v.profileId = ?'); sqlArgs.push(params.profileId); }
+  if (params.batchCode && params.batchCode !== 'all') { conditions.push('v.batchCode = ?'); sqlArgs.push(params.batchCode); }
+  if (params.routerId && params.routerId !== 'all') { conditions.push('v.routerId = ?'); sqlArgs.push(params.routerId); }
+  if (params.agentId && params.agentId !== 'all') { conditions.push('v.agentId = ?'); sqlArgs.push(params.agentId); }
+  if (params.status && params.status !== 'all' && ['WAITING', 'ACTIVE', 'EXPIRED'].includes(params.status)) { conditions.push('v.status = ?'); sqlArgs.push(params.status); }
+  if (params.search && params.search.trim()) { conditions.push('v.code LIKE ?'); sqlArgs.push('%' + params.search.trim() + '%'); }
+  const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+
+  // Use raw SQL with CASE for reliable status ordering: ACTIVE=0, EXPIRED=1, WAITING=2
+  // MySQL utf8mb4_unicode_ci collation sorts WAITING before ACTIVE, breaking alphabetical order
+  const rawVouchers = await prisma.$queryRawUnsafe<any[]>(
+    `SELECT v.*,
+       p.name as \`profile.name\`, p.sellingPrice as \`profile.sellingPrice\`,
+       p.validityValue as \`profile.validityValue\`, p.validityUnit as \`profile.validityUnit\`,
+       p.usageQuota as \`profile.usageQuota\`, p.usageDuration as \`profile.usageDuration\`,
+       r.id as \`router.id\`, r.name as \`router.name\`, r.shortname as \`router.shortname\`,
+       a.id as \`agent.id\`, a.name as \`agent.name\`, a.phone as \`agent.phone\`
+     FROM hotspot_vouchers v
+     LEFT JOIN hotspot_profiles p ON v.profileId = p.id
+     LEFT JOIN nas r ON v.routerId = r.id
+     LEFT JOIN agents a ON v.agentId = a.id
+     ${whereClause}
+     ORDER BY CASE v.status WHEN 'ACTIVE' THEN 0 WHEN 'EXPIRED' THEN 1 WHEN 'WAITING' THEN 2 ELSE 9 END, v.createdAt DESC
+     LIMIT ? OFFSET ?`,
+    ...sqlArgs, limit, skip
+  );
+
+  // Normalize raw query results to match Prisma's nested structure
+  const vouchers = rawVouchers.map((v: any) => ({
+    ...v,
+    profile: {
+      name: v['profile.name'],
+      sellingPrice: v['profile.sellingPrice'],
+      validityValue: v['profile.validityValue'],
+      validityUnit: v['profile.validityUnit'],
+      usageQuota: v['profile.usageQuota'],
+      usageDuration: v['profile.usageDuration'],
+    },
+    router: v['router.id'] ? { id: v['router.id'], name: v['router.name'], shortname: v['router.shortname'] } : null,
+    agent: v['agent.id'] ? { id: v['agent.id'], name: v['agent.name'], phone: v['agent.phone'] } : null,
+  }));
 
   const batches = await prisma.hotspotVoucher.findMany({
     select: { batchCode: true },
