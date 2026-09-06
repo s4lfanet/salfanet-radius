@@ -134,6 +134,17 @@ verify_session.py
 vps_audit.py
 AUTOCHANGELOG.md
 
+# Debug/temp files dari investigasi (jangan di-commit)
+.check-*
+.debug-*
+.test-*
+.verify-*
+.trigger-*
+.compare-*
+.commit-msg-*.txt
+.audit-*
+audit-cron*
+
 # Vercel
 .vercel
 

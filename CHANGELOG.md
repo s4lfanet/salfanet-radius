@@ -6,6 +6,40 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [5.19.1] — 2026-09-06 — Rekap Voucher Rombak + PPPoE Profile Sync + CSP Fix
+
+### Summary
+Rombak total laporan Rekap Voucher agar support penjualan harian/mingguan/bulanan berdasarkan tanggal terjual (`firstLoginAt`), bukan tanggal batch dibuat (`createdAt`). Fix PPPoE user stuck di profile isolir setelah restore. Fix Cloudflare Web Analytics CSP error. Cleanup file debug/temp dari repo.
+
+### Rekap Voucher — Rombak Laporan Penjualan
+- **[FEATURE]** Filter periode (Harian/Mingguan/Bulanan) sekarang filter by `firstLoginAt` (tanggal voucher terjual/digunakan), bukan `createdAt` (tanggal batch dibuat)
+- **[FEATURE]** Mode "Semua Data" tetap filter by `createdAt` dengan full batch counts (qty, stock, sold, active, expired)
+- **[FEATURE]** Tabel "Rincian Penjualan per Hari" — rincian penjualan per tanggal dalam periode (sold, active, expired, revenue)
+- **[FEATURE]** Tabel "Pendapatan per Agent" — summary terjual & profit per agent
+- **[FEATURE]** Export Excel ikut rombak — konsisten dengan API
+- **[FEATURE]** Support both RADIUS NAS (`post-auth` hook set `firstLoginAt`) dan Local NAS (sync dari MikroTik `/system/script` format `user/price/sales/date/time/phone/seller`)
+- **[UI]** Rombak tampilan lebih simple & clean — hilangkan efek neon/glow/blur berlebihan, compact stat pills, responsive card/table
+- **[FIX]** colSpan tfoot mode "Semua" (8 → 6) agar baris Total sejajar dengan kolom
+- **[FIX]** `whitespace-nowrap` + `min-w` di semua tabel agar kolom tidak wrap/truncate
+
+### PPPoE Profile Synchronization
+- **[CRITICAL]** User active di DB tapi MikroTik masih pakai profile `isolir` setelah restore — session tidak di-kick, RouterOS retain profile lama
+- **[FIX]** Kick active PPPoE session saat restore dari isolated/blocked/stop ke active (`status/route.ts`, `bulk-status/route.ts`)
+- **[FIX]** CoA handler: gunakan router user yang sebenarnya untuk MikroTik API fallback kick (`coa-handler.service.ts`)
+- **[FIX]** `runSuspendCheck`: sync RADIUS + MikroTik saat manual suspend
+- **[FEATURE]** Reconciliation script: cek MikroTik PPP secret langsung, repair RADIUS group + MikroTik secret profile, kick affected sessions (`profile-sync-repair.service.ts`)
+
+### Cloudflare Web Analytics CSP Fix
+- **[FIX]** `VM... startTime` error dari Cloudflare beacon.min.js yang inject `reportAllChanges`
+- **[FIX]** Remove `https://static.cloudflareinsights.com` dan `https://cloudflareinsights.com` dari CSP `script-src` dan `connect-src` di `frontend/next.config.ts`
+
+### Project Cleanup
+- **[CHORE]** Remove 18 file debug/temp dari git tracking (`.check-*`, `.debug-*`, `.test-*`, `.commit-msg-*`, `.trigger-*`)
+- **[CHORE]** Update `.gitignore` untuk mencegah file debug/temp ter-commit lagi
+- **[CHORE]** Update README — tambah info Rekap Voucher di feature table
+
+---
+
 ## [5.19.0] — 2026-09-01 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support
 
 ### Summary
