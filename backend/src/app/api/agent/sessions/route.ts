@@ -339,6 +339,16 @@ export async function GET(request: NextRequest) {
         s.downloadFormatted = formatBytes(downloadBytes);
         s.routerName = s.routerName || live.routerName;
       }
+
+      // Remove synthetic voucher sessions not connected to MikroTik.
+      // Only show sessions where the device is actually active on MikroTik.
+      // When the device reconnects, it will reappear via liveMap enrichment.
+      allSessions = allSessions.filter((s: any) => {
+        if (typeof s.id === 'string' && s.id.startsWith('voucher-')) {
+          return liveMap.has(s.username);
+        }
+        return true;
+      });
     }
 
     return NextResponse.json({ sessions: allSessions });

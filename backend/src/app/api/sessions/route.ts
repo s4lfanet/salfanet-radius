@@ -535,6 +535,21 @@ export async function GET(request: NextRequest) {
       } as typeof s;
     });
 
+    // ── 4e2. Remove synthetic voucher sessions not connected to MikroTik ──
+    // Synthetic sessions are ACTIVE vouchers with no radacct record. If the
+    // voucher is NOT currently active on MikroTik either, the device is
+    // disconnected — hide it so only actual connected sessions are shown.
+    // When the device reconnects, MikroTik will list it and the session
+    // reappears (either enriched synthetic or raw MikroTik session).
+    allSessions = allSessions.filter((s) => {
+      // Only filter synthetic voucher sessions (id starts with 'voucher-')
+      // that were NOT enriched with MikroTik data (still dataSource='radius')
+      if (s.id.startsWith('voucher-') && s.dataSource === 'radius') {
+        return mtSessionByUsername.has(s.username);
+      }
+      return true;
+    });
+
     // Look up pppoeUser and hotspotVoucher for MikroTik sessions
     const mikrotikUsernames = [...new Set(mikrotikSessions.map(s => s.username))];
     const [mtPppoeUsers, mtHotspotVouchers] = await Promise.all([
