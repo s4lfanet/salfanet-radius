@@ -107,12 +107,28 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // ── Supplement: MikroTik local-auth sessions ──
+      // Routers with authMode='local' authenticate locally and don't send
+      // RADIUS accounting. Fetch active sessions directly from MikroTik API.
+      // Matches /api/sessions logic: show ALL local-auth hotspot sessions
+      // (including unregistered users), only registered for PPPoE.
+      // Synthetic ACTIVE vouchers are only counted if the device is actually
+      // connected to MikroTik — disconnected vouchers are hidden.
+      const localRouters = await prisma.router.findMany({
+        where: { isActive: true, authMode: { not: 'radius' } },
+        select: { id: true, authMode: true },
+      });
+      // Fetch MikroTik sessions first — needed to verify synthetic vouchers
+      // are actually connected before counting them.
+      let mtSessions: any[] = [];
+      if (localRouters.length > 0) {
+        mtSessions = await batchFetchMikrotikActiveSessions(localRouters, null);
+      }
+      const mtActiveUsernames = new Set(mtSessions.map((s: any) => s.username));
+
       // Supplement: count synthetic ACTIVE hotspot vouchers.
-      // These are vouchers that are ACTIVE + firstLoginAt set but have NO active
-      // radacct row. Matches the same logic as /api/sessions synthetic sessions:
-      //   - Exclude vouchers already counted via active radacct (in onlineUsernames)
-      //   - For vouchers with prior stopped records, only count if latest stop is
-      //     BEFORE firstLoginAt (new login has no Accounting-Start yet).
+      // Only count vouchers that are ALSO active on MikroTik right now.
+      // Vouchers not connected to MikroTik are hidden (device disconnected).
       // Track synthetic codes so MikroTik counting doesn't double-count them.
       const syntheticCodes = new Set<string>();
       const nowTs = new Date();
@@ -148,29 +164,23 @@ export async function GET(request: NextRequest) {
           }
         }
         // Count vouchers where session is still "active" (not properly stopped after last login)
+        // AND the device is currently connected to MikroTik
         const syntheticActive = activeCandidates.filter(v => {
           const latestStop = latestStopMap.get(v.code);
-          if (!latestStop || !v.firstLoginAt) return true; // No prior stop → count as synthetic
+          if (!latestStop || !v.firstLoginAt) return true; // No prior stop → potentially active
           // Count if latest stop is BEFORE firstLoginAt (new login has no Accounting-Start yet)
           return latestStop.getTime() < new Date(v.firstLoginAt).getTime();
+        }).filter(v => {
+          // Only count if device is actually connected to MikroTik right now
+          return mtActiveUsernames.has(v.code);
         });
         for (const v of syntheticActive) syntheticCodes.add(v.code);
         activeSessionsHotspot += syntheticActive.length;
       }
 
-      // ── Supplement: MikroTik local-auth sessions ──
-      // Routers with authMode='local' authenticate locally and don't send
-      // RADIUS accounting. Fetch active sessions directly from MikroTik API.
-      // Matches /api/sessions logic: show ALL local-auth hotspot sessions
-      // (including unregistered users), only registered for PPPoE.
-      const localRouters = await prisma.router.findMany({
-        where: { isActive: true, authMode: { not: 'radius' } },
-        select: { id: true, authMode: true },
-      });
-      if (localRouters.length > 0) {
-        const mtSessions = await batchFetchMikrotikActiveSessions(localRouters, null);
+      if (mtSessions.length > 0) {
         // Get all registered usernames to classify sessions
-        const mtUsernames = [...new Set(mtSessions.map(s => s.username))];
+        const mtUsernames = [...new Set(mtSessions.map((s: any) => s.username))];
         if (mtUsernames.length > 0) {
           const [mtPppoeUsers, mtVouchers] = await Promise.all([
             prisma.pppoeUser.findMany({
