@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { BarChart3, Download, RefreshCw, Filter, ChevronLeft, ChevronRight, X, Copy, CheckCheck } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatWIB, nowWIB, todayWIBStr, parseDateAsWIB } from '@/lib/timezone';
@@ -73,6 +73,10 @@ export default function RekapVoucherPage() {
   const MONTH_NAMES_ID = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
   const DAY_NAMES_ID = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
 
+  // Track the latest batch date from "all" mode so we can default to it
+  // when switching to a period mode (instead of defaulting to today)
+  const allDataLatestDate = useRef<string | null>(null);
+
   const todayStr = () => todayWIBStr();
   const currentMonthStr = () => formatWIB(nowWIB(), 'yyyy-MM');
   const getWeekMonday = (dateStr: string) => {
@@ -84,10 +88,21 @@ export default function RekapVoucherPage() {
   };
   const switchPeriodMode = (mode: 'all' | 'daily' | 'weekly' | 'monthly') => {
     setPeriodMode(mode);
-    if (mode === 'all') setPeriodValue('');
-    else if (mode === 'daily') setPeriodValue(todayStr());
-    else if (mode === 'weekly') setPeriodValue(getWeekMonday(todayStr()));
-    else setPeriodValue(currentMonthStr());
+    if (mode === 'all') {
+      setPeriodValue('');
+      return;
+    }
+    // Default to the period of the most recent voucher batch (if known),
+    // otherwise fall back to the current date
+    const refDateStr = allDataLatestDate.current || todayStr();
+    if (mode === 'daily') {
+      setPeriodValue(refDateStr);
+    } else if (mode === 'weekly') {
+      setPeriodValue(getWeekMonday(refDateStr));
+    } else {
+      // monthly — extract yyyy-MM from the date string
+      setPeriodValue(refDateStr.slice(0, 7));
+    }
   };
   const shiftPeriod = (delta: number) => {
     if (periodMode === 'all') return;
@@ -145,6 +160,15 @@ export default function RekapVoucherPage() {
   const rekap = rekapData?.rekap || [];
   const agents = rekapData?.agents || [];
   const profiles = rekapData?.profiles || [];
+
+  // Save the latest batch date when in "all" mode (no period filter)
+  // so that switching to a period mode defaults to the most recent data
+  useEffect(() => {
+    if (periodMode === 'all' && rekap.length > 0) {
+      // rekap is sorted by createdAt desc (from backend orderBy)
+      allDataLatestDate.current = formatWIB(new Date(rekap[0].createdAt), 'yyyy-MM-dd');
+    }
+  }, [periodMode, rekap]);
 
   const handleExport = async () => {
     try {
