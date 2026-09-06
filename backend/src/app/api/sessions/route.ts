@@ -602,12 +602,12 @@ export async function GET(request: NextRequest) {
       const voucher = mtVoucherByCode.get(ms.username);
 
       // For local-auth routers, show ALL sessions (even unregistered users)
-      // so operators can see every active hotspot client on the router.
-      // For radius-auth routers, only show registered users.
+      // so operators can see every active client on the router — both
+      // hotspot and PPPoE.
+      // For radius-auth routers, only show registered users (in pppoeUser
+      // or hotspotVoucher), since RADIUS accounting handles the rest.
       if (!pppoeUser && !voucher) {
         if (!localAuthRouterIds.has(ms.routerId)) continue;
-        // Only show unregistered sessions for hotspot type (not PPPoE)
-        if (ms.type !== 'hotspot') continue;
       }
 
       const sessionType = pppoeUser ? 'pppoe' : 'hotspot';

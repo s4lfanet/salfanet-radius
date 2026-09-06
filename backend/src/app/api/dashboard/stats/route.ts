@@ -206,12 +206,16 @@ export async function GET(request: NextRequest) {
               activeSessionsPPPoE++;
             } else if (mtVoucherSet.has(s.username)) {
               activeSessionsHotspot++;
-            } else if (s.type === 'hotspot' && localRouterIds.has(s.routerId)) {
-              // Unregistered local-auth hotspot session — count to match
-              // the sessions page which shows ALL local-auth hotspot clients
-              activeSessionsHotspot++;
+            } else if (localRouterIds.has(s.routerId)) {
+              // Unregistered local-auth session — count to match the
+              // sessions page which shows ALL local-auth clients (hotspot & PPPoE)
+              if (s.type === 'hotspot') {
+                activeSessionsHotspot++;
+              } else if (s.type === 'pppoe') {
+                activeSessionsPPPoE++;
+              }
             }
-            // Unregistered PPPoE sessions are NOT counted (no ghost PPPoE)
+            // Unregistered sessions from radius-auth routers are NOT counted
           }
         }
       }
