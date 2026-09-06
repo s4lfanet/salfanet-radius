@@ -336,40 +336,16 @@ export async function GET(request: NextRequest) {
       });
       voucherRevenueToday = soldToday.reduce((sum, v) => sum + (v.profile?.sellingPrice || 0), 0);
 
-      // Try from Keuangan transactions with hotspot/voucher category for this month
-      const voucherCategory = await prisma.transactionCategory.findFirst({
+      // Calculate voucher revenue for this month from actual sold vouchers (firstLoginAt)
+      // This is the authoritative source — Keuangan transactions may not be fully synced
+      const soldVouchers = await prisma.hotspotVoucher.findMany({
         where: {
-          OR: [
-            { name: { contains: 'hotspot' } },
-            { name: { contains: 'voucher' } },
-          ],
-          type: 'INCOME',
+          status: { in: ['ACTIVE', 'EXPIRED'] },
+          firstLoginAt: { gte: startOfMonth, lt: startOfNextMonth },
         },
+        include: { profile: { select: { sellingPrice: true } } },
       });
-
-      if (voucherCategory) {
-        const voucherIncome = await prisma.transaction.aggregate({
-          where: {
-            type: 'INCOME',
-            categoryId: voucherCategory.id,
-            date: { gte: startOfMonth, lt: startOfNextMonth },
-          },
-          _sum: { amount: true },
-        });
-        voucherRevenue = Number(voucherIncome._sum.amount) || 0;
-      }
-
-      // If no category found, estimate from sold vouchers this month
-      if (voucherRevenue === 0) {
-        const soldVouchers = await prisma.hotspotVoucher.findMany({
-          where: {
-            status: { in: ['ACTIVE', 'EXPIRED'] },
-            firstLoginAt: { gte: startOfMonth, lt: startOfNextMonth },
-          },
-          include: { profile: { select: { sellingPrice: true } } },
-        });
-        voucherRevenue = soldVouchers.reduce((sum, v) => sum + (v.profile?.sellingPrice || 0), 0);
-      }
+      voucherRevenue = soldVouchers.reduce((sum, v) => sum + (v.profile?.sellingPrice || 0), 0);
     } catch (e) {
       console.error('[Dashboard] Error calculating voucher revenue:', e);
     }
