@@ -15,34 +15,35 @@ export async function GET(req: NextRequest) {
     const dateParam  = searchParams.get('date');  // YYYY-MM-DD (daily)
     const weekParam  = searchParams.get('week');  // YYYY-MM-DD Monday of week
 
-    // Build date range filter for createdAt (WIB-as-UTC)
+    // Determine if we're filtering by sale date (firstLoginAt) or creation date (createdAt)
+    // When a period filter is applied (daily/weekly/monthly), filter by firstLoginAt
+    // so the user sees vouchers SOLD in that period, not just batches CREATED in that period.
+    // When no period filter (all mode), use createdAt as before.
+    const hasPeriodFilter = !!(dateParam || weekParam || monthParam);
+
+    // Build date range filter
     let dateRangeFilter: any = {};
+    let saleDateRangeFilter: any = {}; // for counting sold vouchers in period
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
-      dateRangeFilter = {
-        createdAt: {
-          gte: startOfDayWIBtoUTC(dateParam),
-          lte: endOfDayWIBtoUTC(dateParam),
-        },
-      };
+      const gte = startOfDayWIBtoUTC(dateParam);
+      const lte = endOfDayWIBtoUTC(dateParam);
+      dateRangeFilter = { [hasPeriodFilter ? 'firstLoginAt' : 'createdAt']: { gte, lte } };
+      saleDateRangeFilter = { firstLoginAt: { gte, lte } };
     } else if (weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam)) {
       // weekParam is Monday (YYYY-MM-DD), end is Sunday (+6 days)
       const weekStart = new Date(weekParam + 'T00:00:00Z');
       const weekEnd   = new Date(weekParam + 'T00:00:00Z');
       weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
-      dateRangeFilter = {
-        createdAt: {
-          gte: startOfDayWIBtoUTC(weekStart),
-          lte: endOfDayWIBtoUTC(weekEnd),
-        },
-      };
+      const gte = startOfDayWIBtoUTC(weekStart);
+      const lte = endOfDayWIBtoUTC(weekEnd);
+      dateRangeFilter = { [hasPeriodFilter ? 'firstLoginAt' : 'createdAt']: { gte, lte } };
+      saleDateRangeFilter = { firstLoginAt: { gte, lte } };
     } else if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
       const [y, m] = monthParam.split('-').map(Number);
-      dateRangeFilter = {
-        createdAt: {
-          gte: startOfDayWIBtoUTC(new Date(Date.UTC(y, m - 1, 1))),
-          lte: endOfDayWIBtoUTC(new Date(Date.UTC(y, m, 0))),
-        },
-      };
+      const gte = startOfDayWIBtoUTC(new Date(Date.UTC(y, m - 1, 1)));
+      const lte = endOfDayWIBtoUTC(new Date(Date.UTC(y, m, 0)));
+      dateRangeFilter = { [hasPeriodFilter ? 'firstLoginAt' : 'createdAt']: { gte, lte } };
+      saleDateRangeFilter = { firstLoginAt: { gte, lte } };
     }
 
     // Get distinct batches (group only by batchCode to avoid duplicate rows)
@@ -75,18 +76,37 @@ export async function GET(req: NextRequest) {
           },
         });
 
-        // Count by status for the entire batch
-        const [waiting, active, expired] = await Promise.all([
-          prisma.hotspotVoucher.count({ where: { batchCode, status: 'WAITING' } }),
-          prisma.hotspotVoucher.count({ where: { batchCode, status: 'ACTIVE' } }),
-          prisma.hotspotVoucher.count({ where: { batchCode, status: 'EXPIRED' } }),
-        ]);
+        let waiting: number, active: number, expired: number, totalQty: number;
+
+        if (hasPeriodFilter) {
+          // Period mode: count only vouchers SOLD (firstLoginAt) in the selected period
+          const soldInPeriod = await prisma.hotspotVoucher.count({
+            where: { batchCode, firstLoginAt: saleDateRangeFilter.firstLoginAt },
+          });
+          const activeInPeriod = await prisma.hotspotVoucher.count({
+            where: { batchCode, status: 'ACTIVE', firstLoginAt: saleDateRangeFilter.firstLoginAt },
+          });
+          const expiredInPeriod = await prisma.hotspotVoucher.count({
+            where: { batchCode, status: 'EXPIRED', firstLoginAt: saleDateRangeFilter.firstLoginAt },
+          });
+          waiting = 0; // stock not applicable for sales-period view
+          active = activeInPeriod;
+          expired = expiredInPeriod;
+          totalQty = soldInPeriod; // totalQty = sold in period
+        } else {
+          // All mode: count ALL vouchers in the batch (original behavior)
+          [waiting, active, expired] = await Promise.all([
+            prisma.hotspotVoucher.count({ where: { batchCode, status: 'WAITING' } }),
+            prisma.hotspotVoucher.count({ where: { batchCode, status: 'ACTIVE' } }),
+            prisma.hotspotVoucher.count({ where: { batchCode, status: 'EXPIRED' } }),
+          ]);
+          totalQty = waiting + active + expired;
+        }
 
         const sellingPrice = sample?.profile?.sellingPrice ?? 0;
         const costPrice = sample?.profile?.costPrice ?? 0;
         const resellerFee = sample?.profile?.resellerFee ?? 0;
         const sold = active + expired;
-        const totalQty = waiting + active + expired;
 
         // If agentId is set on voucher but agent was deleted, still treat it as agent batch
         const rawAgentId = sample?.agentId ?? null;
