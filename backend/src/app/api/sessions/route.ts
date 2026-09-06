@@ -669,6 +669,23 @@ export async function GET(request: NextRequest) {
       allSessions = allSessions.filter((s) => s.type === type);
     }
 
+    // ── 5b. Filter by search term (applies to MikroTik sessions too) ──────────
+    // radacct sessions are already filtered at DB level, but MikroTik sessions
+    // (added later) need client-side filtering by username, IP, or MAC.
+    if (search) {
+      const q = search.toLowerCase();
+      allSessions = allSessions.filter((s) => {
+        return (
+          s.username?.toLowerCase().includes(q) ||
+          s.framedIpAddress?.toLowerCase().includes(q) ||
+          s.macAddress?.toLowerCase().includes(q) ||
+          (s as any).user?.name?.toLowerCase().includes(q) ||
+          (s as any).user?.customerId?.toLowerCase().includes(q) ||
+          (s as any).user?.phone?.toLowerCase().includes(q)
+        );
+      });
+    }
+
     // ── 6. Stats ────────────────────────────────────────────────────────────
     const stats = {
       total: allSessions.length,
