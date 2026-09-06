@@ -1,0 +1,10 @@
+fix: rekap voucher tfoot colSpan di mode Semua
+
+colSpan di baris Total (tfoot) mode "Semua" salah 8, harusnya 6.
+Mode Semua: 14 kolom = 6 (colSpan) + Qty + Stok + Terjual + Aktif
++ Exp + Harga + Pendapatan + Profit = 6 + 8 = 14.
+Sebelumnya 8 + 8 = 16 (kelebihan 2 kolom) menyebabkan misalignment.
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
