@@ -1,7 +1,7 @@
 ﻿import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/server/db/client';
 import { requirePermission } from '@/server/middleware/api-auth';
-import { startOfDayWIBtoUTC, endOfDayWIBtoUTC } from '@/lib/timezone';
+import { startOfDayWIBtoUTC, endOfDayWIBtoUTC, formatWIB } from '@/lib/timezone';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,59 +15,166 @@ export async function GET(req: NextRequest) {
     const dateParam  = searchParams.get('date');  // YYYY-MM-DD (daily)
     const weekParam  = searchParams.get('week');  // YYYY-MM-DD Monday of week
 
-    // Determine if we're filtering by sale date (firstLoginAt) or creation date (createdAt)
-    // When a period filter is applied (daily/weekly/monthly), filter by firstLoginAt
-    // so the user sees vouchers SOLD in that period, not just batches CREATED in that period.
-    // When no period filter (all mode), use createdAt as before.
+    // Determine mode: "all" (by createdAt) vs "period" (by firstLoginAt/sale date)
     const hasPeriodFilter = !!(dateParam || weekParam || monthParam);
 
-    // Build date range filter
-    let dateRangeFilter: any = {};
-    let saleDateRangeFilter: any = {}; // for counting sold vouchers in period
+    // Build date range
+    let gte: Date | null = null;
+    let lte: Date | null = null;
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
-      const gte = startOfDayWIBtoUTC(dateParam);
-      const lte = endOfDayWIBtoUTC(dateParam);
-      dateRangeFilter = { [hasPeriodFilter ? 'firstLoginAt' : 'createdAt']: { gte, lte } };
-      saleDateRangeFilter = { firstLoginAt: { gte, lte } };
+      gte = startOfDayWIBtoUTC(dateParam);
+      lte = endOfDayWIBtoUTC(dateParam);
     } else if (weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam)) {
-      // weekParam is Monday (YYYY-MM-DD), end is Sunday (+6 days)
       const weekStart = new Date(weekParam + 'T00:00:00Z');
       const weekEnd   = new Date(weekParam + 'T00:00:00Z');
       weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
-      const gte = startOfDayWIBtoUTC(weekStart);
-      const lte = endOfDayWIBtoUTC(weekEnd);
-      dateRangeFilter = { [hasPeriodFilter ? 'firstLoginAt' : 'createdAt']: { gte, lte } };
-      saleDateRangeFilter = { firstLoginAt: { gte, lte } };
+      gte = startOfDayWIBtoUTC(weekStart);
+      lte = endOfDayWIBtoUTC(weekEnd);
     } else if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
       const [y, m] = monthParam.split('-').map(Number);
-      const gte = startOfDayWIBtoUTC(new Date(Date.UTC(y, m - 1, 1)));
-      const lte = endOfDayWIBtoUTC(new Date(Date.UTC(y, m, 0)));
-      dateRangeFilter = { [hasPeriodFilter ? 'firstLoginAt' : 'createdAt']: { gte, lte } };
-      saleDateRangeFilter = { firstLoginAt: { gte, lte } };
+      gte = startOfDayWIBtoUTC(new Date(Date.UTC(y, m - 1, 1)));
+      lte = endOfDayWIBtoUTC(new Date(Date.UTC(y, m, 0)));
     }
 
-    // Get distinct batches (group only by batchCode to avoid duplicate rows)
+    // Base filter for agent/profile
+    const baseFilter: any = {
+      ...(agentId && agentId !== 'all' ? { agentId } : {}),
+      ...(profileId && profileId !== 'all' ? { profileId } : {}),
+    };
+
+    if (hasPeriodFilter && gte && lte) {
+      // ── PERIOD MODE: filter by firstLoginAt (sale date) ──
+      // Get all SOLD vouchers in the period
+      const soldVouchers = await prisma.hotspotVoucher.findMany({
+        where: {
+          ...baseFilter,
+          firstLoginAt: { gte, lte, not: null },
+        },
+        select: {
+          id: true,
+          code: true,
+          batchCode: true,
+          status: true,
+          firstLoginAt: true,
+          expiresAt: true,
+          profile: { select: { id: true, name: true, sellingPrice: true, costPrice: true, resellerFee: true } },
+          agent: { select: { id: true, name: true, phone: true } },
+          router: { select: { id: true, name: true } },
+          agentId: true,
+        },
+        orderBy: { firstLoginAt: 'desc' },
+      });
+
+      // Group by date (yyyy-MM-dd) for daily breakdown
+      const byDate = new Map<string, { date: string; sold: number; revenue: number; active: number; expired: number; vouchers: typeof soldVouchers }>();
+      // Group by batch for batch-level rekap
+      const byBatch = new Map<string, { batchCode: string; vouchers: typeof soldVouchers }>();
+
+      for (const v of soldVouchers) {
+        const saleDate = v.firstLoginAt ? formatWIB(v.firstLoginAt, 'yyyy-MM-dd') : 'unknown';
+        if (!byDate.has(saleDate)) {
+          byDate.set(saleDate, { date: saleDate, sold: 0, revenue: 0, active: 0, expired: 0, vouchers: [] });
+        }
+        const d = byDate.get(saleDate)!;
+        d.sold++;
+        d.revenue += v.profile?.sellingPrice ?? 0;
+        if (v.status === 'ACTIVE') d.active++;
+        if (v.status === 'EXPIRED') d.expired++;
+        d.vouchers.push(v);
+
+        const bc = v.batchCode || 'no-batch';
+        if (!byBatch.has(bc)) {
+          byBatch.set(bc, { batchCode: bc, vouchers: [] });
+        }
+        byBatch.get(bc)!.vouchers.push(v);
+      }
+
+      // Build rekap per batch (only sold vouchers in period)
+      const rekapData = Array.from(byBatch.values()).map((batch) => {
+        const sample = batch.vouchers[0];
+        const active = batch.vouchers.filter(v => v.status === 'ACTIVE').length;
+        const expired = batch.vouchers.filter(v => v.status === 'EXPIRED').length;
+        const sold = batch.vouchers.length;
+        const sellingPrice = sample?.profile?.sellingPrice ?? 0;
+        const costPrice = sample?.profile?.costPrice ?? 0;
+        const resellerFee = sample?.profile?.resellerFee ?? 0;
+        const rawAgentId = sample?.agentId ?? null;
+        const agentData = sample?.agent ?? (rawAgentId ? { id: rawAgentId, name: 'Agent (dihapus)', phone: '-' } : null);
+
+        return {
+          batchCode: batch.batchCode,
+          createdAt: sample?.firstLoginAt?.toISOString() ?? new Date().toISOString(),
+          firstLoginAt: sample?.firstLoginAt?.toISOString() ?? null,
+          agent: agentData,
+          profile: sample?.profile ?? { id: '', name: 'Unknown', sellingPrice: 0, costPrice: 0, resellerFee: 0 },
+          router: sample?.router ?? null,
+          totalQty: sold, // in period mode, totalQty = sold in period
+          stock: 0,       // stock not applicable in period mode
+          active,
+          expired,
+          sold,
+          sellingPrice,
+          costPrice,
+          resellerFee,
+          totalRevenue: sold * sellingPrice,
+          agentProfit: agentData ? sold * resellerFee : 0,
+          adminEarnings: agentData ? sold * costPrice : sold * sellingPrice,
+        };
+      }).sort((a, b) => (b.firstLoginAt ?? '').localeCompare(a.firstLoginAt ?? ''));
+
+      // Build daily breakdown
+      const dailyBreakdown = Array.from(byDate.values())
+        .map(d => ({
+          date: d.date,
+          dateLabel: formatWIB(new Date(d.date + 'T00:00:00Z'), 'EEEE, dd MMM yyyy'),
+          sold: d.sold,
+          active: d.active,
+          expired: d.expired,
+          revenue: d.revenue,
+        }))
+        .sort((a, b) => b.date.localeCompare(a.date));
+
+      // Get agents and profiles for filter
+      const [agents, profiles] = await Promise.all([
+        prisma.agent.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+        prisma.hotspotProfile.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+      ]);
+
+      return NextResponse.json({
+        rekap: rekapData,
+        dailyBreakdown,
+        mode: 'period',
+        totalSold: soldVouchers.length,
+        totalRevenue: soldVouchers.reduce((s, v) => s + (v.profile?.sellingPrice ?? 0), 0),
+        agents,
+        profiles,
+      });
+    }
+
+    // ── ALL MODE: filter by createdAt (batch creation date) ──
+    let dateRangeFilter: any = {};
+    if (gte && lte) {
+      dateRangeFilter = { createdAt: { gte, lte } };
+    }
+
     const batchGroups = await prisma.hotspotVoucher.groupBy({
       by: ['batchCode'],
       where: {
         batchCode: { not: null },
-        ...(agentId && agentId !== 'all' ? { agentId } : {}),
-        ...(profileId && profileId !== 'all' ? { profileId } : {}),
+        ...baseFilter,
         ...dateRangeFilter,
       },
       _min: { createdAt: true },
       orderBy: { _min: { createdAt: 'desc' } },
     });
 
-    // Get voucher counts per batch by status
     const rekapData = await Promise.all(
       batchGroups.map(async (batch: any) => {
         const batchCode = batch.batchCode as string;
 
-        // Get metadata from a sample voucher — prefer vouchers with agentId set (orderBy agentId desc puts non-null first)
         const sample = await prisma.hotspotVoucher.findFirst({
           where: { batchCode },
-          orderBy: { agentId: 'desc' }, // non-null agentId sorts before null in DESC
+          orderBy: { agentId: 'desc' },
           select: {
             agentId: true,
             profile: { select: { id: true, name: true, sellingPrice: true, costPrice: true, resellerFee: true } },
@@ -76,45 +183,25 @@ export async function GET(req: NextRequest) {
           },
         });
 
-        let waiting: number, active: number, expired: number, totalQty: number;
-
-        if (hasPeriodFilter) {
-          // Period mode: count only vouchers SOLD (firstLoginAt) in the selected period
-          const soldInPeriod = await prisma.hotspotVoucher.count({
-            where: { batchCode, firstLoginAt: saleDateRangeFilter.firstLoginAt },
-          });
-          const activeInPeriod = await prisma.hotspotVoucher.count({
-            where: { batchCode, status: 'ACTIVE', firstLoginAt: saleDateRangeFilter.firstLoginAt },
-          });
-          const expiredInPeriod = await prisma.hotspotVoucher.count({
-            where: { batchCode, status: 'EXPIRED', firstLoginAt: saleDateRangeFilter.firstLoginAt },
-          });
-          waiting = 0; // stock not applicable for sales-period view
-          active = activeInPeriod;
-          expired = expiredInPeriod;
-          totalQty = soldInPeriod; // totalQty = sold in period
-        } else {
-          // All mode: count ALL vouchers in the batch (original behavior)
-          [waiting, active, expired] = await Promise.all([
-            prisma.hotspotVoucher.count({ where: { batchCode, status: 'WAITING' } }),
-            prisma.hotspotVoucher.count({ where: { batchCode, status: 'ACTIVE' } }),
-            prisma.hotspotVoucher.count({ where: { batchCode, status: 'EXPIRED' } }),
-          ]);
-          totalQty = waiting + active + expired;
-        }
+        const [waiting, active, expired] = await Promise.all([
+          prisma.hotspotVoucher.count({ where: { batchCode, status: 'WAITING' } }),
+          prisma.hotspotVoucher.count({ where: { batchCode, status: 'ACTIVE' } }),
+          prisma.hotspotVoucher.count({ where: { batchCode, status: 'EXPIRED' } }),
+        ]);
 
         const sellingPrice = sample?.profile?.sellingPrice ?? 0;
         const costPrice = sample?.profile?.costPrice ?? 0;
         const resellerFee = sample?.profile?.resellerFee ?? 0;
         const sold = active + expired;
+        const totalQty = waiting + active + expired;
 
-        // If agentId is set on voucher but agent was deleted, still treat it as agent batch
         const rawAgentId = sample?.agentId ?? null;
         const agentData = sample?.agent ?? (rawAgentId ? { id: rawAgentId, name: 'Agent (dihapus)', phone: '-' } : null);
 
         return {
           batchCode,
           createdAt: batch._min.createdAt?.toISOString() ?? new Date().toISOString(),
+          firstLoginAt: null,
           agent: agentData,
           profile: sample?.profile ?? { id: '', name: 'Unknown', sellingPrice: 0, costPrice: 0, resellerFee: 0 },
           router: sample?.router ?? null,
@@ -127,38 +214,23 @@ export async function GET(req: NextRequest) {
           costPrice,
           resellerFee,
           totalRevenue: sold * sellingPrice,
-          // Agent batches: admin earned costPrice*sold (already collected when agent generated)
-          // Admin batches: admin earned sellingPrice*sold
           agentProfit: agentData ? sold * resellerFee : 0,
           adminEarnings: agentData ? sold * costPrice : sold * sellingPrice,
         };
       })
     );
 
-    // Get all agents for filter
-    const agents = await prisma.agent.findMany({
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
-
-    // Get all profiles for filter
-    const profiles = await prisma.hotspotProfile.findMany({
-      select: {
-        id: true,
-        name: true,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
+    const [agents, profiles] = await Promise.all([
+      prisma.agent.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+      prisma.hotspotProfile.findMany({ select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+    ]);
 
     return NextResponse.json({
       rekap: rekapData,
+      dailyBreakdown: [],
+      mode: 'all',
+      totalSold: rekapData.reduce((s, r) => s + r.sold, 0),
+      totalRevenue: rekapData.reduce((s, r) => s + r.totalRevenue, 0),
       agents,
       profiles,
     });

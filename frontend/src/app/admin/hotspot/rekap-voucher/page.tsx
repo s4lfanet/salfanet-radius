@@ -12,6 +12,7 @@ import { showError } from '@/lib/sweetalert';
 interface RekapVoucher {
   batchCode: string;
   createdAt: string;
+  firstLoginAt?: string | null;
   agent: {
     id: string;
     name: string;
@@ -39,6 +40,15 @@ interface RekapVoucher {
   totalRevenue: number;
   agentProfit: number;    // agent's earnings (resellerFee * sold)
   adminEarnings: number;  // admin's actual earnings from this batch
+}
+
+interface DailyBreakdownItem {
+  date: string;
+  dateLabel: string;
+  sold: number;
+  active: number;
+  expired: number;
+  revenue: number;
 }
 
 interface VoucherItem {
@@ -151,11 +161,13 @@ export default function RekapVoucherPage() {
     profileId: filterProfile && filterProfile !== 'all' ? filterProfile : undefined,
     ...buildPeriodQueryParams(),
   };
-  const { data: rekapData, isLoading: loading, refetch: refetchRekap } = useApiQuery<{ rekap?: RekapVoucher[]; agents?: { id: string; name: string }[]; profiles?: { id: string; name: string }[] }>(
+  const { data: rekapData, isLoading: loading, refetch: refetchRekap } = useApiQuery<{ rekap?: RekapVoucher[]; dailyBreakdown?: DailyBreakdownItem[]; mode?: string; totalSold?: number; totalRevenue?: number; agents?: { id: string; name: string }[]; profiles?: { id: string; name: string }[] }>(
     '/api/hotspot/rekap-voucher',
     { params: rekapParams, staleTime: 30000 }
   );
   const rekap = rekapData?.rekap || [];
+  const dailyBreakdown = rekapData?.dailyBreakdown || [];
+  const isPeriodMode = rekapData?.mode === 'period';
   const agents = rekapData?.agents || [];
   const profiles = rekapData?.profiles || [];
 
@@ -386,23 +398,88 @@ export default function RekapVoucherPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="bg-card p-4 rounded-lg border-2 border-primary/30 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
-          <div className="text-xs text-primary font-bold uppercase mb-1">{t('hotspot.totalQty')}</div>
-          <div className="text-lg sm:text-2xl font-bold text-primary drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">{totalQty.toLocaleString()}</div>
-        </div>
-        <div className="bg-card p-4 rounded-lg border-2 border-success/30 shadow-[0_0_15px_rgba(0,255,136,0.1)]">
-          <div className="text-xs text-success font-bold uppercase mb-1">{t('hotspot.stock')}</div>
-          <div className="text-lg sm:text-2xl font-bold text-success drop-shadow-[0_0_5px_rgba(0,255,136,0.5)]">{totalStock.toLocaleString()}</div>
-        </div>
-        <div className="bg-card p-4 rounded-lg border-2 border-warning/30 shadow-[0_0_15px_rgba(255,170,0,0.1)]">
-          <div className="text-xs text-warning font-bold uppercase mb-1">{t('hotspot.sold')}</div>
-          <div className="text-lg sm:text-2xl font-bold text-warning drop-shadow-[0_0_5px_rgba(255,170,0,0.5)]">{totalSold.toLocaleString()}</div>
-        </div>
-        <div className="bg-card p-4 rounded-lg border-2 border-brand-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)] col-span-2 md:col-span-1">
-          <div className="text-xs text-brand-500 font-bold uppercase mb-1">Total Pendapatan</div>
-          <div className="text-base sm:text-xl font-bold text-brand-500 drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">{formatCurrency(totalRevenue)}</div>
-        </div>
+        {isPeriodMode ? (
+          <>
+            <div className="bg-card p-4 rounded-lg border-2 border-warning/30 shadow-[0_0_15px_rgba(255,170,0,0.1)]">
+              <div className="text-xs text-warning font-bold uppercase mb-1">Terjual</div>
+              <div className="text-lg sm:text-2xl font-bold text-warning drop-shadow-[0_0_5px_rgba(255,170,0,0.5)]">{totalSold.toLocaleString()}</div>
+            </div>
+            <div className="bg-card p-4 rounded-lg border-2 border-success/30 shadow-[0_0_15px_rgba(0,255,136,0.1)]">
+              <div className="text-xs text-success font-bold uppercase mb-1">Aktif</div>
+              <div className="text-lg sm:text-2xl font-bold text-success drop-shadow-[0_0_5px_rgba(0,255,136,0.5)]">{totalActive.toLocaleString()}</div>
+            </div>
+            <div className="bg-card p-4 rounded-lg border-2 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+              <div className="text-xs text-red-400 font-bold uppercase mb-1">Expired</div>
+              <div className="text-lg sm:text-2xl font-bold text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">{totalExpired.toLocaleString()}</div>
+            </div>
+            <div className="bg-card p-4 rounded-lg border-2 border-brand-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+              <div className="text-xs text-brand-500 font-bold uppercase mb-1">Total Pendapatan</div>
+              <div className="text-base sm:text-xl font-bold text-brand-500 drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">{formatCurrency(totalRevenue)}</div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-card p-4 rounded-lg border-2 border-primary/30 shadow-[0_0_15px_rgba(139,92,246,0.1)]">
+              <div className="text-xs text-primary font-bold uppercase mb-1">{t('hotspot.totalQty')}</div>
+              <div className="text-lg sm:text-2xl font-bold text-primary drop-shadow-[0_0_5px_rgba(139,92,246,0.5)]">{totalQty.toLocaleString()}</div>
+            </div>
+            <div className="bg-card p-4 rounded-lg border-2 border-success/30 shadow-[0_0_15px_rgba(0,255,136,0.1)]">
+              <div className="text-xs text-success font-bold uppercase mb-1">{t('hotspot.stock')}</div>
+              <div className="text-lg sm:text-2xl font-bold text-success drop-shadow-[0_0_5px_rgba(0,255,136,0.5)]">{totalStock.toLocaleString()}</div>
+            </div>
+            <div className="bg-card p-4 rounded-lg border-2 border-warning/30 shadow-[0_0_15px_rgba(255,170,0,0.1)]">
+              <div className="text-xs text-warning font-bold uppercase mb-1">{t('hotspot.sold')}</div>
+              <div className="text-lg sm:text-2xl font-bold text-warning drop-shadow-[0_0_5px_rgba(255,170,0,0.5)]">{totalSold.toLocaleString()}</div>
+            </div>
+            <div className="bg-card p-4 rounded-lg border-2 border-brand-500/30 shadow-[0_0_15px_rgba(6,182,212,0.1)] col-span-2 md:col-span-1">
+              <div className="text-xs text-brand-500 font-bold uppercase mb-1">Total Pendapatan</div>
+              <div className="text-base sm:text-xl font-bold text-brand-500 drop-shadow-[0_0_5px_rgba(6,182,212,0.5)]">{formatCurrency(totalRevenue)}</div>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Daily Breakdown — only in period mode */}
+      {isPeriodMode && dailyBreakdown.length > 0 && (
+        <div className="bg-card rounded-lg border border-border overflow-hidden">
+          <div className="px-4 py-2 bg-muted border-b border-border">
+            <span className="text-xs font-semibold text-foreground">Rincian Penjualan per Hari</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Tanggal</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Terjual</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aktif</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Expired</th>
+                  <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Pendapatan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {dailyBreakdown.map((d) => (
+                  <tr key={d.date} className="hover:bg-muted">
+                    <td className="px-3 py-2 text-xs font-medium text-foreground">{d.dateLabel}</td>
+                    <td className="px-3 py-2 text-xs text-right text-warning font-semibold">{d.sold}</td>
+                    <td className="px-3 py-2 text-xs text-right text-success">{d.active}</td>
+                    <td className="px-3 py-2 text-xs text-right text-red-400">{d.expired}</td>
+                    <td className="px-3 py-2 text-xs text-right text-brand-500 font-semibold">{formatCurrency(d.revenue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot className="bg-muted border-t border-border">
+                <tr>
+                  <td className="px-3 py-2 text-xs font-bold text-foreground">Total</td>
+                  <td className="px-3 py-2 text-xs text-right font-bold text-warning">{dailyBreakdown.reduce((s, d) => s + d.sold, 0)}</td>
+                  <td className="px-3 py-2 text-xs text-right font-bold text-success">{dailyBreakdown.reduce((s, d) => s + d.active, 0)}</td>
+                  <td className="px-3 py-2 text-xs text-right font-bold text-red-400">{dailyBreakdown.reduce((s, d) => s + d.expired, 0)}</td>
+                  <td className="px-3 py-2 text-xs text-right font-bold text-brand-500">{formatCurrency(dailyBreakdown.reduce((s, d) => s + d.revenue, 0))}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Revenue Breakdown: Admin vs Agent */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -478,7 +555,11 @@ export default function RekapVoucherPage() {
               <div className="flex items-start justify-between mb-2">
                 <div>
                   <div className="font-mono text-xs text-foreground">{item.batchCode}</div>
-                  <div className="text-[10px] text-muted-foreground">{formatDate(item.createdAt)}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {isPeriodMode && item.firstLoginAt
+                      ? `Terjual: ${formatDate(item.firstLoginAt)}`
+                      : formatDate(item.createdAt)}
+                  </div>
                 </div>
                 <span className="text-[10px] text-muted-foreground">#{index + 1}</span>
               </div>
@@ -509,23 +590,46 @@ export default function RekapVoucherPage() {
                 )}
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs border-t border-border pt-2">
-                <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground">{t('hotspot.qty')}</div>
-                  <button onClick={() => openVoucherModal(item.batchCode, '')} className="font-medium text-primary hover:underline cursor-pointer">{item.totalQty}</button>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground">{t('hotspot.stock')}</div>
-                  <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="font-medium text-success hover:underline cursor-pointer">{item.stock}</button>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground">{t('hotspot.sold')}</div>
-                  <button onClick={() => openVoucherModal(item.batchCode, 'SOLD')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
-                  <div className="text-[9px] text-muted-foreground mt-0.5">{item.active}↑ {item.expired}↓</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-[10px] text-muted-foreground">Nominal</div>
-                  <div className="font-medium text-brand-500 text-[10px]">{formatCurrency(item.totalRevenue)}</div>
-                </div>
+                {isPeriodMode ? (
+                  <>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">Terjual</div>
+                      <button onClick={() => openVoucherModal(item.batchCode, 'SOLD')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">Aktif</div>
+                      <div className="font-medium text-success">{item.active}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">Expired</div>
+                      <div className="font-medium text-red-400">{item.expired}</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">Nominal</div>
+                      <div className="font-medium text-brand-500 text-[10px]">{formatCurrency(item.totalRevenue)}</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">{t('hotspot.qty')}</div>
+                      <button onClick={() => openVoucherModal(item.batchCode, '')} className="font-medium text-primary hover:underline cursor-pointer">{item.totalQty}</button>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">{t('hotspot.stock')}</div>
+                      <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="font-medium text-success hover:underline cursor-pointer">{item.stock}</button>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">{t('hotspot.sold')}</div>
+                      <button onClick={() => openVoucherModal(item.batchCode, 'SOLD')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
+                      <div className="text-[9px] text-muted-foreground mt-0.5">{item.active}↑ {item.expired}↓</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-[10px] text-muted-foreground">Nominal</div>
+                      <div className="font-medium text-brand-500 text-[10px]">{formatCurrency(item.totalRevenue)}</div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ))
@@ -562,12 +666,18 @@ export default function RekapVoucherPage() {
               <tr>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">#</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.batchCode')}</th>
-                <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.creationDate')}</th>
+                <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">
+                  {isPeriodMode ? 'Tgl Terjual' : t('hotspot.creationDate')}
+                </th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.partnerAgent')}</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.profile')}</th>
                 <th className="px-3 py-2 text-left text-[10px] font-medium text-muted-foreground uppercase">Router</th>
-                <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.qty')}</th>
-                <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.stock')}</th>
+                <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">
+                  {isPeriodMode ? 'Terjual' : t('hotspot.qty')}
+                </th>
+                {!isPeriodMode && (
+                  <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.stock')}</th>
+                )}
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">{t('hotspot.sold')}</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Aktif</th>
                 <th className="px-3 py-2 text-right text-[10px] font-medium text-muted-foreground uppercase">Expired</th>
@@ -579,13 +689,13 @@ export default function RekapVoucherPage() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={14} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={isPeriodMode ? 13 : 14} className="px-3 py-8 text-center text-muted-foreground text-xs">
                     {t('common.loading')}
                   </td>
                 </tr>
               ) : filteredRekap.length === 0 ? (
                 <tr>
-                  <td colSpan={14} className="px-3 py-8 text-center text-muted-foreground text-xs">
+                  <td colSpan={isPeriodMode ? 13 : 14} className="px-3 py-8 text-center text-muted-foreground text-xs">
                     {t('hotspot.noRekapData')}
                   </td>
                 </tr>
@@ -597,7 +707,9 @@ export default function RekapVoucherPage() {
                       {item.batchCode}
                     </td>
                     <td className="px-3 py-2 text-[10px] text-muted-foreground">
-                      {formatDate(item.createdAt)}
+                      {isPeriodMode && item.firstLoginAt
+                        ? formatDate(item.firstLoginAt)
+                        : formatDate(item.createdAt)}
                     </td>
                     <td className="px-3 py-2 text-[10px] text-muted-foreground">
                       {item.agent ? (
@@ -616,11 +728,17 @@ export default function RekapVoucherPage() {
                       {item.router?.name || <span className="italic">-</span>}
                     </td>
                     <td className="px-3 py-2 text-[10px] text-right">
-                      <button onClick={() => openVoucherModal(item.batchCode, '')} className="font-medium text-primary hover:underline cursor-pointer">{item.totalQty}</button>
+                      {isPeriodMode ? (
+                        <span className="font-medium text-orange-600">{item.sold}</span>
+                      ) : (
+                        <button onClick={() => openVoucherModal(item.batchCode, '')} className="font-medium text-primary hover:underline cursor-pointer">{item.totalQty}</button>
+                      )}
                     </td>
-                    <td className="px-3 py-2 text-[10px] text-right">
-                      <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="font-medium text-success hover:underline cursor-pointer">{item.stock}</button>
-                    </td>
+                    {!isPeriodMode && (
+                      <td className="px-3 py-2 text-[10px] text-right">
+                        <button onClick={() => openVoucherModal(item.batchCode, 'WAITING')} className="font-medium text-success hover:underline cursor-pointer">{item.stock}</button>
+                      </td>
+                    )}
                     <td className="px-3 py-2 text-[10px] text-right">
                       <button onClick={() => openVoucherModal(item.batchCode, 'SOLD')} className="font-medium text-orange-600 hover:underline cursor-pointer">{item.sold}</button>
                     </td>
