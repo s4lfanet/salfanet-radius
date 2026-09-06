@@ -108,13 +108,13 @@ export default function PPPoESessionsPage() {
     return formatWIB(dateStr, 'dd/MM/yyyy HH:mm');
   };
 
-  // Format uptime with days support
+  // Format uptime with days support (include seconds to match MikroTik display)
   const formatUptime = (seconds: number) => {
     const d = Math.floor(seconds / 86400);
     const h = Math.floor((seconds % 86400) / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    if (d > 0) return `${d}d ${h}h ${m}m`;
+    if (d > 0) return `${d}d ${h}h ${m}m ${s}s`;
     if (h > 0) return `${h}h ${m}m ${s}s`;
     if (m > 0) return `${m}m ${s}s`;
     return `${s}s`;
