@@ -15,8 +15,6 @@ export async function GET(req: NextRequest) {
     const dateParam  = searchParams.get('date');  // YYYY-MM-DD (daily)
     const weekParam  = searchParams.get('week');  // YYYY-MM-DD Monday of week
 
-    console.log('[REKAP_VOUCHER] params:', { agentId, profileId, monthParam, dateParam, weekParam });
-
     // Build date range filter for createdAt (WIB-as-UTC)
     let dateRangeFilter: any = {};
     if (dateParam && /^\d{4}-\d{2}-\d{2}$/.test(dateParam)) {
@@ -47,8 +45,6 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    console.log('[REKAP_VOUCHER] dateRangeFilter:', JSON.stringify(dateRangeFilter, (key, val) => val instanceof Date ? val.toISOString() : val));
-
     // Get distinct batches (group only by batchCode to avoid duplicate rows)
     const batchGroups = await prisma.hotspotVoucher.groupBy({
       by: ['batchCode'],
@@ -61,8 +57,6 @@ export async function GET(req: NextRequest) {
       _min: { createdAt: true },
       orderBy: { _min: { createdAt: 'desc' } },
     });
-
-    console.log('[REKAP_VOUCHER] batchGroups found:', batchGroups.length);
 
     // Get voucher counts per batch by status
     const rekapData = await Promise.all(
