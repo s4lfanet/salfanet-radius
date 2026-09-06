@@ -56,11 +56,13 @@ async function safePrint(api: any, path: string, args?: any[]): Promise<any[]> {
 function parseUptime(uptime: string | null | undefined): number {
   if (!uptime) return 0
   let total = 0
-  const days = uptime.match(/(\d+)w/) || uptime.match(/(\d+)d/)
+  const weeks = uptime.match(/(\d+)w/)
+  const days = uptime.match(/(\d+)d/)
   const hours = uptime.match(/(\d+)h/)
   const mins = uptime.match(/(\d+)m/)
   const secs = uptime.match(/(\d+)s/)
-  if (days) total += parseInt(days[1]) * (uptime.includes('w') ? 7 * 24 * 3600 : 24 * 3600)
+  if (weeks) total += parseInt(weeks[1]) * 7 * 24 * 3600
+  if (days) total += parseInt(days[1]) * 24 * 3600
   if (hours) total += parseInt(hours[1]) * 3600
   if (mins) total += parseInt(mins[1]) * 60
   if (secs) total += parseInt(secs[1])
@@ -106,7 +108,10 @@ export async function listPppActiveDetailed(routerId: string): Promise<MikrotikA
       const ifaces = await safePrint(api, '/interface/print')
       for (const iface of ifaces) {
         if (iface.type === 'pppoe-in' && iface.name) {
-          const match = iface.name.match(/^<pppoe-(.+)>$/)
+          // RouterOS v6 uses "<pppoe-username>", v7 uses "pppoe-username"
+          // Support both formats for byte counter matching.
+          let match = iface.name.match(/^<pppoe-(.+)>$/)
+          if (!match) match = iface.name.match(/^pppoe-(.+)$/)
           if (match) {
             byteMap.set(match[1], {
               rx: Number(iface['rx-byte'] || 0),
