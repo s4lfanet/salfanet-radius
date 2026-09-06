@@ -1041,6 +1041,38 @@ Bagian ini otomatis sinkron dari `CHANGELOG.md` saat file changelog berubah di G
 
 <!-- AUTO-CHANGELOG:START -->
 
+### v5.19.1 — 2026-09-06 — Rekap Voucher Rombak + PPPoE Profile Sync + CSP Fix
+
+### Summary
+Rombak total laporan Rekap Voucher agar support penjualan harian/mingguan/bulanan berdasarkan tanggal terjual (`firstLoginAt`), bukan tanggal batch dibuat (`createdAt`). Fix PPPoE user stuck di profile isolir setelah restore. Fix Cloudflare Web Analytics CSP error. Cleanup file debug/temp dari repo.
+
+### Rekap Voucher — Rombak Laporan Penjualan
+- **[FEATURE]** Filter periode (Harian/Mingguan/Bulanan) sekarang filter by `firstLoginAt` (tanggal voucher terjual/digunakan), bukan `createdAt` (tanggal batch dibuat)
+- **[FEATURE]** Mode "Semua Data" tetap filter by `createdAt` dengan full batch counts (qty, stock, sold, active, expired)
+- **[FEATURE]** Tabel "Rincian Penjualan per Hari" — rincian penjualan per tanggal dalam periode (sold, active, expired, revenue)
+- **[FEATURE]** Tabel "Pendapatan per Agent" — summary terjual & profit per agent
+- **[FEATURE]** Export Excel ikut rombak — konsisten dengan API
+- **[FEATURE]** Support both RADIUS NAS (`post-auth` hook set `firstLoginAt`) dan Local NAS (sync dari MikroTik `/system/script` format `user/price/sales/date/time/phone/seller`)
+- **[UI]** Rombak tampilan lebih simple & clean — hilangkan efek neon/glow/blur berlebihan, compact stat pills, responsive card/table
+- **[FIX]** colSpan tfoot mode "Semua" (8 → 6) agar baris Total sejajar dengan kolom
+- **[FIX]** `whitespace-nowrap` + `min-w` di semua tabel agar kolom tidak wrap/truncate
+
+### PPPoE Profile Synchronization
+- **[CRITICAL]** User active di DB tapi MikroTik masih pakai profile `isolir` setelah restore — session tidak di-kick, RouterOS retain profile lama
+- **[FIX]** Kick active PPPoE session saat restore dari isolated/blocked/stop ke active (`status/route.ts`, `bulk-status/route.ts`)
+- **[FIX]** CoA handler: gunakan router user yang sebenarnya untuk MikroTik API fallback kick (`coa-handler.service.ts`)
+- **[FIX]** `runSuspendCheck`: sync RADIUS + MikroTik saat manual suspend
+- **[FEATURE]** Reconciliation script: cek MikroTik PPP secret langsung, repair RADIUS group + MikroTik secret profile, kick affected sessions (`profile-sync-repair.service.ts`)
+
+### Cloudflare Web Analytics CSP Fix
+- **[FIX]** `VM... startTime` error dari Cloudflare beacon.min.js yang inject `reportAllChanges`
+- **[FIX]** Remove `https://static.cloudflareinsights.com` dan `https://cloudflareinsights.com` dari CSP `script-src` dan `connect-src` di `frontend/next.config.ts`
+
+### Project Cleanup
+- **[CHORE]** Remove 18 file debug/temp dari git tracking (`.check-*`, `.debug-*`, `.test-*`, `.commit-msg-*`, `.trigger-*`)
+- **[CHORE]** Update `.gitignore` untuk mencegah file debug/temp ter-commit lagi
+- **[CHORE]** Update README — tambah info Rekap Voucher di feature table
+
 ### v5.19.0 — 2026-09-01 — Payment Webhook Fixes & HOTSPOT Isolation/Reactivation Support
 
 ### Summary
@@ -1237,29 +1269,6 @@ npx prisma migrate deploy
 npx prisma generate
 pm2 restart salfanet-backend salfanet-frontend
 ```
-
-### v5.15.1 — 2026-08-25 — Mobile Scroll Fix (All Portals)
-
-### Summary
-Perbaikan issue scroll mobile yang tidak bisa sampai ke bawah halaman di semua portal (admin, customer, technician, agent, collector). Root cause: `min-h-screen` (100vh) menggunakan "large viewport" height yang tidak akurat saat toolbar browser mobile terlihat. Juga menambahkan `viewportFit: 'cover'` untuk safe area iOS dan class CSS `.safe-area-pb` yang hilang.
-
-### Fixes
-- **[FIX]** `min-h-screen` → `min-h-dvh` (dynamic viewport height) di semua layout: AdminClientLayout, CustomerClientLayout, TechnicianPortalLayout, AgentLayoutClient, CollectorPortalLayout — termasuk loading states dan Suspense fallback
-- **[FIX]** `viewportFit: 'cover'` ditambahkan ke viewport export di root `layout.tsx` untuk enable safe area insets di iOS notched devices
-- **[FIX]** Class CSS `.safe-area-pb` ditambahkan ke `globals.css` — dipakai oleh customer mobile bottom nav tapi belum didefinisikan
-- **[FIX]** Customer portal: bottom padding `pb-20` → `pb-24` untuk spacing yang lebih aman terhadap mobile bottom navigation
-
-### Files Changed
-- `frontend/src/app/layout.tsx` — viewportFit: 'cover'
-- `frontend/src/app/globals.css` — .safe-area-pb class
-- `frontend/src/app/admin/AdminClientLayout.tsx` — min-h-dvh (5 places)
-- `frontend/src/app/customer/CustomerClientLayout.tsx` — min-h-dvh + pb-24
-- `frontend/src/app/technician/TechnicianPortalLayout.tsx` — min-h-dvh (3 places)
-- `frontend/src/app/agent/AgentLayoutClient.tsx` — min-h-dvh (2 places)
-- `frontend/src/app/collector/CollectorPortalLayout.tsx` — min-h-dvh (2 places)
-- `package.json` — version bump to 5.15.1
-- `README.md` — version update
-- `CHANGELOG.md` — this entry
 
 <!-- AUTO-CHANGELOG:END -->
 
