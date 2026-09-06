@@ -219,10 +219,11 @@ export async function PUT(request: Request) {
           console.error(`[HOTSPOT] Failed for "${user.username}":`, e?.message || e);
         }
 
-        if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+        if (status === 'isolated' || status === 'blocked' || status === 'stop' ||
+            (status === 'active' && (oldStatus === 'isolated' || oldStatus === 'blocked' || oldStatus === 'stop'))) {
           try {
             const kicked = await kickHotspotSession(user.router.id, user.username);
-            console.log(`[HOTSPOT_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+            console.log(`[HOTSPOT_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status}, oldStatus=${oldStatus})`);
           } catch (e: any) {
             console.error(`[HOTSPOT_KICK] Failed for "${user.username}":`, e?.message || e);
           }
@@ -243,10 +244,15 @@ export async function PUT(request: Request) {
         }
 
         // Kick active session via MikroTik API (critical for local — CoA doesn't work on local-auth sessions)
-        if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+        // Also kick when restoring to active — RouterOS retains the old profile on
+        // already-authenticated sessions, so the user stays stuck on isolir until
+        // the session is kicked and they re-authenticate with the restored profile.
+        const wasSuspended = oldStatus === 'isolated' || oldStatus === 'blocked' || oldStatus === 'stop';
+        if (status === 'isolated' || status === 'blocked' || status === 'stop' ||
+            (status === 'active' && wasSuspended)) {
           try {
             const kicked = await kickPppoeSession(user.router.id, user.username);
-            console.log(`[PPP_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+            console.log(`[PPP_KICK] Kicked ${kicked} session(s) for "${user.username}" (status=${status}, oldStatus=${oldStatus})`);
           } catch (e: any) {
             console.error(`[PPP_KICK] Failed for "${user.username}":`, e?.message || e);
           }

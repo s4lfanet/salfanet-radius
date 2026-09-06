@@ -1,0 +1,25 @@
+fix: PPPoE profile sync — kick active session on restore to active
+
+Root cause: When a customer was restored to 'active' (via manual status
+change, bulk status change, or suspend-check cron), the PPP secret profile
+was updated in MikroTik but the active session was NOT kicked. RouterOS
+retains the old profile on already-authenticated sessions, so the user
+stayed stuck on the 'isolir' profile even though DB status was 'active'.
+
+Fixes:
+- status/route.ts: Kick PPPoE/hotspot session when restoring to active
+  from isolated/blocked/stop (previously only kicked for isolation)
+- bulk-status/route.ts: Same kick-on-restore fix for bulk operations
+- coa-handler.service.ts: Use user's actual router (via pppoeUser.routerId)
+  for MikroTik API fallback kick, instead of random active router
+- invoice-jobs.ts (runSuspendCheck): Full RADIUS + MikroTik sync when
+  applying manual suspend (previously only updated DB status — no RADIUS
+  or MikroTik changes, so suspend had no effect on the live session)
+- profile-sync-repair.service.ts: New reconciliation service that detects
+  active users whose radusergroup is still 'isolir' and auto-repairs:
+  fixes RADIUS tables, restores MikroTik PPP secret profile, kicks active
+  session. Wired into radius_reconciliation cron (daily at 6 AM).
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

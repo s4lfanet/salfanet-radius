@@ -315,7 +315,17 @@ async function runFinancialReconciliation() {
  */
 async function runRadiusReconciliation() {
   const { runReconciliation } = await import('@/server/services/radius/radius-reconciliation.service')
+  const { runProfileSyncRepair } = await import('@/server/services/radius/profile-sync-repair.service')
   const report = await runReconciliation()
+
+  // Auto-repair: fix active users whose RADIUS group / MikroTik profile is
+  // still 'isolir' (stuck from a previous restore that didn't kick the session)
+  let repairReport: { scanned: number; repaired: number; errors: string[] } | null = null
+  try {
+    repairReport = await runProfileSyncRepair()
+  } catch (e: any) {
+    console.error('[CRON] Profile sync repair failed:', e?.message || e)
+  }
 
   console.log('[CRON] RADIUS Reconciliation:', {
     totalSalfaNetUsers: report.totalSalfaNetUsers,
@@ -328,6 +338,7 @@ async function runRadiusReconciliation() {
     knownStale: report.summary.knownStaleCount,
     unknownStale: report.summary.unknownStaleCount,
     deleteQueued: report.summary.deleteQueuedCount,
+    profileSyncRepair: repairReport ? { scanned: repairReport.scanned, repaired: repairReport.repaired, errors: repairReport.errors.length } : null,
   })
 
   return {
@@ -345,5 +356,6 @@ async function runRadiusReconciliation() {
     knownStale: report.summary.knownStaleCount,
     unknownStale: report.summary.unknownStaleCount,
     deleteQueued: report.summary.deleteQueuedCount,
+    profileSyncRepair: repairReport ? { scanned: repairReport.scanned, repaired: repairReport.repaired, errors: repairReport.errors.length } : null,
   }
 }

@@ -176,10 +176,11 @@ export async function PUT(request: Request) {
             console.error(`[HOTSPOT] bulk failed for "${user.username}":`, e?.message || e);
           }
 
-          if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+          if (status === 'isolated' || status === 'blocked' || status === 'stop' ||
+              (status === 'active' && (user.status === 'isolated' || user.status === 'blocked' || user.status === 'stop'))) {
             try {
               const kicked = await kickHotspotSession(user.router.id, user.username);
-              console.log(`[HOTSPOT_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+              console.log(`[HOTSPOT_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status}, oldStatus=${user.status})`);
             } catch (e: any) {
               console.error(`[HOTSPOT_KICK] bulk failed for "${user.username}":`, e?.message || e);
             }
@@ -200,10 +201,14 @@ export async function PUT(request: Request) {
           }
 
           // Kick active session via MikroTik API
-          if (status === 'isolated' || status === 'blocked' || status === 'stop') {
+          // Also kick when restoring to active — RouterOS retains the old profile
+          // on already-authenticated sessions, so without a kick the user stays
+          // stuck on the isolir profile even after the secret is restored.
+          if (status === 'isolated' || status === 'blocked' || status === 'stop' ||
+              (status === 'active' && (user.status === 'isolated' || user.status === 'blocked' || user.status === 'stop'))) {
             try {
               const kicked = await kickPppoeSession(user.router.id, user.username);
-              console.log(`[PPP_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status})`);
+              console.log(`[PPP_KICK] bulk kicked ${kicked} session(s) for "${user.username}" (status=${status}, oldStatus=${user.status})`);
             } catch (e: any) {
               console.error(`[PPP_KICK] bulk failed for "${user.username}":`, e?.message || e);
             }

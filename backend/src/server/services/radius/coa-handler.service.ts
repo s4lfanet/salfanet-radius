@@ -328,17 +328,29 @@ export async function disconnectPPPoEUser(username: string) {
       console.log(`[CoA] No active radacct session for ${username} — trying MikroTik API kick`)
 
       // Fallback: user may be connected on MikroTik but missing from radacct
-      // (e.g. after username rename, accounting gap, or radacct cleanup)
-      // Try to kick via MikroTik API directly
+      // (e.g. local-auth routers, after username rename, accounting gap, or
+      // radacct cleanup). Try to kick via MikroTik API directly.
+      // IMPORTANT: Look up the user's actual router first — using a random
+      // active router would kick on the wrong device and leave the session
+      // stuck on the user's real router.
       try {
-        const nas = await prisma.router.findFirst({
-          where: { isActive: true },
-          orderBy: { createdAt: 'desc' },
+        // Find the user's router via pppoeUser.routerId
+        const pppoeUser = await prisma.pppoeUser.findFirst({
+          where: { username },
+          select: { routerId: true, router: { select: { id: true, name: true } } },
         })
+        let nas: any = pppoeUser?.router ?? null
+        // Fallback to any active router if user has no router assignment
+        if (!nas) {
+          nas = await prisma.router.findFirst({
+            where: { isActive: true },
+            orderBy: { createdAt: 'desc' },
+          })
+        }
         if (nas) {
           const { kickPppoeSession } = await import('@/server/services/mikrotik/ppp-secret.service')
           const kicked = await kickPppoeSession(nas.id, username)
-          console.log(`[CoA] MikroTik API kick result for ${username}: ${kicked} session(s) removed`)
+          console.log(`[CoA] MikroTik API kick result for ${username} on router ${nas.name || nas.id}: ${kicked} session(s) removed`)
           if (kicked > 0) {
             return { success: true, message: `Disconnected via MikroTik API (${kicked} session(s))` }
           }
