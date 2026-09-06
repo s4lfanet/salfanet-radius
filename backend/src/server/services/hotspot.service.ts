@@ -144,12 +144,20 @@ export async function listVouchers(params: ListVouchersParams) {
       agent: { select: { id: true, name: true, phone: true } },
     },
     orderBy: [
-      // ACTIVE first, then EXPIRED, then WAITING
-      { status: 'asc' },
-      { createdAt: 'desc' },
+      // ACTIVE first (1), then EXPIRED (2), then WAITING (3)
+      // Use raw SQL for reliable status ordering
     ],
     skip,
     take: limit,
+  });
+
+  // Sort vouchers: ACTIVE → EXPIRED → WAITING, then by createdAt desc
+  const statusOrder: Record<string, number> = { ACTIVE: 0, EXPIRED: 1, WAITING: 2 };
+  vouchers.sort((a: any, b: any) => {
+    const sa = statusOrder[a.status] ?? 9;
+    const sb = statusOrder[b.status] ?? 9;
+    if (sa !== sb) return sa - sb;
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
   });
 
   const batches = await prisma.hotspotVoucher.findMany({
