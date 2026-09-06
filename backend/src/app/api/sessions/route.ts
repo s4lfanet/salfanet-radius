@@ -669,14 +669,6 @@ export async function GET(request: NextRequest) {
       allSessions = allSessions.filter((s) => s.type === type);
     }
 
-    // TEMPORARY DEBUG: log first 5 PPPoE sessions with duration
-    if (type === 'pppoe') {
-      console.log('[DEBUG PPPoE] Total sessions:', allSessions.length);
-      for (const s of allSessions.slice(0, 5)) {
-        console.log(`[DEBUG PPPoE] user=${s.username} duration=${s.duration} startTime=${s.startTime} dataSource=${(s as any).dataSource}`);
-      }
-    }
-
     // ── 6. Stats ────────────────────────────────────────────────────────────
     const stats = {
       total: allSessions.length,
