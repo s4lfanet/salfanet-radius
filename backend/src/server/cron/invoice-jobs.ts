@@ -578,20 +578,112 @@ export async function runDisconnectSessions(): Promise<{ disconnected: number; t
 /**
  * Suspend Check — process approved manual suspend requests.
  * Postpaid auto-isolir is handled by runAutoIsolir.
+ *
+ * This does the SAME RADIUS + MikroTik sync as a manual status change to
+ * 'isolated' — without it, the user's DB status changes but their MikroTik
+ * session stays on the normal profile (no actual isolation).
  */
 export async function runSuspendCheck(): Promise<{ suspended: number; total: number; errors: string[] }> {
+  const { managePppSecret, shouldManagePppSecretForSuspend, kickPppoeSession } = await import('@/server/services/mikrotik/ppp-secret.service');
+  const { disconnectPPPoEUser } = await import('@/server/services/radius/coa-handler.service');
+
   let suspended = 0;
   const errors: string[] = [];
 
   const now = await nowWIBAsync();
   const approved = await prisma.suspendRequest.findMany({
     where: { status: 'APPROVED', startDate: { lte: now } },
+    include: {
+      user: {
+        select: {
+          id: true, username: true, password: true, ipAddress: true,
+          connectionType: true,
+          profile: { select: { groupName: true } },
+          router: { select: { id: true, authMode: true } },
+        },
+      },
+    },
   });
+
   for (const req of approved) {
     try {
+      const user = req.user;
+      if (!user) {
+        errors.push(`suspend_${req.id}: user not found`);
+        continue;
+      }
+
+      // Idempotency: skip if user is already isolated (this request was
+      // already processed by a previous cron run)
+      const currentUser = await prisma.pppoeUser.findUnique({
+        where: { id: req.userId },
+        select: { status: true },
+      });
+      if (currentUser?.status === 'isolated') {
+        continue;
+      }
+
+      const nasIdentifier = user.router?.id || null;
+
+      // 1. Update DB status to isolated
       await prisma.pppoeUser.update({ where: { id: req.userId }, data: { status: 'isolated' } });
+
+      // 2. Sync RADIUS tables — move to isolir group
+      await prisma.radcheck.deleteMany({
+        where: { username: user.username, attribute: 'Auth-Type', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
+      });
+      await prisma.radcheck.deleteMany({
+        where: { username: user.username, attribute: 'NAS-IP-Address', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
+      });
+      await prisma.radreply.deleteMany({
+        where: { username: user.username, attribute: 'Reply-Message', ...(nasIdentifier ? { nas_identifier: nasIdentifier } : {}) },
+      });
+      await prisma.$executeRaw`
+        INSERT INTO radcheck (username, attribute, op, value, nas_identifier)
+        VALUES (${user.username}, 'Cleartext-Password', ':=', ${user.password}, ${nasIdentifier})
+        ON DUPLICATE KEY UPDATE value = ${user.password}
+      `;
+      await prisma.$executeRaw`
+        DELETE FROM radusergroup WHERE username = ${user.username} AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+      `;
+      await prisma.$executeRaw`
+        INSERT INTO radusergroup (username, groupname, priority, nas_identifier)
+        VALUES (${user.username}, 'isolir', 1, ${nasIdentifier})
+      `;
+      await prisma.$executeRaw`
+        DELETE FROM radreply WHERE username = ${user.username} AND attribute = 'Framed-IP-Address' AND (${nasIdentifier} IS NULL OR nas_identifier = ${nasIdentifier})
+      `;
+
+      // 3. MikroTik sync — change PPP secret profile to isolir + kick active session
+      if (user.router?.id && shouldManagePppSecretForSuspend(user.router.authMode)) {
+        const connType = user.connectionType || 'PPPOE';
+        if (connType === 'HOTSPOT') {
+          try {
+            const { manageHotspotUser, kickHotspotSession } = await import('./mikrotik/arp-hotspot.service');
+            await manageHotspotUser(user.router.id, 'update', {
+              username: user.username, password: user.password, disabled: true, comment: 'Manual suspend',
+            });
+            await kickHotspotSession(user.router.id, user.username);
+          } catch (e: any) {
+            errors.push(`suspend_${req.id} hotspot: ${e?.message || e}`);
+          }
+        } else {
+          try {
+            await managePppSecret(user.router.id, 'enable', {
+              username: user.username, password: user.password, profile: 'isolir',
+            });
+            await kickPppoeSession(user.router.id, user.username);
+          } catch (e: any) {
+            errors.push(`suspend_${req.id} pppoe: ${e?.message || e}`);
+          }
+        }
+      }
+
+      // 4. CoA disconnect
+      try { await disconnectPPPoEUser(user.username); } catch { /* non-fatal */ }
+
       suspended++;
-      console.log(`[SUSPEND_CHECK] Manual suspend applied for user ${req.userId}`);
+      console.log(`[SUSPEND_CHECK] Manual suspend applied for user ${user.username} (req ${req.id})`);
     } catch (e: any) {
       errors.push(`suspend_${req.id}: ${e?.message || e}`);
     }
