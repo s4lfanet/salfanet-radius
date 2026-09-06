@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Power, RefreshCw, Wifi, Search, Download, Trash2, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/cyberpunk/CyberToast';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -66,14 +66,9 @@ export default function PPPoESessionsPage() {
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [now, setNow] = useState(() => Date.now());
   const [syncing, setSyncing] = useState(false);
 
-  // 1-second ticker for live uptime counter
-  useEffect(() => {
-    const ticker = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(ticker);
-  }, []);
+  // Uptime updates every 10s via refetchInterval (no client-side ticker needed)
 
   // ─── React Query: PPPoE sessions (page + filters, 10s auto-refresh) ──────────
   const sessionParams: Record<string, unknown> = {
@@ -84,7 +79,7 @@ export default function PPPoESessionsPage() {
     routerId: routerFilter || undefined,
     search: searchFilter || undefined,
   };
-  const { data: sessionsData, isLoading: loading, dataUpdatedAt: fetchedAt, refetch: refetchSessions } = useApiQuery<{ sessions: Session[]; stats: Stats; pagination: Pagination }>(
+  const { data: sessionsData, isLoading: loading, refetch: refetchSessions } = useApiQuery<{ sessions: Session[]; stats: Stats; pagination: Pagination }>(
     '/api/sessions',
     { params: sessionParams, refetchInterval: 10000, staleTime: 30000 }
   );
@@ -96,12 +91,10 @@ export default function PPPoESessionsPage() {
   const { data: routersData } = useApiQuery<{ routers: Router[] }>('/api/network/routers', { staleTime: 300000 });
   const routers = routersData?.routers || [];
 
-  // Use server-computed duration (clock-independent) + elapsed seconds since last fetch.
-  // This avoids the clock-skew problem where NAS timestamps are ahead of VPS clock.
-  const liveDuration = (serverDuration: number) => {
-    const elapsed = Math.floor((now - fetchedAt) / 1000);
-    return serverDuration + elapsed;
-  };
+  // Use server-computed duration directly from MikroTik API.
+  // MikroTik uptime is fetched live at API call time, so it's already accurate.
+  // No need for client-side elapsed time adjustment.
+  const liveDuration = (serverDuration: number) => serverDuration;
 
   const formatDateTime = (dateStr: string | null) => {
     if (!dateStr) return '-';
