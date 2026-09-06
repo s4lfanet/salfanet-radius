@@ -381,7 +381,7 @@ export default function AdminDashboard() {
       icon: <Wifi className="w-5 h-5" />,
       gradient: 'from-violet-500 to-purple-400',
       bgGlow: 'bg-violet-500/20',
-      href: '/admin/hotspot/sessions',
+      href: '/admin/sessions/hotspot',
     },
     {
       title: 'Registrasi Online Baru',
