@@ -113,6 +113,8 @@ export async function GET(request: NextRequest) {
       //   - Exclude vouchers already counted via active radacct (in onlineUsernames)
       //   - For vouchers with prior stopped records, only count if latest stop is
       //     BEFORE firstLoginAt (new login has no Accounting-Start yet).
+      // Track synthetic codes so MikroTik counting doesn't double-count them.
+      const syntheticCodes = new Set<string>();
       const nowTs = new Date();
       const activeCandidates = await prisma.hotspotVoucher.findMany({
         where: {
@@ -146,25 +148,28 @@ export async function GET(request: NextRequest) {
           }
         }
         // Count vouchers where session is still "active" (not properly stopped after last login)
-        const syntheticCount = activeCandidates.filter(v => {
+        const syntheticActive = activeCandidates.filter(v => {
           const latestStop = latestStopMap.get(v.code);
           if (!latestStop || !v.firstLoginAt) return true; // No prior stop → count as synthetic
           // Count if latest stop is BEFORE firstLoginAt (new login has no Accounting-Start yet)
           return latestStop.getTime() < new Date(v.firstLoginAt).getTime();
-        }).length;
-        activeSessionsHotspot += syntheticCount;
+        });
+        for (const v of syntheticActive) syntheticCodes.add(v.code);
+        activeSessionsHotspot += syntheticActive.length;
       }
 
       // ── Supplement: MikroTik local-auth sessions ──
       // Routers with authMode='local' authenticate locally and don't send
       // RADIUS accounting. Fetch active sessions directly from MikroTik API.
+      // Matches /api/sessions logic: show ALL local-auth hotspot sessions
+      // (including unregistered users), only registered for PPPoE.
       const localRouters = await prisma.router.findMany({
         where: { isActive: true, authMode: { not: 'radius' } },
         select: { id: true, authMode: true },
       });
       if (localRouters.length > 0) {
         const mtSessions = await batchFetchMikrotikActiveSessions(localRouters, null);
-        // Get all registered usernames to filter ghost sessions
+        // Get all registered usernames to classify sessions
         const mtUsernames = [...new Set(mtSessions.map(s => s.username))];
         if (mtUsernames.length > 0) {
           const [mtPppoeUsers, mtVouchers] = await Promise.all([
@@ -179,14 +184,22 @@ export async function GET(request: NextRequest) {
           ]);
           const mtPppoeSet = new Set(mtPppoeUsers.map(u => u.username));
           const mtVoucherSet = new Set(mtVouchers.map(v => v.code));
+          const localRouterIds = new Set(localRouters.map(r => r.id));
           for (const s of mtSessions) {
             // Skip if already counted via radacct
             if (onlineUsernames.has(s.username)) continue;
+            // Skip if already counted as synthetic voucher (avoid double-count)
+            if (syntheticCodes.has(s.username)) continue;
             if (mtPppoeSet.has(s.username)) {
               activeSessionsPPPoE++;
             } else if (mtVoucherSet.has(s.username)) {
               activeSessionsHotspot++;
+            } else if (s.type === 'hotspot' && localRouterIds.has(s.routerId)) {
+              // Unregistered local-auth hotspot session — count to match
+              // the sessions page which shows ALL local-auth hotspot clients
+              activeSessionsHotspot++;
             }
+            // Unregistered PPPoE sessions are NOT counted (no ghost PPPoE)
           }
         }
       }

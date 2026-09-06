@@ -216,11 +216,17 @@ export async function GET(request: NextRequest) {
     const voucherByCode = new Map(hotspotVouchers.map((v) => [v.code, v]));
 
     // ── 4. Build response sessions ──────────────────────────────────────────
-    // All DB dates are WIB-as-UTC (Prisma reads WIB DATETIME and appends Z).
-    // Dates sent to client stay in WIB-as-UTC — frontend uses formatWIB().
-    // Duration calc uses WIB-aware "now" so both sides are in the same space.
+    // DB radacct dates are WIB-as-UTC (FreeRADIUS FROM_UNIXTIME uses NAS clock).
+    // Voucher dates (firstLoginAt, expiresAt) are TRUE UTC (stored via Prisma).
+    //
+    // `now` (WIB-as-UTC) is used for duration calculations against radacct DB
+    // dates so both sides are in the same timezone space.
+    // `nowUtc` (TRUE UTC) is used for creating startTime/lastUpdate ISO strings
+    // sent to the frontend, because formatWIB() expects TRUE UTC and converts
+    // to company timezone for display.
     const TZ_OFFSET_MS = getTimezoneOffsetMs();
-    const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC epoch for duration calc
+    const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC epoch for radacct duration calc
+    const nowUtc = Date.now();             // True UTC epoch for frontend timestamps
     // ── 4b. Synthetic hotspot sessions: ACTIVE vouchers with no radacct record ──
     // Covers cases where MikroTik authenticated successfully but no
     // Accounting-Start was recorded in radacct.
@@ -294,7 +300,8 @@ export async function GET(request: NextRequest) {
     const syntheticHotspotSessions = orphanedActiveVouchers.map((voucher, i) => {
         const effectiveStartMs = new Date(voucher.firstLoginAt!).getTime();
         const effectiveStartTime = new Date(effectiveStartMs).toISOString();
-        const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+        // firstLoginAt is TRUE UTC (stored via Prisma), so use nowUtc (TRUE UTC)
+        const duration = Math.max(0, Math.floor((nowUtc - effectiveStartMs) / 1000));
         const router =
           voucher.router
             ? { id: voucher.router.id, name: voucher.router.name }
@@ -388,7 +395,8 @@ export async function GET(request: NextRequest) {
       //   real startTime (WIB-as-UTC) = VPS_now - duration
       //   real lastUpdate (WIB-as-UTC) ≈ VPS_now (last interim was ≤ Acct-Interim-Interval ago)
       if (acct.acctstarttime && duration > 0) {
-        effectiveStartTime = new Date(now - duration * 1000).toISOString();
+        // Use nowUtc (TRUE UTC) — frontend formatWIB() expects TRUE UTC
+        effectiveStartTime = new Date(nowUtc - duration * 1000).toISOString();
       }
 
       // Use radacct bytes (updated by Interim-Update packets from router)
@@ -410,7 +418,7 @@ export async function GET(request: NextRequest) {
         // NAS-clock epoch via FROM_UNIXTIME). Since startTime was re-derived
         // as (VPS_now - duration), lastUpdate ≈ VPS_now for active sessions.
         lastUpdate: acct.acctstarttime && duration > 0
-          ? new Date(now).toISOString()
+          ? new Date(nowUtc).toISOString()
           : (acct.acctupdatetime ? new Date(acct.acctupdatetime).toISOString() : null),
         duration,
         durationFormatted: formatDuration(duration),
@@ -512,9 +520,9 @@ export async function GET(request: NextRequest) {
         macAddress: mt.macAddress || s.macAddress,
         sessionId: mt.sessionId || s.sessionId,
         startTime: duration > 0
-          ? new Date(now - duration * 1000).toISOString()
+          ? new Date(nowUtc - duration * 1000).toISOString()
           : s.startTime,
-        lastUpdate: new Date(now).toISOString(),
+        lastUpdate: new Date(nowUtc).toISOString(),
         duration,
         durationFormatted: formatDuration(duration),
         uploadBytes: mt.rxBytes,
@@ -589,8 +597,8 @@ export async function GET(request: NextRequest) {
         framedIpAddress: ms.ipAddress,
         macAddress: ms.macAddress || '-',
         calledStationId: '-',
-        startTime: duration > 0 ? new Date(now - duration * 1000).toISOString() : new Date().toISOString(),
-        lastUpdate: new Date(now).toISOString(),
+        startTime: duration > 0 ? new Date(nowUtc - duration * 1000).toISOString() : new Date().toISOString(),
+        lastUpdate: new Date(nowUtc).toISOString(),
         duration,
         durationFormatted: formatDuration(duration),
         uploadBytes,
