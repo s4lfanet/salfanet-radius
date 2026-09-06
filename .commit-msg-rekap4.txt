@@ -1,0 +1,28 @@
+rombak: rekap voucher — penjualan harian/mingguan/bulanan by firstLoginAt
+
+Rombak total rekap voucher agar jelas untuk laporan penjualan:
+
+Backend:
+- Mode "Semua Data": filter by createdAt (batch creation), tampilkan
+  full batch counts (stock, sold, active, expired)
+- Mode period (harian/mingguan/bulanan): filter by firstLoginAt (sale
+  date), count hanya voucher terjual di periode tersebut
+- Return dailyBreakdown: rincian penjualan per hari dalam periode
+  (date, sold, active, expired, revenue)
+- Export Excel juga ikut rombak untuk konsistensi
+
+Frontend:
+- Summary card berubah sesuai mode: period mode tampilkan
+  Terjual/Aktif/Expired/Pendapatan; all mode tampilkan
+  Qty/Stock/Sold/Pendapatan
+- Tabel "Rincian Penjualan per Hari" muncul di period mode
+- Tabel batch: kolom "Tgl Terjual" di period mode, "Tgl Dibuat" di
+  all mode; kolom Stock disembunyikan di period mode
+- Mobile card view juga adaptif sesuai mode
+
+Support both local NAS (firstLoginAt dari sync MikroTik /system/script)
+dan RADIUS NAS (firstLoginAt dari post-auth hook).
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
