@@ -212,9 +212,9 @@ export async function GET(request: NextRequest) {
         sellingPrice: v.profile?.sellingPrice || 0,
         resellerFee: v.profile?.resellerFee || 0,
         routerName: v.router?.name || null,
-        firstLoginAt: v.firstLoginAt ? v.firstLoginAt.toISOString().replace('Z', '') : null,
-        expiresAt: v.expiresAt ? v.expiresAt.toISOString().replace('Z', '') : null,
-        createdAt: formatInTimeZone(v.createdAt, WIB_TIMEZONE, "yyyy-MM-dd'T'HH:mm:ss.SSS"),
+        firstLoginAt: v.firstLoginAt ? v.firstLoginAt.toISOString() : null,
+        expiresAt: v.expiresAt ? v.expiresAt.toISOString() : null,
+        createdAt: v.createdAt.toISOString(),
       })),
       pagination: {
         page,

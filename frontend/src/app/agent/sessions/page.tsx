@@ -1,9 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { nowWIB, WIB_TIMEZONE } from '@/lib/timezone';
-import { format } from 'date-fns';
-import { formatInTimeZone } from 'date-fns-tz';
+import { nowWIB, formatWIB } from '@/lib/timezone';
 import { useTranslation } from '@/hooks/useTranslation';
 import { apiAgent } from '@/lib/api';
 import {
@@ -145,8 +143,7 @@ export default function AgentSessionsPage() {
   const formatLocal = (date: Date | string | null, formatStr: string) => {
     if (!date) return '-';
     try {
-      const d = typeof date === 'string' ? new Date(date) : date;
-      return formatInTimeZone(d, WIB_TIMEZONE, formatStr);
+      return formatWIB(date, formatStr);
     } catch {
       return '-';
     }

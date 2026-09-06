@@ -1,9 +1,7 @@
 'use client';
 import { showSuccess, showError } from '@/lib/sweetalert';
-import { format } from 'date-fns';
-import { formatInTimeZone } from 'date-fns-tz';
 import { useTranslation } from '@/hooks/useTranslation';
-import { isExpiredWIB, WIB_TIMEZONE } from '@/lib/timezone';
+import { isExpiredWIB, formatWIB } from '@/lib/timezone';
 import { apiAgent } from '@/lib/api';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -75,13 +73,12 @@ export default function AgentVouchersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
-  // API /api/agent/dashboard returns voucher datetimes as local datetime strings
-  // (without timezone suffix), same pattern used by admin voucher page.
+  // API returns TRUE UTC ISO strings (with Z suffix). formatWIB converts
+  // TRUE UTC to company timezone for display.
   const formatLocal = (date: Date | string | null, formatStr: string) => {
     if (!date) return '-';
     try {
-      const d = typeof date === 'string' ? new Date(date) : date;
-      return formatInTimeZone(d, WIB_TIMEZONE, formatStr);
+      return formatWIB(date, formatStr);
     } catch {
       return '-';
     }

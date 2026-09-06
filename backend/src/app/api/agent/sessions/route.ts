@@ -113,9 +113,16 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // All DB dates are WIB-as-UTC. Use WIB-aware "now" for duration calc.
+    // DB radacct dates are WIB-as-UTC (FreeRADIUS FROM_UNIXTIME uses NAS clock).
+    // Voucher dates (firstLoginAt, expiresAt) are TRUE UTC (stored via Prisma).
+    //
+    // `now` (WIB-as-UTC) is used for duration calculations against radacct DB
+    // dates so both sides are in the same timezone space.
+    // `nowUtc` (TRUE UTC) is used for creating startTime ISO strings sent to
+    // the frontend, because formatInTimeZone() expects TRUE UTC input.
     const TZ_OFFSET_MS = getTimezoneOffsetMs();
-    const now = Date.now() + TZ_OFFSET_MS;
+    const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for radacct duration calc
+    const nowUtc = Date.now();             // True UTC for frontend timestamps
 
     // Build set of voucher codes that have an active radacct entry
     const activeRadacctCodes = new Set(sessions.map((s) => s.username));
@@ -136,14 +143,15 @@ export async function GET(request: NextRequest) {
 
       // For hotspot: always prefer voucher firstLoginAt so displayed start time
       // matches the voucher "waktu digunakan" value seen in voucher list.
+      // firstLoginAt is TRUE UTC (stored via Prisma).
       let effectiveStartMs = rawStartMs;
       let effectiveStartTime: string | null = session.acctstarttime
-        ? new Date(rawStartMs).toISOString().replace('Z', '')
+        ? new Date(rawStartMs).toISOString()
         : null;
 
       if (voucher?.firstLoginAt) {
         effectiveStartMs = new Date(voucher.firstLoginAt).getTime();
-        effectiveStartTime = new Date(effectiveStartMs).toISOString().replace('Z', '');
+        effectiveStartTime = new Date(effectiveStartMs).toISOString();
       }
 
       // Prefer DB-based duration (acctupdatetime - acctstarttime) to avoid
@@ -155,8 +163,16 @@ export async function GET(request: NextRequest) {
       } else {
         duration = Number(session.acctsessiontime ?? 0);
         if (duration === 0) {
-          duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+          // Use nowUtc if start is from firstLoginAt (TRUE UTC), now if from radacct (WIB-as-UTC)
+          const nowForCalc = voucher?.firstLoginAt ? nowUtc : now;
+          duration = Math.max(0, Math.floor((nowForCalc - effectiveStartMs) / 1000));
         }
+      }
+
+      // Re-derive startTime from TRUE UTC clock for frontend display.
+      // formatInTimeZone() on the frontend expects TRUE UTC input.
+      if (duration > 0) {
+        effectiveStartTime = new Date(nowUtc - duration * 1000).toISOString();
       }
 
       return {
@@ -226,8 +242,9 @@ export async function GET(request: NextRequest) {
 
     const syntheticSessions = orphanedVouchers.map((voucher, i) => {
         const effectiveStartMs = new Date(voucher.firstLoginAt!).getTime();
-        const effectiveStartTime = new Date(effectiveStartMs).toISOString().replace('Z', '');
-        const duration = Math.max(0, Math.floor((now - effectiveStartMs) / 1000));
+        const effectiveStartTime = new Date(effectiveStartMs).toISOString();
+        // firstLoginAt is TRUE UTC, so use nowUtc (TRUE UTC) for duration
+        const duration = Math.max(0, Math.floor((nowUtc - effectiveStartMs) / 1000));
         return {
           id: `voucher-${voucher.id}`,
           username: voucher.code,
