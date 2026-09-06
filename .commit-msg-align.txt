@@ -1,0 +1,9 @@
+fix: rekap voucher table column alignment & whitespace
+
+- Add whitespace-nowrap to all th/td so headers don't wrap/truncate
+- Add min-w to tables so columns don't get squished on narrow screens
+- Ensures header, body, and tfoot columns align symmetrically
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>
