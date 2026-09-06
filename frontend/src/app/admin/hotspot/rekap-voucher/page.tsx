@@ -92,16 +92,14 @@ export default function RekapVoucherPage() {
       setPeriodValue('');
       return;
     }
-    // Default to the period of the most recent voucher batch (if known),
-    // otherwise fall back to the current date
-    const refDateStr = allDataLatestDate.current || todayStr();
+    // Default to today — period filter is based on firstLoginAt (sale date),
+    // so today is the most relevant period for viewing recent sales
     if (mode === 'daily') {
-      setPeriodValue(refDateStr);
+      setPeriodValue(todayStr());
     } else if (mode === 'weekly') {
-      setPeriodValue(getWeekMonday(refDateStr));
+      setPeriodValue(getWeekMonday(todayStr()));
     } else {
-      // monthly — extract yyyy-MM from the date string
-      setPeriodValue(refDateStr.slice(0, 7));
+      setPeriodValue(currentMonthStr());
     }
   };
   const shiftPeriod = (delta: number) => {
@@ -169,6 +167,10 @@ export default function RekapVoucherPage() {
       allDataLatestDate.current = formatWIB(new Date(rekap[0].createdAt), 'yyyy-MM-dd');
     }
   }, [periodMode, rekap]);
+
+  // When switching to period mode, default to TODAY (not latest batch date)
+  // because period filter is now based on firstLoginAt (sale date), not createdAt.
+  // Sales happen in the present, so today is the most relevant default.
 
   const handleExport = async () => {
     try {
