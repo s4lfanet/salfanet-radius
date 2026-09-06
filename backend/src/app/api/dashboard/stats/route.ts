@@ -185,19 +185,27 @@ export async function GET(request: NextRequest) {
           const mtPppoeSet = new Set(mtPppoeUsers.map(u => u.username));
           const mtVoucherSet = new Set(mtVouchers.map(v => v.code));
           const localRouterIds = new Set(localRouters.map(r => r.id));
+          // Deduplicate by username — a user may have multiple active sessions
+          // (e.g. same username on 2 devices). Count each user only once.
+          const countedMtUsernames = new Set<string>();
           for (const s of mtSessions) {
             // Skip if already counted via radacct
             if (onlineUsernames.has(s.username)) continue;
             // Skip if already counted as synthetic voucher (avoid double-count)
             if (syntheticCodes.has(s.username)) continue;
+            // Skip if already counted from another MikroTik session
+            if (countedMtUsernames.has(s.username)) continue;
             if (mtPppoeSet.has(s.username)) {
               activeSessionsPPPoE++;
+              countedMtUsernames.add(s.username);
             } else if (mtVoucherSet.has(s.username)) {
               activeSessionsHotspot++;
+              countedMtUsernames.add(s.username);
             } else if (s.type === 'hotspot' && localRouterIds.has(s.routerId)) {
               // Unregistered local-auth hotspot session — count to match
               // the sessions page which shows ALL local-auth hotspot clients
               activeSessionsHotspot++;
+              countedMtUsernames.add(s.username);
             }
             // Unregistered PPPoE sessions are NOT counted (no ghost PPPoE)
           }
