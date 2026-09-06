@@ -610,7 +610,10 @@ export async function GET(request: NextRequest) {
         if (!localAuthRouterIds.has(ms.routerId)) continue;
       }
 
-      const sessionType = pppoeUser ? 'pppoe' : 'hotspot';
+      // Determine session type from MikroTik source type, not from DB
+      // registration. A PPPoE session from MikroTik is PPPoE even if the
+      // user is not registered in our pppoeUser table (local-auth router).
+      const sessionType = ms.type === 'pppoe' ? 'pppoe' : 'hotspot';
       const duration = parseUptime(ms.uptime);
       // pppoe-in interface: rx-byte = from client = upload, tx-byte = to client = download
       const uploadBytes = ms.rxBytes;

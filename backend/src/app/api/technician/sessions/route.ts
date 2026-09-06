@@ -3,26 +3,10 @@ import { jwtVerify } from 'jose';
 import { prisma } from '@/server/db/client';
 import { getTimezoneOffsetMs } from '@/lib/timezone';
 import { TECH_JWT_SECRET } from '@/server/auth/technician-secret';
-import { RouterOSAPI } from 'node-routeros';
+import { batchFetchMikrotikActiveSessions, parseUptime } from '@/server/services/mikrotik/active-sessions.service';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-// Parse MikroTik uptime format (e.g., "1h30m45s", "5m20s", "30s")
-function parseUptime(uptime: string): number {
-  let seconds = 0;
-  const weeks   = uptime.match(/(\d+)w/);
-  const days    = uptime.match(/(\d+)d/);
-  const hours   = uptime.match(/(\d+)h/);
-  const minutes = uptime.match(/(\d+)m/);
-  const secs    = uptime.match(/(\d+)s/);
-  if (weeks)   seconds += parseInt(weeks[1])   * 7 * 24 * 3600;
-  if (days)    seconds += parseInt(days[1])    * 24 * 3600;
-  if (hours)   seconds += parseInt(hours[1])   * 3600;
-  if (minutes) seconds += parseInt(minutes[1]) * 60;
-  if (secs)    seconds += parseInt(secs[1]);
-  return seconds;
-}
 
 function fmtBytes(b: number): string {
   if (b >= 1073741824) return `${(b / 1073741824).toFixed(2)} GB`;
@@ -40,71 +24,6 @@ function fmtDuration(seconds: number): string {
   if (h > 0) return `${h}h ${m}m ${s}s`;
   if (m > 0) return `${m}m ${s}s`;
   return `${s}s`;
-}
-
-// Fetch live PPPoE sessions from MikroTik /ppp/active for local-auth routers.
-// Also fetches /interface/print to get actual rx-byte/tx-byte counters,
-// since /ppp/active/print does NOT include byte counters on RouterOS v6.
-async function getMikrotikPppoeSessions(router: { id: string; name: string; nasname: string; ipAddress?: string | null; port?: number | null; username: string; password: string }) {
-  const api = new RouterOSAPI({
-    host: router.ipAddress || router.nasname,
-    port: router.port || 8728,
-    user: router.username,
-    password: router.password,
-    timeout: 15,
-  });
-  try {
-    await Promise.race([
-      api.connect(),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('connect timeout')), 15000)),
-    ]);
-
-    // 1. Fetch active PPPoE sessions (username, IP, MAC, uptime)
-    const active = await api.write('/ppp/active/print') as Array<any>;
-
-    // 2. Fetch all interfaces to get byte counters (rx-byte/tx-byte)
-    //    PPPoE interfaces have type="pppoe-in" and name="<pppoe-{username}>"
-    let byteMap = new Map<string, { rx: number; tx: number }>();
-    try {
-      const ifaces = await api.write('/interface/print') as Array<any>;
-      for (const iface of ifaces) {
-        if (iface.type === 'pppoe-in' && iface.name) {
-          // Extract username from interface name: <pppoe-username> → username
-          const match = iface.name.match(/^<pppoe-(.+)>$/);
-          if (match) {
-            byteMap.set(match[1], {
-              rx: Number(iface['rx-byte'] || 0),
-              tx: Number(iface['tx-byte'] || 0),
-            });
-          }
-        }
-      }
-    } catch (e: any) {
-      console.error(`[TechSessions] Interface byte fetch failed for ${router.name}:`, e?.message || e);
-    }
-
-    return active.map((s) => {
-      const username = s.name || s.user || '';
-      const bytes = byteMap.get(username);
-      // On MikroTik: rx-byte = traffic FROM client (upload), tx-byte = traffic TO client (download)
-      return {
-        username,
-        framedIpAddress: s.address || s['local-address'] || '',
-        macAddress: s['caller-id'] || '',
-        uptimeSeconds: parseUptime(s.uptime || '0s'),
-        uploadBytes: bytes?.rx ?? 0,
-        downloadBytes: bytes?.tx ?? 0,
-        sessionId: s['session-id'] || s['.id'] || '',
-        routerId: router.id,
-        routerName: router.name,
-      };
-    });
-  } catch (e: any) {
-    console.error(`[TechSessions] MikroTik PPP active fetch failed for ${router.name}:`, e?.message || e);
-    return [];
-  } finally {
-    try { await api.close(); } catch { /* ignore */ }
-  }
 }
 
 async function verifyTechnician(req: NextRequest) {
@@ -171,13 +90,15 @@ export async function GET(req: NextRequest) {
     take: 1000,
   });
 
-  // 3. Fetch live PPPoE sessions from MikroTik for local-auth routers
+  // 3. Fetch live sessions (PPPoE + hotspot) from MikroTik for local-auth routers
+  // Uses the shared batchFetchMikrotikActiveSessions service (same as admin).
   const mikrotikSessions = localRouters.length > 0
-    ? (await Promise.all(localRouters.map(r => getMikrotikPppoeSessions(r)))).flat()
+    ? await batchFetchMikrotikActiveSessions(localRouters, null)
     : [];
 
   const TZ_OFFSET_MS = getTimezoneOffsetMs();
   const now = Date.now() + TZ_OFFSET_MS; // WIB-as-UTC for duration calc
+  const nowUtc = Date.now(); // True UTC for frontend timestamps
 
   // Build router map for local sessions
   const routerMap = new Map(routers.map(r => [r.id, { id: r.id, name: r.name }]));
@@ -224,43 +145,43 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  const mikrotikMerged: MergedSession[] = mikrotikSessions.map((s) => {
-    const durationSec = s.uptimeSeconds;
-    const hours = Math.floor(durationSec / 3600);
-    const mins = Math.floor((durationSec % 3600) / 60);
-    const secs = durationSec % 60;
+  const mikrotikMerged: MergedSession[] = mikrotikSessions.map((s: any) => {
+    const durationSec = parseUptime(s.uptime || '0s');
+    const ul = s.rxBytes || 0;   // rx-byte = from client = upload
+    const dl = s.txBytes || 0;   // tx-byte = to client = download
     return {
-      id: `mt-${s.routerId}-${s.username}`,
+      id: `mt-${s.routerId}-${s.username}-${s.sessionId || s.macAddress || s.ipAddress || ''}`,
       username: s.username,
-      sessionId: s.sessionId,
-      framedIpAddress: s.framedIpAddress,
-      macAddress: s.macAddress,
-      startTime: new Date(Date.now() - durationSec * 1000).toISOString(),
+      sessionId: s.sessionId || '',
+      framedIpAddress: s.ipAddress || '',
+      macAddress: s.macAddress || '',
+      startTime: durationSec > 0 ? new Date(nowUtc - durationSec * 1000).toISOString() : new Date(nowUtc).toISOString(),
       duration: durationSec,
       durationFormatted: fmtDuration(durationSec),
-      uploadFormatted: fmtBytes(s.uploadBytes),
-      downloadFormatted: fmtBytes(s.downloadBytes),
-      totalFormatted: fmtBytes(s.uploadBytes + s.downloadBytes),
-      router: routerMap.get(s.routerId) ?? null,
+      uploadFormatted: fmtBytes(ul),
+      downloadFormatted: fmtBytes(dl),
+      totalFormatted: fmtBytes(ul + dl),
+      router: routerMap.get(s.routerId) ?? { id: s.routerId, name: s.routerName || 'Unknown' },
       user: null, // will be enriched from userMap below
     };
   });
 
   // Deduplicate: prefer radacct for RADIUS-auth routers, MikroTik for local-auth
-  const seenUsernames = new Set<string>();
+  // Allow multiple MikroTik sessions per username (different devices)
+  const seenRadacctUsernames = new Set<string>();
   let sessions: MergedSession[] = [];
 
   // First add radacct sessions (RADIUS-auth routers)
   for (const s of radacctSessions) {
-    if (!seenUsernames.has(s.username)) {
-      seenUsernames.add(s.username);
+    if (!seenRadacctUsernames.has(s.username)) {
+      seenRadacctUsernames.add(s.username);
       sessions.push(s);
     }
   }
-  // Then add MikroTik sessions (local-auth routers), skipping duplicates
+  // Then add ALL MikroTik sessions (local-auth routers), skipping only
+  // usernames already in radacct (avoid double-count for RADIUS routers)
   for (const s of mikrotikMerged) {
-    if (!seenUsernames.has(s.username)) {
-      seenUsernames.add(s.username);
+    if (!seenRadacctUsernames.has(s.username)) {
       sessions.push(s);
     }
   }
