@@ -998,7 +998,7 @@ export default function GenieACSDevicesPage() {
           {/* Device Detail Modal */}
           {showDetailModal && createPortal(
             <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-              <div className="bg-card rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mx-4">
+              <div className="bg-card rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
                 {/* Modal Header */}
                 <div className="bg-gradient-to-r from-primary to-primary p-3 text-white flex items-center justify-between">
                   <div className="flex items-center gap-2">
