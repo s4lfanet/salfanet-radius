@@ -171,7 +171,7 @@ export default function AddonTypesPage() {
       {/* Modal Create/Edit */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-background dark:bg-card border border-border dark:border-border rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-background dark:bg-card border border-border dark:border-border rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-foreground dark:text-muted-foreground flex items-center gap-2">
                 <Package className="h-5 w-5" />

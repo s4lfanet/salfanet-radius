@@ -1240,7 +1240,7 @@ export default function InvoicesPage() {
 
         {/* Print Dialog */}
         <Dialog open={printDialogInvoice !== null} onOpenChange={(open) => { if (!open) setPrintDialogInvoice(null); }}>
-          <DialogContent className="max-w-xs p-0 overflow-hidden gap-0">
+          <DialogContent className="max-w-xs p-0 overflow-y-auto gap-0">
             <div className="h-1 w-full bg-gradient-to-r from-primary to-blue-400" />
             <div className="p-5">
               <DialogHeader className="mb-4">
@@ -1293,7 +1293,7 @@ export default function InvoicesPage() {
 
         {/* Payment Dialog */}
         <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-          <DialogContent className="max-w-xs p-0 overflow-hidden gap-0">
+          <DialogContent className="max-w-xs p-0 overflow-y-auto gap-0">
             {/* Coloured header strip */}
             <div className="h-1 w-full bg-gradient-to-r from-success to-emerald-400" />
             <div className="p-5">
@@ -1344,7 +1344,7 @@ export default function InvoicesPage() {
 
         {/* Generate Invoice Dialog */}
         <Dialog open={showGenerateDialog} onOpenChange={(open) => { if (!open) { setShowGenerateDialog(false); setGenResult(null); } }}>
-          <DialogContent className="max-w-sm p-0 overflow-hidden gap-0">
+          <DialogContent className="max-w-sm p-0 overflow-y-auto gap-0">
             <div className="h-1 w-full bg-gradient-to-r from-blue-500 to-cyan-400" />
             <div className="p-5">
               <DialogHeader className="mb-4">

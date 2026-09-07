@@ -245,7 +245,7 @@ export default function RadCheckPage() {
             {/* Add Item Modal/Panel - Simplified inline for now */}
             {showAdd && createPortal(
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-2.5 sm:p-4">
-                    <div className="bg-card w-full max-w-lg rounded-xl border border-border shadow-xl p-6">
+                    <div className="bg-card w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-border shadow-xl p-4 sm:p-6">
                         <h3 className="text-lg font-bold mb-4">{t('radius.addAttribute')}</h3>
                         <div className="space-y-4">
                             <div>

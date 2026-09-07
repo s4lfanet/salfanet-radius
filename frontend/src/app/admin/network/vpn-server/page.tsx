@@ -784,7 +784,7 @@ export default function VpnServerPage() {
       {/* Test Password Modal */}
       {showTestPasswordModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowTestPasswordModal(false)}>
-          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-sm max-h-[90vh] overflow-y-auto mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="font-bold text-brand-500">{t('network.enterPassword')}</h2>
               <button onClick={() => setShowTestPasswordModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
@@ -804,7 +804,7 @@ export default function VpnServerPage() {
       {/* Setup Password Modal */}
       {showSetupPasswordModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setShowSetupPasswordModal(false)}>
-          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-md mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className="font-bold text-brand-500">Auto-Setup VPN Server?</h2>
               <button onClick={() => setShowSetupPasswordModal(false)}><X className="w-5 h-5 text-muted-foreground hover:text-foreground" /></button>
@@ -825,7 +825,7 @@ export default function VpnServerPage() {
       {/* Setup Result Modal */}
       {setupResultModal && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/70 backdrop-blur-sm" onClick={() => setupResultModal?.success !== null && setSetupResultModal(null)}>
-          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#1e1b2e] border border-border rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto mx-4" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h2 className={`font-bold ${setupResultModal.success === false ? 'text-red-400' : 'text-brand-500'}`}>{setupResultModal.title}</h2>
               <button onClick={() => setupResultModal.success !== null && setSetupResultModal(null)} disabled={setupResultModal.success === null}>

@@ -1301,7 +1301,7 @@ function CustomerAddonsTab({ userId }: { userId: string }) {
       {/* Assign Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">Tambah Layanan Tambahan</h3>
             <div className="space-y-3">
               <div>
@@ -1485,7 +1485,7 @@ function PaymentPromiseTab({ userId, userStatus }: { userId: string; userStatus:
       {/* Create Promise Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full p-6" onClick={e => e.stopPropagation()}>
+          <div className="bg-background dark:bg-[#0a0520] border border-border dark:border-[#bc13fe]/30 rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6" onClick={e => e.stopPropagation()}>
             <h3 className="text-lg font-bold text-foreground dark:text-[#e0d0ff] mb-4">Buat Janji Bayar</h3>
             <p className="text-xs text-muted-foreground mb-4">
               Pelanggan berjanji membayar tagihan pada tanggal tertentu. Akses internet akan dibuka hingga tanggal janji. Jika tidak dibayar hingga tanggal janji, pelanggan akan diisolir otomatis.
