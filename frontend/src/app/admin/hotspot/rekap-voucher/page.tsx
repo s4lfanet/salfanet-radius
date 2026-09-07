@@ -295,21 +295,21 @@ export default function RekapVoucherPage() {
             <table className="w-full text-xs min-w-[500px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="px-3 py-1.5 text-left font-medium whitespace-nowrap">Tanggal</th>
-                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap">Terjual</th>
-                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap">Aktif</th>
-                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap">Expired</th>
-                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap">Pendapatan</th>
+                  <th className="px-3 py-1.5 text-left font-medium whitespace-nowrap truncate overflow-hidden">Tanggal</th>
+                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap truncate overflow-hidden">Terjual</th>
+                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap truncate overflow-hidden">Aktif</th>
+                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap truncate overflow-hidden">Expired</th>
+                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap truncate overflow-hidden">Pendapatan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {dailyBreakdown.map(d => (
                   <tr key={d.date} className="hover:bg-muted/50">
-                    <td className="px-3 py-1.5 font-medium text-foreground whitespace-nowrap">{d.dateLabel}</td>
-                    <td className="px-3 py-1.5 text-right text-orange-500 font-medium whitespace-nowrap">{d.sold}</td>
+                    <td className="px-3 py-1.5 font-medium text-foreground whitespace-nowrap truncate overflow-hidden">{d.dateLabel}</td>
+                    <td className="px-3 py-1.5 text-right text-orange-500 font-medium whitespace-nowrap truncate overflow-hidden">{d.sold}</td>
                     <td className="px-3 py-1.5 text-right text-green-500 whitespace-nowrap">{d.active}</td>
                     <td className="px-3 py-1.5 text-right text-red-400 whitespace-nowrap">{d.expired}</td>
-                    <td className="px-3 py-1.5 text-right text-brand-500 font-medium whitespace-nowrap">{formatCurrency(d.revenue)}</td>
+                    <td className="px-3 py-1.5 text-right text-brand-500 font-medium whitespace-nowrap truncate overflow-hidden">{formatCurrency(d.revenue)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -319,7 +319,7 @@ export default function RekapVoucherPage() {
                   <td className="px-3 py-1.5 text-right text-orange-500 whitespace-nowrap">{dailyBreakdown.reduce((s,d) => s+d.sold, 0)}</td>
                   <td className="px-3 py-1.5 text-right text-green-500 whitespace-nowrap">{dailyBreakdown.reduce((s,d) => s+d.active, 0)}</td>
                   <td className="px-3 py-1.5 text-right text-red-400 whitespace-nowrap">{dailyBreakdown.reduce((s,d) => s+d.expired, 0)}</td>
-                  <td className="px-3 py-1.5 text-right text-brand-500 whitespace-nowrap">{formatCurrency(dailyBreakdown.reduce((s,d) => s+d.revenue, 0))}</td>
+                  <td className="px-3 py-1.5 text-right text-brand-500 whitespace-nowrap truncate overflow-hidden">{formatCurrency(dailyBreakdown.reduce((s,d) => s+d.revenue, 0))}</td>
                 </tr>
               </tfoot>
             </table>
@@ -335,17 +335,17 @@ export default function RekapVoucherPage() {
             <table className="w-full text-xs min-w-[400px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
-                  <th className="px-3 py-1.5 text-left font-medium whitespace-nowrap">Agent</th>
-                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap">Terjual</th>
-                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap">Profit</th>
+                  <th className="px-3 py-1.5 text-left font-medium whitespace-nowrap truncate overflow-hidden">Agent</th>
+                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap truncate overflow-hidden">Terjual</th>
+                  <th className="px-3 py-1.5 text-right font-medium whitespace-nowrap truncate overflow-hidden">Profit</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {Array.from(agentMap.entries()).map(([id, a]) => (
                   <tr key={id} className="hover:bg-muted/50">
-                    <td className="px-3 py-1.5 font-medium text-foreground whitespace-nowrap">{a.name}</td>
-                    <td className="px-3 py-1.5 text-right text-muted-foreground whitespace-nowrap">{a.sold}</td>
-                    <td className="px-3 py-1.5 text-right text-primary font-medium whitespace-nowrap">{formatCurrency(a.profit)}</td>
+                    <td className="px-3 py-1.5 font-medium text-foreground whitespace-nowrap truncate overflow-hidden">{a.name}</td>
+                    <td className="px-3 py-1.5 text-right text-muted-foreground whitespace-nowrap truncate overflow-hidden">{a.sold}</td>
+                    <td className="px-3 py-1.5 text-right text-primary font-medium whitespace-nowrap truncate overflow-hidden">{formatCurrency(a.profit)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -422,28 +422,28 @@ export default function RekapVoucherPage() {
               <table className="w-full text-xs min-w-[1100px]">
                 <thead className="bg-muted border-b border-border text-muted-foreground">
                   <tr>
-                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap w-8">#</th>
-                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Batch</th>
-                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap">{isPeriodMode ? 'Tgl Terjual' : 'Tgl Dibuat'}</th>
-                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Agent</th>
-                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Profile</th>
-                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Router</th>
-                    {!isPeriodMode && <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Qty</th>}
-                    {!isPeriodMode && <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Stok</th>}
-                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Terjual</th>
-                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Aktif</th>
-                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Exp</th>
-                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Harga</th>
-                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Pendapatan</th>
-                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Profit Agent</th>
+                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap truncate overflow-hidden w-8">#</th>
+                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap truncate overflow-hidden">Batch</th>
+                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap truncate overflow-hidden">{isPeriodMode ? 'Tgl Terjual' : 'Tgl Dibuat'}</th>
+                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap truncate overflow-hidden">Agent</th>
+                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap truncate overflow-hidden">Profile</th>
+                    <th className="px-3 py-2 text-left font-medium whitespace-nowrap truncate overflow-hidden">Router</th>
+                    {!isPeriodMode && <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Qty</th>}
+                    {!isPeriodMode && <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Stok</th>}
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Terjual</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Aktif</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Exp</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Harga</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Pendapatan</th>
+                    <th className="px-3 py-2 text-right font-medium whitespace-nowrap truncate overflow-hidden">Profit Agent</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {filteredRekap.map((item, i) => (
                     <tr key={item.batchCode} className="hover:bg-muted/50">
-                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{i+1}</td>
-                      <td className="px-3 py-2 font-mono text-foreground whitespace-nowrap">{item.batchCode}</td>
-                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap truncate overflow-hidden">{i+1}</td>
+                      <td className="px-3 py-2 font-mono text-foreground whitespace-nowrap truncate overflow-hidden">{item.batchCode}</td>
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap truncate overflow-hidden">
                         {isPeriodMode && item.firstLoginAt ? formatDate(item.firstLoginAt) : formatDate(item.createdAt)}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">
@@ -451,8 +451,8 @@ export default function RekapVoucherPage() {
                           <div><div className="font-medium text-foreground">{item.agent.name}</div><div className="text-muted-foreground">{item.agent.phone}</div></div>
                         ) : <span className="text-muted-foreground italic">Admin</span>}
                       </td>
-                      <td className="px-3 py-2 text-foreground whitespace-nowrap">{item.profile.name}</td>
-                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">{item.router?.name || '-'}</td>
+                      <td className="px-3 py-2 text-foreground whitespace-nowrap truncate overflow-hidden">{item.profile.name}</td>
+                      <td className="px-3 py-2 text-muted-foreground whitespace-nowrap truncate overflow-hidden">{item.router?.name || '-'}</td>
                       {!isPeriodMode && (
                         <td className="px-3 py-2 text-right whitespace-nowrap">
                           <button onClick={() => openVoucherModal(item.batchCode, '')} className="text-primary hover:underline cursor-pointer font-medium">{item.totalQty}</button>
@@ -472,22 +472,22 @@ export default function RekapVoucherPage() {
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button onClick={() => openVoucherModal(item.batchCode, 'EXPIRED')} className="text-muted-foreground hover:underline cursor-pointer">{item.expired}</button>
                       </td>
-                      <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap">{item.sellingPrice > 0 ? formatCurrency(item.sellingPrice) : '-'}</td>
-                      <td className="px-3 py-2 text-right font-medium text-brand-500 whitespace-nowrap">{item.totalRevenue > 0 ? formatCurrency(item.totalRevenue) : '-'}</td>
+                      <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap truncate overflow-hidden">{item.sellingPrice > 0 ? formatCurrency(item.sellingPrice) : '-'}</td>
+                      <td className="px-3 py-2 text-right font-medium text-brand-500 whitespace-nowrap truncate overflow-hidden">{item.totalRevenue > 0 ? formatCurrency(item.totalRevenue) : '-'}</td>
                       <td className="px-3 py-2 text-right font-medium text-primary whitespace-nowrap">{item.agentProfit > 0 ? formatCurrency(item.agentProfit) : <span className="text-muted-foreground">-</span>}</td>
                     </tr>
                   ))}
                 </tbody>
                 <tfoot className="bg-muted border-t border-border font-bold">
                   <tr>
-                    <td colSpan={6} className="px-3 py-2 text-right text-foreground whitespace-nowrap">Total:</td>
+                    <td colSpan={6} className="px-3 py-2 text-right text-foreground whitespace-nowrap truncate overflow-hidden">Total:</td>
                     {!isPeriodMode && <td className="px-3 py-2 text-right text-primary whitespace-nowrap">{totalQty}</td>}
                     {!isPeriodMode && <td className="px-3 py-2 text-right text-green-500 whitespace-nowrap">{totalStock}</td>}
                     <td className="px-3 py-2 text-right text-orange-500 whitespace-nowrap">{totalSold}</td>
                     <td className="px-3 py-2 text-right text-green-500 whitespace-nowrap">{totalActive}</td>
                     <td className="px-3 py-2 text-right text-red-400 whitespace-nowrap">{totalExpired}</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap">-</td>
-                    <td className="px-3 py-2 text-right text-brand-500 whitespace-nowrap">{formatCurrency(totalRevenue)}</td>
+                    <td className="px-3 py-2 text-right text-muted-foreground whitespace-nowrap truncate overflow-hidden">-</td>
+                    <td className="px-3 py-2 text-right text-brand-500 whitespace-nowrap truncate overflow-hidden">{formatCurrency(totalRevenue)}</td>
                     <td className="px-3 py-2 text-right text-primary whitespace-nowrap">{formatCurrency(totalAgentProfit)}</td>
                   </tr>
                 </tfoot>

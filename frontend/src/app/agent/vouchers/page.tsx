@@ -215,7 +215,7 @@ export default function AgentVouchersPage() {
       {/* Vouchers List */}
       <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
         <div className="px-5 py-4 border-b border-border">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-3 min-w-0">
             <div>
               <h2 className="text-base font-bold text-foreground">{t('agent.portal.voucherList')}</h2>
               <p className="text-xs text-muted-foreground mt-0.5">{t('agent.portal.total')}: {pagination.total} {t('agent.portal.voucher').toLowerCase()}</p>
@@ -306,7 +306,7 @@ export default function AgentVouchersPage() {
           ) : (
             vouchers.map((voucher) => (
               <div key={voucher.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 min-w-0">
                   <div className="flex items-center gap-2 min-w-0">
                     {voucher.status === 'WAITING' && (
                       <input

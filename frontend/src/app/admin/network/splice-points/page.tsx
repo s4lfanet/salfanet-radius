@@ -442,7 +442,7 @@ export default function SplicePointsPage() {
                     <span className="text-[10px] font-medium text-blue-700 dark:text-blue-400">{t('splicePoint.connection')}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-2 min-w-0">
                     {/* Incoming Core */}
                     <div className="flex-1 text-center p-2 bg-card rounded-lg">
                       <p className="text-[9px] text-gray-500 mb-1">Incoming</p>

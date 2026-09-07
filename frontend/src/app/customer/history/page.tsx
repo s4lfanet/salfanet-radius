@@ -519,7 +519,7 @@ export default function PaymentHistoryPage() {
       </div>
 
       {payments.length === 0 && (
-        <CyberCard className="p-10 text-center bg-card border-2 border-primary/30">
+        <CyberCard className="p-6 sm:p-10 text-center bg-card border-2 border-primary/30">
           <Receipt className="w-14 h-14 mx-auto mb-3 text-primary/40" />
           <h3 className="text-sm font-bold text-white mb-1">Tidak Ada Tagihan</h3>
           <p className="text-xs text-muted-foreground">Belum ada tagihan yang dicatat</p>
@@ -550,7 +550,7 @@ export default function PaymentHistoryPage() {
                   <div className={`h-1 w-full ${payment.status === 'OVERDUE' ? 'bg-destructive' : 'bg-warning'}`} />
                   <div className="p-4">
                     {/* Header row */}
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between mb-3 min-w-0">
                       <div className="flex items-center gap-2">
                         <div className={`p-1.5 rounded-lg flex items-center justify-center ${config.bgColor} border ${config.borderColor}`}>
                           <StatusIcon className={`w-3.5 h-3.5 ${config.textColor}`} />
@@ -679,7 +679,7 @@ export default function PaymentHistoryPage() {
                   <div className="h-1 w-full bg-gradient-to-r from-success/50 to-success/10" />
                   <div className="p-4 pt-4">
                     {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-start justify-between mb-3 min-w-0">
                       <div className="flex items-center gap-2.5">
                         <div className="p-2 rounded-lg bg-success/10 border border-success/20">
                           {payment.isPackageChange ? <Package className="w-4 h-4 text-primary" /> : <Receipt className="w-4 h-4 text-success" />}

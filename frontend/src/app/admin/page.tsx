@@ -457,9 +457,9 @@ export default function AdminDashboard() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
 
@@ -520,7 +520,7 @@ export default function AdminDashboard() {
                 <>
                   {/* Background glow */}
                   <div className={`absolute -top-8 -right-8 w-24 h-24 ${card.bgGlow} rounded-full blur-2xl opacity-50 group-hover:opacity-80 transition-opacity`} />
-                  <div className="relative flex items-center justify-between gap-2">
+                  <div className="relative flex items-center justify-between gap-2 min-w-0">
                     <div className="flex-1 min-w-0">
                       <p className="text-[10px] sm:text-[11px] font-medium text-muted-foreground uppercase tracking-wider truncate">
                         {card.title}
@@ -738,7 +738,7 @@ export default function AdminDashboard() {
 
           {/* Agent Voucher Sales */}
           <div className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 min-w-0">
               <div>
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Store className="w-4 h-4 text-primary" />
@@ -790,7 +790,7 @@ export default function AdminDashboard() {
 
           {/* RADIUS Auth Log */}
           <div className="bg-card/60 rounded-xl border border-white/10 p-3 sm:p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 min-w-0">
               <div>
                 <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-brand-500" />

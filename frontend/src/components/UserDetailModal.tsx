@@ -477,7 +477,7 @@ export default function UserDetailModal({
 
                 {/* GPS Location */}
                 <div className="col-span-2">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2 min-w-0">
                     <label className="block text-sm font-medium text-foreground dark:text-[#e0d0ff]">{t('userModal.gpsLocation')}</label>
                     <div className="flex gap-2">
                       {onLatLngChange && (
@@ -899,7 +899,7 @@ export default function UserDetailModal({
                       key={session.id}
                       className="p-4 border border-border dark:border-[#bc13fe]/30 rounded-lg bg-muted/30 dark:bg-[#0a0520]/30"
                     >
-                      <div className="flex items-start justify-between mb-2">
+                      <div className="flex items-start justify-between mb-2 min-w-0">
                         <div>
                           <div className="flex items-center gap-2">
                             {session.isOnline ? (

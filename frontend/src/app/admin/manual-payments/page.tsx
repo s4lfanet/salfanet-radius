@@ -235,9 +235,9 @@ export default function ManualPaymentsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
@@ -253,7 +253,7 @@ export default function ManualPaymentsPage() {
         <Card className="border-2 border-warning/30 bg-card backdrop-blur-sm ">
           <CardHeader className="p-4 pb-3">
             <CardDescription className="text-xs font-bold text-warning uppercase tracking-wide">{t('manualPayment.pendingVerification')}</CardDescription>
-            <CardTitle className="text-4xl font-black text-warning drop-">{stats.pending}</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-black text-warning drop-">{stats.pending}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-2 border-success/30 bg-card backdrop-blur-sm ">
@@ -356,7 +356,7 @@ export default function ManualPaymentsPage() {
                   className="bg-card rounded-xl border border-border p-3 space-y-2"
                 >
                   {/* Header: Customer + Status */}
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="min-w-0 flex-1">
                       <div className="font-medium text-sm text-foreground truncate">{payment.user.name}</div>
                       <div className="text-xs text-muted-foreground">{payment.user.username}</div>

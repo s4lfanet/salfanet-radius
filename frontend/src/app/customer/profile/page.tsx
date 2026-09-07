@@ -110,7 +110,7 @@ export default function CustomerProfilePage() {
   if (loading) {
     return (
       <div className="p-3 flex justify-center items-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary "></div>
+        <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-primary "></div>
       </div>
     );
   }
@@ -147,7 +147,7 @@ export default function CustomerProfilePage() {
 
       {/* Contact Information */}
       <CyberCard className="p-4 bg-card border-2 border-accent/30 dark: shadow-sm">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 min-w-0">
           <h2 className="text-sm font-bold text-accent flex items-center gap-2 uppercase tracking-wider drop-">
             <Mail size={16} className="drop-" />
             {t('profile.contactInfo')}

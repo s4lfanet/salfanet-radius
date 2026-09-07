@@ -200,7 +200,7 @@ export default function CollectorSettlementsPage() {
             <div className="text-center py-8 text-muted-foreground">Memuat...</div>
           ) : rangeData ? (
             rangeData.rows.length === 0 ? (
-              <div className="bg-card border border-border rounded-lg p-8 text-center text-muted-foreground">Tidak ada data.</div>
+              <div className="bg-card border border-border rounded-lg p-4 sm:p-8 text-center text-muted-foreground">Tidak ada data.</div>
             ) : (
               <div className="overflow-x-auto bg-card border border-border rounded-xl">
                 <table className="w-full text-sm">

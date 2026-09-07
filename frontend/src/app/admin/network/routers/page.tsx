@@ -378,8 +378,8 @@ export default function RouterPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <div className="relative z-10 flex flex-col items-center gap-4">
           <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop-" />
@@ -926,7 +926,7 @@ export default function RouterPage() {
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, secret: generateSecret() })}
-                      className="px-4 py-3 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all font-medium whitespace-nowrap"
+                      className="px-4 py-3 bg-primary/10 border border-border text-primary rounded-xl hover:bg-primary/10 transition-all font-medium whitespace-nowrap truncate overflow-hidden"
                       title="Generate new secret"
                     >
                       <RefreshCw className="w-4 h-4" />
@@ -938,7 +938,7 @@ export default function RouterPage() {
                 {/* Test Connection - only for MikroTik */}
                 {!editingRouter && formData.type === 'mikrotik' && (
                   <div className="p-4 bg-primary/10 border border-border rounded-xl">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-3 min-w-0">
                       <span className="text-sm font-medium text-foreground">{t('network.testConnection')}</span>
                       <button
                         type="button"

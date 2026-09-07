@@ -191,7 +191,7 @@ export default function AutoProvisionPage() {
 
         {/* Parameters */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <label className="text-sm font-medium text-muted-foreground">
               Parameters to set
             </label>

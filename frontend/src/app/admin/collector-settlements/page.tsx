@@ -153,7 +153,7 @@ export default function AdminCollectorSettlementsPage() {
               <Loader2 className="w-6 h-6 animate-spin" />
             </div>
           ) : filtered.length === 0 ? (
-            <div className="card p-8 text-center text-muted-foreground">
+            <div className="card p-4 sm:p-8 text-center text-muted-foreground">
               <Wallet className="w-10 h-10 mx-auto mb-3 opacity-20" />
               Tidak ada setoran kolektor pada tanggal ini.
             </div>
@@ -247,7 +247,7 @@ export default function AdminCollectorSettlementsPage() {
           )}
         </>
       ) : (
-        <div className="card p-8 text-center text-muted-foreground">
+        <div className="card p-4 sm:p-8 text-center text-muted-foreground">
           Mode rentang tanggal akan segera hadir.
         </div>
       )}

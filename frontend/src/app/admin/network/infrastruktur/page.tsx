@@ -77,7 +77,7 @@ function StatusBadge({ status }: { status: string }) {
 
 function CoordCell({ lat, lng }: { lat: number; lng: number }) {
   return (
-    <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
+    <span className="font-mono text-xs text-muted-foreground whitespace-nowrap truncate overflow-hidden">
       {Number(lat).toFixed(5)}, {Number(lng).toFixed(5)}
     </span>
   );
@@ -131,7 +131,7 @@ function OTBTable({ search }: { search: string }) {
               <p className="text-xs text-muted-foreground font-mono">{r.code}</p>
             </td>
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
-            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap truncate overflow-hidden">
               {r.usedPorts}/{r.portCount}
             </td>
             <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -200,7 +200,7 @@ function JCTable({ search }: { search: string }) {
             <td className="px-4 py-3"><StatusBadge status={r.status} /></td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.type?.replace(/_/g, ' ') ?? '-'}</td>
             <td className="px-4 py-3 text-sm text-muted-foreground">{r.closureType ?? '-'}</td>
-            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">{r.fiberCount ?? '-'}</td>
+            <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap truncate overflow-hidden">{r.fiberCount ?? '-'}</td>
             <td className="px-4 py-3"><CoordCell lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3"><MapPinLink lat={r.latitude} lng={r.longitude} /></td>
             <td className="px-4 py-3">

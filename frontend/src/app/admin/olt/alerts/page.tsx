@@ -221,8 +221,8 @@ export default function OLTAlertsPage() {
       {/* Alert List */}
       <div className="space-y-2">
         {alerts.length === 0 ? (
-          <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-12 text-center">
-            <CheckCircle className="h-12 w-12 text-emerald-400 mx-auto mb-3" />
+          <div className="bg-card rounded-lg border border-slate-200 dark:border-slate-800 p-6 sm:p-12 text-center">
+            <CheckCircle className="h-10 w-10 sm:h-12 sm:w-12 text-emerald-400 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground font-medium">Tidak ada alert</p>
             <p className="text-xs text-muted-foreground/70">Semua sistem berjalan normal</p>
           </div>

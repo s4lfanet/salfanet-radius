@@ -396,7 +396,7 @@ export default function PushNotificationsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-blue-200/50 bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/20 dark:to-background">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 min-w-0">
               <div className="p-2 bg-blue-500/10 rounded-lg flex items-center justify-center">
                 <Users className="w-5 h-5 text-blue-600" />
               </div>
@@ -409,7 +409,7 @@ export default function PushNotificationsPage() {
 
         <Card className="border-emerald-200/50 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/20 dark:to-background">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 min-w-0">
               <div className="p-2 bg-emerald-500/10 rounded-lg flex items-center justify-center">
                 <Smartphone className="w-5 h-5 text-emerald-600" />
               </div>
@@ -422,7 +422,7 @@ export default function PushNotificationsPage() {
 
         <Card className="border-orange-200/50 bg-gradient-to-br from-orange-50 to-white dark:from-orange-950/20 dark:to-background">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 min-w-0">
               <div className="p-2 bg-orange-500/10 rounded-lg flex items-center justify-center">
                 <RadioTower className="w-5 h-5 text-orange-600" />
               </div>
@@ -435,7 +435,7 @@ export default function PushNotificationsPage() {
 
         <Card className="border-purple-200/50 bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/20 dark:to-background">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 min-w-0">
               <div className="p-2 bg-primary/10 rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-purple-600" />
               </div>
@@ -865,7 +865,7 @@ export default function PushNotificationsPage() {
                 <div className="block md:hidden space-y-3.5">
                   {broadcasts.map((bc) => (
                     <div key={bc.id} className="bg-card rounded-xl border border-border dark:border-border p-3.5">
-                      <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="flex items-start justify-between gap-2 min-w-0 mb-2">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold leading-tight">{bc.title}</p>
                           <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{bc.body}</p>
@@ -954,7 +954,7 @@ export default function PushNotificationsPage() {
                             <span className="text-xs font-medium text-muted-foreground">{bc.sentBy || 'admin'}</span>
                           </TableCell>
                           <TableCell>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            <span className="text-xs text-muted-foreground whitespace-nowrap truncate overflow-hidden">
                               {formatWIB(bc.createdAt, 'dd MMM yyyy HH:mm')}
                             </span>
                           </TableCell>

@@ -640,8 +640,8 @@ export default function GenieACSDevicesPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
@@ -652,9 +652,9 @@ export default function GenieACSDevicesPage() {
     return (
       <div className="bg-background relative">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
           <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
         </div>
         <div className="relative z-10 space-y-6">
@@ -671,7 +671,7 @@ export default function GenieACSDevicesPage() {
             </div>
 
             {/* Not Configured */}
-            <div className="bg-card rounded-lg border border-border p-8 text-center">
+            <div className="bg-card rounded-lg border border-border p-4 sm:p-8 text-center">
               <div className="w-16 h-16 mx-auto mb-4 bg-warning/20 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
                 <Info className="w-8 h-8 text-warning" />
               </div>
@@ -696,9 +696,9 @@ export default function GenieACSDevicesPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
@@ -805,7 +805,7 @@ export default function GenieACSDevicesPage() {
               ) : (
                 filteredDevices.map((device) => (
                   <div key={device._id} className="bg-card rounded-xl border border-border p-3">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-2 min-w-0">
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-foreground truncate">{device.serialNumber || '-'}</p>
                         <p className="text-[10px] text-muted-foreground">{device.manufacturer || '-'} &middot; {device.model || '-'}</p>
@@ -922,8 +922,8 @@ export default function GenieACSDevicesPage() {
                             <p className="text-[10px] text-muted-foreground">{device.manufacturer || '-'}</p>
                           </div>
                         </td>
-                        <td className="py-2 px-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap">{device.model || '-'}</td>
-                        <td className="py-2 px-2 font-mono text-[10px] text-muted-foreground dark:text-muted-foreground whitespace-nowrap">{device.tr069IP || '-'}</td>
+                        <td className="py-2 px-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap truncate overflow-hidden">{device.model || '-'}</td>
+                        <td className="py-2 px-2 font-mono text-[10px] text-muted-foreground dark:text-muted-foreground whitespace-nowrap truncate overflow-hidden">{device.tr069IP || '-'}</td>
                         <td className="py-2 px-2 whitespace-nowrap">
                           <div>
                             <p className="text-primary dark:text-primary">{device.pppoeUsername || '-'}</p>
@@ -946,7 +946,7 @@ export default function GenieACSDevicesPage() {
                             </span>
                           ) : '-'}
                         </td>
-                        <td className="py-2 px-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap">{device.uptime || '-'}</td>
+                        <td className="py-2 px-2 text-muted-foreground dark:text-muted-foreground whitespace-nowrap truncate overflow-hidden">{device.uptime || '-'}</td>
                         <td className="py-2 px-2 text-center whitespace-nowrap">
                           <span className={`inline-flex items-center px-1.5 py-0.5 text-[10px] font-medium rounded ${device.status === 'Online'
                             ? 'bg-success/20 text-success dark:bg-green-900/30 dark:text-success'

@@ -136,7 +136,7 @@ export default function AgentDepositsPage() {
           ) : (
             deposits.map((deposit) => (
               <div key={deposit.id} className="p-3 space-y-2">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 min-w-0">
                   <div className="min-w-0">
                     <p className="text-sm font-medium">{deposit.agent.name}</p>
                     <p className="text-[10px] text-muted-foreground">{deposit.agent.phone}</p>

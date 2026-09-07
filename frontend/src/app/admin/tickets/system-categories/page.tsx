@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useTranslation } from '@/hooks/useTranslation';
 import { Tag, Info, Clock, AlertCircle, AlertTriangle, CheckCircle, ArrowRight } from 'lucide-react';
@@ -78,7 +78,7 @@ export default function SystemTicketCategoriesPage() {
               key={category.id}
               className="bg-card dark:bg-[#1a1525] border border-border dark:border-gray-800 rounded-lg p-4 hover:border-primary/30 dark:hover:border-cyan-500/30 transition-colors"
             >
-              <div className="flex items-start justify-between mb-3">
+              <div className="flex items-start justify-between mb-3 min-w-0">
                 <div className="flex items-center gap-2">
                   <div
                     className="w-3 h-3 rounded-full"

@@ -110,7 +110,7 @@ function LogicalTraceTab() {
           {traceResult ? (
             <TraceResultDisplay path={traceResult.path} summary={traceResult.summary} onNodeClick={() => {}} />
           ) : (
-            <div className="bg-card rounded-lg shadow p-12 text-center border border-border">
+            <div className="bg-card rounded-lg shadow p-6 sm:p-12 text-center border border-border">
               <GitBranch className="w-20 h-20 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-300 mb-2">{t('network.tracing.selectNodeToStart')}</h3>
               <p className="text-sm text-gray-500">{t('network.tracing.selectNodeDescription')}</p>
@@ -284,7 +284,7 @@ function PhysicalTraceTab() {
 
       {!traceResult && !loading && (
         <Card className="bg-gray-50 dark:bg-gray-900 border-dashed">
-          <CardContent className="p-6 sm:p-8 text-center">
+          <CardContent className="p-6 sm:p-4 sm:p-8 text-center">
             <Route className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-muted-foreground mb-2">How to Trace Fiber Paths</h3>
             <p className="text-gray-500 max-w-md mx-auto">Select a search type, enter the core ID or device details, and click Trace to visualize the complete fiber path.</p>

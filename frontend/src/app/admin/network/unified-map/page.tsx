@@ -377,7 +377,7 @@ export default function UnifiedMapPage() {
           {/* Add mode hint */}
           {addMode && !connectMode && (
             <div className="absolute inset-0 z-[500] cursor-crosshair pointer-events-none">
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium whitespace-nowrap">
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium whitespace-nowrap truncate overflow-hidden">
                 Klik lokasi di peta untuk menempatkan node baru
               </div>
             </div>
@@ -386,7 +386,7 @@ export default function UnifiedMapPage() {
           {/* ── Connect mode hint ──────────────────────────────────────── */}
           {connectMode && !connectTarget && (
             <div className="absolute inset-0 z-[500] pointer-events-none">
-              <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium whitespace-nowrap">
+              <div className="absolute top-12 left-1/2 -translate-x-1/2 bg-amber-500 text-white text-sm px-4 py-2 rounded-full shadow-lg font-medium whitespace-nowrap truncate overflow-hidden">
                 {!connectSource
                   ? '🔗 Klik node SUMBER (asal koneksi)'
                   : `🔗 ${TYPE_LABEL[connectSource.type] ?? connectSource.type}: ${connectSource.name} - Klik node TUJUAN`}

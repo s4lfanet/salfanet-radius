@@ -57,7 +57,7 @@ export default function CollectorDashboardPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {cards.map((card, i) => (
           <div key={i} className="bg-card border border-border rounded-xl p-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-3 min-w-0">
               <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${colorMap[card.color]} flex items-center justify-center text-white`}>
                 {card.icon}
               </div>

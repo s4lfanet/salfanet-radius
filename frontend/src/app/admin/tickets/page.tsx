@@ -307,9 +307,9 @@ export default function AdminTicketsPage() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       
@@ -337,7 +337,7 @@ export default function AdminTicketsPage() {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 sm:gap-3 mb-4">
           <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.totalTickets')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.total}</p>
@@ -347,7 +347,7 @@ export default function AdminTicketsPage() {
           </div>
 
           <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.openTickets')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byStatus.open}</p>
@@ -357,7 +357,7 @@ export default function AdminTicketsPage() {
           </div>
 
           <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.urgentTickets')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byPriority.urgent}</p>
@@ -367,7 +367,7 @@ export default function AdminTicketsPage() {
           </div>
 
           <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.unassigned')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.unassigned}</p>
@@ -377,7 +377,7 @@ export default function AdminTicketsPage() {
           </div>
 
           <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.inProgress')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byStatus.inProgress}</p>
@@ -387,7 +387,7 @@ export default function AdminTicketsPage() {
           </div>
 
           <div className="bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.resolved')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">{stats.byStatus.resolved}</p>
@@ -397,7 +397,7 @@ export default function AdminTicketsPage() {
           </div>
 
           <div className="col-span-2 sm:col-span-1 bg-card rounded-xl border border-border p-3  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('ticket.avgResponseTime')}</p>
                 <p className="text-lg sm:text-xl font-bold text-foreground mt-1">
@@ -522,7 +522,7 @@ export default function AdminTicketsPage() {
                         </span>
                         {ticket.category && (
                           <span
-                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-foreground whitespace-nowrap"
+                            className="px-1.5 py-0.5 rounded text-[10px] font-medium text-foreground whitespace-nowrap truncate overflow-hidden"
                             style={{ backgroundColor: ticket.category.color }}
                           >
                             {ticket.category.name}
@@ -563,14 +563,14 @@ export default function AdminTicketsPage() {
                   onClick={() => router.push(`/admin/tickets/${ticket.id}`)}
                   className="p-3 hover:bg-muted/50 cursor-pointer transition-colors active:bg-muted"
                 >
-                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <div className="flex items-start justify-between gap-2 min-w-0 mb-1.5">
                     <div className="min-w-0">
                       <span className="text-[11px] font-mono font-medium text-primary">
                         #{ticket.ticketNumber}
                       </span>
                       <p className="text-xs font-medium text-foreground mt-0.5 line-clamp-2">{ticket.subject}</p>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap flex-shrink-0 ${getPriorityColor(ticket.priority)}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium whitespace-nowrap truncate overflow-hidden flex-shrink-0 ${getPriorityColor(ticket.priority)}`}>
                       {t(`ticket.priority_${ticket.priority}`)}
                     </span>
                   </div>
@@ -659,7 +659,7 @@ export default function AdminTicketsPage() {
                     {dispatchData?.customers && dispatchData.customers.length > 0 && customerSearch && !customerLockedIn && (
                       <div className="mt-1 bg-background border border-border rounded-lg max-h-44 overflow-y-auto shadow-lg z-10">
                         {dispatchData.customers.map(c => (
-                          <button key={c.id} onClick={() => selectCustomer(c)} className="w-full text-left px-3 py-2.5 text-xs hover:bg-muted transition flex items-center justify-between gap-2">
+                          <button key={c.id} onClick={() => selectCustomer(c)} className="w-full text-left px-3 py-2.5 text-xs hover:bg-muted transition flex items-center justify-between gap-2 min-w-0">
                             <div className="flex flex-col gap-0.5 min-w-0">
                               <span className="font-medium text-foreground truncate">{c.name || c.username}</span>
                               <span className="text-muted-foreground">{c.phone} {c.username && c._source === 'pppoe' ? `· @${c.username}` : ''}</span>

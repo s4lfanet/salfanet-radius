@@ -428,7 +428,7 @@ export default function CustomerDashboard() {
         <div className="absolute -bottom-8 -right-8 w-24 h-24 rounded-full bg-foreground/5 pointer-events-none" />
         <div className="relative z-10">
           {/* Top row: name + status badge */}
-          <div className="flex items-start justify-between mb-3">
+          <div className="flex items-start justify-between mb-3 min-w-0">
             <div>
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-primary">Selamat Datang</p>
               <h1 className="text-lg lg:text-xl font-extrabold text-foreground mt-0.5 leading-tight">{user.name}</h1>
@@ -557,7 +557,7 @@ export default function CustomerDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* ONT/WiFi Card */}
         <CyberCard className="p-4 bg-card border-2 border-accent/30 ">
-          <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center justify-between gap-2 min-w-0 mb-3 min-w-0">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-accent/20 rounded-lg border border-accent/30 flex items-center justify-center">
                 <Wifi className="w-4 h-4 text-accent" />
@@ -648,7 +648,7 @@ export default function CustomerDashboard() {
 
         {/* All Invoices Card */}
         <CyberCard className="p-4 bg-card border-2 border-success/30 ">
-          <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center justify-between gap-2 min-w-0 mb-3 min-w-0">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-success/20 rounded-lg border border-success/30 flex items-center justify-center">
                 <Receipt className="w-4 h-4 text-success" />
@@ -668,7 +668,7 @@ export default function CustomerDashboard() {
                 const isCancelled = invoice.status === 'CANCELLED';
                 return (
                   <div key={invoice.id} className="border border-border/30 rounded-xl p-2.5 bg-card/60">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center justify-between gap-2 min-w-0">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
                           <p className="font-mono text-xs font-semibold text-foreground truncate">{invoice.invoiceNumber}</p>

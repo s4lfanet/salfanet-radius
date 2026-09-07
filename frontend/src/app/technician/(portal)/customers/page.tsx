@@ -224,7 +224,7 @@ export default function TechnicianCustomersPage() {
               const nearExpiry = isNearExpiry(c.expiredAt);
               return (
                 <div key={c.id} className="p-3 space-y-2 hover:bg-slate-50 dark:hover:bg-primary/10 transition-colors">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={`w-1.5 h-8 rounded-full flex-shrink-0 ${cfg.dot}`} />
                       <div className="min-w-0">
@@ -332,7 +332,7 @@ export default function TechnicianCustomersPage() {
 
                         {/* Phone */}
                         <td className="px-4 py-3">
-                          <span className="text-[12px] text-muted-foreground whitespace-nowrap">
+                          <span className="text-[12px] text-muted-foreground whitespace-nowrap truncate overflow-hidden">
                             {c.phone}
                           </span>
                         </td>

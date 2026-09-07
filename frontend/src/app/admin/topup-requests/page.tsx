@@ -101,8 +101,8 @@ export default function TopUpRequestsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
@@ -112,9 +112,9 @@ export default function TopUpRequestsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
       <div className="relative z-10 space-y-6">
@@ -134,7 +134,7 @@ export default function TopUpRequestsPage() {
             filter === 'PENDING' ? 'border-warning' : 'border-border hover:border-warning/50'
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <p className="text-xs text-muted-foreground uppercase">{t('topup.pending')}</p>
             <Clock className="w-5 h-5 text-warning" />
           </div>
@@ -147,7 +147,7 @@ export default function TopUpRequestsPage() {
             filter === 'SUCCESS' ? 'border-success' : 'border-border hover:border-success/50'
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <p className="text-xs text-muted-foreground uppercase">{t('topup.approved')}</p>
             <CheckCircle2 className="w-5 h-5 text-success" />
           </div>
@@ -160,7 +160,7 @@ export default function TopUpRequestsPage() {
             filter === 'FAILED' ? 'border-destructive' : 'border-border hover:border-destructive/50'
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <p className="text-xs text-muted-foreground uppercase">{t('topup.rejected')}</p>
             <XCircle className="w-5 h-5 text-destructive" />
           </div>
@@ -173,7 +173,7 @@ export default function TopUpRequestsPage() {
             filter === 'ALL' ? 'border-primary' : 'border-border hover:border-primary/50'
           }`}
         >
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 min-w-0">
             <p className="text-xs text-muted-foreground uppercase">{t('common.total')}</p>
             <AlertCircle className="w-5 h-5 text-primary" />
           </div>
@@ -184,7 +184,7 @@ export default function TopUpRequestsPage() {
       {/* Requests List */}
       <div className="bg-card border border-border rounded-lg overflow-hidden">
         {filteredRequests.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
+          <div className="p-4 sm:p-8 text-center text-muted-foreground">
             <AlertCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>{t('topup.noRequests')} {filter !== 'ALL' && filter.toLowerCase()}</p>
           </div>

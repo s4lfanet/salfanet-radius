@@ -354,7 +354,7 @@ export default function CollectorBillingPage() {
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">Memuat...</div>
       ) : visible.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-8 text-center text-muted-foreground">
+        <div className="bg-card border border-border rounded-xl p-4 sm:p-8 text-center text-muted-foreground">
           <Users className="w-10 h-10 mx-auto mb-3 opacity-20" />
           Tidak ada data.
         </div>

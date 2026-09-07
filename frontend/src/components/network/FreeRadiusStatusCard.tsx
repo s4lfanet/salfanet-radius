@@ -42,7 +42,7 @@ export default function FreeRadiusStatusCard({ className = '' }: Props) {
       className={`bg-card border border-border rounded-xl p-3 ${className}`}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 min-w-0">
         <div className="flex items-center gap-2">
           <span className="text-teal-600 dark:text-teal-400">
             <Radio size={14} />

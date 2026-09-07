@@ -221,7 +221,7 @@ export default function AdminReferralsPage() {
           <div className="block md:hidden divide-y divide-border">
             {rewards.map((reward) => (
               <div key={reward.id} className="p-3 space-y-2">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 min-w-0">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{reward.referrer.name}</p>
                     <p className="text-[10px] text-muted-foreground">{reward.referrer.phone}</p>

@@ -249,7 +249,7 @@ export function NetworkTopologyMap({
             >
               <Popup>
                 <div className="p-2 min-w-[200px] bg-gray-800 border border-gray-700">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-2 min-w-0">
                     <span className="px-2 py-1 text-xs font-medium rounded bg-blue-600 text-white">
                       {node.type === 'JOINT_CLOSURE' ? 'JC' : node.type}
                     </span>

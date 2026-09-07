@@ -338,8 +338,8 @@ export default function CronSettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl" />
         </div>
         <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 relative z-10" />
       </div>
@@ -351,9 +351,9 @@ export default function CronSettingsPage() {
   return (
     <div className="bg-background relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl" />
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
       </div>
 
@@ -456,7 +456,7 @@ export default function CronSettingsPage() {
               </p>
             </div>
 
-            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between gap-2 px-6 py-2.5">
+            <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 text-xs text-amber-700 dark:text-amber-400 flex items-center justify-between gap-2 min-w-0 px-6 py-2.5">
               <div className="flex items-center gap-2">
                 <span className="font-semibold">⚠ Catatan:</span>
                 Perubahan jadwal disimpan ke database. Cron runner membaca jadwal saat startup.
@@ -616,7 +616,7 @@ export default function CronSettingsPage() {
                 const duration = item.completedAt ? Math.round((new Date(item.completedAt).getTime() - new Date(item.startedAt).getTime()) / 1000) : null;
                 return (
                   <div key={item.id} className="bg-card border border-border rounded-xl p-3">
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center justify-between mb-2 min-w-0">
                       <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-muted text-muted-foreground rounded">{typeLabels[item.type] || item.type}</span>
                       {getStatusBadge(item.status)}
                     </div>

@@ -437,7 +437,7 @@ export default function NetworkDiagramsPage() {
 
         {/* Empty State */}
         {hasNoData && (
-          <div className="bg-card rounded-lg p-12 text-center border border-border">
+          <div className="bg-card rounded-lg p-6 sm:p-12 text-center border border-border">
             <div className="text-muted-foreground mb-4">
               <svg className="mx-auto h-12 w-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -525,7 +525,7 @@ export default function NetworkDiagramsPage() {
               {selectedTab === 'otb' && (
                 <>
                   {otbList.length === 0 ? (
-                    <div className="bg-card rounded-lg p-8 text-center border border-border">
+                    <div className="bg-card rounded-lg p-4 sm:p-8 text-center border border-border">
                       <p className="text-muted-foreground mb-4">Belum ada OTB yang terdaftar.</p>
                       <Link
                         href="/admin/network/map"
@@ -539,7 +539,7 @@ export default function NetworkDiagramsPage() {
                       {/* Left: selector + diagram */}
                       <div className="xl:col-span-2 space-y-4">
                         <div className="flex items-center gap-4 bg-card p-4 rounded-lg border border-border">
-                          <label className="text-gray-900 dark:text-gray-300 font-medium whitespace-nowrap">Pilih OTB:</label>
+                          <label className="text-gray-900 dark:text-gray-300 font-medium whitespace-nowrap truncate overflow-hidden">Pilih OTB:</label>
                           <select
                             value={selectedOTB}
                             onChange={e => setSelectedOTB(e.target.value)}
@@ -552,7 +552,7 @@ export default function NetworkDiagramsPage() {
                         </div>
 
                         {otbDetailLoading && (
-                          <div className="bg-card rounded-lg p-8 text-center border border-border">
+                          <div className="bg-card rounded-lg p-4 sm:p-8 text-center border border-border">
                             <p className="text-muted-foreground">Memuat data OTB...</p>
                           </div>
                         )}
@@ -723,7 +723,7 @@ export default function NetworkDiagramsPage() {
               {selectedTab === 'jc' && (
                 <>
                   {jcList.length === 0 ? (
-                    <div className="bg-card rounded-lg p-8 text-center border border-border">
+                    <div className="bg-card rounded-lg p-4 sm:p-8 text-center border border-border">
                       <p className="text-muted-foreground mb-4">{t('network.diagram.noJointClosures')}</p>
                       <Link
                         href="/admin/network/fiber-joint-closures"
@@ -737,7 +737,7 @@ export default function NetworkDiagramsPage() {
                       {/* Left col: selector + diagram */}
                       <div className="xl:col-span-2 space-y-4">
                         <div className="flex items-center gap-4 bg-card p-4 rounded-lg border border-border">
-                          <label className="text-gray-900 dark:text-gray-300 font-medium whitespace-nowrap">{t('network.diagram.selectJointClosure')}:</label>
+                          <label className="text-gray-900 dark:text-gray-300 font-medium whitespace-nowrap truncate overflow-hidden">{t('network.diagram.selectJointClosure')}:</label>
                           <select
                             value={selectedJC}
                             onChange={e => setSelectedJC(e.target.value)}
@@ -750,7 +750,7 @@ export default function NetworkDiagramsPage() {
                         </div>
 
                         {jcDetailLoading && (
-                          <div className="bg-card rounded-lg p-8 text-center border border-border">
+                          <div className="bg-card rounded-lg p-4 sm:p-8 text-center border border-border">
                             <p className="text-muted-foreground">Memuat data JC...</p>
                           </div>
                         )}
@@ -934,7 +934,7 @@ export default function NetworkDiagramsPage() {
               {selectedTab === 'odc' && (
                 <>
                   {odcList.length === 0 ? (
-                    <div className="bg-card rounded-lg p-8 text-center border border-border">
+                    <div className="bg-card rounded-lg p-4 sm:p-8 text-center border border-border">
                       <p className="text-muted-foreground mb-4">{t('network.diagram.noODCs')}</p>
                       <Link
                         href="/admin/network/fiber-odcs"
@@ -980,7 +980,7 @@ export default function NetworkDiagramsPage() {
               {selectedTab === 'odp' && (
                 <>
                   {odpList.length === 0 ? (
-                    <div className="bg-card rounded-lg p-8 text-center border border-border">
+                    <div className="bg-card rounded-lg p-4 sm:p-8 text-center border border-border">
                       <p className="text-muted-foreground mb-4">{t('network.diagram.noODPs')}</p>
                       <Link
                         href="/admin/network/fiber-odps"

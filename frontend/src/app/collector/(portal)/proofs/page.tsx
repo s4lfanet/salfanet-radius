@@ -121,7 +121,7 @@ export default function CollectorProofsPage() {
           <Loader2 className="w-6 h-6 animate-spin" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="card p-8 text-center text-muted-foreground">
+        <div className="card p-4 sm:p-8 text-center text-muted-foreground">
           <Inbox className="w-10 h-10 mx-auto mb-3 opacity-20" />
           {search ? `Tidak ada hasil untuk "${search}"` : filter === 'pending' ? 'Tidak ada bukti transfer yang menunggu verifikasi.' : 'Tidak ada data.'}
         </div>

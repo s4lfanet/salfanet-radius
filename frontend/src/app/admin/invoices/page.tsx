@@ -794,8 +794,8 @@ export default function InvoicesPage() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
+          <div className="absolute top-1/4 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
         </div>
         <Loader2 className="w-12 h-12 animate-spin text-brand-500 dark:text-brand-500 dark:drop- relative z-10" />
       </div>
@@ -806,9 +806,9 @@ export default function InvoicesPage() {
     <div className="bg-background relative">
       {/* Neon Cyberpunk Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-        <div className="absolute top-1/3 right-1/4 w-96 h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute top-0 left-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-primary/10 rounded-full blur-3xl"></div>
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 sm:w-96 sm:h-96 bg-brand-500/20 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 w-48 h-48 sm:w-96 sm:h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
         <div className="hidden dark:block absolute inset-0 bg-[linear-gradient(rgba(139,92,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(139,92,246,0.03)_1px,transparent_1px)] bg-[size:50px_50px]"></div>
       </div>
 
@@ -831,7 +831,7 @@ export default function InvoicesPage() {
               </button>
             )}
             <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-[10px] text-muted-foreground whitespace-nowrap">Periode:</span>
+              <span className="text-[10px] text-muted-foreground whitespace-nowrap truncate overflow-hidden">Periode:</span>
               <input type="date" value={exportDateFrom} onChange={e => setExportDateFrom(e.target.value)}
                 className="text-[10px] px-1.5 py-1 bg-muted/80 border border-border rounded text-foreground focus:outline-none focus:border-border" />
               <span className="text-[10px] text-muted-foreground/40">-</span>
@@ -858,7 +858,7 @@ export default function InvoicesPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
           <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('common.total')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.total}</p>
@@ -869,7 +869,7 @@ export default function InvoicesPage() {
             </div>
           </div>
           <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.pending')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.unpaid}</p>
@@ -881,7 +881,7 @@ export default function InvoicesPage() {
             </div>
           </div>
           <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.paid')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.paid}</p>
@@ -893,7 +893,7 @@ export default function InvoicesPage() {
             </div>
           </div>
           <div className="bg-card rounded-xl border border-border p-3 sm:p-4  hover:border-border transition-all">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 min-w-0">
               <div className="min-w-0">
                 <p className="text-[10px] sm:text-xs text-brand-500 uppercase tracking-wide truncate">{t('invoices.overdue')}</p>
                 <p className="text-lg sm:text-2xl font-bold text-foreground mt-1">{stats.overdue}</p>
@@ -1068,7 +1068,7 @@ export default function InvoicesPage() {
             ) : (
               filteredInvoices.map((invoice) => (
                 <div key={invoice.id} className="p-3 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="flex items-start justify-between gap-2 min-w-0 mb-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <input
                         type="checkbox"
@@ -1083,7 +1083,7 @@ export default function InvoicesPage() {
                         </div>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-foreground whitespace-nowrap">{formatCurrency(Number(invoice.amount))}</span>
+                    <span className="text-sm font-bold text-foreground whitespace-nowrap truncate overflow-hidden">{formatCurrency(Number(invoice.amount))}</span>
                   </div>
                   <div className="space-y-1 text-[11px] ml-6">
                     <div className="flex justify-between">

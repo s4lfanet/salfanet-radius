@@ -146,7 +146,7 @@ export default function RadCheckPage() {
                     ) : (
                         items.map((item) => (
                             <div key={item.id} className="bg-card rounded-xl border border-border p-3">
-                                <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center justify-between mb-2 min-w-0">
                                     <span className="text-sm font-medium text-foreground">{item.username}</span>
                                     <button
                                         onClick={() => handleDelete(item.id)}

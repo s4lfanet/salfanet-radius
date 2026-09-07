@@ -176,7 +176,7 @@ export default function AdminSuspendRequestsPage() {
               const sc = STATUS_CONFIG[row.status];
               return (
                 <div key={row.id} className="p-3 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 min-w-0">
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{row.user.name}</p>
                       <p className="text-[10px] font-mono text-muted-foreground">{row.user.username}</p>

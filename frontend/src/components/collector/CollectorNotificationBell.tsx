@@ -199,7 +199,7 @@ export default function CollectorNotificationBell() {
               {loading ? (
                 <div className="p-4 text-center text-xs text-muted-foreground">Memuat...</div>
               ) : notifications.length === 0 ? (
-                <div className="p-8 text-center">
+                <div className="p-4 sm:p-8 text-center">
                   <Bell className="w-8 h-8 mx-auto text-muted-foreground/30 mb-2" />
                   <p className="text-xs text-muted-foreground">Tidak ada notifikasi</p>
                 </div>

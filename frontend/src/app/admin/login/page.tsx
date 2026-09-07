@@ -205,7 +205,7 @@ function LoginForm() {
         </div>
       </div>
       {/* ── Left Panel: Login Form ── */}
-      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-dvh bg-card border-r border-border shadow-xl px-8 pt-10 lg:pt-14 pb-10 flex-shrink-0">
+      <div className="flex items-start justify-center w-full lg:w-[430px] lg:min-h-dvh bg-card border-r border-border shadow-xl px-4 pt-6 pb-6 sm:px-8 sm:pt-10 lg:pt-14 sm:pb-10 flex-shrink-0">
         <div className="w-full max-w-[320px]">
 
           {/* Logo */}
@@ -364,7 +364,7 @@ function LoginForm() {
       {/* ── Right Panel: Brand Info ── */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-slate-100 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-900 items-center justify-center px-12 py-8 relative overflow-hidden">
         {/* Decorative blobs */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-blue-100/60 dark:bg-blue-900/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-40 h-40 sm:w-72 sm:h-72 bg-blue-100/60 dark:bg-blue-900/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-56 h-56 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-full blur-3xl pointer-events-none" />
 
         <div className="max-w-lg w-full relative z-10">
@@ -373,7 +373,7 @@ function LoginForm() {
             <span className="text-xs font-semibold uppercase tracking-widest text-blue-500 dark:text-blue-400">Panel Admin</span>
           </div>
           {/* Company name */}
-          <h1 className="text-5xl font-extrabold leading-tight mb-2 text-foreground">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-tight mb-2 text-foreground">
             {companyName}
           </h1>
           <div className="mb-4 h-1.5 w-28 rounded-full bg-gradient-to-r from-blue-600 to-indigo-500" />
